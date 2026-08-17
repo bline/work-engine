@@ -1,0 +1,41 @@
+version: 1
+objective: "Advance the Site2JSON roadmap"
+
+work_source:
+  kind: file
+  value: "docs/roadmap.md"
+
+builder:
+  skill: "slice-builder"
+  model: "gpt-5.6-sol"
+  reasoning_effort: "low"
+  context:
+    evidence_skill: "claude-recon-implementation"
+
+validation:
+  profile: "engineering-full"
+  requirements:
+    - focused_checks
+    - full_suite
+    - freshness_checks
+    - adversarial_review
+
+limits: {}
+
+approval:
+  plan: "procedural_when_safe"
+  uninterrupted_after_plan: false
+
+notifications:
+  intervention: true
+  completion: false
+
+stop_on:
+  - objective_complete
+  - human_judgment
+  - unresolved_architecture
+  - quota_exhaustion
+  - validation_nonconvergence
+
+metrics:
+  path: "work-engine/metrics/roadmap.jsonl"

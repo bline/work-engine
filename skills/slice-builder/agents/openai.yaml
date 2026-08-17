@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slice Builder"
+  short_description: "Build one configured engineering slice"
+  default_prompt: "Use $slice-builder as the engineering adapter for one configured evidence-driven implementation slice."
