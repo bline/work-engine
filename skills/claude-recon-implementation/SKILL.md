@@ -51,13 +51,11 @@ Prefer:
 claude -p \
   --effort medium \
   --no-session-persistence \
-  --tools "mcp__codebase-memory-mcp,Read,Grep,Bash" \
+  --tools "mcp__codebase-memory-mcp" \
   --output-format json \
   --json-schema '<placement-schema>' \
   '<bounded placement prompt>'
 ```
-
-Run Claude outside the Codex sandbox when normal API/config access or subprocess behavior requires it. During the migration, `claude-codebase-memory` keeps `Read`, `Grep`, and `Bash` available beside the exact Codebase Memory MCP server selector so evidence can bridge graph and filesystem boundaries. Remove that transitional filesystem access only after the migration establishes that it is no longer required. Claude must not edit files, write patches, run tests or builds, invoke generators, run freshness checks, or mutate repository state. It may identify the exact commands and ranges for those operations.
 
 If Claude fails before returning repository evidence, treat that as infrastructure failure. Inspect the execution conditions before retrying; do not repeatedly issue the same invocation. Prefer correct API/config access outside the sandbox, then retry once. On a direct low-risk route, return the failure to the builder for a recorded route decision: builder-direct observation may replace a defaulted provider only when no explicit independence requirement applies and the same acceptance condition remains provable. Never silently substitute for an explicitly selected provider or high-assurance falsifier.
 
