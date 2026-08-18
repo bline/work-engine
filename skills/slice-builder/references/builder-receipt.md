@@ -1,10 +1,11 @@
-# Engineering builder receipt contract
+# Engineering builder audit receipt contract
 
-Return one concise object after a slice is accepted, stopped, or failed. Do not include prompts, transcripts, chain-of-thought, raw Claude output, source excerpts, diffs, patches, raw test output, debug logs, or secrets.
+Return this object as `audit_receipt` after a slice is accepted, stopped, or failed. It is the complete terminal record consumed by the supervisor's durable schema validator. Return the separate compact `handoff_receipt` defined in [handoff-receipt.md](handoff-receipt.md) beside it. Do not include prompts, transcripts, chain-of-thought, raw Claude output, source excerpts, diffs, patches, raw test output, debug logs, or secrets.
 
 ## Required outcome fields
 
-- `slice_statement`
+- `slice_title`
+- `slice_goal`
 - `status`: `accepted`, `stopped`, or `failed`
 - `outcome`
 - `stop_reason`: null only when accepted

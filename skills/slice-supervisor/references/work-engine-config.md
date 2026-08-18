@@ -18,6 +18,8 @@ builder:
   reasoning_effort: "low"
   context:
     evidence_skill: "claude-recon-implementation"
+    reconnaissance:
+      provider: "claude-filesystem"
 
 validation:
   profile: "engineering-full"
@@ -53,7 +55,7 @@ stop_on:
 - `version`: Required integer; use `1`.
 - `objective`: Required nonempty statement. Preserve the user's wording.
 - `work_source`: Optional evidence/boundary source. `kind` is `file`, `inline`, or `repository_evidence`; `value` is required for `file` and `inline` and omitted for `repository_evidence`. A missing work source means the objective plus applicable repository evidence, not an inferred roadmap file.
-- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration.
+- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. `context.reconnaissance.provider` identifies the repository-evidence mechanism, while `context.evidence_skill` identifies its concrete adapter; version 1 requires those values to resolve consistently.
 - `validation`: `profile` names a builder-supported gate and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. Do not reinterpret an unknown requirement.
 - `metrics.path`: Durable JSONL destination. An explicit `null` disables durable metrics only when the user says so; do not confuse it with a missing value.
 - `limits`: Hard limits explicitly supplied by the user, such as `slices`, `time_seconds`, `cost_usd`, `tokens`, or `repair_attempts`. An empty object means no configured hard limits. Never invent them.
@@ -69,6 +71,7 @@ Defaults preserve the existing engineering workflow:
 - `builder.model`: `gpt-5.6-sol`
 - `builder.reasoning_effort`: `low`
 - `builder.context.evidence_skill`: `claude-recon-implementation`
+- `builder.context.reconnaissance.provider`: `claude-filesystem`
 - `validation.profile`: `engineering-full`
 - `validation.requirements`: `focused_checks`, `full_suite`, `freshness_checks`, `adversarial_review`
 - `metrics.path`: `docs/ai-workflow-metrics.jsonl`
@@ -90,7 +93,7 @@ A configured builder must declare before plan acceptance that it can:
 3. execute through controlled implementation and gate phases using one persistent identity;
 4. satisfy or truthfully reject each validation requirement;
 5. preserve baseline and unrelated work where the medium has mutable state;
-6. return the common terminal receipt fields plus namespaced adapter metrics; and
+6. return a complete terminal `audit_receipt` with common fields and namespaced adapter metrics, plus a compact semantic `handoff_receipt` for the next builder; and
 7. distinguish objective completion, remaining work, stops, and failures.
 
 The supervisor must not emulate a missing capability. A builder-specific evidence or reviewer skill belongs in `builder.context`; the supervisor passes it through and records it but does not invoke it directly.
@@ -105,7 +108,7 @@ Store a compact `engine_config` in every schema-version-3 receipt:
   "source": "inline_user_config",
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
-  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation"}},
+  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation", "reconnaissance": {"provider": "claude-filesystem"}}},
   "validation": {"profile": "engineering-full", "requirements": ["focused_checks", "full_suite", "freshness_checks", "adversarial_review"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},

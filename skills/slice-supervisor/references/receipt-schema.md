@@ -1,6 +1,6 @@
 # Work-engine receipt schema
 
-Append exactly one record when a slice reaches `accepted`, `stopped`, or `failed`. Use schema version 3 for campaigns using placement-first reconnaissance. The append script continues to accept historical version-1 and version-2 records, but new runs must not emit them.
+Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 3 for campaigns using placement-first reconnaissance. The append script continues to accept historical version-1 and version-2 records, but new runs must not emit them.
 
 ## Required common fields
 

@@ -43,7 +43,7 @@ Give the worker only:
 
 - the effective campaign configuration and provenance;
 - original objective, work source, and applicable local instructions;
-- relevant prior accepted receipts, not transcripts;
+- relevant prior accepted `handoff_receipt` objects, not audit receipts or transcripts;
 - hard limits and approval boundaries; and
 - the planning phase contract required by the configured builder.
 
@@ -76,18 +76,18 @@ When `approval.uninterrupted_after_plan` is true, execution and gate may share o
 
 ## Accept and record a slice
 
-Require the configured builder's terminal receipt plus the common fields in its adapter contract. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted.
+Require the configured builder's `audit_receipt` plus its compact `handoff_receipt`. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted. Retain the handoff only for relevant future builder context; never use it as the durable record.
 
 Do not retain raw tool output, exploration, debugging, test logs, diffs, or copied source. Ask the builder to compress an overlong receipt rather than summarizing its evidence yourself.
 
-When `metrics.path` is non-null, append exactly one terminal receipt per slice using:
+When `metrics.path` is non-null, append exactly one terminal audit receipt per slice using:
 
 ```bash
 python3 work-engine/skills/slice-supervisor/scripts/append_metrics.py \
-  --path <configured-metrics-path> --record-json '<receipt>'
+  --path <configured-metrics-path> --record-json '<audit-receipt>'
 ```
 
-The script validates and locks the append. Record the effective engine configuration, placement proof, and provenance as required by schema version 3. Preserve unavailable values as `null` and flexible builder metrics inside their namespaced objects. Correct rejected receipts from actual evidence; never pad them with guesses. If the user explicitly configured a null metrics path, retain the receipt in supervisor state for the final report and state that no durable record was written.
+The script validates and locks the audit append. Record the effective engine configuration, placement proof, and provenance as required by schema version 3. Preserve unavailable values as `null` and flexible builder metrics inside their namespaced objects. Correct rejected audit receipts from actual evidence; never pad them with guesses. Never append the compact handoff. If the user explicitly configured a null metrics path, retain both receipt views in supervisor state for the final report and state that no durable record was written.
 
 ## Decide whether to continue
 

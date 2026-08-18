@@ -26,12 +26,25 @@ Give the builder only:
 - the exact campaign objective and work source;
 - the effective configuration and its provenance;
 - repository instructions and working directory;
-- relevant prior accepted receipts, not transcripts;
+- relevant prior accepted handoff receipts, not audit receipts or transcripts;
 - hard limits and approval boundaries;
 - the current phase contract; and
-- configured builder context, including `evidence_skill` when present.
+- configured builder context, including `evidence_skill` and
+  `reconnaissance.provider` when present.
 
-Require the worker to use the configured evidence skill faithfully. The default is `$claude-recon-implementation`. If the configured skill is unavailable or does not provide the required placement, targeted-reconnaissance, and gate capabilities, stop with `unsupported_capability`; do not substitute a different tool without approval.
+Before invoking repository evidence, resolve the builder context with
+`scripts/resolve_provider.py`. The default provider is `claude-filesystem`,
+backed by `$claude-recon-implementation`. The same adapter supports
+`claude-codebase-memory` with a graph-first evidence path that retains
+transitional filesystem access until the migration is complete.
+Provider identity and concrete evidence-skill identity remain separate
+provenance: they must resolve consistently, and the resolved provider is
+recorded as `evidence_provider` in the audit receipt. Other recognized graph
+providers stop as unavailable until their adapters exist; `auto` is deferred.
+Unknown, unavailable, or inconsistent configuration is
+`unsupported_capability`, not permission to substitute.
+
+Require the worker to use the resolved evidence skill faithfully. If the configured skill is unavailable or does not provide the required placement, targeted-reconnaissance, failure-diagnosis, and adversarial-review capabilities, stop with `unsupported_capability`; do not substitute a different tool without approval. Ordinary test execution belongs to this builder, not the evidence skill.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 
@@ -65,7 +78,16 @@ After explicit `procedural_auto_approval` or `human_approval`, send the accepted
 
 ### Gate turn
 
-Authorize the complete configured test/review loop. Run the mapped gates in the evidence skill's required order. Evaluate findings, implement valid in-scope fixes, and repeat until accepted or genuinely blocked. Return the final receipt in [references/builder-receipt.md](references/builder-receipt.md). Do not return raw transcripts, diffs, source excerpts, or test logs.
+Authorize the complete configured test/review loop. Build an explicit ordered manifest and run it with `scripts/run_gate.py`: vertical proof and changed-file boundary first, then `git diff --check` and check-only prechecks/freshness, focused tests, and the full suite. The script is the canonical owner of deterministic execution, fail-fast behavior, and compact gate results; pass command arguments as arrays and never interpolate a shell command.
+
+```bash
+python3 scripts/run_gate.py --manifest-json \
+  '{"checks":[{"requirement":"focused_checks","identity":"focused","command":["python3","-m","unittest"]}]}'
+```
+
+If the deterministic gate fails, diagnose locally or use the configured evidence skill's compact failure-diagnosis path, then fix and rerun. After it passes, use the configured evidence skill for fresh adversarial review, evaluate findings, implement valid in-scope fixes, rerun affected checks, and complete one final deterministic gate before acceptance.
+
+Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Do not return raw transcripts, diffs, source excerpts, or test logs.
 
 The supervisor may authorize implementation through gate in one follow-up only when the effective config sets `approval.uninterrupted_after_plan: true`. Plan acceptance and separate phase accounting remain mandatory.
 
@@ -95,6 +117,6 @@ If unrelated or unattributable workspace changes appear, stop mutation until own
 
 ## Collect the final receipt
 
-Read [references/builder-receipt.md](references/builder-receipt.md) before requesting the gate result. Preserve measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, and requirement results even if no escalation occurred.
+Read [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md) before requesting the gate result. Return `audit_receipt` for durable validation and metrics, plus `handoff_receipt` for the next builder. Preserve audit measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, and requirement results even if no escalation occurred. Never copy engine, provider, model, token, cache, or detailed gate bookkeeping into the handoff.
 
 The builder is complete only when every configured blocking gate passes with no blocking findings, or when it returns a truthful stopped/failed receipt. Completion of edits alone is not success.

@@ -1,6 +1,6 @@
 ---
 name: claude-recon-implementation
-description: Use Claude CLI for shallow architectural placement alternatives, fresh targeted repository reconnaissance, test gating, and adversarial review while preserving Codex context for judgment and implementation. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
+description: Use Claude CLI for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and adversarial review while preserving Codex context for judgment and implementation. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
 ---
 
 # Claude Recon Implementation
@@ -10,15 +10,15 @@ Use Claude CLI as a forked external process for high-volume, disposable evidence
 This workflow does not invoke Agents API delegation. Do not use `implementation-orchestrator` unless the user separately and explicitly requests agents, subagents, delegation, or multi-agent orchestration.
 
 ```text
-Claude placement alternatives
+Claude compact placement alternatives
 → Codex placement decision
-→ fresh Claude targeted reconnaissance and falsification
+→ fresh Claude compact targeted reconnaissance and falsification
 → Codex plan and implementation
-→ Claude test gate
-   → failure packet and stop
-   → or adversarial review
+→ deterministic test gate
+   → Claude failure diagnosis when needed
+   → or fresh Claude adversarial review
 → Codex fixes
-→ repeat Claude gate until accepted
+→ repeat deterministic gate and review until accepted
 ```
 
 ## 1. Establish a baseline
@@ -43,27 +43,25 @@ Prefer:
 claude -p \
   --effort medium \
   --no-session-persistence \
-  --tools "Read,Grep,Bash" \
+  --tools "mcp__codebase-memory-mcp,Read,Grep,Bash" \
   --output-format json \
   --json-schema '<placement-schema>' \
   '<bounded placement prompt>'
 ```
 
-Run Claude outside the Codex sandbox when normal API/config access or subprocess behavior requires it. Claude must not edit files, write patches, run tests or builds, invoke generators, run freshness checks, or mutate repository state. It may identify the exact commands and ranges for those operations.
+Run Claude outside the Codex sandbox when normal API/config access or subprocess behavior requires it. During the migration, `claude-codebase-memory` keeps `Read`, `Grep`, and `Bash` available beside the exact Codebase Memory MCP server selector so evidence can bridge graph and filesystem boundaries. Remove that transitional filesystem access only after the migration establishes that it is no longer required. Claude must not edit files, write patches, run tests or builds, invoke generators, run freshness checks, or mutate repository state. It may identify the exact commands and ranges for those operations.
 
 If Claude fails before returning repository evidence, treat that as infrastructure failure. Inspect the execution conditions before retrying; do not repeatedly issue the same invocation. Prefer correct API/config access outside the sandbox, then retry once.
 
 Require a JSON schema with:
 
 - `semantic_outcome`: the user-visible or runtime consequence the slice must make true, independent of implementation shape.
-- `observed_architecture`: directly established ownership, lifecycle, and runtime-boundary facts.
-- `premise_conflicts`: conflicts with the request, roadmap, prior receipts, or canonical design documents.
-- `placement_candidates`: at most three plausible boundaries. Each contains `boundary`, `state_owner`, `producer`, `consumer`, `lifecycle`, `evidence_for`, `evidence_against`, `required_preconditions`, `downstream_proof`, and `plausible_but_insufficient_substitute`.
-- `discriminating_facts`: the smallest facts or questions that distinguish candidates; do not expand each candidate into full reconnaissance.
-- `open_decisions`: decisions the evidence does not settle.
+- `placement_candidates`: at most three compact candidate objects naming the boundary, owner, producer, consumer, lifecycle, evidence for and against, downstream proof, and insufficient substitute.
+- `discriminators`: at most five facts or questions that distinguish candidates.
+- `ranges`: at most eight minimum canonical-document or ownership ranges Codex must read to choose responsibly.
+- `blockers`: at most three unresolved premise conflicts, preconditions, or decisions.
 - `placement_risk`: `low`, `medium`, or `high`, with evidence.
-- `placement_ranges`: only the minimum canonical-document or ownership ranges Codex must read to choose responsibly.
-- available call statistics.
+- `statistics`: available call statistics.
 
 Do not request or return a singular recommended slice, complete call paths, exact changed-file lists, or a full implementation plan in this round. Ranking candidates is allowed only when the evidence and uncertainty remain visible.
 
@@ -84,23 +82,16 @@ After Codex provisionally selects a placement, invoke a new Claude process with 
 
 This call explores only the selected boundary and the callers or dependencies necessary to prove or falsify it. Require a JSON schema with:
 
-- `observed_state`: facts directly established from repository evidence.
-- `premise_conflicts`: conflicts with the request, roadmap, or prior completion summary. Never silently redefine the task.
-- `placement_verdict`: `confirmed`, `conflict`, or `unresolved`, with verified evidence. A conflict identifies the failed certificate clause; it does not silently choose another placement.
-- `semantic_effect_path`: exact trigger, producer, state, owner, consumer, and observable consequence.
-- `selected_boundary`: the smallest coherent implementation boundary supported by the confirmed placement.
-- `relevant_ranges`: minimum code, test, and canonical-document ranges, each with `path`, numeric `start_line`, numeric `end_line`, and `reason`.
-- `call_path`: relevant symbols, files, data flow, state transitions, and lifecycle.
-- `module_and_test_wiring`: registration/loading, exports/globals, test bootstrap, whether browser registration is needed, package/precheck commands, check-only generated-freshness commands, and environmental requirements.
-- `invariants`: behavioral and architectural truths; distinguish evidence, inference, user decision, accepted effective state, and durable runtime state where relevant.
-- `acceptance_tests`: existing and required correctness checks.
-- `vertical_semantic_test`: the smallest test or executable proof that fails unless the intended downstream consumer observes the new state. UI-local or producer-only tests are insufficient when the objective promises a runtime consequence.
-- `test_commands`: exact precheck, focused, full-suite, and check-only freshness commands. Do not execute them during reconnaissance.
-- `expected_changed_file_boundaries`: files or subsystems the slice may legitimately modify.
-- `result_and_error_vocabulary`: existing accepted, rejected, unresolved, stale, failure, and related state language to preserve.
-- `deferred_scope`: excluded work.
-- `open_decisions`: only decisions repository evidence does not settle.
-- `missing_context_risk`: likely omissions and their consequences.
+- `verdict`: `confirmed`, `conflict`, or `unresolved`.
+- `failed_certificate_clause`: the failed clause for a conflict, otherwise null.
+- `facts`: at most eight directly observed facts that prove or falsify the certificate, including premise conflicts rather than silently redefining the task.
+- `ranges`: at most twelve minimum code, test, and canonical-document ranges with path, numeric start/end lines, and reason.
+- `wiring`: at most five registration, call-path, lifecycle, test-bootstrap, or environmental facts Codex cannot cheaply derive from those ranges.
+- `commands`: exact vertical, precheck, focused, full-suite, and check-only freshness commands; do not execute them during reconnaissance.
+- `blockers`: at most three unresolved decisions or missing-context risks.
+- `statistics`: available call statistics.
+
+Codex owns the selected boundary, semantic-effect path, invariants, acceptance tests, changed-file boundary, vocabulary, deferred scope, and final plan. Derive them from the certificate and compact evidence packet; do not make Claude restate them.
 
 Prefer narrow, cohesive ranges. Codex reads only those ranges initially and does not repeat Claude's exploration merely to confirm it. If the verdict is `conflict` or `unresolved`, stop before implementation and reconsider placement or request judgment. Do not reinterpret the intended outcome to make the selected boundary pass.
 
@@ -123,51 +114,15 @@ Codex owns all implementation. Use the confirmed placement certificate and targe
 
 Maintain an exact task-owned changed-file manifest. If a task modifies a file already dirty at baseline, identify the overlap explicitly for final review.
 
-## 6. Run the Claude test gate
+## 6. Diagnose gate failures and review passing work
 
-After implementation is coherent, invoke a new read-only Claude process outside the sandbox when tests or subprocesses require it. Pass:
+The builder owns ordinary test execution through its deterministic gate. Claude must not run the vertical proof, boundary check, `git diff --check`, prechecks, freshness checks, focused tests, or full suite. The deterministic result is observed gate state; never replace it with model inference.
 
-- the accepted slice statement;
-- the confirmed placement certificate and rejected insufficient substitutes;
-- architectural invariants;
-- exact task-owned changed-file manifest;
-- baseline overlaps and pre-existing dirty state relevant to those files;
-- concise completion notes;
-- exact commands from the reconnaissance packet.
+If that gate fails and Codex needs diagnostic help, invoke a read-only Claude process with only the failing check identity and exit status, bounded error excerpt, isolation result, task-owned files, accepted placement certificate, and likely diagnostic ranges. Require the smallest likely root-failure set, environment-versus-product assessment, whether task-owned files are in the call path, and exact additional ranges. Do not request adversarial review while deterministic checks are failing.
 
-Claude must not edit files, write patches, regenerate assets, update snapshots, or otherwise mutate repository state beyond ordinary temporary test artifacts. Freshness checks must use check-only modes.
+After every required deterministic command passes, invoke a new read-only Claude process for adversarial review. Pass the accepted slice and placement certificate, invariants, task-owned manifest and overlaps, concise completion notes, and compact deterministic result. Claude must not edit files, write patches, rerun tests, regenerate assets, update snapshots, or otherwise mutate repository state.
 
-Run in this order, stopping at the first failure:
-
-1. the vertical semantic test and a changed-file-boundary check against the placement certificate;
-2. `git diff --check` and required prechecks/check-only freshness checks;
-3. focused tests;
-4. full suite.
-
-Scope review to task-owned changes and only the callers or dependencies necessary to validate them. Do not review the entire dirty tree. Treat an unrelated modification as a finding only when evidence shows this task introduced it.
-
-Use a JSON schema with mutually exclusive `failure` and `review` outcomes.
-
-### Failure outcome
-
-Stop before adversarial review. Return only:
-
-- failing command and exit status;
-- smallest likely root-failure set, not cascading failures;
-- failing test names/files;
-- concise error excerpts, never raw transcripts;
-- whether the failure reproduces in isolation;
-- environment-versus-product assessment, including restricted versus normal execution when relevant;
-- whether task-owned files are in the failing call path;
-- exact code/test ranges needed for diagnosis.
-
-Codex evaluates and fixes the failure, using supplemental Claude reconnaissance if additional context is needed, then repeats the gate.
-
-If the vertical proof fails because the accepted boundary has no valid consumer or owner, classify the plan as invalidated and return to placement instead of repairing indefinitely inside the wrong boundary.
-
-### Passing outcome
-
-Only after every required command passes, perform adversarial review. Prioritize:
+Scope review to task-owned changes and only the callers or dependencies necessary to validate them. Treat an unrelated modification as a finding only when evidence shows this task introduced it. Prioritize:
 
 - truth or provenance loss;
 - broadened user ownership;
@@ -184,7 +139,7 @@ Only after every required command passes, perform adversarial review. Prioritize
 
 Return actionable findings ordered by severity. Each finding includes severity, files/symbols, verified evidence, violated invariant or expected behavior, and whether it was reproduced or inferred. Also return focused/full totals, duration, finding counts by severity, and whether the implementation is acceptable as-is. Never return raw exploration or test transcripts.
 
-Codex decides which findings are valid and in scope, implements fixes, and repeats the complete Claude gate until tests pass and no blocking findings remain. Codex owns final acceptance.
+Codex decides which findings are valid and in scope, implements fixes, repeats affected deterministic checks, and completes a final deterministic gate before acceptance. If the vertical proof shows there is no valid consumer or owner, return to placement rather than repairing indefinitely inside the wrong boundary. Codex owns final acceptance.
 
 ## 7. Report workflow metrics
 
