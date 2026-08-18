@@ -10,7 +10,7 @@ Efficiency means all of the following:
 - less irrelevant context retained by the persistent builder;
 - correct architectural placement, not merely compiling code;
 - an executable downstream semantic proof for each slice;
-- independent falsification of important architectural assumptions;
+- independent falsification of important architectural assumptions when consequence or uncertainty warrants it;
 - deterministic validation wherever model judgment is unnecessary;
 - reproducible evidence and durable metrics;
 - no hidden weakening of acceptance criteria in exchange for lower cost.
@@ -31,7 +31,7 @@ The existing workflow has three useful information-lifetime boundaries and shoul
 2. **Persistent slice builder** — durable understanding, placement judgment, implementation, and final acceptance for one slice.
 3. **Disposable reconnaissance/review processes** — high-volume evidence gathering, falsification, test diagnosis, and adversarial review that should not pollute builder context.
 
-The current placement flow is also intentional:
+The high-assurance placement flow is intentional for ambiguous, cross-boundary, or consequential work:
 
 1. scout multiple plausible placement boundaries;
 2. Codex selects a provisional placement;
@@ -40,18 +40,19 @@ The current placement flow is also intentional:
 5. implement only after placement is confirmed;
 6. require a vertical semantic proof that reaches the intended consumer/consequence.
 
-Do not collapse this into one model recommendation. Independence between proposal, owner judgment, and falsification is part of the correctness model.
+For an obvious, local, reversible boundary with a known producer, consumer, and focused proof, a direct targeted-evidence route is sufficient. Escalate to the high-assurance flow when evidence reveals competing ownership, hidden consumers, lifecycle conflict, broad consequence, or medium/high placement risk. Do not collapse important placement judgments into one model recommendation: independence between proposal, owner judgment, and falsification remains part of the correctness model when those conditions apply.
 
 ## Implementation status after the placement/efficiency slice
 
 The current Work Engine already implements much of the pre-graph optimization foundation:
 
-- placement alternatives are a distinct shallow reconnaissance step;
+- the builder selects a direct or falsified-placement route from observed placement risk;
+- placement alternatives are a distinct shallow reconnaissance step on the falsified-placement route;
 - Codex owns the provisional placement decision and placement certificate;
-- a fresh targeted reconnaissance call confirms, conflicts with, or leaves that certificate unresolved;
+- targeted evidence confirms, conflicts with, or leaves that certificate unresolved, with a fresh falsifier when independence is warranted;
 - placement and targeted-recon outputs have explicit cardinality limits;
 - ordinary validation runs through a deterministic `run_gate.py` manifest rather than Claude;
-- Claude is reserved for bounded failure diagnosis and fresh adversarial semantic review;
+- Claude is reserved for bounded reconnaissance, useful failure diagnosis, and fresh adversarial semantic review when configured or risk-justified;
 - `audit_receipt` and compact 300–800-token `handoff_receipt` are separate;
 - schema-version-3 audit receipts persist placement certificate/verdict/risk and rejected alternatives;
 - the builder, evidence skill, supervisor, receipt schema, and gate runner have explicit contract ownership boundaries.
@@ -186,11 +187,11 @@ No LLM is required merely to execute a known validation command or report a succ
 
 # Phase 2 — Shrink model-boundary contracts
 
-**Status: implemented in the current Claude evidence adapter; benchmark and tighten further rather than redesigning it.** Placement and targeted reconnaissance now have separate bounded schemas and hard cardinality limits, while Codex owns the final architectural plan.
+**Status: implemented in the current Claude evidence adapter; benchmark and tighten further rather than redesigning it.** The builder selects a direct or falsified-placement route. On the latter, placement and targeted reconnaissance have separate bounded schemas and hard cardinality limits, while Codex owns the final architectural plan.
 
 ## 2.1 Slim placement reconnaissance
 
-The first placement round remains exploratory but must not become an architecture report.
+When placement alternatives are warranted, the first round remains exploratory but must not become an architecture report.
 
 Return only information needed for Codex to choose responsibly:
 
@@ -219,10 +220,10 @@ Codex owns and records:
 
 The certificate is the compact semantic path that survives into implementation, validation, handoff, and later architectural memory.
 
-Record:
+Record applicable fields:
 
-- selected candidate;
-- rejected alternatives;
+- selected candidate or directly supported boundary;
+- rejected alternatives when alternatives were plausible;
 - evidence for rejection;
 - unresolved preconditions;
 - confidence;
@@ -230,7 +231,7 @@ Record:
 
 ## 2.3 Brutally slim targeted falsification/recon
 
-The second fresh process assumes the selected certificate may be wrong.
+On the falsified-placement route, the second fresh process assumes the selected certificate may be wrong. On the direct route, targeted evidence must still expose any competing owner, hidden consumer, or lifecycle conflict that would require escalation.
 
 Its normal response contract should be bounded approximately as follows:
 
@@ -614,7 +615,7 @@ Do not adopt the rule by assumption; validate it empirically.
 
 # Phase 10 — Hybrid graph workflow
 
-If Experiment B supports the airlock model, make it the default.
+If Experiment B supports the airlock model, make it the default for ambiguous, cross-boundary, or consequential placement. Preserve direct targeted retrieval for obvious local boundaries.
 
 ## 10.1 Primary placement scout
 
@@ -634,7 +635,7 @@ Use a new process, graph-first, that receives:
 
 It assumes the certificate may be wrong and attempts to falsify only the selected boundary.
 
-Freshness remains mandatory here because epistemic independence has value.
+Freshness remains mandatory on this falsification route because epistemic independence is the reason for selecting it.
 
 ## 10.3 Builder microscope
 
@@ -1015,7 +1016,7 @@ It moves **small, verified evidence and architectural claims** across explicit l
 - Codex owns architectural placement and implementation;
 - the placement certificate carries the intended semantic path;
 - deterministic runners prove mechanical correctness;
-- fresh reviewers attempt to falsify semantic correctness;
+- fresh reviewers attempt to falsify semantic correctness when consequence, uncertainty, or configuration requires independence;
 - compact handoffs preserve only durable architectural consequences;
 - strong models are escalated for ambiguity and adversarial reasoning rather than routine retrieval;
 - later semantic memory preserves what the project has learned and why it is still believed.

@@ -22,12 +22,11 @@ builder:
       provider: "claude-filesystem"
 
 validation:
-  profile: "engineering-full"
+  profile: "engineering-proportional"
   requirements:
-    - focused_checks
-    - full_suite
-    - freshness_checks
-    - adversarial_review
+    - semantic_proof
+    - risk_proportional_checks
+    - workspace_integrity
 
 metrics:
   path: "docs/ai-workflow-metrics.jsonl"
@@ -56,7 +55,7 @@ stop_on:
 - `objective`: Required nonempty statement. Preserve the user's wording.
 - `work_source`: Optional evidence/boundary source. `kind` is `file`, `inline`, or `repository_evidence`; `value` is required for `file` and `inline` and omitted for `repository_evidence`. A missing work source means the objective plus applicable repository evidence, not an inferred roadmap file.
 - `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. `context.reconnaissance.provider` identifies the repository-evidence mechanism, while `context.evidence_skill` identifies its concrete adapter; version 1 requires those values to resolve consistently.
-- `validation`: `profile` names a builder-supported gate and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. Do not reinterpret an unknown requirement.
+- `validation`: `profile` names a builder-supported evidence policy and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. `engineering-proportional` selects check breadth and review independence from the slice's actual risk; `engineering-full` requires focused checks, applicable freshness checks, the full suite, and fresh adversarial review. Explicit requirements remain binding under either profile. Do not reinterpret an unknown requirement.
 - `metrics.path`: Durable JSONL destination. An explicit `null` disables durable metrics only when the user says so; do not confuse it with a missing value.
 - `limits`: Hard limits explicitly supplied by the user, such as `slices`, `time_seconds`, `cost_usd`, `tokens`, or `repair_attempts`. An empty object means no configured hard limits. Never invent them.
 - `approval.plan`: `procedural_when_safe` or `human_required`. `approval.uninterrupted_after_plan` controls whether execution and gate may share a follow-up; it never removes plan acceptance.
@@ -65,15 +64,15 @@ stop_on:
 
 ## Documented defaults
 
-Defaults preserve the existing engineering workflow:
+Defaults provide an adaptive engineering workflow while explicit full-gate campaigns remain unchanged:
 
 - `builder.skill`: `slice-builder`
 - `builder.model`: `gpt-5.6-sol`
 - `builder.reasoning_effort`: `low`
 - `builder.context.evidence_skill`: `claude-recon-implementation`
 - `builder.context.reconnaissance.provider`: `claude-filesystem`
-- `validation.profile`: `engineering-full`
-- `validation.requirements`: `focused_checks`, `full_suite`, `freshness_checks`, `adversarial_review`
+- `validation.profile`: `engineering-proportional`
+- `validation.requirements`: `semantic_proof`, `risk_proportional_checks`, `workspace_integrity`
 - `metrics.path`: `docs/ai-workflow-metrics.jsonl`
 - `limits`: `{}`
 - `approval.plan`: `procedural_when_safe`
@@ -89,7 +88,7 @@ Record which values were explicit and which came from these defaults. A user exp
 A configured builder must declare before plan acceptance that it can:
 
 1. keep planning read-only and return observed evidence separately from inference;
-2. accept a fixed bounded slice and report any necessary boundary change;
+2. accept a bounded slice, preserve its invariants, and return for renewed acceptance when evidence requires a route or boundary revision;
 3. execute through controlled implementation and gate phases using one persistent identity;
 4. satisfy or truthfully reject each validation requirement;
 5. preserve baseline and unrelated work where the medium has mutable state;
@@ -109,7 +108,7 @@ Store a compact `engine_config` in every schema-version-3 receipt:
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
   "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation", "reconnaissance": {"provider": "claude-filesystem"}}},
-  "validation": {"profile": "engineering-full", "requirements": ["focused_checks", "full_suite", "freshness_checks", "adversarial_review"]},
+  "validation": {"profile": "engineering-proportional", "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},
   "approval": {"plan": "procedural_when_safe", "uninterrupted_after_plan": false},
@@ -136,6 +135,16 @@ work_source: {kind: file, value: "docs/cleanup.md"}
 builder: {skill: slice-builder, model: gpt-5.6-sol, reasoning_effort: low, context: {evidence_skill: claude-recon-implementation}}
 validation: {profile: engineering-full, requirements: [focused_checks, full_suite, adversarial_review]}
 ```
+
+Use `engineering-full` when the user wants the same broad gate on every slice or when the campaign's consequences make that consistency part of the acceptance contract. Under the default `engineering-proportional` profile:
+
+- `semantic_proof` requires an observed vertical consequence, not merely compiling edits;
+- `risk_proportional_checks` requires focused tests and adds broader suites plus independent review when consequence, fan-out, uncertainty, or changed boundaries warrant them; and
+- `workspace_integrity` requires changed-file/baseline checks and applicable generated-artifact freshness checks.
+
+The audit receipt records selected and omitted stages with reasons. An omitted optional stage is not reported as passed; the profile passes only when its selection policy and executed evidence both satisfy the slice's risk.
+
+Do not rewrite `engineering-proportional` as `engineering-full` merely because a high-risk slice selected full-suite and independent-review breadth. Configuration is authored policy; `validation_breadth` is observed execution.
 
 An objective without a plan is explicit:
 

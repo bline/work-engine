@@ -11,6 +11,8 @@ The caller remains the supervisor. It owns the campaign configuration, plan acce
 
 Read the effective work-engine configuration. This adapter supports engineering campaigns whose validation requirements can be mapped to repository checks, freshness checks, visual inspection, and adversarial review. Before planning, explicitly reject unsupported validation requirements or a non-engineering objective. Never silently downgrade a gate. Normalize provider metrics by semantic role while preserving provider-native measurements in `additional_metrics`.
 
+Keep invariants, acceptance conditions, routes, and recovery decisions distinct. Invariants and explicit configuration remain binding. Select an evidence and validation route proportionate to the slice instead of treating every available stage as mandatory. When evidence invalidates a premise, preserve applicable observations, mark dependent decisions stale, revise the route, and return for renewed plan acceptance. Do not turn a recoverable route correction into either silent scope expansion or automatic failure.
+
 ## Launch the builder
 
 Spawn with:
@@ -44,7 +46,7 @@ providers stop as unavailable until their adapters exist; `auto` is deferred.
 Unknown, unavailable, or inconsistent configuration is
 `unsupported_capability`, not permission to substitute.
 
-Require the worker to use the resolved evidence skill faithfully. If the configured skill is unavailable or does not provide the required placement, targeted-reconnaissance, failure-diagnosis, and adversarial-review capabilities, stop with `unsupported_capability`; do not substitute a different tool without approval. Ordinary test execution belongs to this builder, not the evidence skill.
+Require the worker to use the resolved evidence skill faithfully for stages selected by the accepted route. Before planning, confirm that it supports every stage the configured validation profile or current risk requires. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires an independent provider. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Otherwise attempt a route revision only when it does not weaken configuration, independence, or provenance, or stop with `unsupported_capability`. Ordinary test execution belongs to this builder, not the evidence skill.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 
@@ -54,20 +56,25 @@ Retain the builder returned by `spawn_agent`. Use `followup_task` on that identi
 
 ### Planning turn
 
-Require read-only placement analysis followed by targeted reconnaissance and an evidence-based plan only. First obtain shallow placement alternatives, make an explicit Codex placement decision, and then use a fresh evidence-provider call to prove or falsify only the selected boundary. Do not ask the provider to deeply explore every alternative in one call.
+Require read-only evidence and an evidence-based plan only. First assess consequence, reversibility, placement ambiguity, repository familiarity, and the number of ownership/runtime boundaries involved. Select and record one route:
+
+- `direct`: for an obvious, local, reversible boundary with a known producer, consumer, and focused downstream proof. Gather only targeted evidence needed to confirm the semantic path, using builder-direct observation unless independent evidence is explicitly configured or risk-justified.
+- `falsified-placement`: for competing homes, cross-boundary state, consequential behavior, weak repository familiarity, or medium/high placement risk. Obtain shallow alternatives, make an explicit Codex placement decision, then use a fresh provider call that assumes the selected boundary may be wrong.
+
+Escalate from `direct` to `falsified-placement` as soon as evidence reveals a plausible competing owner, hidden consumer, lifecycle conflict, or broader consequence. Do not deeply explore every alternative.
 
 Require:
 
 - bounded slice statement and premise conflicts;
 - observed facts separated from inference;
 - semantic outcome independent of implementation shape;
-- placement candidates, discriminating evidence, and placement risk;
+- placement risk, selected route, and supporting evidence;
 - a provisional placement certificate naming trigger, producer, state owner, consumer, lifecycle, observable consequence, and downstream proof;
-- rejected alternatives and plausible-but-insufficient substitutes;
-- a targeted-reconnaissance placement verdict of `confirmed`; `conflict` or `unresolved` stops planning;
+- candidates, discriminating evidence, and rejected alternatives when plausible alternatives exist;
+- a placement verdict of `confirmed`; on `conflict`, revise the premise and route while the objective and authority remain stable; on `unresolved`, make at most one narrow discriminating request before stopping for a real decision or unavailable evidence;
 - invariants and ownership/provenance requirements;
 - expected changed-file boundary and baseline overlaps;
-- acceptance checks, a vertical semantic test, and exact future validation commands;
+- acceptance checks, a vertical semantic test, and exact future validation commands proportionate to the claims;
 - mapping from every configured validation requirement to a concrete gate;
 - deferred scope, open decisions, and missing-context risk; and
 - available reconnaissance statistics.
@@ -78,14 +85,20 @@ After explicit `procedural_auto_approval` or `human_approval`, send the accepted
 
 ### Gate turn
 
-Authorize the complete configured test/review loop. Build an explicit ordered manifest and run it with `scripts/run_gate.py`: vertical proof and changed-file boundary first, then `git diff --check` and check-only prechecks/freshness, focused tests, and the full suite. The script is the canonical owner of deterministic execution, fail-fast behavior, and compact gate results; pass command arguments as arrays and never interpolate a shell command.
+Authorize the configured validation profile. Build an explicit ordered manifest and run it with `scripts/run_gate.py`. The script is the canonical owner of deterministic execution, fail-fast behavior, and compact gate results; pass command arguments as arrays and never interpolate a shell command.
+
+For `engineering-proportional`, always include the vertical semantic proof, changed-file/workspace integrity, and focused tests. Add freshness checks when generated or derived artifacts may be affected. Add broader regression suites when the change crosses shared/runtime boundaries, has broad fan-out, changes persistence/schema/build behavior, or focused checks cannot bound the risk. Require fresh independent adversarial review for medium/high risk, consequential user-visible or runtime behavior, security/persistence/ownership changes, or material uncertainty. Record why omitted stages were not needed; omission is a scoped judgment, not evidence that a stage passed.
+
+Keep the configured profile identity unchanged. A high-risk proportional run may select the same breadth as `engineering-full`, but record that as `validation_breadth`, not as a profile change.
+
+For `engineering-full`, run vertical proof and changed-file boundary first, then `git diff --check`, applicable prechecks/freshness, focused tests, the full suite, and fresh adversarial review. Explicit configured requirements override profile defaults and must not be waived.
 
 ```bash
 python3 scripts/run_gate.py --manifest-json \
   '{"checks":[{"requirement":"focused_checks","identity":"focused","command":["python3","-m","unittest"]}]}'
 ```
 
-If the deterministic gate fails, diagnose locally or use the configured evidence skill's compact failure-diagnosis path, then fix and rerun. After it passes, use the configured evidence skill for fresh adversarial review, evaluate findings, implement valid in-scope fixes, rerun affected checks, and complete one final deterministic gate before acceptance.
+If a deterministic check fails, diagnose locally or use the configured evidence skill's compact failure-diagnosis path when independence or context isolation adds value, then fix and rerun affected checks. Perform fresh adversarial review when configured or warranted by the profile, evaluate findings, and implement valid in-scope fixes. Finish with the checks needed to prove the final state; repeat the full suite only when configured or when fixes changed its risk surface.
 
 Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Do not return raw transcripts, diffs, source excerpts, or test logs.
 
@@ -99,8 +112,8 @@ Escalation requires at least one concrete signal:
 
 - bounded evidence leaves architectural reasoning unresolved;
 - placement alternatives remain tied after one narrow discriminating request;
-- targeted reconnaissance conflicts with the provisional placement certificate;
-- a plan remains internally inconsistent after one narrow supplemental reconnaissance;
+- a revised route still cannot reconcile targeted evidence with the placement certificate;
+- a plan remains internally inconsistent after one narrow discriminating request;
 - the same valid blocking review category survives two repair attempts;
 - the builder twice violates the accepted boundary or cannot produce the required receipt; or
 - checks pass but the builder cannot reconcile a verified output/provenance contradiction.
@@ -111,12 +124,12 @@ Escalate one level at a time: `low → medium → high`. Stop for human judgment
 
 ## Enforce the boundary
 
-If new necessary scope appears, stop and return a boundary-change request. The supervisor must re-accept the revised boundary or ask the user.
+If new necessary scope appears, stop mutation and return a boundary-change request. The supervisor returns to planning and re-accepts the revised boundary when the objective, authority, and consequential decisions remain stable; ask the user only when the change requires their judgment or expands authority.
 
 If unrelated or unattributable workspace changes appear, stop mutation until ownership is established. A replacement inherits the exact baseline and task-owned manifest. Preserve the distinction between pre-existing, task-owned, overlapping, and unowned changes.
 
 ## Collect the final receipt
 
-Read [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md) before requesting the gate result. Return `audit_receipt` for durable validation and metrics, plus `handoff_receipt` for the next builder. Preserve audit measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, and requirement results even if no escalation occurred. Never copy engine, provider, model, token, cache, or detailed gate bookkeeping into the handoff.
+Read [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md) before requesting the gate result. Return `audit_receipt` for durable validation and metrics, plus `handoff_receipt` for the next builder. Preserve audit measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, requirement results, `workflow_route`, `route_revisions`, and evidence-based validation breadth even if no escalation occurred. Each route revision names the failed premise, stale decisions, preserved evidence, replacement route, and reason. Never copy engine, provider, model, token, cache, route mechanics, or detailed gate bookkeeping into the handoff.
 
 The builder is complete only when every configured blocking gate passes with no blocking findings, or when it returns a truthful stopped/failed receipt. Completion of edits alone is not success.

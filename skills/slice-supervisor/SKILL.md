@@ -9,6 +9,17 @@ Supervise the work engine; do not perform campaign work. Keep the parent context
 
 Before starting, read [references/work-engine-config.md](references/work-engine-config.md) and [references/receipt-schema.md](references/receipt-schema.md) completely. Then read the configured builder skill and its receipt contract completely. The builder must satisfy the adapter contract in the configuration reference; stop on an unsupported capability instead of silently weakening the campaign.
 
+## Preserve invariants; adapt the route
+
+Keep these categories distinct throughout the campaign:
+
+- **Invariants** are always binding: preserve the objective, evidence provenance, user work, approval boundaries, configured hard requirements, and truthful state.
+- **Acceptance conditions** describe what must be demonstrated for this slice. Scale the evidence to the consequence and uncertainty; do not confuse more procedure with stronger proof.
+- **Routes** are revisable defaults. Placement scouting, fresh falsification, broad validation, and independent review are tools selected for a reason, not universal truth conditions.
+- **Recovery decisions** record which premise failed, which evidence remains valid, what state became stale, and why the revised route still serves the objective.
+
+At every phase boundary, ask whether the current route remains the simplest credible path to the objective. Revise it when observed evidence invalidates a premise. Never preserve a stale plan merely because it is the next legal transition, and never use adaptability to weaken an invariant or configured requirement.
+
 ## Resolve the campaign contract
 
 Accept configuration from an inline user block, a user-named file, or the request plus documented defaults. Configuration describes the run; this skill remains the machine.
@@ -27,13 +38,13 @@ Precedence is explicit user instruction, then the named config document, then do
 
 Treat the original objective as authoritative. A builder may reorganize work but must not silently narrow, broaden, reinterpret, or omit it. A work source supplies evidence and boundaries; it does not replace the objective.
 
-Use these states only:
+Use these primary states:
 
 `idle → planning → awaiting_acceptance → implementing → awaiting_gate → gating → accepted`
 
 Terminal states are `completed`, `stopped`, and `failed`.
 
-Never skip `awaiting_acceptance`. Never begin a new slice unless the previous slice is `accepted`. Transition to `completed` only when the builder establishes that no evidence-supported in-scope slice remains and the configured completion condition is satisfied.
+Keep `awaiting_acceptance` as an explicit accounting state, although a concise low-risk plan may be procedurally accepted without user interruption. Permit any active phase to return to `planning` when new evidence invalidates the boundary, route, or acceptance evidence; permit `gating` to return to `implementing` for bounded fixes. Record the reason and preserve only evidence that remains applicable. Never begin a new slice unless the previous slice is `accepted`. Transition to `completed` only when the builder establishes that no evidence-supported in-scope slice remains and the configured completion condition is satisfied.
 
 ## Start one configured builder
 
@@ -47,7 +58,7 @@ Give the worker only:
 - hard limits and approval boundaries; and
 - the planning phase contract required by the configured builder.
 
-Require read-only evidence gathering and an evidence-based plan only. The builder must first map shallow placement alternatives, decide provisionally, and use a fresh targeted-reconnaissance call to prove or falsify only the selected boundary. The plan must include the bounded slice, premise conflicts, observed evidence versus inference, placement candidates and risk, a confirmed placement certificate, rejected alternatives, invariants, expected output/change boundary, a vertical semantic test, acceptance checks, deferred scope, open decisions, baseline overlaps where applicable, and a concise recommendation. Do not allow implementation during planning.
+Require read-only evidence gathering and an evidence-based plan only. The builder first classifies placement risk and selects a justified route. An obvious, local, reversible boundary may use direct targeted evidence. Ambiguous, cross-boundary, consequential, or high-risk placement uses shallow alternatives followed by a fresh attempt to falsify the selected boundary. The plan must include the bounded slice, premise conflicts, observed evidence versus inference, placement risk and route, a confirmed semantic-path certificate, invariants, expected output/change boundary, a vertical semantic proof, proportionate acceptance checks, deferred scope, open decisions, baseline overlaps where applicable, and a concise recommendation. Require candidates and rejected alternatives only when plausible alternatives exist. Do not allow implementation during planning.
 
 Retain the builder identity through planning, implementation, and gate phases so its bounded understanding survives. Start a fresh builder for the next slice. Apply the configured builder's evidence-based replacement or escalation protocol; never improvise one merely to sustain momentum.
 
@@ -57,20 +68,21 @@ Evaluate procedure, not domain design. Auto-accept only when `approval.plan` per
 
 - evidence supports a bounded coherent slice;
 - the plan preserves the objective and work-source boundary;
-- targeted reconnaissance confirms a placement certificate that names the actual producer, state owner, consumer, lifecycle, semantic consequence, and downstream proof;
-- rejected alternatives and plausible-but-insufficient substitutes are explicit, and no equally supported placement remains unresolved;
+- the selected route is justified by placement risk and evidence independence needs;
+- evidence confirms a semantic-path certificate that names the actual producer, state owner, consumer, lifecycle, semantic consequence, and downstream proof;
+- plausible alternatives and insufficient substitutes are resolved when they materially affect placement;
 - invariants, output boundary, acceptance checks, deferred scope, and overlaps are explicit;
 - no consequential product, architecture, aesthetics, ownership, policy, destructive, publication, migration, or other configured human decision remains open;
 - the builder declares support for every configured validation requirement; and
 - no hard limit or ownership conflict is active.
 
-Otherwise stop before execution, notify when configured, and ask for the smallest decision needed. Record acceptance as `procedural_auto_approval` or `human_approval`; use `not_reached` only when the slice terminates before acceptance. Acceptance fixes the boundary. Newly necessary scope must return to `awaiting_acceptance` or stop for judgment.
+Otherwise keep planning when another bounded evidence step can resolve the issue; stop and ask only when progress requires human judgment, new authority, or unavailable capability. Record acceptance as `procedural_auto_approval` or `human_approval`; use `not_reached` only when the slice terminates before acceptance. Acceptance establishes the current boundary, not an irreversible fiction. Invalidating evidence reopens planning and requires renewed acceptance while preserving compatible evidence and recording stale decisions.
 
 ## Execute in controlled phases
 
-Send the accepted slice and placement certificate verbatim to the same builder. Require it to prove the smallest vertical semantic path before broad implementation, execute only the accepted boundary, perform inexpensive configured checks, and stop immediately before the final gate with a concise implementation receipt: outputs or changed files, baseline overlaps, vertical and targeted checks, unresolved concerns, and gate readiness. A missing owner or consumer invalidates the boundary and returns to plan acceptance; it is not an ordinary implementation repair.
+Send the accepted slice and semantic-path certificate verbatim to the same builder. Require it to prove the smallest vertical semantic path before broad implementation, execute only the accepted boundary, perform inexpensive configured checks, and stop immediately before the final gate with a concise implementation receipt: outputs or changed files, baseline overlaps, vertical and targeted checks, unresolved concerns, and gate readiness. A missing owner or consumer invalidates the boundary and returns to planning with a route-revision record; it is not an ordinary implementation repair or an automatic terminal stop.
 
-Move to `awaiting_gate` only when execution is complete. Then authorize the builder's complete configured validation and adversarial-review loop. Require valid in-scope findings to be corrected and the gate repeated until accepted or a stop condition occurs.
+Move to `awaiting_gate` only when execution is complete. Then authorize the builder's configured validation profile. For proportional profiles, require the builder to justify check breadth and review independence from consequence, reversibility, uncertainty, changed boundaries, and repository instructions. For full profiles, execute every configured gate. Require valid in-scope findings to be corrected and affected checks repeated; run a final broad gate only when configured or warranted by the resulting risk.
 
 When `approval.uninterrupted_after_plan` is true, execution and gate may share one follow-up. Explicit plan acceptance, phase accounting, configured validation, and both receipts remain mandatory.
 
@@ -98,7 +110,7 @@ After every accepted receipt:
 3. Continue only if the builder reports meaningful in-scope work remains and acceptance is clean.
 4. Start a new configured builder for the next slice.
 
-Stop and preserve state when a configured stop condition occurs, evidence is insufficient, the objective conflicts with its work source, ownership cannot be established, validation cannot distinguish work failure from environment failure, repairs do not converge, a required capability or quota is unavailable, a hard limit is reached, or human judgment is required.
+Stop and preserve state when a configured stop condition occurs, a bounded replan cannot resolve insufficient evidence, the objective conflicts with its work source, ownership cannot be established, validation cannot distinguish work failure from environment failure, repairs do not converge, a required capability or quota is unavailable, a hard limit is reached, or human judgment is required. A route change, corrected premise, or recoverable provider failure is not by itself a stop condition.
 
 On a stop, append a truthful `stopped` or `failed` receipt with the exact triggering condition. Never represent termination as success or a builder's inability to find work as objective completion without evidence.
 

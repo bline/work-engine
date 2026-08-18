@@ -33,6 +33,9 @@ Checks should contain command identity, pass/fail state, and test totals when av
 
 Use null for unavailable measurements:
 
+- `workflow_route`: `direct` or `falsified-placement`
+- `route_revisions`: array of objects naming the failed premise, stale decisions, preserved evidence, replacement route, and reason
+- `validation_breadth`: selected deterministic and independent-review stages plus reasons for optional omissions
 - `builder_model`
 - `initial_reasoning_effort`
 - `final_reasoning_effort`
@@ -84,3 +87,5 @@ These configured values are not proof of what ran. Keep them beside the actual m
 - `late_semantic_rejections`
 
 `evidence_recon_calls` is the total of initial non-supplemental evidence calls; report `placement_calls` and `targeted_reconnaissance_calls` as its stage-specific breakdown. Map the configured provider's measurements into these semantic fields when correspondence is direct. Preserve original provider-specific measurements under `additional_metrics` without speculatively renaming them. Measurements must come from tool or platform receipts; never estimate them.
+
+Route fields preserve the real decision process. Do not report an omitted optional stage as passed, and do not treat a route revision as a failure when the revised plan was renewed and accepted. Configured requirements still require explicit passing results.
