@@ -57,8 +57,8 @@ def validate(record: Any) -> dict[str, Any]:
             fail(f"{key} must be {expected.__name__}")
     if "stop_reason" not in record or not isinstance(record["stop_reason"], (str, type(None))):
         fail("stop_reason must be a string or null")
-    if record["schema_version"] not in {1, 2}:
-        fail("schema_version must be 1 or 2")
+    if record["schema_version"] not in {1, 2, 3}:
+        fail("schema_version must be 1, 2, or 3")
     if record["slice_number"] < 1:
         fail("slice_number must be positive")
     if record["status"] not in {"accepted", "stopped", "failed"}:
@@ -71,8 +71,10 @@ def validate(record: Any) -> dict[str, Any]:
         fail("accepted receipts require null stop_reason")
     if record["status"] != "accepted" and not record["stop_reason"]:
         fail("stopped/failed receipts require a stop_reason")
-    if record["schema_version"] == 2:
+    if record["schema_version"] >= 2:
         validate_engine_record(record)
+    if record["schema_version"] == 3:
+        validate_placement_record(record)
     for key in ("run_id", "timestamp", "slice_title", "slice_goal", "outcome"):
         if not record[key].strip():
             fail(f"{key} must not be empty")
@@ -171,6 +173,38 @@ def validate_engine_record(record: dict[str, Any]) -> None:
             fail(f"not_applicable validation result requires a reason: {requirement}")
         if record["status"] == "accepted" and state != "passed":
             fail(f"accepted receipt requires passed validation: {requirement}")
+
+
+def validate_placement_record(record: dict[str, Any]) -> None:
+    required = {
+        "placement_certificate": (dict, type(None)),
+        "placement_verdict": (str, type(None)),
+        "placement_risk": (str, type(None)),
+        "rejected_placement_alternatives": list,
+        "vertical_semantic_test": (dict, str, type(None)),
+        "vertical_semantic_test_passed": (bool, type(None)),
+    }
+    for key, expected in required.items():
+        if key not in record or not isinstance(record[key], expected):
+            names = " or ".join(kind.__name__ for kind in expected)
+            fail(f"{key} must be {names}")
+
+    if record["placement_verdict"] not in {None, "confirmed", "conflict", "unresolved"}:
+        fail("placement_verdict must be confirmed, conflict, unresolved, or null")
+    if record["placement_risk"] not in {None, "low", "medium", "high"}:
+        fail("placement_risk must be low, medium, high, or null")
+
+    if record["plan_acceptance"] != "not_reached":
+        if not record["placement_certificate"]:
+            fail("an accepted plan requires a placement_certificate")
+        if record["placement_verdict"] != "confirmed":
+            fail("an accepted plan requires a confirmed placement_verdict")
+        if record["placement_risk"] is None:
+            fail("an accepted plan requires placement_risk")
+        if record["vertical_semantic_test"] is None:
+            fail("an accepted plan requires a vertical_semantic_test")
+    if record["status"] == "accepted" and record["vertical_semantic_test_passed"] is not True:
+        fail("an accepted slice requires a passing vertical semantic test")
 
 
 def load_record(args: argparse.Namespace) -> dict[str, Any]:

@@ -47,7 +47,7 @@ Give the worker only:
 - hard limits and approval boundaries; and
 - the planning phase contract required by the configured builder.
 
-Require read-only evidence gathering and an evidence-based plan only. The plan must include the bounded slice, premise conflicts, observed evidence versus inference, invariants, expected output/change boundary, acceptance checks, deferred scope, open decisions, baseline overlaps where applicable, and a concise recommendation. Do not allow implementation during planning.
+Require read-only evidence gathering and an evidence-based plan only. The builder must first map shallow placement alternatives, decide provisionally, and use a fresh targeted-reconnaissance call to prove or falsify only the selected boundary. The plan must include the bounded slice, premise conflicts, observed evidence versus inference, placement candidates and risk, a confirmed placement certificate, rejected alternatives, invariants, expected output/change boundary, a vertical semantic test, acceptance checks, deferred scope, open decisions, baseline overlaps where applicable, and a concise recommendation. Do not allow implementation during planning.
 
 Retain the builder identity through planning, implementation, and gate phases so its bounded understanding survives. Start a fresh builder for the next slice. Apply the configured builder's evidence-based replacement or escalation protocol; never improvise one merely to sustain momentum.
 
@@ -57,6 +57,8 @@ Evaluate procedure, not domain design. Auto-accept only when `approval.plan` per
 
 - evidence supports a bounded coherent slice;
 - the plan preserves the objective and work-source boundary;
+- targeted reconnaissance confirms a placement certificate that names the actual producer, state owner, consumer, lifecycle, semantic consequence, and downstream proof;
+- rejected alternatives and plausible-but-insufficient substitutes are explicit, and no equally supported placement remains unresolved;
 - invariants, output boundary, acceptance checks, deferred scope, and overlaps are explicit;
 - no consequential product, architecture, aesthetics, ownership, policy, destructive, publication, migration, or other configured human decision remains open;
 - the builder declares support for every configured validation requirement; and
@@ -66,7 +68,7 @@ Otherwise stop before execution, notify when configured, and ask for the smalles
 
 ## Execute in controlled phases
 
-Send the accepted slice verbatim to the same builder. Require it to execute only that boundary, perform inexpensive configured checks, and stop immediately before the final gate with a concise implementation receipt: outputs or changed files, baseline overlaps, targeted checks, unresolved concerns, and gate readiness.
+Send the accepted slice and placement certificate verbatim to the same builder. Require it to prove the smallest vertical semantic path before broad implementation, execute only the accepted boundary, perform inexpensive configured checks, and stop immediately before the final gate with a concise implementation receipt: outputs or changed files, baseline overlaps, vertical and targeted checks, unresolved concerns, and gate readiness. A missing owner or consumer invalidates the boundary and returns to plan acceptance; it is not an ordinary implementation repair.
 
 Move to `awaiting_gate` only when execution is complete. Then authorize the builder's complete configured validation and adversarial-review loop. Require valid in-scope findings to be corrected and the gate repeated until accepted or a stop condition occurs.
 
@@ -81,11 +83,11 @@ Do not retain raw tool output, exploration, debugging, test logs, diffs, or copi
 When `metrics.path` is non-null, append exactly one terminal receipt per slice using:
 
 ```bash
-python3 docs/skills/slice-supervisor/scripts/append_metrics.py \
+python3 work-engine/skills/slice-supervisor/scripts/append_metrics.py \
   --path <configured-metrics-path> --record-json '<receipt>'
 ```
 
-The script validates and locks the append. Record the effective engine configuration and its provenance as required by schema version 2. Preserve unavailable values as `null` and flexible builder metrics inside their namespaced objects. Correct rejected receipts from actual evidence; never pad them with guesses. If the user explicitly configured a null metrics path, retain the receipt in supervisor state for the final report and state that no durable record was written.
+The script validates and locks the append. Record the effective engine configuration, placement proof, and provenance as required by schema version 3. Preserve unavailable values as `null` and flexible builder metrics inside their namespaced objects. Correct rejected receipts from actual evidence; never pad them with guesses. If the user explicitly configured a null metrics path, retain the receipt in supervisor state for the final report and state that no durable record was written.
 
 ## Decide whether to continue
 

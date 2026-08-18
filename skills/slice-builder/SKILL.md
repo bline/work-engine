@@ -31,7 +31,7 @@ Give the builder only:
 - the current phase contract; and
 - configured builder context, including `evidence_skill` when present.
 
-Require the worker to use the configured evidence skill faithfully. The default is `$claude-recon-implementation`. If the configured skill is unavailable or does not provide the required reconnaissance and gate capabilities, stop with `unsupported_capability`; do not substitute a different tool without approval.
+Require the worker to use the configured evidence skill faithfully. The default is `$claude-recon-implementation`. If the configured skill is unavailable or does not provide the required placement, targeted-reconnaissance, and gate capabilities, stop with `unsupported_capability`; do not substitute a different tool without approval.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 
@@ -41,20 +41,27 @@ Retain the builder returned by `spawn_agent`. Use `followup_task` on that identi
 
 ### Planning turn
 
-Require read-only reconnaissance and an evidence-based plan only. Require:
+Require read-only placement analysis followed by targeted reconnaissance and an evidence-based plan only. First obtain shallow placement alternatives, make an explicit Codex placement decision, and then use a fresh evidence-provider call to prove or falsify only the selected boundary. Do not ask the provider to deeply explore every alternative in one call.
+
+Require:
 
 - bounded slice statement and premise conflicts;
 - observed facts separated from inference;
+- semantic outcome independent of implementation shape;
+- placement candidates, discriminating evidence, and placement risk;
+- a provisional placement certificate naming trigger, producer, state owner, consumer, lifecycle, observable consequence, and downstream proof;
+- rejected alternatives and plausible-but-insufficient substitutes;
+- a targeted-reconnaissance placement verdict of `confirmed`; `conflict` or `unresolved` stops planning;
 - invariants and ownership/provenance requirements;
 - expected changed-file boundary and baseline overlaps;
-- acceptance checks and exact future validation commands;
+- acceptance checks, a vertical semantic test, and exact future validation commands;
 - mapping from every configured validation requirement to a concrete gate;
 - deferred scope, open decisions, and missing-context risk; and
 - available reconnaissance statistics.
 
 ### Implementation turn
 
-After explicit `procedural_auto_approval` or `human_approval`, send the accepted slice verbatim. Require implementation, relevant documentation, and inexpensive configured checks, then a stop immediately before the final gate. Require the task-owned file manifest, baseline overlaps, targeted results, unresolved concerns, and gate readiness.
+After explicit `procedural_auto_approval` or `human_approval`, send the accepted slice and placement certificate verbatim. Require the vertical semantic proof before broad implementation or presentation polish. If the selected owner or consumer cannot support it, return a boundary-change request instead of implementing a locally coherent substitute. Then require implementation, relevant documentation, and inexpensive configured checks, followed by a stop immediately before the final gate. Require the task-owned file manifest, baseline overlaps, vertical and targeted results, unresolved concerns, and gate readiness.
 
 ### Gate turn
 
@@ -69,6 +76,8 @@ An existing worker's model configuration cannot be changed. If the configured ef
 Escalation requires at least one concrete signal:
 
 - bounded evidence leaves architectural reasoning unresolved;
+- placement alternatives remain tied after one narrow discriminating request;
+- targeted reconnaissance conflicts with the provisional placement certificate;
 - a plan remains internally inconsistent after one narrow supplemental reconnaissance;
 - the same valid blocking review category survives two repair attempts;
 - the builder twice violates the accepted boundary or cannot produce the required receipt; or

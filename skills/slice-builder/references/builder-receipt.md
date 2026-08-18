@@ -17,6 +17,12 @@ Return one concise object after a slice is accepted, stopped, or failed. Do not 
 - `unresolved_concerns`
 - `deferred_scope`
 - `more_in_scope_work_remains`: true, false, or null
+- `placement_certificate`: concise object containing trigger, producer, state owner, consumer, lifecycle, semantic consequence, downstream proof, and insufficient substitute
+- `placement_verdict`: `confirmed`, `conflict`, or `unresolved`
+- `placement_risk`: `low`, `medium`, or `high`
+- `rejected_placement_alternatives`: array of concise candidate/evidence objects
+- `vertical_semantic_test`: concise command or structured proof identity
+- `vertical_semantic_test_passed`: true, false, or null
 - `configured_validation_requirements`: array copied from the effective config
 - `validation_requirement_results`: object mapping every requirement to `passed`, `failed`, `blocked`, or `not_applicable`, with a concise reason for `not_applicable`
 
@@ -69,5 +75,11 @@ These configured values are not proof of what ran. Keep them beside the actual m
 - `retrieved_ranges`
 - `retrieved_source_lines`
 - `missing_context_blocked_implementation`
+- `placement_calls`
+- `placement_candidate_count`
+- `placement_conflicts`
+- `placement_reconsiderations`
+- `targeted_reconnaissance_calls`
+- `late_semantic_rejections`
 
-Map the configured provider's measurements into these semantic fields when correspondence is direct. Preserve original provider-specific measurements under `additional_metrics` without speculatively renaming them. Measurements must come from tool or platform receipts; never estimate them.
+`evidence_recon_calls` is the total of initial non-supplemental evidence calls; report `placement_calls` and `targeted_reconnaissance_calls` as its stage-specific breakdown. Map the configured provider's measurements into these semantic fields when correspondence is direct. Preserve original provider-specific measurements under `additional_metrics` without speculatively renaming them. Measurements must come from tool or platform receipts; never estimate them.

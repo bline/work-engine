@@ -1,12 +1,12 @@
 # Work-engine receipt schema
 
-Append exactly one record when a slice reaches `accepted`, `stopped`, or `failed`. Use schema version 2 for configured campaigns. The append script continues to accept historical version-1 records but new runs must not emit them.
+Append exactly one record when a slice reaches `accepted`, `stopped`, or `failed`. Use schema version 3 for campaigns using placement-first reconnaissance. The append script continues to accept historical version-1 and version-2 records, but new runs must not emit them.
 
 ## Required common fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema_version` | integer | Use `2` for configured campaigns. |
+| `schema_version` | integer | Use `3` for placement-first configured campaigns. |
 | `run_id` | string | Nonempty identifier shared by every slice in one campaign. |
 | `slice_number` | integer | Positive, sequential within the run. |
 | `timestamp` | string | ISO 8601 timestamp with timezone. |
@@ -21,12 +21,20 @@ Append exactly one record when a slice reaches `accepted`, `stopped`, or `failed
 | `validation_profile` | string | Configured validation profile. |
 | `validation_requirement_results` | object | Result for every configured requirement. |
 | `more_in_scope_work_remains` | boolean or null | Builder's evidence-based continuation report. |
+| `placement_certificate` | object or null | Confirmed producer/owner/consumer contract; null only when planning did not reach placement. |
+| `placement_verdict` | string or null | `confirmed`, `conflict`, `unresolved`, or null before placement. |
+| `placement_risk` | string or null | `low`, `medium`, `high`, or null before placement. |
+| `rejected_placement_alternatives` | array | Concise rejected candidates and evidence. |
+| `vertical_semantic_test` | object, string, or null | Downstream proof selected during planning. |
+| `vertical_semantic_test_passed` | boolean or null | Observed proof result. Must be true for acceptance. |
 | `worker_metrics` | object | Flexible namespaced metrics reported by the worker. |
 | `producer_metrics` | object | Flexible namespaced metrics reported by an orchestrator or producer. |
 
 `engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
 
 Each validation result is `passed`, `failed`, `blocked`, or `not_applicable`. `not_applicable` requires a concise reason and is never a silent waiver. Every configured requirement must be `passed` for an accepted slice; use another terminal status when a requirement cannot apply.
+
+Any receipt whose plan was accepted requires a nonempty placement certificate, `confirmed` verdict, placement risk, and vertical semantic test. A terminal `accepted` receipt additionally requires `vertical_semantic_test_passed: true`. Preserve a late semantic rejection as a stopped or failed outcome; never rewrite the earlier placement verdict as though it had not occurred.
 
 ## Recommended normalized engineering fields
 
@@ -36,6 +44,7 @@ Include when available, using `null` otherwise:
 - `test_totals`
 - `review_findings` and `review_fix_iterations`
 - evidence/review provider call, failure, time, cost, token, and retrieval measurements
+- placement calls, candidate counts, conflicts, reconsiderations, targeted-reconnaissance calls, placement risk, vertical-proof status, and late semantic rejections
 - engineering input/output/context measurements
 - configured and actual builder model and reasoning effort
 - reasoning escalation and replacement counts

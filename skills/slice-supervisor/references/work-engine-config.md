@@ -97,7 +97,7 @@ The supervisor must not emulate a missing capability. A builder-specific evidenc
 
 ## Provenance and amendments
 
-Store a compact `engine_config` in every schema-version-2 receipt:
+Store a compact `engine_config` in every schema-version-3 receipt:
 
 ```json
 {
