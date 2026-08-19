@@ -9,13 +9,13 @@ import sys
 from typing import Any
 
 
-DEFAULT_PROVIDER = "claude-filesystem"
+DEFAULT_PROVIDER = "claude-codebase-memory"
 DEFAULT_EVIDENCE_SKILL = "claude-recon-implementation"
 PROVIDER_ADAPTERS = {
     DEFAULT_PROVIDER: DEFAULT_EVIDENCE_SKILL,
-    "claude-codebase-memory": DEFAULT_EVIDENCE_SKILL,
+    "claude-filesystem": DEFAULT_EVIDENCE_SKILL,
 }
-PLANNED_PROVIDERS = {"codex-codebase-memory"}
+PLANNED_PROVIDERS = {}
 
 
 class ProviderResolutionError(ValueError):

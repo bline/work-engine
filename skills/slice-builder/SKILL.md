@@ -35,16 +35,21 @@ Give the builder only:
   `reconnaissance.provider` when present.
 
 Before invoking repository evidence, resolve the builder context with
-`scripts/resolve_provider.py`. The default provider is `claude-filesystem`,
-backed by `$claude-recon-implementation`. The same adapter supports
-`claude-codebase-memory` with a graph-first evidence path that retains
-transitional filesystem access until the migration is complete.
-Provider identity and concrete evidence-skill identity remain separate
-provenance: they must resolve consistently, and the resolved provider is
-recorded as `evidence_provider` in the audit receipt. Other recognized graph
-providers stop as unavailable until their adapters exist; `auto` is deferred.
-Unknown, unavailable, or inconsistent configuration is
-`unsupported_capability`, not permission to substitute.
+`scripts/resolve_provider.py`. The default provider is claude-codebase-memory,
+backed by $claude-recon-implementation. Treat Codebase Memory as the primary
+evidence capability and use $codebase-memory to understand and apply the
+capabilities it currently exposes. Select the evidence route dynamically from
+the objective, repository state, available graph capabilities, coverage, and
+observed uncertainty. Supplement graph evidence with targeted repository
+evidence when needed to establish trustworthy claims; do not treat current tool
+limitations or today's preferred query sequence as permanent workflow law.
+
+claude-filesystem remains an explicitly selectable filesystem-first provider.
+Provider identity and evidence-skill identity remain separate provenance and
+must resolve consistently; record the resolved provider as `evidence_provider`.
+Do not silently substitute providers or weaken configured acceptance
+requirements. Other recognized providers remain unavailable until supported;
+auto provider selection is deferred.
 
 Require the worker to use the resolved evidence skill faithfully for stages selected by the accepted route. Before planning, confirm that it supports every stage the configured validation profile or current risk requires. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires an independent provider. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Otherwise attempt a route revision only when it does not weaken configuration, independence, or provenance, or stop with `unsupported_capability`. Ordinary test execution belongs to this builder, not the evidence skill.
 
