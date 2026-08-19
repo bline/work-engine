@@ -15,7 +15,10 @@ Keep these categories distinct throughout the campaign:
 
 - **Invariants** are always binding: preserve the objective, evidence provenance, user work, approval boundaries, configured hard requirements, and truthful state.
 - **Acceptance conditions** describe what must be demonstrated for this slice. Scale the evidence to the consequence and uncertainty; do not confuse more procedure with stronger proof.
-- **Routes** are revisable defaults. Placement scouting, fresh falsification, broad validation, and independent review are tools selected for a reason, not universal truth conditions.
+- **Routes** are revisable defaults. Repository retrieval, placement scouting,
+  fresh falsification, broad validation, and independent review are distinct
+  capabilities selected for a reason, not universal truth conditions. Changing
+  retrieval does not change or satisfy review independence.
 - **Recovery decisions** record which premise failed, which evidence remains valid, what state became stale, and why the revised route still serves the objective.
 
 At every phase boundary, ask whether the current route remains the simplest credible path to the objective. Revise it when observed evidence invalidates a premise. Never preserve a stale plan merely because it is the next legal transition, and never use adaptability to weaken an invariant or configured requirement.

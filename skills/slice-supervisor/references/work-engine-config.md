@@ -2,10 +2,10 @@
 
 Configuration supplies campaign context to the stable supervisor state machine. Use YAML or JSON with these exact fields. Reject unknown fields so misspellings do not silently change behavior.
 
-## Version 1 shape
+## Version 2 shape
 
 ```yaml
-version: 1
+version: 2
 objective: "Advance the Site2JSON roadmap"
 
 work_source:
@@ -17,9 +17,12 @@ builder:
   model: "gpt-5.6-sol"
   reasoning_effort: "low"
   context:
-    evidence_skill: "claude-recon-implementation"
-    reconnaissance:
-      provider: "claude-codebase-memory"
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
 
 validation:
   profile: "engineering-proportional"
@@ -51,10 +54,11 @@ stop_on:
 
 ## Field contract
 
-- `version`: Required integer; use `1`.
+- `version`: Required integer; use `2` for new campaigns. Version 1 remains a
+  compatibility shape with its historical combined evidence/review meaning.
 - `objective`: Required nonempty statement. Preserve the user's wording.
 - `work_source`: Optional evidence/boundary source. `kind` is `file`, `inline`, or `repository_evidence`; `value` is required for `file` and `inline` and omitted for `repository_evidence`. A missing work source means the objective plus applicable repository evidence, not an inferred roadmap file.
-- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. `context.reconnaissance.provider` identifies the repository-evidence mechanism, while `context.evidence_skill` identifies its concrete adapter; version 1 requires those values to resolve consistently.
+- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. In version 2, `context.repository_evidence` and `context.independent_review` each contain a `provider` and `skill` and resolve independently. Do not mix version-1 and version-2 context fields.
 - `validation`: `profile` names a builder-supported evidence policy and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. `engineering-proportional` selects check breadth and review independence from the slice's actual risk; `engineering-full` requires focused checks, applicable freshness checks, the full suite, and fresh adversarial review. Explicit requirements remain binding under either profile. Do not reinterpret an unknown requirement.
 - `metrics.path`: Durable JSONL destination. An explicit `null` disables durable metrics only when the user says so; do not confuse it with a missing value.
 - `limits`: Hard limits explicitly supplied by the user, such as `slices`, `time_seconds`, `cost_usd`, `tokens`, or `repair_attempts`. An empty object means no configured hard limits. Never invent them.
@@ -69,8 +73,10 @@ Defaults provide an adaptive engineering workflow while explicit full-gate campa
 - `builder.skill`: `slice-builder`
 - `builder.model`: `gpt-5.6-sol`
 - `builder.reasoning_effort`: `low`
-- `builder.context.evidence_skill`: `claude-recon-implementation`
-- `builder.context.reconnaissance.provider`: `claude-codebase-memory`
+- `builder.context.repository_evidence.skill`: `repo-search`
+- `builder.context.repository_evidence.provider`: `codex-codebase-memory`
+- `builder.context.independent_review.skill`: `claude-recon-implementation`
+- `builder.context.independent_review.provider`: `claude`
 - `validation.profile`: `engineering-proportional`
 - `validation.requirements`: `semantic_proof`, `risk_proportional_checks`, `workspace_integrity`
 - `metrics.path`: `docs/ai-workflow-metrics.jsonl`
@@ -95,7 +101,7 @@ A configured builder must declare before plan acceptance that it can:
 6. return a complete terminal `audit_receipt` with common fields and namespaced adapter metrics, plus a compact semantic `handoff_receipt` for the next builder; and
 7. distinguish objective completion, remaining work, stops, and failures.
 
-The supervisor must not emulate a missing capability. A builder-specific evidence or reviewer skill belongs in `builder.context`; the supervisor passes it through and records it but does not invoke it directly.
+The supervisor must not emulate a missing capability. Builder-specific repository-evidence and independent-review roles belong in `builder.context`; the supervisor passes them through and records them but does not invoke them directly. Changing retrieval must not implicitly change or satisfy independent review.
 
 ## Provenance and amendments
 
@@ -103,11 +109,11 @@ Store a compact `engine_config` in every schema-version-4 receipt:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "source": "inline_user_config",
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
-  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation", "reconnaissance": {"provider": "claude-codebase-memory"}}},
+  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"repository_evidence": {"skill": "repo-search", "provider": "codex-codebase-memory"}, "independent_review": {"skill": "claude-recon-implementation", "provider": "claude"}}},
   "validation": {"profile": "engineering-proportional", "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},
@@ -129,12 +135,31 @@ Keep `run_id`, slice number, lifecycle state, timestamps, and acceptance results
 Cleanup changes context, not machinery:
 
 ```yaml
-version: 1
+version: 2
 objective: "Restore structural coherence"
 work_source: {kind: file, value: "docs/cleanup.md"}
-builder: {skill: slice-builder, model: gpt-5.6-sol, reasoning_effort: low, context: {evidence_skill: claude-recon-implementation}}
+builder: {skill: slice-builder, model: gpt-5.6-sol, reasoning_effort: low}
 validation: {profile: engineering-full, requirements: [focused_checks, full_suite, adversarial_review]}
 ```
+
+## Version 1 compatibility
+
+Version 1 retains the exact historical builder context:
+
+```yaml
+version: 1
+builder:
+  context:
+    evidence_skill: claude-recon-implementation
+    reconnaissance:
+      provider: claude-codebase-memory
+```
+
+The resolver normalizes that pair as one combined legacy retrieval/review role
+and records `legacy-combined-evidence-and-review` provenance. It also preserves
+`claude-filesystem`. Version 1 rejects split-role fields; version 2 rejects the
+legacy fields. Migrate by authoring version 2 explicitly, never by silently
+reinterpreting a stored version-1 context.
 
 Use `engineering-full` when the user wants the same broad gate on every slice or when the campaign's consequences make that consistency part of the acceptance contract. Under the default `engineering-proportional` profile:
 
@@ -149,7 +174,7 @@ Do not rewrite `engineering-proportional` as `engineering-full` merely because a
 An objective without a plan is explicit:
 
 ```yaml
-version: 1
+version: 2
 objective: "Identify and remove measurable extraction bottlenecks without changing output semantics"
 work_source: {kind: repository_evidence}
 ```

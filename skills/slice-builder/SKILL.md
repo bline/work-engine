@@ -31,15 +31,21 @@ Give the builder only:
 - relevant prior accepted handoff receipts, not audit receipts or transcripts;
 - hard limits and approval boundaries;
 - the current phase contract; and
-- configured builder context, including `evidence_skill` and
-  `reconnaissance.provider` when present.
+- configured builder context, including versioned repository-evidence and
+  independent-review roles.
 
-Before invoking repository evidence, resolve the builder context with
-`scripts/resolve_provider.py`. The default provider is claude-codebase-memory,
-backed by $claude-recon-implementation. Treat Codebase Memory as the current
-primary indexed-structure capability and use $codebase-memory to learn and
-apply the interface it currently exposes; do not copy individual operation
-names or today's preferred query sequence into this durable role contract.
+Before invoking repository evidence, resolve the config version and builder
+context with `scripts/resolve_provider.py`. Config version 2 defaults repository
+retrieval to `codex-codebase-memory`, backed by $repo-search, and resolves
+independent review separately through $claude-recon-implementation. Config
+version 1 retains its historical combined Claude evidence/review meaning; never
+mix or silently reinterpret the two shapes.
+
+Use $repo-search for the durable `orient`, `find`, `trace`, `impact`, and `audit`
+intents. Treat Codebase Memory as the current primary indexed-structure
+capability and use $codebase-memory to learn and apply the interface it currently
+exposes; do not copy individual operation names or today's preferred query
+sequence into this durable role contract.
 Select indexed structural evidence or targeted direct source observation for
 each claim from the objective, repository state, available capability classes,
 coverage, and observed uncertainty. Prefer indexed evidence for relationships
@@ -49,14 +55,14 @@ unresolved graph ambiguity, or claims the current index cannot establish.
 Record the actual evidence mode and fallback reason. Current interface limits
 are observed constraints, not permanent workflow law.
 
-claude-filesystem remains an explicitly selectable filesystem-first provider.
-Provider identity and evidence-skill identity remain separate provenance and
-must resolve consistently; record the resolved provider as `evidence_provider`.
-Do not silently substitute providers or weaken configured acceptance
-requirements. Other recognized providers remain unavailable until supported;
-auto provider selection is deferred.
+`claude-codebase-memory` and `claude-filesystem` remain explicitly selectable
+retrieval providers backed by $claude-recon-implementation. Provider and skill
+identity must resolve consistently. Record repository retrieval and independent
+review as separate provenance. Do not silently substitute providers, count
+retrieval as review, or weaken configured acceptance requirements. Auto provider
+selection is deferred.
 
-Require the worker to use the resolved evidence skill faithfully for stages selected by the accepted route. Before planning, confirm that it supports every stage the configured validation profile or current risk requires. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires an independent provider. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Otherwise attempt a route revision only when it does not weaken configuration, independence, or provenance, or stop with `unsupported_capability`. Ordinary test execution belongs to this builder, not the evidence skill.
+Require the worker to use each resolved skill faithfully for the stages selected by the accepted route. Before planning, confirm that repository retrieval supports the needed evidence and that the independent-review role supports every configured or risk-required independence stage. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires independent evidence. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Retrieval success never satisfies a required independent review. Ordinary test execution belongs to this builder, not either evidence role.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 

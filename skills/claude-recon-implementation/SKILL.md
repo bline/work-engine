@@ -5,7 +5,14 @@ description: Use Claude CLI for shallow architectural placement alternatives, fr
 
 # Claude Recon Implementation
 
-Use Claude CLI as a forked external process for high-volume, disposable evidence gathering. Codex owns task interpretation, architectural judgment, implementation, durable understanding, and final acceptance.
+Use Claude CLI as a forked external process for optional high-volume disposable
+repository retrieval, fresh placement falsification, failure diagnosis, and
+adversarial review. Codex owns task interpretation, architectural judgment,
+implementation, durable understanding, and final acceptance. In Work Engine
+config version 2, repository retrieval and independent review are separate
+roles; selecting this skill for one role never implicitly selects or satisfies
+the other. Direct Codebase Memory through $repo-search is the default retrieval
+path.
 
 This workflow does not invoke Agents API delegation. Do not use `implementation-orchestrator` unless the user separately and explicitly requests agents, subagents, delegation, or multi-agent orchestration.
 
@@ -54,6 +61,7 @@ claude -p \
   --tools "mcp__codebase-memory-mcp" \
   --output-format json \
   --json-schema '<placement-schema>' \
+  --dangerously-skip-permissions \
   '<bounded placement prompt>'
 ```
 

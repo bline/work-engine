@@ -1,111 +1,72 @@
-Yeah — I like this architecture a lot. The important part is that you’ve separated **durable reasoning from disposable evidence gathering**. That is a much better model for agentic coding than “give one giant agent the repository and keep feeding it until context death.”
+I'll take a look at what's in the archive.Read through all of it — the four skills, both campaign configs, the scripts, the eight metrics records, the roadmap, and the prior review. Here's my honest take.
 
-The supervisor → persistent slice builder → disposable recon/reviewer topology is sound. I would keep it.
+## What's genuinely good
 
-Where I think you can make a surprisingly large improvement is that your **recon agent is currently doing too much reasoning and reporting**. It’s halfway between a retrieval agent and another architect.
+The organizing rule — *information crosses a model boundary only when its expected lifetime justifies crossing* — is one of the better framings I've seen for agentic coding, and more importantly you actually applied it rather than stating it. Supervisor state is tiny, builder identity persists through a slice, recon is disposable. That's coherent.
 
-Your own metrics make that visible. The Visual Evidence slice used four Claude calls, 13 files / 22 ranges / 3,437 retrieved lines, but Claude emitted **83,530 output tokens**. That’s an average of roughly **21k output tokens per call**. The 7 million cached-read tokens look scary, but caching changes the economics; the 83k generated tokens are the part that really jumps out at me. And you paid about $5.37 in the recorded provider cost for that slice.
+The placement certificate is the best artifact in the system. `trigger → producer → owned state → consumer → consequence → proof → insufficient substitute` is compressed, falsifiable, and it does real work. The "insufficient substitute" clause in particular is doing something most review checklists never manage: it names the plausible-but-wrong thing in advance.
 
-I think you can probably cut external-model generation by **50–80% without weakening the workflow**.
+And the two-stage placement with a fresh falsifier has already paid for itself in your own data. Record 3 of `work-engine-roadmap.jsonl`: the shallow packet claimed `sidebar.js` was module-loaded, targeted evidence found `sidebar.html` using classic ordered scripts and turned up an unlisted consumer in `semantic-toolbox.js`. That's a caught architectural error, pre-implementation, from a process that assumed its own prior output was wrong. Keep that.
 
-The biggest changes I would make are:
+`run_gate.py` is clean — array commands, fail-fast, bounded excerpt, structured result, no shell interpolation. `resolve_provider.py` enforcing provider↔skill consistency and refusing `auto` rather than guessing is exactly right.
 
-* **Turn recon back into reconnaissance.** Your targeted-recon schema currently asks for `observed_state`, `semantic_effect_path`, `selected_boundary`, `call_path`, `module_and_test_wiring`, `invariants`, `acceptance_tests`, `vertical_semantic_test`, `test_commands`, vocabulary, deferred scope, open decisions, missing-context risk, etc. That is basically a miniature architecture report. I would have recon return only the evidence necessary for Codex to reason: placement verdict, a few facts that prove/falsify the certificate, exact ranges, wiring/commands that Codex cannot cheaply discover, and blockers. Let the persistent builder derive invariants, acceptance tests, changed-file boundaries, and the final plan.
-* **Remove the LLM from ordinary test execution.** This is probably the single easiest win. Claude does not need to run `git diff --check`, freshness checks, focused tests, and the 582-test suite. A deterministic gate script can do all of that and return a tiny structured result. Invoke a model only if something fails and needs diagnosis, or after everything passes for adversarial semantic review. You retain all of the safety with dramatically less model activity.
-* **Don’t rerun the entire expensive gate before every review iteration.** I’d do vertical proof + focused checks → adversarial review → fixes → affected checks → **one final full suite/freshness gate after the last fix**. You absolutely want the final full suite after review fixes, but Claude doesn’t need a clean full-suite run before it can notice “you persisted the wrong thing.”
-* **Split audit receipts from context handoffs.** Your durable receipt is excellent for metrics, but it is too rich to be the thing passed to the next builder. In particular, `engine_config`, provider statistics, validation bookkeeping, and model metadata have essentially zero architectural value to the next slice. I’d have an `audit_receipt` and a tiny `handoff_receipt`: what became true, durable architectural decisions made, affected boundaries, unresolved concerns, deferred work. Maybe 300–800 tokens. The supervisor can retain the full JSONL record without feeding it back into model context.
-* **Have one canonical contract instead of restating it at every layer.** There’s considerable semantic duplication among `slice-supervisor/SKILL.md`, `slice-builder/SKILL.md`, `builder-receipt.md`, `receipt-schema.md`, and `claude-recon-implementation/SKILL.md`. That duplication is good defensive engineering initially, but the builder is being told variations of the same placement-certificate/vertical-proof/rejected-alternative requirements several times. A shared compact contract would save prompt tokens and, perhaps more importantly, reduce eventual contract drift.
+## The main problem: the elaborate part is the untested part
 
-That last one is already showing a tiny bit of drift: the receipt documentation says new placement-first runs should emit schema version 3, while the two stored metrics records are schema version 2. There are also old/current path differences in the recorded configs. None of that is alarming while you’re building this, but it demonstrates why I’d want fewer independently repeated definitions.
+All eight records are `slice_number: 1`, each with a distinct `run_id`. **No campaign has ever executed a second slice.**
 
-### The recon model does not need to be Claude
+That means the `handoff_receipt` has never once been consumed by a downstream builder. Neither has the continuation logic, the limits machinery, the notification rules, or the outlier check ("more than twice a recent median" — against a median of one). The supervisor is your most heavily specified component and has essentially no execution history beyond "start one builder, record what happened."
 
-I actually think **Claude is most valuable at the opposite end of this pipeline**.
+Meanwhile 100% of your actual activity is concentrated in planning and placement, which is where six of eight runs terminated.
 
-For your workflow, I’d assign model capability something like:
+That inversion is worth sitting with. The 300–800 token handoff receipt is a good idea, but right now it's a good idea with zero evidence, specified at the same level of rigor as the parts you've run twenty times. I'd either run one genuine multi-slice campaign until it breaks, or cut the supervisor spec down to what actually executes and let it regrow from observed need.
 
-**Placement scout:** cheap/fast tool-using model, low reasoning. Its job is essentially “find the plausible homes and the evidence discriminating them.”
+## The measurement layer can't answer the questions the roadmap asks
 
-**Targeted recon:** cheap/fast model again. This is mostly grep/read/call-path tracing. Escalate only when evidence is genuinely ambiguous.
+Phase 0's exit criterion is a repeatable baseline. It isn't met, and Phases 5 and 6 shipped anyway.
 
-**Codex builder:** your current persistent GPT-5.6 Sol low-effort arrangement makes sense. It is where architectural context has durable value.
+Nearly every cost field is `null` across all eight records: `builder_input_tokens`, `builder_output_tokens`, `builder_wall_clock_seconds`, `builder_context_usage`, and provider cost. So your headline derived metric — provider output tokens per retrieved source line — is not computable from stored records. `decision-policy.md` instructs the builder to "prefer the lowest expected total cost across model tokens, context occupancy, latency…" with no data on any of those. Phases 8, 9, and 11 are explicitly A/B experiments requiring comparable measurements; they cannot be run against this JSONL.
 
-**Test runner:** no model.
+`workflow_route` is absent from every record, though both the builder skill and the receipt doc require it. The validator only enforces it at `schema_version >= 4`, and no v4 record exists. So the central efficiency lever — whether `direct` is ever actually selected over `falsified-placement` — is unmeasured.
 
-**Failure triage:** cheap model first if the failure isn't obvious; Codex builder handles the actual fix.
+## Data integrity is worse than the drift the last review flagged
 
-**Adversarial review:** this is where I would spend your Claude allowance. Fresh context, preferably a strong Claude model, explicitly hostile to the implementation assumptions. Different model family is actually valuable here because correlated reasoning errors matter much more during review than during grep.
+That review noted docs at v3 while records were v2. It's now docs at v4, records at v2 and v3, and the same class of problem has spread into fields that carry your truthfulness invariant:
 
-So rather than:
+- `engine_config.version` is `1` in all eight records, including runs sourced from `work-engine-roadmap.yaml`, which declares `version: 2`.
+- `engine_config.validation.profile` is `engineering-full` in all eight. Both campaign files say `engineering-proportional`. Either every run was overridden (two records say so; six don't), or the recorded provenance is simply wrong.
+- Two records name their source as `work-engin/campaigns/roadmap.yaml` — a path that doesn't exist. It validated fine.
+- `producer_metrics` appears in three mutually incompatible shapes plus empty: `{}`, `{"model": null, "input_tokens": null, …}`, `{"supervisor_input_tokens": …}`, and `{"run_id", "planning_turns", "plan_acceptance", …}`.
+- `repository_exploration_outside_evidence_packets` appears as `0`, as an array of strings, as `null`, and as an English sentence.
 
-`Claude → Codex → Claude → Codex → Claude tests/review`
+"Flexible namespaced metrics" is doing real damage here — the flexibility sits precisely where cross-run comparison is the entire point. I'd close the schema on a small typed set and confine flexibility to `additional_metrics`, then have `append_metrics.py` verify that `engine_config` matches the file it names rather than trusting the model's transcription of it. A `--min-schema-version` flag with an explicit `--allow-legacy` escape would turn "new runs must not emit v1–v3" from prose into something enforced.
 
-I'd gravitate toward:
+## Prose is carrying load that code should carry
 
-`cheap scout → Codex placement judgment → cheap fresh recon/falsifier → Codex implementation → deterministic gate → fresh strong Claude review → Codex fixes → deterministic final gate`
+The recon skill says: on infrastructure failure, "inspect the execution conditions before retrying; do not repeatedly issue the same invocation." Record 2 of `work-engine-roadmap.jsonl` shows `evidence_recon_calls: 5` against a provider that returned no evidence at all, and the run died there. The instruction was clear, well-placed, and did not hold. Retry policy belongs in the adapter.
 
-There is a really nice asymmetry there. **Recon needs recall; review needs judgment.** You are currently paying judgment-model prices/tokens for both.
+More broadly: ~45KB of normative SKILL.md against ~600 lines of Python, and the Python is what actually binds. The invariants/acceptance-conditions/routes/recovery-decisions taxonomy is stated four times — supervisor, builder, decision-policy, recon. Route selection criteria appear three times. Plan contents twice. The previous review flagged this; it grew instead.
 
-### I would keep the two-stage placement idea
+A useful filter for every paragraph: *what observable field or check does this produce?* If nothing, it's prompt tax on every slice and a drift surface forever.
 
-I would *not* collapse placement alternatives and targeted falsification into one call just to save tokens.
+## Smaller things
 
-That is one of the best ideas in the whole thing:
+Two of eight runs died to provider failure at the very first evidence call — that's your largest single failure category, ahead of genuine architectural stops, and it's an infrastructure problem being handled as a workflow problem.
 
-> scout plausible boundaries → Codex chooses → fresh process tries to falsify the chosen boundary
+Path conventions are inconsistent: the builder calls `python3 scripts/run_gate.py` (skill-relative), the supervisor calls `python3 work-engine/skills/slice-supervisor/scripts/append_metrics.py` (repo-root-relative). You're already running this engine against two different repositories, so that will bite.
 
-That protects you from a subtle failure mode where the recon agent invents an architecture and then spends the rest of its context proving itself right. The independence is worth one extra cheap call.
+`chrome-vision` is orphaned — full `src/`, tests, schemas, `package.json`, and no campaign, builder contract, or roadmap phase references it. Only `ideas/ui-review.md` does. Either wire it in as a selectable evidence capability or move it out of `skills/` until it has a caller.
 
-But I would make those outputs almost brutally small.
+## On the seam-review idea
 
-Your first placement response could realistically be something on this order conceptually:
+It's the right generalization, and your own instinct against fifteen mandatory reviewers is correct — exposing seam capabilities and letting the decision policy invoke them is the right shape. But it's downstream work. Seam reviews are only affordable once the deterministic gate and the metrics are trustworthy, and right now you can't tell a cheap route from an expensive one. Building critics on top of an unmeasured base means you won't know whether they helped.
 
-```text
-outcome
-candidates[<=3]
-discriminators[<=5]
-ranges[<=8]
-blockers[<=3]
-risk
-```
+## What I'd do next, in order
 
-Then targeted recon:
+1. Close Phase 0 for real. Capture tokens, cost, and wall-clock, or explicitly record why the provider can't supply them. Nothing downstream is meaningful without it.
+2. Freeze the receipt schema at v4, enforce it in the validator, and validate `engine_config` against the file it cites.
+3. Run one multi-slice campaign to completion or genuine failure, so the handoff receipt and continuation logic get exercised at least once.
+4. Move retry, backoff, and provider health out of prose and into the adapter.
+5. Then collapse the duplicated contract prose — after the above, you'll know which paragraphs correspond to something observable.
 
-```text
-verdict
-failed_certificate_clause?
-facts[<=8]
-ranges[<=12]
-wiring[<=5]
-commands
-blockers[<=3]
-```
-
-Everything else should be **Codex's job**.
-
-In particular, I love your placement certificate. That is exactly the sort of compressed semantic artifact worth keeping:
-
-> trigger → producer → owned state → consumer → consequence → proof → insufficient substitute
-
-That tiny structure carries an enormous amount of architectural information. I would lean harder on it and delete information that merely restates it.
-
-### One other subtle efficiency improvement
-
-Your rule that supplemental recon uses another fresh Claude invocation is stronger isolation than you need.
-
-Freshness matters a lot for the **falsification pass** and **adversarial review** because independence has epistemic value there. If implementation simply discovers, “I need to know how `sidebar.js` registers this module,” I would happily continue the targeted-recon session or use a dirt-cheap retrieval worker. There is no meaningful independence benefit to making that agent forget everything and reconstruct the neighborhood.
-
-So I would distinguish:
-
-**fresh-by-design:** placement falsifier, final adversarial reviewer.
-
-**continuation preferred:** supplemental retrieval, test-failure investigation.
-
-That could make a noticeable dent in the enormous cache/read churn.
-
-Overall, though, I think you've built something quite good here. This isn't “multi-agent because multi-agent is cool.” There are very explicit information-lifetime boundaries: supervisor state is tiny and durable, the builder owns semantic understanding for one slice, and repository exploration is disposable. **That is the right conceptual model.**
-
-The next optimization isn't really “use fewer agents.” It's **make each agent return only information whose lifetime justifies crossing the boundary**.
-
-And your metrics system is already good enough that you can empirically test the change. I would watch **provider output tokens per retrieved source line**, **provider output tokens per accepted slice**, number of supplemental calls, and late semantic rejections. Right now that first ratio on the Visual Evidence slice is about **24 Claude output tokens for every source line retrieved**. Recon should be able to get *way* below that without losing architectural accuracy.
+The architecture is sound and I wouldn't restructure it. The gap is that the specification has outrun the evidence by a wide margin, and the fastest way to close it is to make one campaign run end to end with honest numbers.
 

@@ -5,12 +5,25 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import importlib.util
 import json
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+RESOLVER_PATH = (
+    Path(__file__).parents[2] / "slice-builder" / "scripts" / "resolve_provider.py"
+)
+RESOLVER_SPEC = importlib.util.spec_from_file_location(
+    "work_engine_resolve_provider", RESOLVER_PATH
+)
+if not RESOLVER_SPEC or not RESOLVER_SPEC.loader:
+    raise RuntimeError(f"cannot load provider resolver: {RESOLVER_PATH}")
+PROVIDER_RESOLVER = importlib.util.module_from_spec(RESOLVER_SPEC)
+RESOLVER_SPEC.loader.exec_module(PROVIDER_RESOLVER)
 
 
 REQUIRED_TYPES = {
@@ -149,14 +162,15 @@ def validate_engine_record(record: dict[str, Any]) -> None:
         if key not in config or not isinstance(config[key], expected):
             names = " or ".join(kind.__name__ for kind in expected) if isinstance(expected, tuple) else expected.__name__
             fail(f"engine_config.{key} must be {names}")
-    if config["version"] != 1:
-        fail("engine_config.version must be 1")
+    if isinstance(config["version"], bool) or config["version"] not in {1, 2}:
+        fail("engine_config.version must be 1 or 2")
     for key in ("source", "objective"):
         if not config[key].strip():
             fail(f"engine_config.{key} must not be empty")
 
     if not isinstance(config["builder"].get("skill"), str) or not config["builder"]["skill"].strip():
         fail("engine_config.builder.skill must be a nonempty string")
+    validate_builder_context(config["version"], config["builder"].get("context", {}))
     if not isinstance(config["validation"].get("profile"), str) or not config["validation"]["profile"].strip():
         fail("engine_config.validation.profile must be a nonempty string")
     requirements = config["validation"].get("requirements")
@@ -243,6 +257,15 @@ def require_exact_keys(value: dict[str, Any], expected: set[str], path: str) -> 
         fail(f"{path} has unknown keys: {', '.join(sorted(unknown))}")
 
 
+def validate_builder_context(version: int, context: Any) -> None:
+    if not isinstance(context, dict):
+        fail("engine_config.builder.context must be an object")
+    try:
+        PROVIDER_RESOLVER.resolve_builder_context(version, context)
+    except PROVIDER_RESOLVER.ProviderResolutionError as error:
+        fail(str(error))
+
+
 def validate_evidence_provenance(record: dict[str, Any]) -> None:
     metrics = record["worker_metrics"]
     required = {
@@ -262,12 +285,123 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         if key not in metrics or not isinstance(metrics[key], expected):
             fail(f"worker_metrics.{key} must be {expected.__name__}")
 
+    identity_fields = {"repository_evidence_identity", "independent_review_identity"}
+    present_identities = identity_fields & set(metrics)
+    if present_identities and present_identities != identity_fields:
+        fail("worker_metrics role identities must be reported together")
+    if record.get("engine_config", {}).get("version") == 2 and present_identities != identity_fields:
+        fail("version 2 receipts require role-separated provider identities")
+    for field in identity_fields:
+        if field not in metrics:
+            continue
+        identity = metrics[field]
+        if not isinstance(identity, dict):
+            fail(f"worker_metrics.{field} must be an object")
+        require_exact_keys(identity, {"provider", "skill"}, f"worker_metrics.{field}")
+        for name, value in identity.items():
+            if not isinstance(value, str) or not value.strip():
+                fail(f"worker_metrics.{field}.{name} must be a nonempty string")
+    config_version = record.get("engine_config", {}).get("version")
+    if present_identities == identity_fields:
+        try:
+            configured_roles = PROVIDER_RESOLVER.resolve_builder_context(
+                config_version,
+                record["engine_config"]["builder"].get("context", {}),
+            )
+            if config_version == 1:
+                normalized = []
+                for field in sorted(identity_fields):
+                    identity = metrics[field]
+                    normalized.append(
+                        PROVIDER_RESOLVER.resolve_builder_context(
+                            1,
+                            {
+                                "evidence_skill": identity["skill"],
+                                "reconnaissance": {"provider": identity["provider"]},
+                            },
+                        )["repository_evidence"]
+                    )
+                if normalized[0] != normalized[1]:
+                    fail("version 1 role identities must preserve one combined legacy role")
+                if normalized[0] != configured_roles["repository_evidence"]:
+                    fail("version 1 actual role identity must match configured legacy role")
+            else:
+                actual_roles = PROVIDER_RESOLVER.resolve_builder_context(
+                    2,
+                    {
+                        "repository_evidence": metrics["repository_evidence_identity"],
+                        "independent_review": metrics["independent_review_identity"],
+                    },
+                )
+                for role in ("repository_evidence", "independent_review"):
+                    if actual_roles[role] != configured_roles[role]:
+                        fail(f"actual {role} identity must match configured role")
+        except PROVIDER_RESOLVER.ProviderResolutionError as error:
+            fail(f"worker_metrics role identity is invalid: {error}")
+
+    semantic_call_fields = {
+        "evidence_recon_calls", "evidence_supplemental_calls", "review_gate_calls"
+    }
+    present_call_fields = semantic_call_fields & set(metrics)
+    if config_version == 2 and present_call_fields != semantic_call_fields:
+        fail("version 2 receipts require semantic evidence and review call counters")
+    for field in present_call_fields:
+        require_nonnegative_integer(metrics[field], f"worker_metrics.{field}")
+
+    role_metrics = metrics.get("provider_role_metrics")
+    if record.get("engine_config", {}).get("version") == 2 and not isinstance(role_metrics, dict):
+        fail("version 2 receipts require worker_metrics.provider_role_metrics")
+    if role_metrics is not None:
+        if not isinstance(role_metrics, dict):
+            fail("worker_metrics.provider_role_metrics must be an object")
+        require_exact_keys(
+            role_metrics,
+            {"repository_evidence", "independent_review"},
+            "worker_metrics.provider_role_metrics",
+        )
+        role_fields = EVIDENCE_COUNT_FIELDS | EVIDENCE_MEASUREMENT_FIELDS
+        for role, values in role_metrics.items():
+            path = f"worker_metrics.provider_role_metrics.{role}"
+            if not isinstance(values, dict):
+                fail(f"{path} must be an object")
+            require_exact_keys(values, role_fields, path)
+            for field in EVIDENCE_COUNT_FIELDS:
+                require_nonnegative_integer(values[field], f"{path}.{field}")
+            outcomes = sum(values[field] for field in EVIDENCE_COUNT_FIELDS if field != "attempts")
+            if outcomes != values["attempts"]:
+                fail(f"{path} outcome counts must sum to attempts")
+            for field in EVIDENCE_MEASUREMENT_FIELDS:
+                require_nullable_measurement(values[field], f"{path}.{field}")
+
+    if role_metrics is not None and present_call_fields == semantic_call_fields:
+        repository_attempts = role_metrics["repository_evidence"]["attempts"]
+        retrieval_stages = metrics["evidence_recon_calls"] + metrics["evidence_supplemental_calls"]
+        if retrieval_stages > repository_attempts:
+            fail("repository evidence stage calls cannot exceed repository provider attempts")
+        review_attempts = role_metrics["independent_review"]["attempts"]
+        if metrics["review_gate_calls"] > review_attempts:
+            fail("review gate calls cannot exceed independent-review provider attempts")
+
     provider_count_fields = {
         "provider_successful_calls", "provider_failed_calls",
         "provider_timed_out_calls", "provider_infrastructure_failed_calls",
     }
     for field in provider_count_fields:
         require_nonnegative_integer(metrics[field], f"worker_metrics.{field}")
+
+    if role_metrics is not None:
+        aggregate_fields = {
+            "successful": "provider_successful_calls",
+            "failed": "provider_failed_calls",
+            "timed_out": "provider_timed_out_calls",
+            "infrastructure_failed": "provider_infrastructure_failed_calls",
+        }
+        for role_field, aggregate_field in aggregate_fields.items():
+            observed = sum(values[role_field] for values in role_metrics.values())
+            if observed != metrics[aggregate_field]:
+                fail(
+                    f"worker_metrics.{aggregate_field} must equal provider-role {role_field} totals"
+                )
 
     if metrics["workflow_route"] not in {"direct", "falsified-placement"}:
         fail("worker_metrics.workflow_route must be direct or falsified-placement")

@@ -97,11 +97,160 @@ def base_record(version: int) -> dict[str, object]:
     return record
 
 
+def make_config_v2(record: dict[str, object]) -> None:
+    record["engine_config"]["version"] = 2
+    record["engine_config"]["builder"]["context"] = {
+        "repository_evidence": {
+            "provider": "codex-codebase-memory",
+            "skill": "repo-search",
+        },
+        "independent_review": {
+            "provider": "claude",
+            "skill": "claude-recon-implementation",
+        },
+    }
+    record["worker_metrics"]["repository_evidence_identity"] = {
+        "provider": "codex-codebase-memory",
+        "skill": "repo-search",
+    }
+    record["worker_metrics"]["independent_review_identity"] = {
+        "provider": "claude",
+        "skill": "claude-recon-implementation",
+    }
+    empty_metrics = {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "timed_out": 0,
+        "infrastructure_failed": 0,
+        "input_tokens": None,
+        "cache_creation_tokens": None,
+        "cache_read_tokens": None,
+        "output_tokens": None,
+        "thinking_tokens": None,
+        "cost_usd": None,
+        "wall_clock_seconds": None,
+    }
+    record["worker_metrics"]["provider_role_metrics"] = {
+        "repository_evidence": dict(empty_metrics),
+        "independent_review": dict(empty_metrics),
+    }
+    record["worker_metrics"].update(
+        {
+            "evidence_recon_calls": 0,
+            "evidence_supplemental_calls": 0,
+            "review_gate_calls": 0,
+        }
+    )
+
+
 class AppendMetricsCompatibilityTest(unittest.TestCase):
     def test_accepts_historical_and_current_schema_versions(self) -> None:
         for version in (1, 2, 3, 4):
             with self.subTest(version=version):
                 self.assertEqual(version, APPEND_METRICS.validate(base_record(version))["schema_version"])
+
+    def test_v4_accepts_engine_config_v2_with_role_identities(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        self.assertEqual(2, APPEND_METRICS.validate(record)["engine_config"]["version"])
+
+    def test_engine_config_version_rejects_json_boolean(self) -> None:
+        record = base_record(4)
+        record["engine_config"]["version"] = True
+        with self.assertRaisesRegex(ValueError, "version must be 1 or 2"):
+            APPEND_METRICS.validate(record)
+
+    def test_v1_and_v2_context_shapes_cannot_be_mixed(self) -> None:
+        record = base_record(4)
+        record["engine_config"]["builder"]["context"] = {"repository_evidence": {}}
+        with self.assertRaisesRegex(ValueError, "unknown builder.context fields"):
+            APPEND_METRICS.validate(record)
+
+        record = base_record(4)
+        make_config_v2(record)
+        record["engine_config"]["builder"]["context"]["evidence_skill"] = "legacy"
+        with self.assertRaisesRegex(ValueError, "unknown builder.context fields"):
+            APPEND_METRICS.validate(record)
+
+    def test_v2_rejects_inconsistent_configured_and_actual_role_adapters(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        record["engine_config"]["builder"]["context"]["repository_evidence"]["skill"] = (
+            "claude-recon-implementation"
+        )
+        with self.assertRaisesRegex(ValueError, "requires skill 'repo-search'"):
+            APPEND_METRICS.validate(record)
+
+        record = base_record(4)
+        make_config_v2(record)
+        record["worker_metrics"]["independent_review_identity"]["skill"] = "repo-search"
+        with self.assertRaisesRegex(ValueError, "role identity is invalid"):
+            APPEND_METRICS.validate(record)
+
+        record = base_record(4)
+        make_config_v2(record)
+        record["worker_metrics"]["repository_evidence_identity"] = {
+            "provider": "claude-filesystem",
+            "skill": "claude-recon-implementation",
+        }
+        with self.assertRaisesRegex(ValueError, "must match configured role"):
+            APPEND_METRICS.validate(record)
+
+    def test_v2_requires_both_role_identities(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        del record["worker_metrics"]["independent_review_identity"]
+        with self.assertRaisesRegex(ValueError, "reported together"):
+            APPEND_METRICS.validate(record)
+
+    def test_v2_provider_role_totals_must_match_aggregate_counts(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        role = record["worker_metrics"]["provider_role_metrics"]["repository_evidence"]
+        role["attempts"] = 1
+        role["successful"] = 1
+        with self.assertRaisesRegex(ValueError, "provider-role successful totals"):
+            APPEND_METRICS.validate(record)
+        record["worker_metrics"]["provider_successful_calls"] = 1
+        self.assertEqual(4, APPEND_METRICS.validate(record)["schema_version"])
+
+    def test_v1_optional_identities_must_be_valid_and_equal(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["repository_evidence_identity"] = {
+            "provider": "claude-filesystem",
+            "skill": "claude-recon-implementation",
+        }
+        record["worker_metrics"]["independent_review_identity"] = {
+            "provider": "claude-codebase-memory",
+            "skill": "claude-recon-implementation",
+        }
+        with self.assertRaisesRegex(ValueError, "one combined legacy role"):
+            APPEND_METRICS.validate(record)
+        record["worker_metrics"]["independent_review_identity"]["provider"] = "mystery"
+        with self.assertRaisesRegex(ValueError, "role identity is invalid"):
+            APPEND_METRICS.validate(record)
+
+        record = base_record(4)
+        actual = {
+            "provider": "claude-filesystem",
+            "skill": "claude-recon-implementation",
+        }
+        record["worker_metrics"]["repository_evidence_identity"] = dict(actual)
+        record["worker_metrics"]["independent_review_identity"] = dict(actual)
+        with self.assertRaisesRegex(ValueError, "must match configured legacy role"):
+            APPEND_METRICS.validate(record)
+
+    def test_v2_semantic_call_counters_are_bounded_by_role_attempts(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        record["worker_metrics"]["review_gate_calls"] = 1
+        with self.assertRaisesRegex(ValueError, "review gate calls"):
+            APPEND_METRICS.validate(record)
+        record["worker_metrics"]["review_gate_calls"] = 0
+        record["worker_metrics"]["evidence_recon_calls"] = 1
+        with self.assertRaisesRegex(ValueError, "repository evidence stage calls"):
+            APPEND_METRICS.validate(record)
 
     def test_accepted_v4_requires_confirmed_placement_and_vertical_proof(self) -> None:
         record = base_record(4)

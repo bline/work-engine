@@ -1,4 +1,4 @@
-version: 1
+version: 2
 objective: "Advance the work-engine roadmap"
 
 work_source:
@@ -10,9 +10,12 @@ builder:
   model: "gpt-5.6-sol"
   reasoning_effort: "low"
   context:
-    evidence_skill: "claude-recon-implementation"
-    reconnaissance:
-      provider: "claude-codebase-memory"
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
 
 validation:
   profile: "engineering-proportional"

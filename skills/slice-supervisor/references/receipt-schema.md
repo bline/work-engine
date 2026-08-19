@@ -30,7 +30,7 @@ Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stop
 | `worker_metrics` | object | Flexible namespaced metrics reported by the worker. |
 | `producer_metrics` | object | Flexible namespaced metrics reported by an orchestrator or producer. |
 
-`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
+`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. Config version 1 preserves the historical combined evidence/review builder context. Config version 2 uses separate `repository_evidence` and `independent_review` provider/skill objects. The shapes must not be mixed. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
 
 Each validation result is `passed`, `failed`, `blocked`, or `not_applicable`. `not_applicable` requires a concise reason and is never a silent waiver. Every configured requirement must be `passed` for an accepted slice; use another terminal status when a requirement cannot apply.
 
@@ -71,6 +71,21 @@ Include when available, using `null` otherwise:
   `provider_failure`; and
 - `fallbacks`, the compact transition events from which fallback reason counts
   are derived.
+
+New config-version-2 receipts also contain `repository_evidence_identity` and
+`independent_review_identity`, each with the provider and skill actually used.
+They also contain `provider_role_metrics`, partitioning provider attempt
+outcomes and available measurements between those two roles; role outcome
+totals must equal the generic provider outcome totals. Historical
+config-version-1 receipts remain valid without these additive fields. If role
+identities are present, report both; version-1 identities must both preserve the
+same valid combined legacy role. Version-2 receipts include semantic
+`evidence_recon_calls`, `evidence_supplemental_calls`, and `review_gate_calls`.
+Retrieval stage calls cannot exceed repository-provider attempts, and review
+gate calls cannot exceed independent-review-provider attempts.
+Actual role identities must match the normalized effective configuration. A
+different provider requires a recorded configuration amendment; evidence-mode
+fallback inside the configured role does not change provider identity.
 
 Capability classes describe how evidence was obtained, not which product
 supplied it. Provider and model identity remain separate provenance. A fallback

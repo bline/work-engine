@@ -42,6 +42,14 @@ The high-assurance placement flow is intentional for ambiguous, cross-boundary, 
 
 For an obvious, local, reversible boundary with a known producer, consumer, and focused proof, a direct targeted-evidence route is sufficient. Escalate to the high-assurance flow when evidence reveals competing ownership, hidden consumers, lifecycle conflict, broad consequence, or medium/high placement risk. Do not collapse important placement judgments into one model recommendation: independence between proposal, owner judgment, and falsification remains part of the correctness model when those conditions apply.
 
+## Exploratory ideas
+
+Notes under `work-engine/ideas/` are brainstorming inputs, not accepted roadmap
+phases, configured capabilities, or implementation commitments. Preserve them as
+separate idea files until a dedicated design and placement pass establishes a
+real owner, contract, evidence path, acceptance conditions, and priority. Do not
+silently promote an appealing review concept into mandatory workflow policy.
+
 ## Implementation status after the placement/efficiency slice
 
 The current Work Engine already implements much of the pre-graph optimization foundation:
@@ -330,41 +338,47 @@ Each semantic contract has one authoritative owner and drift can be detected wit
 
 ---
 
-# Phase 5 — Add a reconnaissance-provider abstraction
+# Phase 5 — Add a repository-evidence provider abstraction
 
-**Status: implemented.** Static provider identity is
-configured independently from the concrete evidence-skill adapter. The builder
-resolves their consistency deterministically. `claude-filesystem` and the
-graph-first `claude-codebase-memory` path are available. The latter retains
-filesystem access during migration and can remove it once the migrated boundary
-no longer requires that fallback. Other graph-backed providers and `auto` remain
-explicitly unavailable until later phases implement them.
+**Status: implemented.** Config version 2 separates repository retrieval from
+independent review. The backend-neutral `repo-search` skill owns retrieval
+intent and evidence contracts; direct `codex-codebase-memory` is the default.
+`claude-filesystem` and `claude-codebase-memory` remain optional retrieval paths,
+while version 1 preserves their historical combined semantics through explicit
+normalization. Auto provider selection remains deferred.
 
 Do not hard-code “Claude” or “Codebase-Memory” as the architecture.
 
-Introduce a provider abstraction behind the evidence/recon contract.
+Resolve providers behind the repository-evidence contract independently from
+the review contract.
 
 Possible configured modes:
 
 ```yaml
 builder:
   context:
-    reconnaissance:
+    repository_evidence:
+      skill: claude-recon-implementation
       provider: claude-filesystem
 ```
 
 ```yaml
 builder:
   context:
-    reconnaissance:
+    repository_evidence:
+      skill: claude-recon-implementation
       provider: claude-codebase-memory
 ```
 
 ```yaml
 builder:
   context:
-    reconnaissance:
+    repository_evidence:
+      skill: repo-search
       provider: codex-codebase-memory
+    independent_review:
+      skill: claude-recon-implementation
+      provider: claude
 ```
 
 Later:
@@ -372,11 +386,12 @@ Later:
 ```yaml
 builder:
   context:
-    reconnaissance:
+    repository_evidence:
       provider: auto
 ```
 
-The builder must receive the same semantic contract regardless of provider.
+The builder must receive the same retrieval contract regardless of provider,
+while independent review retains separate identity and freshness.
 
 Provider-specific telemetry stays namespaced in the audit receipt.
 
@@ -388,16 +403,21 @@ Changing the repository-evidence mechanism requires configuration, not changes t
 
 # Phase 6 — Prove an ESM migration through one vertical runtime slice
 
-**Status: implementation complete; final gate pending.** The canonical authored
-modules are `property-profile.mjs`, `correction-promotion.mjs`, and
-`sidebar.mjs`. The sidebar imports correction promotion directly, which imports
-property profile directly. A generated `property-profile.js` compatibility
-artifact temporarily serves the unmigrated classic semantic-toolbox consumer;
-its build script owns both generation and freshness checking, so it is not a
-parallel authored implementation. Focused scoring, compatibility, Semantic
-Library, and sidebar tests pass. Real-extension interaction, the broader suite,
-freshness gates, adversarial review, and post-change import-aware graph evidence
-remain unverified until the final gate runs.
+**Status: implementation present; completion evidence needs reconciliation.**
+The canonical authored modules are `property-profile.mjs`,
+`correction-promotion.mjs`, and `sidebar.mjs`. The sidebar imports correction
+promotion directly, which imports property profile directly. A generated
+`property-profile.js` compatibility artifact temporarily serves the unmigrated
+classic semantic-toolbox consumer; its build script owns both generation and
+freshness checking, so it is not a parallel authored implementation. Focused
+scoring, compatibility, Semantic Library, and sidebar tests pass.
+
+The durable Work Engine metrics currently contain stopped Phase 6 planning
+receipts, but no accepted terminal receipt proving the real-extension
+interaction, broader suite, freshness gates, independent review, and
+post-change import-aware graph evidence. Do not repeat the implementation.
+First recover any existing completion evidence; if none exists, run only the
+missing final gate and record its result.
 
 The extension currently uses UMD wrappers and `globalThis` APIs primarily as a
 scaffolding inheritance, not as a desired architectural constraint. Before
@@ -518,7 +538,11 @@ longer begin from a known UMD/global alias-resolution handicap.
 
 # Phase 8 — Codebase-Memory experiment A: change retrieval, not model
 
-This is the cleanest first graph experiment.
+**Status: retained as a controlled post-adoption benchmark.** Direct
+Codebase-Memory is already the config-version-2 retrieval default behind
+`repo-search`. This experiment now measures an explicit Claude graph-first
+retrieval route against the historical Claude filesystem control; it is not a
+prerequisite for adopting the default.
 
 Keep constant:
 
@@ -578,11 +602,18 @@ Compare against Phase 0 baseline on:
 
 ## Decision rule
 
-Adopt graph-first Claude recon only if token/context savings do not materially worsen placement quality, semantic-review findings, or late rework.
+Prefer or retain graph-first Claude retrieval for the slices it serves only if
+token/context savings do not materially worsen placement quality,
+semantic-review findings, or late rework. Do not infer the quality of direct
+Codebase-Memory retrieval from this separate provider comparison.
 
 ---
 
 # Phase 9 — Codebase-Memory experiment B: preserve recon as an airlock
+
+**Status: measurement pending.** The provider contract now supports direct
+repository retrieval separately from independent review, but that does not by
+itself prove when broad exploration should live in disposable context.
 
 Test the hypothesis that disposable graph exploration protects persistent builder context.
 
@@ -733,9 +764,13 @@ Strong-model tokens are spent primarily on real ambiguity and adversarial reason
 
 # Phase 13 — Move repository context to Codebase-Memory as the default substrate
 
-This is the intended migration if prior experiments succeed.
+**Status: implemented at the Work Engine contract boundary.** Direct
+Codebase-Memory is the default repository provider behind `repo-search`, with
+coverage-aware direct-source and optional Claude-backed fallbacks. Benchmarking
+and broader runtime evidence remain ongoing rather than prerequisites for
+truthfully representing the configured default.
 
-## Default architecture
+## Target operational architecture
 
 ```text
 campaign supervisor
@@ -958,37 +993,40 @@ A change that lowers tokens while increasing late semantic failures is not an op
 
 # Proposed near-term slice order
 
-The placement/efficiency slice and reconnaissance-provider abstraction are
-already implemented. The next campaign should therefore proceed approximately
-in this order:
+The provider abstraction, direct Codebase-Memory default, deterministic gate,
+bounded evidence contracts, and audit/handoff split are implemented. Continue
+approximately in this order:
 
-1. **Prove one complete ESM runtime slice** through property profile, correction
-   promotion, the sidebar consumer, browser behavior, tests, and import-backed
-   graph evidence.
-2. **Migrate the remaining first-party extension clusters to ESM in dependency
-   order**, removing each compatibility global when its final consumer moves
-   while preserving documented platform/vendor boundaries.
-3. **Run the Claude + Codebase-Memory graph-first experiment** against the
-   existing Claude filesystem baseline while keeping model, schemas, builder,
-   and validation constant.
-4. **Compare disposable graph recon with builder-direct graph exploration** to
-   measure whether the recon airlock protects durable builder context.
-5. **Adopt the hybrid airlock + builder-microscope policy** only if the
-   measurements support it.
-6. **Benchmark cheaper graph-enabled placement/recon models** independently of
-   the retrieval change.
-7. **Add adaptive escalation** so strong-model reasoning is spent on unresolved
-   structural/semantic ambiguity rather than navigation.
-8. **Make Codebase-Memory the default repository-intelligence substrate** if
-   correctness and verification acceptance metrics hold, retaining filesystem
-   recon as fallback/control.
-9. **Experiment with a Work Engine semantic overlay** beginning with accepted
-   placement certificates, architectural decisions, rejected substitutes, and
-   proof relationships.
-10. **Add proof invalidation/selective reverification** only if measured repeated
-    reconstruction or verification cost justifies it.
-11. **Compress adversarial review around counterexamples and violated proof
+1. **Reconcile the Phase 6 ESM completion record.** Recover an accepted gate
+   receipt if one exists; otherwise run the missing real-extension, broader
+   suite, freshness, independent-review, and import-aware graph checks without
+   reimplementing the slice.
+2. **Decide whether to begin Phase 7** from that accepted evidence. If the Phase
+   6 gate is clean, migrate remaining first-party extension clusters in
+   dependency order; otherwise repair only findings that invalidate the
+   vertical ESM consequence.
+3. **Measure the adopted direct Codebase-Memory default on representative real
+   slices** against correctness, verification quality, context growth, and the
+   historical filesystem/Claude control.
+4. **Run the explicit Claude graph-first provider comparison** only as a
+   controlled provider benchmark, keeping the model, contracts, builder, and
+   validation constant.
+5. **Compare disposable graph exploration with builder-direct retrieval** to
+   determine whether the recon airlock protects durable builder context.
+6. **Adopt or revise the hybrid airlock + builder-microscope policy** only from
+   those measurements.
+7. **Benchmark reviewer and retrieval model choices independently**, then add
+   adaptive escalation only where observed ambiguity justifies it.
+8. **Experiment with a semantic architectural overlay** beginning with accepted
+   placement certificates, decisions, rejected substitutes, and proof
+   relationships.
+9. **Add proof invalidation/selective reverification** only if measured repeated
+   reconstruction or verification cost justifies it.
+10. **Compress adversarial review around counterexamples and violated proof
     obligations** while preserving an independent reviewer.
+
+The brainstorming notes in `work-engine/ideas/` remain outside this ordering
+until their systems are deliberately designed and accepted.
 
 The already-implemented deterministic gate, bounded recon schemas, audit/handoff split, and contract ownership remain prerequisites and should be protected by tests while these experiments proceed.
 

@@ -57,14 +57,18 @@ Use null for unavailable measurements:
 - `builder_skill`
 - `configured_builder_model`
 - `configured_reasoning_effort`
-- `configured_evidence_skill`
+- `configured_repository_evidence`: provider and skill
+- `configured_independent_review`: provider and skill
 - `validation_profile`
 
 These configured values are not proof of what ran. Keep them beside the actual model, effort, call, and gate measurements above so configuration and observation remain distinguishable.
 
 ## Required evidence and review workflow metrics
 
-- `evidence_provider`
+- `repository_evidence_identity`: provider and skill actually used
+- `independent_review_identity`: provider and skill actually used
+- `provider_role_metrics`: per-role attempt outcomes and available token, cost,
+  and time measurements for `repository_evidence` and `independent_review`
 - `evidence_recon_calls`
 - `evidence_supplemental_calls`
 - `review_gate_calls`
@@ -99,6 +103,19 @@ These configured values are not proof of what ran. Keep them beside the actual m
   `to_mode`, `stage`, `reason`, and `failure_kind`
 
 `evidence_recon_calls` is the total of initial non-supplemental evidence calls; report `placement_calls` and `targeted_reconnaissance_calls` as its stage-specific breakdown. Map the configured provider's measurements into these semantic fields when correspondence is direct. Preserve original provider-specific measurements under `additional_metrics` without speculatively renaming them. Measurements must come from tool or platform receipts; never estimate them.
+
+For config version 1, preserve the combined historical provider/skill as both
+normalized role identities and record the compatibility mode. For version 2,
+record retrieval and review identities independently; a retrieval call must not
+be counted as a review call merely because both roles use the same product.
+Repository provider attempts must cover reported reconnaissance and
+supplemental evidence-stage calls, and independent-review provider attempts must
+cover reported review-gate calls. A provider may make several attempts within
+one semantic stage, so the reverse equality is not required.
+Actual role identities must match the normalized effective configuration. A
+provider change requires a recorded configuration amendment; direct-source or
+coverage fallback within a provider is represented by evidence modes and
+fallback events, not by rewriting provider identity.
 
 For schema version 4, provider call outcomes are mutually exclusive. Classify
 every unsuccessful call under exactly one of `failed`, `timed_out`, or
