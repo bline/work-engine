@@ -1,487 +1,1077 @@
-# Work Engine Run Review
-
-**Run:** `8f2ad7df-6e85-4030-bd78-421e7a8a8b56`  
-**Slice:** Normalize Visual Evidence authored observations  
+# Work Engine Run Review — Consolidated Findings
 **Date:** 2026-08-19  
-**Campaign:** Site2JSON roadmap  
-**Builder:** GPT-5.6 Sol, low reasoning  
-**Validation profile:** `engineering-proportional`
+**Run:** `8f2ad7df-6e85-4030-bd78-421e7a8a8b56`  
+**Slice:** `Normalize Visual Evidence authored observations`
 
 ## Executive summary
 
-This run is the strongest evidence so far that the redesigned Work Engine is behaving differently in the intended direction. A real, medium-risk Site2JSON slice crossed editor, picker, shared IR, tests, documentation, and live UI verification. The builder stayed at low reasoning, revised its route when evidence invalidated an assumption, completed implementation, ran focused and broad deterministic validation, used independent review where it mattered, repaired two real blocking defects found by review, and reached an accepted result with 602/602 tests passing.
+This run strongly validates the redesigned Work Engine.
 
-The run also exposed several concrete efficiency and reliability seams. The largest avoidable cost was not review itself, but repeatedly reconstructing fresh review context during remediation. Repository evidence and independent review were still coupled through the same legacy Claude + Codebase Memory provider, so routine repository understanding consumed nearly half of the external-provider cost. The metrics receipt was generated correctly enough to contain rich evidence, but persistence failed twice because the probabilistically authored receipt did not exactly match the validator schema; compaction then made the transient receipt unavailable from model context. Recovery ultimately succeeded only after the receipt was recovered, corrected, staged to a temporary file, validated, appended, and the temporary file removed.
+A real Site2JSON slice crossed multiple semantic/UI/runtime boundaries, changed 13 task-owned files, passed focused checks and the full 602-test suite, received real-extension inspection, survived a falsified planning premise, and converged after two valid blocking review findings. The builder remained on GPT-5.6 Sol at low reasoning effort and did not require reasoning escalation.
 
-The important conclusion is not that the Work Engine needs another major redesign. The decision policy appears to have worked. The next gains are mostly infrastructural: preserve acquired context where independence is not lost, move deterministic data-shaping out of model memory, separate repository retrieval from independent judgment, and prevent large mechanical outputs from entering the reasoning context.
+The most important conclusion is:
 
----
+> **The flexible objective-driven decision system worked. Most remaining problems are infrastructure, observability, artifact-lifecycle, and capability-affordance problems—not reasons to add more rigid procedure.**
 
-## 1. What the slice accomplished
-
-The accepted slice normalized real Detection and Graph Visual Evidence selections into validated authored or unresolved session observations using canonical semantic-model identity and truthful picker/page provenance.
-
-The implementation:
-
-- added IR-owned canonical target projection and observation normalization;
-- projected Detection fields from effective Semantic DOM nodes/findings/reports, including nested relationship paths;
-- projected Graph paths from authored root/nodes/edges/property references without allowing aliases to become semantic identity;
-- preserved ambiguity instead of selecting an arbitrary Graph route;
-- propagated real picker version and current Page Analysis revision;
-- distinguished authored click provenance from explicitly unresolved provenance;
-- excluded raw selected values, live DOM references, opening tags, persistence effects, inference effects, and runtime effects;
-- updated focused tests, broader tests, documentation, and the real extension path.
-
-The final deterministic state was strong:
-
-- 13 task-owned files;
-- 602/602 full-suite tests passed;
-- 12 focused Visual Evidence tests passed;
-- initial ordered gate: 8/8 checks passed;
-- two post-review repair gates: 5/5 each passed;
-- `git diff --check` passed;
-- real-extension Graph workflow inspected at wide/dark and narrow/light layouts;
-- no final blocking review findings;
-- two blocking high-severity findings discovered and repaired.
-
-The one meaningful visual-validation limitation was explicit rather than hidden: the resumed draft exposed the Graph route but not blank-draft Detection, and opening Detection would have created additional user state. The run therefore used deterministic vertical and bridge tests for that path rather than mutating user state merely to satisfy a ritualized visual check. This is a good example of proportional validation rather than validation theater.
-
----
-
-## 2. Evidence that bounded flexibility is working
-
-The most important behavioral observation is that the system did not merely execute a fixed sequence more cheaply. It adapted its route while preserving the objective and invariants.
-
-The builder began with a premise that the existing picker/caller payload already supplied every field required by `validateObservation`. Targeted evidence falsified that premise: semantic identity and document revision existed in authoritative owners, but were not projected into the Visual Evidence invocation. The builder preserved the valid evidence, marked the dependent approach stale, and replaced it with IR-owned normalization plus minimal caller-specific canonical projection and current-context plumbing.
-
-That is exactly the behavior the Work Engine redesign was intended to produce:
-
-> **Routes are disposable hypotheses; objectives, invariants, and acceptance conditions remain authoritative.**
-
-The builder did not require a human restart, did not treat a corrected premise as failure, and did not blindly follow its first plan. It revised the path while keeping the accepted semantic goal intact.
-
-A related observation appeared in the repository-evidence work around this run: the model began decomposing evidence questions into separate bounded agents without being told exactly how to optimize the decomposition. That suggests the global objective plus capability boundaries are giving the model enough direction to invent efficient tactics rather than forcing those tactics into the workflow specification.
-
-This is evidence, not yet proof, that the Work Engine's new flexibility is producing the intended emergent behavior. It should be evaluated across more runs before being converted into additional hard procedure.
-
----
-
-## 3. Independent review was expensive and demonstrably valuable
-
-Independent review should **not** be removed based on this run.
-
-The first adversarial review found a genuine blocking edge case: a rendered-page click on an element with no extractable interpretation could throw before the picker dismissed. The repair made the operation truthfully produce an unresolved observation while retaining click provenance.
-
-The second review found another genuine blocking semantic defect: an ambiguous Graph route with a valid click interpretation needed to remain unresolved while still retaining the recorded click evidence. The repair preserved both ambiguity and action evidence and added a focused regression test.
-
-These were not cosmetic findings. They were exactly the kind of semantic/provenance failures that a passing test suite can miss when the tests encode the same assumptions as the implementation.
-
-The conclusion is:
-
-> **Review was good expensive work. Reconstructing review context repeatedly was avoidable expensive work.**
-
-### Review cost observed
-
-The run used three successful independent-review calls:
-
-- cache creation: 169,183 tokens;
-- cache reads: 1,993,625 tokens;
-- output: 35,657 tokens;
-- thinking: 21,718 tokens;
-- provider cost: about $2.15;
-- provider wall time: about 386 seconds.
-
-The average review round therefore paid again for a large portion of the same accepted boundary, prior findings, invariants, task-owned files, and architectural context.
-
-### Recommended review lifecycle
-
-Use a fresh isolated reviewer at the beginning of an independent review episode, then preserve that reviewer's context through bounded remediation rounds until acceptance or material premise change:
+The run also exposed a clear causal chain:
 
 ```text
-fresh independent reviewer
+large bootstrap + repeated repository/tool output
         ↓
-full initial review
+builder reaches ~78% context before adversarial review
         ↓
-findings A / B
+implementation/review pushes peak context to ~88%
         ↓
-builder repairs delta
+large audit receipt is authored only inside model context
         ↓
-same reviewer verifies delta + prior concern
+context compacts immediately after task completion
         ↓
-repeat while converging
+exact receipt bytes disappear from builder context
         ↓
-approval
+metrics persistence requires transcript archaeology
         ↓
-discard reviewer
+receipt production/persistence consumes ~21% of builder output
 ```
 
-Start a new fresh review context only when the implementation boundary materially changes, architecture/placement is reopened, the reviewer becomes confused/context-heavy, a different independent perspective is warranted, or a later review episode begins.
-
-This preserves the original independence from the builder while avoiding repeated acquisition of the reviewer's own knowledge.
-
----
-
-## 4. Repository evidence and independent judgment are still conflated
-
-The external-provider metrics divide almost exactly into two halves.
-
-### Repository evidence
-
-- 4 attempts;
-- 3 successful;
-- 1 infrastructure failure;
-- output: 32,042 tokens;
-- thinking: 9,683 tokens;
-- cache reads: 1,198,442 tokens;
-- provider cost: about $1.95;
-- wall time: about 334 seconds.
-
-### Independent review
-
-- 3 successful calls;
-- output: 35,657 tokens;
-- thinking: 21,718 tokens;
-- cache reads: 1,993,625 tokens;
-- provider cost: about $2.15;
-- wall time: about 386 seconds.
-
-### Combined provider cost
-
-- output: 67,699 tokens;
-- thinking: 31,401 tokens;
-- cache reads: 3,192,067 tokens;
-- provider cost: about $4.10;
-- wall time: about 720 seconds.
-
-The run still identified both `repository_evidence` and `independent_review` as the legacy combined `claude-codebase-memory` / `claude-recon-implementation` capability.
-
-This strongly validates the architectural split already underway:
+A separate cost path also emerged:
 
 ```text
-repo-search
-    repository retrieval / tracing / coverage
-
-independent review
-    fresh judgment / falsification / adversarial synthesis
+many backgrounded subprocesses
+        ↓
+one model wakeup per completion/poll
+        ↓
+full large-context replay each time
+        ↓
+~4.0M input tokens of replay
+        ↓
+latency/turn cost without materially increasing resident context
 ```
 
-Routine repository understanding does not inherently require an independent language-model perspective. Codebase Memory, exact source, graph traces, and bounded fallback can often provide that evidence more cheaply. Independent model judgment should be purchased where the value of an independent perspective justifies it.
-
-A useful experiment after `repo-search` lands is to compare otherwise similar slices on:
-
-- external-provider output tokens;
-- cache reads;
-- wall time;
-- supplemental evidence calls;
-- placement reconsiderations;
-- late semantic rejections;
-- review findings;
-- accepted defects discovered later.
-
-The goal is not fewer agents or fewer calls by itself. The goal is lower total cost to a trustworthy accepted result.
+These are different problems and should be optimized differently.
 
 ---
 
-## 5. The receipt/metrics seam is currently too dependent on model memory
+# 1. Guardrail: what this run does **not** justify changing
 
-The run exposed a clear persistence-design problem.
+This section should stay near the top of any future review.
 
-The builder produced a rich schema-v4 audit receipt, but the first append was rejected because the two identity objects contained an unsupported `compatibility` key. The exact receipt then became difficult to retry safely because the shell was non-interactive and did not preserve history.
+Do **not** respond to this run by adding:
 
-A later recovery attempt exposed a second schema mismatch: `route_revisions[0].replacement_route` contained a prose description of the replacement implementation approach, while the validator expected a workflow-route value such as `falsified-placement`.
+- mandatory evidence ladders;
+- mandatory review panels;
+- mandatory context quotas;
+- hard per-phase read limits;
+- compulsory agent-per-seam decomposition;
+- fixed model-escalation ladders;
+- quota-exploitation logic;
+- rigid browser-inspection recipes;
+- more procedural rules merely because one infrastructure seam failed.
 
-Then context compaction occurred. After compaction, the builder correctly refused to reconstruct the exact large receipt from memory because doing so could silently change evidence.
-
-The eventual successful recovery was revealing: the corrected receipt was staged to a temporary JSON file, passed mechanically through the locked validator/append path, appended successfully to `work-engine/metrics/roadmap.jsonl`, and the temporary file was removed.
-
-That recovery path should become normal behavior.
-
-### Recommended invariant
-
-> **Once a terminal receipt has been produced, its exact bytes must survive model compaction, retries, and handoffs. Persisting or retrying it must never require reconstruction from model memory.**
-
-### Recommended normal path
+The architecture should continue to express:
 
 ```text
-builder produces semantic receipt
-        ↓
-stage exact candidate JSON
-        ↓
-validate staged artifact
-        ↓
-correct only validator-supported defects from evidence
-        ↓
-validate again
-        ↓
-append exact validated artifact
-        ↓
-remove/archive staging artifact
+objective
++ invariants
++ acceptance conditions
++ available capabilities
++ evidence/cost state
+→ model chooses route
 ```
 
-An even stronger design would move schema construction itself further into deterministic code: the model supplies semantic fields and flexible measurements, while a receipt builder normalizes closed objects, enum fields, defaults, nulls, and provider-specific extensions into the canonical schema.
+The Work Engine succeeded because the model had room to adapt while still knowing what mattered.
+
+The correct response is:
+
+> **Improve the machinery around the reasoning so the model does not repeatedly pay for context, evidence, artifacts, or process state the system already possesses.**
 
 ---
 
-## 6. The schema and skill contracts need a targeted audit
+# 2. What the run proved
 
-The immediate schema errors were model errors, but both were avoidable traps.
+## 2.1 Route flexibility worked
 
-### `compatibility` in identity objects
+A planning premise was falsified:
 
-The model was trying to preserve a truthful and useful fact: this run used the legacy combined evidence-and-review provider. It placed that fact inside the identity objects, but those objects have a closed schema.
+> The existing picker/caller payload already supplied every field required by `validateObservation`.
 
-This raises two questions:
+The builder did not force the original plan and did not terminate unnecessarily.
 
-1. Is the closed identity shape sufficiently explicit in the builder/receipt instructions?
-2. Is there a clearly documented canonical home for provider-specific compatibility/provenance metadata?
+It preserved valid evidence, marked dependent assumptions stale, and revised the route to:
 
-If the fact belongs in `additional_metrics`, the skill should say so explicitly.
+> IR-owned normalization plus minimal caller-specific canonical projection and current-context plumbing.
 
-### `replacement_route` ambiguity
+This is exactly the intended behavior:
 
-The model interpreted `replacement_route` in ordinary engineering language as "the replacement implementation route" and supplied a prose plan. The validator treated it as a workflow-route enum.
+> **Routes are hypotheses. Invariants and acceptance conditions remain binding.**
 
-That field name is semantically ambiguous. A clearer contract would be something like:
+## 2.2 Proportional validation made a good expensive decision
 
-```text
-replacement_workflow_route: direct | falsified-placement
-replacement_plan_summary: <optional prose>
-```
+The slice touched:
 
-The exact names are less important than removing the collision between workflow-routing terminology and implementation-plan terminology.
+- Detection;
+- Graph;
+- Visual Evidence;
+- picker data;
+- shared IR;
+- provenance;
+- ambiguity;
+- user-authored state.
 
-### Documentation/version drift
+The workflow selected stronger validation because the consequence justified it.
 
-Earlier supervisor material still referred to schema version 3 while this run emitted schema version 4. Even if the live working copy has since been corrected, this is evidence that schema ownership can drift across skill docs, examples, and validator code.
+Independent review found two real blocking defects:
 
-### Recommended audit
+1. A click without extractable interpretation could throw instead of becoming a truthful unresolved click.
+2. An ambiguous Graph route could discard click evidence rather than remain unresolved while preserving the recorded click.
 
-Audit these as one seam rather than patching the two observed fields independently:
+Both were fixed, regression-tested, and revalidated.
 
-- `builder-receipt.md`;
-- `receipt-schema.md`;
-- `append_metrics.py`;
-- slice-builder receipt instructions;
-- slice-supervisor append instructions;
-- all schema-v4 examples/tests;
-- provider identity/provenance placement;
-- every enum whose name could plausibly imply free text;
-- schema-version references in skills and docs.
+Therefore:
 
-Every canonical receipt example should be executable as a validator fixture. The validator should remain the source of truth.
+> **Independent review was valuable. Reconstructing independent review repeatedly was the waste.**
 
----
+## 2.3 Low reasoning effort was enough
 
-## 7. Deterministic output compression worked - except where it was bypassed
+The builder remained on GPT-5.6 Sol / low effort for the full slice.
 
-`run_gate.py` did what the workflow wanted: it converted broad mechanical validation into a small structured result. The initial gate ran eight checks and returned a compact pass/fail summary instead of flooding the builder context with test output.
+No reasoning escalation occurred.
 
-Near the end of the run, however, the builder directly ran `npm test` and received roughly 3,500 lines of TAP output into its context even though the same class of evidence had already been handled through the deterministic gate.
+This supports:
 
-This is a small but clean example of avoidable context pollution.
+> **Start capable workers cheaply when evidence capabilities narrow the problem; escalate only from concrete evidence of need.**
 
-### Recommended principle
+## 2.4 Capability-oriented routing emerged naturally
 
-> **Bulk deterministic output should terminate at a compact deterministic boundary. Models should receive the result and only the failure detail needed for diagnosis.**
+The builder used different mechanisms for different questions:
 
-Direct full-suite commands should normally be wrapped by `run_gate.py` or an equivalent bounded-output mechanism. Raw output should be pulled only on failure and only for the failing portion.
+- Claude + Codebase Memory for independent placement/review;
+- direct Codebase Memory for targeted structural questions;
+- literal source reads when graph evidence was ambiguous or exact behavior mattered;
+- Chrome Vision for rendered-state observation;
+- deterministic gates/tests for executable proof.
 
----
-
-## 8. Chrome Vision may not yet be reusing its persistent transport as intended
-
-During the run, `/ps` showed 12 background Node terminals, many associated with `ChromeVisionBroker` invocations and prior observation packets.
-
-This does not prove that 12 live CDP/WebSocket connections were leaking; the Codex terminal UI may retain completed/background entries. But it is strong enough to investigate.
-
-The intended Chrome Vision architecture is:
-
-```text
-one persistent broker/session
-        ↓
-many bounded observations
-```
-
-not:
-
-```text
-observation
-→ launch persistent broker
-observation
-→ launch another persistent broker
-...
-```
-
-Before changing anything, inspect actual process/socket state and broker lifecycle. If connections are truly accumulating, add broker discovery/reuse, lease semantics, or deterministic shutdown. If the terminals are merely retained UI records, document that and leave the architecture alone.
-
-This should remain an evidence-driven investigation, not a speculative rewrite.
+This is evidence that the new objective/capability model is producing useful autonomous routing.
 
 ---
 
-## 9. Metrics are already useful, but builder-side spend remains partially invisible
+# 3. Four distinct resource mechanisms
 
-The run captured external-provider spend in considerable detail, including provider roles, cache creation/read, output tokens, thinking tokens, wall time, cost, failures, evidence modes, fallbacks, retrieval counts, placement calls, and review-fix iterations.
+The run shows that “token efficiency” is too coarse a concept.
 
-However, these fields remained null:
+## 3.1 Context accumulation
 
-- `builder_input_tokens`;
-- `builder_output_tokens`;
-- `builder_context_usage`;
-- `builder_wall_clock_seconds`.
-
-That means the metrics can answer questions such as "which external evidence route was expensive?" much better than "what did the entire accepted slice cost end-to-end?"
-
-Capturing builder-side usage would improve optimization analysis, but it should not become a blocker for engineering work. Missing measurements should remain `null`, not estimated.
-
----
-
-## 10. Quota behavior: useful reliability knowledge, not usable capacity
-
-This run began when the Codex weekly meter displayed roughly 1% remaining. The slice consumed substantially more work than that number would intuitively suggest before the account eventually displayed 0% remaining with the scheduled reset unchanged.
-
-The practical observation is that active work may continue across the point where the displayed weekly allowance reaches zero rather than being terminated immediately.
-
-This should **not** become part of the Work Engine's resource budget or scheduling strategy.
-
-Treat it as graceful service behavior:
-
-> **Benefit from quota grace if it occurs; never budget around it existing.**
-
-The run also clarified that two scarcity dimensions are distinct:
-
-- weekly allowance pressure: whether future work can be initiated/continued;
-- active context pressure: whether the current worker still has enough coherent reasoning context.
-
-At the end, the weekly allowance was 0% while the active Codex session still had roughly 81% of its 258K context window left. Weekly percentage therefore should not be treated as a precise token budget for the current worker.
-
-If Work Engine ever receives resource-state awareness, it should be a coarse route-selection/resumability signal only. It must never weaken acceptance conditions.
-
----
-
-## 11. Context persistence is becoming a general optimization pattern
-
-Several discoveries from this run point to the same deeper principle:
-
-> **Do not repeatedly pay to reacquire knowledge that remains valid, but do not preserve context whose freshness or independence is the reason it exists.**
+This is resident information that grows the active builder context.
 
 Examples:
 
-- **Builder:** persistent across the slice because accumulated implementation context is durable and useful.
-- **Independent reviewer:** fresh at episode start for independence; persistent through remediation because its own review context remains valid.
-- **Repository scouts:** disposable when their exploratory history is low-durability; return bounded evidence packets.
-- **Chrome Vision:** persistent transport, disposable/bounded observation packets.
-- **Receipts:** persist exact bytes outside model context once produced.
-- **Handoffs:** persist compact durable conclusions, not raw exploration.
+- skill/reference bootstrap;
+- large source reads;
+- tool/interface descriptions;
+- accumulated implementation state;
+- direct repository exploration.
 
-This is a more precise optimization target than simply "use fewer tokens" or "use more agents."
+Effect:
+
+> threatens context capacity, coherence, and compaction.
+
+Observed:
+
+- ~78% context occupancy before adversarial review;
+- ~88% peak context occupancy.
+
+## 3.2 Context replay
+
+Every new model turn reprocesses the existing large prefix, even when almost all of it is cached.
+
+Examples:
+
+- subprocess completion/poll turns;
+- repeated wakeups;
+- small follow-up actions late in a large session.
+
+Effect:
+
+> token/latency/turn cost without necessarily increasing resident context.
+
+Observed polling/wait cost:
+
+```text
+poll/wait turns:             28
+mean input per turn:    ~142,673
+replayed input:       ~3,994,862
+share of builder input:    ~17.9%
+```
+
+Polling did **not** cause the context occupancy that led to compaction. It belongs to execution/turn economics, not the compaction causal chain.
+
+## 3.3 Disposable external reasoning
+
+This includes Claude repository evidence and independent review.
+
+Recorded provider totals:
+
+```text
+provider output:           67,699
+provider thinking:         31,401
+provider cache reads:   3,192,067
+provider cost:            $4.1001
+provider wall time:       719.922s
+```
+
+This is where repo-search and persistent review can help.
+
+## 3.4 Artifact lifecycle
+
+This is reasoning spent creating, reconstructing, validating, or recovering durable artifacts that infrastructure could preserve.
+
+The receipt episode is the clearest example.
+
+Measured receipt production + persistence episode:
+
+```text
+input tokens:       ~736,370
+output tokens:       12,845
+reasoning tokens:     2,041
+```
+
+`12,845 / 60,673 ≈ 21.2%`
+
+So roughly 21% of builder output for the slice was spent producing/persisting the receipt.
 
 ---
 
-## 12. What should *not* be changed based on this run
+# 4. Builder-side spend is a first-class optimization target
 
-The run provides no evidence that the new decision policy should be tightened into more procedure. In fact, the adaptive behavior was one of the strongest successes.
+The terminal receipt left builder metrics as `null`, but the raw rollout contains running telemetry.
 
-Do not respond to these findings by adding a mandatory reviewer ladder, rigid evidence-agent sequence, fixed query plan, or large new supervisor checklist.
+Observed builder totals:
 
-The following choices were validated by this run and should remain unless later evidence contradicts them:
+```text
+builder input:             22,379,428
+builder cached input:      21,944,320   (~98%)
+builder output:                60,673
+builder reasoning:             11,550
+peak context:                 226,461   (~88% of 258,400)
+observed builder turns:             9
+wall clock:                    ~2,605s   (~43.4 min)
+```
 
-- objective + invariants + acceptance conditions are authoritative;
-- routes remain revisable hypotheses;
-- Sol low is a credible default builder effort when evidence capabilities bound the problem;
-- independent review is conditional on consequence/uncertainty, not universally removed for cost;
-- deterministic gates establish observed test state;
-- real UI inspection is proportional to what can be inspected truthfully without corrupting user state;
-- review findings must be repaired and revalidated when they expose real semantic defects;
-- missing metrics remain null rather than invented;
-- user attention is reserved for actual judgment/authority boundaries, not ordinary route corrections.
+Builder output was approximately 47% of combined builder + provider output:
 
----
+```text
+60,673 / (60,673 + 67,699) ≈ 47%
+```
 
-## 13. Prioritized follow-up actions
+Important precision:
 
-### P0 - Make receipt persistence mechanical
+> Do **not** convert this directly into a dollar-equivalence claim.
 
-Stage terminal receipts outside model context before validation and append. Ensure exact bytes survive compaction/retry. Add regression coverage for the two observed schema failures.
+Provider dollars and Codex builder/cache economics are not directly comparable from this log.
 
-### P0 - Audit schema/skill correspondence
+The correct conclusion is:
 
-Check receipt docs, schema docs, validator behavior, examples, enum names, provider provenance, and version references as one correspondence seam. Clarify or rename `replacement_route` semantics.
-
-### P1 - Persist reviewer context through remediation
-
-Keep the initial independent review fresh, then reuse that isolated reviewer until acceptance or material boundary change. Measure token, cache-read, cost, wall-time, and finding-quality differences against fresh-review-every-round runs.
-
-### P1 - Complete and benchmark `repo-search`
-
-Move routine repository evidence away from the legacy combined Claude evidence/review provider. Preserve independent model review as a separate capability. Compare total accepted-slice cost and defect yield, not call count alone.
-
-### P1 - Verify Chrome Vision broker lifecycle
-
-Determine whether the observed background terminals correspond to live broker/session accumulation. Fix only if actual transport reuse is failing.
-
-### P2 - Keep full deterministic output out of builder context
-
-Route full suites and other high-volume mechanical checks through `run_gate.py`; expose raw failure output only when diagnosis requires it.
-
-### P2 - Capture builder-side usage when available
-
-Populate builder token/context/wall-time metrics from observed system data if a reliable source exists. Do not infer missing values.
-
-### P2 - Treat quota pressure only as coarse state
-
-If quota awareness is eventually exposed to the decision policy, use it to favor cheaper credible routes and clean resumability. Never treat displayed remaining percentage as precise available compute and never lower the acceptance bar.
+> **External providers are not the only major reasoning consumer. Persistent builder context and output must be measured and optimized too.**
 
 ---
 
-## 14. Experiments worth running over the next 20-30 slices
+# 5. Builder metrics should be derived after completion
 
-Do not optimize from this single run alone. Use it to define measurements.
+The receipt reported:
+
+```text
+builder_turn_count: 4
+```
+
+The complete rollout shows 9 builder turns.
+
+Four was apparently truthful when the receipt was authored. Five later turns occurred during persistence/recovery.
+
+This exposes a structural impossibility:
+
+> **A builder cannot accurately report final metrics about work that happens after it produces the report.**
+
+Therefore operational builder metrics should be harvested outside the builder after its terminal event:
+
+- input tokens;
+- cached input;
+- output tokens;
+- reasoning tokens;
+- peak context;
+- turn count;
+- wall clock;
+- tool-call count;
+- tool-output volume;
+- repository-access categories.
+
+These should be deterministic telemetry, not model-authored claims.
+
+---
+
+# 6. Context growth is a P0 concern
+
+The builder reached roughly 78% occupancy **before adversarial review began**.
+
+Therefore review did not create the context crisis.
+
+The largest resident-context contributors were instead:
+
+- large batched `sed`/source reads;
+- initial skill/reference loading;
+- Codebase Memory capability/tool discovery;
+- repository instructions;
+- roadmap/design documents;
+- repeated direct repository exploration;
+- normal implementation evidence.
+
+Raw analysis found roughly 745 KB of tool output across ~155 outputs, with the largest handful accounting for a disproportionate share.
+
+The direct `npm test` call was **not** a major context problem because the harness limited returned model-visible output to ~3K tokens.
+
+The right question is:
+
+> **Which information must remain resident for the whole slice, and which can be loaded only when the current phase/decision needs it?**
+
+Investigate before imposing limits.
+
+Potential experiments:
+
+- phase-lazy loading of receipt/reference docs;
+- smaller skill bootstrap;
+- less tool-interface discovery;
+- avoid repeated large batched source reads;
+- track repeated ranges;
+- measure repo-search effect on builder-resident evidence.
+
+---
+
+# 7. Receipt persistence architecture is the clearest infrastructure defect
+
+Actual order:
+
+```text
+receipt authored
+→ task_complete
+→ context compaction
+→ first append attempt
+→ schema rejection
+→ second schema rejection
+→ session-log archaeology
+→ temporary receipt staging
+→ append succeeds
+```
+
+The receipt was gone from builder context **before the first append attempt**.
+
+So an append-retry wrapper is not enough.
+
+The durable artifact must leave model context at production time.
+
+The receipt was never lost from the system:
+
+- it existed in the task-complete payload;
+- it existed in the rollout log.
+
+The builder later searched its own transcript to recover it.
+
+That recovery was clever but should never be necessary.
+
+## Preferred architecture
+
+```text
+builder
+  ↓
+returns semantic outcome / durable decisions / evidence references
+  ↓
+task_complete captured durably
+  ↓
+deterministic metrics harvester reads rollout/tool telemetry
+  ↓
+deterministic receipt assembler
+  ↓
+schema validation
+  ↓
+atomic append
+```
+
+At minimum:
+
+```text
+builder authors receipt
+  ↓
+exact bytes staged immediately
+  ↓
+task completes
+  ↓
+supervisor validates/appends staged artifact
+```
+
+Compaction must never be able to destroy the only exact copy.
+
+---
+
+# 8. Receipt schema/docs have avoidable ambiguity
+
+Two schema failures occurred.
+
+## 8.1 Unsupported `compatibility`
+
+The builder added:
+
+```json
+{
+  "provider": "claude-codebase-memory",
+  "skill": "claude-recon-implementation",
+  "compatibility": "legacy-combined-evidence-and-review"
+}
+```
+
+The validator correctly rejected the extra key.
+
+The builder was trying to preserve a useful fact, suggesting either:
+
+- the closed identity shape was not salient enough; or
+- provider-specific provenance lacks an obvious legal home.
+
+Give provider-specific metadata one documented location.
+
+## 8.2 `replacement_route` invited the wrong interpretation
+
+The builder treated `replacement_route` as prose describing the new implementation approach.
+
+The validator expected a route enum such as:
+
+```text
+falsified-placement
+```
+
+Prefer:
+
+```text
+replacement_workflow_route
+```
+
+and, if prose is useful:
+
+```text
+replacement_plan_summary
+```
+
+## 8.3 Canonical schema ownership
+
+Audit:
+
+- `receipt-schema.md`;
+- builder receipt reference;
+- supervisor skill;
+- builder skill;
+- `append_metrics.py`;
+- examples/tests.
+
+Check for:
+
+- schema-version drift;
+- stale examples;
+- closed objects not clearly documented;
+- enum names that imply free text;
+- useful metadata with no legal home.
+
+Canonical examples should execute as validator fixtures.
+
+---
+
+# 9. Reviewer persistence through remediation is strongly supported
+
+Independent review totals:
+
+```text
+calls:                 3
+output tokens:    35,657
+thinking tokens:  21,718
+cache reads:   1,993,625
+cost:             $2.1483
+wall time:          386s
+```
+
+Recommended lifecycle:
+
+```text
+fresh isolated reviewer
+    ↓
+initial whole-slice review
+    ↓
+finding(s)
+    ↓
+builder repairs
+    ↓
+same reviewer verifies delta + original concern
+    ↓
+repeat bounded remediation if needed
+    ↓
+accept
+    ↓
+discard reviewer
+```
+
+Freshness matters for independence **from the builder**.
+
+Repeated amnesia between repair rounds does not create more meaningful independence.
+
+Start fresh again only when:
+
+- architecture/placement changes materially;
+- the review premise changes;
+- context becomes confused/oversized;
+- a genuinely new independent perspective is valuable.
+
+---
+
+# 10. Repo-search remains valuable, but benchmark total effect
+
+Repository-evidence provider totals:
+
+```text
+attempts:            4
+successful:          3
+infra failures:      1
+output tokens:  32,042
+thinking:        9,683
+cache reads:   1,198,442
+cost:           $1.9517
+wall time:       333.8s
+```
+
+Repo-search should reduce routine external repository reasoning and provide a cleaner evidence abstraction.
+
+But do not expect provider savings alone to predict total Work Engine savings.
+
+Benchmark:
+
+- provider calls/output/cost;
+- direct builder repository reads;
+- builder context growth;
+- total turns;
+- wall time;
+- review quality;
+- accepted-result quality.
+
+---
+
+# 11. Repository exploration outside evidence packets must be derived
+
+The receipt field:
+
+```text
+repository_exploration_outside_evidence_packets
+```
+
+was model-authored prose.
+
+The raw rollout shows substantial direct repository activity throughout planning and verification.
+
+That activity may have been justified.
+
+The problem is telemetry.
+
+If the architecture claims bounded evidence packets reduce durable builder exploration, the measure cannot be self-reported by the builder.
+
+Derive repository access from the rollout:
+
+```text
+repository access
+├── repo-search / bounded evidence capability
+├── independent-review repository access
+├── builder direct Codebase Memory
+├── builder exact-source follow-up
+└── other/unclassified direct exploration
+```
 
 Track:
 
-- accepted-slice end-to-end wall time;
-- builder effort level and escalations;
-- builder context usage when observable;
-- repository-evidence calls and external-provider cost;
-- review episode count versus review call count;
-- review findings by severity and whether they were genuinely task-caused;
-- review repair iterations;
-- late semantic rejections;
-- placement reconsiderations;
-- deterministic gate reruns;
-- UI inspection coverage and limitations;
-- metrics append failures/retries;
-- context compactions during active slices;
-- repeated evidence acquisition that did not change a decision;
-- defects discovered after acceptance.
-
-The most useful qualitative annotation remains:
-
-> **Why did it do that, and did the extra cost change the decision or increase trustworthy acceptance?**
-
-That question will reveal where the Work Engine needs another capability, where an existing capability is being overused, and where apparent expense is actually buying quality.
+- calls;
+- files/ranges;
+- bytes/tokens returned;
+- repeated ranges;
+- phase;
+- context contribution.
 
 ---
 
-## Final assessment
+# 12. Provider permission failure is a cheap, high-value fix
 
-This run did not expose a failed Work Engine design. It exposed a successful decision architecture sitting on top of several still-expensive mechanical seams.
+The first Claude call failed because the required permission mode was omitted.
 
-The builder adapted rather than obeying a brittle script. Independent review found two real defects. Validation remained truthful when live Detection inspection would have required unwanted user-state mutation. The system reached a strong accepted result while the builder remained at low reasoning effort.
-
-The remaining inefficiencies are unusually actionable:
+Later calls used:
 
 ```text
-knowledge reacquired unnecessarily  → persist bounded context
-repository retrieval uses judgment  → separate repo-search from review
-receipt exists only in model memory → stage exact artifact mechanically
-schema wording invites interpretation → tighten semantic ownership/names
-bulk deterministic output hits model → terminate it at run_gate
-persistent browser transport may duplicate → verify actual lifecycle
+--dangerously-skip-permissions
 ```
 
-The direction should therefore remain the same:
+This was the run's one recorded infrastructure failure, and permission failures have appeared in earlier runs too.
 
-> **Give the model clear objectives, invariants, consequences, and capable tools; let it choose the route. Then make the infrastructure cheap enough that it does not have to repeatedly pay for knowledge or mechanics it already owns.**
+If the documented invocation example still omits the flag:
 
-This run is strong evidence that the flexibility is producing useful behavior. The next phase should improve the seams around that behavior without proceduralizing it back out of existence.
+> fix the example and add deterministic provider preflight.
+
+This is exactly the kind of failure infrastructure should eliminate before production reasoning begins.
+
+---
+
+# 13. Chrome Vision: the full mystery is now mostly explained
+
+This was not one bug. It was an affordance/configuration seam.
+
+## 13.1 The builder did try the intended path first
+
+The builder explicitly said it was using the `chrome-vision` skill.
+
+It read the skill, which correctly said:
+
+- use the repository broker;
+- use bounded operations;
+- the broker speaks NDJSON over stdin/stdout.
+
+It then tried:
+
+```bash
+node scripts/site2json-chrome-vision.mjs --help
+```
+
+That returned exit code 0 but no useful output.
+
+So the first attempt was not a thrown error, but it was an ergonomic dead end.
+
+## 13.2 It discovered the Site2JSON adapter
+
+`scripts/site2json-chrome-vision.mjs` contains:
+
+- endpoint;
+- Site2JSON aliases;
+- extension name;
+- recovery command;
+- helper functions.
+
+But it is not an interactive broker CLI.
+
+## 13.3 It discovered the generic persistent broker
+
+The generic CLI:
+
+```text
+work-engine/skills/chrome-vision/scripts/chrome-vision.mjs
+```
+
+expects:
+
+```text
+chrome-vision <config.json>
+```
+
+It reads the config once, creates one `ChromeVisionBroker`, then remains alive consuming NDJSON requests from stdin.
+
+That is the intended persistent architecture.
+
+## 13.4 The repository had no ready-to-use runtime broker config
+
+The builder searched for a Chrome Vision config and found:
+
+- schema;
+- package metadata;
+- observation schema;
+
+but no actual runtime config file.
+
+The config schema requires:
+
+```json
+{
+  "version": 1,
+  "endpoint": "http://127.0.0.1:9222"
+}
+```
+
+with optional:
+
+- limits;
+- artifact directory;
+- target aliases.
+
+The Site2JSON adapter contains project configuration knowledge, but its profile shape is not directly the generic broker config shape.
+
+So the model faced:
+
+```text
+A. persistent generic broker
+   - correct architecture
+   - requires config
+   - no runtime config exists
+   - requires persistent stdin/process handling
+
+B. Site2JSON adapter
+   - knows project aliases/recovery
+   - not an interactive broker CLI
+   - --help yields nothing
+
+C. inline node -e
+   - import broker
+   - construct config inline
+   - request()
+   - works immediately
+```
+
+It chose C.
+
+## 13.5 Thirteen one-shot brokers were confirmed
+
+The log contains **13 separate `new ChromeVisionBroker(...)` constructions**, each in its own one-shot:
+
+```text
+node --input-type=module -e '...'
+```
+
+process.
+
+This matches the background terminals seen during the run.
+
+Persistence was structurally impossible in that invocation style.
+
+## 13.6 AGENTS.md contains legacy manual-CDP route gravity
+
+`AGENTS.md` correctly says generic observation belongs in Chrome Vision, but it also still contains the older manual CDP recovery recipe:
+
+- enumerate port 9222 targets;
+- identify page/service worker;
+- call `chrome.sidePanel.open(...)`;
+- reconnect manually.
+
+That old detailed recipe remains behaviorally salient.
+
+So the model received:
+
+```text
+new guidance:
+use chrome-vision
+
+old detailed fallback:
+here is exactly how to do CDP manually
+```
+
+When the high-level path had friction, it already had a lower-level recipe in working context.
+
+## 13.7 Correct Chrome Vision fix
+
+Do **not** add more broker lifecycle theory first.
+
+The immediate fix is:
+
+> **Make persistent Chrome Vision the easiest path.**
+
+Recommended:
+
+1. Create one obvious Site2JSON Chrome Vision entry point.
+2. Have it already know/derive the project config.
+3. Start or attach to one persistent broker host.
+4. Make request/reuse/release ergonomics obvious.
+5. Remove/de-emphasize one-shot broker examples.
+6. Remove the detailed old manual CDP recipe from always-resident AGENTS instructions; preserve it inside adapter/recovery docs/tests.
+
+Conceptually:
+
+```text
+site2json-chrome-vision start
+site2json-chrome-vision request '{...}'
+site2json-chrome-vision request '{...}'
+site2json-chrome-vision stop
+```
+
+or automatic start/reuse behind a single command.
+
+The lesson:
+
+> **When the intended abstraction has an incomplete seam, a capable model drops one level and completes the missing machinery itself.**
+
+---
+
+# 14. Background subprocess polling churn is confirmed
+
+Measured:
+
+```text
+poll/wait turns:        28
+mean replay input: ~142,673
+replayed input:   ~3,994,862
+share of builder input: ~17.9%
+```
+
+Important nuance:
+
+- this is primarily **turn/latency/replay cost**;
+- it is **not resident-context growth**;
+- it did **not** cause the compaction.
+
+The shape was also interesting:
+
+> roughly one wait/poll per backgrounded subprocess, not pathological repeated polling of a few jobs.
+
+So the problem is not “poll less often.”
+
+The problem is:
+
+> **Every backgrounded process currently creates another expensive large-context model turn when completion must be observed.**
+
+If the execution substrate supports it, prefer completion delivery that does not require a model turn merely to learn that the process finished.
+
+Measure before redesigning.
+
+---
+
+# 15. Direct `npm test` output is low priority
+
+The command generated a large TAP stream, but the harness had:
+
+```text
+max_output_tokens: 3000
+```
+
+Only roughly 3K tokens entered model context.
+
+Therefore wrapping every large command in `run_gate.py` is not currently a high-value optimization.
+
+Keep the general bounded-output principle, but focus on measured large context contributors instead.
+
+---
+
+# 16. Supervisor/builder metrics ownership deserves a seam check
+
+Intended ownership:
+
+```text
+builder → slice reasoning / implementation / validation / receipts
+supervisor → campaign control / durable metrics / continuation
+```
+
+Actual recovery:
+
+```text
+builder authors receipt
+→ compaction
+→ supervisor reactivates builder
+→ builder attempts/reconstructs/stages/appends metrics
+```
+
+This worked, but operational telemetry/persistence is probably better owned outside the builder.
+
+Reasons:
+
+- exact artifacts should survive builder context loss;
+- final builder metrics cannot be self-measured accurately;
+- persistence should not require reopening terminal reasoning.
+
+---
+
+# 17. Quota behavior: useful grace, never capacity
+
+The run began at roughly 1% weekly allowance remaining.
+
+The meter reached 100% used / 0% remaining while the active run continued for substantial additional work.
+
+This appears to be graceful continuation behavior for an already-active run.
+
+Operational invariant:
+
+> **Benefit from grace if it happens; never budget around grace existing.**
+
+Weekly remaining percentage is not a precise active-run compute budget.
+
+Do not build quota-exploitation logic into Work Engine.
+
+---
+
+# 18. Revised priorities
+
+## P0 — Fix receipt production/persistence architecture
+
+Why:
+
+- compaction happened before first append;
+- exact receipt existed only transiently in model context;
+- receipt episode consumed ~21% of builder output;
+- self-authored final metrics are stale by construction.
+
+Actions:
+
+- capture/stage semantic receipt at production/task-complete time;
+- preferably assemble final audit receipt deterministically after return;
+- harvest builder metrics from rollout telemetry;
+- validate before atomic append;
+- make retries independent of model memory.
+
+## P0 — Investigate/reduce builder context growth
+
+Why:
+
+- ~78% occupancy before review;
+- ~88% peak;
+- context pressure caused compaction;
+- ~22.4M builder input replayed over the run.
+
+Actions:
+
+- attribute context/tool output by source and phase;
+- inspect top contributors;
+- phase-lazy-load references where appropriate;
+- measure repeated source/range reads;
+- measure repo-search effect on resident builder evidence.
+
+Do not impose arbitrary limits first.
+
+## P0/P1 — Harvest builder metrics deterministically
+
+Record after terminal completion:
+
+- input/cached/output/reasoning;
+- peak context;
+- turns;
+- wall clock;
+- tool calls/output volume;
+- repository-access categories.
+
+## P1 — Audit receipt schema/docs
+
+- align schema versions;
+- remove ambiguous field names;
+- document provider-metadata home;
+- turn examples into validator fixtures.
+
+## P1 — Fix provider invocation/preflight
+
+- correct permission-mode example;
+- deterministic provider preflight;
+- eliminate known permission failures.
+
+## P1 — Persist reviewer context through remediation
+
+- first review fresh;
+- reuse same isolated reviewer through bounded fixes;
+- start fresh only after material premise/boundary/context change.
+
+## P1 — Complete and benchmark repo-search
+
+Measure total effect, not only Claude savings.
+
+## P1 — Fix Chrome Vision entry-point/config integration
+
+- one canonical Site2JSON command;
+- project config available/derived automatically;
+- persistent broker reuse is easiest route;
+- remove/de-emphasize lower-level one-shot/manual route;
+- move manual CDP recovery detail out of always-resident AGENTS.
+
+## P1/P2 — Derive repository-exploration telemetry
+
+Replace self-reported prose with rollout-derived measurement.
+
+## P2 — Reduce subprocess completion replay if measured worthwhile
+
+The current cost is real (~17.9% input replay), but it is execution-substrate overhead rather than context-growth cause.
+
+## P3 — Additional bulk-command wrapping
+
+Low measured value in this run.
+
+---
+
+# 19. Suggested measurements for future slices
+
+For each accepted slice, capture:
+
+```text
+quality
+- late semantic rejection
+- review findings
+- fix rounds
+- tests
+- real UI inspection where applicable
+
+builder
+- input
+- cached input
+- output
+- reasoning
+- peak context
+- turns
+- wall clock
+- tool output bytes/tokens
+
+repository evidence
+- repo-search / direct CBM / source-read calls
+- files/ranges
+- repeated ranges
+- builder-direct exploration
+
+review
+- fresh review episodes
+- remediation continuations
+- output/cache/cost
+- findings by severity
+
+browser evidence
+- broker starts
+- broker reuses
+- one-shot processes
+- Chrome reconnects/restarts
+- observation packet count
+
+infrastructure
+- provider failures
+- background subprocess count
+- wait/completion turns
+- compactions
+- receipt production/persistence cost
+```
+
+Compare before/after:
+
+- repo-search;
+- persistent reviewer remediation;
+- phase-lazy reference loading;
+- deterministic receipt assembly;
+- corrected Chrome Vision persistent entry point.
+
+Success metric:
+
+> **lowest total cost to a trustworthy accepted result without increased late defects or weakened evidence.**
+
+---
+
+# 20. Final assessment
+
+This run is evidence that the Work Engine redesign was directionally right.
+
+The model:
+
+- revised a falsified route;
+- preserved valid evidence;
+- used different capabilities intelligently;
+- stayed at low reasoning effort;
+- selected independent review where justified;
+- fixed real defects found by that review;
+- passed deterministic validation;
+- inspected the real UI;
+- recovered from compaction and schema failures without corrupting the durable record.
+
+The remaining failures cluster around infrastructure:
+
+- context accumulation;
+- context replay;
+- exact-artifact lifetime;
+- self-measurement;
+- schema ergonomics;
+- reviewer reconstruction;
+- provider invocation hygiene;
+- repository-access telemetry;
+- Chrome Vision configuration/entry-point affordance;
+- background subprocess completion cost.
+
+The decision system itself should remain flexible.
+
+> **Do not add more rules to solve infrastructure problems. Make the correct, efficient capability path easier than the lower-level workaround.**
