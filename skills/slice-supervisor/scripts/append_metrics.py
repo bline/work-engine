@@ -30,6 +30,19 @@ PROHIBITED_KEYS = {
     "raw_transcript", "transcript", "chain_of_thought", "raw_test_output",
     "test_log", "debug_log", "diff", "patch", "source_excerpt",
 }
+EVIDENCE_COUNT_FIELDS = {
+    "attempts", "successful", "failed", "timed_out", "infrastructure_failed",
+}
+EVIDENCE_MEASUREMENT_FIELDS = {
+    "input_tokens", "cache_creation_tokens", "cache_read_tokens",
+    "output_tokens", "thinking_tokens", "cost_usd", "wall_clock_seconds",
+}
+PROVIDER_FAILURE_REASONS = {
+    "network", "timeout", "permission", "protocol", "quota", "other",
+}
+FALLBACK_REASONS = {
+    "index_unavailable", "coverage_gap", "graph_ambiguity", "provider_failure",
+}
 
 
 def fail(message: str) -> None:
@@ -57,8 +70,8 @@ def validate(record: Any) -> dict[str, Any]:
             fail(f"{key} must be {expected.__name__}")
     if "stop_reason" not in record or not isinstance(record["stop_reason"], (str, type(None))):
         fail("stop_reason must be a string or null")
-    if record["schema_version"] not in {1, 2, 3}:
-        fail("schema_version must be 1, 2, or 3")
+    if record["schema_version"] not in {1, 2, 3, 4}:
+        fail("schema_version must be 1, 2, 3, or 4")
     if record["slice_number"] < 1:
         fail("slice_number must be positive")
     if record["status"] not in {"accepted", "stopped", "failed"}:
@@ -73,8 +86,10 @@ def validate(record: Any) -> dict[str, Any]:
         fail("stopped/failed receipts require a stop_reason")
     if record["schema_version"] >= 2:
         validate_engine_record(record)
-    if record["schema_version"] == 3:
+    if record["schema_version"] >= 3:
         validate_placement_record(record)
+    if record["schema_version"] >= 4:
+        validate_evidence_provenance(record)
     for key in ("run_id", "timestamp", "slice_title", "slice_goal", "outcome"):
         if not record[key].strip():
             fail(f"{key} must not be empty")
@@ -205,6 +220,194 @@ def validate_placement_record(record: dict[str, Any]) -> None:
             fail("an accepted plan requires a vertical_semantic_test")
     if record["status"] == "accepted" and record["vertical_semantic_test_passed"] is not True:
         fail("an accepted slice requires a passing vertical semantic test")
+
+
+def require_nonnegative_integer(value: Any, path: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        fail(f"{path} must be a nonnegative integer")
+
+
+def require_nullable_measurement(value: Any, path: str) -> None:
+    if value is None:
+        return
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        fail(f"{path} must be a nonnegative number or null")
+
+
+def require_exact_keys(value: dict[str, Any], expected: set[str], path: str) -> None:
+    missing = expected - set(value)
+    unknown = set(value) - expected
+    if missing:
+        fail(f"{path} missing keys: {', '.join(sorted(missing))}")
+    if unknown:
+        fail(f"{path} has unknown keys: {', '.join(sorted(unknown))}")
+
+
+def validate_evidence_provenance(record: dict[str, Any]) -> None:
+    metrics = record["worker_metrics"]
+    required = {
+        "workflow_route": str,
+        "route_revisions": list,
+        "validation_breadth": dict,
+        "provider_successful_calls": int,
+        "provider_failed_calls": int,
+        "provider_timed_out_calls": int,
+        "provider_infrastructure_failed_calls": int,
+        "evidence_mode_metrics": dict,
+        "provider_failure_reasons": dict,
+        "fallback_reason_counts": dict,
+        "fallbacks": list,
+    }
+    for key, expected in required.items():
+        if key not in metrics or not isinstance(metrics[key], expected):
+            fail(f"worker_metrics.{key} must be {expected.__name__}")
+
+    provider_count_fields = {
+        "provider_successful_calls", "provider_failed_calls",
+        "provider_timed_out_calls", "provider_infrastructure_failed_calls",
+    }
+    for field in provider_count_fields:
+        require_nonnegative_integer(metrics[field], f"worker_metrics.{field}")
+
+    if metrics["workflow_route"] not in {"direct", "falsified-placement"}:
+        fail("worker_metrics.workflow_route must be direct or falsified-placement")
+
+    revision_fields = {
+        "failed_premise", "stale_decisions", "preserved_evidence",
+        "replacement_route", "reason",
+    }
+    for index, revision in enumerate(metrics["route_revisions"]):
+        path = f"worker_metrics.route_revisions[{index}]"
+        if not isinstance(revision, dict):
+            fail(f"{path} must be an object")
+        require_exact_keys(revision, revision_fields, path)
+        for field in ("failed_premise", "reason"):
+            if not isinstance(revision[field], str) or not revision[field].strip():
+                fail(f"{path}.{field} must be a nonempty string")
+        for field in ("stale_decisions", "preserved_evidence"):
+            if not isinstance(revision[field], list) or not all(
+                isinstance(item, str) and item.strip() for item in revision[field]
+            ):
+                fail(f"{path}.{field} must contain nonempty strings")
+        if revision["replacement_route"] not in {"direct", "falsified-placement"}:
+            fail(f"{path}.replacement_route is invalid")
+
+    breadth = metrics["validation_breadth"]
+    breadth_fields = {"selected_stages", "omitted_optional_stages", "rationale"}
+    require_exact_keys(
+        breadth, breadth_fields, "worker_metrics.validation_breadth"
+    )
+    selected = breadth["selected_stages"]
+    if not isinstance(selected, list) or not selected or not all(
+        isinstance(stage, str) and stage.strip() for stage in selected
+    ):
+        fail("worker_metrics.validation_breadth.selected_stages must contain nonempty strings")
+    if len(selected) != len(set(selected)):
+        fail("worker_metrics.validation_breadth.selected_stages must not contain duplicates")
+    if not isinstance(breadth["rationale"], str) or not breadth["rationale"].strip():
+        fail("worker_metrics.validation_breadth.rationale must be a nonempty string")
+    omitted = breadth["omitted_optional_stages"]
+    if not isinstance(omitted, list):
+        fail("worker_metrics.validation_breadth.omitted_optional_stages must be an array")
+    omitted_names: list[str] = []
+    for index, omission in enumerate(omitted):
+        path = f"worker_metrics.validation_breadth.omitted_optional_stages[{index}]"
+        if not isinstance(omission, dict):
+            fail(f"{path} must be an object")
+        require_exact_keys(omission, {"stage", "reason"}, path)
+        for field in ("stage", "reason"):
+            if not isinstance(omission[field], str) or not omission[field].strip():
+                fail(f"{path}.{field} must be a nonempty string")
+        omitted_names.append(omission["stage"])
+    if len(omitted_names) != len(set(omitted_names)):
+        fail("worker_metrics.validation_breadth omitted stages must not contain duplicates")
+    overlap = set(selected) & set(omitted_names)
+    if overlap:
+        fail("worker_metrics.validation_breadth stages cannot be selected and omitted")
+
+    failure_reasons = metrics["provider_failure_reasons"]
+    require_exact_keys(
+        failure_reasons, PROVIDER_FAILURE_REASONS,
+        "worker_metrics.provider_failure_reasons",
+    )
+    for reason, count in failure_reasons.items():
+        require_nonnegative_integer(
+            count, f"worker_metrics.provider_failure_reasons.{reason}"
+        )
+    provider_failures = sum(
+        metrics[field]
+        for field in (
+            "provider_failed_calls", "provider_timed_out_calls",
+            "provider_infrastructure_failed_calls",
+        )
+    )
+    if sum(failure_reasons.values()) != provider_failures:
+        fail(
+            "worker_metrics.provider_failure_reasons must classify every "
+            "failed, timed-out, or infrastructure-failed provider call"
+        )
+
+    fallback_counts = metrics["fallback_reason_counts"]
+    require_exact_keys(
+        fallback_counts, FALLBACK_REASONS,
+        "worker_metrics.fallback_reason_counts",
+    )
+    for reason, count in fallback_counts.items():
+        require_nonnegative_integer(
+            count, f"worker_metrics.fallback_reason_counts.{reason}"
+        )
+
+    mode_fields = EVIDENCE_COUNT_FIELDS | EVIDENCE_MEASUREMENT_FIELDS
+    for mode, values in metrics["evidence_mode_metrics"].items():
+        if not isinstance(mode, str) or not mode.strip():
+            fail("worker_metrics.evidence_mode_metrics keys must be nonempty strings")
+        if not isinstance(values, dict):
+            fail(f"worker_metrics.evidence_mode_metrics.{mode} must be an object")
+        path = f"worker_metrics.evidence_mode_metrics.{mode}"
+        require_exact_keys(values, mode_fields, path)
+        for field in EVIDENCE_COUNT_FIELDS:
+            require_nonnegative_integer(values[field], f"{path}.{field}")
+        outcomes = sum(
+            values[field]
+            for field in EVIDENCE_COUNT_FIELDS
+            if field != "attempts"
+        )
+        if outcomes != values["attempts"]:
+            fail(f"{path} outcome counts must sum to attempts")
+        for field in EVIDENCE_MEASUREMENT_FIELDS:
+            require_nullable_measurement(values[field], f"{path}.{field}")
+
+    observed_fallback_counts = {reason: 0 for reason in FALLBACK_REASONS}
+    failure_fallback_counts = {reason: 0 for reason in PROVIDER_FAILURE_REASONS}
+    event_fields = {"from_mode", "to_mode", "stage", "reason", "failure_kind"}
+    for index, event in enumerate(metrics["fallbacks"]):
+        path = f"worker_metrics.fallbacks[{index}]"
+        if not isinstance(event, dict):
+            fail(f"{path} must be an object")
+        require_exact_keys(event, event_fields, path)
+        for field in ("from_mode", "to_mode", "stage"):
+            if not isinstance(event[field], str) or not event[field].strip():
+                fail(f"{path}.{field} must be a nonempty string")
+        reason = event["reason"]
+        if reason not in FALLBACK_REASONS:
+            fail(f"{path}.reason is invalid")
+        observed_fallback_counts[reason] += 1
+        failure_kind = event["failure_kind"]
+        if reason == "provider_failure":
+            if failure_kind not in PROVIDER_FAILURE_REASONS:
+                fail(f"{path}.failure_kind is required for provider_failure")
+            failure_fallback_counts[failure_kind] += 1
+        elif failure_kind is not None:
+            fail(f"{path}.failure_kind must be null unless reason is provider_failure")
+
+    if fallback_counts != observed_fallback_counts:
+        fail("worker_metrics.fallback_reason_counts must match fallbacks")
+    for reason, count in failure_fallback_counts.items():
+        if count > failure_reasons[reason]:
+            fail(
+                "worker_metrics provider_failure fallback counts must not exceed "
+                "provider_failure_reasons"
+            )
 
 
 def load_record(args: argparse.Namespace) -> dict[str, Any]:

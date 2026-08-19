@@ -9,7 +9,7 @@ Act as the engineering adapter for one coherent slice. Do not decompose the slic
 
 The caller remains the supervisor. It owns the campaign configuration, plan acceptance, limits, durable metrics, continuation, and human escalation; it must not inspect or implement repository work.
 
-Read the effective work-engine configuration. This adapter supports engineering campaigns whose validation requirements can be mapped to repository checks, freshness checks, visual inspection, and adversarial review. Before planning, explicitly reject unsupported validation requirements or a non-engineering objective. Never silently downgrade a gate. Normalize provider metrics by semantic role while preserving provider-native measurements in `additional_metrics`.
+Read the effective work-engine configuration and [references/decision-policy.md](references/decision-policy.md) completely. This adapter supports engineering campaigns whose validation requirements can be mapped to repository checks, freshness checks, visual inspection, and adversarial review. Before planning, explicitly reject unsupported validation requirements or a non-engineering objective. Never silently downgrade a gate. Normalize provider metrics by semantic role while preserving provider-native measurements in `additional_metrics`.
 
 Keep invariants, acceptance conditions, routes, and recovery decisions distinct. Invariants and explicit configuration remain binding. Select an evidence and validation route proportionate to the slice instead of treating every available stage as mandatory. When evidence invalidates a premise, preserve applicable observations, mark dependent decisions stale, revise the route, and return for renewed plan acceptance. Do not turn a recoverable route correction into either silent scope expansion or automatic failure.
 
@@ -36,13 +36,18 @@ Give the builder only:
 
 Before invoking repository evidence, resolve the builder context with
 `scripts/resolve_provider.py`. The default provider is claude-codebase-memory,
-backed by $claude-recon-implementation. Treat Codebase Memory as the primary
-evidence capability and use $codebase-memory to understand and apply the
-capabilities it currently exposes. Select the evidence route dynamically from
-the objective, repository state, available graph capabilities, coverage, and
-observed uncertainty. Supplement graph evidence with targeted repository
-evidence when needed to establish trustworthy claims; do not treat current tool
-limitations or today's preferred query sequence as permanent workflow law.
+backed by $claude-recon-implementation. Treat Codebase Memory as the current
+primary indexed-structure capability and use $codebase-memory to learn and
+apply the interface it currently exposes; do not copy individual operation
+names or today's preferred query sequence into this durable role contract.
+Select indexed structural evidence or targeted direct source observation for
+each claim from the objective, repository state, available capability classes,
+coverage, and observed uncertainty. Prefer indexed evidence for relationships
+the current interface can establish. Use direct source observation for literal
+content, runtime or presentation details, stale or incomplete coverage,
+unresolved graph ambiguity, or claims the current index cannot establish.
+Record the actual evidence mode and fallback reason. Current interface limits
+are observed constraints, not permanent workflow law.
 
 claude-filesystem remains an explicitly selectable filesystem-first provider.
 Provider identity and evidence-skill identity remain separate provenance and
@@ -105,7 +110,7 @@ python3 scripts/run_gate.py --manifest-json \
 
 If a deterministic check fails, diagnose locally or use the configured evidence skill's compact failure-diagnosis path when independence or context isolation adds value, then fix and rerun affected checks. Perform fresh adversarial review when configured or warranted by the profile, evaluate findings, and implement valid in-scope fixes. Finish with the checks needed to prove the final state; repeat the full suite only when configured or when fixes changed its risk surface.
 
-Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Do not return raw transcripts, diffs, source excerpts, or test logs.
+Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Partition provider effort by evidence mode and preserve compact failure and fallback provenance as required by the audit contract. Do not return raw transcripts, diffs, source excerpts, or test logs.
 
 The supervisor may authorize implementation through gate in one follow-up only when the effective config sets `approval.uninterrupted_after_plan: true`. Plan acceptance and separate phase accounting remain mandatory.
 

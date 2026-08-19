@@ -7,7 +7,7 @@ description: Run a declaratively configured, evidence-driven work campaign throu
 
 Supervise the work engine; do not perform campaign work. Keep the parent context limited to the effective campaign configuration, lifecycle state, concise receipts, limits, and continuation decisions. Delegate inspection, reasoning, mutation, and validation to one persistent configured builder per slice.
 
-Before starting, read [references/work-engine-config.md](references/work-engine-config.md) and [references/receipt-schema.md](references/receipt-schema.md) completely. Then read the configured builder skill and its receipt contract completely. The builder must satisfy the adapter contract in the configuration reference; stop on an unsupported capability instead of silently weakening the campaign.
+Before starting, read [references/work-engine-config.md](references/work-engine-config.md) and [references/receipt-schema.md](references/receipt-schema.md) completely. Then read the configured builder skill, the decision policy it owns, and its receipt contract completely. The builder must satisfy the adapter contract in the configuration reference; stop on an unsupported capability instead of silently weakening the campaign.
 
 ## Preserve invariants; adapt the route
 
@@ -99,7 +99,7 @@ python3 work-engine/skills/slice-supervisor/scripts/append_metrics.py \
   --path <configured-metrics-path> --record-json '<audit-receipt>'
 ```
 
-The script validates and locks the audit append. Record the effective engine configuration, placement proof, and provenance as required by schema version 3. Preserve unavailable values as `null` and flexible builder metrics inside their namespaced objects. Correct rejected audit receipts from actual evidence; never pad them with guesses. Never append the compact handoff. If the user explicitly configured a null metrics path, retain both receipt views in supervisor state for the final report and state that no durable record was written.
+The script validates and locks the audit append. Record the effective engine configuration, placement proof, and evidence-routing provenance as required by schema version 4. Preserve unavailable measurements as `null`, zero counts as zero, and flexible provider-native metrics inside their namespaced objects. Correct rejected audit receipts from actual evidence; never pad them with guesses. Never append the compact handoff. If the user explicitly configured a null metrics path, retain both receipt views in supervisor state for the final report and state that no durable record was written.
 
 ## Decide whether to continue
 

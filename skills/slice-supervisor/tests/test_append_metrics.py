@@ -53,7 +53,7 @@ def base_record(version: int) -> dict[str, object]:
                 "more_in_scope_work_remains": None,
             }
         )
-    if version == 3:
+    if version >= 3:
         record.update(
             {
                 "placement_certificate": None,
@@ -64,17 +64,47 @@ def base_record(version: int) -> dict[str, object]:
                 "vertical_semantic_test_passed": None,
             }
         )
+    if version >= 4:
+        record["worker_metrics"] = {
+            "workflow_route": "direct",
+            "route_revisions": [],
+            "validation_breadth": {
+                "selected_stages": ["semantic_proof"],
+                "omitted_optional_stages": [],
+                "rationale": "The fixture exercises only receipt validation.",
+            },
+            "provider_successful_calls": 0,
+            "provider_failed_calls": 0,
+            "provider_timed_out_calls": 0,
+            "provider_infrastructure_failed_calls": 0,
+            "evidence_mode_metrics": {},
+            "provider_failure_reasons": {
+                "network": 0,
+                "timeout": 0,
+                "permission": 0,
+                "protocol": 0,
+                "quota": 0,
+                "other": 0,
+            },
+            "fallback_reason_counts": {
+                "index_unavailable": 0,
+                "coverage_gap": 0,
+                "graph_ambiguity": 0,
+                "provider_failure": 0,
+            },
+            "fallbacks": [],
+        }
     return record
 
 
 class AppendMetricsCompatibilityTest(unittest.TestCase):
     def test_accepts_historical_and_current_schema_versions(self) -> None:
-        for version in (1, 2, 3):
+        for version in (1, 2, 3, 4):
             with self.subTest(version=version):
                 self.assertEqual(version, APPEND_METRICS.validate(base_record(version))["schema_version"])
 
-    def test_accepted_v3_requires_confirmed_placement_and_vertical_proof(self) -> None:
-        record = base_record(3)
+    def test_accepted_v4_requires_confirmed_placement_and_vertical_proof(self) -> None:
+        record = base_record(4)
         record.update(
             {
                 "status": "accepted",
@@ -108,11 +138,132 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             APPEND_METRICS.validate(handoff)
 
     def test_audit_identity_fields_match_durable_schema(self) -> None:
-        audit = base_record(3)
+        audit = base_record(4)
         self.assertEqual("Contract test", audit["slice_title"])
         self.assertEqual("Prove receipt compatibility", audit["slice_goal"])
         self.assertNotIn("slice_statement", audit)
-        self.assertEqual(3, APPEND_METRICS.validate(audit)["schema_version"])
+        self.assertEqual(4, APPEND_METRICS.validate(audit)["schema_version"])
+
+    def test_v4_requires_evidence_provenance(self) -> None:
+        record = base_record(4)
+        del record["worker_metrics"]["fallbacks"]
+        with self.assertRaisesRegex(ValueError, "worker_metrics.fallbacks"):
+            APPEND_METRICS.validate(record)
+
+    def test_v4_accepts_partitioned_modes_and_provider_failure_fallback(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"] = {
+            "workflow_route": "falsified-placement",
+            "route_revisions": [],
+            "validation_breadth": {
+                "selected_stages": ["semantic_proof", "focused_checks"],
+                "omitted_optional_stages": [
+                    {
+                        "stage": "full_suite",
+                        "reason": "The fixture has no repository runtime surface.",
+                    }
+                ],
+                "rationale": "The fixture proves partitioned provenance validation.",
+            },
+            "provider_successful_calls": 1,
+            "provider_failed_calls": 0,
+            "provider_timed_out_calls": 1,
+            "provider_infrastructure_failed_calls": 0,
+            "evidence_mode_metrics": {
+                "indexed_structure": {
+                    "attempts": 2,
+                    "successful": 1,
+                    "failed": 0,
+                    "timed_out": 1,
+                    "infrastructure_failed": 0,
+                    "input_tokens": 10,
+                    "cache_creation_tokens": 20,
+                    "cache_read_tokens": 30,
+                    "output_tokens": 40,
+                    "thinking_tokens": 5,
+                    "cost_usd": 0.25,
+                    "wall_clock_seconds": 12.5,
+                },
+                "direct_source": {
+                    "attempts": 1,
+                    "successful": 1,
+                    "failed": 0,
+                    "timed_out": 0,
+                    "infrastructure_failed": 0,
+                    "input_tokens": None,
+                    "cache_creation_tokens": None,
+                    "cache_read_tokens": None,
+                    "output_tokens": None,
+                    "thinking_tokens": None,
+                    "cost_usd": None,
+                    "wall_clock_seconds": 1.0,
+                },
+            },
+            "provider_failure_reasons": {
+                "network": 0,
+                "timeout": 1,
+                "permission": 0,
+                "protocol": 0,
+                "quota": 0,
+                "other": 0,
+            },
+            "fallback_reason_counts": {
+                "index_unavailable": 0,
+                "coverage_gap": 0,
+                "graph_ambiguity": 0,
+                "provider_failure": 1,
+            },
+            "fallbacks": [
+                {
+                    "from_mode": "indexed_structure",
+                    "to_mode": "direct_source",
+                    "stage": "targeted_reconnaissance",
+                    "reason": "provider_failure",
+                    "failure_kind": "timeout",
+                }
+            ],
+        }
+        self.assertEqual(4, APPEND_METRICS.validate(record)["schema_version"])
+
+    def test_v4_distinguishes_healthy_coverage_fallback(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["fallback_reason_counts"]["coverage_gap"] = 1
+        record["worker_metrics"]["fallbacks"] = [
+            {
+                "from_mode": "indexed_structure",
+                "to_mode": "direct_source",
+                "stage": "placement",
+                "reason": "coverage_gap",
+                "failure_kind": None,
+            }
+        ]
+        self.assertEqual(4, APPEND_METRICS.validate(record)["schema_version"])
+
+    def test_v4_rejects_inconsistent_fallback_counts(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["fallback_reason_counts"]["coverage_gap"] = 1
+        with self.assertRaisesRegex(ValueError, "must match fallbacks"):
+            APPEND_METRICS.validate(record)
+
+    def test_v4_requires_route_and_validation_rationale(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["validation_breadth"]["rationale"] = ""
+        with self.assertRaisesRegex(ValueError, "rationale must be a nonempty string"):
+            APPEND_METRICS.validate(record)
+
+    def test_v4_rejects_selected_and_omitted_stage_overlap(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["validation_breadth"]["omitted_optional_stages"] = [
+            {"stage": "semantic_proof", "reason": "invalid fixture overlap"}
+        ]
+        with self.assertRaisesRegex(ValueError, "selected and omitted"):
+            APPEND_METRICS.validate(record)
+
+    def test_v4_requires_every_provider_failure_to_have_a_primary_cause(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["provider_infrastructure_failed_calls"] = 1
+        with self.assertRaisesRegex(ValueError, "must classify every"):
+            APPEND_METRICS.validate(record)
 
 
 if __name__ == "__main__":

@@ -13,12 +13,11 @@ builder:
     evidence_skill: "claude-recon-implementation"
 
 validation:
-  profile: "engineering-full"
+  profile: "engineering-proportional"
   requirements:
-    - focused_checks
-    - full_suite
-    - freshness_checks
-    - adversarial_review
+    - semantic_proof
+    - risk_proportional_checks
+    - workspace_integrity
 
 limits: {}
 

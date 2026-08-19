@@ -19,7 +19,7 @@ builder:
   context:
     evidence_skill: "claude-recon-implementation"
     reconnaissance:
-      provider: "claude-filesystem"
+      provider: "claude-codebase-memory"
 
 validation:
   profile: "engineering-proportional"
@@ -70,7 +70,7 @@ Defaults provide an adaptive engineering workflow while explicit full-gate campa
 - `builder.model`: `gpt-5.6-sol`
 - `builder.reasoning_effort`: `low`
 - `builder.context.evidence_skill`: `claude-recon-implementation`
-- `builder.context.reconnaissance.provider`: `claude-filesystem`
+- `builder.context.reconnaissance.provider`: `claude-codebase-memory`
 - `validation.profile`: `engineering-proportional`
 - `validation.requirements`: `semantic_proof`, `risk_proportional_checks`, `workspace_integrity`
 - `metrics.path`: `docs/ai-workflow-metrics.jsonl`
@@ -99,7 +99,7 @@ The supervisor must not emulate a missing capability. A builder-specific evidenc
 
 ## Provenance and amendments
 
-Store a compact `engine_config` in every schema-version-3 receipt:
+Store a compact `engine_config` in every schema-version-4 receipt:
 
 ```json
 {
@@ -107,7 +107,7 @@ Store a compact `engine_config` in every schema-version-3 receipt:
   "source": "inline_user_config",
   "objective": "Advance the Site2JSON roadmap",
   "work_source": {"kind": "file", "value": "docs/roadmap.md"},
-  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation", "reconnaissance": {"provider": "claude-filesystem"}}},
+  "builder": {"skill": "slice-builder", "model": "gpt-5.6-sol", "reasoning_effort": "low", "context": {"evidence_skill": "claude-recon-implementation", "reconnaissance": {"provider": "claude-codebase-memory"}}},
   "validation": {"profile": "engineering-proportional", "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"]},
   "metrics": {"path": "docs/ai-workflow-metrics.jsonl"},
   "limits": {},

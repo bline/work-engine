@@ -35,7 +35,10 @@ Use null for unavailable measurements:
 
 - `workflow_route`: `direct` or `falsified-placement`
 - `route_revisions`: array of objects naming the failed premise, stale decisions, preserved evidence, replacement route, and reason
-- `validation_breadth`: selected deterministic and independent-review stages plus reasons for optional omissions
+- `validation_breadth`: an object containing nonempty `selected_stages`,
+  `omitted_optional_stages` objects with a reason for each omission, and a
+  concise nonempty `rationale` grounded in consequence, reversibility,
+  uncertainty, changed boundaries, and repository instructions
 - `builder_model`
 - `initial_reasoning_effort`
 - `final_reasoning_effort`
@@ -85,7 +88,44 @@ These configured values are not proof of what ran. Keep them beside the actual m
 - `placement_reconsiderations`
 - `targeted_reconnaissance_calls`
 - `late_semantic_rejections`
+- `evidence_mode_metrics`: per-mode attempt outcomes and available token, cost,
+  and time measurements using stable capability-class names such as
+  `indexed_structure`, `direct_source`, and `builder_direct`
+- `provider_failure_reasons`: mutually exclusive primary-cause counts for
+  `network`, `timeout`, `permission`, `protocol`, `quota`, and `other`
+- `fallback_reason_counts`: counts for `index_unavailable`, `coverage_gap`,
+  `graph_ambiguity`, and `provider_failure`
+- `fallbacks`: compact route-transition objects containing `from_mode`,
+  `to_mode`, `stage`, `reason`, and `failure_kind`
 
 `evidence_recon_calls` is the total of initial non-supplemental evidence calls; report `placement_calls` and `targeted_reconnaissance_calls` as its stage-specific breakdown. Map the configured provider's measurements into these semantic fields when correspondence is direct. Preserve original provider-specific measurements under `additional_metrics` without speculatively renaming them. Measurements must come from tool or platform receipts; never estimate them.
+
+For schema version 4, provider call outcomes are mutually exclusive. Classify
+every unsuccessful call under exactly one of `failed`, `timed_out`, or
+`infrastructure_failed`, and give it exactly one primary cause in
+`provider_failure_reasons`. A timeout therefore contributes to `timed_out` and
+the `timeout` reason, not also to the generic failed count.
+
+Each evidence-mode object contains `attempts`, `successful`, `failed`,
+`timed_out`, `infrastructure_failed`, and, when available, `input_tokens`,
+`cache_creation_tokens`, `cache_read_tokens`, `output_tokens`,
+`thinking_tokens`, `cost_usd`, and `wall_clock_seconds`. Counts are nonnegative
+integers; unavailable measurements are null. Outcome counts must sum to
+`attempts`. Use capability classes rather than provider product names so a new
+interface can supply the same evidence mode without changing the durable
+schema. Provider and model identity remain separate fields.
+
+Fallback reasons record why the evidence route changed, not merely which tools
+ran. A healthy direct-source check caused by incomplete index coverage is
+`coverage_gap`; infrastructure overhead is `provider_failure`. For a provider
+failure, `failure_kind` is one of the primary-cause names above. It is null for
+all other fallback reasons. `fallback_reason_counts` must equal the events in
+`fallbacks`; do not increment several primary causes for one attempt.
+
+The principal efficiency comparison is total tokens, cost, and elapsed time to
+an accepted decision, partitioned by evidence mode, workflow route, placement
+risk, failure cause, and fallback reason. Interpret it beside placement
+conflicts, late semantic rejections, regressions, and review repairs; lower cost
+alone is not acceptance evidence.
 
 Route fields preserve the real decision process. Do not report an omitted optional stage as passed, and do not treat a route revision as a failure when the revised plan was renewed and accepted. Configured requirements still require explicit passing results.

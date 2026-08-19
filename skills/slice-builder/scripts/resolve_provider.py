@@ -15,7 +15,7 @@ PROVIDER_ADAPTERS = {
     DEFAULT_PROVIDER: DEFAULT_EVIDENCE_SKILL,
     "claude-filesystem": DEFAULT_EVIDENCE_SKILL,
 }
-PLANNED_PROVIDERS = {}
+PLANNED_PROVIDERS = {"codex-codebase-memory"}
 
 
 class ProviderResolutionError(ValueError):

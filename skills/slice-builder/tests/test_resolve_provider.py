@@ -13,11 +13,11 @@ SPEC.loader.exec_module(RESOLVER)
 
 
 class ResolveProviderTest(unittest.TestCase):
-    def test_default_resolves_to_claude_filesystem_adapter(self) -> None:
+    def test_default_resolves_to_claude_codebase_memory_adapter(self) -> None:
         self.assertEqual(
             RESOLVER.resolve_provider({}),
             {
-                "provider": "claude-filesystem",
+                "provider": "claude-codebase-memory",
                 "evidence_skill": "claude-recon-implementation",
             },
         )

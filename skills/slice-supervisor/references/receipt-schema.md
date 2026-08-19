@@ -1,12 +1,12 @@
 # Work-engine receipt schema
 
-Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 3 for campaigns using semantic-path placement evidence, whether the route was direct or used fresh falsification. The append script continues to accept historical version-1 and version-2 records, but new runs must not emit them.
+Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 4 for new campaigns. Version 4 preserves semantic-path placement evidence from version 3 and adds required evidence-mode, provider-failure, and fallback provenance. The append script continues to accept historical version-1 through version-3 records, but new runs must not emit them.
 
 ## Required common fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema_version` | integer | Use `3` for semantic-path configured campaigns. |
+| `schema_version` | integer | Use `4` for new configured campaigns. |
 | `run_id` | string | Nonempty identifier shared by every slice in one campaign. |
 | `slice_number` | integer | Positive, sequential within the run. |
 | `timestamp` | string | ISO 8601 timestamp with timezone. |
@@ -53,7 +53,47 @@ Include when available, using `null` otherwise:
 - slice wall-clock time
 - `anomalies`, `deferred_scope`, and `unresolved_concerns`
 
-Non-engineering builders may use different normalized fields inside `worker_metrics`. Preserve unknown producer keys there instead of promoting them speculatively.
+## Required version-4 evidence provenance
+
+`worker_metrics` must contain:
+
+- `workflow_route`, `route_revisions`, and `validation_breadth`, preserving the
+  route decision, recovery history, selected validation stages, explicitly
+  omitted optional stages and reasons, and a concise risk-based rationale;
+- `evidence_mode_metrics`, partitioning attempt outcomes and available token,
+  cost, and wall-clock measurements by capability class;
+- mutually exclusive `provider_successful_calls`, `provider_failed_calls`,
+  `provider_timed_out_calls`, and `provider_infrastructure_failed_calls` counts;
+- `provider_failure_reasons`, containing nonnegative counts for `network`,
+  `timeout`, `permission`, `protocol`, `quota`, and `other`;
+- `fallback_reason_counts`, containing nonnegative counts for
+  `index_unavailable`, `coverage_gap`, `graph_ambiguity`, and
+  `provider_failure`; and
+- `fallbacks`, the compact transition events from which fallback reason counts
+  are derived.
+
+Capability classes describe how evidence was obtained, not which product
+supplied it. Provider and model identity remain separate provenance. A fallback
+event records `from_mode`, `to_mode`, `stage`, `reason`, and `failure_kind`.
+`failure_kind` is required only for `provider_failure` and must otherwise be
+null. Counts must remain internally consistent. Use null for unavailable
+measurements; never use null when the observed count is zero.
+
+Version 4 treats successful, failed, timed-out, and infrastructure-failed
+provider-call counts as mutually exclusive outcomes. Every non-successful call
+has exactly one primary cause in `provider_failure_reasons`; the cause counts
+must equal the failed, timed-out, and infrastructure-failed call total.
+
+The validator checks that route and validation-breadth records are present and
+internally consistent. It does not replace the supervisor's procedural judgment
+about whether the selected breadth is adequate for the recorded consequence,
+uncertainty, reversibility, and placement risk.
+
+Non-engineering builders may add different normalized fields inside
+`worker_metrics`, but version-4 receipts still provide the common evidence
+provenance fields above, using empty objects, zero counts, and an empty fallback
+list when no repository-evidence attempt occurred. Preserve unknown producer
+keys instead of promoting them speculatively.
 
 ## Truth and safety rules
 

@@ -55,6 +55,8 @@ The current Work Engine already implements much of the pre-graph optimization fo
 - Claude is reserved for bounded reconnaissance, useful failure diagnosis, and fresh adversarial semantic review when configured or risk-justified;
 - `audit_receipt` and compact 300–800-token `handoff_receipt` are separate;
 - schema-version-3 audit receipts persist placement certificate/verdict/risk and rejected alternatives;
+- schema-version-4 audit receipts additionally partition evidence cost by
+  capability class and preserve provider-failure and fallback provenance;
 - the builder, evidence skill, supervisor, receipt schema, and gate runner have explicit contract ownership boundaries.
 
 Accordingly, Phases 1–4 below are retained as architectural requirements and regression criteria, not as greenfield implementation work. Phase 0 has useful historical baseline data but should continue accumulating comparable post-optimization measurements. The next new implementation work begins at Phase 5.
@@ -86,6 +88,7 @@ Record per slice:
 - supplemental recon calls;
 - provider input/cache/output/thinking tokens when available;
 - provider cost when available;
+- provider failure causes and evidence-mode fallback reasons;
 - files, ranges, and approximate lines retrieved;
 - recon output tokens;
 - context passed into the builder;
@@ -108,6 +111,8 @@ Calculate at least:
 - builder-context tokens introduced by reconnaissance;
 - supplemental calls per slice;
 - total model tokens per accepted semantic change;
+- total tokens and cost to an accepted decision partitioned by evidence mode,
+  failure cause, route type, and placement risk;
 - rework tokens after adversarial review;
 - placement failure rate;
 - late semantic rejection rate.
@@ -308,6 +313,8 @@ Avoid independently restating complete contracts across installable skills.
 Use ownership rather than a single physically shared file:
 
 - reconnaissance skill owns provider input/output schemas;
+- the builder's decision-policy reference owns evidence economics, stopping,
+  independence, adaptation, and user-surfacing doctrine;
 - builder owns placement certificate and handoff contracts;
 - supervisor owns lifecycle, limits, and acceptance orchestration;
 - receipt schema owns durable audit persistence;
