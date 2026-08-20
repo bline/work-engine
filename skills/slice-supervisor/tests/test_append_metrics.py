@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
+import subprocess
+import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "append_metrics.py"
@@ -149,6 +155,152 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
         for version in (1, 2, 3, 4):
             with self.subTest(version=version):
                 self.assertEqual(version, APPEND_METRICS.validate(base_record(version))["schema_version"])
+
+    def test_cli_rejects_legacy_write_without_touching_destination_and_appends_v4(self) -> None:
+        existing_record = base_record(4)
+        existing_record["slice_number"] = 2
+        seed = json.dumps(existing_record, separators=(",", ":")).encode() + b"\n"
+        with tempfile.TemporaryDirectory() as directory:
+            metrics_path = Path(directory) / "metrics.jsonl"
+            metrics_path.write_bytes(seed)
+
+            legacy = subprocess.run(
+                [
+                    "python3",
+                    str(SCRIPT),
+                    "--path",
+                    str(metrics_path),
+                    "--record-json",
+                    json.dumps(base_record(3)),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(2, legacy.returncode)
+            self.assertIn("new durable receipts require schema_version 4", legacy.stderr)
+            self.assertEqual(seed, metrics_path.read_bytes())
+
+            current_record = base_record(4)
+            current = subprocess.run(
+                [
+                    "python3",
+                    str(SCRIPT),
+                    "--path",
+                    str(metrics_path),
+                    "--record-json",
+                    json.dumps(current_record),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(0, current.returncode, current.stderr)
+            lines = metrics_path.read_bytes().splitlines()
+            self.assertEqual([seed.rstrip(b"\n"), json.dumps(current_record, separators=(",", ":")).encode()], lines)
+
+    def test_cli_rejects_duplicate_identity_without_touching_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            metrics_path = Path(directory) / "metrics.jsonl"
+            original = base_record(4)
+            metrics_path.write_text(
+                json.dumps(original, separators=(",", ":")) + "\n",
+                encoding="utf-8",
+            )
+            seed = metrics_path.read_bytes()
+
+            for duplicate in (original, {**original, "outcome": "conflicting result"}):
+                with self.subTest(outcome=duplicate["outcome"]):
+                    result = subprocess.run(
+                        [
+                            "python3",
+                            str(SCRIPT),
+                            "--path",
+                            str(metrics_path),
+                            "--record-json",
+                            json.dumps(duplicate),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+
+                    self.assertEqual(2, result.returncode)
+                    self.assertIn("terminal receipt already exists for run_id=test-run slice_number=1", result.stderr)
+                    self.assertEqual(seed, metrics_path.read_bytes())
+
+    def test_cli_allows_only_one_concurrent_terminal_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            metrics_path = Path(directory) / "metrics.jsonl"
+            record = base_record(4)
+            command = [
+                "python3",
+                str(SCRIPT),
+                "--path",
+                str(metrics_path),
+                "--record-json",
+                json.dumps(record),
+            ]
+
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(
+                    executor.map(
+                        lambda _: subprocess.run(
+                            command,
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                        ),
+                        range(2),
+                    )
+                )
+
+            self.assertEqual([0, 2], sorted(result.returncode for result in results))
+            self.assertEqual(
+                1,
+                sum("terminal receipt already exists" in result.stderr for result in results),
+            )
+            lines = metrics_path.read_text(encoding="utf-8").splitlines()
+            self.assertEqual([record], [json.loads(line) for line in lines])
+
+    def test_cli_rejects_malformed_existing_log_without_touching_destination(self) -> None:
+        seed = b'{"incomplete":\n'
+        with tempfile.TemporaryDirectory() as directory:
+            metrics_path = Path(directory) / "metrics.jsonl"
+            metrics_path.write_bytes(seed)
+
+            result = subprocess.run(
+                [
+                    "python3",
+                    str(SCRIPT),
+                    "--path",
+                    str(metrics_path),
+                    "--record-json",
+                    json.dumps(base_record(4)),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(2, result.returncode)
+            self.assertIn("invalid existing receipt at line 1", result.stderr)
+            self.assertEqual(seed, metrics_path.read_bytes())
+
+    def test_append_fsyncs_file_and_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            metrics_path = Path(directory) / "metrics.jsonl"
+            real_fsync = os.fsync
+            with mock.patch.object(
+                APPEND_METRICS.os,
+                "fsync",
+                side_effect=real_fsync,
+            ) as fsync:
+                APPEND_METRICS.append(metrics_path, base_record(4))
+
+            self.assertEqual(2, fsync.call_count)
 
     def test_v4_accepts_engine_config_v2_with_role_identities(self) -> None:
         record = base_record(4)
@@ -322,6 +474,39 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing required field: schema_version"):
             APPEND_METRICS.validate(handoff)
 
+    def test_current_named_resumable_write_requires_exact_continuation(self) -> None:
+        record = base_record(4)
+        record.update(
+            status="accepted",
+            stop_reason=None,
+            plan_acceptance="procedural_auto_approval",
+            validation_requirement_results={"focused_checks": "passed"},
+            placement_certificate={"owner": "terminal receipt"},
+            placement_verdict="confirmed",
+            placement_risk="medium",
+            vertical_semantic_test="resume proof",
+            vertical_semantic_test_passed=True,
+            more_in_scope_work_remains=True,
+        )
+        record["producer_metrics"]["campaign_source"] = {"sha256": "a" * 64}
+        with self.assertRaisesRegex(ValueError, "continuation_context is required"):
+            APPEND_METRICS.validate_current_write(record)
+        record["continuation_context"] = {
+            "schema_version": 1,
+            "durable_decisions": [],
+            "affected_boundaries": [],
+            "unresolved_concerns": [],
+            "deferred_scope": [],
+        }
+        self.assertIs(record, APPEND_METRICS.validate_current_write(record))
+        del record["producer_metrics"]["campaign_source"]
+        with self.assertRaisesRegex(ValueError, "only valid for a named-campaign"):
+            APPEND_METRICS.validate_current_write(record)
+        record["producer_metrics"]["campaign_source"] = {"sha256": "a" * 64}
+        record["more_in_scope_work_remains"] = False
+        with self.assertRaisesRegex(ValueError, "must be omitted"):
+            APPEND_METRICS.validate_current_write(record)
+
     def test_audit_identity_fields_match_durable_schema(self) -> None:
         audit = base_record(4)
         self.assertEqual("Contract test", audit["slice_title"])
@@ -435,6 +620,52 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
         record["worker_metrics"]["validation_breadth"]["rationale"] = ""
         with self.assertRaisesRegex(ValueError, "rationale must be a nonempty string"):
             APPEND_METRICS.validate(record)
+
+    def test_v4_accepts_novel_route_identities_without_canonicalizing(self) -> None:
+        record = base_record(4)
+        record["worker_metrics"]["workflow_route"] = " experimental-adaptive "
+        record["worker_metrics"]["route_revisions"] = [
+            {
+                "failed_premise": "The default route no longer fits.",
+                "stale_decisions": ["Use the direct route."],
+                "preserved_evidence": ["The selected boundary remains valid."],
+                "replacement_route": " evidence-guided-recovery ",
+                "reason": "New evidence requires a different route.",
+            }
+        ]
+
+        validated = APPEND_METRICS.validate(record)
+
+        self.assertEqual(
+            " experimental-adaptive ",
+            validated["worker_metrics"]["workflow_route"],
+        )
+        self.assertEqual(
+            " evidence-guided-recovery ",
+            validated["worker_metrics"]["route_revisions"][0]["replacement_route"],
+        )
+
+    def test_v4_rejects_malformed_novel_route_identities(self) -> None:
+        for value in ("", "   ", 7):
+            with self.subTest(field="workflow_route", value=value):
+                record = base_record(4)
+                record["worker_metrics"]["workflow_route"] = value
+                with self.assertRaisesRegex(ValueError, "worker_metrics.workflow_route"):
+                    APPEND_METRICS.validate(record)
+
+            with self.subTest(field="replacement_route", value=value):
+                record = base_record(4)
+                record["worker_metrics"]["route_revisions"] = [
+                    {
+                        "failed_premise": "The default route no longer fits.",
+                        "stale_decisions": [],
+                        "preserved_evidence": [],
+                        "replacement_route": value,
+                        "reason": "New evidence requires a different route.",
+                    }
+                ]
+                with self.assertRaisesRegex(ValueError, "replacement_route"):
+                    APPEND_METRICS.validate(record)
 
     def test_v4_rejects_selected_and_omitted_stage_overlap(self) -> None:
         record = base_record(4)

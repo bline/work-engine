@@ -961,8 +961,10 @@ conflicting_evidence
 `not_observed` means the analysis looked but did not establish the mechanism;
 it does not mean the mechanism is absent. `not_sought` means the dimension was
 outside the selected depth. `confirmed_absent` requires a bounded exhaustive
-search with recorded scope and coverage limitations. Omission must not carry
-any of these meanings implicitly.
+search, recorded scope, and no unresolved coverage limitations. If a limitation
+remains, use a weaker state or close the gap with relevant direct evidence
+before claiming `confirmed_absent`. Omission must not carry any of these meanings
+implicitly.
 
 The same principle applies to positive exploration: gather more evidence only while it has a credible chance of changing the durable repository description, the value of deeper analysis, or a consequential comparison decision.
 

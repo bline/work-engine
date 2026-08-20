@@ -69,7 +69,7 @@ capabilities:
 - `approval.plan`: `procedural_when_safe` or `human_required`. `approval.uninterrupted_after_plan` controls whether execution and gate may share a follow-up; it never removes plan acceptance.
 - `notifications`: Requested Boolean policy for intervention and overall completion. Applicable repository instructions determine the actual command, may require intervention notification, and may prohibit completion notification; they take precedence over this request-level policy.
 - `stop_on`: Named terminal conditions. The supervisor always stops for safety, unsupported capabilities, ownership ambiguity, or required human authority even if omitted. Unknown conditions require clarification.
-- `capabilities.chrome_vision.config`: Optional Chrome Vision availability declaration. It is either an inline config-v1 mapping or a YAML/JSON path resolved relative to the declaring campaign file. Run `node work-engine/skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>` before builder launch. For an external config, `artifactDirectory` is relative to that config file; for inline config, it is relative to the campaign file. Preflight returns the full resolved configuration only in transient `resolvedCapabilities`, alongside identity-only `engineConfig`; that identity is later recorded as receipt field `engine_config`. Durable provenance retains source kind, authoring/reference path, canonical base/path, SHA-256, and schema version—not the expanded runtime configuration and not a claim that the capability was used.
+- `capabilities.chrome_vision.config`: Optional Chrome Vision availability declaration. It is either an inline config-v1 mapping or a YAML/JSON path resolved relative to the declaring campaign file. Run `node skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>` before builder launch. For an external config, `artifactDirectory` is relative to that config file; for inline config, it is relative to the campaign file. Preflight returns the complete initial effective `engineConfig`, a separate digest-backed `campaignSource` identity for the named campaign, and the full capability configuration only in transient `resolvedCapabilities`. The assembler projects `engineConfig` into the terminal receipt and records `campaignSource` separately under producer provenance. Chrome Vision durable provenance retains source kind, authoring/reference path, canonical base/path, SHA-256, and schema version—not the expanded runtime configuration and not a claim that the capability was used.
 
 ## Documented defaults
 
@@ -110,7 +110,10 @@ The supervisor must not emulate a missing capability. Builder-specific repositor
 
 ## Provenance and amendments
 
-Store a compact `engine_config` in every schema-version-4 receipt:
+For a named campaign, preflight deterministically produces the compact initial
+`engine_config` below by applying documented defaults and recording authored
+top-level fields separately from defaulted ones. The terminal assembler uses
+that value authoritatively; the model does not transcribe it.
 
 ```json
 {
@@ -132,7 +135,7 @@ Store a compact `engine_config` in every schema-version-4 receipt:
 }
 ```
 
-Use `source` values such as `inline_user_config`, a named config path, or `request_plus_defaults`. For an approved amendment, append a concise object containing the timestamp, changed fields, prior values, new values, reason, and `human_approval`; do not rewrite provenance as though the new value had always applied.
+Use `source` values such as `inline_user_config`, a named config path, or `request_plus_defaults`. Named-file preflight also returns `campaignSource` with `source`, `authoredReference`, canonical `resolvedPath`, canonical `pathBase`, lowercase content `sha256`, and `schemaVersion`. This source identity is producer provenance, not an `engine_config` field and not telemetry binding provenance. For an approved amendment, append a concise object containing the timestamp, changed fields, prior values, new values, reason, and `human_approval`; do not rewrite provenance as though the new value had always applied.
 
 Keep `run_id`, slice number, lifecycle state, timestamps, and acceptance results outside `engine_config`. They are observed run state, not campaign configuration.
 

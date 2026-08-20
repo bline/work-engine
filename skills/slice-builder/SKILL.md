@@ -88,10 +88,15 @@ Retain the builder returned by `spawn_agent`. Use `followup_task` on that identi
 
 ### Planning turn
 
-Require read-only evidence and an evidence-based plan only. First assess consequence, reversibility, placement ambiguity, repository familiarity, and the number of ownership/runtime boundaries involved. Select and record one route:
+Require read-only evidence and an evidence-based plan only. First assess consequence, reversibility, placement ambiguity, repository familiarity, and the number of ownership/runtime boundaries involved. Select and record a route identity. The named defaults are:
 
 - `direct`: for an obvious, local, reversible boundary with a known producer, consumer, and focused downstream proof. Gather only targeted evidence needed to confirm the semantic path, using builder-direct observation unless independent evidence is explicitly configured or risk-justified.
 - `falsified-placement`: for competing homes, cross-boundary state, consequential behavior, weak repository familiarity, or medium/high placement risk. Obtain shallow alternatives, make an explicit Codex placement decision, then use a fresh provider call that assumes the selected boundary may be wrong.
+
+These defaults are not an exhaustive route taxonomy. A different nonempty
+route identity may be used when it describes an authorized evidence and
+validation route more truthfully; record the route's rationale and preserve its
+authored identity in the audit receipt.
 
 Escalate from `direct` to `falsified-placement` as soon as evidence reveals a plausible competing owner, hidden consumer, lifecycle conflict, or broader consequence. Do not deeply explore every alternative.
 

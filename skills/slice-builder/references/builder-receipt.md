@@ -33,7 +33,8 @@ Checks should contain command identity, pass/fail state, and test totals when av
 
 Use null for unavailable measurements:
 
-- `workflow_route`: `direct` or `falsified-placement`
+- `workflow_route`: nonempty route identity; `direct` and
+  `falsified-placement` are named defaults, not an exhaustive set
 - `route_revisions`: array of objects naming the failed premise, stale decisions, preserved evidence, replacement route, and reason
 - `validation_breadth`: an object containing nonempty `selected_stages`,
   `omitted_optional_stages` objects with a reason for each omission, and a

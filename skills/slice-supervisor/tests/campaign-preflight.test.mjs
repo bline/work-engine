@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -6,9 +7,9 @@ import { spawn } from "node:child_process";
 import test from "node:test";
 import { createFakeChrome } from "../../chrome-vision/tests/fixtures/fake-chrome.mjs";
 
-const repository = path.resolve(import.meta.dirname, "../../../..");
-const preflightCli = path.join(repository, "work-engine/skills/slice-supervisor/scripts/campaign-preflight.mjs");
-const chromeCli = path.join(repository, "work-engine/skills/chrome-vision/scripts/chrome-vision.mjs");
+const repository = path.resolve(import.meta.dirname, "../../..");
+const preflightCli = path.join(repository, "skills/slice-supervisor/scripts/campaign-preflight.mjs");
+const chromeCli = path.join(repository, "skills/chrome-vision/scripts/chrome-vision.mjs");
 
 function run(command, args, { cwd, input = "" }) {
   return new Promise((resolve, reject) => {
@@ -70,10 +71,24 @@ test("campaign preflight routes comparative definitions without changing kindles
   await fs.writeFile(path.join(root, "comparative.yaml"), "kind: comparative_repository_analysis\nconfiguration_version: 1\n");
   await assert.rejects(
     run(process.execPath, [preflightCli, "comparative.yaml"], { cwd: root }),
-    /Comparative repository analysis definitions are not slice-supervisor campaigns\. Run: python3 work-engine\/skills\/comparative-repository-analysis\/scripts\/comparison_artifacts\.py prepare-run --config comparative\.yaml --output comparison-contract\.json/,
+    /Comparative repository analysis definitions are not slice-supervisor campaigns\. Run: python3 skills\/comparative-repository-analysis\/scripts\/comparison_artifacts\.py prepare-run --config comparative\.yaml --output comparison-contract\.json/,
   );
   await fs.writeFile(path.join(root, "engineering.yaml"), "version: 2\nobjective: test\n");
   const engineering = JSON.parse(await run(process.execPath, [preflightCli, "engineering.yaml"], { cwd: root }));
   assert.equal(engineering.engineConfig.version, 2);
   assert.equal(engineering.engineConfig.objective, "test");
+  assert.equal(engineering.engineConfig.source, "engineering.yaml");
+  assert.equal(engineering.engineConfig.builder.skill, "slice-builder");
+  assert.deepEqual(engineering.engineConfig.explicit_fields, ["version", "objective"]);
+  assert.ok(engineering.engineConfig.defaulted_fields.includes("builder"));
+  assert.deepEqual(engineering.engineConfig.amendments, []);
+  const authored = await fs.readFile(path.join(root, "engineering.yaml"));
+  assert.deepEqual(engineering.campaignSource, {
+    source: "file",
+    authoredReference: "engineering.yaml",
+    resolvedPath: path.join(root, "engineering.yaml"),
+    pathBase: root,
+    sha256: crypto.createHash("sha256").update(authored).digest("hex"),
+    schemaVersion: 1,
+  });
 });

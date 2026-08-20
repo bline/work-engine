@@ -28,10 +28,21 @@ At every phase boundary, ask whether the current route remains the simplest cred
 For a named campaign file, execute preflight before launching a builder:
 
 ```bash
-node work-engine/skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>
+node skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>
 ```
 
-Consume the returned `engineConfig` as the durable effective configuration and pass `resolvedCapabilities` only as transient builder launch context. Preflight resolves the CLI argument from the invoker's working directory, external capability references from the campaign directory, and Chrome Vision-owned filesystem paths from the file that authored that configuration. A capability declaration makes a tool available; it neither proves nor requires use. Stop on preflight failure rather than manually reinterpreting the file.
+Consume the returned `engineConfig` as the durable effective configuration and
+retain the separate `campaignSource` identity for terminal receipt assembly.
+Never transcribe either value from the campaign by hand. Pass
+`resolvedCapabilities` only as transient builder launch context. Preflight
+resolves the CLI argument from the invoker's working directory, applies the
+documented defaults, records explicit versus defaulted top-level fields, binds
+the named campaign to its canonical path and digest, resolves external
+capability references from the campaign directory, and resolves Chrome
+Vision-owned filesystem paths from the file that authored that configuration.
+A capability declaration makes a tool available; it neither proves nor
+requires use. Stop on preflight failure rather than manually reinterpreting the
+file.
 
 Accept configuration from an inline user block, a user-named file, or the request plus documented defaults. Configuration describes the run; this skill remains the machine.
 
@@ -103,16 +114,72 @@ Require the configured builder's `audit_receipt` plus its compact `handoff_recei
 
 Do not retain raw tool output, exploration, debugging, test logs, diffs, or copied source. Ask the builder to compress an overlong receipt rather than summarizing its evidence yourself.
 
-When `metrics.path` is non-null, append exactly one terminal audit receipt per slice using:
+For a named campaign, assemble the terminal semantic receipt with its matching
+telemetry ingress and the original successful campaign-preflight result before
+append. The assembler replaces model-authored `engine_config` with the
+preflight-owned value and records campaign-source provenance separately from
+telemetry provenance. Finalize the named-campaign receipt through the composed
+production command so authoritative assembly cannot be omitted:
 
 ```bash
-python3 work-engine/skills/slice-supervisor/scripts/append_metrics.py \
+python3 skills/slice-supervisor/scripts/finalize_receipt.py \
+  --path <configured-metrics-path> \
+  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --telemetry-ingress-json '<telemetry-ingress-v1>' \
+  --campaign-preflight-json '<original-successful-preflight-result>' \
+  --handoff-receipt-json '<compact-handoff-receipt>'
+```
+
+The finalizer passes the assembled in-memory result directly to the existing
+append boundary. It does not use an intermediate receipt file or reread the
+campaign. The assembler remains the authoritative projection owner and append
+remains the schema-v4 write, terminal-identity, locking, and durability owner.
+For an accepted slice with remaining work, the finalizer validates the handoff
+against the assembled receipt and derives its four nonduplicated semantic
+collections into `continuation_context`. It omits that projection for
+accepted-complete, stopped, and failed terminals.
+
+For terminal receipts not sourced from a named campaign, when `metrics.path` is
+non-null, append exactly one already-authoritative terminal audit receipt per
+slice using:
+
+```bash
+python3 skills/slice-supervisor/scripts/append_metrics.py \
   --path <configured-metrics-path> --record-json '<audit-receipt>'
 ```
 
-The script validates and locks the audit append. Record the effective engine configuration, placement proof, and evidence-routing provenance as required by schema version 4. Preserve unavailable measurements as `null`, zero counts as zero, and flexible provider-native metrics inside their namespaced objects. Correct rejected audit receipts from actual evidence; never pad them with guesses. Never append the compact handoff. If the user explicitly configured a null metrics path, retain both receipt views in supervisor state for the final report and state that no durable record was written.
+The script compatibility-validates the receipt, requires schema version 4 for
+the new durable write, and atomically rejects an already-durable `run_id` and
+`slice_number` identity while holding the audit append lock. Historical schema
+versions remain readable by the compatibility validator but are not valid
+inputs to this production command. Record the effective engine configuration, placement proof,
+and evidence-routing provenance as required by schema version 4. Preserve
+unavailable measurements as `null`, zero counts as zero, and flexible
+provider-native metrics inside their namespaced objects. Correct rejected audit
+receipts from actual evidence; never pad them with guesses. Never append the
+compact handoff. If the user explicitly configured a null metrics path, retain
+both receipt views in supervisor state for the final report and state that no
+durable record was written.
 
 ## Decide whether to continue
+
+After an interruption between terminal slices, recover one named run with:
+
+```bash
+python3 skills/slice-supervisor/scripts/resume_campaign.py \
+  --path <configured-metrics-path> \
+  --campaign-preflight-json '<fresh-successful-preflight-result>' \
+  --run-id '<stable-run-id>'
+```
+
+Resume only when the command reports `resumable: true`. It binds both the
+effective engine configuration and campaign-source identity, reconstructs the
+compact handoff, and identifies the next sequential slice without writing or
+reserving it. Structured stopped, failed, accepted-complete, and historical
+continuation-unavailable results are stable non-resumable states. Command
+failure means malformed or incompatible state requiring intervention. This
+path does not recover mid-slice or partial artifacts and does not authorize an
+amendment.
 
 After every accepted receipt:
 

@@ -14,3 +14,10 @@ Include only:
 - `deferred_scope`
 
 Keep observed outcomes, durable decisions, and unresolved concerns distinguishable. Exclude engine configuration, validation bookkeeping, individual commands, provider/model identity, token/cache/cost measurements, timing, call counts, and review statistics. Prefer 300-800 tokens; omit irrelevant narrative rather than required semantic state.
+
+The handoff remains non-durable. For a current named-campaign accepted slice
+that reports more in-scope work, the supervisor's terminal finalizer validates
+the handoff against the assembled audit receipt and derives only
+`durable_decisions`, `affected_boundaries`, `unresolved_concerns`, and
+`deferred_scope` into the audit record's separately owned
+`continuation_context`. The original handoff envelope is never appended.

@@ -1,6 +1,6 @@
 # Work-engine receipt schema
 
-Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 4 for new campaigns. Version 4 preserves semantic-path placement evidence from version 3 and adds required evidence-mode, provider-failure, and fallback provenance. The append script continues to accept historical version-1 through version-3 records, but new runs must not emit them.
+Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The durable identity is the pair of `run_id` and `slice_number`; while holding the append lock, the append CLI rejects any repeated identity without changing the destination, whether the receipt content is identical or conflicting. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 4 for new campaigns. Version 4 preserves semantic-path placement evidence from version 3 and adds required evidence-mode, provider-failure, and fallback provenance. The compatibility validator continues to accept historical version-1 through version-3 records for explicit read or migration use. The append CLI is the current artifact producer and rejects those historical versions before changing the durable destination.
 
 ## Required common fields
 
@@ -54,6 +54,75 @@ telemetry ingress. Tool/provider telemetry remains an explicit ingress array;
 merging ingress into a final audit receipt belongs to the later receipt-assembly
 lifecycle, not to the harvester.
 
+The deterministic receipt assembler accepts one valid schema-version-4
+semantic audit receipt, one matching telemetry-ingress artifact, and the
+original successful named-campaign preflight result. It requires the run and
+slice identities to agree, replaces supported builder-runtime measurements
+with authoritative observed values or `null` for authoritative unavailability,
+and replaces the semantic receipt's model-authored `engine_config` with
+preflight's complete initial effective `engineConfig`. It preserves
+builder-runtime identity, artifact, event, and measurement provenance under
+`producer_metrics.telemetry_ingress`, while the separate canonical campaign
+path and digest are retained under `producer_metrics.campaign_source`. It does
+not persist expanded `resolvedCapabilities` or reinterpret arbitrary
+`tool_runtime` entries. The assembler fails closed when authoritative ingress
+is already present or campaign-source identity is malformed, passes its result
+through the existing audit-receipt validator, does not append the receipt, and
+does not change the harvester's identity rules. Use:
+
+```bash
+python3 skills/slice-supervisor/scripts/assemble_receipt.py \
+  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --telemetry-ingress-json '<telemetry-ingress-v1>' \
+  --campaign-preflight-json '<successful-named-campaign-preflight-result>'
+```
+
+For production named-campaign terminalization, compose assembly and append in
+one process so the authoritative projection cannot be skipped and no mutable
+intermediate receipt is introduced:
+
+```bash
+python3 skills/slice-supervisor/scripts/finalize_receipt.py \
+  --path '<configured-metrics-path>' \
+  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --telemetry-ingress-json '<telemetry-ingress-v1>' \
+  --campaign-preflight-json '<original-successful-preflight-result>'
+```
+
+The finalizer calls the existing assembler and passes its exact in-memory
+result to the existing append boundary. Assembly failure writes nothing;
+append retains current-write validation, exclusive terminal identity under
+lock, and file plus parent-directory durability. The command does not reread
+the campaign file. It accepts the compact handoff separately and, for an
+accepted slice with `more_in_scope_work_remains: true`, derives this top-level
+projection before the single append:
+
+```json
+{"continuation_context":{"schema_version":1,"durable_decisions":[],"affected_boundaries":[],"unresolved_concerns":[],"deferred_scope":[]}}
+```
+
+The projection is not the durable handoff artifact. Current named-campaign
+resumable writes require the exact projection. Accepted records with no
+remaining work and stopped or failed records omit it. Historical compatibility
+reads permit its absence.
+
+Inter-slice recovery uses:
+
+```bash
+python3 skills/slice-supervisor/scripts/resume_campaign.py \
+  --path '<configured-metrics-path>' \
+  --campaign-preflight-json '<fresh-successful-preflight-result>' \
+  --run-id '<stable-run-id>'
+```
+
+The reader validates a unique, ordered, contiguous selected-run history and
+deep-compares both authoritative engine configuration and campaign-source
+identity. Trusted terminal outcomes return structured resumable or
+non-resumable results. Malformed history, gaps, duplicates, missing runs, or
+binding mismatches fail the command. It writes nothing. This contract does not
+define mid-slice recovery, partial-artifact recovery, amendments, migration,
+or slice reservation.
+
 ## Recommended normalized engineering fields
 
 Include when available, using `null` otherwise:
@@ -78,6 +147,10 @@ Include when available, using `null` otherwise:
 - `workflow_route`, `route_revisions`, and `validation_breadth`, preserving the
   route decision, recovery history, selected validation stages, explicitly
   omitted optional stages and reasons, and a concise risk-based rationale;
+- `workflow_route` and every route revision's `replacement_route` are nonempty
+  string identities. `direct` and `falsified-placement` remain named defaults,
+  but validators do not treat them as an exhaustive taxonomy or canonicalize
+  an authored identity;
 - `evidence_mode_metrics`, partitioning attempt outcomes and available token,
   cost, and wall-clock measurements by capability class;
 - mutually exclusive `provider_successful_calls`, `provider_failed_calls`,

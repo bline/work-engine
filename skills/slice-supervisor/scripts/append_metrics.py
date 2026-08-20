@@ -56,6 +56,10 @@ PROVIDER_FAILURE_REASONS = {
 FALLBACK_REASONS = {
     "index_unavailable", "coverage_gap", "graph_ambiguity", "provider_failure",
 }
+CONTINUATION_CONTEXT_FIELDS = {
+    "schema_version", "durable_decisions", "affected_boundaries",
+    "unresolved_concerns", "deferred_scope",
+}
 
 
 def fail(message: str) -> None:
@@ -103,6 +107,8 @@ def validate(record: Any) -> dict[str, Any]:
         validate_placement_record(record)
     if record["schema_version"] >= 4:
         validate_evidence_provenance(record)
+    if "continuation_context" in record:
+        validate_continuation_context(record["continuation_context"])
     for key in ("run_id", "timestamp", "slice_title", "slice_goal", "outcome"):
         if not record[key].strip():
             fail(f"{key} must not be empty")
@@ -115,6 +121,17 @@ def validate(record: Any) -> dict[str, Any]:
         fail("timestamp must include a timezone")
     find_prohibited(record)
     return record
+
+
+def validate_continuation_context(value: Any) -> None:
+    if not isinstance(value, dict):
+        fail("continuation_context must be an object")
+    require_exact_keys(value, CONTINUATION_CONTEXT_FIELDS, "continuation_context")
+    if value["schema_version"] != 1:
+        fail("continuation_context.schema_version must be 1")
+    for field in CONTINUATION_CONTEXT_FIELDS - {"schema_version"}:
+        if not isinstance(value[field], list):
+            fail(f"continuation_context.{field} must be an array")
 
 
 def validate_engine_record(record: dict[str, Any]) -> None:
@@ -431,8 +448,8 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
                     f"worker_metrics.{aggregate_field} must equal provider-role {role_field} totals"
                 )
 
-    if metrics["workflow_route"] not in {"direct", "falsified-placement"}:
-        fail("worker_metrics.workflow_route must be direct or falsified-placement")
+    if not metrics["workflow_route"].strip():
+        fail("worker_metrics.workflow_route must be a nonempty string")
 
     revision_fields = {
         "failed_premise", "stale_decisions", "preserved_evidence",
@@ -451,8 +468,11 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
                 isinstance(item, str) and item.strip() for item in revision[field]
             ):
                 fail(f"{path}.{field} must contain nonempty strings")
-        if revision["replacement_route"] not in {"direct", "falsified-placement"}:
-            fail(f"{path}.replacement_route is invalid")
+        if (
+            not isinstance(revision["replacement_route"], str)
+            or not revision["replacement_route"].strip()
+        ):
+            fail(f"{path}.replacement_route must be a nonempty string")
 
     breadth = metrics["validation_breadth"]
     breadth_fields = {"selected_stages", "omitted_optional_stages", "rationale"}
@@ -583,15 +603,63 @@ def load_record(args: argparse.Namespace) -> dict[str, Any]:
         fail(f"invalid JSON: {error}")
 
 
+def validate_current_write(record: dict[str, Any]) -> dict[str, Any]:
+    validate(record)
+    if record["schema_version"] != 4:
+        fail("new durable receipts require schema_version 4")
+    continuation = record.get("continuation_context")
+    resumable = (
+        record["status"] == "accepted"
+        and record["more_in_scope_work_remains"] is True
+    )
+    named_campaign = "campaign_source" in record["producer_metrics"]
+    if resumable and named_campaign and continuation is None:
+        fail("continuation_context is required for a resumable named-campaign write")
+    if continuation is not None and not named_campaign:
+        fail("continuation_context is only valid for a named-campaign write")
+    if not resumable and continuation is not None:
+        fail("continuation_context must be omitted unless accepted work remains")
+    return record
+
+
+def fsync_parent_directory(path: Path) -> None:
+    directory_fd = os.open(path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
 def append(path: Path, record: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n"
-    with path.open("a", encoding="utf-8") as stream:
+    with path.open("a+", encoding="utf-8") as stream:
         fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
-        stream.write(line)
-        stream.flush()
-        os.fsync(stream.fileno())
-        fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+        try:
+            stream.seek(0)
+            for line_number, existing_line in enumerate(stream, start=1):
+                try:
+                    existing = json.loads(existing_line)
+                    existing_identity = (
+                        existing["run_id"],
+                        existing["slice_number"],
+                    )
+                except (json.JSONDecodeError, KeyError, TypeError) as error:
+                    fail(f"invalid existing receipt at line {line_number}: {error}")
+                if existing_identity == (record["run_id"], record["slice_number"]):
+                    fail(
+                        "terminal receipt already exists for "
+                        f"run_id={record['run_id']} "
+                        f"slice_number={record['slice_number']}"
+                    )
+
+            stream.seek(0, os.SEEK_END)
+            stream.write(line)
+            stream.flush()
+            os.fsync(stream.fileno())
+            fsync_parent_directory(path)
+        finally:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
 def main() -> int:
@@ -602,7 +670,8 @@ def main() -> int:
     source.add_argument("--stdin", action="store_true")
     args = parser.parse_args()
     try:
-        append(args.path, load_record(args))
+        record = validate_current_write(load_record(args))
+        append(args.path, record)
     except (OSError, ValueError) as error:
         print(f"append_metrics: {error}", file=sys.stderr)
         return 2

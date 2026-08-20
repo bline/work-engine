@@ -301,7 +301,21 @@ class ComparisonArtifactsTest(unittest.TestCase):
         artifact["dimension_state"] = "confirmed_absent"
         with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "negative_search"):
             ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
-        artifact["negative_search"] = {"scope": "src/review", "exhaustive": True, "coverage_limitations": ["generated code excluded"]}
+
+        artifact["negative_search"] = {
+            "scope": "src/review",
+            "exhaustive": False,
+            "coverage_limitations": [],
+        }
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "exhaustive bounded search"):
+            ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
+
+        artifact["negative_search"]["exhaustive"] = True
+        artifact["negative_search"]["coverage_limitations"] = ["generated code excluded"]
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "coverage limitations"):
+            ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
+
+        artifact["negative_search"]["coverage_limitations"] = []
         ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
 
     def test_interpretation_requires_observation_parent(self) -> None:

@@ -587,6 +587,8 @@ def validate_dimension_pass(pass_artifact: Any, contract: dict[str, Any]) -> dic
         require(search["exhaustive"] is True, "confirmed_absent requires an exhaustive bounded search")
         text(search["scope"], "pass.negative_search.scope")
         require(isinstance(search["coverage_limitations"], list), "coverage_limitations must be an array")
+        require(not search["coverage_limitations"],
+                "confirmed_absent requires all coverage limitations to be closed")
     return pass_artifact
 
 
