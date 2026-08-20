@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Index preparation receipt v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "receipt_id",
+    "repository_id",
+    "state",
+    "action",
+    "requested",
+    "observed",
+    "coverage",
+    "provenance",
+    "limitations"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "index_preparation_receipt_v1"
+    },
+    "state": {
+      "enum": [
+        "ready",
+        "coverage_limited",
+        "revision_mismatch",
+        "root_mismatch",
+        "failed",
+        "timed_out",
+        "unsupported_nonterminal_status"
+      ]
+    },
+    "action": {
+      "enum": [
+        "none",
+        "reused",
+        "indexed"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    }
+  },
+  "additionalProperties": false
+}

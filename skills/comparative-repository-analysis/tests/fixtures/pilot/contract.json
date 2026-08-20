@@ -1,0 +1,19 @@
+{
+  "artifact_type": "comparison_contract_v1",
+  "compatibility": {"run_id": "pilot-1", "ontology_version": "1.0", "artifact_schema_version": 1},
+  "question": "Which orchestration mechanisms should Work Engine keep or borrow?",
+  "repository_corpus": [{"id": "sample", "repository": "https://example.test/example/sample.git", "commit": "abc123", "checkout_path": "/fixtures/sample", "index_project": "fixture-sample", "inclusion_reason": "heterogeneous pilot", "identity_source": "origin_remote", "git_remote": "https://example.test/example/sample.git", "branch": "main", "detached": false}],
+  "index_policy": {"provider": "codebase-memory", "mode": "full", "persistence": false, "existing_index": "reuse_if_exact", "preparation_context": "disposable", "agent_deadline_seconds": 900, "status_rechecks": 0, "initial_coverage_scopes": ["."], "allowed_fallbacks": ["targeted_direct_source"], "fallback_owner": "comparison_model"},
+  "selection_bias": ["fixture repository is illustrative, not representative"],
+  "required_core_dimensions": ["control", "review"],
+  "dimension_definitions": {"control": "How routes and premises change.", "review": "How independent review affects remediation."},
+  "evidence_semantics": {
+    "uncertainty_states": ["not_applicable", "not_sought", "not_observed", "provisionally_absent", "confirmed_absent", "unknown", "conflicting_evidence"],
+    "correspondence_states": ["documented", "present", "reachable", "default_enabled", "test_demonstrated", "runtime_observed", "production_evidenced"],
+    "confidence_scale": ["low", "medium", "high"]
+  },
+  "minimum_evidence_floor": "Every observation cites reopenable evidence; absence is typed.",
+  "work_engine_snapshot": {"commit": "work-engine-pilot"},
+  "calibration_checks": ["reopen one source reference"],
+  "migration_policy": "Migrate without semantic change, selectively rerun, or quarantine."
+}

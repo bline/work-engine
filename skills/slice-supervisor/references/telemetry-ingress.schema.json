@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://site2json.local/work-engine/telemetry-ingress.schema.json",
+  "title": "Work Engine TelemetryIngress",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "slice_id", "builder_runtime", "tool_runtime"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "slice_id": { "type": "string", "minLength": 1 },
+    "builder_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "source_identity", "artifacts", "binding_provenance", "measurements"],
+      "properties": {
+        "source_kind": { "enum": ["codex_rollout_jsonl", "product_generated_equivalent"] },
+        "source_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parent_thread_id", "child_thread_id", "agent_path", "terminal_turn_id"],
+          "properties": {
+            "parent_thread_id": { "type": "string", "minLength": 1 },
+            "child_thread_id": { "type": "string", "minLength": 1 },
+            "agent_path": { "type": "string", "minLength": 1 },
+            "terminal_turn_id": { "type": "string", "minLength": 1 }
+          }
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parent", "child"],
+          "properties": {
+            "parent": { "type": "string", "minLength": 1 },
+            "child": { "type": "string", "minLength": 1 }
+          }
+        },
+        "binding_provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parent_launch", "child_identity", "terminal_event"],
+          "properties": {
+            "parent_launch": { "$ref": "#/$defs/eventProvenance" },
+            "child_identity": { "$ref": "#/$defs/eventProvenance" },
+            "terminal_event": { "$ref": "#/$defs/eventProvenance" }
+          }
+        },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "peak_context_tokens", "turn_count", "wall_clock_seconds"],
+          "properties": {
+            "input_tokens": { "$ref": "#/$defs/measurement" },
+            "cached_input_tokens": { "$ref": "#/$defs/measurement" },
+            "output_tokens": { "$ref": "#/$defs/measurement" },
+            "reasoning_tokens": { "$ref": "#/$defs/measurement" },
+            "peak_context_tokens": { "$ref": "#/$defs/measurement" },
+            "turn_count": { "$ref": "#/$defs/measurement" },
+            "wall_clock_seconds": { "$ref": "#/$defs/measurement" }
+          }
+        }
+      }
+    },
+    "tool_runtime": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "eventProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_role", "ordinal", "event_type", "timestamp"],
+      "properties": {
+        "artifact_role": { "enum": ["parent_rollout", "child_rollout"] },
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "event_type": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": ["string", "null"] }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "value", "provenance"],
+      "properties": {
+        "availability": { "enum": ["observed", "unavailable"] },
+        "value": { "type": ["integer", "number", "null"], "minimum": 0 },
+        "provenance": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/eventProvenance" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "availability": { "const": "unavailable" } } },
+          "then": { "properties": { "value": { "type": "null" }, "provenance": { "maxItems": 0 } } },
+          "else": { "properties": { "value": { "type": ["integer", "number"] }, "provenance": { "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}

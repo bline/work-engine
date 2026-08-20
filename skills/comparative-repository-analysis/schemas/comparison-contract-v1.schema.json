@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Comparison contract v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "question",
+    "repository_corpus",
+    "required_core_dimensions",
+    "dimension_definitions",
+    "evidence_semantics",
+    "minimum_evidence_floor",
+    "work_engine_snapshot",
+    "calibration_checks",
+    "migration_policy",
+    "index_policy"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "comparison_contract_v1"
+    },
+    "compatibility": {
+      "$ref": "#/$defs/compatibility"
+    },
+    "index_policy": {
+      "type": "object",
+      "required": [
+        "provider",
+        "mode",
+        "persistence",
+        "preparation_context",
+        "status_rechecks"
+      ],
+      "properties": {
+        "provider": {
+          "const": "codebase-memory"
+        },
+        "mode": {
+          "enum": [
+            "full",
+            "moderate",
+            "fast"
+          ]
+        },
+        "persistence": {
+          "type": "boolean"
+        },
+        "preparation_context": {
+          "const": "disposable"
+        },
+        "status_rechecks": {
+          "const": 0
+        }
+      }
+    }
+  },
+  "$defs": {
+    "compatibility": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "ontology_version",
+        "artifact_schema_version"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ontology_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_schema_version": {
+          "const": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

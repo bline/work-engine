@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slice Supervisor"
+  short_description: "Run configured evidence-driven campaigns"
+  default_prompt: "Use $slice-supervisor to run this configured campaign through evidence-driven slices to completion or a truthful stop."

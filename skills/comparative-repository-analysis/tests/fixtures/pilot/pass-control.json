@@ -1,0 +1,208 @@
+{
+  "artifact_type": "dimension_pass_v1",
+  "compatibility": {
+    "run_id": "pilot-1",
+    "ontology_version": "1.0",
+    "artifact_schema_version": 1
+  },
+  "repository_id": "sample",
+  "dimension": "control",
+  "dimension_state": "analyzed",
+  "index_receipt": {
+    "artifact_type": "index_preparation_receipt_v1",
+    "compatibility": {
+      "run_id": "pilot-1",
+      "ontology_version": "1.0",
+      "artifact_schema_version": 1
+    },
+    "receipt_id": "index-sample-1",
+    "repository_id": "sample",
+    "state": "ready",
+    "action": "indexed",
+    "requested": {
+      "root": "/fixtures/sample",
+      "revision": "abc123",
+      "mode": "full",
+      "persistence": false,
+      "scopes": [
+        "."
+      ]
+    },
+    "observed": {
+      "project": "fixture-sample",
+      "root": "/fixtures/sample",
+      "revision": "abc123",
+      "generation": "fixture-generation-1",
+      "status": "ready",
+      "nodes": 12,
+      "edges": 18
+    },
+    "coverage": {
+      "signal": "best_effort",
+      "parse_partial": [],
+      "skipped": [],
+      "not_indexed": [],
+      "limitations": [
+        "fixture evidence only"
+      ]
+    },
+    "provenance": {
+      "provider": "codebase-memory",
+      "calls": [
+        "list_projects",
+        "index_repository",
+        "index_status",
+        "check_index_coverage"
+      ]
+    },
+    "limitations": [
+      "synthetic pilot receipt"
+    ]
+  },
+  "system_boundary": {
+    "included": [
+      "scheduler"
+    ],
+    "unavailable": [
+      "hosted telemetry"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "route-revision",
+      "name": "Route revision",
+      "mechanism": "A scheduler preserves evidence while changing route.",
+      "enforcement": "code",
+      "correspondence": {
+        "documented": true,
+        "present": true,
+        "reachable": true,
+        "default_enabled": true,
+        "test_demonstrated": true,
+        "runtime_observed": "unknown",
+        "production_evidenced": "unknown"
+      },
+      "applicability": "applicable",
+      "confidence": "high",
+      "evidence_ids": [
+        "ev-control"
+      ],
+      "counterevidence_ids": [],
+      "relationships": {
+        "depends_on": [],
+        "enables": [
+          "bounded-review"
+        ],
+        "constrains": [],
+        "conflicts_with": [],
+        "substitutes_for": [],
+        "shares_state_with": [
+          "bounded-review"
+        ]
+      }
+    },
+    {
+      "id": "bounded-review",
+      "name": "Bounded review",
+      "mechanism": "Review findings return to implementation.",
+      "enforcement": "mixed",
+      "correspondence": {
+        "documented": true,
+        "present": true,
+        "reachable": "unknown",
+        "default_enabled": "unknown",
+        "test_demonstrated": false,
+        "runtime_observed": "unknown",
+        "production_evidenced": "unknown"
+      },
+      "applicability": "applicable",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev-control"
+      ],
+      "counterevidence_ids": [],
+      "relationships": {
+        "depends_on": [
+          "route-revision"
+        ],
+        "enables": [],
+        "constrains": [],
+        "conflicts_with": [],
+        "substitutes_for": [],
+        "shares_state_with": [
+          "route-revision"
+        ]
+      }
+    }
+  ],
+  "claims": [
+    {
+      "id": "obs-control",
+      "subject_id": "route-revision",
+      "stage": "observation",
+      "statement": "The scheduler maps review failure back to implementation.",
+      "state": "supported",
+      "confidence": "high",
+      "evidence_ids": [
+        "ev-control"
+      ],
+      "counterevidence_ids": [],
+      "parent_claim_ids": []
+    },
+    {
+      "id": "int-control",
+      "subject_id": "route-revision",
+      "stage": "interpretation",
+      "statement": "The system supports bounded route revision.",
+      "state": "supported",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev-control"
+      ],
+      "counterevidence_ids": [],
+      "parent_claim_ids": [
+        "obs-control"
+      ]
+    },
+    {
+      "id": "imp-control",
+      "subject_id": "route-revision",
+      "stage": "comparison_implication",
+      "statement": "The mechanism is comparable, while its fixed transition may constrain judgment.",
+      "state": "unresolved",
+      "confidence": "low",
+      "evidence_ids": [],
+      "counterevidence_ids": [],
+      "parent_claim_ids": [
+        "int-control"
+      ],
+      "uncertainty": "unknown"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-control",
+      "mode": "source",
+      "locator": "scheduler.py",
+      "range": "20-35",
+      "commit": "abc123",
+      "supports": [
+        "obs-control",
+        "int-control"
+      ],
+      "limitations": [
+        "runtime not observed"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "question": "Is the route configurable?",
+      "why_it_matters": "It affects adaptability."
+    }
+  ],
+  "provenance": {
+    "provider": "fixture",
+    "coverage": "bounded source range"
+  }
+}

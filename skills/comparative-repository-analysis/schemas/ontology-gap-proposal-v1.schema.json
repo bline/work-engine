@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Ontology gap proposal v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "gap_id",
+    "status",
+    "outside_active_ontology",
+    "repository_id",
+    "source_dimension",
+    "source_pass_sha256",
+    "claim_ids",
+    "evidence_ids",
+    "proposed_dimension",
+    "proposed_definition",
+    "why_ontology_is_insufficient",
+    "decision_relevance",
+    "confidence",
+    "alternatives",
+    "limitations"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "ontology_gap_proposal_v1"
+    },
+    "status": {
+      "const": "proposed"
+    },
+    "outside_active_ontology": {
+      "const": true
+    },
+    "source_pass_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

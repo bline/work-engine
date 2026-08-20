@@ -1,0 +1,105 @@
+# Standalone first-prompt configuration for comparative repository analysis.
+# Path shorthand is resolved mechanically. This remains non-runnable until each
+# repository has a semantic inclusion reason and the Work Engine snapshot resolves.
+kind: comparative_repository_analysis
+configuration_version: 1
+status: draft
+
+question: >-
+  Which mechanisms from external software-engineering orchestration systems
+  should Work Engine keep, adopt, borrow, avoid, or investigate, and which Work
+  Engine mechanisms are genuinely differentiated?
+
+repositories:
+  - /home/bline/code/codex-workflow-comparison/agentplane
+  - /home/bline/code/codex-workflow-comparison/agenttrace
+  - /home/bline/code/codex-workflow-comparison/lazycodex
+  - /home/bline/code/codex-workflow-comparison/liza
+  - /home/bline/code/codex-workflow-comparison/symphony
+  - /home/bline/code/codex-workflow-comparison/vnx-orchestration
+
+required_inputs:
+  - Record an inclusion reason for each selected repository.
+  - Resolve the Work Engine snapshot to an immutable commit or release tag.
+
+index_policy:
+  provider: codebase-memory
+  mode: full
+  persistence: false
+  existing_index: reuse_if_exact
+  preparation_context: disposable
+  agent_deadline_seconds: 900
+  status_rechecks: 0
+  initial_coverage_scopes: ["."]
+  allowed_fallbacks: [targeted_direct_source]
+  fallback_owner: comparison_model
+
+selection_bias:
+  - The six repositories were selected for orchestration diversity; selection and survivorship limitations require review before freezing.
+stopping_criteria:
+  - Stop when remaining evidence is unlikely to change the durable profile or a consequential comparison decision.
+
+ontology_version: "1.0"
+artifact_schema_version: 1
+required_core_dimensions:
+  - control_and_judgment
+  - quality_and_semantic_verification
+  - review_architecture
+  - state_and_persistence
+  - context_architecture
+  - repository_evidence_and_retrieval
+  - process_and_mechanical_substrate
+  - metrics_and_observability
+  - flexibility_and_proceduralization
+  - executable_interface_integrity
+  - mechanism_relationships
+dimension_definitions:
+  control_and_judgment: How fixed machinery and model judgment select routes, revise premises, and preserve evidence.
+  quality_and_semantic_verification: How validation establishes downstream consequence and rejects insufficient substitutes.
+  review_architecture: How review independence, freshness, remediation, and proportionality are implemented.
+  state_and_persistence: What task state survives interruption or context loss and who owns it.
+  context_architecture: What context persists, what is disposable, and how compaction or rotation preserves exact artifacts.
+  repository_evidence_and_retrieval: How structural and source evidence, provenance, coverage, and negative claims are handled.
+  process_and_mechanical_substrate: How lifecycle, retries, paths, worktrees, locking, schemas, and failures are managed.
+  metrics_and_observability: What runtime-derived cost, failure, drift, and quality signals are retained.
+  flexibility_and_proceduralization: Whether heterogeneous tasks produce adaptive routes or ritualized fixed sequences.
+  executable_interface_integrity: Whether documented configuration, paths, preflight, and CLI behavior are actually reachable.
+  mechanism_relationships: How mechanisms depend on, enable, constrain, conflict with, substitute for, or share state with one another.
+adaptive_dimensions: []
+
+evidence_semantics:
+  uncertainty_states:
+    - not_applicable
+    - not_sought
+    - not_observed
+    - provisionally_absent
+    - confirmed_absent
+    - unknown
+    - conflicting_evidence
+  correspondence_states:
+    - documented
+    - present
+    - reachable
+    - default_enabled
+    - test_demonstrated
+    - runtime_observed
+    - production_evidenced
+  confidence_scale: [low, medium, high]
+minimum_evidence_floor: >-
+  Every observation cites reopenable evidence; correspondence states remain
+  distinct; confirmed absence requires a bounded exhaustive scope and recorded
+  coverage limitations.
+
+work_engine_snapshot_policy:
+  mode: fixed
+  revision: REQUIRED_WORK_ENGINE_REVISION
+  description: Profile Work Engine under the same descriptive evidence contract as external repositories.
+
+calibration_checks:
+  - Independently repeat at least one repository or consequential dimension.
+  - Reopen a sample of evidence references and confirm that they still support their claims.
+  - Inspect reconciliation for unsupported claims, unresolved contradictions, and relationship loss.
+migration_policy: >-
+  Material ontology changes require meaning-preserving migration, selective
+  re-analysis, quarantine, or a new comparison run; incompatible profiles must
+  never be silently compared.

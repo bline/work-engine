@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chrome Vision"
+  short_description: "Observe and interact with Chrome truthfully"
+  default_prompt: "Use $chrome-vision to collect bounded observed evidence from a Chrome debugging session."

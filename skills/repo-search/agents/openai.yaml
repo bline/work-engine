@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repository Search"
+  short_description: "Retrieve verifiable repository evidence across backends"
+  default_prompt: "Use $repo-search to retrieve repository evidence with coverage, provenance, fallbacks, and limitations."
