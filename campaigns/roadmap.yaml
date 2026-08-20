@@ -1,20 +1,21 @@
-version: 1
-objective: "Advance the Site2JSON roadmap"
+version: 2
+objective: "Advance the Work Engine roadmap"
 
 work_source:
   kind: file
-  value: "docs/roadmap.md"
-
-capabilities:
-  chrome_vision:
-    config: work-engine/config/chrome-vision.yaml
+  value: "roadmap.md"
 
 builder:
   skill: "slice-builder"
   model: "gpt-5.6-sol"
   reasoning_effort: "low"
   context:
-    evidence_skill: "claude-recon-implementation"
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
 
 validation:
   profile: "engineering-proportional"
@@ -41,4 +42,8 @@ stop_on:
   - validation_nonconvergence
 
 metrics:
-  path: "work-engine/metrics/roadmap.jsonl"
+  path: "metrics/work-engine-roadmap.jsonl"
+
+capabilities:
+  chrome_vision:
+    config: ../config/chrome-vision.yaml

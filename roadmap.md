@@ -1,1227 +1,643 @@
-# Work Engine Optimization Roadmap
+# Work Engine Roadmap
 
 ## Purpose
 
-Evolve Work Engine from a model-heavy repository reconnaissance workflow into an evidence-driven engineering engine that minimizes durable model context without weakening architectural correctness, semantic verification, or independent review.
+Work Engine is becoming an independent repository.
 
-Efficiency means all of the following:
+It began as a Site2JSON engineering subsystem, but its durable subject is now
+broader: how capable models perform objective-driven work inside explicit
+contracts while retaining authority over non-invariant decisions.
 
-- lower model input and output token consumption;
-- less irrelevant context retained by the persistent builder;
-- correct architectural placement, not merely compiling code;
-- an executable downstream semantic proof for each slice;
-- independent falsification of important architectural assumptions when consequence or uncertainty warrants it;
-- deterministic validation wherever model judgment is unnecessary;
-- reproducible evidence and durable metrics;
-- no hidden weakening of acceptance criteria in exchange for lower cost.
+This roadmap carries that system from its current nested implementation to a
+coherent standalone product. It is governed by:
 
-The central rule is:
+- [`DESIGN.md`](DESIGN.md), the normative product doctrine;
+- [`PHILOSOPHY.md`](PHILOSOPHY.md), the non-normative explanation of why that
+  doctrine exists; and
+- the four equal design principles inherited from Site2JSON and adopted here:
+  Truth, Maintainability, Explainability, and Aesthetics.
 
-> Information crosses a model boundary only when its expected lifetime justifies crossing that boundary.
-
-The long-term direction is to make Codebase-Memory the primary repository-intelligence substrate while retaining model reasoning only for ambiguity, architectural judgment, implementation, and adversarial semantic review.
-
----
-
-## Current architecture
-
-The existing workflow has three useful information-lifetime boundaries and should preserve them unless measurement disproves their value:
-
-1. **Supervisor** — tiny, durable campaign state and continuation decisions.
-2. **Persistent slice builder** — durable understanding, placement judgment, implementation, and final acceptance for one slice.
-3. **Disposable reconnaissance/review processes** — high-volume evidence gathering, falsification, test diagnosis, and adversarial review that should not pollute builder context.
-
-The high-assurance placement flow is intentional for ambiguous, cross-boundary, or consequential work:
-
-1. scout multiple plausible placement boundaries;
-2. Codex selects a provisional placement;
-3. encode that selection as a placement certificate;
-4. use a fresh process to attempt to falsify the certificate;
-5. implement only after placement is confirmed;
-6. require a vertical semantic proof that reaches the intended consumer/consequence.
-
-For an obvious, local, reversible boundary with a known producer, consumer, and focused proof, a direct targeted-evidence route is sufficient. Escalate to the high-assurance flow when evidence reveals competing ownership, hidden consumers, lifecycle conflict, broad consequence, or medium/high placement risk. Do not collapse important placement judgments into one model recommendation: independence between proposal, owner judgment, and falsification remains part of the correctness model when those conditions apply.
-
-## Exploratory ideas
-
-Notes under `work-engine/ideas/` are brainstorming inputs, not accepted roadmap
-phases, configured capabilities, or implementation commitments. Preserve them as
-separate idea files until a dedicated design and placement pass establishes a
-real owner, contract, evidence path, acceptance conditions, and priority. Do not
-silently promote an appealing review concept into mandatory workflow policy.
-
-## Implementation status after the placement/efficiency slice
-
-The current Work Engine already implements much of the pre-graph optimization foundation:
-
-- the builder selects a direct or falsified-placement route from observed placement risk;
-- placement alternatives are a distinct shallow reconnaissance step on the falsified-placement route;
-- Codex owns the provisional placement decision and placement certificate;
-- targeted evidence confirms, conflicts with, or leaves that certificate unresolved, with a fresh falsifier when independence is warranted;
-- placement and targeted-recon outputs have explicit cardinality limits;
-- ordinary validation runs through a deterministic `run_gate.py` manifest rather than Claude;
-- Claude is reserved for bounded reconnaissance, useful failure diagnosis, and fresh adversarial semantic review when configured or risk-justified;
-- `audit_receipt` and compact 300–800-token `handoff_receipt` are separate;
-- schema-version-3 audit receipts persist placement certificate/verdict/risk and rejected alternatives;
-- schema-version-4 audit receipts additionally partition evidence cost by
-  capability class and preserve provider-failure and fallback provenance;
-- the builder, evidence skill, supervisor, receipt schema, and gate runner have explicit contract ownership boundaries.
-
-Accordingly, Phases 1–2 and 4 below are retained as architectural requirements
-and regression criteria, not as greenfield implementation work. Phase 3 has
-completed its audit/handoff contract split, but not the receipt-production and
-persistence lifecycle required to make that split reliable. Completing that
-lifecycle is the next implementation priority. Phase 0 has useful historical
-baseline data but should continue accumulating comparable post-optimization
-measurements from the resulting runtime-derived records.
+The transition is complete only when Work Engine can be understood, installed,
+run, tested, evolved, and released without knowledge of the Site2JSON repository
+that incubated it.
 
 ---
 
-# Phase 0 — Establish the optimization baseline
+## How to read this roadmap
 
-**Status: active measurement.** Historical filesystem/Claude metrics exist; continue collecting comparable post-optimization slices so graph experiments have a stable control.
+The roadmap describes outcomes, ownership, dependencies, and completion
+evidence. It does not prescribe one universal implementation route.
 
-Before changing the retrieval substrate, make the existing workflow measurable enough that later experiments answer one question at a time.
+Some workstreams have causal order. Repository identity must exist before a
+standalone release can be published; a receipt schema must exist before receipts
+can be validated against it. Outside such dependencies, the model or maintainer
+may combine, reorder, or revise work when evidence shows a better route.
 
-## 0.1 Record a stable baseline
+Each workstream distinguishes:
 
-Capture several representative slices using the current Claude filesystem-based reconnaissance path. Include at least:
+- **Invariant outcome** — what must remain true;
+- **Current evidence** — what is already present or known;
+- **Remaining work** — unresolved product work, not a mandatory action ritual;
+- **Completion evidence** — what demonstrates the outcome without overstating
+  what was proved.
 
-- one obvious/local placement;
-- one cross-module placement;
-- one state-ownership or persistence change;
-- one slice with a meaningful runtime consequence;
-- one slice that causes supplemental reconnaissance or placement reconsideration if available.
+Status values are:
 
-Record per slice:
-
-- placement candidate count;
-- placement risk;
-- placement conflicts and reconsiderations;
-- targeted recon calls;
-- supplemental recon calls;
-- provider input/cache/output/thinking tokens when available;
-- provider cost when available;
-- provider failure causes and evidence-mode fallback reasons;
-- files, ranges, and approximate lines retrieved;
-- recon output tokens;
-- context passed into the builder;
-- builder model tokens when available;
-- local repository exploration performed by the builder outside supplied evidence;
-- vertical semantic proof result;
-- focused-test result;
-- full-suite result;
-- adversarial-review findings by severity;
-- post-review repair count;
-- late semantic rejection or boundary invalidation;
-- wall-clock duration.
-
-## 0.2 Add derived efficiency metrics
-
-Calculate at least:
-
-- provider output tokens per retrieved source line;
-- recon output tokens per accepted slice;
-- builder-context tokens introduced by reconnaissance;
-- supplemental calls per slice;
-- total model tokens per accepted semantic change;
-- total tokens and cost to an accepted decision partitioned by evidence mode,
-  failure cause, route type, and placement risk;
-- rework tokens after adversarial review;
-- placement failure rate;
-- late semantic rejection rate.
-
-Add an **information amplification ratio** when the necessary instrumentation exists:
-
-`recon model output tokens / evidence tokens actually retained into builder context`
-
-This exposes verbose interpretation that does not survive the handoff.
-
-## Exit criterion
-
-A repeatable baseline exists and later provider experiments can be compared without changing the success definition.
+- **preserve** — implemented foundation that remains a regression requirement;
+- **active** — current transition or alignment work;
+- **planned** — required for the independent-repository completion state;
+- **research** — potentially valuable, but not required for completion;
+- **removed** — no longer Work Engine scope.
 
 ---
 
-# Phase 1 — Remove model work that is deterministic
+## Product boundary after extraction
 
-**Status: implemented; preserve as a regression requirement.** The builder now runs an ordered deterministic manifest through `scripts/run_gate.py`, with model use reserved for bounded diagnosis and semantic review.
+Work Engine owns:
 
-This phase should happen before comparing retrieval providers so model-selection experiments are not contaminated by avoidable process overhead.
+- objective, authority, approval, and acceptance contracts;
+- supervisor, builder, evidence, review, and gate boundaries;
+- model-facing capability affordances;
+- route revision and stale-decision retirement;
+- context and information-lifetime contracts;
+- deterministic enforcement of mechanically decidable invariants;
+- truthful receipts, provenance, telemetry ingress, and continuation state;
+- reusable engineering campaign configuration;
+- provider and capability adapters whose semantics are not tied to one product;
+- reference campaigns, fixtures, and tests that demonstrate Work Engine itself;
+- documentation, terminology, release, and developer experience for the
+  standalone system.
 
-## 1.1 Add a deterministic gate runner
+Work Engine does not own:
 
-Move command execution out of Claude.
+- Site2JSON extension architecture;
+- Site2JSON sidebar, service-worker, content-script, or extraction behavior;
+- migration of Site2JSON modules from UMD or classic scripts to ESM;
+- Site2JSON-specific UI, selector, recovery, or Chrome target policy;
+- Site2JSON product priorities or its application roadmap.
 
-The gate runner should execute and return a compact structured result for:
-
-1. vertical semantic test;
-2. changed-file/boundary checks that can be expressed mechanically;
-3. `git diff --check`;
-4. required prechecks;
-5. check-only freshness commands;
-6. focused tests;
-7. full suite.
-
-The gate result should contain only:
-
-- command identity;
-- exit status;
-- duration;
-- pass/fail;
-- small failure excerpts;
-- failing test names/files where available.
-
-Never send successful raw command output to a model.
-
-A model is invoked only when:
-
-- a failure requires diagnosis;
-- an architectural proof cannot be established mechanically; or
-- adversarial semantic review is required.
-
-Default validation order:
-
-`vertical proof → focused deterministic checks → deterministic full suite → semantic adversarial review → fixes → affected deterministic checks → final full suite`
-
-Allow configuration to move semantic review before the first full suite when the suite is unusually slow. This is a latency optimization, not a token/correctness waiver.
-
-## 1.2 Separate failure diagnosis from test supervision
-
-When deterministic validation fails, supply a fresh diagnostic model only:
-
-- the failing command;
-- minimal failure output;
-- task-owned changed files;
-- relevant placement certificate;
-- graph/source evidence required to diagnose the failing path.
-
-Do not ask the model to rerun successful checks or supervise the full gate.
-
-## Exit criterion
-
-No LLM is required merely to execute a known validation command or report a successful result.
+Site2JSON may consume Work Engine and provide a project adapter. That adapter
+must not become Work Engine's generic product contract.
 
 ---
 
-# Phase 2 — Shrink model-boundary contracts
+## Existing roadmap disposition
 
-**Status: implemented in the current Claude evidence adapter; benchmark and tighten further rather than redesigning it.** The builder selects a direct or falsified-placement route. On the latter, placement and targeted reconnaissance have separate bounded schemas and hard cardinality limits, while Codex owns the final architectural plan.
+The previous roadmap mixed Work Engine product development with work on the
+repository that hosted it. This transition makes the boundary explicit.
 
-## 2.1 Slim placement reconnaissance
+| Previous roadmap area | Disposition |
+| --- | --- |
+| Optimization baseline and workflow metrics | Retain, but rebuild around comparable accepted outcomes and authoritative telemetry |
+| Deterministic gate runner | Preserve as a tested Work Engine primitive |
+| Model-boundary contract compression | Retain the objective; remove fixed route and cardinality rules that became policy |
+| Audit receipt versus compact handoff | Retain and complete |
+| Canonical contract ownership | Retain and simplify |
+| Repository-evidence provider abstraction | Retain as capability machinery, not mandatory routing policy |
+| Site2JSON vertical ESM migration | Remove from this roadmap; return it to Site2JSON |
+| Remaining Site2JSON extension ESM migration | Remove from this roadmap; return it to Site2JSON |
+| Codebase Memory experiments A/B and hybrid workflow | Consolidate into one evidence-capability workstream and optional benchmarks |
+| Model-choice benchmark | Move to research; it is not a product-completion gate |
+| Fixed adaptive-escalation ladder | Replace with evidence-based escalation consequences and truthful provenance |
+| Codebase Memory as mandatory default substrate | Retain only as a configurable current default, never an invariant route |
+| Semantic architectural memory overlay | Move to research until a durable consumer and invalidation contract exist |
+| Evidence invalidation and proof-aware verification | Promote into the core route-revision contract |
+| Counterexample-oriented review | Retain as an optional independent-review capability selected by consequence |
 
-When placement alternatives are warranted, the first round remains exploratory but must not become an architecture report.
-
-Return only information needed for Codex to choose responsibly:
-
-- up to 3 plausible placement candidates;
-- smallest discriminating facts;
-- evidence for and against each candidate;
-- unresolved preconditions;
-- minimal canonical/ownership ranges if raw source is necessary;
-- placement risk;
-- available call statistics.
-
-Do not return:
-
-- a complete implementation plan;
-- exact changed-file manifests;
-- broad call graphs;
-- acceptance-test design;
-- detailed invariants beyond what distinguishes ownership;
-- a singular recommendation that obscures uncertainty.
-
-## 2.2 Make the placement certificate the primary durable artifact
-
-Codex owns and records:
-
-> When `<trigger>` occurs, `<producer>` writes `<state>` owned by `<boundary>`. `<consumer>` reads it and produces `<semantic outcome>`. `<downstream proof>` proves the consequence. This is not satisfied by `<plausible but insufficient substitute>`.
-
-The certificate is the compact semantic path that survives into implementation, validation, handoff, and later architectural memory.
-
-Record applicable fields:
-
-- selected candidate or directly supported boundary;
-- rejected alternatives when alternatives were plausible;
-- evidence for rejection;
-- unresolved preconditions;
-- confidence;
-- later confirmation, conflict, or supersession.
-
-## 2.3 Brutally slim targeted falsification/recon
-
-On the falsified-placement route, the second fresh process assumes the selected certificate may be wrong. On the direct route, targeted evidence must still expose any competing owner, hidden consumer, or lifecycle conflict that would require escalation.
-
-Its normal response contract should be bounded approximately as follows:
-
-- one `placement_verdict`;
-- failed certificate clause when applicable;
-- up to 8 verified facts;
-- up to 12 exact source ranges only when source is required;
-- up to 5 relevant wiring/path facts;
-- exact commands only when the deterministic runner cannot already derive them;
-- up to 3 blockers/unknowns;
-- concise confidence/risk.
-
-Do **not** ask this process to derive the final implementation plan, full invariant catalog, changed-file list, acceptance test suite, vocabulary catalog, or broad deferred scope. The builder owns those conclusions.
-
-## 2.4 Put cardinality limits in schemas
-
-Prefer structural limits over prose such as “be concise.” Limits should be explicit, validated, and recorded when exceeded.
-
-## Exit criterion
-
-Recon packets contain evidence and uncertainty, while durable architectural reasoning remains in the builder.
+Historical reviews and metrics remain evidence about prior versions. They do
+not silently define the current product and must be labeled or archived when
+their claims become stale.
 
 ---
 
-# Phase 3 — Split audit persistence from builder handoff
+# Workstream 0 — Establish the independent repository
 
-**Status: partially implemented; completion is the next roadmap item.** The
-builder returns separate `audit_receipt` and `handoff_receipt` views; the handoff
-explicitly excludes provider/model/gate accounting and targets 300–800 tokens.
-Receipt production and persistence are still model-context-dependent: there is
-no immediate staging boundary, post-terminal telemetry harvest, deterministic
-final assembly, enforced schema floor for new records, or interruption-safe
-atomic publication.
+**Status: active.**
 
-## 3.1 Keep the full audit receipt
+## Invariant outcome
 
-The durable audit record may continue to contain:
+Work Engine has its own repository identity, history, paths, automation,
+documentation entry point, and release boundary. No runtime or documentation
+contract requires the source tree to be nested beneath `site2json/work-engine`.
 
-- run and slice identity;
-- model/provider configuration;
-- token/cost statistics;
-- validation bookkeeping;
-- timestamps;
-- commands/results;
-- provenance;
-- acceptance status;
-- detailed metrics.
+## Current evidence
 
-This record exists for auditability and optimization analysis, not as next-slice context.
+The subtree already contains its doctrine, skills, schemas, scripts, tests,
+campaigns, configuration, reviews, and metrics. Several commands and campaign
+paths still assume invocation from the Site2JSON repository root. As the first
+transition cleanup, the invalid Site2JSON roadmap campaign has been removed and
+the owned Work Engine campaign now uses standalone-root-relative roadmap and
+metrics paths.
 
-## 3.2 Introduce a compact handoff receipt
+## Remaining work
 
-Target roughly 300–800 tokens under normal conditions.
+- Choose the standalone repository name, ownership, visibility, license, and
+  release destination.
+- Preserve meaningful history during extraction and record the source revision
+  from which the standalone history began.
+- Make repository-relative paths canonical. Commands should work from the new
+  repository root without a `work-engine/` prefix.
+- Keep a Site2JSON consumer example in the future only if it is explicitly
+  labeled as an external integration fixture.
+- Decide which historical metrics and reviews move with Work Engine, which
+  remain with Site2JSON, and which are archived snapshots. Preserve provenance
+  rather than rewriting their original paths or configuration.
+- Add a root `README.md`, license, contribution guidance, security policy as
+  appropriate, changelog/release convention, and supported-runtime statement.
+- Add repository-owned CI for all supported languages and executable
+  documentation checks.
+- Ensure generic Chrome Vision behavior remains product-neutral; keep
+  Site2JSON-specific aliases and recovery composition in the Site2JSON adapter.
 
-The next builder receives only durable consequences such as:
+## Completion evidence
 
-- accepted placement certificate;
-- architectural decisions introduced or superseded;
-- new/changed invariants;
-- durable state/ownership consequences;
-- public/runtime contracts changed;
-- proof/test relationships worth preserving;
-- unresolved concerns;
-- explicitly deferred work.
-
-Provider accounting, test transcripts, per-command bookkeeping, and temporary evidence do not cross this boundary.
-
-## 3.3 Complete receipt production and persistence
-
-This item promotes the P0 persistence architecture from
-[`reviews/work-engine-run-review-2026-08-19.md`](reviews/work-engine-run-review-2026-08-19.md)
-and the schema-floor recommendation from [`review.md`](review.md) into accepted
-roadmap work.
-
-Move operational accounting and durable publication out of terminal builder
-memory. The intended lifecycle is:
-
-```text
-builder semantic result
-→ exact semantic receipt staged at production/task-complete time
-→ builder reaches a terminal state
-→ host supplies the bound rollout/session identity
-→ terminal host telemetry harvested deterministically
-→ provider/tool result telemetry merged by provenance
-→ final audit receipt assembled with observed/unavailable provenance
-→ current-schema validation
-→ atomic, idempotent JSONL publication
-```
-
-The supervisor owns this lifecycle. The builder owns semantic outcomes,
-decisions, evidence references, and unresolved state; it must not self-report
-final operational measurements for activity that can continue after its return.
-The harvester owns runtime-derived token, context, turn, timing, tool, and
-repository-access measurements. The receipt schema owns their durable shape and
-compatibility policy.
-
-### Authoritative telemetry ingress
-
-Runtime measurements must come from host-produced execution telemetry bound to
-the launched builder identity. For Codex builders, the canonical host source is
-the completed Codex rollout/session JSONL event stream or a product-generated
-equivalent that preserves the same execution identity and event provenance.
-Provider- and tool-specific measurements may be merged only from the
-authoritative result artifacts returned by those providers or tools.
-
-The harvester parses authoritative evidence; it does not estimate. It records
-source identity, exact event or range provenance, and per-field availability as
-`observed` or `unavailable`. It must not infer missing operational measurements
-from model output, filesystem timestamps, neighboring sessions, prior receipts,
-or zeros. An ingress record is conceptually:
-
-```text
-TelemetryIngress
-  run_id
-  slice_id
-
-  builder_runtime
-    source_kind: codex_rollout_jsonl | product_generated_equivalent
-    source_identity: rollout/session identity + terminal event identity
-    observed: input, cached-input, output, reasoning, peak-context,
-              turn-count, and wall-clock measurements when emitted
-    availability: per-field observed | unavailable
-    provenance: exact event/range identities
-
-  tool_runtime
-    source_kind: tool_result | provider_result
-    observed: attempts, duration, and token/cost measurements when emitted
-    availability: per-field observed | unavailable
-    provenance: invocation/result identities
-```
-
-The supervisor-to-builder launch boundary must expose how a terminal builder is
-bound to its authoritative rollout/session. Prefer, in order:
-
-1. a durable rollout/session identifier returned by the builder-launch API;
-2. that identity exposed by the terminal task result;
-3. a deterministic mapping from an existing host-produced artifact; and
-4. only as a last resort, filesystem discovery with strict identity and
-   terminal-event checks.
-
-Timestamp-only discovery under a user directory is not an identity contract.
-Whichever binding is implemented must reject mismatched or ambiguous sessions
-rather than silently harvesting plausible telemetry.
-
-The next Phase 3 slice is deliberately narrower than the complete persistence
-lifecycle. It must:
-
-- define one canonical telemetry-ingress schema;
-- identify the actual Codex host/session artifact and bind it to a launched
-  builder through the strongest available mechanism above;
-- implement a deterministic harvester for the runtime fields Phase 3 owns;
-- preserve unavailable fields without manufacturing values;
-- prove the contract against at least one existing completed rollout; and
-- test malformed, missing, incomplete, ambiguous, and mismatched-session input.
-
-That slice must not redesign semantic receipt staging or atomic publication
-unless a minimal boundary change is required to expose the telemetry ingress.
-The following slice wires the proven harvester into the complete lifecycle.
-
-Implementation requirements:
-
-- stage an exact recoverable artifact before compaction or worker termination
-  can destroy the only copy, with stable run/slice identity and integrity
-  metadata;
-- harvest final operational measurements from authoritative rollout/tool
-  telemetry after the terminal event, preserving unavailable measurements as
-  unavailable rather than inferring zero or accepting stale model estimates;
-- assemble and validate the final audit receipt deterministically while keeping
-  semantic claims, observed telemetry, inference, and unresolved state
-  distinguishable;
-- require schema version 4 or later for ordinary new-record publication, with
-  historical versions admitted only through an explicit legacy-validation or
-  migration path;
-- publish so interruption or retry cannot leave a torn or duplicate durable
-  record: the outcome for a run/slice identity is either no final record or one
-  complete validated record;
-- make recovery independent of model memory and safe under concurrent writers;
-  and
-- test the normal path, validation rejection, interruption between each durable
-  boundary, retry/idempotency, concurrent publication, legacy opt-in, and
-  telemetry-unavailable behavior.
-
-The comparative repository-analysis workflow is the first required consumer.
-Its per-repository workers deliberately cross context boundaries, and its design
-requires runtime-derived operational metrics rather than model self-report.
-Do not scale that workflow beyond a small pilot until this lifecycle can retain
-each repository result and its final measurements across compaction,
-termination, and retry.
-
-## Exit criterion
-
-A future slice can recover the durable architectural result without reading a
-full audit receipt or prior conversation, and a supervisor can recover, finish,
-and publish one validated audit record after builder context is gone without
-reconstructing exact bytes or final metrics through model reasoning. A
-multi-repository comparison pilot demonstrates that guarantee across repeated
-worker boundaries.
+- A fresh clone can install dependencies and run every supported test and
+  preflight from the standalone root.
+- No active Work Engine command or config contains an accidental dependency on
+  the old parent path.
+- Historical artifacts retain truthful source provenance.
+- Site2JSON can reference Work Engine as an external dependency or checked-out
+  integration without Work Engine importing Site2JSON product policy.
 
 ---
 
-# Phase 4 — Establish canonical contract ownership
+# Workstream 1 — Align implementation with the governing design
 
-**Status: substantially implemented.** Current skills establish ownership across the evidence adapter, builder/handoff, supervisor/audit schema, and deterministic gate. Future provider work should extend these contracts without restating them.
+**Status: active.**
 
-Avoid independently restating complete contracts across installable skills.
+## Invariant outcome
 
-Use ownership rather than a single physically shared file:
+Runtime instructions and deterministic validators preserve true contracts while
+leaving non-invariant route choices to model judgment. Every binding command has
+a causal parent and an identifiable failure mode.
 
-- reconnaissance skill owns provider input/output schemas;
-- the builder's decision-policy reference owns evidence economics, stopping,
-  independence, adaptation, and user-surfacing doctrine;
-- builder owns placement certificate and handoff contracts;
-- supervisor owns lifecycle, limits, and acceptance orchestration;
-- receipt schema owns durable audit persistence;
-- deterministic gate runner owns executable validation result schema.
+## Current evidence
 
-Other skills reference the owning contract and restate only the minimum semantics required for safe standalone installation.
+The doctrine clearly separates invariant structure, consequences, capability
+affordances, and procedures. Runtime skills partially preserve that distinction,
+but several encode current preferred routes as mandatory sequences. The receipt
+validator accepts only `direct` and `falsified-placement` route labels, turning
+a useful default taxonomy into a closed product world.
 
-Add compatibility/version fields where an independently installed component crosses a contract boundary.
+## Remaining work
 
-## Exit criterion
+- Inventory binding runtime commands and classify each as invariant,
+  consequence, capability affordance, current observation, or default route.
+- Retain only commands whose violation breaks authority, ownership, security,
+  mutation boundaries, interface validity, provenance, or an explicit
+  acceptance contract.
+- Replace the closed workflow-route enum with open route provenance. Named
+  defaults may remain available for comparison, but novel valid routes must be
+  representable without misclassification.
+- Convert fixed capability ladders into affordance descriptions unless order is
+  causally required.
+- Remove fixed evidence-count, retry-count, reviewer-reset, and escalation
+  thresholds from product doctrine unless an owning external contract supplies
+  them.
+- Keep read-only independent review, user-work preservation, configuration
+  identity, and required receipt provenance as hard boundaries.
+- Add a small doctrine-compliance review to feature design without attempting
+  to mechanically lint semantic judgment.
 
-Each semantic contract has one authoritative owner and drift can be detected without destroying skill portability.
+## Completion evidence
 
----
-
-# Phase 5 — Add a repository-evidence provider abstraction
-
-**Status: implemented.** Config version 2 separates repository retrieval from
-independent review. The backend-neutral `repo-search` skill owns retrieval
-intent and evidence contracts; direct `codex-codebase-memory` is the default.
-`claude-filesystem` and `claude-codebase-memory` remain optional retrieval paths,
-while version 1 preserves their historical combined semantics through explicit
-normalization. Auto provider selection remains deferred.
-
-Do not hard-code “Claude” or “Codebase-Memory” as the architecture.
-
-Resolve providers behind the repository-evidence contract independently from
-the review contract.
-
-Possible configured modes:
-
-```yaml
-builder:
-  context:
-    repository_evidence:
-      skill: claude-recon-implementation
-      provider: claude-filesystem
-```
-
-```yaml
-builder:
-  context:
-    repository_evidence:
-      skill: claude-recon-implementation
-      provider: claude-codebase-memory
-```
-
-```yaml
-builder:
-  context:
-    repository_evidence:
-      skill: repo-search
-      provider: codex-codebase-memory
-    independent_review:
-      skill: claude-recon-implementation
-      provider: claude
-```
-
-Later:
-
-```yaml
-builder:
-  context:
-    repository_evidence:
-      provider: auto
-```
-
-The builder must receive the same retrieval contract regardless of provider,
-while independent review retains separate identity and freshness.
-
-Provider-specific telemetry stays namespaced in the audit receipt.
-
-## Exit criterion
-
-Changing the repository-evidence mechanism requires configuration, not changes to builder semantics or supervisor lifecycle.
+- A valid route outside the historical two-route taxonomy can be configured,
+  executed, recorded, and accepted.
+- Each imperative in a runtime skill traces to an owning product property or is
+  visibly presented as a revisable default.
+- Validators reject invariant violations but do not enforce a preferred
+  reasoning style or tool order.
+- Tests cover route revision, preserved evidence, retired stale decisions, and
+  open route identity.
 
 ---
 
-# Phase 6 — Prove an ESM migration through one vertical runtime slice
+# Workstream 2 — Consolidate contract ownership and runtime projections
 
-**Status: implementation present; completion evidence needs reconciliation.**
-The canonical authored modules are `property-profile.mjs`,
-`correction-promotion.mjs`, and `sidebar.mjs`. The sidebar imports correction
-promotion directly, which imports property profile directly. A generated
-`property-profile.js` compatibility artifact temporarily serves the unmigrated
-classic semantic-toolbox consumer; its build script owns both generation and
-freshness checking, so it is not a parallel authored implementation. Focused
-scoring, compatibility, Semantic Library, and sidebar tests pass.
+**Status: planned; foundations exist.**
 
-The durable Work Engine metrics currently contain stopped Phase 6 planning
-receipts, but no accepted terminal receipt proving the real-extension
-interaction, broader suite, freshness gates, independent review, and
-post-change import-aware graph evidence. Do not repeat the implementation.
-First recover any existing completion evidence; if none exists, run only the
-missing final gate and record its result.
+## Invariant outcome
 
-The extension currently uses UMD wrappers and `globalThis` APIs primarily as a
-scaffolding inheritance, not as a desired architectural constraint. Before
-using call-graph quality to judge Codebase-Memory, migrate one complete runtime
-path to native ES modules and measure both runtime behavior and graph evidence.
+Each durable semantic contract has one canonical owner. Runtime instructions
+are compact, role-scoped projections of that owner rather than parallel policy
+documents.
 
-Use the correction-promotion path as the first bounded slice:
+## Current evidence
 
-`property profile → correction promotion → sidebar consumer → browser interaction`
+Configuration, builder, handoff, receipt, provider, telemetry, comparison, and
+gate contracts exist. Their core distinctions are useful, but placement,
+validation, context, and route doctrine are repeated across several skills and
+references.
 
-## Required behavior
+## Remaining work
 
-1. expose property-profile behavior through explicit named ESM exports;
-2. import those exports directly in correction promotion;
-3. expose correction-promotion operations through explicit named exports;
-4. import those operations directly in the sidebar entry module;
-5. load the sidebar entry with module semantics rather than depending on
-   first-party script-tag ordering for the migrated path;
-6. update Node tests to consume the ESM boundary without duplicating production
-   implementations or maintaining parallel CommonJS logic;
-7. keep any temporary compatibility bridge small, one-way, visibly marked, and
-   owned by a later removal slice.
+- Publish a contract ownership map covering configuration, campaign state,
+  builder output, handoff, audit receipt, telemetry ingress, repository evidence,
+  independent review, comparison artifacts, and visual evidence.
+- Keep wire shapes and mechanically decidable semantics in schemas and
+  deterministic validators.
+- Keep model-facing skills limited to the role's authority, consequences,
+  available capabilities, and required output boundary.
+- Remove repeated general doctrine from adapters; link to the owner without
+  forcing every runtime role to ingest the full design history.
+- Separate historical compatibility readers from current artifact producers.
+  Backward compatibility must not authorize new runs to emit obsolete formats.
+- Give every schema and receipt version an explicit migration and retirement
+  policy.
 
-Do not count a producer-only conversion as completion. The slice is vertical
-only when the browser consumer no longer reaches the migrated behavior through
-`globalThis`.
+## Completion evidence
 
-## Runtime and graph proof
-
-Prove all of the following independently:
-
-- the real extension sidebar loads and the correction-promotion interaction
-  still reaches its persisted semantic-library consequence;
-- focused tests cover named imports, revision conflicts, and successful saves;
-- the broader extension suite remains green;
-- Codebase-Memory resolves the selected cross-file calls as `CALLS` edges using
-  import-aware evidence rather than weak same-name matching;
-- unresolved dynamic service calls remain represented as unresolved/dynamic
-  boundaries rather than being claimed as statically proven calls.
-
-Graph improvement is evidence about static correspondence, not proof of browser
-behavior. Browser execution and tests remain separate acceptance evidence.
-
-## Exit criterion
-
-One complete production path uses native ESM from producer through sidebar
-consumer, has no first-party global API dependency within that path, passes
-runtime and test verification, and produces precise import-backed graph edges.
+- Every shared field and state vocabulary has one documented owner.
+- Changing an owned contract has an identifiable consumer/test impact path.
+- New runs cannot emit legacy receipt versions merely because historical
+  readers still accept them.
+- Runtime prompt footprint decreases without losing authority, provenance, or
+  failure consequences.
 
 ---
 
-# Phase 7 — Migrate the remaining first-party extension graph to ESM
+# Workstream 3 — Complete truthful state, provenance, and persistence
 
-Continue from the proven vertical slice in dependency order. Treat each module
-cluster as a separately reviewable ownership decision rather than converting
-the entire extension in one flag day.
+**Status: active; substantial implementation exists.**
 
-## 7.1 Inventory real runtime boundaries
+## Invariant outcome
 
-Record, from source and manifest evidence:
+Durable state describes what actually happened. Observed, inferred, decided,
+unavailable, conflicting, and unresolved states remain distinguishable.
+Continuation preserves useful consequences without treating a transcript as
+the product record.
 
-- browser entry points and their execution environments;
-- first-party classic-script ordering dependencies;
-- `globalThis.Site2Json*` producers and consumers;
-- CommonJS-only test consumers;
-- service-worker, content-script, injected-page, and extension-page boundaries;
-- vendor scripts that should remain external/classic rather than being rewritten.
+## Current evidence
 
-Keep observed runtime wiring distinct from inferred migration order.
+Versioned receipts, compact handoffs, route revisions, provider/evidence-mode
+separation, fallback events, configuration provenance, append locking, and
+telemetry-ingress validation are present. Some historical records remain on old
+schemas, authoritative builder telemetry is incomplete, and comparative
+analysis currently permits `confirmed_absent` despite recorded coverage
+limitations.
 
-## 7.2 Migrate by coherent dependency cluster
+## Remaining work
 
-For each cluster:
+- Make material coverage limitations incompatible with definitive absence.
+  Downgrade the claim or close the gap with relevant direct evidence.
+- Complete deterministic receipt assembly from validated semantic builder
+  output and authoritative host/provider telemetry.
+- Enforce current schema versions for new durable writes while preserving
+  explicit historical read/migration support.
+- Bind effective configuration to its resolved source rather than relying on
+  model transcription.
+- Preserve `null` for unavailable measurements and zero only for observed zero.
+- Define resumption semantics for interrupted campaigns, including stable run
+  identity, accepted slice state, pending authority decisions, and compatible
+  handoff context.
+- Preserve route invalidations compactly: failed premise, stale dependent
+  decisions, still-valid evidence, replacement route, and reason.
+- Exercise append locking, crash boundaries, duplicate prevention, and partial
+  receipt recovery under realistic concurrent or interrupted conditions.
 
-1. select the smallest complete producer-to-consumer path;
-2. replace first-party global lookup with named or namespace imports;
-3. preserve runtime ownership and initialization timing explicitly;
-4. update tests and entry-point declarations in the same slice;
-5. visually and behaviorally inspect affected extension surfaces;
-6. reindex and verify representative import/call edges;
-7. remove the compatibility bridge as soon as its final consumer migrates.
+## Completion evidence
 
-Do not create a permanent ESM implementation plus CommonJS implementation pair.
-Tests should import production behavior through the same authored module
-boundary, even when the test runner needs dynamic `import()` or a scoped module
-configuration.
-
-## 7.3 Preserve truthful mixed-mode boundaries
-
-During migration, document which clusters are ESM, which remain classic, and
-why. A classic vendor asset, page-injected script, or platform-constrained entry
-point is not technical debt merely because its execution model differs. A
-first-party compatibility global with no remaining consumer is debt and should
-fail a freshness check or boundary test.
-
-## 7.4 Completion checks
-
-- first-party extension modules no longer use UMD solely for dual browser/Node
-  loading;
-- migrated dependencies are visible as explicit imports;
-- entry-point module settings match the actual Chrome execution environment;
-- accessibility, keyboard behavior, light/dark themes, narrow/wide panels, and
-  maximized layouts remain coherent where a migrated cluster affects UI;
-- focused tests, the full suite, generated-asset checks, and real-extension
-  smoke tests pass;
-- documentation and developer vocabulary describe the resulting module model;
-- Codebase-Memory edge checks are recorded as static-analysis evidence with
-  confidence/strategy, not overstated as complete runtime proof.
-
-## Exit criterion
-
-The remaining first-party extension runtime uses explicit ESM boundaries except
-where a documented platform boundary requires another execution model; obsolete
-globals and compatibility bridges are removed, and graph-first experiments no
-longer begin from a known UMD/global alias-resolution handicap.
+- False definitive-absence artifacts fail validation.
+- A new terminal receipt can be assembled without guessed measurements or
+  model-copied authoritative telemetry.
+- An interrupted campaign resumes from durable state without replaying accepted
+  work or losing unresolved decisions.
+- Exactly one durable terminal audit record exists for each terminal slice.
 
 ---
 
-# Phase 8 — Codebase-Memory experiment A: change retrieval, not model
+# Workstream 4 — Stabilize the capability and adapter architecture
 
-**Status: retained as a controlled post-adoption benchmark.** Direct
-Codebase-Memory is already the config-version-2 retrieval default behind
-`repo-search`. This experiment now measures an explicit Claude graph-first
-retrieval route against the historical Claude filesystem control; it is not a
-prerequisite for adopting the default.
+**Status: planned; provider and evidence foundations exist.**
 
-Keep constant:
+## Invariant outcome
 
-- Claude model;
-- placement contract;
-- targeted recon contract;
-- Codex builder model/effort;
-- deterministic validation;
-- adversarial review requirements;
-- representative slice mix.
+Capabilities expose meaningful, composable state transitions with clear
+affordances and limitations. Provider identity, capability choice, evidence
+mode, fallback, and independent review remain separate concepts.
 
-Change only:
+## Current evidence
 
-`Claude + Grep/Glob/Read` → `Claude + Codebase-Memory graph-first retrieval`
+The repository includes repository-search, Codebase Memory guidance, Claude
+reconnaissance/review, deterministic gates, comparison tooling, and Chrome
+Vision. Configuration version 2 separates repository retrieval from independent
+review. Some skills still couple provider products to preferred workflows.
 
-Use the installed Codebase-Memory Claude integration and scout agent where appropriate.
+## Remaining work
 
-## Required behavior
+- Define the minimal adapter interface for repository evidence, independent
+  review, deterministic validation, rendered-state evidence, and builder
+  execution.
+- Describe what each capability can establish, its authority, its cost signals,
+  its limitations, and the provenance it returns.
+- Keep provider-specific metrics namespaced while mapping only genuinely
+  corresponding measurements into shared semantic fields.
+- Allow capabilities to coexist when authority and safety permit; do not force a
+  provider change merely to use another evidence mode.
+- Make unavailable, failed, timed-out, and unsupported capabilities explicit
+  state rather than cognitive recovery instructions.
+- Provide bounded extension points for additional builders and evidence
+  providers without adding redundant controls that reach indistinguishable
+  states.
+- Make Chrome Vision an optional generic capability with a stable packet
+  contract. Product selectors, aliases, and restart policy remain adapter-owned.
 
-Claude should:
+## Completion evidence
 
-1. use Codebase-Memory as the primary repository navigation and structural evidence source;
-2. avoid reconstructing broad repository architecture in prose;
-3. query only until the requested placement/falsification questions are resolved;
-4. read raw source only when graph evidence is insufficient or exact behavior must be verified;
-5. return only evidence that deserves to cross into builder context.
-
-Source remains ground truth. The graph is an evidence/navigation substrate, not an unquestionable authority.
-
-## Instrument hidden context
-
-Measure separately when possible:
-
-- automatic Codebase-Memory context injected at session/subagent start;
-- graph-query result tokens;
-- raw source-read tokens;
-- final recon output tokens;
-- builder-bound packet tokens.
-
-Do not call an approach efficient merely because injected or cached context is cheaper to bill. Context-window occupancy and reasoning pollution also matter.
-
-## Acceptance comparison
-
-Compare against Phase 0 baseline on:
-
-- placement conflicts;
-- late placement invalidation;
-- supplemental recon frequency;
-- adversarial-review findings;
-- post-review repairs;
-- builder-context growth;
-- total model tokens;
-- Claude output tokens;
-- wall-clock duration;
-- source ranges read;
-- builder local exploration.
-
-## Decision rule
-
-Prefer or retain graph-first Claude retrieval for the slices it serves only if
-token/context savings do not materially worsen placement quality,
-semantic-review findings, or late rework. Do not infer the quality of direct
-Codebase-Memory retrieval from this separate provider comparison.
+- At least two repository-evidence implementations satisfy the same semantic
+  adapter contract, or the single supported implementation is truthfully
+  documented without pretending portability has been proved.
+- Retrieval and independent review can use the same or different products
+  without conflating their roles.
+- Capability selection is recorded separately from actual fallback.
+- Adding an adapter does not require rewriting supervisor doctrine.
 
 ---
 
-# Phase 9 — Codebase-Memory experiment B: preserve recon as an airlock
+# Workstream 5 — Prove the campaign lifecycle
 
-**Status: measurement pending.** The provider contract now supports direct
-repository retrieval separately from independent review, but that does not by
-itself prove when broad exploration should live in disposable context.
+**Status: planned; single-slice paths have the most evidence.**
 
-Test the hypothesis that disposable graph exploration protects persistent builder context.
+## Invariant outcome
 
-Compare:
+The supervisor owns campaign state, authority, limits, durable receipts, and
+continuation decisions without absorbing or recreating the builder's domain
+reasoning. Builder context survives only while it improves the bounded work.
 
-### A. Disposable recon agent + graph
+## Current evidence
 
-`slice → disposable Codebase-Memory scout/recon → bounded evidence packet → persistent builder`
+The supervisor and builder contracts describe planning, acceptance,
+implementation, gating, handoff, continuation, limits, stops, and intervention.
+Recorded campaigns have exercised first slices; the repository does not yet
+carry convincing evidence for a complete multi-slice lifecycle.
 
-### B. Persistent builder + graph directly
+## Remaining work
 
-`slice → persistent builder explores Codebase-Memory → implementation`
+- Run representative campaigns that accept more than one slice and consume a
+  compact handoff in a later builder.
+- Demonstrate route reopening when evidence invalidates an accepted boundary.
+- Demonstrate a recoverable validation failure, a truthful stop, a required
+  human-authority decision, and continuation after an accepted slice.
+- Verify limits and stop conditions from observed state, including the
+  distinction between exhausted capacity, unavailable capability, product
+  failure, and incomplete evidence.
+- Verify that supervisor context remains compact and does not accumulate raw
+  source, logs, transcripts, or model-specific bookkeeping.
+- Decide lifecycle boundaries from retained information value rather than a
+  universal reset ritual.
 
-Use equivalent slices and validation.
+## Completion evidence
 
-## Measure especially
-
-- builder-context growth;
-- number of exploratory graph results entering builder context;
-- abandoned query paths;
-- builder compaction frequency;
-- total slice tokens;
-- implementation/rework quality;
-- late semantic review findings.
-
-## Working hypothesis
-
-Exploration remains disposable; known-question retrieval may happen directly in the builder.
-
-The intended rule is:
-
-> **Exploration → disposable context. Known-question retrieval → builder context.**
-
-Do not adopt the rule by assumption; validate it empirically.
-
----
-
-# Phase 10 — Hybrid graph workflow
-
-If Experiment B supports the airlock model, make it the default for ambiguous, cross-boundary, or consequential placement. Preserve direct targeted retrieval for obvious local boundaries.
-
-## 10.1 Primary placement scout
-
-Use a disposable Codebase-Memory-enabled scout to find up to three plausible boundaries and the facts that discriminate them.
-
-Codex remains the placement owner and selects the provisional candidate.
-
-## 10.2 Fresh placement falsifier
-
-Use a new process, graph-first, that receives:
-
-- objective and work source;
-- placement candidates;
-- provisional placement certificate;
-- rejected alternatives and reasons;
-- relevant repository instructions.
-
-It assumes the certificate may be wrong and attempts to falsify only the selected boundary.
-
-Freshness remains mandatory on this falsification route because epistemic independence is the reason for selecting it.
-
-## 10.3 Builder microscope
-
-Allow the persistent builder to query Codebase-Memory directly only for narrow, already-known questions exposed during implementation, for example:
-
-- exact consumer path for a known state;
-- callers of a known symbol;
-- tests covering a known persistence path;
-- ownership neighborhood of a known module;
-- impact of changing a known symbol.
-
-Broad exploratory neighborhood walking belongs in disposable recon.
-
-## 10.4 Supplemental retrieval policy
-
-For a missing fact during implementation:
-
-1. attempt deterministic/local graph retrieval when the question is narrow;
-2. if the result is sufficient, return only the minimal evidence to the builder;
-3. use recon-session continuation only when the missing fact heavily depends on the existing packet and doing so is explicit;
-4. use a fresh process when independence matters;
-5. escalate to a stronger model only when evidence remains ambiguous.
-
-## Exit criterion
-
-Raw repository reading is no longer the default navigation strategy for either placement or targeted recon.
+- A multi-slice reference campaign reaches objective completion with valid
+  terminal receipts and a consumed handoff.
+- A separate campaign reaches a truthful non-success terminal state without
+  representing it as completion.
+- Resume, replan, repair, limit, approval, and notification behavior have
+  executable coverage proportional to their consequence.
+- Campaign completion is supported by evidence beyond a builder's unsupported
+  assertion that no work remains.
 
 ---
 
-# Phase 11 — Benchmark model choice independently of retrieval choice
+# Workstream 6 — Make validation consequence-driven
 
-Only after the graph-first workflow is stable, compare model choices.
+**Status: planned; deterministic gate runner is preserve.**
 
-Candidate placements/recon backends may include:
+## Invariant outcome
 
-- current Claude model + Codebase-Memory;
-- cheaper Claude model + Codebase-Memory;
-- Codex subagent + Codebase-Memory;
-- other configurable models that satisfy the evidence contract.
+Mechanically determined checks run deterministically. Semantic breadth and
+independence are selected from consequence, uncertainty, reversibility,
+fan-out, and explicit acceptance requirements. Passing a check never proves
+more than that check establishes.
 
-Do not optimize only for provider price.
+## Current evidence
 
-Compare:
+The deterministic gate runner accepts array commands, runs without shell
+interpolation, bounds failure excerpts, fails fast, and reports executed totals.
+Engineering profiles distinguish proportional and full validation, but some
+runtime instructions still turn risk signals into mandatory stage rules.
 
-- correct placement rate;
-- disagreement with builder placement;
-- falsifier conflict rate;
-- late semantic rejection;
-- supplemental retrieval;
-- adversarial-review findings;
-- post-review repairs;
-- total tokens and cost;
-- wall-clock duration.
+## Remaining work
 
-A cheaper placement model is accepted only if the overall accepted-slice cost and semantic quality improve.
+- Preserve the gate runner as the owner of command execution and compact
+  observed results.
+- Make validation requirements describe observable consequences rather than
+  ceremonial stages where possible.
+- Keep explicit full-gate configuration binding when broad consistency is
+  itself part of the user's acceptance contract.
+- Allow proportional validation to justify selected and omitted evidence
+  without reporting omission as success.
+- Treat independent review as a capability used when it materially reduces
+  consequential correlated error or is explicitly required.
+- Preserve useful reviewer context through bounded remediation unless renewed
+  independence or changed premises require a fresh perspective.
+- Add rendered-state and accessibility evidence when the changed consequence is
+  visual or interactive; source and unit tests alone do not establish pixels or
+  interaction.
 
-## Exit criterion
+## Completion evidence
 
-Model selection becomes evidence-based and configurable rather than embedded in workflow semantics.
-
----
-
-# Phase 12 — Adaptive escalation
-
-After provider/model baselines exist, introduce an `auto` mode.
-
-Resolve each uncertainty with the cheapest mechanism that can establish it reliably:
-
-`deterministic graph query → inexpensive graph-enabled model → strong model → independent reviewer → human judgment`
-
-Possible escalation triggers:
-
-- graph returns no path for a required placement-certificate clause;
-- multiple viable owners survive discrimination;
-- evidence conflicts across graph/source/canonical documentation;
-- placement confidence or candidate margin falls below a configured threshold;
-- ownership requires semantic interpretation rather than structural discovery;
-- falsifier identifies a failed certificate clause;
-- existing accepted architectural decision conflicts with current repository structure.
-
-Do not allow a cheap model to silently resolve ambiguity by inventing certainty.
-
-## Exit criterion
-
-Strong-model tokens are spent primarily on real ambiguity and adversarial reasoning, not routine repository navigation.
+- The same semantic requirement can be established through different valid
+  evidence routes when no contract fixes the route.
+- Deterministic validators reject malformed contracts and failed checks without
+  judging open semantic choices mechanically.
+- Review freshness corresponds to an independence claim rather than a universal
+  phase transition.
+- Receipts state validation breadth, limitations, and unresolved concerns
+  truthfully.
 
 ---
 
-# Phase 13 — Move repository context to Codebase-Memory as the default substrate
+# Workstream 7 — Build useful observability and evaluation
 
-**Status: implemented at the Work Engine contract boundary.** Direct
-Codebase-Memory is the default repository provider behind `repo-search`, with
-coverage-aware direct-source and optional Claude-backed fallbacks. Benchmarking
-and broader runtime evidence remain ongoing rather than prerequisites for
-truthfully representing the configured default.
+**Status: planned; historical measurements are incomplete.**
 
-## Target operational architecture
+## Invariant outcome
 
-```text
-campaign supervisor
-        │
-        ▼
-persistent slice builder
-        │
-        ├── placement decision / certificate ownership
-        │
-        ├── implementation
-        │
-        └── narrow graph queries for known questions
+Metrics inform future judgment and design without redefining success. Comparisons
+use compatible accepted outcomes and distinguish missing measurements from
+zero.
 
-slice intent
-        │
-        ▼
-disposable placement scout
-        │
-        ▼
-Codebase-Memory
-        │
-        ▼
-bounded candidate/evidence packet
+## Current evidence
 
-provisional certificate
-        │
-        ▼
-fresh graph-enabled falsifier
-        │
-        ▼
-confirm / conflict / unresolved
+Receipt contracts contain builder, provider-role, evidence-mode, route,
+validation, review, timing, token, cost, and outcome fields. Historical records
+are sparse, span schema versions, contain no second slices, and lack several
+authoritative builder measurements.
 
-implementation
-        │
-        ▼
-deterministic gate runner
-        │
-        ▼
-fresh independent semantic reviewer
-        │
-        ▼
-findings / counterexamples
-```
+## Remaining work
 
-## Default evidence policy
+- Complete authoritative telemetry ingress and receipt assembly before treating
+  cost comparisons as reliable.
+- Define comparison cohorts by objective class, consequence, route, provider,
+  model, validation breadth, and accepted outcome.
+- Measure total cost to an accepted or truthful terminal decision, including
+  repair, late rejection, user attention, context occupancy, and maintenance
+  burden where observable.
+- Keep historical incompatible records available for provenance but out of
+  unsupported aggregate comparisons.
+- Add calibration checks that reopen evidence and compare recorded claims with
+  the artifacts they cite.
+- Evaluate repository evidence, context isolation, reviewer persistence, model
+  choice, and escalation as separable variables.
+- Publish limitations with every benchmark; a sample or passing run is not a
+  universal performance claim.
 
-- Codebase-Memory is primary for repository topology, callers/callees, symbol relationships, impact, and structural navigation.
-- Raw source reads are targeted verification, not default exploration.
-- Disposable recon absorbs broad graph exploration.
-- Builder direct graph use is narrow and purpose-known.
-- Claude or another strong model remains available for placement falsification and semantic adversarial review.
-- Provider choice remains configurable so the filesystem path can be retained as fallback and benchmark control.
+## Completion evidence
 
-## Migration safety
-
-Do not delete the raw filesystem recon path immediately. Keep it as:
-
-- fallback when Codebase-Memory indexing is unavailable/stale;
-- control provider for regression experiments;
-- escalation path when graph coverage is demonstrably insufficient.
-
-Record whether a slice used graph-only, graph-plus-source, or raw-filesystem recon.
-
-## Exit criterion
-
-The routine workflow no longer asks a model to rediscover repository structure by reading broad source ranges when equivalent structural evidence already exists in Codebase-Memory.
+- New accepted runs carry authoritative available measurements and explicit
+  unavailability for the rest.
+- Comparable cohorts can answer at least one route or capability question
+  without mixing incompatible schemas or outcomes.
+- Evaluation includes quality and repair signals, not cost alone.
+- No product acceptance rule is silently derived from an observational metric.
 
 ---
 
-# Phase 14 — Semantic architectural memory overlay
+# Workstream 8 — Make the repository explain and sustain itself
 
-Do this only after the Codebase-Memory substrate has proven useful. Do not rebuild low-level code graph functionality already supplied by Codebase-Memory.
+**Status: planned.**
 
-The Work Engine-owned layer should capture **verified semantic knowledge**, not duplicate AST/call/import indexing.
+## Invariant outcome
 
-Begin with the highest-value durable objects:
+The standalone repository is coherent to use and maintain. Documentation,
+terminology, architecture, commands, errors, and presentation reveal the real
+system and invite continued stewardship.
 
-- placement certificates;
-- accepted architectural decisions;
-- rejected/insufficient substitutes;
-- invariants;
-- state ownership;
-- durable producer/consumer consequences;
-- proof/test relationships;
-- superseded decisions.
+## Current evidence
 
-Possible semantic node types:
+The repository contains substantial doctrine and reference material, but lacks
+a concise standalone entry point. Current, historical, speculative, and
+Site2JSON-specific documents are not always visibly distinguished, and several
+contracts repeat the same ideas.
 
-- `Concept`
-- `Responsibility`
-- `State`
-- `Boundary`
-- `Invariant`
-- `Decision`
-- `Proof`
-- `Test`
+## Remaining work
 
-Possible semantic edge types:
+- Create a documentation map with explicit categories: normative doctrine,
+  runtime contracts, operator guidance, reference, roadmap, research, history,
+  and generated artifacts.
+- Give every historical review, experimental note, and superseded proposal a
+  visible status and relationship to current doctrine.
+- Consolidate duplicate design drafts after preserving any unique evidence or
+  reasoning that still matters.
+- Use consistent names for supervisor state, builder state, evidence mode,
+  provider role, route revision, validation result, receipt, and handoff.
+- Provide minimal runnable examples that demonstrate normal, uncertain,
+  fallback, intervention, and failure paths without presenting scripted demos
+  as general workflow law.
+- Make errors identify what happened, which contract failed, what evidence is
+  available, and what authority or action is needed next.
+- Establish formatting, linting, test, release, and contribution workflows that
+  make internal maintenance pleasant and predictable.
+- Review documentation and developer surfaces against Truth, Maintainability,
+  Explainability, and Aesthetics together.
 
-- `OWNS`
-- `PRODUCES`
-- `CONSUMES`
-- `AFFECTS`
-- `VERIFIED_BY`
-- `MUST_NOT_DEPEND_ON`
-- `REJECTED_SUBSTITUTE`
-- `SUPERSEDES`
-- `IMPLEMENTED_BY`
+## Completion evidence
 
-Every semantic edge must retain provenance and epistemic status. Distinguish:
-
-- deterministic fact;
-- accepted architectural decision;
-- verified inference;
-- active hypothesis;
-- stale/superseded assertion.
-
-Models may propose semantic assertions but should not silently promote hypotheses into authoritative architectural facts.
-
-## First experiment
-
-Before building automatic semantic graph reasoning, persist accepted placement certificates and handoff decisions in a queryable form and test whether later slices require less recon.
-
-## Exit criterion
-
-The engine preserves architectural knowledge that Codebase-Memory cannot derive from source structure alone.
+- A new contributor can identify the canonical design, run a reference campaign,
+  locate each contract owner, and understand a failed receipt without reading
+  historical reviews.
+- No active documentation makes a known stale claim about current behavior.
+- Links, examples, commands, schemas, and campaign preflights are checked in CI.
+- Repository organization makes current product surfaces visibly distinct from
+  research and history.
 
 ---
 
-# Phase 15 — Evidence invalidation and proof-aware verification
+# Workstream 9 — Release the completed standalone foundation
 
-This is a later optimization, not a prerequisite for the Codebase-Memory migration.
+**Status: planned.**
 
-Model accepted slice claims explicitly, for example:
+## Invariant outcome
 
-- state belongs to boundary X;
-- runtime layer does not depend on editor-only identity;
-- stale binding cannot influence scoring;
-- persistence preserves semantic identity;
-- downstream consumer observes the new state.
+Work Engine has a versioned standalone foundation whose claims match its
+observed behavior. Completion means the core system is coherent and supported;
+it does not mean every possible provider, optimization, or research idea has
+been implemented.
 
-Attach proof evidence such as:
+## Release candidate requirements
 
-- placement certificate;
-- deterministic graph fact;
-- static dependency rule;
-- vertical semantic test;
-- focused regression test;
-- full-suite result;
-- adversarial reviewer finding/clearance.
+- Independent repository extraction and root-relative operation are complete.
+- Doctrine and runtime projections pass the alignment criteria in Workstream 1.
+- Contract owners and current schema-production rules are explicit.
+- Truthful absence, route revision, provenance, configuration identity, and
+  receipt persistence are executable and tested.
+- At least one multi-slice reference campaign completes and one representative
+  campaign stops truthfully.
+- Capability roles are distinct and adapters report truthful availability,
+  use, failure, and fallback.
+- Deterministic and semantic validation boundaries are demonstrated.
+- Current telemetry supports limited, explicitly scoped evaluation.
+- Standalone documentation, contribution, CI, versioning, and release surfaces
+  are present and coherent.
+- Site2JSON-specific product work is absent from the active Work Engine roadmap
+  and generic runtime contracts.
 
-Track dependencies/digests so a repository change can invalidate only affected claims and proofs.
+## Completion review
 
-The long-term target is selective re-verification:
+The completion review evaluates all four principles equally:
 
-> Re-establish stale proof obligations rather than reconstructing all previously accepted knowledge.
+### Truth
 
-This phase should be justified by measured repeated verification/recon cost before implementation.
+Do state, evidence, provenance, confidence, uncertainty, fallbacks, revisions,
+and limitations correspond to what actually happened?
 
----
+### Maintainability
 
-# Phase 16 — Counterexample-oriented adversarial review
+Does each contract have one owner? Can providers, builders, and campaigns evolve
+without duplicating doctrine or transferring unrelated maintenance burden?
 
-Keep the independent semantic reviewer, but compress its output around falsification.
+### Explainability
 
-Prefer findings that identify one of:
+Can a user or maintainer trace objective, authority, evidence, decision,
+execution, validation, and outcome without reconstructing hidden machinery?
 
-- concrete counterexample;
-- violated invariant;
-- failed placement-certificate clause;
-- contradictory source/graph evidence;
-- missing proof obligation;
-- unreachable claimed consequence;
-- unsafe/stale persistence or identity behavior.
+### Aesthetics
 
-Avoid broad review essays when a small falsifier set is sufficient.
+Do terminology, repository organization, documentation, code boundaries,
+commands, and presentation form one coherent system worth caring for?
 
-Codex remains responsible for deciding whether findings are valid and in scope, implementing repairs, and accepting the final slice only after deterministic checks and blocking semantic findings are clear.
-
----
-
-# Measurement and decision policy
-
-No optimization phase is accepted solely because it lowers tokens.
-
-For each experiment, classify the outcome across three dimensions:
-
-## Token/context efficiency
-
-- provider input/output tokens;
-- hidden/injected context where measurable;
-- builder-context growth;
-- graph-result tokens retained;
-- raw source lines/ranges read;
-- supplemental calls;
-- compaction frequency.
-
-## Correctness
-
-- placement conflict rate;
-- placement reconsideration rate;
-- vertical proof failures;
-- late semantic rejection;
-- regressions;
-- post-review repair count;
-- unresolved architecture stops.
-
-## Verification quality
-
-- independent falsification preserved;
-- deterministic gate completeness;
-- adversarial-review findings;
-- missing-proof findings;
-- ability to reproduce evidence;
-- source-grounded confirmation when graph evidence is insufficient.
-
-A change that lowers tokens while increasing late semantic failures is not an optimization.
+Work Engine reaches roadmap completion when the release candidate requirements
+are observed and unresolved limitations are explicitly recorded. Optional
+research remains open without making the completed foundation fictional.
 
 ---
 
-# Proposed near-term slice order
+# Research after the standalone foundation
 
-The provider abstraction, direct Codebase-Memory default, deterministic gate,
-bounded evidence contracts, and audit/handoff contract split are implemented.
-The production/persistence half of that split is not. Continue approximately in
-this order:
+These areas may improve Work Engine, but they are not prerequisites for the
+first completed standalone release:
 
-1. **Define and implement the Phase 3 telemetry-ingress contract.** Bind each
-   launched Codex builder to authoritative rollout/session telemetry, merge
-   provider/tool result artifacts by provenance, preserve per-field
-   unavailability, and prove deterministic harvesting against an existing
-   completed rollout plus malformed and mismatched inputs. Do not absorb the
-   rest of receipt persistence into this slice.
-2. **Complete Phase 3 receipt production and persistence.** Stage the semantic
-   artifact at production/task-complete time, invoke the proven harvester after
-   terminal execution, assemble and validate deterministically, enforce the
-   current-schema floor with explicit legacy opt-in, and publish atomically and
-   idempotently with interruption/retry coverage.
-3. **Exercise the completed lifecycle in the comparative repository-analysis
-   pilot.** Profile Work Engine and two or three heterogeneous repositories,
-   proving that per-repository artifacts and runtime-derived metrics survive
-   compaction, termination, and retry before scaling to the configured corpus.
-4. **Reconcile the Phase 6 ESM completion record.** Recover an accepted gate
-   receipt if one exists; otherwise run the missing real-extension, broader
-   suite, freshness, independent-review, and import-aware graph checks without
-   reimplementing the slice.
-5. **Decide whether to begin Phase 7** from that accepted evidence. If the Phase
-   6 gate is clean, migrate remaining first-party extension clusters in
-   dependency order; otherwise repair only findings that invalidate the
-   vertical ESM consequence.
-6. **Measure the adopted direct Codebase-Memory default on representative real
-   slices** against correctness, verification quality, context growth, and the
-   historical filesystem/Claude control.
-7. **Run the explicit Claude graph-first provider comparison** only as a
-   controlled provider benchmark, keeping the model, contracts, builder, and
-   validation constant.
-8. **Compare disposable graph exploration with builder-direct retrieval** to
-   determine whether the recon airlock protects durable builder context.
-9. **Adopt or revise the hybrid airlock + builder-microscope policy** only from
-   those measurements.
-10. **Benchmark reviewer and retrieval model choices independently**, then add
-   adaptive escalation only where observed ambiguity justifies it.
-11. **Experiment with a semantic architectural overlay** beginning with accepted
-    placement certificates, decisions, rejected substitutes, and proof
-    relationships.
-12. **Add proof invalidation/selective reverification** only if measured repeated
-    reconstruction or verification cost justifies it.
-13. **Compress adversarial review around counterexamples and violated proof
-    obligations** while preserving an independent reviewer.
+- controlled comparisons of repository-evidence providers;
+- controlled model and reasoning-effort comparisons;
+- semantic architectural memory with explicit invalidation and consumer
+  contracts;
+- richer proof-aware verification and claim dependency tracking;
+- additional independent-review strategies;
+- new domain-specific builders;
+- distributed or remote campaign execution;
+- richer UI, visualization, and human collaboration surfaces.
 
-The brainstorming notes in `work-engine/ideas/` remain outside this ordering
-until their systems are deliberately designed and accepted.
-
-The already-implemented deterministic gate, bounded recon schemas,
-audit/handoff contract split, and contract ownership remain prerequisites and
-should be protected by tests while Phase 3 completion makes their persistence
-reliable.
+Research becomes product work only when it has an owner, a protected
+consequence, a truthful provenance model, and evidence that it adds meaningful
+reach rather than another equivalent control.
 
 ---
 
-# Non-goals
+## Immediate transition slice
 
-Do not:
+The first bounded slice should establish the standalone boundary without trying
+to finish every internal alignment issue at once.
 
-- replace independent review with compilation or tests alone;
-- let Codebase-Memory become an unquestioned source of truth;
-- build a new AST/call/import graph before proving existing Codebase-Memory capabilities insufficient;
-- introduce agent swarms merely to reduce individual context sizes;
-- persist raw recon prose as architectural memory;
-- optimize provider cost while ignoring builder-context pollution;
-- let an LLM directly execute routine validation merely for orchestration;
-- allow a provider-specific response shape to leak into the builder contract;
-- silently weaken placement falsification when changing retrieval providers;
-- treat cached tokens as free when they still occupy reasoning context;
-- preserve a recon session merely for convenience when independence is semantically valuable.
+Its intended consequence is:
 
----
+> A fresh checkout behaves as the Work Engine repository, with canonical root
+> paths, an accurate entry document, valid owned campaigns, preserved historical
+> provenance, and no active dependency on Site2JSON product structure.
 
-# Target end state
-
-The desired Work Engine does not primarily move source code between models.
-
-It moves **small, verified evidence and architectural claims** across explicit lifetime boundaries:
-
-- Codebase-Memory supplies deterministic repository structure and navigation;
-- disposable scouts absorb exploratory graph traversal;
-- Codex owns architectural placement and implementation;
-- the placement certificate carries the intended semantic path;
-- deterministic runners prove mechanical correctness;
-- fresh reviewers attempt to falsify semantic correctness when consequence, uncertainty, or configuration requires independence;
-- compact handoffs preserve only durable architectural consequences;
-- strong models are escalated for ambiguity and adversarial reasoning rather than routine retrieval;
-- later semantic memory preserves what the project has learned and why it is still believed.
-
-The ultimate optimization target is not the fewest tokens per call. It is the fewest tokens required to produce an accepted change whose placement, downstream consequence, and verification remain trustworthy.
+Expected scope includes repository extraction decisions, root-relative path
+normalization, campaign disposition, documentation entry points, CI bootstrap,
+and a migration inventory for historical artifacts. Changes to receipt
+semantics, route openness, and runtime doctrine remain separately reviewable
+Workstreams 1–3 unless the extraction exposes a causal dependency that requires
+them sooner.
