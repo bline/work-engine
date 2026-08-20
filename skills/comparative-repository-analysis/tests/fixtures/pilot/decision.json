@@ -1,0 +1,19 @@
+{
+  "artifact_type": "comparison_decision_v1",
+  "compatibility": {"run_id": "pilot-1", "ontology_version": "1.0", "artifact_schema_version": 1},
+  "classification": "INVESTIGATE",
+  "target_work_engine_boundary": "route revision",
+  "profile_claim_refs": ["sample:imp-control"],
+  "expected_value": "Determine whether the mechanism reduces recovery complexity.",
+  "architectural_fit": "Potentially compatible.",
+  "evidence_strength": "Source-backed but no runtime evidence.",
+  "integration_cost": "Unknown.",
+  "migration_cost": "Unknown.",
+  "maintenance_burden": "Unknown.",
+  "constraints": ["runtime evidence unavailable"],
+  "reversibility_and_lock_in": "Investigation is reversible.",
+  "alternatives_considered": ["retain current route"],
+  "assumptions": ["fixture source corresponds to shipped code"],
+  "invalidation_triggers": ["runtime contradicts documented route"],
+  "unresolved_questions": ["is the transition configurable?"]
+}

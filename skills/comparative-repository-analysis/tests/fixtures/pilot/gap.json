@@ -1,0 +1,31 @@
+{
+  "artifact_type": "ontology_gap_proposal_v1",
+  "compatibility": {
+    "artifact_schema_version": 1,
+    "ontology_version": "1.0",
+    "run_id": "pilot-1"
+  },
+  "gap_id": "gap-emergent-coordination",
+  "status": "proposed",
+  "outside_active_ontology": true,
+  "repository_id": "sample",
+  "source_dimension": "control",
+  "source_pass_sha256": "13412cf4148f25aeb185d3a8b1ccec5a295e1659202289b46b03e1709ad4b854",
+  "claim_ids": [
+    "obs-control"
+  ],
+  "evidence_ids": [
+    "ev-control"
+  ],
+  "proposed_dimension": "emergent_coordination",
+  "proposed_definition": "Coordination behavior spanning frozen dimensions that is not represented by control alone.",
+  "why_ontology_is_insufficient": "The observed mechanism crosses frozen dimensions without equivalent semantics.",
+  "decision_relevance": "The gap could change a later adoption decision after ontology migration and selective re-analysis.",
+  "confidence": "medium",
+  "alternatives": [
+    "Represent the observation as a relationship edge without changing the ontology"
+  ],
+  "limitations": [
+    "Observed in one fixture repository"
+  ]
+}

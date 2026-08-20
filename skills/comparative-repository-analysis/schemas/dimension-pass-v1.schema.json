@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Dimension pass v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "repository_id",
+    "dimension",
+    "dimension_state",
+    "index_receipt",
+    "capabilities",
+    "claims",
+    "evidence",
+    "unknowns",
+    "provenance"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "dimension_pass_v1"
+    },
+    "dimension_state": {
+      "enum": [
+        "analyzed",
+        "not_applicable",
+        "not_sought",
+        "not_observed",
+        "provisionally_absent",
+        "confirmed_absent",
+        "unknown",
+        "conflicting_evidence"
+      ]
+    },
+    "index_receipt": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

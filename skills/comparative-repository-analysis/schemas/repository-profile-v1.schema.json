@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Repository profile v1",
+  "description": "Descriptive artifact; adoption decisions are forbidden by the semantic validator.",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "repository_id",
+    "dimension_states",
+    "capabilities",
+    "claims",
+    "evidence",
+    "reconciliation",
+    "unknowns",
+    "provenance"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "repository_profile_v1"
+    }
+  },
+  "additionalProperties": true
+}

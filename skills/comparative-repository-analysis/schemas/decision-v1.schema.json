@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Comparison decision v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "classification",
+    "target_work_engine_boundary",
+    "profile_claim_refs",
+    "assumptions",
+    "invalidation_triggers",
+    "unresolved_questions"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "comparison_decision_v1"
+    },
+    "classification": {
+      "enum": [
+        "KEEP",
+        "ADOPT",
+        "BORROW",
+        "AVOID",
+        "INVESTIGATE"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

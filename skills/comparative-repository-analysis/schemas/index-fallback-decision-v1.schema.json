@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Wire shape only. comparison_artifacts.py is the authoritative semantic validator.",
+  "title": "Index fallback decision v1",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "compatibility",
+    "repository_id",
+    "receipt_id",
+    "receipt_sha256",
+    "decision",
+    "decided_by",
+    "reason"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "index_fallback_decision_v1"
+    },
+    "receipt_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "decision": {
+      "const": "targeted_direct_source"
+    },
+    "decided_by": {
+      "const": "comparison_model"
+    }
+  },
+  "additionalProperties": false
+}

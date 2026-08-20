@@ -1,0 +1,110 @@
+{
+  "artifact_type": "dimension_pass_v1",
+  "compatibility": {
+    "run_id": "pilot-1",
+    "ontology_version": "1.0",
+    "artifact_schema_version": 1
+  },
+  "repository_id": "sample",
+  "dimension": "review",
+  "dimension_state": "not_observed",
+  "index_receipt": {
+    "artifact_type": "index_preparation_receipt_v1",
+    "compatibility": {
+      "run_id": "pilot-1",
+      "ontology_version": "1.0",
+      "artifact_schema_version": 1
+    },
+    "receipt_id": "index-sample-1",
+    "repository_id": "sample",
+    "state": "ready",
+    "action": "indexed",
+    "requested": {
+      "root": "/fixtures/sample",
+      "revision": "abc123",
+      "mode": "full",
+      "persistence": false,
+      "scopes": [
+        "."
+      ]
+    },
+    "observed": {
+      "project": "fixture-sample",
+      "root": "/fixtures/sample",
+      "revision": "abc123",
+      "generation": "fixture-generation-1",
+      "status": "ready",
+      "nodes": 12,
+      "edges": 18
+    },
+    "coverage": {
+      "signal": "best_effort",
+      "parse_partial": [],
+      "skipped": [],
+      "not_indexed": [],
+      "limitations": [
+        "fixture evidence only"
+      ]
+    },
+    "provenance": {
+      "provider": "codebase-memory",
+      "calls": [
+        "list_projects",
+        "index_repository",
+        "index_status",
+        "check_index_coverage"
+      ]
+    },
+    "limitations": [
+      "synthetic pilot receipt"
+    ]
+  },
+  "system_boundary": {
+    "included": [
+      "review prompt"
+    ],
+    "unavailable": [
+      "provider runtime"
+    ]
+  },
+  "capabilities": [],
+  "claims": [
+    {
+      "id": "obs-review",
+      "subject_id": "sample",
+      "stage": "observation",
+      "statement": "Documentation names a reviewer but does not establish fresh execution.",
+      "state": "supported",
+      "confidence": "medium",
+      "evidence_ids": [
+        "ev-review"
+      ],
+      "counterevidence_ids": [],
+      "parent_claim_ids": [],
+      "uncertainty": "not_observed"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-review",
+      "mode": "documentation",
+      "locator": "README.md#review",
+      "supports": [
+        "obs-review"
+      ],
+      "limitations": [
+        "documentation does not prove reachability"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "question": "Does the runtime create a fresh reviewer?",
+      "why_it_matters": "Independence changes decision value."
+    }
+  ],
+  "provenance": {
+    "provider": "fixture",
+    "coverage": "documentation only"
+  }
+}
