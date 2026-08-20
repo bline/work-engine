@@ -1,0 +1,9 @@
+version: 1
+endpoint: http://127.0.0.1:9222
+artifactDirectory: ../artifacts/chrome-vision
+limits:
+  events: 200
+  textBytes: 14000
+  evidenceBytes: 18000
+  artifacts: 2
+  endpointTimeoutMs: 5000
