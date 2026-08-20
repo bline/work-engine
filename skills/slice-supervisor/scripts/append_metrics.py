@@ -137,7 +137,7 @@ def validate_engine_record(record: dict[str, Any]) -> None:
     allowed_config_keys = {
         "version", "source", "objective", "work_source", "builder",
         "validation", "metrics", "limits", "approval", "notifications",
-        "stop_on", "explicit_fields", "defaulted_fields", "amendments",
+        "stop_on", "capabilities", "explicit_fields", "defaulted_fields", "amendments",
     }
     unknown_config_keys = set(config) - allowed_config_keys
     if unknown_config_keys:
@@ -164,6 +164,34 @@ def validate_engine_record(record: dict[str, Any]) -> None:
             fail(f"engine_config.{key} must be {names}")
     if isinstance(config["version"], bool) or config["version"] not in {1, 2}:
         fail("engine_config.version must be 1 or 2")
+    capabilities = config.get("capabilities", {})
+    if not isinstance(capabilities, dict):
+        fail("engine_config.capabilities must be an object")
+    unknown_capabilities = set(capabilities) - {"chrome_vision"}
+    if unknown_capabilities:
+        fail(f"unknown engine_config capabilities: {', '.join(sorted(unknown_capabilities))}")
+    if "chrome_vision" in capabilities:
+        chrome = capabilities["chrome_vision"]
+        if not isinstance(chrome, dict):
+            fail("engine_config.capabilities.chrome_vision must be an object")
+        if chrome.get("source") not in {"file", "inline"}:
+            fail("engine_config.capabilities.chrome_vision.source must be file or inline")
+        common = {"source", "pathBase", "sha256", "schemaVersion"}
+        allowed_chrome = common | ({"authoredReference", "resolvedPath"} if chrome.get("source") == "file" else {"campaignPath"})
+        unknown_chrome = set(chrome) - allowed_chrome
+        if unknown_chrome:
+            fail(f"unknown chrome_vision provenance fields: {', '.join(sorted(unknown_chrome))}")
+        for key in common - {"schemaVersion"}:
+            if not isinstance(chrome.get(key), str) or not chrome[key]:
+                fail(f"engine_config.capabilities.chrome_vision.{key} must be a nonempty string")
+        if chrome.get("schemaVersion") != 1:
+            fail("engine_config.capabilities.chrome_vision.schemaVersion must be 1")
+        if len(chrome["sha256"]) != 64 or any(character not in "0123456789abcdef" for character in chrome["sha256"]):
+            fail("engine_config.capabilities.chrome_vision.sha256 must be lowercase SHA-256")
+        required_source = ("authoredReference", "resolvedPath") if chrome["source"] == "file" else ("campaignPath",)
+        for key in required_source:
+            if not isinstance(chrome.get(key), str) or not chrome[key]:
+                fail(f"engine_config.capabilities.chrome_vision.{key} must be a nonempty string")
     for key in ("source", "objective"):
         if not config[key].strip():
             fail(f"engine_config.{key} must not be empty")

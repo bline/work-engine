@@ -5,6 +5,10 @@ work_source:
   kind: file
   value: "docs/roadmap.md"
 
+capabilities:
+  chrome_vision:
+    config: work-engine/config/chrome-vision.yaml
+
 builder:
   skill: "slice-builder"
   model: "gpt-5.6-sol"

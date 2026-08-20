@@ -30,11 +30,29 @@ Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stop
 | `worker_metrics` | object | Flexible namespaced metrics reported by the worker. |
 | `producer_metrics` | object | Flexible namespaced metrics reported by an orchestrator or producer. |
 
-`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. Config version 1 preserves the historical combined evidence/review builder context. Config version 2 uses separate `repository_evidence` and `independent_review` provider/skill objects. The shapes must not be mixed. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
+`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. It may contain preflighted `capabilities`. Chrome Vision capability provenance is identity-only: source kind, authored reference or campaign path, canonical resolved path/base, SHA-256, and schema version. Do not persist the expanded runtime config or infer actual use from availability. Config version 1 preserves the historical combined evidence/review builder context. Config version 2 uses separate `repository_evidence` and `independent_review` provider/skill objects. The shapes must not be mixed. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
 
 Each validation result is `passed`, `failed`, `blocked`, or `not_applicable`. `not_applicable` requires a concise reason and is never a silent waiver. Every configured requirement must be `passed` for an accepted slice; use another terminal status when a requirement cannot apply.
 
 Any receipt whose plan was accepted requires a nonempty placement certificate, `confirmed` verdict, placement risk, and vertical semantic test. A terminal `accepted` receipt additionally requires `vertical_semantic_test_passed: true`. Preserve a late semantic rejection as a stopped or failed outcome; never rewrite the earlier placement verdict as though it had not occurred.
+
+## Telemetry ingress boundary
+
+[`telemetry-ingress.schema.json`](telemetry-ingress.schema.json) owns the
+canonical boundary between authoritative host telemetry and later audit-receipt
+assembly. The supervisor invokes the deterministic harvester only after it can
+identify the launched builder from the parent's `SubAgentActivity` `started`
+event. The parent-side `agent_thread_id` is the primary identifier; the child
+rollout must independently corroborate its own ID, parent thread, subagent
+source, and canonical agent path before any measurement is accepted.
+
+Each measurement records `observed` or `unavailable`, its value, and exact event
+provenance. Missing fields remain unavailable rather than becoming inferred
+zeroes. Timestamp proximity, agent path alone, builder self-report, and a child
+artifact that is ambiguous, mismatched, malformed, or nonterminal are not valid
+telemetry ingress. Tool/provider telemetry remains an explicit ingress array;
+merging ingress into a final audit receipt belongs to the later receipt-assembly
+lifecycle, not to the harvester.
 
 ## Recommended normalized engineering fields
 

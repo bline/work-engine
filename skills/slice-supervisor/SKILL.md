@@ -25,6 +25,14 @@ At every phase boundary, ask whether the current route remains the simplest cred
 
 ## Resolve the campaign contract
 
+For a named campaign file, execute preflight before launching a builder:
+
+```bash
+node work-engine/skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>
+```
+
+Consume the returned `engineConfig` as the durable effective configuration and pass `resolvedCapabilities` only as transient builder launch context. Preflight resolves the CLI argument from the invoker's working directory, external capability references from the campaign directory, and Chrome Vision-owned filesystem paths from the file that authored that configuration. A capability declaration makes a tool available; it neither proves nor requires use. Stop on preflight failure rather than manually reinterpreting the file.
+
 Accept configuration from an inline user block, a user-named file, or the request plus documented defaults. Configuration describes the run; this skill remains the machine.
 
 Resolve and record:

@@ -62,7 +62,23 @@ review as separate provenance. Do not silently substitute providers, count
 retrieval as review, or weaken configured acceptance requirements. Auto provider
 selection is deferred.
 
+Do not confuse provider selection with evidence capability. A configured Claude
+role may expose Codebase Memory and bounded read-only filesystem tools in the
+same process. Keep indexed structure primary for repository code understanding,
+and use direct filesystem observation only for exact non-code content, reported
+coverage gaps, generated or unindexed artifacts, or required host state outside
+the index. That evidence-mode change does not rewrite provider identity or
+require a configuration amendment. Record the actual mode and transition reason;
+mere tool availability is not a fallback event. Selecting `claude-filesystem` as
+the repository provider remains a distinct explicit configuration choice.
+
 Require the worker to use each resolved skill faithfully for the stages selected by the accepted route. Before planning, confirm that repository retrieval supports the needed evidence and that the independent-review role supports every configured or risk-required independence stage. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires independent evidence. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Retrieval success never satisfies a required independent review. Ordinary test execution belongs to this builder, not either evidence role.
+
+When a placement or review clause predictably depends on an external or
+unindexed artifact, require the configured Claude call to provision bounded
+read-only filesystem access from its first attempt while retaining indexed
+access for repository structure. A reviewer must observe the material clause in
+its own fresh process; a retrieval packet alone does not create independence.
 
 Never describe the builder as a subtask worker. State that it owns the whole slice and must return a boundary-change request instead of silently expanding scope.
 

@@ -50,6 +50,10 @@ stop_on:
   - unresolved_architecture
   - quota_exhaustion
   - validation_nonconvergence
+
+capabilities:
+  chrome_vision:
+    config: ../config/chrome-vision.yaml
 ```
 
 ## Field contract
@@ -65,6 +69,7 @@ stop_on:
 - `approval.plan`: `procedural_when_safe` or `human_required`. `approval.uninterrupted_after_plan` controls whether execution and gate may share a follow-up; it never removes plan acceptance.
 - `notifications`: Requested Boolean policy for intervention and overall completion. Applicable repository instructions determine the actual command, may require intervention notification, and may prohibit completion notification; they take precedence over this request-level policy.
 - `stop_on`: Named terminal conditions. The supervisor always stops for safety, unsupported capabilities, ownership ambiguity, or required human authority even if omitted. Unknown conditions require clarification.
+- `capabilities.chrome_vision.config`: Optional Chrome Vision availability declaration. It is either an inline config-v1 mapping or a YAML/JSON path resolved relative to the declaring campaign file. Run `node work-engine/skills/slice-supervisor/scripts/campaign-preflight.mjs <campaign.yaml>` before builder launch. For an external config, `artifactDirectory` is relative to that config file; for inline config, it is relative to the campaign file. Preflight returns the full resolved configuration only in transient `resolvedCapabilities`, alongside identity-only `engineConfig`; that identity is later recorded as receipt field `engine_config`. Durable provenance retains source kind, authoring/reference path, canonical base/path, SHA-256, and schema version—not the expanded runtime configuration and not a claim that the capability was used.
 
 ## Documented defaults
 
@@ -120,6 +125,7 @@ Store a compact `engine_config` in every schema-version-4 receipt:
   "approval": {"plan": "procedural_when_safe", "uninterrupted_after_plan": false},
   "notifications": {"intervention": true, "completion": false},
   "stop_on": ["objective_complete", "human_judgment", "unresolved_architecture", "quota_exhaustion", "validation_nonconvergence"],
+  "capabilities": {"chrome_vision": {"source": "file", "authoredReference": "../config/chrome-vision.yaml", "resolvedPath": "/repo/work-engine/config/chrome-vision.yaml", "pathBase": "/repo/work-engine/config", "sha256": "<lowercase sha256>", "schemaVersion": 1}},
   "explicit_fields": ["objective", "work_source"],
   "defaulted_fields": ["builder", "validation", "metrics", "limits", "approval", "notifications", "stop_on"],
   "amendments": []

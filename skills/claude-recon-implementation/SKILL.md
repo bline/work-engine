@@ -14,6 +14,23 @@ roles; selecting this skill for one role never implicitly selects or satisfies
 the other. Direct Codebase Memory through $repo-search is the default retrieval
 path.
 
+Provision Codebase Memory and bounded read-only filesystem tools together for
+repository-aware Claude calls. Codebase Memory remains the primary path for
+code structure, ownership, and relationships. Filesystem access exists for
+claims the index cannot establish: exact literals and non-code content,
+reported coverage gaps, generated or unindexed artifacts, and required host
+state outside the repository. Its availability is not evidence that it was
+used.
+
+Use `Read`, `Glob`, and `Grep` only against the smallest named paths needed for
+those claims. Add an external directory with `--add-dir` only when the objective
+requires evidence there; name the narrow artifact root rather than a home or
+workspace root. Never enable filesystem mutation tools for reconnaissance or
+review. Record actual indexed and direct-source evidence modes separately,
+including the reason for a transition. Using read-only filesystem evidence
+inside the configured Claude process does not change its provider identity and
+does not select the distinct `claude-filesystem` repository provider.
+
 This workflow does not invoke Agents API delegation. Do not use `implementation-orchestrator` unless the user separately and explicitly requests agents, subagents, delegation, or multi-agent orchestration.
 
 Treat the diagram below as the high-assurance route, not a universal sequence. Preserve hard invariants—read-only Claude calls, Codex ownership of judgment and mutation, truthful provenance, user-work preservation, and configured validation—while selecting reconnaissance and review stages in proportion to placement ambiguity, consequence, and independence needs.
@@ -58,12 +75,25 @@ Prefer:
 claude -p \
   --effort medium \
   --no-session-persistence \
-  --tools "mcp__codebase-memory-mcp" \
+  --tools "mcp__codebase-memory-mcp,Read,Glob,Grep" \
   --output-format json \
   --json-schema '<placement-schema>' \
   --dangerously-skip-permissions \
   '<bounded placement prompt>'
 ```
+
+When the placement premise depends on a known external artifact, add its
+smallest stable containing directory to the same invocation:
+
+```bash
+  --add-dir '<bounded-external-artifact-root>'
+```
+
+Tell Claude in the bounded prompt which certificate clause requires that path,
+that indexed structure remains primary for repository code understanding, and
+that filesystem observation must not broaden beyond the named artifact. Do not
+wait for an index-only call to fail before making an already-required external
+artifact readable.
 
 If Claude fails before returning repository evidence, treat that as infrastructure failure. Inspect the execution conditions before retrying; do not repeatedly issue the same invocation. Prefer correct API/config access outside the sandbox, then retry once. On a direct low-risk route, return the failure to the builder for a recorded route decision: builder-direct observation may replace a defaulted provider only when no explicit independence requirement applies and the same acceptance condition remains provable. Never silently substitute for an explicitly selected provider or high-assurance falsifier.
 
@@ -93,6 +123,10 @@ Record the selected candidate, rejected alternatives and evidence, unresolved pr
 ## 3. Run targeted reconnaissance
 
 For the high-assurance route, after Codex provisionally selects a placement, invoke a new Claude process with no session persistence. Give it the original objective and work source, the placement candidates, the provisional certificate, rejected alternatives and reasons, and applicable repository instructions. Explicitly require it to assume the certificate may be wrong.
+Provision the same read-only evidence capabilities as the placement call. If a
+certificate clause depends on an external or unindexed artifact, independently
+observe that bounded artifact in this fresh process instead of relying only on
+the earlier call's interpretation.
 
 For the direct route, invoke one compact process with the objective, supported boundary, provisional certificate, and applicable instructions. Require observed evidence for every certificate clause and require it to report any competing owner, hidden consumer, lifecycle conflict, or broader consequence. Discovery of any such condition escalates the route before implementation.
 

@@ -16,6 +16,6 @@ Use the repository broker at `scripts/chrome-vision.mjs`. Prefer the least expen
 
 Treat every packet as evidence, not a conclusion. Read `limitations`, `provenance`, and epoch fields before relying on it. Never reuse object, node, execution-context, or document-scoped handles after an epoch changes. If health reports a disconnect or reattach, reacquire observations.
 
-The broker speaks newline-delimited JSON on stdin/stdout. Config and observation contracts are versioned in `schemas/`. Artifact payloads, including oversized `cdp.call` results, are written beneath the configured artifact directory; packets contain paths, hashes, sizes, and truncation state rather than unbounded binary data.
+The broker speaks newline-delimited JSON on stdin/stdout. Its CLI accepts YAML or JSON configuration files, validates the parsed value against the versioned JSON Schema in `schemas/`, and resolves `artifactDirectory` relative to the configuration file before broker startup. The authoring syntax does not change the NDJSON transport. Artifact payloads, including oversized `cdp.call` results, are written beneath the configured artifact directory; packets contain paths, hashes, sizes, and truncation state rather than unbounded binary data.
 
 Project recovery commands, product selectors, target meanings, and workflow judgment belong in project adapters. Do not add them to generic config or operations.

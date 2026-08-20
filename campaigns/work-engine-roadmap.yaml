@@ -43,3 +43,7 @@ stop_on:
 
 metrics:
   path: "work-engine/metrics/work-engine-roadmap.jsonl"
+
+capabilities:
+  chrome_vision:
+    config: ../config/chrome-vision.yaml

@@ -39,6 +39,14 @@ an invisible fallback. Record `index_unavailable`, `coverage_gap`,
 `graph_ambiguity`, or `provider_failure` as the transition reason when one
 applies.
 
+Capability availability and provider identity are different. A provider call
+may expose indexed structure and bounded read-only filesystem tools together so
+external or unindexed evidence is reachable without restarting the call or
+silently changing providers. Keep indexed retrieval primary for code structure
+and relationships. Use filesystem tools only for the claims above, record the
+mode actually used, and do not report a fallback merely because the tools were
+available.
+
 ## Claude-backed retrieval
 
 Claude-backed Codebase Memory and Claude filesystem retrieval remain optional
@@ -46,6 +54,12 @@ providers for compatibility, benchmark control, or disposable context. Their
 model identity does not change the evidence packet contract. Do not treat a
 Claude retrieval process as independent review merely because it uses a
 different context; review is a separately selected role and stage.
+
+The named `claude-filesystem` provider means filesystem retrieval was selected
+as the repository-evidence provider. It is not implied when a configured Claude
+Codebase Memory or independent-review process uses bounded read-only filesystem
+evidence for an external artifact or coverage gap; preserve the configured
+provider identity and report that observation as a direct-source evidence mode.
 
 ## Negative evidence checklist
 

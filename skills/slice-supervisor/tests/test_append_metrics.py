@@ -155,6 +155,42 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
         make_config_v2(record)
         self.assertEqual(2, APPEND_METRICS.validate(record)["engine_config"]["version"])
 
+    def test_v2_accepts_identity_only_chrome_vision_provenance(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        record["engine_config"]["capabilities"] = {
+            "chrome_vision": {
+                "source": "file",
+                "authoredReference": "../config/chrome-vision.yaml",
+                "resolvedPath": "/repo/work-engine/config/chrome-vision.yaml",
+                "pathBase": "/repo/work-engine/config",
+                "sha256": "a" * 64,
+                "schemaVersion": 1,
+            }
+        }
+        validated = APPEND_METRICS.validate(record)
+        self.assertNotIn("config", validated["engine_config"]["capabilities"]["chrome_vision"])
+
+    def test_v2_rejects_expanded_or_malformed_chrome_vision_provenance(self) -> None:
+        record = base_record(4)
+        make_config_v2(record)
+        record["engine_config"]["capabilities"] = {
+            "chrome_vision": {
+                "source": "inline", "campaignPath": "/repo/campaign.yaml",
+                "pathBase": "/repo", "sha256": "a" * 64, "schemaVersion": 1,
+                "config": {"endpoint": "secret-or-runtime-state"},
+            }
+        }
+        with self.assertRaisesRegex(ValueError, "unknown chrome_vision provenance fields"):
+            APPEND_METRICS.validate(record)
+        record["engine_config"]["capabilities"]["chrome_vision"] = {
+            "source": "external", "authoredReference": "chrome.yaml",
+            "resolvedPath": "/repo/chrome.yaml", "pathBase": "/repo",
+            "sha256": "a" * 64, "schemaVersion": 1,
+        }
+        with self.assertRaisesRegex(ValueError, "source must be file or inline"):
+            APPEND_METRICS.validate(record)
+
     def test_engine_config_version_rejects_json_boolean(self) -> None:
         record = base_record(4)
         record["engine_config"]["version"] = True

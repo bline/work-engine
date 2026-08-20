@@ -67,7 +67,13 @@ The current Work Engine already implements much of the pre-graph optimization fo
   capability class and preserve provider-failure and fallback provenance;
 - the builder, evidence skill, supervisor, receipt schema, and gate runner have explicit contract ownership boundaries.
 
-Accordingly, Phases 1–4 below are retained as architectural requirements and regression criteria, not as greenfield implementation work. Phase 0 has useful historical baseline data but should continue accumulating comparable post-optimization measurements. The next new implementation work begins at Phase 5.
+Accordingly, Phases 1–2 and 4 below are retained as architectural requirements
+and regression criteria, not as greenfield implementation work. Phase 3 has
+completed its audit/handoff contract split, but not the receipt-production and
+persistence lifecycle required to make that split reliable. Completing that
+lifecycle is the next implementation priority. Phase 0 has useful historical
+baseline data but should continue accumulating comparable post-optimization
+measurements from the resulting runtime-derived records.
 
 ---
 
@@ -271,7 +277,13 @@ Recon packets contain evidence and uncertainty, while durable architectural reas
 
 # Phase 3 — Split audit persistence from builder handoff
 
-**Status: implemented.** The builder returns separate `audit_receipt` and `handoff_receipt` views; the handoff explicitly excludes provider/model/gate accounting and targets 300–800 tokens.
+**Status: partially implemented; completion is the next roadmap item.** The
+builder returns separate `audit_receipt` and `handoff_receipt` views; the handoff
+explicitly excludes provider/model/gate accounting and targets 300–800 tokens.
+Receipt production and persistence are still model-context-dependent: there is
+no immediate staging boundary, post-terminal telemetry harvest, deterministic
+final assembly, enforced schema floor for new records, or interruption-safe
+atomic publication.
 
 ## 3.1 Keep the full audit receipt
 
@@ -306,9 +318,136 @@ The next builder receives only durable consequences such as:
 
 Provider accounting, test transcripts, per-command bookkeeping, and temporary evidence do not cross this boundary.
 
+## 3.3 Complete receipt production and persistence
+
+This item promotes the P0 persistence architecture from
+[`reviews/work-engine-run-review-2026-08-19.md`](reviews/work-engine-run-review-2026-08-19.md)
+and the schema-floor recommendation from [`review.md`](review.md) into accepted
+roadmap work.
+
+Move operational accounting and durable publication out of terminal builder
+memory. The intended lifecycle is:
+
+```text
+builder semantic result
+→ exact semantic receipt staged at production/task-complete time
+→ builder reaches a terminal state
+→ host supplies the bound rollout/session identity
+→ terminal host telemetry harvested deterministically
+→ provider/tool result telemetry merged by provenance
+→ final audit receipt assembled with observed/unavailable provenance
+→ current-schema validation
+→ atomic, idempotent JSONL publication
+```
+
+The supervisor owns this lifecycle. The builder owns semantic outcomes,
+decisions, evidence references, and unresolved state; it must not self-report
+final operational measurements for activity that can continue after its return.
+The harvester owns runtime-derived token, context, turn, timing, tool, and
+repository-access measurements. The receipt schema owns their durable shape and
+compatibility policy.
+
+### Authoritative telemetry ingress
+
+Runtime measurements must come from host-produced execution telemetry bound to
+the launched builder identity. For Codex builders, the canonical host source is
+the completed Codex rollout/session JSONL event stream or a product-generated
+equivalent that preserves the same execution identity and event provenance.
+Provider- and tool-specific measurements may be merged only from the
+authoritative result artifacts returned by those providers or tools.
+
+The harvester parses authoritative evidence; it does not estimate. It records
+source identity, exact event or range provenance, and per-field availability as
+`observed` or `unavailable`. It must not infer missing operational measurements
+from model output, filesystem timestamps, neighboring sessions, prior receipts,
+or zeros. An ingress record is conceptually:
+
+```text
+TelemetryIngress
+  run_id
+  slice_id
+
+  builder_runtime
+    source_kind: codex_rollout_jsonl | product_generated_equivalent
+    source_identity: rollout/session identity + terminal event identity
+    observed: input, cached-input, output, reasoning, peak-context,
+              turn-count, and wall-clock measurements when emitted
+    availability: per-field observed | unavailable
+    provenance: exact event/range identities
+
+  tool_runtime
+    source_kind: tool_result | provider_result
+    observed: attempts, duration, and token/cost measurements when emitted
+    availability: per-field observed | unavailable
+    provenance: invocation/result identities
+```
+
+The supervisor-to-builder launch boundary must expose how a terminal builder is
+bound to its authoritative rollout/session. Prefer, in order:
+
+1. a durable rollout/session identifier returned by the builder-launch API;
+2. that identity exposed by the terminal task result;
+3. a deterministic mapping from an existing host-produced artifact; and
+4. only as a last resort, filesystem discovery with strict identity and
+   terminal-event checks.
+
+Timestamp-only discovery under a user directory is not an identity contract.
+Whichever binding is implemented must reject mismatched or ambiguous sessions
+rather than silently harvesting plausible telemetry.
+
+The next Phase 3 slice is deliberately narrower than the complete persistence
+lifecycle. It must:
+
+- define one canonical telemetry-ingress schema;
+- identify the actual Codex host/session artifact and bind it to a launched
+  builder through the strongest available mechanism above;
+- implement a deterministic harvester for the runtime fields Phase 3 owns;
+- preserve unavailable fields without manufacturing values;
+- prove the contract against at least one existing completed rollout; and
+- test malformed, missing, incomplete, ambiguous, and mismatched-session input.
+
+That slice must not redesign semantic receipt staging or atomic publication
+unless a minimal boundary change is required to expose the telemetry ingress.
+The following slice wires the proven harvester into the complete lifecycle.
+
+Implementation requirements:
+
+- stage an exact recoverable artifact before compaction or worker termination
+  can destroy the only copy, with stable run/slice identity and integrity
+  metadata;
+- harvest final operational measurements from authoritative rollout/tool
+  telemetry after the terminal event, preserving unavailable measurements as
+  unavailable rather than inferring zero or accepting stale model estimates;
+- assemble and validate the final audit receipt deterministically while keeping
+  semantic claims, observed telemetry, inference, and unresolved state
+  distinguishable;
+- require schema version 4 or later for ordinary new-record publication, with
+  historical versions admitted only through an explicit legacy-validation or
+  migration path;
+- publish so interruption or retry cannot leave a torn or duplicate durable
+  record: the outcome for a run/slice identity is either no final record or one
+  complete validated record;
+- make recovery independent of model memory and safe under concurrent writers;
+  and
+- test the normal path, validation rejection, interruption between each durable
+  boundary, retry/idempotency, concurrent publication, legacy opt-in, and
+  telemetry-unavailable behavior.
+
+The comparative repository-analysis workflow is the first required consumer.
+Its per-repository workers deliberately cross context boundaries, and its design
+requires runtime-derived operational metrics rather than model self-report.
+Do not scale that workflow beyond a small pilot until this lifecycle can retain
+each repository result and its final measurements across compaction,
+termination, and retry.
+
 ## Exit criterion
 
-A future slice can recover the durable architectural result without reading a full audit receipt or prior conversation.
+A future slice can recover the durable architectural result without reading a
+full audit receipt or prior conversation, and a supervisor can recover, finish,
+and publish one validated audit record after builder context is gone without
+reconstructing exact bytes or final metrics through model reasoning. A
+multi-repository comparison pilot demonstrates that guarantee across repeated
+worker boundaries.
 
 ---
 
@@ -994,41 +1133,60 @@ A change that lowers tokens while increasing late semantic failures is not an op
 # Proposed near-term slice order
 
 The provider abstraction, direct Codebase-Memory default, deterministic gate,
-bounded evidence contracts, and audit/handoff split are implemented. Continue
-approximately in this order:
+bounded evidence contracts, and audit/handoff contract split are implemented.
+The production/persistence half of that split is not. Continue approximately in
+this order:
 
-1. **Reconcile the Phase 6 ESM completion record.** Recover an accepted gate
+1. **Define and implement the Phase 3 telemetry-ingress contract.** Bind each
+   launched Codex builder to authoritative rollout/session telemetry, merge
+   provider/tool result artifacts by provenance, preserve per-field
+   unavailability, and prove deterministic harvesting against an existing
+   completed rollout plus malformed and mismatched inputs. Do not absorb the
+   rest of receipt persistence into this slice.
+2. **Complete Phase 3 receipt production and persistence.** Stage the semantic
+   artifact at production/task-complete time, invoke the proven harvester after
+   terminal execution, assemble and validate deterministically, enforce the
+   current-schema floor with explicit legacy opt-in, and publish atomically and
+   idempotently with interruption/retry coverage.
+3. **Exercise the completed lifecycle in the comparative repository-analysis
+   pilot.** Profile Work Engine and two or three heterogeneous repositories,
+   proving that per-repository artifacts and runtime-derived metrics survive
+   compaction, termination, and retry before scaling to the configured corpus.
+4. **Reconcile the Phase 6 ESM completion record.** Recover an accepted gate
    receipt if one exists; otherwise run the missing real-extension, broader
    suite, freshness, independent-review, and import-aware graph checks without
    reimplementing the slice.
-2. **Decide whether to begin Phase 7** from that accepted evidence. If the Phase
+5. **Decide whether to begin Phase 7** from that accepted evidence. If the Phase
    6 gate is clean, migrate remaining first-party extension clusters in
    dependency order; otherwise repair only findings that invalidate the
    vertical ESM consequence.
-3. **Measure the adopted direct Codebase-Memory default on representative real
+6. **Measure the adopted direct Codebase-Memory default on representative real
    slices** against correctness, verification quality, context growth, and the
    historical filesystem/Claude control.
-4. **Run the explicit Claude graph-first provider comparison** only as a
+7. **Run the explicit Claude graph-first provider comparison** only as a
    controlled provider benchmark, keeping the model, contracts, builder, and
    validation constant.
-5. **Compare disposable graph exploration with builder-direct retrieval** to
+8. **Compare disposable graph exploration with builder-direct retrieval** to
    determine whether the recon airlock protects durable builder context.
-6. **Adopt or revise the hybrid airlock + builder-microscope policy** only from
+9. **Adopt or revise the hybrid airlock + builder-microscope policy** only from
    those measurements.
-7. **Benchmark reviewer and retrieval model choices independently**, then add
+10. **Benchmark reviewer and retrieval model choices independently**, then add
    adaptive escalation only where observed ambiguity justifies it.
-8. **Experiment with a semantic architectural overlay** beginning with accepted
-   placement certificates, decisions, rejected substitutes, and proof
-   relationships.
-9. **Add proof invalidation/selective reverification** only if measured repeated
-   reconstruction or verification cost justifies it.
-10. **Compress adversarial review around counterexamples and violated proof
+11. **Experiment with a semantic architectural overlay** beginning with accepted
+    placement certificates, decisions, rejected substitutes, and proof
+    relationships.
+12. **Add proof invalidation/selective reverification** only if measured repeated
+    reconstruction or verification cost justifies it.
+13. **Compress adversarial review around counterexamples and violated proof
     obligations** while preserving an independent reviewer.
 
 The brainstorming notes in `work-engine/ideas/` remain outside this ordering
 until their systems are deliberately designed and accepted.
 
-The already-implemented deterministic gate, bounded recon schemas, audit/handoff split, and contract ownership remain prerequisites and should be protected by tests while these experiments proceed.
+The already-implemented deterministic gate, bounded recon schemas,
+audit/handoff contract split, and contract ownership remain prerequisites and
+should be protected by tests while Phase 3 completion makes their persistence
+reliable.
 
 ---
 
