@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Environment Graph"
+  short_description: "Build and audit agent environment graphs"
+  default_prompt: "Use $agent-environment-graph to validate, analyze, and render the repository's Agent Environment Graph."

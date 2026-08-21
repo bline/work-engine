@@ -1,0 +1,33 @@
+schema_version: 1
+document_id: fixture.agent-environments
+status: fixture
+verified_on: 2026-08-21
+scope: {}
+sources: {}
+semantics: {}
+entities:
+  states:
+    state.input:
+      label: Input
+  artifacts:
+    artifact.view:
+      label: View
+  capabilities:
+    capability.validate:
+      label: Validate
+      mechanism: MECH-ONE
+roles:
+  role.builder:
+    label: Builder
+    objective: Build the view.
+    context_lifetime: one run
+    bound_by: [INV-001]
+    may_invoke: [capability.validate]
+    may_observe: [state.input]
+    may_mutate: []
+    owns: [artifact.view]
+    consumes: [state.input]
+    emits: [artifact.view]
+    forbidden_from: [changing contracts]
+analysis_queries:
+  ownership_gap: Find emitted artifacts without declared ownership.

@@ -1,0 +1,69 @@
+schema_version: 1
+strategic_objective: "Reach a recoverable, controlled idea-to-proposal workflow that can turn speculative ideas into durable, reviewed, authority-bound proposal packets"
+evidence_cutoff:
+  roadmap_revision: "sha256:74e52aed4d5ee7d18dd209022a2c9e968f64e3174862e88ba52d672c77c93715"
+  repository_revision: "a326f2fe7cada3725af2b3ba06b6203a68d4f5ad"
+  campaign_terminals:
+    - {run_id: "1f721733-736b-4bd2-8f35-9f1ac493d138", slice_number: 1, status: "accepted"}
+    - {run_id: "1f721733-736b-4bd2-8f35-9f1ac493d138", slice_number: 2, status: "accepted"}
+    - {run_id: "fa59f249-81db-4a22-b707-179da4a87def", slice_number: 1, status: "accepted"}
+    - {run_id: "fa59f249-81db-4a22-b707-179da4a87def", slice_number: 2, status: "accepted"}
+    - {run_id: "3c31301f-5a3c-4ba8-82ab-92279b62a419", slice_number: 1, status: "accepted"}
+    - {run_id: "3c31301f-5a3c-4ba8-82ab-92279b62a419", slice_number: 2, status: "accepted"}
+    - {run_id: "3c31301f-5a3c-4ba8-82ab-92279b62a419", slice_number: 3, status: "accepted"}
+continuity: "retained"
+verdict: "reorder"
+current_rationale: "Minimal persistent live state remains the next correctness dependency, but its strategic purpose is now to enable a recoverable proposal workflow. Durable proposal packets, interactive formation, adaptive specialized review, and explicit decision authority should follow state before broader distribution, portfolio evaluation, or closed-loop learning."
+assumptions:
+  confirmed:
+    - evidence: "roadmap.md and the accepted persistent-state route-openness remediation"
+      consequence: "Executable recovery after context replacement remains unproved and should precede reliance on long-lived interactive proposal formation."
+    - evidence: "proposals/idea-to-proposal-system"
+      consequence: "Durable proposal packets and interactive proposal formation already have formed candidate boundaries and can become the immediate consumer of the state foundation."
+  changed:
+    - evidence: "Explicit user priority decision on 2026-08-21"
+      consequence: "Reaching a usable proposal workflow now precedes installed-skill distribution, broader repository release work, evidence-backed portfolio evaluation, and closed-loop learning."
+    - evidence: "ideas/architectural-review.md, ideas/persistent-strategic-planner.md, and proposal-review planning"
+      consequence: "Architectural review and strategic planning should be reusable capabilities during both proposal design and implementation, with phase-specific authority, evidence, context, and output projections."
+    - evidence: "Adaptive specialized-review decision recorded in ideas/adaptive-specialized-review-panels.md"
+      consequence: "Proposal review is a consequence-driven panel of selected specialist capabilities with a non-authoritative decision-readiness gate, not one universal reviewer or a fixed reviewer roster."
+  invalidated:
+    - evidence: "Accepted review-coordination and persistent-state remediation"
+      consequence: "The initial state boundary does not require a complete review queue, reservation system, event-sourced history, decision graph, or Work Dossier."
+    - evidence: "Explicit review authority decision"
+      consequence: "Durability of a role judgment does not make that judgment correct, authoritative, or independent evidence for itself."
+route_changes:
+  priorities:
+    - "Run campaigns/persistent-runtime-state-route-open.yaml as the bounded enabling campaign."
+    - "Implement the minimal durable proposal-packet contract and interactive proposal formation after state recovery is proved."
+    - "Include revision-bound adaptive specialized review and explicit authority-controlled decision transitions in the first controlled proposal lifecycle."
+    - "Dogfood the workflow on materially different ideas before selecting further idea-driven implementation."
+  dependencies:
+    - "Reliable interactive proposal continuation depends on a named durable owner for resume-critical live state."
+    - "Interactive formation depends on a durable packet target with stable identity, lineage, placement, relationships, uncertainty, and authority metadata."
+    - "Proposal review depends on immutable proposal-revision identity, read-only reviewer artifacts, applicability lineage, and a synthesis boundary that cannot mutate or accept the proposal."
+  newly_important:
+    - "Architectural diagnosis separated from architecture mutation and scope-reopening authority."
+    - "Strategic advice separated from campaign amendment and portfolio-decision authority."
+    - "Model-selected specialist review panels based on material claims, seams, uncertainty, and explicit contracts."
+    - "Review selection and omission provenance proportionate to decision value rather than administrative completeness."
+    - "A durable-judgment rule: persistence preserves provenance, not epistemic or decision authority."
+  deferred:
+    - "Evidence-backed scoring, normalization, and portfolio ranking."
+    - "Full role-decision graph, Work Dossier service, confidence calibration, and introspection UI."
+    - "Automatic reviewer-selection rules, fixed reviewer rosters, or mandatory universal review phases."
+    - "General scheduling, mutation reservations, and review-queue infrastructure unless later evidence establishes a required consumer."
+recommended_campaign:
+  disposition: "start_new"
+  objective: "Establish authoritative durable live-state ownership and recovery consequences so active Work Engine campaigns can survive context replacement without duplicated consequences, stale-state resurrection, or dependence on model context"
+  work_source: "campaigns/persistent-runtime-state-route-open.yaml"
+  reason: "This route-open campaign is the accepted bounded foundation for the proposal workflow and does not preselect review, dossier, storage, or coordination machinery."
+open_uncertainties:
+  - "Which component should own authoritative live state and what storage route best preserves the required recovery consequences."
+  - "Whether adaptive review selection and synthesis belong to one proposal-review coordinator or separate review-planning and synthesis capabilities."
+  - "Whether architectural review remains one capability with phase-specific projections or later evidence justifies distinct proposal-architecture and implementation-architecture roles."
+authority_required: []
+revisit_when:
+  - "The persistent-state campaign establishes its recovery interface and durable owner."
+  - "Proposal-packet dogfooding reveals missing lifecycle, review-applicability, or authority semantics."
+  - "Specialist-review use shows that the proposed open capability registry is either insufficiently expressive or becoming a procedural taxonomy."
