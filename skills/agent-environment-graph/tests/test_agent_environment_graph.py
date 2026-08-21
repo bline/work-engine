@@ -68,6 +68,57 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
         self.assertEqual(result["status"], "candidates_only")
         self.assertIn("human approval", result["semantic_authority"])
 
+    def test_escaped_pipe_is_cell_content_not_a_column_boundary(self):
+        source = (FIXTURES / "workflow-invariants.md").read_text().replace(
+            "Human owns contract changes.", "Human owns A \\| B contract changes."
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "escaped-pipe.md"
+            path.write_text(source)
+            catalog = AEG.parse_invariants(path)
+        self.assertEqual(catalog["invariants"]["INV-001"]["condition"], "Human owns A | B contract changes.")
+
+    def test_same_target_in_two_subgraphs_has_distinct_node_ids(self):
+        catalog, environment = self.load_fixture()
+        environment["roles"]["role.builder"]["may_observe"].append("artifact.view")
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn("N_role_builder_3_artifact_view", rendered)
+        self.assertIn("N_role_builder_4_artifact_view", rendered)
+        self.assertEqual(rendered.count('N_role_builder_3_artifact_view["View"]'), 1)
+        self.assertEqual(rendered.count('N_role_builder_4_artifact_view["View"]'), 1)
+
+    def test_relationship_table_surfaces_consumes_and_emits(self):
+        catalog, environment = self.load_fixture()
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn("| `CONSUMES` | `state.input` | Input |", rendered)
+        self.assertIn("| `EMITS` | `artifact.view` | View |", rendered)
+
+    def test_relation_matrix_combines_relations_for_one_target(self):
+        catalog, environment = self.load_fixture()
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn("## Role × relation matrix", rendered)
+        self.assertIn("| View | OWNS, EMITS |", rendered)
+
+    def test_rendered_table_escapes_pipe_in_mutation_boundary(self):
+        catalog, environment = self.load_fixture()
+        environment["roles"]["role.builder"]["may_mutate"] = [{
+            "target": "state.input", "boundary": "accepted | attributed",
+        }]
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn("| `MAY_MUTATE` | `state.input` | Input (boundary: accepted \\| attributed) |", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

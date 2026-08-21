@@ -32,6 +32,10 @@ ROLE_KEYS = {
     "consumes", "emits", "mediated_transitions", "forbidden_from", "independence",
 }
 RELATION_LISTS = ("bound_by", "may_invoke", "may_observe", "owns", "consumes", "emits")
+RELATION_LABELS = {
+    "bound_by": "BOUND_BY", "may_invoke": "MAY_INVOKE", "owns": "OWNS",
+    "may_observe": "MAY_OBSERVE", "consumes": "CONSUMES", "emits": "EMITS",
+}
 
 
 class UniqueKeyLoader(yaml.SafeLoader):
@@ -65,6 +69,32 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return value
 
 
+def _split_row(line: str) -> list[str]:
+    """Split a Markdown table row while preserving escaped pipes as cell text."""
+    value = line.strip()
+    if value.startswith("|"):
+        value = value[1:]
+    if value.endswith("|") and not value.endswith(r"\|"):
+        value = value[:-1]
+    cells: list[str] = []
+    cell: list[str] = []
+    index = 0
+    while index < len(value):
+        character = value[index]
+        if character == "\\" and index + 1 < len(value) and value[index + 1] == "|":
+            cell.append("|")
+            index += 2
+            continue
+        if character == "|":
+            cells.append("".join(cell).strip())
+            cell = []
+        else:
+            cell.append(character)
+        index += 1
+    cells.append("".join(cell).strip())
+    return cells
+
+
 def _table_rows(source: str, heading: str) -> list[list[str]]:
     start = source.find(heading)
     require(start >= 0, f"missing section: {heading}")
@@ -75,7 +105,7 @@ def _table_rows(source: str, heading: str) -> list[list[str]]:
     for line in section.splitlines():
         if not line.startswith("|") or re.match(r"^\|[ -]+\|", line):
             continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        cells = _split_row(line)
         if cells and cells[0] not in {"ID", "Field"}:
             rows.append(cells)
     return rows
@@ -89,7 +119,7 @@ def parse_invariants(path: Path) -> dict[str, Any]:
     require(catalog_start >= 0 and machinery_start > catalog_start, "missing invariant or machinery catalog")
     for line in source[catalog_start:machinery_start].splitlines():
         if line.startswith("|"):
-            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            cells = _split_row(line)
             if cells and re.fullmatch(r"`INV-[0-9]+`", cells[0]):
                 invariant_rows.append(cells)
     mechanism_rows = _table_rows(source, "## Current machinery catalog")
@@ -229,6 +259,71 @@ def _label(value: str) -> str:
     return value.replace('"', "'").replace("[", "(").replace("]", ")")
 
 
+def _markdown_cell(value: str) -> str:
+    return " ".join(value.split()).replace("|", r"\|")
+
+
+def _relation_rows(role: dict[str, Any], entity_labels: dict[str, str]) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    for field, relation in RELATION_LABELS.items():
+        for target in role.get(field, []):
+            rows.append((relation, target, entity_labels.get(target, target)))
+    for mutation in role.get("may_mutate", []):
+        detail = f"{entity_labels.get(mutation['target'], mutation['target'])} (boundary: {mutation['boundary']})"
+        rows.append(("MAY_MUTATE", mutation["target"], detail))
+    for index, transition in enumerate(role.get("mediated_transitions", []), 1):
+        detail = f"{transition['transition']} (via {transition['mediated_by']})"
+        rows.append(("MEDIATED", f"transition-{index}", detail))
+    for index, denial in enumerate(role.get("forbidden_from", []), 1):
+        rows.append(("FORBIDDEN_FROM", f"deny-{index}", denial))
+    return rows
+
+
+def _role_table_lines(role: dict[str, Any], entity_labels: dict[str, str]) -> list[str]:
+    rows = _relation_rows(role, entity_labels)
+    lines = [
+        "| Relation | Target | Label |",
+        "| --- | --- | --- |",
+    ]
+    lines.extend(
+        f"| `{relation}` | `{_markdown_cell(target)}` | {_markdown_cell(detail)} |"
+        for relation, target, detail in rows
+    )
+    return lines
+
+
+def _matrix_lines(environment: dict[str, Any], entity_labels: dict[str, str]) -> list[str]:
+    role_ids = sorted(environment["roles"])
+    targets = sorted({
+        target
+        for role in environment["roles"].values()
+        for field in RELATION_LABELS
+        for target in role.get(field, [])
+    })
+    if not targets:
+        return []
+    role_labels = [_markdown_cell(environment["roles"][role_id]["label"]) for role_id in role_ids]
+    lines = [
+        "| Target | " + " | ".join(role_labels) + " |",
+        "| --- | " + " | ".join("---" for _ in role_ids) + " |",
+    ]
+    for target in targets:
+        cells = []
+        for role_id in role_ids:
+            role = environment["roles"][role_id]
+            relations = [
+                relation
+                for field, relation in RELATION_LABELS.items()
+                if target in role.get(field, [])
+            ]
+            cells.append(", ".join(relations))
+        lines.append(
+            f"| {_markdown_cell(entity_labels.get(target, target))} | "
+            + " | ".join(cells) + " |"
+        )
+    return lines
+
+
 def render(catalog: dict[str, Any], environment: dict[str, Any], invariant_path: Path, environment_path: Path) -> str:
     inv_digest = hashlib.sha256(invariant_path.read_bytes()).hexdigest()
     env_digest = hashlib.sha256(environment_path.read_bytes()).hexdigest()
@@ -257,14 +352,26 @@ def render(catalog: dict[str, Any], environment: dict[str, Any], invariant_path:
                 continue
             lines.append(f"  subgraph G{number}[\"{title}\"]")
             for identifier, label in items:
-                lines.append(f"    {_node_id(role_id + '-' + identifier)}[\"{_label(label)}\"]")
+                node = _node_id(f"{role_id}-{number}-{identifier}")
+                lines.append(f"    {node}[\"{_label(label)}\"]")
             lines.append("  end")
             for identifier, _ in items:
-                lines.append(f"  R -->|{relation}| {_node_id(role_id + '-' + identifier)}")
+                node = _node_id(f"{role_id}-{number}-{identifier}")
+                lines.append(f"  R -->|{relation}| {node}")
         for index, transition in enumerate(role.get("mediated_transitions", []), 1):
             node = _node_id(role_id + '-transition-' + str(index))
             lines += [f"  {node}[\"{_label(transition['transition'])}\"]", f"  R -.->|MEDIATED_BY {transition['mediated_by']}| {node}"]
         lines += ["```", "", role["objective"].strip(), ""]
+        table = _role_table_lines(role, entity_labels)
+        if table:
+            lines += ["#### Relation table", ""] + table + [""]
+    matrix = _matrix_lines(environment, entity_labels)
+    if matrix:
+        lines += [
+            "## Role × relation matrix", "",
+            "Every target this environment references, and which relation each role holds to it.", "",
+        ]
+        lines += matrix + [""]
     summary = analyze(catalog, environment)
     lines += ["## Deterministic baseline summary", "", f"- Invariants: {summary['counts']['invariants']}",
               f"- Mechanisms: {summary['counts']['mechanisms']}", f"- Roles: {summary['counts']['roles']}",

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Role Scheduler"
+  short_description: "Reconcile supervised role schedules and due work"
+  default_prompt: "Use $role-scheduler to reconcile this active role's overdue, due, and upcoming scheduled items."
+
