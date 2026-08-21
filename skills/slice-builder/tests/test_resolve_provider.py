@@ -46,6 +46,40 @@ class ResolveProviderTest(unittest.TestCase):
         self.assertEqual(resolved["repository_evidence"]["provider"], "claude-filesystem")
         self.assertEqual(resolved["independent_review"]["provider"], "claude")
 
+    def test_v2_accepts_exact_same_model_adversarial_review(self) -> None:
+        review = {
+            "provider": "codex",
+            "skill": "codex-adversarial-review",
+            "model": "gpt-5.6-sol",
+            "reasoning_effort": "low",
+            "evidence_class": "accepted_same_model_review",
+            "isolation": "fresh_process",
+        }
+        resolved = RESOLVER.resolve_builder_context(2, {"adversarial_review": review})
+        self.assertEqual(resolved["adversarial_review"], review)
+        self.assertNotIn("independent_review", resolved)
+
+    def test_v2_rejects_two_review_roles_or_false_same_model_provenance(self) -> None:
+        valid = {
+            "provider": "codex",
+            "skill": "codex-adversarial-review",
+            "model": "gpt-5.6-sol",
+            "reasoning_effort": "low",
+            "evidence_class": "accepted_same_model_review",
+            "isolation": "fresh_process",
+        }
+        cases = (
+            {"independent_review": {}, "adversarial_review": valid},
+            {"adversarial_review": {**valid, "model": "another-model"}},
+            {"adversarial_review": {**valid, "reasoning_effort": "high"}},
+            {"adversarial_review": {**valid, "evidence_class": "independent_review"}},
+            {"adversarial_review": {**valid, "isolation": "shared_context"}},
+        )
+        for context in cases:
+            with self.subTest(context=context):
+                with self.assertRaises(RESOLVER.ProviderResolutionError):
+                    RESOLVER.resolve_builder_context(2, context)
+
     def test_v1_explicit_claude_context_keeps_combined_historical_meaning(self) -> None:
         resolved = RESOLVER.resolve_builder_context(
             1,

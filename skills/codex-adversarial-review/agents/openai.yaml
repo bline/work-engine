@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Adversarial Review"
+  short_description: "Read-only accepted same-model review"
+  default_prompt: "Use $codex-adversarial-review to perform a fresh-process, read-only adversarial review."

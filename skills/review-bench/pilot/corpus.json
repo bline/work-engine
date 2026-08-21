@@ -1,0 +1,78 @@
+{
+  "artifact_type": "review_bench_corpus_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "protocol": {
+    "name": "evidence-calibrated-review",
+    "version": "1.0",
+    "prompt": "Act as a read-only independent verification reviewer. Treat material claims as hypotheses, verify them from the supplied snapshot, and check the most plausible contradictory path. Report acceptance-critical uncertainty as blocked_unverified instead of assuming it away. Stop once material claims reach high confidence. Do not treat builder rationale or passing tests alone as proof.",
+    "verdicts": ["accepted", "rejected", "blocked_unverified", "stale_snapshot"],
+    "severities": ["critical", "high", "medium", "low"],
+    "confidence_scale": ["high", "medium", "low"]
+  },
+  "cases": [
+    {
+      "case_id": "c6-slice9-pre-review",
+      "title": "Persist and recover authoritative campaign continuation state",
+      "review_class": "implementation",
+      "risk": "high",
+      "change_profile": {
+        "route_class": "persistent_state_identity_integrity",
+        "semantic_domains": ["persistence", "identity", "integrity", "lifecycle"],
+        "topologies": ["cross_module"],
+        "novelty": "new_ownership",
+        "evidence_types": ["static_source", "deterministic_test", "persisted_artifact", "historical_reconstruction"],
+        "consequences": ["workflow_blocking", "state_corrupting"],
+        "changed_files": 9
+      },
+      "contract": {
+        "goal": "Make accepted named-campaign continuation state durable and allow deterministic, read-only recovery without replaying an accepted slice.",
+        "acceptance_criteria": [
+          "Current named accepted receipts with remaining work require validated continuation context; completed, stopped, and failed terminals omit it.",
+          "Historical receipts without continuation context remain readable but nonresumable.",
+          "Resume validates unique ordered contiguous selected-run history and binds both authoritative engine configuration and campaign source.",
+          "Trusted terminal outcomes return structured state; malformed history and binding mismatches fail closed.",
+          "Continuation context belongs only to named-campaign writes and has one current-write validation owner."
+        ],
+        "excluded_scope": [
+          "Mid-slice and partial-artifact recovery",
+          "Receipt amendments and historical migration",
+          "Limits and notifications",
+          "Reference campaign orchestration"
+        ]
+      },
+      "snapshot": {
+        "kind": "reconstructed",
+        "identity": "refs/work-engine/review-bench/c6-slice9/pre-review",
+        "digest": "961bb5ba2d5cd60333e03e2ad388d4b6e7c3aee4ae258124e6e2c57ef215d258",
+        "reconstruction_confidence": "high",
+        "limitations": [
+          "Reconstructed by reversing the sole accepted production fix recorded between the first review and user commit eb4f14f7.",
+          "The private checkpoint commit is synthetic; its tree, not its parent chronology, identifies the reviewed snapshot."
+        ],
+        "repository": "/home/bline/code/work-engine",
+        "tree_oid": "0798aa9bfd169d17b8230a312c43e23ea94e04a8"
+      },
+      "artifacts": [
+        {"path": "skills/slice-builder/references/handoff-receipt.md", "role": "compact handoff contract", "sha256": "ebbbdca423c6a8e7967cbc77bf241af63e14415b8e1908bd152fdd5be9b9ed12"},
+        {"path": "skills/slice-supervisor/SKILL.md", "role": "supervisor lifecycle contract", "sha256": "23539b406a4025b7d288009459742a9013057dce84979aee8b2ca9c8c06d4075"},
+        {"path": "skills/slice-supervisor/references/receipt-schema.md", "role": "durable receipt and resume semantics", "sha256": "ce025e75c7bb3e1fca27ed8d15d3a20efb86c57f1cb488af160abe2449fa1d1e"},
+        {"path": "skills/slice-supervisor/scripts/append_metrics.py", "role": "current-write and compatibility validation owner", "sha256": "92838e5dc9ac64cdbd9bad1581fb2322064244dabdeb2e5dca4d3757de24d05d"},
+        {"path": "skills/slice-supervisor/scripts/finalize_receipt.py", "role": "continuation projection producer", "sha256": "aaf3f92943be6f38e9c6e4d7a47838c100525c1e7034d1bb45a88bcd6e0c94cc"},
+        {"path": "skills/slice-supervisor/scripts/resume_campaign.py", "role": "durable continuation consumer", "sha256": "61f371b88666f5acbbfc18e5ff13ff89fe04409756b68d808731d4e4894e320b"},
+        {"path": "skills/slice-supervisor/tests/test_append_metrics.py", "role": "write-boundary contract tests", "sha256": "1c97380741b444388309ed98e975400c24755c83040113884a4fbd3773312fcd"},
+        {"path": "skills/slice-supervisor/tests/test_finalize_receipt.py", "role": "projection and finalization tests", "sha256": "96ea19db17c7d53142cb0277a470852ce18172d2ebcbbdaff3885543adba6445"},
+        {"path": "skills/slice-supervisor/tests/test_resume_campaign.py", "role": "recovery lifecycle tests", "sha256": "c52f15a607e00807740912d9677bcea2f4b68bf3f7af481882a29c0473e4fc51"}
+      ],
+      "deterministic_evidence": [
+        "The historical gate reported 11/11 checks passing before review, including the two-slice resume vertical and full supervisor Python and Node suites.",
+        "The reconstructed pre-review snapshot independently passes all 52 supervisor Python tests, demonstrating that the confirmed defect was not covered by that suite."
+      ],
+      "limitations": [
+        "This is one historical case and cannot establish a route policy.",
+        "The original reviewer saw repository tools rather than only the nine-file artifact list.",
+        "Run blinded reviews from the exported archive; repository Git history can reveal the later repair through the synthetic checkpoint parent."
+      ]
+    }
+  ]
+}

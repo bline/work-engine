@@ -30,7 +30,7 @@ Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stop
 | `worker_metrics` | object | Flexible namespaced metrics reported by the worker. |
 | `producer_metrics` | object | Flexible namespaced metrics reported by an orchestrator or producer. |
 
-`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. It may contain preflighted `capabilities`. Chrome Vision capability provenance is identity-only: source kind, authored reference or campaign path, canonical resolved path/base, SHA-256, and schema version. Do not persist the expanded runtime config or infer actual use from availability. Config version 1 preserves the historical combined evidence/review builder context. Config version 2 uses separate `repository_evidence` and `independent_review` provider/skill objects. The shapes must not be mixed. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
+`engine_config` must contain `version`, `source`, `objective`, `work_source`, `builder`, `validation`, `metrics`, `limits`, `approval`, `notifications`, `stop_on`, `explicit_fields`, `defaulted_fields`, and `amendments`. It may contain preflighted `capabilities`. Chrome Vision capability provenance is identity-only: source kind, authored reference or campaign path, canonical resolved path/base, SHA-256, and schema version. Do not persist the expanded runtime config or infer actual use from availability. Config version 1 preserves the historical combined evidence/review builder context. Config version 2 uses `repository_evidence` plus exactly one review role: the provider/skill `independent_review` object or the explicitly authorized provenance-bearing `adversarial_review` object. The shapes must not be mixed. The last four provenance/condition collections are arrays where appropriate. Preserve explicit and defaulted ownership; do not flatten them into an indistinguishable effective value.
 
 Each validation result is `passed`, `failed`, `blocked`, or `not_applicable`. `not_applicable` requires a concise reason and is never a silent waiver. Every configured requirement must be `passed` for an accepted slice; use another terminal status when a requirement cannot apply.
 
@@ -53,6 +53,17 @@ artifact that is ambiguous, mismatched, malformed, or nonterminal are not valid
 telemetry ingress. Tool/provider telemetry remains an explicit ingress array;
 merging ingress into a final audit receipt belongs to the later receipt-assembly
 lifecycle, not to the harvester.
+
+A corroborated child rollout may contain an earlier started turn with no
+completion when a later unique turn completes and is the rollout's final event.
+The harvester retains each such turn under
+`binding_provenance.interrupted_turns` with its start event and explicitly
+unavailable completion provenance; it never synthesizes a completion.
+`turn_count` counts every unique started attempt, wall clock spans the first
+start through the final latest completion, and token values remain the latest
+cumulative values actually emitted rather than inferred per-turn allocations.
+Duplicate identifiers, unknown completions, and an incomplete or nonterminal
+latest turn remain invalid.
 
 The deterministic receipt assembler accepts one valid schema-version-4
 semantic audit receipt, one matching telemetry-ingress artifact, and the
@@ -93,8 +104,28 @@ The finalizer calls the existing assembler and passes its exact in-memory
 result to the existing append boundary. Assembly failure writes nothing;
 append retains current-write validation, exclusive terminal identity under
 lock, and file plus parent-directory durability. The command does not reread
-the campaign file. It accepts the compact handoff separately and, for an
-accepted slice with `more_in_scope_work_remains: true`, derives this top-level
+the campaign file. It accepts the compact handoff separately and may accept an
+authorized accepted/stopped slice-checkpoint receipt. The finalizer projects
+that receipt under `producer_metrics.slice_checkpoint`; the append validator
+binds its run, slice, lifecycle kind, object identities, private ref, plan,
+scope, gate, and task-patch identity to the terminal receipt. For an
+accepted slice, the finalizer may also project a schema-version-1
+`producer_metrics.slice_completion_commit` lifecycle receipt. A new proposal
+uses schema version 2 with structured, open production provenance containing a
+producer description and durable evidence references; historical proposal
+schema version 1 remains readable with its original completing-builder origin.
+Neither producer nor provider/model identity grants authority. Every proposal
+binds the accepted checkpoint commit, tree, and task-patch digest. `created`
+records the verified ordinary commit;
+Historical `pending` projections remain readable, but new pending interaction
+is supervisor-owned live state and cannot enter a terminal write. `declined`
+and `refused` preserve truthful resolved non-commit outcomes.
+Before append, the finalizer obtains the adapter's read-only verification of a
+`created` receipt's repository, proposal, commit, parent, tree, message,
+publication target, and resulting state. Shape-valid input alone is not
+authoritative evidence.
+None replaces the private checkpoint as resume authority. For an accepted
+slice with `more_in_scope_work_remains: true`, it derives this top-level
 projection before the single append:
 
 ```json
@@ -118,10 +149,24 @@ python3 skills/slice-supervisor/scripts/resume_campaign.py \
 The reader validates a unique, ordered, contiguous selected-run history and
 deep-compares both authoritative engine configuration and campaign-source
 identity. Trusted terminal outcomes return structured resumable or
-non-resumable results. Malformed history, gaps, duplicates, missing runs, or
-binding mismatches fail the command. It writes nothing. This contract does not
-define mid-slice recovery, partial-artifact recovery, amendments, migration,
-or slice reservation.
+non-resumable results. A stopped or failed result includes an additive
+`terminal_state` projection containing the receipt-owned `status` and exact
+`stop_reason`; its stable coarse `reason` remains `stopped` or `failed` and the
+result remains non-resumable. Accepted-complete and continuation-unavailable
+results omit `terminal_state` because accepted receipts have no stop reason.
+When an accepted record contains `producer_metrics.slice_checkpoint`, the
+reader verifies that its private ref still names the recorded commit and that
+the commit names the recorded tree. A resumable result returns that projection
+as `baseline_checkpoint`; current branch HEAD is not a substitute.
+Malformed history, gaps, duplicates, missing runs, or binding mismatches fail
+the command. It writes nothing. This contract does not define mid-slice
+recovery, partial-artifact recovery, amendments, migration, or slice
+reservation.
+
+When the accepted checkpoint repository contains the supervisor-owned private
+completion-offer ref for the last slice, resume validates and returns it
+additively as `completion_offer`. Open or resolved offer state never changes
+`resumable`, `next_slice_number`, or `baseline_checkpoint`.
 
 ## Recommended normalized engineering fields
 
@@ -163,8 +208,11 @@ Include when available, using `null` otherwise:
 - `fallbacks`, the compact transition events from which fallback reason counts
   are derived.
 
-New config-version-2 receipts also contain `repository_evidence_identity` and
-`independent_review_identity`, each with the provider and skill actually used.
+New config-version-2 receipts contain `repository_evidence_identity` and the
+identity matching the configured review role. Legacy `independent_review_identity`
+contains provider and skill. `adversarial_review_identity` contains provider,
+skill, model, reasoning effort, evidence class, isolation, observed builder
+context inheritance, model relationship, and whether independence was claimed.
 They also contain `provider_role_metrics`, partitioning provider attempt
 outcomes and available measurements between those two roles; role outcome
 totals must equal the generic provider outcome totals. Historical
@@ -173,10 +221,16 @@ identities are present, report both; version-1 identities must both preserve the
 same valid combined legacy role. Version-2 receipts include semantic
 `evidence_recon_calls`, `evidence_supplemental_calls`, and `review_gate_calls`.
 Retrieval stage calls cannot exceed repository-provider attempts, and review
-gate calls cannot exceed independent-review-provider attempts.
+gate calls cannot exceed configured-review-provider attempts.
 Actual role identities must match the normalized effective configuration. A
 different provider requires a recorded configuration amendment; evidence-mode
 fallback inside the configured role does not change provider identity.
+
+An `accepted_same_model_review` identity requires fresh-process isolation,
+`builder_context_inherited: false`, `model_relationship: same_model`, and
+`independence_claimed: false`. It must not be represented as cross-provider,
+cross-model, statistically independent, or independent reasoning, and cannot
+satisfy a configured requirement explicitly demanding independent review.
 
 Capability classes describe how evidence was obtained, not which product
 supplied it. Provider and model identity remain separate provenance. A fallback

@@ -1,0 +1,55 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "case_id": "c6-slice9-pre-review",
+  "result_id": "claude-cli-medium-c6-slice9-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "harness": "claude-cli-isolated-archive",
+    "inference_family": "claude-sonnet",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem-read", "glob", "grep"],
+    "reasoning_effort": "medium",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": [],
+    "session_id": "ec45cf7e-ad20-40f9-ad60-41b3b14e2df8"
+  },
+  "snapshot_digest": "961bb5ba2d5cd60333e03e2ad388d4b6e7c3aee4ae258124e6e2c57ef215d258",
+  "verdict": "rejected",
+  "findings": [
+    {
+      "finding_id": "F1",
+      "severity": "high",
+      "blocking": true,
+      "category": "correctness/validation-completeness",
+      "claim": "append_metrics.py's validate_current_write, the documented single current-write validation owner, fails to enforce that continuation_context belongs only to named-campaign writes: a resumable receipt that lacks producer_metrics.campaign_source is permitted to carry arbitrary continuation_context without rejection.",
+      "evidence": [
+        "skills/slice-supervisor/scripts/append_metrics.py:606-620 defines validate_current_write: resumable is accepted status with remaining work; named_campaign is campaign_source presence; it only rejects missing context for named resumable writes or supplied context for nonresumable writes. There is no branch rejecting resumable and not named_campaign with continuation present.",
+        "skills/slice-supervisor/references/receipt-schema.md:104-107 states the projection belongs only to named-campaign writes and that current named-campaign resumable writes require it, while other current outcomes omit it.",
+        "skills/slice-supervisor/SKILL.md:142-149 documents append_metrics.py as the direct write path for terminal receipts not sourced from a named campaign, which is the sanctioned write class that can carry continuation_context through this validation gap.",
+        "skills/slice-supervisor/scripts/assemble_receipt.py:124-126 shows the named-campaign finalize pipeline always supplies campaign_source, so that production path does not trigger the gap; the contradictory path is the documented direct non-named append path.",
+        "skills/slice-supervisor/tests/test_append_metrics.py:477-504 covers the named requirement and nonresumable omission but not a resumable non-named receipt with continuation_context; the supplied finalize and resume tests likewise do not cover it."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Review was limited to the packet-listed artifacts plus necessary read-only dependencies; unrelated preflight and telemetry files were not deeply audited.",
+    "No Git history, later fixes, session logs, internet sources, shell, or runtime execution were available.",
+    "The practical blast radius is bounded because resume campaign-source binding would reject an ordinary attempt to recover a non-named receipt; the confirmed issue is the durable schema-integrity and ownership violation itself.",
+    "Provider input_tokens excludes 94883 cache-creation and 297670 cache-read tokens, which are retained only in this limitation because the frozen result schema has no cache-token fields."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T18:00:19.675-06:00",
+    "completed_at": "2026-08-20T18:02:39-06:00",
+    "wall_clock_seconds": 139.325,
+    "cost_usd": 0.830157,
+    "input_tokens": 16,
+    "output_tokens": 11434
+  }
+}

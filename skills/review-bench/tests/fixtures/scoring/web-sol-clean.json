@@ -1,0 +1,13 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "clean-closure",
+  "result_id": "web-sol-clean",
+  "finding_dispositions": [
+    {"result_finding_id": "s2", "disposition": "false_positive", "truth_finding_ids": [], "evidence_valid": false, "notes": "The cited call does not establish replacement, and the regression test disproves it."}
+  ],
+  "missed_truth_ids": [],
+  "adjudicator": "fixture-human",
+  "limitations": []
+}

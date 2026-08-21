@@ -1,0 +1,48 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "sol-codex-low-c6-slice9-clean-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "codex-subagent-isolated-archive",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem", "shell", "python-runtime"],
+    "reasoning_effort": "low",
+    "review_protocol": "evidence-calibrated-review/1.1",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "708d93f697bc4fb7b125435063a249db7e52fd9b7be4b7d05c9b7a0bd786d0b3",
+  "verdict": "accepted",
+  "findings": [
+    {
+      "finding_id": "F1",
+      "severity": "low",
+      "blocking": false,
+      "category": "documentation",
+      "claim": "The receipt-schema production command example omits the required --handoff-receipt-json argument, so copying that example causes finalizer argument parsing to fail even though the supervisor lifecycle contract documents the complete command.",
+      "evidence": [
+        "skills/slice-supervisor/references/receipt-schema.md:84-90 shows the finalize_receipt.py command without --handoff-receipt-json.",
+        "skills/slice-supervisor/scripts/finalize_receipt.py:77-85 declares --handoff-receipt-json as required and parses it before finalization.",
+        "skills/slice-supervisor/SKILL.md:126-133 provides the complete supported production command, including --handoff-receipt-json."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Review was bounded to the supplied snapshot and packet artifacts.",
+    "The 52 supervisor Python tests passed with bytecode generation disabled; Node campaign-preflight tests were not independently executed.",
+    "No claims were made about excluded mid-slice recovery, migration, limits, notifications, or reference orchestration.",
+    "Started and completed timestamps are orchestration bounds; the Codex subagent harness did not expose provider wall-clock or token measurements."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T18:56:27-06:00",
+    "completed_at": "2026-08-20T19:00:02-06:00"
+  }
+}

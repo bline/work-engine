@@ -1,0 +1,21 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "case_id": "c6-slice9-pre-review",
+  "result_id": "claude-cli-medium-c6-slice9-run1",
+  "finding_dispositions": [
+    {
+      "result_finding_id": "F1",
+      "disposition": "true_positive",
+      "truth_finding_ids": ["continuation-allowed-without-named-campaign"],
+      "evidence_valid": true,
+      "notes": "The source-grounded current-write fall-through exactly matches the corrected truth. Claude correctly identified the explicit acceptance-criterion violation as blocking and bounded the practical recovery blast radius; its high severity label overstates the amended medium-severity truth."
+    }
+  ],
+  "missed_truth_ids": [],
+  "adjudicator": "codex-root-against-sealed-executable-truth",
+  "limitations": [
+    "The frozen v1 scoring schema does not score severity calibration; the high-versus-medium overstatement remains visible in the raw result and adjudication notes."
+  ]
+}

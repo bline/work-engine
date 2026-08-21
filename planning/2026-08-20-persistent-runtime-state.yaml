@@ -1,0 +1,82 @@
+schema_version: 1
+strategic_objective: "Keep the standalone Work Engine route coherent while making interrupted and capability-blocked work recoverable"
+evidence_cutoff:
+  roadmap_revision: "sha256:dab964efbcc87d821a6ced5c399fb1dd21b7ac1f500b27a3cbfed63abb59b29f"
+  repository_revision: "eb4f14f7a33d7d16dc48df6289ad4bdd4be4fd6f"
+  campaign_terminals:
+    - run_id: "c6eed952-a107-4f73-85bd-6863de887240"
+      slice_number: 14
+      status: "accepted"
+    - run_id: "c6eed952-a107-4f73-85bd-6863de887240"
+      slice_number: 15
+      status: "stopped"
+continuity: "retained"
+verdict: "reorder"
+current_rationale: "The repository-local terminal lifecycle is proven, but slice 15 exposed that live implementation and pending review state cannot survive provider unavailability truthfully. Persistent runtime state and protected review obligations now precede distribution of the workflow."
+assumptions:
+  confirmed:
+    - evidence: "Fourteen accepted roadmap slices and production-boundary reference tests"
+      consequence: "Terminal receipt, handoff, resume, and route-reopening foundations remain valid inputs to the new state layer."
+  changed:
+    - evidence: "Slice 15 completed deterministic validation but stopped when independent review quota was unavailable."
+      consequence: "Capability waiting and pending review require durable nonterminal ownership rather than model context or an immediately final stopped campaign."
+    - evidence: "A delayed review becomes stale if another slice mutates overlapping files or semantic boundaries."
+      consequence: "Review queue state, protected snapshots, and mutation-scope reservations are required consumers of persistent state."
+  invalidated:
+    - evidence: "Installed skills are stale, while the repository still lacks live recovery and review coordination."
+      consequence: "Distribution should not precede the runtime state needed to recover the workflow safely."
+route_changes:
+  priorities:
+    - "Move minimal persistent agent state and review coordination ahead of installed-skill distribution."
+  dependencies:
+    - "Review queue and scope reservations depend on stable agent, attempt, plan-version, event, and transition identities."
+  newly_important:
+    - "Durable awaiting_review and awaiting_capability states"
+    - "Protected review snapshots and overlap-aware mutation reservations"
+  deferred:
+    - "Installed-skill distribution and neutral-directory smoke testing"
+    - "General scheduling and portfolio automation"
+recommended_campaign:
+  disposition: "start_new"
+  run_id: "024d95f0-5f03-4fc3-bdd9-52566d8b5ccd"
+  objective: "Establish durable persistent agent and review-queue state so active Work Engine campaigns can survive context replacement, defer unavailable reviews truthfully, and prevent overlapping mutation across initial and revised slice plans without rewriting historical terminals"
+  work_source: "campaigns/persistent-runtime-state.yaml"
+  campaign_source_sha256: "0332d505834ed640823d4ae692a256a364b73122ca218b00e0f4e66d91dea744"
+  reason: "The prior roadmap run is truthfully stopped and nonresumable; the revised objective requires a new immutable campaign configuration and run identity."
+open_uncertainties:
+  - "The first slice must establish the authoritative state owner and storage boundary without presuming the full review-queue schema."
+authority_required: []
+revisit_when:
+  - "The state owner cannot support atomic idempotent transitions and restart hydration."
+  - "Review protection requires a conflicting owner or a broader repository mutation boundary."
+  - "A protected slice-15 file becomes necessary before its delayed review is resolved or explicitly superseded."
+later_reconciliation:
+  recorded_at: "2026-08-21"
+  provenance: "Review-remediation slice 5; preserves the evidence cutoff and strategic lineage above rather than rewriting the dated observation."
+  supersedes_interpretation:
+    - "A delayed review becomes stale merely because another slice mutates overlapping files or semantic boundaries."
+    - "Mutation-scope reservations are universally required consumers of persistent state."
+    - "The first implementation must use atomic idempotent transitions, restart hydration, transition history, or a materialized current-state projection before repository evidence establishes the authoritative owner and consumers."
+    - "The recommended campaign at campaigns/persistent-runtime-state.yaml remains the current runnable route."
+  revised_consequences:
+    - "A delayed review remains truthful about its immutable subject; later consequential use establishes applicability to the decision state or records refresh, supersession, or composition."
+    - "Review artifacts own reviewed claims, material assumptions, established consequences, limitations, and lineage; checkpoint artifacts own immutable content identity and reconstruction provenance."
+    - "Queue, overlap, protected-scope, reservation, and supersession machinery remain available capabilities. Reservations become mandatory only when an identified concurrency or authority contract makes them causally necessary."
+    - "Unrelated work is not blocked merely because semantic non-overlap cannot be exhaustively proven, while confirmed conflicting integrated changes cannot reuse stale review evidence."
+    - "Every recovery-critical consequence must have a durable owner outside lossy model context. The selected owner must preserve stable logical identity, epistemic distinctions, authoritative references, and enough crash, order, and retry semantics to prevent duplicated consequences and stale-state resurrection."
+    - "Append-only history, materialized projections, hydration sequencing, idempotency mechanisms, and storage technology remain implementation decisions unless an identified owner or consumer failure mode makes one irreducible."
+  campaign_reconciliation:
+    prior_campaign:
+      path: "campaigns/persistent-runtime-state.yaml"
+      sha256: "0332d505834ed640823d4ae692a256a364b73122ca218b00e0f4e66d91dea744"
+      disposition: "superseded_before_observed_execution"
+      note: "The immutable authored bytes and original recommendation above remain historical evidence; no terminal receipt or metrics history was observed for this campaign."
+    replacement_campaign:
+      disposition: "start_new"
+      run_id: "f97ddf00-e342-4d7a-bc99-df3d96759d39"
+      path: "campaigns/persistent-runtime-state-route-open.yaml"
+      sha256: "f6394272009db2818ccd2ebbc69bf1177e6b376af721f08649ca90028a111a87"
+      reason: "A new immutable source preserves route-open recovery consequences without rewriting the prior campaign provenance."
+  deferred_executable_proof:
+    - "Replace or reconstruct an active context and recover active work, handled-event disposition, unresolved decisions, and authoritative artifact references."
+    - "Repeat a relevant write/recovery boundary without duplicated consequence or stale-state resurrection. This documentation remediation does not claim that proof passed."

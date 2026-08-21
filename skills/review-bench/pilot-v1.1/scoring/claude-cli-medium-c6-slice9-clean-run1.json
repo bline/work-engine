@@ -1,0 +1,35 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "claude-cli-medium-c6-slice9-clean-run1",
+  "finding_dispositions": [
+    {
+      "result_finding_id": "F1",
+      "disposition": "nonblocking_observation",
+      "truth_finding_ids": [],
+      "evidence_valid": true,
+      "notes": "This is an evidence-backed verification statement, not a defect claim."
+    },
+    {
+      "result_finding_id": "F2",
+      "disposition": "nonblocking_observation",
+      "truth_finding_ids": [],
+      "evidence_valid": true,
+      "notes": "This is an evidence-backed verification statement, not a defect claim."
+    },
+    {
+      "result_finding_id": "F3",
+      "disposition": "nonblocking_observation",
+      "truth_finding_ids": [],
+      "evidence_valid": true,
+      "notes": "This is an evidence-backed verification statement, not a defect claim."
+    }
+  ],
+  "missed_truth_ids": [],
+  "adjudicator": "codex-root-against-sealed-clean-truth-and-direct-source",
+  "limitations": [
+    "The result schema calls every returned item a finding; scoring preserves these positive verification statements without treating them as defects or false positives."
+  ]
+}

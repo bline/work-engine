@@ -1,0 +1,47 @@
+{
+  "artifact_type": "review_bench_historical_provenance_v1",
+  "schema_version": 1,
+  "case_id": "visual-evidence-authored-observation-pre-review",
+  "historical_run": {
+    "run_id": "8f2ad7df-6e85-4030-bd78-421e7a8a8b56",
+    "title": "Normalize Visual Evidence authored observations",
+    "receipt": "/home/bline/code/site2json/work-engine/metrics/roadmap.jsonl",
+    "review": "/home/bline/code/work-engine/reviews/work-engine-run-review-2026-08-19.md",
+    "containing_commit": "c2be184d4ff8a7f7e623cc5e7b7fe6e97d83cc8b",
+    "baseline_commit": "de92b8ea090bf3a77a2183fc5e4ced83cfaf4c79"
+  },
+  "checkpoints": {
+    "pre_review": {
+      "ref": "refs/work-engine/review-bench/visual-observation/pre-review",
+      "commit_oid": "e6f5cbed31987499bf01b952dc8fcaaabb77baef",
+      "tree_oid": "7490bb2083f0f5b44048a9bfde858f5b060d76b7",
+      "archive_sha256": "7ea148539e201994d52aae122e04891890809cfc59f786b63e3356f31c336459"
+    },
+    "post_review": {
+      "ref": "refs/work-engine/review-bench/visual-observation/post-review",
+      "commit_oid": "c397cc03a576d7c5711ce03c20a2ae4b457f96d2",
+      "tree_oid": "6d353d407ceaee20451d53cb50a440e26c5b5314",
+      "archive_sha256": "21b73cda9885deb572fa47658e7625696dd28ef99ca43c0c80b3afc19a34a052"
+    }
+  },
+  "reconstruction": {
+    "confidence": "medium",
+    "method": "Overlay the 12 committed task-owned files from the containing commit and the surviving untracked contract test onto the historical baseline, then reverse the two production repair edits and remove their two named regression tests to form the pre-review tree.",
+    "boundary_diff": {
+      "files": 2,
+      "insertions": 28,
+      "deletions": 2
+    },
+    "limitations": [
+      "The original provider used no persistent Claude session, and no exact transient pre-review worktree checkpoint was retained.",
+      "tests/visual-evidence-contract.test.js was historically untracked; its blob is preserved from the surviving descendant workspace.",
+      "The synthetic commits preserve immutable trees but do not claim historical parent chronology."
+    ]
+  },
+  "validation": {
+    "pre_review_focused_tests": "10 passed",
+    "post_review_focused_tests": "12 passed",
+    "pre_review_probe": {"null_interpretation_throws": true, "ambiguous_click_action_preserved": false},
+    "post_review_probe": {"null_interpretation_status": "unresolved", "ambiguous_click_action_preserved": true}
+  }
+}

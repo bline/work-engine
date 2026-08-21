@@ -1,0 +1,11 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "clean-closure",
+  "result_id": "claude-clean",
+  "finding_dispositions": [],
+  "missed_truth_ids": [],
+  "adjudicator": "fixture-human",
+  "limitations": []
+}

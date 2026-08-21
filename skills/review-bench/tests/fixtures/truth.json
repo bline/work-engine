@@ -1,0 +1,41 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "cases": [
+    {
+      "case_id": "defective-state",
+      "expected_verdict": "rejected",
+      "findings": [
+        {
+          "truth_id": "identity-replaced",
+          "severity": "high",
+          "blocking": true,
+          "category": "identity",
+          "claim": "Reload allocates a replacement identity.",
+          "evidence": ["Executable restoration evidence reproduces replacement identity."],
+          "adjudication": "Confirmed by the fixture adjudicator.",
+          "tags": ["restoration"]
+        },
+        {
+          "truth_id": "stale-mutates",
+          "severity": "high",
+          "blocking": true,
+          "category": "stale-state",
+          "claim": "Stale state mutates before rejection.",
+          "evidence": ["Executable stale-state evidence reproduces mutation before rejection."],
+          "adjudication": "Confirmed by the fixture adjudicator.",
+          "tags": ["ordering"]
+        }
+      ],
+      "adjudication_notes": []
+    },
+    {
+      "case_id": "clean-closure",
+      "expected_verdict": "accepted",
+      "findings": [],
+      "adjudication_notes": ["Fixture clean case."]
+    }
+  ],
+  "limitations": ["Synthetic fixture truth"]
+}

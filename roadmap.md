@@ -110,6 +110,49 @@ their claims become stale.
 
 ---
 
+## Current strategic route
+
+The 2026-08-20 strategic reconciliation found that the command-and-control
+direction remains sound, while distribution and live recovery lag behind the
+repository-local terminal lifecycle. Fourteen accepted slices now establish
+multi-slice completion, compact handoff consumption, recoverable validation,
+truthful stopped and failed terminals, and route reopening. A fifteenth slice
+stopped truthfully when its configured independent review became unavailable;
+its local edits are not accepted evidence.
+
+The review-remediation campaign has since established the exact authorized Git
+delta, authoritative completion-commit receipts, a durable nonterminal
+completion-offer lifecycle, open proposal provenance, review-evidence
+applicability, and route-open persistent-state requirements. Those accepted
+outcomes supersede the corresponding gaps in the 2026-08-20 reconciliation
+without rewriting that dated evidence. Executable recovery after context
+replacement remains unproved.
+
+The current priority order is:
+
+1. reconcile accepted campaign work and keep stopped or user-owned changes
+   distinguishable;
+2. establish the authoritative owner and consumers for persistent live campaign
+   and agent state, then implement the smallest evidence-supported recovery
+   boundary, including truthful retryable capability-waiting consequences;
+3. select live-state consumers from implementation evidence; durable review
+   obligations and immutable review subjects are one candidate consumer, while
+   overlap and reservation capabilities remain conditional on actual
+   concurrency or authority constraints;
+4. establish an atomic, versioned install boundary with a neutral-directory
+   smoke test before syncing the repository skill into Codex;
+5. audit contract ownership and imperative runtime instructions;
+6. complete standalone documentation, CI, versioning, and release surfaces;
+7. promote proposal formation, strategic planning, and closed-loop learning
+   into durable portfolio machinery after the runtime can preserve their state
+   truthfully.
+
+This order is current strategic guidance, not an invariant procedure. A
+strategic planning break should confirm or revise it when durable execution
+evidence materially changes its assumptions, dependencies, or expected value.
+
+---
+
 # Workstream 0 — Establish the independent repository
 
 **Status: active.**
@@ -122,19 +165,17 @@ contract requires the source tree to be nested beneath `site2json/work-engine`.
 
 ## Current evidence
 
-The subtree already contains its doctrine, skills, schemas, scripts, tests,
-campaigns, configuration, reviews, and metrics. Several commands and campaign
-paths still assume invocation from the Site2JSON repository root. As the first
-transition cleanup, the invalid Site2JSON roadmap campaign has been removed and
-the owned Work Engine campaign now uses standalone-root-relative roadmap and
-metrics paths.
+Work Engine now has its own repository, remote, package identity, license,
+doctrine, skills, schemas, scripts, tests, campaigns, configuration, reviews,
+and metrics. The owned roadmap campaign uses standalone-root-relative roadmap
+and metrics paths. The repository-local suites and campaign preflight pass, but
+the installed skill is an older incompatible copy and some comparative paths
+and historical identifiers still assume the former Site2JSON layout.
 
 ## Remaining work
 
-- Choose the standalone repository name, ownership, visibility, license, and
-  release destination.
-- Preserve meaningful history during extraction and record the source revision
-  from which the standalone history began.
+- Record the chosen repository identity, ownership, visibility, license, and
+  extraction provenance in the standalone documentation.
 - Make repository-relative paths canonical. Commands should work from the new
   repository root without a `work-engine/` prefix.
 - Keep a Site2JSON consumer example in the future only if it is explicitly
@@ -146,6 +187,9 @@ metrics paths.
   appropriate, changelog/release convention, and supported-runtime statement.
 - Add repository-owned CI for all supported languages and executable
   documentation checks.
+- Define an atomic, versioned install/sync boundary for supervisor, builder,
+  scripts, references, and runtime dependencies. Verify it from a neutral
+  directory rather than relying on repository-local dependency resolution.
 - Ensure generic Chrome Vision behavior remains product-neutral; keep
   Site2JSON-specific aliases and recovery composition in the Site2JSON adapter.
 
@@ -163,7 +207,7 @@ metrics paths.
 
 # Workstream 1 — Align implementation with the governing design
 
-**Status: active.**
+**Status: active; open route provenance is implemented.**
 
 ## Invariant outcome
 
@@ -175,9 +219,11 @@ a causal parent and an identifiable failure mode.
 
 The doctrine clearly separates invariant structure, consequences, capability
 affordances, and procedures. Runtime skills partially preserve that distinction,
-but several encode current preferred routes as mandatory sequences. The receipt
-validator accepts only `direct` and `falsified-placement` route labels, turning
-a useful default taxonomy into a closed product world.
+but several still encode current preferred routes as mandatory sequences. The
+receipt validator now accepts any nonempty workflow-route identity; `direct`
+and `falsified-placement` remain named defaults rather than a closed product
+enum. Tests exercise additional identities and preserve route revisions with
+their retired decisions and retained evidence.
 
 ## Remaining work
 
@@ -186,9 +232,6 @@ a useful default taxonomy into a closed product world.
 - Retain only commands whose violation breaks authority, ownership, security,
   mutation boundaries, interface validity, provenance, or an explicit
   acceptance contract.
-- Replace the closed workflow-route enum with open route provenance. Named
-  defaults may remain available for comparison, but novel valid routes must be
-  representable without misclassification.
 - Convert fixed capability ladders into affordance descriptions unless order is
   causally required.
 - Remove fixed evidence-count, retry-count, reviewer-reset, and escalation
@@ -201,8 +244,8 @@ a useful default taxonomy into a closed product world.
 
 ## Completion evidence
 
-- A valid route outside the historical two-route taxonomy can be configured,
-  executed, recorded, and accepted.
+- Routes outside the historical two-route taxonomy remain representable and
+  accepted without weakening their provenance.
 - Each imperative in a runtime skill traces to an owning product property or is
   visibly presented as a revisable default.
 - Validators reject invariant violations but do not enforce a preferred
@@ -270,30 +313,54 @@ the product record.
 ## Current evidence
 
 Versioned receipts, compact handoffs, route revisions, provider/evidence-mode
-separation, fallback events, configuration provenance, append locking, and
-telemetry-ingress validation are present. Some historical records remain on old
-schemas, authoritative builder telemetry is incomplete, and comparative
-analysis currently permits `confirmed_absent` despite recorded coverage
-limitations.
+separation, fallback events, configuration and campaign-source provenance,
+authoritative receipt assembly, append locking, terminal finalization, and
+read-only inter-slice resume are present. Reference campaigns prove accepted,
+stopped, failed, repaired, and reopened routes. Completion interaction now has
+a supervisor-owned durable nonterminal offer lifecycle outside terminal metrics
+and the ordinary worktree; the completion adapter retains ownership of real
+branch mutation and authoritative created or refused evidence. Proposal
+provenance is structured and open to truthful producers while remaining bound
+to its checkpoint, tree, and task patch. Some historical records remain on old
+schemas, authoritative builder telemetry is incomplete, and durable general
+mid-slice agent state and partial-artifact recovery do not yet exist.
+
+The persistent-state proposals retain durable review obligations as a possible
+consumer rather than selecting the first implementation boundary in advance. A
+review artifact owns its immutable subject, material assumptions, established
+consequence, limitations, and lineage. Later consequential use must establish
+applicability or record refresh, supersession, or composition. Overlap and
+reservation machinery remains a useful conditional coordination capability,
+and later workspace mutation does not retroactively change what was reviewed.
+See [`ideas/persistent-agent-state-and-runtime-introspection.md`](ideas/persistent-agent-state-and-runtime-introspection.md)
+and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-review-queue-and-scope-coordination.md).
 
 ## Remaining work
 
-- Make material coverage limitations incompatible with definitive absence.
-  Downgrade the claim or close the gap with relevant direct evidence.
-- Complete deterministic receipt assembly from validated semantic builder
-  output and authoritative host/provider telemetry.
-- Enforce current schema versions for new durable writes while preserving
-  explicit historical read/migration support.
-- Bind effective configuration to its resolved source rather than relying on
-  model transcription.
 - Preserve `null` for unavailable measurements and zero only for observed zero.
-- Define resumption semantics for interrupted campaigns, including stable run
-  identity, accepted slice state, pending authority decisions, and compatible
-  handoff context.
-- Preserve route invalidations compactly: failed premise, stale dependent
-  decisions, still-valid evidence, replacement route, and reason.
-- Exercise append locking, crash boundaries, duplicate prevention, and partial
-  receipt recovery under realistic concurrent or interrupted conditions.
+- Add durable live state for active campaigns and agents: stable logical
+  identities distinct from provider runtime identities, phase checkpoints,
+  handled-event disposition, child bindings, baseline ownership, and truthful
+  recovery after context replacement. Select update, retry, and reconstruction
+  mechanics only after the authoritative owner and consumers are established.
+- Generalize retryable capability or gate unavailability beyond the implemented
+  completion-offer lifecycle without redefining final stopped and failed
+  terminals.
+- Define pending-authority, mid-slice interruption, partial-artifact recovery,
+  and deterministic reconciliation semantics.
+- Preserve review obligations durably when an evidence-selected runtime
+  consumer requires it; retain immutable subject, material assumptions,
+  established consequence, limitations, and lineage.
+- Make consequential use of existing review evidence establish applicability
+  to the candidate state or record refresh, supersession, or composition.
+- Expose overlap analysis, protected scopes, and reservations as coordination
+  capabilities, requiring them only where an identified concurrency or
+  authority constraint would otherwise permit an invalid transition.
+- Prevent confirmed conflicts from reusing stale evidence while allowing later
+  non-conflicting work to continue without weakening the original review truth.
+- Exercise crash boundaries, duplicate-consequence prevention, and partial
+  recovery under realistic concurrent or interrupted conditions. Append
+  locking remains one possible mechanism where the selected owner requires it.
 
 ## Completion evidence
 
@@ -356,7 +423,7 @@ review. Some skills still couple provider products to preferred workflows.
 
 # Workstream 5 — Prove the campaign lifecycle
 
-**Status: planned; single-slice paths have the most evidence.**
+**Status: active; core multi-slice lifecycle evidence exists.**
 
 ## Invariant outcome
 
@@ -368,16 +435,18 @@ reasoning. Builder context survives only while it improves the bounded work.
 
 The supervisor and builder contracts describe planning, acceptance,
 implementation, gating, handoff, continuation, limits, stops, and intervention.
-Recorded campaigns have exercised first slices; the repository does not yet
-carry convincing evidence for a complete multi-slice lifecycle.
+Production-boundary reference tests now demonstrate multi-slice completion,
+exact compact handoff consumption, recoverable validation failure, truthful
+stopped and failed terminals, byte-preserving nonresumable resume, and route
+reopening followed by later completion. Completion offers add a durable,
+retryable human-interaction lifecycle without occupying the unique terminal
+receipt or blocking checkpoint continuation.
 
 ## Remaining work
 
-- Run representative campaigns that accept more than one slice and consume a
-  compact handoff in a later builder.
-- Demonstrate route reopening when evidence invalidates an accepted boundary.
-- Demonstrate a recoverable validation failure, a truthful stop, a required
-  human-authority decision, and continuation after an accepted slice.
+- Extend required human-authority and retryable-capability continuation evidence
+  beyond the implemented completion-offer case without redefining final stopped
+  receipts.
 - Verify limits and stop conditions from observed state, including the
   distinction between exhausted capacity, unavailable capability, product
   failure, and incomplete evidence.
@@ -461,9 +530,21 @@ zero.
 ## Current evidence
 
 Receipt contracts contain builder, provider-role, evidence-mode, route,
-validation, review, timing, token, cost, and outcome fields. Historical records
-are sparse, span schema versions, contain no second slices, and lack several
-authoritative builder measurements.
+validation, review, timing, token, cost, and outcome fields. One fifteen-slice
+campaign now provides sequential lifecycle evidence, with fourteen accepted
+slices and one truthful quota stop. Records still span schema versions and only
+the latest slices contain authoritative builder measurements, so aggregate
+cost or performance comparisons remain premature.
+
+The review-bench research tree has explicit artifact owners: protocol-versioned
+corpora, sealed truth, results, scoring, reports, and provenance are retained
+research evidence governed by its artifact contracts and deterministic
+validator. A complete exported review packet, including its snapshot archive,
+case, prompt, and export receipt, is generated evidence whose members remain
+bound together. These artifacts preserve the snapshot and protocol under which
+a descriptive claim was observed; neither a benchmark result nor a generated
+packet is production acceptance evidence for the reviewed change. Disposable
+local exports and interpreter caches are not part of that publication boundary.
 
 ## Remaining work
 
@@ -624,20 +705,64 @@ reach rather than another equivalent control.
 
 ---
 
-## Immediate transition slice
+## Verified review remediation campaign
 
-The first bounded slice should establish the standalone boundary without trying
-to finish every internal alignment issue at once.
+The completion-commit and planning review has a dedicated remediation work
+source at
+[`planning/review-remediation/README.md`](planning/review-remediation/README.md)
+and a runnable campaign configuration at
+[`campaigns/review-remediation.yaml`](campaigns/review-remediation.yaml).
+
+Accepted remediation slices now prove that a user-visible commit contains its
+exact authorized delta, created completion receipts are authoritatively verified,
+and pending completion interaction has a durable nonterminal lifecycle. They
+also open proposal provenance to truthful evidence-bound producers, make later
+use establish review applicability, and preserve persistent recovery
+consequences without selecting event history, projection, hydration,
+idempotency, storage, or coordination mechanisms in advance. Truthful stopped
+planning attempts remain historical evidence rather than accepted repairs.
+
+The dated strategic handoff at
+[`planning/2026-08-20-persistent-runtime-state.yaml`](planning/2026-08-20-persistent-runtime-state.yaml)
+is the canonical owner of its original evidence cutoff and later reconciliation.
+The corresponding `skills/planning/` artifact is a compatibility reference to
+that owner, not a second handoff. Protocol-bound review-bench artifacts and
+complete exported packets remain research evidence under their recorded
+snapshot and protocol provenance. The unowned root `files.zip` proposal export
+is preserved as a disposable local file and excluded from this campaign's
+publication boundary; its unique bytes do not make it a durable planning owner.
+
+The remaining remediation responsibility is to keep this live roadmap and its
+artifact ownership claims aligned with those observed outcomes. This campaign
+does not prove executable recovery after context replacement or repeated writes,
+and it does not complete the broader standalone-product roadmap.
+
+---
+
+## Next persistent-state campaign
+
+The next campaign should first establish the authoritative live-state owner and
+its consumers from repository evidence. Its implementation slices should remain
+bounded without assuming that a review queue, supervisor integration, general
+scheduling, installed-skill distribution, or a particular storage mechanism
+belongs in the same change.
 
 Its intended consequence is:
 
-> A fresh checkout behaves as the Work Engine repository, with canonical root
-> paths, an accurate entry document, valid owned campaigns, preserved historical
-> provenance, and no active dependency on Site2JSON product structure.
+> A campaign, agent, slice attempt, and plan version can be created and
+> recovered from one durable state owner with enough identity, ordering,
+> crash-safety, and retry semantics to prevent duplicate consequences or stale
+> resurrection, without treating terminal receipts or model context as live
+> state.
 
-Expected scope includes repository extraction decisions, root-relative path
-normalization, campaign disposition, documentation entry points, CI bootstrap,
-and a migration inventory for historical artifacts. Changes to receipt
-semantics, route openness, and runtime doctrine remain separately reviewable
-Workstreams 1–3 unless the extraction exposes a causal dependency that requires
-them sooner.
+The first implementation scope remains an evidence decision. It must separate
+stable logical identity from provider runtime identity, distinguish observed,
+inferred, unresolved, stale, and unavailable facts, reference stronger artifact
+owners, and prove context replacement plus a repeated write/recovery boundary.
+Append-only history, materialized projections, hydration sequencing,
+idempotency mechanisms, and any particular storage technology remain candidate
+routes unless a concrete owner or consumer failure mode makes one irreducible.
+Review-queue records and mutation reservations remain separately reviewable
+coordination capabilities, required only where an identified concurrency or
+authority invariant demands them. Supervisor integration, accepting the
+stopped fifteenth slice, and installed-skill distribution also remain separate.

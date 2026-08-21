@@ -1,0 +1,884 @@
+--- interactive-idea-to-proposal-workflow.md	2026-08-20 13:08:16.105031396 -0600
++++ proposal-packet-workflow.md	2026-08-20 12:52:45.965824850 -0600
+@@ -20,19 +20,20 @@
+ 
+ It may:
+ 
+-- describe a symptom rather than the underlying problem;
+-- leave the intended consequence ambiguous;
+-- contain several distinct opportunities that should not be implemented together;
+-- assume machinery that does not exist;
+-- duplicate an existing capability or pending proposal;
+-- belong to the wrong architectural owner;
+-- cross repository or product boundaries;
+-- collapse implementation choices prematurely;
+-- ignore competing placements;
+-- omit dependencies or affected contracts;
+-- depend on another proposal without making that relationship explicit;
+-- combine foundational and optional work into one oversized change;
+-- rely on assumptions that have not been identified.
++* describe a symptom rather than the underlying problem;
++* leave the intended consequence ambiguous;
++* contain several distinct opportunities that should not be implemented together;
++* assume machinery that does not exist;
++* duplicate an existing capability or pending proposal;
++* belong to the wrong architectural owner;
++* cross repository or product boundaries;
++* collapse implementation choices prematurely;
++* ignore competing placements;
++* omit dependencies or affected contracts;
++* depend on another proposal without making that relationship explicit;
++* combine foundational and optional work into one oversized change;
++* rely on assumptions that have not been identified;
++* contain useful intuition without enough structure for another agent to evaluate it correctly.
+ 
+ The missing capability is an intermediate process that **interprets and decomposes an idea, then forms coherent proposals before evaluating them**.
+ 
+@@ -40,16 +41,16 @@
+ 
+ A human and capable model can interactively develop a raw idea until it has yielded zero or more proposal packets that another capable agent can evaluate without first having to reconstruct:
+ 
+-- what problem is actually being addressed;
+-- what consequences matter;
+-- whether the idea contains multiple separable proposals;
+-- where each consequence belongs;
+-- what each proposal does and does not claim;
+-- which system boundaries may be affected;
+-- which alternatives remain credible;
+-- which proposals depend on, enable, overlap, or conflict with one another;
+-- which assumptions are uncertain;
+-- what evidence still needs to be gathered.
++* what problem is actually being addressed;
++* what consequences matter;
++* whether the idea contains multiple separable proposals;
++* where each consequence belongs;
++* what each proposal does and does not claim;
++* which system boundaries may be affected;
++* which alternatives remain credible;
++* which proposals depend on, enable, overlap, or conflict with one another;
++* which assumptions are uncertain;
++* and what evidence still needs to be gathered.
+ 
+ The durable results are proposal packets plus explicit relationships among them.
+ 
+@@ -57,11 +58,19 @@
+ 
+ This workflow must follow the same Work Engine distinction between structure and judgment.
+ 
+-It should define the durable properties a formed proposal must expose, the packet artifacts available to hold them, relationships that may be preserved between proposals, available investigation capabilities, and authority boundaries.
++It should define:
++
++* the durable properties a formed proposal must expose;
++* the packet artifacts available to hold them;
++* the relationships that may be preserved between proposals;
++* the evidence and repository capabilities available to investigate uncertainty;
++* the authority boundaries of participating agents.
+ 
+ It should **not** define a universal sequence of questions or reasoning steps.
+ 
+-Proposal formation is an open semantic task. Different ideas will have different missing information and different natural decomposition. The system should concentrate interaction on the uncertainties that matter for the current idea rather than forcing every idea through the same questionnaire.
++Proposal formation is an open semantic task. Different ideas will have different missing information and different natural decomposition.
++
++The system should concentrate interaction on the uncertainties that matter for the current idea rather than forcing every idea through the same questionnaire.
+ 
+ ## Ideas and proposals are different units
+ 
+@@ -71,6 +80,8 @@
+ 
+ They do not have a one-to-one relationship.
+ 
++A single idea may result in:
++
+ ```text
+ idea
+   ├─ proposal A
+@@ -79,7 +90,15 @@
+   └─ proposal D
+ ```
+ 
+-Proposals derived from the same idea may have different consequences, implementation boundaries, dependencies, costs, evidence requirements, and owners.
++For example, an idea about preserving engineering decision context may reveal distinct proposals for:
++
++* a durable proposal-packet artifact;
++* an interactive idea-to-proposal workflow;
++* evidence-backed proposal evaluation;
++* a proposal-backed roadmap;
++* closed-loop learning from implementation metrics.
++
++These proposals share an origin but have different consequences, implementation boundaries, dependencies, costs, and potentially different owners.
+ 
+ Keeping them separate allows each proposal to be evaluated, prioritized, deferred, implemented, rejected, or revised independently.
+ 
+@@ -89,20 +108,24 @@
+ 
+ Signals that decomposition may be appropriate include:
+ 
+-- different semantic owners;
+-- different implementation boundaries;
+-- different affected contracts;
+-- different evidence requirements;
+-- different risk or complexity profiles;
+-- different information lifetimes;
+-- one change can succeed without another;
+-- one change enables another but is useful independently;
+-- one part is foundational while another is optional;
+-- one part belongs to research while another belongs to product work;
+-- parts could reasonably receive different roadmap priorities;
+-- combining them would make placement or acceptance ambiguous.
++* different semantic owners;
++* different implementation boundaries;
++* different affected contracts;
++* different evidence requirements;
++* different risk or complexity profiles;
++* different information lifetimes;
++* one change can succeed without another;
++* one change enables another but is useful independently;
++* one part is foundational while another is optional;
++* one part belongs to research while another belongs to product work;
++* parts could reasonably receive different roadmap priorities;
++* combining them would make placement or acceptance ambiguous.
++
++The purpose is not to maximize the number of proposals.
+ 
+-The purpose is not to maximize the number of proposals. The purpose is to preserve meaningful implementation and decision boundaries.
++The purpose is to preserve meaningful implementation boundaries.
++
++A large idea should remain one proposal when its consequences are genuinely inseparable.
+ 
+ ## Proposal families
+ 
+@@ -130,7 +153,11 @@
+ → idea
+ ```
+ 
+-The originating idea retains shared motivation and exploratory context. Each proposal packet owns the durable context specific to that candidate change.
++The originating idea retains the shared motivation and exploratory context.
++
++Each proposal packet owns the durable context specific to that candidate change.
++
++This prevents shared brainstorming history from being duplicated into every packet while still allowing later agents to recover why sibling proposals exist.
+ 
+ ## Proposal relationships and dependency graph
+ 
+@@ -152,11 +179,34 @@
+ 
+ These relationships create a natural graph over pending engineering work.
+ 
+-The graph should emerge from proposal understanding rather than being reconstructed when the roadmap is assembled. It becomes decision evidence in its own right.
++For example:
++
++```text
++proposal packet
++      ↓ enables
++idea-to-proposal workflow
++      ↓ enables
++evidence-backed evaluation
++      ↓ enables
++proposal-backed roadmap
++      ↓ provides execution input to
++Work Engine
++      ↓ produces evidence for
++closed-loop learning
++      └──────── improves ────────→ evidence-backed evaluation
++```
++
++This graph should emerge from proposal understanding rather than being manually reconstructed when the roadmap is assembled.
++
++It becomes useful decision evidence in its own right.
++
++A proposal with modest direct impact may have high **unlock value** because several valuable proposals depend on it.
+ 
+-A proposal with modest direct impact may have high **unlock value** because several valuable proposals depend on it. A proposal with high apparent value may need to wait because an unresolved causal dependency would make implementation premature.
++A proposal with high apparent value may need to wait because an unresolved dependency would make implementation premature.
+ 
+-The dependency graph should inform roadmap judgment without becoming a rigid scheduler. Only genuinely causal relationships should constrain ordering.
++The dependency graph therefore becomes an input to later portfolio and roadmap judgment.
++
++It should not become a rigid scheduler.
+ 
+ ## Interactive model
+ 
+@@ -171,7 +221,7 @@
+ → step 4
+ ```
+ 
+-The proposed workbench instead maintains an evolving model:
++The proposed workbench instead maintains an evolving model of the idea and its candidate proposals:
+ 
+ ```text
+ IDEA
+@@ -188,34 +238,54 @@
+   consequence   partial
+   placement     uncertain
+   alternatives  three
++
++candidate proposal C
++  consequence   duplicate of existing machinery?
++  status        needs investigation
+ ```
+ 
+ The model examines the current state and chooses what deserves attention next.
+ 
++For one idea, decomposition may be the important question.
++
++For another, placement may be obvious and impact unclear.
++
++For another, the proposal may duplicate existing machinery.
++
++For another, almost everything may already be known from prior evidence.
++
+ The interaction should follow the semantic needs of the idea and proposals rather than a predefined route.
+ 
+ ## Human interaction
+ 
+ The human should not have to fill out a large proposal form.
+ 
+-The model should do the majority of proposal formation from the original idea, repository evidence when useful, Work Engine design and philosophy, existing proposal packets and relationships, known product boundaries, and current project context.
++The model should do the majority of proposal formation from:
++
++* the original idea;
++* current repository evidence when useful;
++* Work Engine design and philosophy;
++* existing proposal packets;
++* existing proposal relationships;
++* known product boundaries;
++* available project context.
+ 
+ The model should surface only material uncertainty or meaningful choices.
+ 
+ Useful interactions may include:
+ 
+-- **Reflect** — show the current understanding.
+-- **Decompose** — identify independently valuable proposals.
+-- **Merge** — recognize that candidate proposals are actually one inseparable change.
+-- **Fill gaps** — investigate missing dimensions.
+-- **Challenge** — look for flaws or false assumptions.
+-- **Explore placement** — compare plausible semantic owners.
+-- **Explore alternatives** — identify materially different ways to achieve the consequence.
+-- **Inspect relationships** — identify dependencies, conflicts, overlap, or enablement.
+-- **Narrow or expand scope** — adjust proposal boundaries.
+-- **Inspect assumptions** — expose what is inferred rather than established.
+-- **Accept current formulation** — preserve current proposal state.
+-- **Reopen** — revisit previously accepted understanding when new evidence makes it stale.
++* **Reflect** — show the model's current understanding of the idea.
++* **Decompose** — identify independently valuable proposals within the idea.
++* **Merge** — recognize that candidate proposals are actually one inseparable change.
++* **Fill gaps** — investigate missing proposal dimensions.
++* **Challenge** — actively look for flaws or false assumptions.
++* **Explore placement** — compare plausible semantic owners.
++* **Explore alternatives** — identify materially different ways of achieving a consequence.
++* **Inspect relationships** — identify dependencies, conflicts, overlap, or enablement among proposals.
++* **Narrow or expand scope** — adjust proposal boundaries.
++* **Inspect assumptions** — expose what is currently inferred rather than established.
++* **Accept current formulation** — preserve the current proposal state.
++* **Reopen** — revisit a previously accepted part when new evidence makes it stale.
+ 
+ These are capabilities, not mandatory phases.
+ 
+@@ -263,93 +333,84 @@
+   decision.md
+ ```
+ 
+-The packet persists. Agent context does not.
++The packet persists.
++
++Agent context does not.
+ 
+-Each actor should load only the idea and packet material useful to the current decision.
++Each agent or interaction should load only the idea and packet material useful to its current decision.
+ 
+ > **Persistent decision objects, selectively projected context.**
+ 
+-## Working persistence and checkpoints
++## `idea.md`
+ 
+-The packet should be updated during work when newly acquired understanding has durable downstream value.
++The original idea should remain recognizable rather than being overwritten by later conclusions.
+ 
+-Proposal formation can involve expensive repository exploration, placement analysis, dependency discovery, or alternative elimination before a formal proposal or handoff exists. Waiting until the end of the stage to persist this work makes interruption unnecessarily expensive.
++It may contain:
+ 
+-The workflow therefore distinguishes checkpoint persistence from handoff persistence.
++* the originating observation;
++* the initial intuition or hypothesis;
++* possible consequences;
++* examples;
++* questions;
++* brainstorming context worth preserving.
+ 
+-### Checkpoint persistence
++It is explicitly speculative.
+ 
+-During ongoing work, the agent may checkpoint durable consequences when losing the current context would cause meaningful reconstruction cost.
++An idea is not evidence, a contract, a proposal, or roadmap authority.
+ 
+-Useful signals include:
++The idea may remain valuable even after every proposal currently derived from it has been rejected or completed.
+ 
+-- an important placement conclusion becomes supported;
+-- a competing owner is ruled out for a durable reason;
+-- expensive repository exploration yields reusable evidence;
+-- a material assumption is falsified;
+-- one idea is split into several proposals;
+-- proposals are merged;
+-- a causal dependency is discovered;
+-- an existing proposal is found to overlap or conflict;
+-- accumulated context is becoming large, fragile, or likely to compact;
+-- the agent is about to enter a substantially different investigation area;
+-- a human decision materially changes direction.
++Future evidence may reveal another proposal latent in the original idea.
+ 
+-These are signals for judgment, not mandatory triggers.
++## `proposal.md`
+ 
+-> **Persist by value, not by phase.**
++Each `proposal.md` represents one current formed proposal.
+ 
+-The checkpoint should preserve the smallest durable consequence that future work would otherwise need to reconstruct, not the full reasoning transcript.
++It should capture enough durable meaning to answer:
+ 
+-### Handoff persistence
++### Problem or opportunity
+ 
+-Before control passes to another agent, stage, or process, all information required to resume correctly must be durably represented in the packet or another canonical owned artifact.
++What appears to be wrong, missing, expensive, risky, or newly possible?
+ 
+-> **No handoff may be the sole durable owner of information required to resume the proposal lifecycle correctly.**
++### Intended consequence
+ 
+-A handoff is a context projection for the next actor, not the authoritative storage location.
++What would become better if this proposal succeeds?
+ 
+-### Resume behavior
++Prefer the property to be established over a prescribed activity.
+ 
+-After a crash, restart, lost connection, context reset, or agent replacement, a new agent should begin from the latest durable packet state.
++### Proposal
+ 
+-It should normally:
++What change to the system is being proposed at a sufficiently high level to evaluate it?
+ 
+-- load only the packet sections relevant to the current task;
+-- inspect unresolved assumptions and current placement;
+-- check whether decisive evidence has become stale;
+-- continue from the latest durable proposal understanding;
+-- reconstruct only what was not already preserved.
++The proposal should not unnecessarily prescribe implementation choices that remain open to judgment.
+ 
+-The objective is not perfect transcript recovery. It is to avoid repeating expensive semantic work that had already produced durable value.
++### Relationship to originating idea
+ 
+-## `idea.md`
++Which idea produced this proposal?
+ 
+-The original idea should remain recognizable rather than being overwritten by later conclusions.
++Which part of the larger idea does this proposal capture?
+ 
+-It may contain the originating observation, initial intuition or hypothesis, possible consequences, examples, questions, and brainstorming context worth preserving.
++### Scope and boundaries
+ 
+-It is explicitly speculative.
++What does this proposal include?
+ 
+-An idea is not evidence, a contract, a proposal, or roadmap authority.
++What does it explicitly not include?
+ 
+-## `proposal.md`
++Which sibling concerns have been separated into their own proposals?
+ 
+-Each `proposal.md` represents one current formed proposal.
++### Assumptions and uncertainty
+ 
+-It should capture enough durable meaning to establish:
++What is currently believed but not yet established?
+ 
+-- the problem or opportunity;
+-- the intended consequence;
+-- the high-level proposed change;
+-- relationship to the originating idea;
+-- scope and explicit exclusions;
+-- sibling concerns separated into other proposals;
+-- assumptions and uncertainty;
+-- materially different alternatives;
+-- invalidation conditions.
++What could materially change the proposal?
+ 
+-The proposal should not unnecessarily prescribe implementation choices that remain open to judgment.
++### Alternatives
++
++What substantially different approaches remain plausible?
++
++### Invalidation conditions
++
++What evidence would cause the proposal to be rejected, substantially revised, merged with another proposal, split further, or moved elsewhere?
+ 
+ ## `placement.md`
+ 
+@@ -357,15 +418,15 @@
+ 
+ It should capture:
+ 
+-- likely semantic owner;
+-- relevant component or product boundary;
+-- affected contracts;
+-- consumers of the proposed consequence;
+-- competing plausible owners;
+-- evidence supporting current placement;
+-- evidence contradicting alternatives;
+-- unresolved placement uncertainty;
+-- conditions that would reopen placement.
++* likely semantic owner;
++* relevant component or product boundary;
++* affected contracts;
++* consumers of the proposed consequence;
++* competing plausible owners;
++* reasons supporting the current placement;
++* evidence contradicting alternatives;
++* unresolved placement uncertainty;
++* conditions that would reopen placement.
+ 
+ The purpose is not to determine the implementation path.
+ 
+@@ -373,22 +434,51 @@
+ 
+ > **Where does this consequence belong?**
+ 
++A proposal should not undergo expensive detailed scoring against an implementation surface that has not been plausibly established.
++
+ ## `dependencies.md`
+ 
+ Proposal relationships deserve durable representation because they affect later evaluation and roadmap judgment.
+ 
+ `dependencies.md` may capture:
+ 
+-- required predecessor proposals;
+-- proposals enabled by this one;
+-- conflicts;
+-- alternatives;
+-- overlaps;
+-- shared contracts or implementation surfaces;
+-- sequencing that is genuinely causal;
+-- sequencing that is merely convenient and therefore should remain judgment.
++* required predecessor proposals;
++* proposals enabled by this one;
++* conflicts;
++* alternatives;
++* overlaps;
++* shared contracts or implementation surfaces;
++* sequencing that is genuinely causal;
++* sequencing that is merely convenient and therefore should remain judgment.
++
++Relationships should include enough explanation to distinguish causal dependency from historical or preferred order.
++
++For example:
++
++```text
++depends-on: proposal-packet
++
++reason:
++The workflow requires a durable packet contract to exist before it can
++produce packet state with defined ownership.
++
++dependency-type:
++causal
++```
++
++versus:
++
++```text
++related-to: proposal-backed-roadmap
++
++reason:
++Both consume proposal metadata, but either can be implemented independently.
++
++dependency-type:
++non-causal
++```
+ 
+-Relationships should contain enough explanation to distinguish causal dependency from preferred order.
++This avoids turning the emerging graph into another procedural workflow.
+ 
+ ## Formation versus evidence evaluation
+ 
+@@ -396,39 +486,59 @@
+ 
+ ### Formation asks
+ 
+-- What does this idea contain?
+-- Is it one proposal or several?
+-- What is each proposal?
+-- What consequence does each intend?
+-- Where does each appear to belong?
+-- What would each affect?
+-- How do the proposals relate?
+-- What assumptions do they contain?
+-- What alternatives exist?
+-- What evidence is still needed?
++* What does this idea contain?
++* Is it one proposal or several?
++* What is each proposal?
++* What consequence does each intend?
++* Where does each appear to belong?
++* What would each affect?
++* How do the proposals relate?
++* What assumptions do they contain?
++* What alternatives exist?
++* What evidence is still needed?
+ 
+ ### Evaluation asks
+ 
+-- Is the problem actually present?
+-- How strongly does repository evidence support the proposal?
+-- How well does it align with Work Engine design?
+-- What do historical metrics say?
+-- What is the likely impact?
+-- What is the likely implementation complexity?
+-- What is the fan-out?
+-- What is the risk?
+-- How reversible is it?
+-- What is the expected cost?
+-- What is the proposal's dependency or unlock value?
+-- How confident are these estimates?
++* Is the problem actually present?
++* How strongly does repository evidence support the proposal?
++* How well does it align with Work Engine design?
++* What do historical metrics say?
++* What is the likely impact?
++* What is the likely implementation complexity?
++* What is the fan-out?
++* What is the risk?
++* How reversible is it?
++* What is the expected cost?
++* What is the proposal's dependency or unlock value?
++* How confident are these estimates?
++
++Formation creates coherent objects to investigate.
+ 
+-Formation creates coherent objects to investigate. Evaluation investigates them.
++Evaluation investigates them.
+ 
+ ## Placement before expensive evaluation
+ 
+ Placement should usually be resolved enough to guide evaluation before expensive research begins.
+ 
+-This does not require absolute certainty. Placement uncertainty should be represented explicitly and may itself become a target of evaluation.
++This does not require absolute certainty.
++
++A packet may say:
++
++```text
++placement: probable
++confidence: moderate
++
++preferred owner:
++proposal subsystem
++
++credible alternative:
++campaign supervisor
++
++unresolved question:
++whether proposal state must survive campaign creation
++```
++
++The evaluation machinery can then explicitly investigate that uncertainty.
+ 
+ What should be avoided is silently assuming placement and spending substantial research effort scoring the wrong implementation surface.
+ 
+@@ -436,9 +546,24 @@
+ 
+ Decomposition is itself a judgment based on current understanding.
+ 
+-Later evidence may show that proposals should be merged, split, superseded, or moved.
++Later evidence may show that:
++
++```text
++proposal A + proposal B
++→ actually one inseparable consequence
++```
++
++or:
++
++```text
++proposal C
++→ contains two independently valuable consequences
++→ split into proposal C1 and C2
++```
++
++Those changes should preserve lineage rather than pretending the earlier formulation never existed.
+ 
+-Those changes should preserve lineage rather than pretending the earlier formulation never existed. Existing evidence, scores, dependencies, and roadmap references should remain traceable through the change.
++A split or merge should retain enough provenance for later consumers to understand what happened to existing evidence, scores, dependencies, and roadmap references.
+ 
+ ## Epistemic state
+ 
+@@ -462,9 +587,32 @@
+ split
+ ```
+ 
+-These represent what is currently known. They are not a mandatory state-transition procedure.
++These represent what is currently known.
+ 
+-Evidence may cause a proposal to move backward or change identity relationships. That is normal route revision.
++They are not a mandatory state-transition procedure.
++
++Evidence may cause a proposal to move backward or change identity relationships.
++
++For example:
++
++```text
++placed
++→ new repository evidence
++→ placement-invalidated
++→ placement investigation
++→ newly placed
++```
++
++or:
++
++```text
++formed proposal
++→ evidence reveals independent consequence
++→ split
++→ two formed proposals
++```
++
++That is normal route revision.
+ 
+ ## Completion consequence for proposal formation
+ 
+@@ -474,17 +622,21 @@
+ 
+ This is a semantic completion criterion, not a field-completion checklist.
+ 
+-A proposal may still contain uncertainty, but that uncertainty should be explicit enough for evaluation to investigate deliberately.
++A proposal may still contain uncertainty.
++
++That uncertainty should be explicit enough that evaluation can investigate it deliberately.
+ 
+ ## Context economy
+ 
+ The workflow should preserve the consequence of proposal reasoning, not its entire transcript.
+ 
+-Useful rejected alternatives, decomposition decisions, placement conclusions, dependencies, assumptions, invalidation evidence, and expensive reusable discoveries should survive when they prevent later reconstruction.
++Useful rejected alternatives, decomposition decisions, placement conclusions, dependencies, assumptions, and invalidation evidence should survive when they prevent later reconstruction.
+ 
+ Shared context should remain attached to the originating idea when it genuinely applies to the whole family rather than being copied into every proposal packet.
+ 
+-Exploratory conversation that no longer contributes to future decisions should remain disposable.
++Exploratory conversation that no longer contributes to future decisions should not automatically become durable state.
++
++Each file should exist because some future consumer benefits from that information lifetime.
+ 
+ ## Relationship to the future planning system
+ 
+@@ -521,6 +673,8 @@
+ 
+ The roadmap eventually becomes a compact portfolio of selected proposal references rather than the place where expensive design context is compressed.
+ 
++The proposal relationship graph becomes available to roadmap judgment without the roadmap having to reconstruct it.
++
+ ## Relationship to Work Engine
+ 
+ This planning system sits above Work Engine.
+@@ -535,33 +689,31 @@
+ 
+ and:
+ 
+-> Which independently executable changes are contained in the ideas we are considering, and how do those changes relate?
++> Which independently executable changes are actually contained in the ideas we are considering, and how do those changes relate?
+ 
+ Proposal packets are the durable bridge between those layers.
+ 
+ ## Initial implementation direction
+ 
+-The first implementation should prioritize semantic workflow, packet artifacts, proposal-family relationships, dependency representation, and durable checkpoint behavior over sophisticated UI.
++The first implementation should prioritize the semantic workflow, packet artifacts, proposal-family relationships, and dependency representation over sophisticated UI.
+ 
+ A usable first version could operate through model interaction and Markdown files while establishing:
+ 
+-- idea identity;
+-- proposal-family identity;
+-- proposal decomposition semantics;
+-- packet identity and ownership;
+-- proposal formation semantics;
+-- placement representation;
+-- explicit uncertainty;
+-- dependency and relationship representation;
+-- split/merge lineage;
+-- incremental checkpoint persistence;
+-- handoff persistence;
+-- resume behavior;
+-- reopening and revision;
+-- selective context loading;
+-- handoff to evidence-backed evaluation.
++* idea identity;
++* proposal-family identity;
++* proposal decomposition semantics;
++* packet identity;
++* packet file ownership;
++* proposal formation semantics;
++* placement representation;
++* explicit uncertainty;
++* dependency and relationship representation;
++* split/merge lineage;
++* reopening/revision behavior;
++* selective context loading;
++* handoff to evidence-backed evaluation.
+ 
+-A richer visual workbench may follow once actual formation sessions reveal which interactions and states deserve dedicated controls.
++A richer visual workbench may follow once actual proposal-formation sessions reveal which interactions, relationships, and states deserve dedicated controls.
+ 
+ ## Design risks
+ 
+@@ -573,98 +725,99 @@
+ 
+ Not every distinguishable concern deserves an independent proposal.
+ 
++Decomposition should preserve meaningful implementation and decision boundaries, not maximize granularity.
++
+ ### Turning formation into a questionnaire
+ 
+ A fixed list of required questions would recreate procedural narrowing.
+ 
+-### Turning checkpointing into a timer or phase ritual
+-
+-Checkpointing should preserve newly valuable durable understanding when reconstruction would be costly. It should not require arbitrary save intervals.
+-
+-### Treating handoff summaries as durable state
+-
+-If important resume information exists only in a handoff message, interruption can destroy accepted work.
++The model should determine which uncertainties matter.
+ 
+ ### Turning dependencies into mandatory workflow
+ 
++A proposal relationship graph describes real dependencies and useful relationships.
++
+ Only causally necessary edges should constrain execution order.
+ 
+ ### Treating completeness as certainty
+ 
+ A formed proposal can remain uncertain.
+ 
++The requirement is that uncertainty is represented clearly enough to evaluate.
++
+ ### Premature implementation planning
+ 
+ Formation should establish proposals and placement without locking future builders into implementation paths.
+ 
+ ### Duplicating shared evidence
+ 
+-Evidence applying to the whole proposal family should not be copied unnecessarily into every sibling packet.
++Evidence applying to the whole proposal family should not be copied unnecessarily into each sibling packet.
+ 
+ ### Duplicating existing proposals
+ 
+-Formation should recognize overlap, extension, alternatives, and prior rejected work when useful.
++Formation should inspect existing proposal families when useful and recognize overlap, extension, alternatives, or prior rejected work.
+ 
+ ### Treating current decomposition as permanent truth
+ 
++Proposal boundaries may change as understanding improves.
++
+ Splits, merges, and supersession should preserve provenance.
+ 
+ ### Letting packet files become another policy layer
+ 
+-Packets record the current proposal model and its evidence. They do not redefine Work Engine contracts.
++Packets record the current proposal model and its evidence.
++
++They do not redefine Work Engine contracts.
+ 
+ ## Key design questions
+ 
+-- What is the minimum durable structure required for a formed proposal?
+-- What signals indicate that an idea contains multiple proposals?
+-- What signals indicate that candidate proposals should remain one?
+-- How should proposal-family identity be represented?
+-- Which relationships belong in the pending-proposal graph?
+-- How do we distinguish causal dependencies from useful but non-binding relationships?
+-- How should splits, merges, and supersession preserve lineage?
+-- Which packet files have distinct information lifetimes or consumers?
+-- How should agents determine which proposal uncertainty deserves attention next?
+-- How should placement confidence and competing owners be represented?
+-- When should repository investigation occur during formation rather than evaluation?
+-- When has intermediate work become valuable enough to checkpoint?
+-- What information must be durable before handoff?
+-- How should interrupted work resume from packet state?
+-- How are stale proposal conclusions identified and reopened?
+-- Which packet artifacts should later supervisors, builders, reviewers, or evidence agents receive?
+-- How should the system detect duplication with existing proposals or machinery?
+-- How should shared evidence be attached to an idea family without unnecessary duplication?
+-- At what point is each proposal sufficiently formed to justify expensive evidence-backed evaluation?
++* What is the minimum durable structure required for a formed proposal?
++* What signals indicate that an idea contains multiple proposals?
++* What signals indicate that candidate proposals should remain one?
++* How should proposal-family identity be represented?
++* Which relationships belong in the pending-proposal graph?
++* How do we distinguish causal dependencies from useful but non-binding relationships?
++* How should splits, merges, and supersession preserve lineage?
++* Which packet files have distinct information lifetimes or consumers?
++* How should agents determine which proposal uncertainty deserves attention next?
++* How should placement confidence and competing owners be represented?
++* When should repository investigation occur during formation rather than evaluation?
++* How are stale proposal conclusions identified and reopened?
++* Which packet artifacts should a later supervisor receive?
++* Which should a builder receive?
++* Which proposal context should remain available only on demand?
++* How should the system detect duplication with existing proposals or existing machinery?
++* How should shared evidence be attached to an idea family without unnecessary duplication?
++* At what point is each proposal sufficiently formed to justify expensive evidence-backed evaluation?
+ 
+ ## Expected value
+ 
+ The workflow should reduce:
+ 
+-- repeated reconstruction of proposal context;
+-- loss of expensive research after crashes, resets, or lost connections;
+-- expensive evaluation of poorly formed ideas;
+-- oversized proposals containing unrelated consequences;
+-- implementation against incorrect placement;
+-- dependency reconstruction during roadmap planning;
+-- roadmap compression loss;
+-- repeated rediscovery of rejected alternatives;
+-- duplicate proposals;
+-- unnecessary context carried between planning stages.
++* repeated reconstruction of proposal context;
++* expensive evaluation of poorly formed ideas;
++* oversized proposals containing unrelated consequences;
++* implementation against incorrect placement;
++* dependency reconstruction during roadmap planning;
++* roadmap compression loss;
++* repeated rediscovery of rejected alternatives;
++* duplicate proposals;
++* unnecessary context carried between planning stages.
+ 
+ It should improve:
+ 
+-- proposal granularity;
+-- proposal clarity;
+-- placement quality;
+-- dependency visibility;
+-- interruption resilience;
+-- resume quality;
+-- evidence targeting;
+-- prioritization quality;
+-- identification of high-unlock foundational work;
+-- implementation handoff;
+-- long-lived engineering memory;
+-- token and context efficiency.
++* proposal granularity;
++* proposal clarity;
++* placement quality;
++* dependency visibility;
++* evidence targeting;
++* prioritization quality;
++* identification of high-unlock foundational work;
++* implementation handoff;
++* long-lived engineering memory;
++* token and context efficiency.
+ 
+ The deeper goal is not to automate creativity.
+ 
+-It is to give creative engineering ideas a durable structure that allows them to **fan out into the right implementation units, preserve valuable work as it is discovered, retain their relationships, and let later agents reason about them without losing the understanding that made the original idea valuable.**
++It is to give creative engineering ideas a durable structure that allows them to **fan out into the right implementation units**, preserve their relationships, and let later agents reason about them without losing the understanding that made the original idea valuable.
++

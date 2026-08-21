@@ -1,0 +1,89 @@
+{
+  "artifact_type": "review_bench_result_v2",
+  "schema_version": 2,
+  "bench_id": "work-engine-slice14-clean-20260820",
+  "case_id": "c6-slice14-route-reopening-clean",
+  "result_id": "sol-codex-low-slice14-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "codex-subagent-isolated-archive",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": [
+      "isolated-filesystem",
+      "shell",
+      "python-runtime"
+    ],
+    "reasoning_effort": "low",
+    "review_protocol": "evidence-calibrated-review/1.2",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "cdbcd3dac822540395c8cded09e50621181f83a626f6be090f71a2793c0128e6",
+  "verdict": "accepted",
+  "findings": [],
+  "verified_claims": [
+    {
+      "claim_id": "VC-001",
+      "claim": "The reopened successor persists exactly one complete route revision and selects its non-default replacement route.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py::test_accepted_continuation_reopens_route_and_completes constructs one route_revision containing failed_premise, stale_decisions, preserved_evidence, replacement_route, and reason; sets workflow_route to evidence-guided-replan; finalizes slice 2; and checks both the returned receipt and the reloaded JSONL record contain that exact revision.",
+        "skills/slice-supervisor/scripts/assemble_receipt.py::assemble deep-copies the semantic receipt, preserving worker_metrics; skills/slice-supervisor/scripts/append_metrics.py validates the exact route-revision field set and nonempty replacement_route, then writes, flushes, fsyncs the file, and fsyncs its parent directory.",
+        "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest skills/slice-supervisor/tests/test_reference_campaign.py passed all 5 tests in the supplied snapshot."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "The revised successor records one complete route revision durably in worker_metrics with a non-default replacement workflow route."
+      ]
+    },
+    {
+      "claim_id": "VC-002",
+      "claim": "The compact continuation retains the predecessor-derived durable consequence and excludes route bookkeeping.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py::test_accepted_continuation_reopens_route_and_completes builds slice 2 from the resumed slice-1 handoff, appends the boundary-retirement consequence to handoff.durable_decisions, verifies the predecessor title remains in slice_goal, and asserts route_revisions and workflow_route are absent from continuation_context.",
+        "skills/slice-supervisor/scripts/finalize_receipt.py::apply_continuation constructs continuation_context only from durable_decisions, affected_boundaries, unresolved_concerns, and deferred_scope; worker_metrics fields cannot enter that compact object."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Compact continuation preserves the useful predecessor handoff consequence while excluding route-revision and workflow-route bookkeeping."
+      ]
+    },
+    {
+      "claim_id": "VC-003",
+      "claim": "Resume is read-only and reconstructs the exact expected compact handoff.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py::test_accepted_continuation_reopens_route_and_completes compares receipt-file bytes before and after both resumptions and asserts the slice-2 resume handoff equals the exact handoff supplied to finalization.",
+        "skills/slice-supervisor/scripts/resume_campaign.py::resume loads and validates history without opening it for writing, then reconstructs the handoff from terminal receipt identity fields plus the four validated continuation_context arrays."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Resume returns the exact compact handoff without mutating durable campaign history."
+      ]
+    },
+    {
+      "claim_id": "VC-004",
+      "claim": "The reference lifecycle uses contiguous identities through a consuming successor, completes, and then becomes nonresumable.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py::test_accepted_continuation_reopens_route_and_completes finalizes slices 1, 2, and 3 under test-run, uses the resumed slice-2 handoff to create slice 3, verifies slice 3's goal and durable decision consume its title and outcome, and checks the persisted identities equal [(test-run, 1), (test-run, 2), (test-run, 3)].",
+        "The same test verifies the completed resume is nonresumable with reason objective_or_scope_complete and null next_slice_number and handoff_receipt; skills/slice-supervisor/scripts/resume_campaign.py additionally rejects selected histories that are not unique, ordered, and contiguous from 1."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Exactly contiguous campaign identities lead to a later successor that consumes the handoff and completes, after which resume is nonresumable."
+      ]
+    }
+  ],
+  "observations": [],
+  "limitations": [
+    "Review was bounded to the supplied reconstructed snapshot and manifested route-reopening contract; no claims are made about unrelated repository behavior.",
+    "Validation executed the five tests in test_reference_campaign.py; the packet's wider deterministic evidence was not independently rerun beyond that bounded suite.",
+    "Started and completed timestamps are orchestration bounds; provider token and wall-clock measurements were unavailable."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T19:26:30-06:00",
+    "completed_at": "2026-08-20T19:28:30-06:00"
+  }
+}

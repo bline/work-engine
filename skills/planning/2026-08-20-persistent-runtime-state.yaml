@@ -1,0 +1,5 @@
+schema_version: 1
+artifact_role: "non_authoritative_reference"
+canonical_artifact: "planning/2026-08-20-persistent-runtime-state.yaml"
+status: "superseded_copy"
+note: "The canonical dated artifact preserves the original evidence cutoff and all later reconciliation. This compatibility reference must not be treated as an independent planning owner."

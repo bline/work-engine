@@ -5,7 +5,7 @@ import path from "node:path";
 import { parse } from "yaml";
 import { loadChromeVisionConfig, resolveChromeVisionConfig } from "../../chrome-vision/src/config.mjs";
 
-const allowed = new Set(["version","objective","work_source","builder","validation","metrics","limits","approval","notifications","stop_on","capabilities"]);
+const allowed = new Set(["version","objective","work_source","builder","validation","metrics","limits","approval","notifications","stop_on","capabilities","slice_completion_commit","amendments"]);
 const defaults = {
   work_source: null,
   builder: {
@@ -25,6 +25,8 @@ const defaults = {
   limits: {},
   approval: { plan: "procedural_when_safe", uninterrupted_after_plan: false },
   notifications: { intervention: true, completion: false },
+  slice_completion_commit: { prompt: "enabled" },
+  amendments: [],
   stop_on: ["objective_complete", "human_judgment", "unresolved_architecture", "quota_exhaustion", "validation_nonconvergence"],
 };
 
@@ -57,10 +59,31 @@ export async function preflightCampaign(campaignPath, { cwd = process.cwd() } = 
   const declaration = campaign.capabilities?.chrome_vision;
   const authoredFields = Object.keys(campaign).filter(key => allowed.has(key));
   const engineConfig = mergeDefaults(defaults, campaign);
+  const authoredContext = campaign.builder?.context;
+  if (authoredContext?.independent_review && authoredContext?.adversarial_review) {
+    throw new Error("builder.context must configure exactly one review role, not both independent_review and adversarial_review");
+  }
+  if (authoredContext?.adversarial_review) {
+    delete engineConfig.builder.context.independent_review;
+  }
+  if (!engineConfig.slice_completion_commit || !["enabled", "disabled"].includes(engineConfig.slice_completion_commit.prompt) || Object.keys(engineConfig.slice_completion_commit).some(key => key !== "prompt")) {
+    throw new Error("slice_completion_commit must contain only prompt: enabled or disabled");
+  }
   engineConfig.source = campaignPath;
   engineConfig.explicit_fields = authoredFields;
   engineConfig.defaulted_fields = Object.keys(defaults).filter(key => !(key in campaign));
-  engineConfig.amendments = [];
+  const amendmentFields = new Set(["timestamp", "changed_fields", "prior_values", "new_values", "reason", "human_approval"]);
+  if (!Array.isArray(engineConfig.amendments)) throw new Error("amendments must be an array");
+  for (const [index, amendment] of engineConfig.amendments.entries()) {
+    if (!amendment || typeof amendment !== "object" || Array.isArray(amendment)) throw new Error(`amendments[${index}] must be a mapping`);
+    const unknownAmendmentFields = Object.keys(amendment).filter(key => !amendmentFields.has(key));
+    const missingAmendmentFields = [...amendmentFields].filter(key => !(key in amendment));
+    if (unknownAmendmentFields.length || missingAmendmentFields.length) throw new Error(`amendments[${index}] must contain exactly timestamp, changed_fields, prior_values, new_values, reason, and human_approval`);
+    if (typeof amendment.timestamp !== "string" || !amendment.timestamp.trim()) throw new Error(`amendments[${index}].timestamp must be nonempty`);
+    if (!Array.isArray(amendment.changed_fields) || amendment.changed_fields.length === 0 || amendment.changed_fields.some(value => typeof value !== "string" || !value.trim())) throw new Error(`amendments[${index}].changed_fields must contain nonempty strings`);
+    for (const key of ["prior_values", "new_values"]) if (!amendment[key] || typeof amendment[key] !== "object" || Array.isArray(amendment[key])) throw new Error(`amendments[${index}].${key} must be a mapping`);
+    for (const key of ["reason", "human_approval"]) if (typeof amendment[key] !== "string" || !amendment[key].trim()) throw new Error(`amendments[${index}].${key} must be nonempty`);
+  }
   const campaignSource = {
     source: "file",
     authoredReference: campaignPath,

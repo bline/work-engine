@@ -1,0 +1,36 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "clean-closure",
+  "result_id": "web-sol-clean",
+  "attempt_id": "attempt-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "chatgpt-web-attachment",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["attached-files"],
+    "reasoning_effort": "high",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "verdict": "blocked_unverified",
+  "findings": [
+    {
+      "finding_id": "s2",
+      "severity": "medium",
+      "blocking": true,
+      "category": "speculation",
+      "claim": "The repaired reload may still replace identity.",
+      "evidence": ["src/state.py:44 calls the restoration helper."],
+      "confidence": "medium"
+    }
+  ],
+  "limitations": ["Could not execute the regression test"],
+  "timing": {"started_at": "2026-08-20T00:06:00Z", "completed_at": "2026-08-20T00:07:00Z", "wall_clock_seconds": 60, "input_tokens": 1300, "output_tokens": 250}
+}

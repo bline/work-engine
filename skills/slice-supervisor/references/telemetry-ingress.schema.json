@@ -42,7 +42,11 @@
           "properties": {
             "parent_launch": { "$ref": "#/$defs/eventProvenance" },
             "child_identity": { "$ref": "#/$defs/eventProvenance" },
-            "terminal_event": { "$ref": "#/$defs/eventProvenance" }
+            "terminal_event": { "$ref": "#/$defs/eventProvenance" },
+            "interrupted_turns": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/interruptedTurn" }
+            }
           }
         },
         "measurements": {
@@ -76,6 +80,18 @@
         "ordinal": { "type": "integer", "minimum": 1 },
         "event_type": { "type": "string", "minLength": 1 },
         "timestamp": { "type": ["string", "null"] }
+      }
+    },
+    "interruptedTurn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turn_id", "state", "start_event", "completion_availability", "completion_provenance"],
+      "properties": {
+        "turn_id": { "type": "string", "minLength": 1 },
+        "state": { "const": "interrupted" },
+        "start_event": { "$ref": "#/$defs/eventProvenance" },
+        "completion_availability": { "const": "unavailable" },
+        "completion_provenance": { "type": "array", "maxItems": 0 }
       }
     },
     "measurement": {

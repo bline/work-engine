@@ -1,0 +1,35 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "cases": [
+    {
+      "case_id": "c6-slice9-pre-review",
+      "expected_verdict": "accepted",
+      "findings": [
+        {
+          "truth_id": "continuation-allowed-without-named-campaign",
+          "severity": "medium",
+          "blocking": false,
+          "category": "state-ownership",
+          "claim": "The current-write validator accepts continuation_context on a receipt without authoritative producer_metrics.campaign_source, allowing non-named writes to claim named-campaign continuation state.",
+          "evidence": [
+            "In the reconstructed append_metrics.py, validate_current_write requires context for resumable named campaigns but has no inverse check rejecting supplied context when campaign_source is absent.",
+            "A direct execution against the checkpoint reproduced successful validation of an accepted remaining-work receipt containing continuation_context but no campaign_source.",
+            "The recorded repair adds the inverse validation and its regression test; the same execution against the repaired implementation rejects the receipt."
+          ],
+          "adjudication": "Confirmed by source comparison and executable pre/post reproduction; retained as a nonblocking ownership defect under the accepted slice contract.",
+          "tags": ["persistence", "named-campaign", "current-write-validation", "negative-path"]
+        }
+      ],
+      "adjudication_notes": [
+        "The historical high claim that malformed records from other runs should be ignored was rejected: the accepted contract intentionally treated any malformed shared JSONL history as an unsafe fail-closed condition.",
+        "Two later low findings requested missing regression coverage for already-correct behavior; they are nonblocking observations rather than defects in this pre-review truth set."
+      ]
+    }
+  ],
+  "limitations": [
+    "Truth covers the acceptance contract and recorded review boundary, not every possible defect in the repository.",
+    "The case expected verdict remains accepted because the confirmed finding was adjudicated nonblocking."
+  ]
+}

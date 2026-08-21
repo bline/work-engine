@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -24,6 +25,10 @@ MEASUREMENT_NAMES = (
 )
 
 
+def _reject_nonfinite(value: str) -> None:
+    raise TelemetryIngressError(f"rollout contains non-finite JSON number: {value}")
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     try:
@@ -31,7 +36,7 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
             for ordinal, line in enumerate(source, start=1):
                 if not line.strip():
                     continue
-                value = json.loads(line)
+                value = json.loads(line, parse_constant=_reject_nonfinite)
                 if not isinstance(value, dict):
                     raise TelemetryIngressError(f"{path}:{ordinal}: event must be an object")
                 value = dict(value)
@@ -48,6 +53,8 @@ def _session_meta(records: list[dict[str, Any]], role: str) -> dict[str, Any]:
     matches = [record for record in records if record.get("type") == "session_meta"]
     if len(matches) != 1 or not isinstance(matches[0].get("payload"), dict):
         raise TelemetryIngressError(f"{role} rollout must contain exactly one session_meta")
+    if not isinstance(matches[0]["payload"].get("id"), str) or not matches[0]["payload"]["id"]:
+        raise TelemetryIngressError(f"{role} session_meta must contain a nonempty id")
     return matches[0]
 
 
@@ -115,23 +122,36 @@ def _bound_child(
     return matches[0]
 
 
-def _terminal_state(records: list[dict[str, Any]]) -> tuple[dict[str, Any], int]:
+def _terminal_state(
+    records: list[dict[str, Any]],
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     starts = _event_payloads(records, "task_started")
     completions = _event_payloads(records, "task_complete")
     started_ids = [record["payload"].get("turn_id") for record in starts]
     completed_ids = [record["payload"].get("turn_id") for record in completions]
-    if not started_ids or any(not isinstance(turn_id, str) for turn_id in started_ids):
-        raise TelemetryIngressError("child rollout has no valid task_started event")
-    if (
-        len(started_ids) != len(set(started_ids))
-        or len(completed_ids) != len(set(completed_ids))
-        or set(started_ids) != set(completed_ids)
+    if not started_ids or any(
+        not isinstance(turn_id, str) or not turn_id for turn_id in started_ids
     ):
-        raise TelemetryIngressError("child rollout contains incomplete or duplicate turns")
-    terminal = completions[-1]
-    if records[-1] is not terminal or terminal["payload"].get("turn_id") != started_ids[-1]:
-        raise TelemetryIngressError("child rollout does not end in completion of its latest turn")
-    return terminal, len(started_ids)
+        raise TelemetryIngressError("child rollout has no valid task_started event")
+    if any(not isinstance(turn_id, str) or not turn_id for turn_id in completed_ids):
+        raise TelemetryIngressError("child rollout contains an invalid task_complete event")
+    if len(started_ids) != len(set(started_ids)) or len(completed_ids) != len(set(completed_ids)):
+        raise TelemetryIngressError("child rollout contains duplicate turn ids")
+    starts_by_id = dict(zip(started_ids, starts, strict=True))
+    completions_by_id = dict(zip(completed_ids, completions, strict=True))
+    if set(completed_ids) - set(started_ids):
+        raise TelemetryIngressError("child rollout contains completion for an unknown turn")
+    for turn_id, completion in completions_by_id.items():
+        if completion["_ordinal"] <= starts_by_id[turn_id]["_ordinal"]:
+            raise TelemetryIngressError("child rollout contains completion before its start")
+    latest_id = started_ids[-1]
+    terminal = completions_by_id.get(latest_id)
+    if terminal is None or records[-1] is not terminal:
+        raise TelemetryIngressError(
+            "child rollout is incomplete or does not end in completion of its latest turn"
+        )
+    interrupted = [start for start in starts if start["payload"]["turn_id"] not in completions_by_id]
+    return terminal, starts, interrupted
 
 
 def _provenance(record: dict[str, Any], artifact_role: str) -> dict[str, Any]:
@@ -143,15 +163,24 @@ def _provenance(record: dict[str, Any], artifact_role: str) -> dict[str, Any]:
     }
 
 
-def _measurement(value: int | float | None, provenance: dict[str, Any] | None) -> dict[str, Any]:
+def _measurement(
+    value: int | float | None,
+    provenance: dict[str, Any] | list[dict[str, Any]] | None,
+) -> dict[str, Any]:
     if value is not None and (
-        isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or value < 0
     ):
         raise TelemetryIngressError("observed measurement must be a nonnegative number")
+    provenance_items = provenance if isinstance(provenance, list) else (
+        [provenance] if provenance is not None else []
+    )
     return {
         "availability": "observed" if value is not None else "unavailable",
         "value": value,
-        "provenance": [provenance] if provenance is not None else [],
+        "provenance": provenance_items,
     }
 
 
@@ -171,7 +200,7 @@ def harvest(
     child_path, child, child_meta = _bound_child(
         parent_meta, launch, candidates, agent_path
     )
-    terminal, turn_count = _terminal_state(child)
+    terminal, starts, interrupted = _terminal_state(child)
 
     token_events = _event_payloads(child, "token_count")
     token_event = token_events[-1] if token_events else None
@@ -184,17 +213,24 @@ def harvest(
         usage = {}
     token_provenance = _provenance(token_event, "child_rollout") if token_event else None
 
-    starts = _event_payloads(child, "task_started")
     start_seconds = starts[0]["payload"].get("started_at")
     completed_seconds = terminal["payload"].get("completed_at")
-    wall_clock = (
-        completed_seconds - start_seconds
-        if isinstance(start_seconds, (int, float))
-        and isinstance(completed_seconds, (int, float))
-        and completed_seconds >= start_seconds
-        else None
-    )
-    turn_provenance = _provenance(terminal, "child_rollout")
+    if start_seconds is None or completed_seconds is None:
+        wall_clock = None
+    elif (
+        isinstance(start_seconds, bool)
+        or isinstance(completed_seconds, bool)
+        or not isinstance(start_seconds, (int, float))
+        or not isinstance(completed_seconds, (int, float))
+        or not math.isfinite(start_seconds)
+        or not math.isfinite(completed_seconds)
+        or completed_seconds < start_seconds
+    ):
+        raise TelemetryIngressError("child rollout contains invalid wall-clock boundaries")
+    else:
+        wall_clock = completed_seconds - start_seconds
+    start_provenance = [_provenance(start, "child_rollout") for start in starts]
+    terminal_provenance = _provenance(terminal, "child_rollout")
 
     measurements = {
         "input_tokens": _measurement(usage.get("input_tokens"), token_provenance),
@@ -202,8 +238,11 @@ def harvest(
         "output_tokens": _measurement(usage.get("output_tokens"), token_provenance),
         "reasoning_tokens": _measurement(usage.get("reasoning_output_tokens"), token_provenance),
         "peak_context_tokens": _measurement(None, None),
-        "turn_count": _measurement(turn_count, turn_provenance),
-        "wall_clock_seconds": _measurement(wall_clock, turn_provenance if wall_clock is not None else None),
+        "turn_count": _measurement(len(starts), start_provenance),
+        "wall_clock_seconds": _measurement(
+            wall_clock,
+            [start_provenance[0], terminal_provenance] if wall_clock is not None else None,
+        ),
     }
     assert set(measurements) == set(MEASUREMENT_NAMES)
 
@@ -228,7 +267,17 @@ def harvest(
             "binding_provenance": {
                 "parent_launch": _provenance(launch, "parent_rollout"),
                 "child_identity": _provenance(child_meta, "child_rollout"),
-                "terminal_event": _provenance(terminal, "child_rollout"),
+                "terminal_event": terminal_provenance,
+                "interrupted_turns": [
+                    {
+                        "turn_id": start["payload"]["turn_id"],
+                        "state": "interrupted",
+                        "start_event": _provenance(start, "child_rollout"),
+                        "completion_availability": "unavailable",
+                        "completion_provenance": [],
+                    }
+                    for start in interrupted
+                ],
             },
             "measurements": measurements,
         },

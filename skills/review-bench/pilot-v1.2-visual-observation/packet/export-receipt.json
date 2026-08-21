@@ -1,0 +1,8 @@
+{
+  "archive": "/home/bline/code/work-engine/skills/review-bench/pilot-v1.2-visual-observation/packet/snapshot.tar.gz",
+  "bench_id": "site2json-visual-observation-defective-20260820",
+  "case_id": "visual-evidence-authored-observation-pre-review",
+  "packet": "/home/bline/code/work-engine/skills/review-bench/pilot-v1.2-visual-observation/packet/case.json",
+  "prompt": "/home/bline/code/work-engine/skills/review-bench/pilot-v1.2-visual-observation/packet/review-prompt.md",
+  "status": "exported"
+}

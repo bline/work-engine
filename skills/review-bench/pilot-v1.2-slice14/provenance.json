@@ -1,0 +1,67 @@
+{
+  "artifact_type": "review_bench_historical_provenance_v1",
+  "schema_version": 1,
+  "case_id": "c6-slice14-route-reopening-clean",
+  "run_id": "c6eed952-a107-4f73-85bd-6863de887240",
+  "slice_number": 14,
+  "slice_timestamp": "2026-08-20T20:07:03.197Z",
+  "codex_session": {
+    "id": "01a020b7-fd84-7cf3-9bd6-3ec5dd11e640",
+    "path": "/home/bline/.codex/sessions/2026/08/20/rollout-2026-08-20T13-48-44-01a020b7-fd84-7cf3-9bd6-3ec5dd11e640.jsonl",
+    "patch_record": 184,
+    "review_call_record": 289,
+    "review_result_record": 313
+  },
+  "historical_review": {
+    "provider": "claude",
+    "model": "claude-sonnet-5",
+    "harness": "claude-cli",
+    "effort": "medium",
+    "session_id": "ed5f6982-a9cc-45e2-9b91-ec0f14ca25cb",
+    "acceptable_as_is": true,
+    "blocking_findings": 0,
+    "nonblocking_findings": 1,
+    "cost_usd": 0.7513092,
+    "input_tokens": 22,
+    "cache_creation_input_tokens": 65577,
+    "cache_read_input_tokens": 519804,
+    "output_tokens": 13456,
+    "thinking_tokens": 9416
+  },
+  "checkpoint": {
+    "baseline_head": "eb4f14f7a33d7d16dc48df6289ad4bdd4be4fd6f",
+    "pre_review_ref": "refs/work-engine/review-bench/c6-slice14/pre-review",
+    "pre_review_commit": "885002346de700234f84e26d6223893aa3d6dc5d",
+    "post_review_ref": "refs/work-engine/review-bench/c6-slice14/post-review",
+    "post_review_commit": "29550aa594851f3ee38457406533764295b061b9",
+    "post_review_tree": "46f4b4b992cec34dc98c3168b518f67135e8a65a",
+    "archive_sha256": "cdbcd3dac822540395c8cded09e50621181f83a626f6be090f71a2793c0128e6",
+    "changed_files": 1,
+    "insertions": 96,
+    "deletions": 0
+  },
+  "qualification": {
+    "truth_sealed": true,
+    "qualification_use_allowed": true,
+    "independent_case": false,
+    "reason": "Exact transcript, patch, hashes, immutable refs, and isolated validation are available; campaign ancestry overlaps the admitted c6 slice 9 cases."
+  },
+  "evaluation_runs": [
+    {
+      "result_id": "sol-codex-low-slice14-run1",
+      "normalized_result": "results/sol-codex-low-slice14-run1.json",
+      "raw_capture": "/home/bline/.codex/sessions/2026/08/20/rollout-2026-08-20T19-27-43-01a021ee-57fb-7462-bff6-d3d50c1fe2cb.jsonl"
+    },
+    {
+      "result_id": "sol-codex-high-slice14-run1",
+      "normalized_result": "results/sol-codex-high-slice14-run1.json",
+      "raw_capture": "/home/bline/.codex/sessions/2026/08/20/rollout-2026-08-20T19-27-56-01a021ee-8968-7e70-b334-6ce4e8358c08.jsonl"
+    },
+    {
+      "result_id": "claude-cli-medium-slice14-run1",
+      "normalized_result": "results/claude-cli-medium-slice14-run1.json",
+      "provider_session_id": "684437de-d6ab-499c-81d1-e5a97416f194",
+      "raw_capture": "/home/bline/.codex/sessions/2026/08/20/rollout-2026-08-20T01-10-08-01a01e01-79c0-73c1-bd1b-8ca23553afe6.jsonl"
+    }
+  ]
+}

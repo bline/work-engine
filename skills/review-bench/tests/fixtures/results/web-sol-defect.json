@@ -1,0 +1,36 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "defective-state",
+  "result_id": "web-sol-defect",
+  "attempt_id": "attempt-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "chatgpt-web-attachment",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["attached-files"],
+    "reasoning_effort": "high",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verdict": "rejected",
+  "findings": [
+    {
+      "finding_id": "s1",
+      "severity": "high",
+      "blocking": true,
+      "category": "stale-state",
+      "claim": "Stale input mutates the owner before validation.",
+      "evidence": ["src/state.py:61 applies payload data before checking revision."],
+      "confidence": "high"
+    }
+  ],
+  "limitations": ["No shell execution"],
+  "timing": {"started_at": "2026-08-20T00:04:00Z", "completed_at": "2026-08-20T00:05:00Z", "wall_clock_seconds": 60, "input_tokens": 1600, "output_tokens": 350}
+}

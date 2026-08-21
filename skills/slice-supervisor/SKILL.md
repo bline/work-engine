@@ -112,6 +112,47 @@ When `approval.uninterrupted_after_plan` is true, execution and gate may share o
 
 Require the configured builder's `audit_receipt` plus its compact `handoff_receipt`. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted. Retain the handoff only for relevant future builder context; never use it as the durable record.
 
+When the campaign uses Git-backed slice checkpoints, request a candidate only
+after the deterministic gate is ready for review. Give the checkpoint adapter
+the declared baseline, exact attributed manifest, plan version, scope revision,
+and gate-receipt digest. The adapter owns isolated Git mechanics; the supervisor
+owns the lifecycle consequence. Pin review to the returned candidate commit,
+tree, task-patch, plan, scope, and gate identities. A material repair requires a
+new candidate and preserves the old candidate and findings.
+
+Before acceptance, validate the review result with
+`scripts/checkpoint_lifecycle.py`. Only an exact binding may create the private
+accepted lifecycle checkpoint. Pass that accepted receipt to terminal
+finalization so the durable audit receipt and next-slice recovery name the same
+identity. Stopped or failed checkpoint refs preserve recovery state but never
+advance acceptance. Checkpoint mechanics may update only private local
+`refs/work-engine/checkpoints/`; they never move the user's branch, alter the
+real index or working tree, create tags, or publish refs.
+
+After private acceptance, apply `engine_config.slice_completion_commit.prompt`.
+When disabled, suppress the offer and continue from the private checkpoint.
+When enabled, prefer sending the accepted checkpoint and exact manifest back to
+the completing builder before releasing useful context. Require its compact
+schema-version-2 proposal to bind both and truthfully name its producer and
+durable supporting evidence. If that context is unavailable, a replacement may
+reconstruct only from the accepted checkpoint plus durable attributed manifest
+and compact terminal semantic consequences. Insufficient evidence must produce
+refusal or explicit uncertainty, never an unsupported equivalence claim. The
+producer route and provider/model identity do not authorize the proposal; its
+content and immutable bindings remain decisive. Then ask the user to create or
+decline the ordinary commit. Only an explicit per-slice create decision authorizes
+`$slice-completion-commit`; an open, declined, unavailable, or refused offer
+never blocks checkpoint-based continuation. The supervisor owns one durable
+live offer outside model context, terminal audit history, and the ordinary
+worktree. The current implementation uses a private Work Engine ref as storage;
+that mechanism is an affordance rather than invariant product structure. The
+sibling adapter owns real Git preflight, mutation, and read-only reconciliation
+after uncertain publication. Because resolving a stale open offer could
+misreport an already-published commit, every terminal transition reconciles Git
+first and fails closed when publication state is ambiguous. Persist terminal
+offer transitions through the live owner, and retain the accepted private checkpoint—not current branch
+HEAD—as the authoritative next-slice baseline.
+
 Do not retain raw tool output, exploration, debugging, test logs, diffs, or copied source. Ask the builder to compress an overlong receipt rather than summarizing its evidence yourself.
 
 For a named campaign, assemble the terminal semantic receipt with its matching
@@ -127,12 +168,17 @@ python3 skills/slice-supervisor/scripts/finalize_receipt.py \
   --semantic-receipt-json '<schema-v4-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
   --campaign-preflight-json '<original-successful-preflight-result>' \
-  --handoff-receipt-json '<compact-handoff-receipt>'
+  --handoff-receipt-json '<compact-handoff-receipt>' \
+  --checkpoint-receipt-json '<accepted-checkpoint-receipt>' \
+  --completion-commit-receipt-json '<resolved-created-declined-or-refused-receipt>'
 ```
 
 The finalizer passes the assembled in-memory result directly to the existing
 append boundary. It does not use an intermediate receipt file or reread the
-campaign. The assembler remains the authoritative projection owner and append
+campaign. Before a `created` completion-commit projection can enter that result,
+the finalizer requires the completion adapter to re-establish its Git claims
+read-only; otherwise fabricated adapter-shaped input could become durable
+history. The assembler remains the authoritative projection owner and append
 remains the schema-v4 write, terminal-identity, locking, and durability owner.
 For an accepted slice with remaining work, the finalizer validates the handoff
 against the assembled receipt and derives its four nonduplicated semantic
@@ -161,6 +207,29 @@ compact handoff. If the user explicitly configured a null metrics path, retain
 both receipt views in supervisor state for the final report and state that no
 durable record was written.
 
+## Reconcile strategy when execution changes the map
+
+Strategic reconciliation is a separate capability, not another builder phase.
+Use `$strategic-planner` when durable execution evidence could materially
+change roadmap priority, dependency order, an architectural assumption,
+expected value, release readiness, or the wisdom of continuing the current
+campaign unchanged. Do not invoke it on a fixed slice cadence or from a numeric
+signal alone, and do not make the supervisor continuously re-plan the product.
+
+Pass the bounded strategic objective, governing roadmap and doctrine, current
+repository revision, compact terminal consequences, the prior planning handoff
+when one exists, and relevant proposal expectations. Do not pass raw builder
+transcripts, logs, source dumps, or audit bookkeeping that has no strategic
+consumer.
+
+The planner returns a compact planning handoff; it does not accept slices or
+amend the campaign. The supervisor decides the execution consequence within
+its authority. A recommendation that changes the objective, work-source
+boundary, approval, or another immutable configuration field requires the
+owning amendment or a new campaign before another builder starts. If strategic
+review is materially necessary but unavailable, stop rather than continuing
+on a roadmap known to be unreliable.
+
 ## Decide whether to continue
 
 After an interruption between terminal slices, recover one named run with:
@@ -175,7 +244,10 @@ python3 skills/slice-supervisor/scripts/resume_campaign.py \
 Resume only when the command reports `resumable: true`. It binds both the
 effective engine configuration and campaign-source identity, reconstructs the
 compact handoff, and identifies the next sequential slice without writing or
-reserving it. Structured stopped, failed, accepted-complete, and historical
+reserving it. When the terminal receipt carries a slice checkpoint, recovery
+also verifies the private ref and commit tree and returns it as
+`baseline_checkpoint`; that immutable identity, not current branch HEAD, is the
+next slice's repository baseline. Structured stopped, failed, accepted-complete, and historical
 continuation-unavailable results are stable non-resumable states. Command
 failure means malformed or incompatible state requiring intervention. This
 path does not recover mid-slice or partial artifacts and does not authorize an

@@ -1,0 +1,48 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "case_id": "c6-slice9-pre-review",
+  "result_id": "sol-codex-high-c6-slice9-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "codex-subagent-isolated-archive",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem", "shell", "python-runtime"],
+    "reasoning_effort": "high",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "961bb5ba2d5cd60333e03e2ad388d4b6e7c3aee4ae258124e6e2c57ef215d258",
+  "verdict": "rejected",
+  "findings": [
+    {
+      "finding_id": "continuation-source-binding-1",
+      "severity": "high",
+      "blocking": true,
+      "category": "persistence_identity_integrity",
+      "claim": "A resumable continuation can be accepted as a current durable write without named-campaign provenance, and recovery can then treat the missing campaign-source identity as a successful binding. This violates the named-campaign-only ownership and fail-closed source-binding requirements.",
+      "evidence": [
+        "skills/slice-supervisor/scripts/append_metrics.py:610-619 computes named_campaign from campaign_source presence, but only uses it to require missing context for named writes; a resumable unnamed record with continuation_context falls through because the omission check applies only when resumable is false. The contradictory path checked was an accepted schema-v4 record with remaining work, valid continuation context, and no producer_metrics.campaign_source; validate_current_write accepted it.",
+        "skills/slice-supervisor/scripts/resume_campaign.py:66-81 compares both source values using .get, so an absent campaign_preflight.campaignSource equals an absent terminal campaign_source, after which the continuation is consumed. Read-only in-memory execution using the valid fixture shape from skills/slice-supervisor/tests/test_append_metrics.py:21-103 returned resumable: true and next_slice_number: 2 for that source-less record.",
+        "skills/slice-supervisor/references/receipt-schema.md:104-107 requires current resumable continuation projection only for named campaigns and says other current outcomes omit it; lines 118-122 require campaign-source binding and fail-closed malformed state. The demonstrated fall-through contradicts both requirements.",
+        "skills/slice-supervisor/tests/test_append_metrics.py:477-504 covers the positive named-campaign requirement and nonresumable omission, but does not exercise the acceptance-critical contradictory case of a resumable unnamed write carrying continuation context."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Review was confined to the packet-listed snapshot artifacts and their in-snapshot import dependencies; Git history, the source repository, session logs, and the internet were not inspected.",
+    "Artifact SHA-256 values matched the case packet. The write-producing test suite was not rerun because the review required no filesystem mutation; the defect was reproduced with a read-only in-memory adversarial execution and bytecode generation disabled."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T17:51:04-06:00",
+    "completed_at": "2026-08-20T17:54:00-06:00",
+    "wall_clock_seconds": 176
+  }
+}

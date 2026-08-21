@@ -85,6 +85,20 @@ class ResumeCampaignTest(unittest.TestCase):
         self.assertFalse(state["resumable"])
         self.assertIsNone(state["next_slice_number"])
         self.assertIsNone(state["handoff_receipt"])
+        self.assertNotIn("terminal_state", state)
+
+        historical = self.accepted_inputs(1)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipts.jsonl"
+            receipt = FINALIZER.finalize(path, *historical)
+            receipt.pop("continuation_context")
+            path.write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+            state = RESUME.resume(path, historical[2], "test-run")
+        self.assertEqual("continuation_unavailable", state["reason"])
+        self.assertFalse(state["resumable"])
+        self.assertIsNone(state["next_slice_number"])
+        self.assertIsNone(state["handoff_receipt"])
+        self.assertNotIn("terminal_state", state)
 
     def test_binding_mismatch_fails(self) -> None:
         inputs = self.accepted_inputs(1)
@@ -95,6 +109,32 @@ class ResumeCampaignTest(unittest.TestCase):
             mismatched["engineConfig"]["objective"] = "different"
             with self.assertRaisesRegex(ValueError, "engineConfig"):
                 RESUME.resume(path, mismatched, "test-run")
+
+            mismatched = json.loads(json.dumps(inputs[2]))
+            mismatched["campaignSource"]["sha256"] = "f" * 64
+            with self.assertRaisesRegex(ValueError, "campaignSource"):
+                RESUME.resume(path, mismatched, "test-run")
+
+    def test_gap_duplicate_and_out_of_order_histories_fail(self) -> None:
+        first = self.accepted_inputs(1)
+        second = self.accepted_inputs(2)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipts.jsonl"
+            finalized = [
+                FINALIZER.finalize(path, *first),
+                FINALIZER.finalize(path, *second),
+            ]
+            for numbers in ([1, 3], [1, 1], [2, 1]):
+                with self.subTest(numbers=numbers):
+                    records = json.loads(json.dumps(finalized))
+                    for record, number in zip(records, numbers, strict=True):
+                        record["slice_number"] = number
+                    path.write_text(
+                        "".join(json.dumps(record) + "\n" for record in records),
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(ValueError, "unique, ordered, and contiguous"):
+                        RESUME.resume(path, second[2], "test-run")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,45 @@
+version: 2
+objective: "Establish durable persistent agent and review-queue state so active Work Engine campaigns can survive context replacement, defer unavailable reviews truthfully, and prevent overlapping mutation across initial and revised slice plans without rewriting historical terminals"
+
+work_source:
+  kind: file
+  value: "roadmap.md"
+
+builder:
+  skill: "slice-builder"
+  model: "gpt-5.6-sol"
+  reasoning_effort: "low"
+  context:
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
+
+validation:
+  profile: "engineering-proportional"
+  requirements:
+    - semantic_proof
+    - risk_proportional_checks
+    - workspace_integrity
+
+limits: {}
+
+approval:
+  plan: "procedural_when_safe"
+  uninterrupted_after_plan: false
+
+notifications:
+  intervention: true
+  completion: false
+
+stop_on:
+  - objective_complete
+  - human_judgment
+  - unresolved_architecture
+  - quota_exhaustion
+  - validation_nonconvergence
+
+metrics:
+  path: "metrics/work-engine-persistent-runtime-state.jsonl"

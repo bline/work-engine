@@ -1,0 +1,5 @@
+version: 2
+objective: "Implement the checkpoint described in ideas/git-backed-slice-checkpoints.md."
+work_source:
+  kind: file
+  value: "ideas/git-backed-slice-checkpoints.md"

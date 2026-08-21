@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import importlib.util
 import json
 import os
@@ -60,6 +61,23 @@ CONTINUATION_CONTEXT_FIELDS = {
     "schema_version", "durable_decisions", "affected_boundaries",
     "unresolved_concerns", "deferred_scope",
 }
+CHECKPOINT_PROJECTION_FIELDS = {
+    "schema_version", "checkpoint_id", "checkpoint_kind", "repository", "run_id",
+    "slice_number", "candidate_attempt", "checkpoint_commit_oid", "checkpoint_tree_oid",
+    "candidate_checkpoint_id", "parent_checkpoint_commit_oid", "task_patch_digest",
+    "manifest_digest",
+    "plan_version", "scope_revision",
+    "gate_receipt_digest", "ref", "limitations",
+}
+COMPLETION_COMMIT_FIELDS = {
+    "schema_version", "state", "repository", "run_id", "slice_number", "proposal",
+    "proposal_digest", "expected_branch", "expected_head_oid", "commit_oid", "reason",
+}
+COMPLETION_PROPOSAL_COMMON_FIELDS = {
+    "schema_version", "subject", "body", "paths", "checkpoint_commit_oid",
+    "checkpoint_tree_oid", "task_patch_digest",
+}
+COMPLETION_PROVENANCE_FIELDS = {"schema_version", "producer", "evidence"}
 
 
 def fail(message: str) -> None:
@@ -109,6 +127,12 @@ def validate(record: Any) -> dict[str, Any]:
         validate_evidence_provenance(record)
     if "continuation_context" in record:
         validate_continuation_context(record["continuation_context"])
+    checkpoint = record["producer_metrics"].get("slice_checkpoint")
+    if checkpoint is not None:
+        validate_checkpoint_projection(checkpoint, record)
+    completion_commit = record["producer_metrics"].get("slice_completion_commit")
+    if completion_commit is not None:
+        validate_completion_commit_projection(completion_commit, record, checkpoint)
     for key in ("run_id", "timestamp", "slice_title", "slice_goal", "outcome"):
         if not record[key].strip():
             fail(f"{key} must not be empty")
@@ -121,6 +145,126 @@ def validate(record: Any) -> dict[str, Any]:
         fail("timestamp must include a timezone")
     find_prohibited(record)
     return record
+
+
+def validate_checkpoint_projection(value: Any, record: dict[str, Any]) -> None:
+    if not isinstance(value, dict):
+        fail("producer_metrics.slice_checkpoint must be an object")
+    require_exact_keys(value, CHECKPOINT_PROJECTION_FIELDS, "producer_metrics.slice_checkpoint")
+    if value["schema_version"] != 1:
+        fail("producer_metrics.slice_checkpoint.schema_version must be 1")
+    if value["run_id"] != record["run_id"] or value["slice_number"] != record["slice_number"]:
+        fail("slice checkpoint identity must match the terminal receipt")
+    expected_kind = "accepted" if record["status"] == "accepted" else "stopped"
+    if value["checkpoint_kind"] != expected_kind:
+        fail(f"{record['status']} receipt requires a {expected_kind} checkpoint")
+    for field in ("checkpoint_id", "task_patch_digest", "manifest_digest", "gate_receipt_digest"):
+        digest = value[field]
+        if not isinstance(digest, str) or len(digest) != 64 or any(
+            character not in "0123456789abcdef" for character in digest
+        ):
+            fail(f"producer_metrics.slice_checkpoint.{field} must be lowercase SHA-256")
+    for field in ("checkpoint_commit_oid", "checkpoint_tree_oid"):
+        oid = value[field]
+        if not isinstance(oid, str) or len(oid) not in {40, 64} or any(
+            character not in "0123456789abcdef" for character in oid
+        ):
+            fail(f"producer_metrics.slice_checkpoint.{field} must be a Git object id")
+    for field in (
+        "repository", "run_id", "candidate_checkpoint_id", "plan_version",
+        "scope_revision", "ref",
+    ):
+        if not isinstance(value[field], str) or not value[field].strip():
+            fail(f"producer_metrics.slice_checkpoint.{field} must be nonempty")
+    if not value["ref"].startswith("refs/work-engine/checkpoints/"):
+        fail("producer_metrics.slice_checkpoint.ref must be a private Work Engine ref")
+    if isinstance(value["candidate_attempt"], bool) or not isinstance(value["candidate_attempt"], int) or value["candidate_attempt"] < 1:
+        fail("producer_metrics.slice_checkpoint.candidate_attempt must be positive")
+    if not isinstance(value["limitations"], list) or not all(
+        isinstance(item, str) for item in value["limitations"]
+    ):
+        fail("producer_metrics.slice_checkpoint.limitations must be an array of strings")
+
+
+def validate_completion_commit_projection(value: Any, record: dict[str, Any], checkpoint: Any) -> None:
+    if not isinstance(value, dict):
+        fail("producer_metrics.slice_completion_commit must be an object")
+    require_exact_keys(value, COMPLETION_COMMIT_FIELDS, "producer_metrics.slice_completion_commit")
+    if value["schema_version"] != 1 or value["state"] not in {"pending", "declined", "created", "refused"}:
+        fail("slice completion commit must use schema version 1 and a valid state")
+    if record["status"] != "accepted":
+        fail("slice completion commit requires an accepted terminal receipt")
+    if value["run_id"] != record["run_id"] or value["slice_number"] != record["slice_number"]:
+        fail("slice completion commit identity must match the terminal receipt")
+    proposal = value["proposal"]
+    if not isinstance(proposal, dict):
+        fail("slice completion commit proposal must be an object")
+    if proposal.get("schema_version") == 1:
+        require_exact_keys(
+            proposal, COMPLETION_PROPOSAL_COMMON_FIELDS | {"origin"},
+            "historical slice completion commit proposal",
+        )
+        if proposal["origin"] != "completing_builder":
+            fail("historical slice completion proposal requires completing_builder origin")
+    elif proposal.get("schema_version") == 2:
+        require_exact_keys(
+            proposal, COMPLETION_PROPOSAL_COMMON_FIELDS | {"provenance"},
+            "slice completion commit proposal",
+        )
+        validate_completion_provenance(proposal["provenance"])
+    else:
+        fail("slice completion proposal must use supported schema version 1 or 2")
+    if checkpoint is None or proposal["checkpoint_commit_oid"] != checkpoint["checkpoint_commit_oid"] or proposal["checkpoint_tree_oid"] != checkpoint["checkpoint_tree_oid"] or proposal["task_patch_digest"] != checkpoint["task_patch_digest"]:
+        fail("slice completion proposal must bind the accepted checkpoint")
+    if hashlib.sha256(json.dumps(proposal, sort_keys=True, separators=(",", ":")).encode()).hexdigest() != value["proposal_digest"]:
+        fail("slice completion proposal digest does not match")
+    for field in ("subject", "checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest"):
+        if not isinstance(proposal[field], str) or not proposal[field].strip():
+            fail(f"slice completion proposal.{field} must be nonempty")
+    if "\n" in proposal["subject"] or not isinstance(proposal["body"], str):
+        fail("slice completion proposal message is invalid")
+    if not isinstance(proposal["paths"], list) or not proposal["paths"] or not all(
+        isinstance(path, str) and path and not path.startswith("/") for path in proposal["paths"]
+    ) or len(set(proposal["paths"])) != len(proposal["paths"]):
+        fail("slice completion proposal paths must be a unique nonempty array")
+    for field in ("repository", "expected_branch", "expected_head_oid", "proposal_digest"):
+        if not isinstance(value[field], str) or not value[field].strip():
+            fail(f"slice completion commit.{field} must be nonempty")
+    for field in ("expected_head_oid",):
+        oid = value[field]
+        if len(oid) not in {40, 64} or any(character not in "0123456789abcdef" for character in oid):
+            fail(f"slice completion commit.{field} must be a Git object id")
+    if value["state"] == "created":
+        if not isinstance(value["commit_oid"], str) or not value["commit_oid"] or not isinstance(value["reason"], (str, type(None))):
+            fail("created completion commit requires commit_oid and an optional reason")
+        if len(value["commit_oid"]) not in {40, 64} or any(character not in "0123456789abcdef" for character in value["commit_oid"]):
+            fail("created completion commit.commit_oid must be a Git object id")
+    elif value["state"] == "pending":
+        if value["commit_oid"] is not None or value["reason"] is not None:
+            fail("pending completion commit cannot have commit_oid or reason")
+    elif value["commit_oid"] is not None or not isinstance(value["reason"], str) or not value["reason"]:
+        fail("declined/refused completion commit requires a reason and no commit_oid")
+
+
+def validate_completion_provenance(value: Any) -> None:
+    if not isinstance(value, dict):
+        fail("slice completion proposal provenance must be an object")
+    require_exact_keys(value, COMPLETION_PROVENANCE_FIELDS, "slice completion proposal provenance")
+    if value["schema_version"] != 1:
+        fail("slice completion proposal provenance schema_version must be 1")
+    if not isinstance(value["producer"], str) or not value["producer"].strip():
+        fail("slice completion proposal provenance producer must be nonempty")
+    if not isinstance(value["evidence"], list) or not value["evidence"]:
+        fail("slice completion proposal provenance evidence must be a nonempty array")
+    for index, item in enumerate(value["evidence"]):
+        if not isinstance(item, dict) or set(item) != {"kind", "digest"}:
+            fail(f"slice completion proposal provenance evidence[{index}] is invalid")
+        if not isinstance(item["kind"], str) or not item["kind"].strip():
+            fail(f"slice completion proposal provenance evidence[{index}].kind must be nonempty")
+        digest = item["digest"]
+        if (not isinstance(digest, str) or len(digest) != 64
+                or any(character not in "0123456789abcdef" for character in digest)):
+            fail(f"slice completion proposal provenance evidence[{index}].digest must be lowercase SHA-256")
 
 
 def validate_continuation_context(value: Any) -> None:
@@ -154,7 +298,7 @@ def validate_engine_record(record: dict[str, Any]) -> None:
     allowed_config_keys = {
         "version", "source", "objective", "work_source", "builder",
         "validation", "metrics", "limits", "approval", "notifications",
-        "stop_on", "capabilities", "explicit_fields", "defaulted_fields", "amendments",
+        "stop_on", "capabilities", "slice_completion_commit", "explicit_fields", "defaulted_fields", "amendments",
     }
     unknown_config_keys = set(config) - allowed_config_keys
     if unknown_config_keys:
@@ -181,6 +325,13 @@ def validate_engine_record(record: dict[str, Any]) -> None:
             fail(f"engine_config.{key} must be {names}")
     if isinstance(config["version"], bool) or config["version"] not in {1, 2}:
         fail("engine_config.version must be 1 or 2")
+    completion_policy = config.get("slice_completion_commit")
+    if completion_policy is not None and (
+        not isinstance(completion_policy, dict)
+        or set(completion_policy) != {"prompt"}
+        or completion_policy["prompt"] not in {"enabled", "disabled"}
+    ):
+        fail("engine_config.slice_completion_commit must contain prompt enabled or disabled")
     capabilities = config.get("capabilities", {})
     if not isinstance(capabilities, dict):
         fail("engine_config.capabilities must be an object")
@@ -223,6 +374,34 @@ def validate_engine_record(record: dict[str, Any]) -> None:
         fail("engine_config.validation.requirements must be a nonempty array of nonempty strings")
     if len(set(requirements)) != len(requirements):
         fail("engine_config.validation.requirements must not contain duplicates")
+    resolved_context = PROVIDER_RESOLVER.resolve_builder_context(
+        config["version"], config["builder"].get("context", {})
+    )
+    if "adversarial_review" in resolved_context and any(
+        requirement in {"independent_review", "independent_adversarial_review"}
+        for requirement in requirements
+    ):
+        fail("accepted same-model review cannot satisfy an independent-review requirement")
+    amendment_fields = {
+        "timestamp", "changed_fields", "prior_values", "new_values", "reason", "human_approval"
+    }
+    for index, amendment in enumerate(config["amendments"]):
+        path = f"engine_config.amendments[{index}]"
+        if not isinstance(amendment, dict):
+            fail(f"{path} must be an object")
+        require_exact_keys(amendment, amendment_fields, path)
+        if not isinstance(amendment["timestamp"], str) or not amendment["timestamp"].strip():
+            fail(f"{path}.timestamp must be a nonempty string")
+        if not isinstance(amendment["changed_fields"], list) or not amendment["changed_fields"] or not all(
+            isinstance(item, str) and item.strip() for item in amendment["changed_fields"]
+        ):
+            fail(f"{path}.changed_fields must contain nonempty strings")
+        for field in ("prior_values", "new_values"):
+            if not isinstance(amendment[field], dict):
+                fail(f"{path}.{field} must be an object")
+        for field in ("reason", "human_approval"):
+            if not isinstance(amendment[field], str) or not amendment[field].strip():
+                fail(f"{path}.{field} must be a nonempty string")
     results = record["validation_requirement_results"]
     if set(results) != set(requirements):
         fail("validation_requirement_results keys must exactly match configured requirements")
@@ -330,11 +509,30 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         if key not in metrics or not isinstance(metrics[key], expected):
             fail(f"worker_metrics.{key} must be {expected.__name__}")
 
-    identity_fields = {"repository_evidence_identity", "independent_review_identity"}
-    present_identities = identity_fields & set(metrics)
+    config_version = record.get("engine_config", {}).get("version")
+    configured_roles = None
+    if config_version in {1, 2}:
+        try:
+            configured_roles = PROVIDER_RESOLVER.resolve_builder_context(
+                config_version,
+                record["engine_config"]["builder"].get("context", {}),
+            )
+        except PROVIDER_RESOLVER.ProviderResolutionError as error:
+            fail(f"worker_metrics role identity is invalid: {error}")
+    review_role = (
+        "adversarial_review"
+        if configured_roles and "adversarial_review" in configured_roles
+        else "independent_review"
+    )
+    review_identity_field = f"{review_role}_identity"
+    identity_fields = {"repository_evidence_identity", review_identity_field}
+    all_identity_fields = identity_fields | {
+        "independent_review_identity", "adversarial_review_identity"
+    }
+    present_identities = all_identity_fields & set(metrics)
     if present_identities and present_identities != identity_fields:
-        fail("worker_metrics role identities must be reported together")
-    if record.get("engine_config", {}).get("version") == 2 and present_identities != identity_fields:
+        fail("worker_metrics role identities must be reported together and match the configured review role")
+    if config_version == 2 and present_identities != identity_fields:
         fail("version 2 receipts require role-separated provider identities")
     for field in identity_fields:
         if field not in metrics:
@@ -342,17 +540,25 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         identity = metrics[field]
         if not isinstance(identity, dict):
             fail(f"worker_metrics.{field} must be an object")
-        require_exact_keys(identity, {"provider", "skill"}, f"worker_metrics.{field}")
-        for name, value in identity.items():
-            if not isinstance(value, str) or not value.strip():
+        expected_fields = {"provider", "skill"}
+        if field == "adversarial_review_identity":
+            expected_fields |= {
+                "model", "reasoning_effort", "evidence_class", "isolation",
+                "builder_context_inherited", "model_relationship", "independence_claimed",
+            }
+        require_exact_keys(identity, expected_fields, f"worker_metrics.{field}")
+        for name in expected_fields - {"builder_context_inherited", "independence_claimed"}:
+            if not isinstance(identity[name], str) or not identity[name].strip():
                 fail(f"worker_metrics.{field}.{name} must be a nonempty string")
-    config_version = record.get("engine_config", {}).get("version")
+        if field == "adversarial_review_identity":
+            if identity["builder_context_inherited"] is not False:
+                fail("worker_metrics.adversarial_review_identity.builder_context_inherited must be false")
+            if identity["model_relationship"] != "same_model":
+                fail("worker_metrics.adversarial_review_identity.model_relationship must be same_model")
+            if identity["independence_claimed"] is not False:
+                fail("worker_metrics.adversarial_review_identity.independence_claimed must be false")
     if present_identities == identity_fields:
         try:
-            configured_roles = PROVIDER_RESOLVER.resolve_builder_context(
-                config_version,
-                record["engine_config"]["builder"].get("context", {}),
-            )
             if config_version == 1:
                 normalized = []
                 for field in sorted(identity_fields):
@@ -371,14 +577,16 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
                 if normalized[0] != configured_roles["repository_evidence"]:
                     fail("version 1 actual role identity must match configured legacy role")
             else:
-                actual_roles = PROVIDER_RESOLVER.resolve_builder_context(
-                    2,
-                    {
-                        "repository_evidence": metrics["repository_evidence_identity"],
-                        "independent_review": metrics["independent_review_identity"],
+                actual_review = metrics[review_identity_field]
+                actual_context = {
+                    "repository_evidence": metrics["repository_evidence_identity"],
+                    review_role: {
+                        key: actual_review[key]
+                        for key in configured_roles[review_role]
                     },
-                )
-                for role in ("repository_evidence", "independent_review"):
+                }
+                actual_roles = PROVIDER_RESOLVER.resolve_builder_context(2, actual_context)
+                for role in ("repository_evidence", review_role):
                     if actual_roles[role] != configured_roles[role]:
                         fail(f"actual {role} identity must match configured role")
         except PROVIDER_RESOLVER.ProviderResolutionError as error:
@@ -401,7 +609,7 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
             fail("worker_metrics.provider_role_metrics must be an object")
         require_exact_keys(
             role_metrics,
-            {"repository_evidence", "independent_review"},
+            {"repository_evidence", review_role},
             "worker_metrics.provider_role_metrics",
         )
         role_fields = EVIDENCE_COUNT_FIELDS | EVIDENCE_MEASUREMENT_FIELDS
@@ -423,9 +631,9 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         retrieval_stages = metrics["evidence_recon_calls"] + metrics["evidence_supplemental_calls"]
         if retrieval_stages > repository_attempts:
             fail("repository evidence stage calls cannot exceed repository provider attempts")
-        review_attempts = role_metrics["independent_review"]["attempts"]
+        review_attempts = role_metrics[review_role]["attempts"]
         if metrics["review_gate_calls"] > review_attempts:
-            fail("review gate calls cannot exceed independent-review provider attempts")
+            fail("review gate calls cannot exceed configured review provider attempts")
 
     provider_count_fields = {
         "provider_successful_calls", "provider_failed_calls",
@@ -619,6 +827,9 @@ def validate_current_write(record: dict[str, Any]) -> dict[str, Any]:
         fail("continuation_context is only valid for a named-campaign write")
     if not resumable and continuation is not None:
         fail("continuation_context must be omitted unless accepted work remains")
+    completion = record["producer_metrics"].get("slice_completion_commit")
+    if completion is not None and completion["state"] == "pending":
+        fail("pending completion offers are live state and cannot enter new terminal receipts")
     return record
 
 

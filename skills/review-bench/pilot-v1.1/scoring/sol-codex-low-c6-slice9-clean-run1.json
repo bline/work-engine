@@ -1,0 +1,21 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "sol-codex-low-c6-slice9-clean-run1",
+  "finding_dispositions": [
+    {
+      "result_finding_id": "F1",
+      "disposition": "nonblocking_observation",
+      "truth_finding_ids": [],
+      "evidence_valid": true,
+      "notes": "Direct source confirms the reference example omits a required CLI argument while the canonical skill command is correct. This is a real low documentation issue, but it is outside the explicit persistence acceptance criteria and does not invalidate the accepted case."
+    }
+  ],
+  "missed_truth_ids": [],
+  "adjudicator": "codex-root-against-sealed-clean-truth-and-direct-source",
+  "limitations": [
+    "The clean truth is contract-bounded; valid out-of-contract observations are separated from both truth defects and false positives."
+  ]
+}

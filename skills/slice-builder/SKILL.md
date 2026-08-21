@@ -62,6 +62,16 @@ review as separate provenance. Do not silently substitute providers, count
 retrieval as review, or weaken configured acceptance requirements. Auto provider
 selection is deferred.
 
+Version 2 may instead explicitly configure `adversarial_review` through
+$codex-adversarial-review when a human has accepted same-model review. Launch it
+with `fork_turns: "none"`, its configured model and reasoning effort, and no
+builder-session history. Record it as `accepted_same_model_review`, including
+observed isolation and model relationship; never describe it as independent,
+cross-model, cross-provider, or statistically independent. Exactly one of
+`independent_review` and `adversarial_review` may be configured, and accepted
+same-model review cannot satisfy a requirement that explicitly demands
+independent review.
+
 Do not confuse provider selection with evidence capability. A configured Claude
 role may expose Codebase Memory and bounded read-only filesystem tools in the
 same process. Keep indexed structure primary for repository code understanding,
@@ -166,6 +176,24 @@ If new necessary scope appears, stop mutation and return a boundary-change reque
 If unrelated or unattributable workspace changes appear, stop mutation until ownership is established. A replacement inherits the exact baseline and task-owned manifest. Preserve the distinction between pre-existing, task-owned, overlapping, and unowned changes.
 
 ## Collect the final receipt
+
+When the supervisor returns an accepted checkpoint under an enabled
+`engine_config.slice_completion_commit.prompt`, retain this builder while its
+context remains useful and ask it to compose one compact schema-version-2
+`commit_proposal`. Bind its one-line subject, body, and exact task-owned path
+set to the accepted checkpoint commit, tree, and task-patch digest. Include
+structured production provenance naming the producer and the durable evidence
+that supports the proposal; provider or model identity is descriptive, never
+authority. Return the proposal as a separate completion artifact beside the
+receipts. It conveys semantic context; it is not part of the audit receipt and
+never authorizes a Git mutation.
+
+If this context is lost or no longer trustworthy, a replacement may reconstruct
+the proposal only from the accepted checkpoint, attributed manifest, and
+durable compact semantic consequences. It records that route truthfully in the
+same open provenance structure. When those artifacts do not support an accurate
+subject or body, refuse the proposal or surface the uncertainty; do not infer
+semantic equivalence or replay a transcript merely to satisfy the schema.
 
 Read [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md) before requesting the gate result. Return `audit_receipt` for durable validation and metrics, plus `handoff_receipt` for the next builder. Preserve audit measurements exactly and use `null` when unavailable. Record configured and actual model, effort, evidence skill, validation profile, requirement results, `workflow_route`, `route_revisions`, and evidence-based validation breadth even if no escalation occurred. Each route revision names the failed premise, stale decisions, preserved evidence, replacement route, and reason. Never copy engine, provider, model, token, cache, route mechanics, or detailed gate bookkeeping into the handoff.
 

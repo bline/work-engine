@@ -1,0 +1,137 @@
+{
+  "artifact_type": "review_bench_pilot_selection_v1",
+  "schema_version": 1,
+  "status": "selected_reconstruction_required",
+  "selected_at": "2026-08-20",
+  "selection_policy": {
+    "target": "One real historical candidate per initial route class",
+    "truth_sealed": false,
+    "qualification_use_allowed": false,
+    "promotion_requirements": [
+      "Recover or reconstruct the exact reviewed snapshot and compute its digest.",
+      "Recover the blinded contract and artifact manifest.",
+      "Adjudicate known findings from executable or human evidence.",
+      "Seal truth before collecting new reviewer results."
+    ]
+  },
+  "promoted_cases": [
+    {
+      "case_id": "c6-slice9-pre-review",
+      "route_class": "persistent_state_identity_integrity",
+      "corpus": "pilot/corpus.json",
+      "truth": "pilot/truth.json",
+      "snapshot_ref": "refs/work-engine/review-bench/c6-slice9/pre-review",
+      "reconstruction_confidence": "high",
+      "truth_sealed": true,
+      "qualification_use_allowed": true
+    },
+    {
+      "case_id": "c6-slice9-post-medium-fix-clean",
+      "route_class": "persistent_state_identity_integrity",
+      "corpus": "pilot-v1.1/corpus.json",
+      "truth": "pilot-v1.1/truth.json",
+      "snapshot_ref": "refs/work-engine/review-bench/c6-slice9/post-medium-fix",
+      "reconstruction_confidence": "high",
+      "truth_sealed": true,
+      "qualification_use_allowed": true,
+      "selection_reason": "Paired clean checkpoint differs from the admitted defective case only by the confirmed ownership fix and its regression assertions, controlling contract and surrounding implementation while enabling false-block measurement."
+    },
+    {
+      "case_id": "c6-slice14-route-reopening-clean",
+      "route_class": "persistent_state_identity_integrity",
+      "corpus": "pilot-v1.2-slice14/corpus.json",
+      "truth": "pilot-v1.2-slice14/truth.json",
+      "provenance": "pilot-v1.2-slice14/provenance.json",
+      "snapshot_ref": "refs/work-engine/review-bench/c6-slice14/post-review",
+      "reconstruction_confidence": "high",
+      "truth_sealed": true,
+      "qualification_use_allowed": true,
+      "independent_case": false,
+      "selection_reason": "The exact transcript, additive patch, recorded file hashes, original review payload, immutable pre/post refs, and isolated validation are available. It remains correlated with the c6 slice 9 campaign cases."
+    },
+    {
+      "case_id": "visual-evidence-authored-observation-pre-review",
+      "route_class": "runtime_cross_boundary",
+      "corpus": "pilot-v1.2-visual-observation/corpus.json",
+      "truth": "pilot-v1.2-visual-observation/truth.json",
+      "provenance": "pilot-v1.2-visual-observation/provenance.json",
+      "snapshot_ref": "refs/work-engine/review-bench/visual-observation/pre-review",
+      "reconstruction_confidence": "medium",
+      "truth_sealed": true,
+      "qualification_use_allowed": true,
+      "independent_case": true,
+      "selection_reason": "Independent Site2JSON UI/runtime case with two historically accepted blocking repairs, exact executable pre/post behavior, immutable reconstructed trees, and a blinded archive. Qualification use is confidence-qualified because the transient pre-review worktree and one untracked test blob were not retained historically."
+    }
+  ],
+  "candidates": [
+    {
+      "route_class": "deterministic_local",
+      "run_id": "8ad90b4d-2541-4303-a1e0-bc7676614d87",
+      "slice_number": 1,
+      "slice_title": "Visual Evidence contract and boundary tests",
+      "inventory_state": "forensic_only",
+      "session_match_quality": "run_only",
+      "qualification_status": "unqualified_false_session_and_mixed_checkpoint",
+      "selection_reason": "Focused contract and boundary behavior with a repair iteration and an owned-file manifest; useful as a likely clean deterministic case after reconstruction.",
+      "known_limitations": [
+        "All apparent Codex session matches are later transcripts quoting the run identifier, not the original builder or reviewer session.",
+        "The first plausible post-run commit mixes the task with unrelated changes and cannot establish the reviewed checkpoint.",
+        "No immutable reviewed snapshot or verified patch reconstruction is currently available."
+      ]
+    },
+    {
+      "route_class": "runtime_cross_boundary",
+      "run_id": "roadmap-visual-evidence-20260817",
+      "slice_number": 1,
+      "slice_title": "Shared Visual Evidence authoring workspace",
+      "inventory_state": "forensic_only",
+      "session_match_quality": "run_and_slice",
+      "qualification_status": "unqualified_retrospective_session_and_mixed_checkpoint",
+      "selection_reason": "Real cross-boundary UI/runtime slice with an exact session candidate, owned-file manifest, nonzero findings, and a repair iteration.",
+      "known_limitations": [
+        "The matched Aug. 17 Codex session contains a later retrospective diagnosis of the failed slice, not the original builder or reviewer run.",
+        "The first plausible post-run commit contains 27 files and 1,956 insertions across product, tests, documentation, metrics, campaign, and skill work, so it cannot establish the reviewed checkpoint.",
+        "No original worker transcript or immutable reviewed snapshot was recovered."
+      ]
+    },
+    {
+      "route_class": "persistent_state_identity_integrity",
+      "run_id": "c6eed952-a107-4f73-85bd-6863de887240",
+      "slice_number": 9,
+      "slice_title": "Persist and recover authoritative campaign continuation state",
+      "inventory_state": "insufficient",
+      "session_match_quality": "run_and_slice",
+      "promotion_status": "promoted_as_c6-slice9-pre-review",
+      "selection_reason": "Directly exercises persistence and recovery and records two repair iterations, making it valuable if its manifest and snapshots can be recovered from the exact session.",
+      "known_limitations": ["No immutable reviewed snapshot", "Receipt lacks a task-owned file manifest"]
+    },
+    {
+      "route_class": "novel_architecture_high_consequence",
+      "run_id": "0dc2a3fc-60e1-4fa7-81c1-9b78187da264",
+      "slice_number": 1,
+      "slice_title": "Static reconnaissance-provider abstraction",
+      "inventory_state": "forensic_only",
+      "session_match_quality": "run_only",
+      "selection_reason": "Introduced a provider abstraction across skill, resolver, configuration, and roadmap boundaries and has nonzero review findings plus a repair iteration.",
+      "known_limitations": ["No immutable reviewed snapshot", "Session match is run-only"]
+    }
+  ],
+  "alternates": [
+    {
+      "route_class": "runtime_cross_boundary",
+      "run_id": "c6eed952-a107-4f73-85bd-6863de887240",
+      "slice_number": 14,
+      "slice_title": "Prove route reopening survives durable continuation",
+      "inventory_state": "promoted",
+      "promotion_status": "promoted_as_c6-slice14-route-reopening-clean",
+      "independent_case": false
+    },
+    {
+      "route_class": "persistent_state_identity_integrity",
+      "run_id": "c6eed952-a107-4f73-85bd-6863de887240",
+      "slice_number": 15,
+      "slice_title": "Preserve exact terminal cause across campaign recovery",
+      "inventory_state": "forensic_only"
+    }
+  ]
+}

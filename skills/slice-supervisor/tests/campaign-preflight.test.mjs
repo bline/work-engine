@@ -79,9 +79,15 @@ test("campaign preflight routes comparative definitions without changing kindles
   assert.equal(engineering.engineConfig.objective, "test");
   assert.equal(engineering.engineConfig.source, "engineering.yaml");
   assert.equal(engineering.engineConfig.builder.skill, "slice-builder");
+  assert.deepEqual(engineering.engineConfig.slice_completion_commit, { prompt: "enabled" });
   assert.deepEqual(engineering.engineConfig.explicit_fields, ["version", "objective"]);
   assert.ok(engineering.engineConfig.defaulted_fields.includes("builder"));
   assert.deepEqual(engineering.engineConfig.amendments, []);
+  await fs.writeFile(path.join(root, "disabled.yaml"), "version: 2\nobjective: test\nslice_completion_commit:\n  prompt: disabled\n");
+  const disabled = JSON.parse(await run(process.execPath, [preflightCli, "disabled.yaml"], { cwd: root }));
+  assert.equal(disabled.engineConfig.slice_completion_commit.prompt, "disabled");
+  await fs.writeFile(path.join(root, "bad-commit-policy.yaml"), "version: 2\nobjective: test\nslice_completion_commit:\n  prompt: automatic\n");
+  await assert.rejects(run(process.execPath, [preflightCli, "bad-commit-policy.yaml"], { cwd: root }), /prompt: enabled or disabled/);
   const authored = await fs.readFile(path.join(root, "engineering.yaml"));
   assert.deepEqual(engineering.campaignSource, {
     source: "file",
@@ -91,4 +97,33 @@ test("campaign preflight routes comparative definitions without changing kindles
     sha256: crypto.createHash("sha256").update(authored).digest("hex"),
     schemaVersion: 1,
   });
+});
+
+test("campaign preflight preserves an approved same-model review amendment", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "same-model-review-campaign-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, "campaign.yaml"), `version: 2
+objective: test
+builder:
+  context:
+    adversarial_review:
+      provider: codex
+      skill: codex-adversarial-review
+      model: gpt-5.6-sol
+      reasoning_effort: low
+      evidence_class: accepted_same_model_review
+      isolation: fresh_process
+amendments:
+  - timestamp: 2026-08-21T00:00:00-06:00
+    changed_fields: [builder.context.independent_review, builder.context.adversarial_review]
+    prior_values: {review: claude}
+    new_values: {review: codex}
+    reason: Claude quota unavailable; accepted same-model review approved.
+    human_approval: I approve Sol low as accepted same-model review.
+`);
+  const result = JSON.parse(await run(process.execPath, [preflightCli, "campaign.yaml"], { cwd: root }));
+  assert.equal(result.engineConfig.builder.context.adversarial_review.evidence_class, "accepted_same_model_review");
+  assert.equal("independent_review" in result.engineConfig.builder.context, false);
+  assert.equal(result.engineConfig.amendments.length, 1);
+  assert.match(result.engineConfig.amendments[0].human_approval, /I approve/);
 });

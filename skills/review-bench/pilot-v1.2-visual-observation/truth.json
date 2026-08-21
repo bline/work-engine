@@ -1,0 +1,51 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "site2json-visual-observation-defective-20260820",
+  "cases": [
+    {
+      "case_id": "visual-evidence-authored-observation-pre-review",
+      "expected_verdict": "rejected",
+      "findings": [
+        {
+          "truth_id": "click-without-interpretation-throws",
+          "severity": "high",
+          "blocking": true,
+          "category": "runtime-correctness",
+          "claim": "A recorded page click with no extractable interpretation is emitted as authored with a null interpretation, causing contract validation to throw instead of returning a truthful unresolved observation.",
+          "evidence": [
+            "The pre-review normalizer derives authored status from the selected target and constructs an action whenever that status is authored and a click was recorded, without requiring a selected interpretation.",
+            "The resulting null interpretation reaches the contract validator, whose authored-observation invariant rejects it; an isolated executable probe against the sealed pre-review tree reports null_interpretation_throws=true.",
+            "The post-review repair derives an effective unresolved status when interpretation is absent, and the named regression test passes in the isolated post-review checkpoint."
+          ],
+          "adjudication": "This is high severity and blocking because a supported rendered-click path can abort Visual Evidence authoring rather than produce the contract-required explicit unresolved result.",
+          "tags": ["runtime", "validation", "unresolved", "click-provenance"]
+        },
+        {
+          "truth_id": "ambiguous-graph-click-discarded",
+          "severity": "high",
+          "blocking": true,
+          "category": "evidence-integrity",
+          "claim": "An ambiguous Graph selection discards its recorded click action because action preservation is incorrectly conditioned on authored status, even when a valid selected interpretation exists.",
+          "evidence": [
+            "The pre-review normalizer emits an action only when status is authored and clickRecorded is true; ambiguous Graph routes are unresolved by design, so their click action is omitted.",
+            "An isolated executable probe against the sealed pre-review tree reports ambiguous_click_action_preserved=false.",
+            "The post-review repair conditions action creation on recorded click plus selected interpretation, and the named ambiguous-Graph regression test passes in the isolated post-review checkpoint."
+          ],
+          "adjudication": "This is high severity and blocking because it silently loses explicit user evidence and provenance on a supported ambiguous route, violating the contract's unresolved-path preservation requirement.",
+          "tags": ["graph", "ambiguity", "provenance", "state-loss"]
+        }
+      ],
+      "adjudication_notes": [
+        "The historical consolidated review identifies both findings as blocking high-severity defects and records two repair iterations.",
+        "The reconstructed pre-review tree still passes its original 10 focused tests, while the post-review tree passes 12 tests including the two named regressions.",
+        "Executable pre/post probes establish the behavior independently of the historical review prose."
+      ]
+    }
+  ],
+  "limitations": [
+    "Truth is bounded to this case contract and artifact manifest.",
+    "The pre-review tree has medium reconstruction confidence because exact transient worktree bytes were not retained.",
+    "Future evidence can correct sealed truth only through a provenance-bearing superseding artifact."
+  ]
+}

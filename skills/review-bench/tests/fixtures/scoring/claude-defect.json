@@ -1,0 +1,13 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "defective-state",
+  "result_id": "claude-defect",
+  "finding_dispositions": [
+    {"result_finding_id": "c1", "disposition": "true_positive", "truth_finding_ids": ["identity-replaced"], "evidence_valid": true, "notes": "Directly establishes the identity defect."}
+  ],
+  "missed_truth_ids": ["stale-mutates"],
+  "adjudicator": "fixture-human",
+  "limitations": []
+}

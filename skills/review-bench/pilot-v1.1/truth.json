@@ -1,0 +1,24 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "cases": [
+    {
+      "case_id": "c6-slice9-post-medium-fix-clean",
+      "expected_verdict": "accepted",
+      "findings": [],
+      "adjudication_notes": [
+        "The immutable post-fix checkpoint differs from the admitted defective tree only by the confirmed inverse ownership guard and its regression assertions.",
+        "Exact-snapshot execution passed 52 Python tests, three Node preflight tests with qualified dependency reuse, and production-script compilation.",
+        "Bounded source and caller-context adjudication confirmed that named finalization supplies campaign provenance, direct non-named append rejects continuation context, and supported named resume binds fresh campaign provenance before consuming continuation.",
+        "The source-less resume path reported in the earlier high-effort review requires malformed preflight outside the documented supported workflow and does not defeat the repaired current-write boundary.",
+        "Historical malformed shared-history rejection and two test-coverage suggestions remain intentional behavior or nonblocking observations, not confirmed defects under this case contract."
+      ]
+    }
+  ],
+  "limitations": [
+    "Clean adjudication is bounded to this case contract and artifact manifest.",
+    "The paired checkpoint controls implementation variance but is correlated with the defective case.",
+    "Future evidence can correct this sealed truth only through a provenance-bearing superseding artifact."
+  ]
+}

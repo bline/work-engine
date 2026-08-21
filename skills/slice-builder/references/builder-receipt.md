@@ -26,8 +26,19 @@ Return this object as `audit_receipt` after a slice is accepted, stopped, or fai
 - `vertical_semantic_test_passed`: true, false, or null
 - `configured_validation_requirements`: array copied from the effective config
 - `validation_requirement_results`: object mapping every requirement to `passed`, `failed`, `blocked`, or `not_applicable`, with a concise reason for `not_applicable`
-
 Checks should contain command identity, pass/fail state, and test totals when available—not transcripts.
+
+When the enabled slice-completion workflow requests a proposal, return a
+separate schema-version-2 `commit_proposal` artifact with subject, body, exact
+paths, accepted checkpoint commit/tree IDs, task-patch digest, and structured
+production provenance. Provenance names the producer and nonempty durable
+evidence references that support the proposal; its vocabulary is open and
+provider/model identity does not confer validity. Prefer the completing
+builder's useful context, but a replacement may reconstruct from sufficient
+durable accepted-checkpoint, manifest, and compact semantic evidence. Refuse or
+surface uncertainty when that evidence cannot support an accurate proposal.
+Do not place the proposal inside either receipt; it is semantic proposal data,
+not mutation authority.
 
 ## Required builder metrics
 
@@ -59,7 +70,9 @@ Use null for unavailable measurements:
 - `configured_builder_model`
 - `configured_reasoning_effort`
 - `configured_repository_evidence`: provider and skill
-- `configured_independent_review`: provider and skill
+- `configured_independent_review`: provider and skill, or
+  `configured_adversarial_review`: provider, skill, model, reasoning effort,
+  evidence class, and isolation, matching the configured review role
 - `validation_profile`
 
 These configured values are not proof of what ran. Keep them beside the actual model, effort, call, and gate measurements above so configuration and observation remain distinguishable.
@@ -67,9 +80,11 @@ These configured values are not proof of what ran. Keep them beside the actual m
 ## Required evidence and review workflow metrics
 
 - `repository_evidence_identity`: provider and skill actually used
-- `independent_review_identity`: provider and skill actually used
+- `independent_review_identity`: provider and skill actually used, or
+  `adversarial_review_identity`: configured identity plus observed
+  `builder_context_inherited`, `model_relationship`, and `independence_claimed`
 - `provider_role_metrics`: per-role attempt outcomes and available token, cost,
-  and time measurements for `repository_evidence` and `independent_review`
+  and time measurements for `repository_evidence` and the configured review role
 - `evidence_recon_calls`
 - `evidence_supplemental_calls`
 - `review_gate_calls`
@@ -113,6 +128,12 @@ Repository provider attempts must cover reported reconnaissance and
 supplemental evidence-stage calls, and independent-review provider attempts must
 cover reported review-gate calls. A provider may make several attempts within
 one semantic stage, so the reverse equality is not required.
+
+For accepted same-model review, use the `adversarial_review` role and preserve
+configured and observed model, reasoning effort, fresh-process isolation,
+`builder_context_inherited: false`, `model_relationship: same_model`, and
+`independence_claimed: false`. It does not satisfy an explicitly independent
+review requirement.
 Actual role identities must match the normalized effective configuration. A
 provider change requires a recorded configuration amendment; direct-source or
 coverage fallback within a provider is represented by evidence modes and

@@ -1,0 +1,82 @@
+{
+  "artifact_type": "review_bench_corpus_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "protocol": {
+    "name": "evidence-calibrated-review",
+    "version": "1.0",
+    "prompt": "Act as a read-only independent verification reviewer. Verify every material claim from the supplied artifacts, check one plausible contradictory path, and report material uncertainty rather than assuming it away.",
+    "verdicts": ["accepted", "rejected", "blocked_unverified", "stale_snapshot"],
+    "severities": ["critical", "high", "medium", "low"],
+    "confidence_scale": ["high", "medium", "low"]
+  },
+  "cases": [
+    {
+      "case_id": "defective-state",
+      "title": "Restore durable state without losing identity",
+      "review_class": "implementation",
+      "risk": "high",
+      "change_profile": {
+        "route_class": "persistent_state_identity_integrity",
+        "semantic_domains": ["persistence", "identity", "integrity"],
+        "topologies": ["cross_module"],
+        "novelty": "pattern_extension",
+        "evidence_types": ["static_source", "deterministic_test", "persisted_artifact"],
+        "consequences": ["state_corrupting"]
+      },
+      "contract": {
+        "goal": "Restore durable state with stable identity and reject stale state.",
+        "acceptance_criteria": [
+          "Reload preserves the original identity.",
+          "Stale state is rejected before mutation."
+        ],
+        "excluded_scope": ["User interface presentation"]
+      },
+      "snapshot": {
+        "kind": "checkpoint",
+        "identity": "refs/work-engine/checkpoints/fixture/defective",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "reconstruction_confidence": "high",
+        "limitations": []
+      },
+      "artifacts": [
+        {"path": "src/state.py", "role": "production state owner"},
+        {"path": "tests/test_state.py", "role": "deterministic state tests"}
+      ],
+      "deterministic_evidence": ["Focused tests passed before review."],
+      "limitations": []
+    },
+    {
+      "case_id": "clean-closure",
+      "title": "Closure after state repair",
+      "review_class": "closure",
+      "risk": "medium",
+      "change_profile": {
+        "route_class": "deterministic_local",
+        "semantic_domains": ["tests_docs", "identity"],
+        "topologies": ["local"],
+        "novelty": "established_pattern",
+        "evidence_types": ["static_source", "deterministic_test"],
+        "consequences": ["recoverable"]
+      },
+      "contract": {
+        "goal": "Verify that the two confirmed state defects were repaired.",
+        "acceptance_criteria": ["Both regressions are covered and production behavior is corrected."],
+        "excluded_scope": ["Unrelated state-store refactoring"]
+      },
+      "snapshot": {
+        "kind": "checkpoint",
+        "identity": "refs/work-engine/checkpoints/fixture/clean",
+        "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "reconstruction_confidence": "high",
+        "limitations": []
+      },
+      "artifacts": [
+        {"path": "src/state.py", "role": "repaired production state owner"},
+        {"path": "tests/test_state.py", "role": "repair regression tests"}
+      ],
+      "deterministic_evidence": ["Focused and full tests passed after repair."],
+      "limitations": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Bench"
+  short_description: "Compare reviewer quality and harness diversity"
+  default_prompt: "Use $review-bench to build or evaluate a blinded code-review comparison corpus."

@@ -1,0 +1,50 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "case_id": "c6-slice9-pre-review",
+  "result_id": "sol-codex-low-c6-slice9-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "codex-subagent-isolated-archive",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem", "shell", "python-runtime"],
+    "reasoning_effort": "low",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "961bb5ba2d5cd60333e03e2ad388d4b6e7c3aee4ae258124e6e2c57ef215d258",
+  "verdict": "rejected",
+  "findings": [
+    {
+      "finding_id": "F-001",
+      "severity": "high",
+      "blocking": true,
+      "category": "persistence_scope_integrity",
+      "claim": "The current-write validator incorrectly permits continuation_context on resumable receipts that are not sourced from a named campaign, violating the required ownership boundary and allowing named-campaign continuation state into unrelated durable writes.",
+      "evidence": [
+        "skills/slice-supervisor/references/receipt-schema.md:104-107 limits the projection to current named-campaign resumable writes and requires other terminal cases to omit it.",
+        "skills/slice-supervisor/SKILL.md:139-145 distinguishes named-campaign continuation projection from non-named terminal receipt handling.",
+        "skills/slice-supervisor/scripts/append_metrics.py:610-619 computes named_campaign but uses it only to require missing context for named resumable writes; the omission check applies only when the receipt is nonresumable, so an unnamed resumable receipt carrying continuation_context falls through and is returned as valid at line 620.",
+        "skills/slice-supervisor/tests/test_append_metrics.py:477-504 checks missing context for a named resumable write and context on a nonresumable write, but does not exercise the contradictory unnamed-resumable-with-context path.",
+        "Contradictory path checked with an in-memory schema-v4 accepted receipt having more_in_scope_work_remains=true, valid continuation_context, and no producer_metrics.campaign_source: validate_current_write returned the record successfully. The failure mechanism is therefore executable, not merely inferred from control flow."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Review was restricted to the nine listed snapshot artifacts and case packet; no repository history, unrelated files, or internet sources were inspected.",
+    "Write-producing test suites were not run because the review was required to remain read-only; the acceptance-critical branch was verified with a bytecode-disabled, in-memory validator invocation.",
+    "The supplied artifact hashes matched the case packet."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T17:25:21-06:00",
+    "completed_at": "2026-08-20T17:26:49-06:00",
+    "wall_clock_seconds": 88
+  }
+}

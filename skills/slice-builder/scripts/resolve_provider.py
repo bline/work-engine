@@ -29,6 +29,12 @@ DEFAULT_REVIEW_SKILL = LEGACY_DEFAULT_SKILL
 REVIEW_PROVIDER_ADAPTERS = {
     DEFAULT_REVIEW_PROVIDER: DEFAULT_REVIEW_SKILL,
 }
+ADVERSARIAL_REVIEW_PROVIDER = "codex"
+ADVERSARIAL_REVIEW_SKILL = "codex-adversarial-review"
+ADVERSARIAL_REVIEW_MODEL = "gpt-5.6-sol"
+ADVERSARIAL_REVIEW_REASONING_EFFORT = "low"
+ADVERSARIAL_REVIEW_EVIDENCE_CLASS = "accepted_same_model_review"
+ADVERSARIAL_REVIEW_ISOLATION = "fresh_process"
 
 
 class ProviderResolutionError(ValueError):
@@ -113,7 +119,9 @@ def _resolve_v1(context: dict[str, Any]) -> dict[str, Any]:
 
 def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
     _reject_unknown(
-        context, {"repository_evidence", "independent_review"}, "builder.context"
+        context,
+        {"repository_evidence", "independent_review", "adversarial_review"},
+        "builder.context",
     )
     repository = _resolve_role(
         context.get("repository_evidence", {}),
@@ -122,19 +130,50 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
         default_skill=DEFAULT_REPOSITORY_SKILL,
         adapters=REPOSITORY_PROVIDER_ADAPTERS,
     )
-    review = _resolve_role(
-        context.get("independent_review", {}),
-        path="builder.context.independent_review",
-        default_provider=DEFAULT_REVIEW_PROVIDER,
-        default_skill=DEFAULT_REVIEW_SKILL,
-        adapters=REVIEW_PROVIDER_ADAPTERS,
-    )
-    return {
+    if "independent_review" in context and "adversarial_review" in context:
+        raise ProviderResolutionError(
+            "builder.context must configure exactly one review role, not both "
+            "independent_review and adversarial_review"
+        )
+    result = {
         "config_version": 2,
         "compatibility": "split-roles",
         "repository_evidence": repository,
-        "independent_review": review,
     }
+    if "adversarial_review" not in context:
+        result["independent_review"] = _resolve_role(
+            context.get("independent_review", {}),
+            path="builder.context.independent_review",
+            default_provider=DEFAULT_REVIEW_PROVIDER,
+            default_skill=DEFAULT_REVIEW_SKILL,
+            adapters=REVIEW_PROVIDER_ADAPTERS,
+        )
+        return result
+
+    review = _require_object(
+        context["adversarial_review"], "builder.context.adversarial_review"
+    )
+    fields = {
+        "provider", "skill", "model", "reasoning_effort", "evidence_class", "isolation"
+    }
+    _reject_unknown(review, fields, "builder.context.adversarial_review")
+    expected = {
+        "provider": ADVERSARIAL_REVIEW_PROVIDER,
+        "skill": ADVERSARIAL_REVIEW_SKILL,
+        "model": ADVERSARIAL_REVIEW_MODEL,
+        "reasoning_effort": ADVERSARIAL_REVIEW_REASONING_EFFORT,
+        "evidence_class": ADVERSARIAL_REVIEW_EVIDENCE_CLASS,
+        "isolation": ADVERSARIAL_REVIEW_ISOLATION,
+    }
+    for field, expected_value in expected.items():
+        value = review.get(field)
+        if value != expected_value:
+            raise ProviderResolutionError(
+                f"builder.context.adversarial_review.{field} must be "
+                f"'{expected_value}'"
+            )
+    result["adversarial_review"] = expected
+    return result
 
 
 def resolve_builder_context(version: int, context: dict[str, Any]) -> dict[str, Any]:

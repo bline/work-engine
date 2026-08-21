@@ -1,0 +1,80 @@
+{
+  "artifact_type": "review_bench_corpus_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-slice14-clean-20260820",
+  "protocol": {
+    "name": "evidence-calibrated-review",
+    "version": "1.2",
+    "prompt": "Act as a read-only independent verification reviewer. Treat material claims as hypotheses, verify them from the supplied snapshot, and check the most plausible contradictory path. Report acceptance-critical uncertainty as blocked_unverified instead of assuming it away. Stop once material claims reach high confidence. Do not treat builder rationale or passing tests alone as proof. Before assigning blocking status, trace the relevant producer, validation or ownership boundary, supported caller, and consumer. Separate supported production reachability from malformed or contract-excluded direct invocation. A bounded practical consequence does not make an explicit acceptance-criterion violation nonblocking; report severity and blocking as separate judgments. Return result schema v2. Put only defects or material risks in findings. Put evidence-backed acceptance conclusions in verified_claims and identify the acceptance criteria they support. Put real non-defect improvements or out-of-contract notes in observations. Verified claims and observations have no severity or blocking label. Classify each claim once.",
+    "verdicts": ["accepted", "rejected", "blocked_unverified", "stale_snapshot"],
+    "severities": ["critical", "high", "medium", "low"],
+    "confidence_scale": ["high", "medium", "low"]
+  },
+  "cases": [
+    {
+      "case_id": "c6-slice14-route-reopening-clean",
+      "title": "Prove route reopening survives durable continuation",
+      "review_class": "implementation",
+      "risk": "high",
+      "change_profile": {
+        "route_class": "persistent_state_identity_integrity",
+        "semantic_domains": ["persistence", "identity", "integrity", "lifecycle"],
+        "topologies": ["cross_module"],
+        "novelty": "pattern_extension",
+        "evidence_types": ["static_source", "deterministic_test", "persisted_artifact", "historical_reconstruction"],
+        "consequences": ["workflow_blocking", "state_corrupting"],
+        "changed_files": 1,
+        "changed_lines": 96
+      },
+      "contract": {
+        "goal": "Add one reference lifecycle proof that new evidence invalidates an accepted successor boundary, records the complete route revision durably, preserves the exact compact continuation handoff, and permits a later successor to consume that handoff and complete.",
+        "acceptance_criteria": [
+          "The revised successor records one complete route revision durably in worker_metrics with a non-default replacement workflow route.",
+          "Compact continuation preserves the useful predecessor handoff consequence while excluding route-revision and workflow-route bookkeeping.",
+          "Resume returns the exact compact handoff without mutating durable campaign history.",
+          "Exactly contiguous campaign identities lead to a later successor that consumes the handoff and completes, after which resume is nonresumable."
+        ],
+        "excluded_scope": [
+          "Changing production finalization, append validation, or resume behavior",
+          "Human-authority intervention and later continuation",
+          "Failed and stopped terminal semantics",
+          "Mid-slice and partial-artifact recovery"
+        ]
+      },
+      "snapshot": {
+        "kind": "reconstructed",
+        "identity": "refs/work-engine/review-bench/c6-slice14/post-review",
+        "digest": "cdbcd3dac822540395c8cded09e50621181f83a626f6be090f71a2793c0128e6",
+        "reconstruction_confidence": "high",
+        "limitations": [
+          "The immutable checkpoint is artifact-bounded: it overlays the exact reviewed test, resume consumer, and supporting fixtures on the recorded eb4f14f7 baseline rather than reconstructing unrelated dirty workspace files.",
+          "The reviewed test and resume-test hashes match hashes recorded by the original slice immediately after review.",
+          "This case shares campaign history and production machinery with c6 slice 9 and must not be counted as an independent real-world change."
+        ],
+        "repository": "/home/bline/code/work-engine",
+        "tree_oid": "46f4b4b992cec34dc98c3168b518f67135e8a65a"
+      },
+      "artifacts": [
+        {"path": "skills/slice-supervisor/tests/test_reference_campaign.py", "role": "new route-reopening lifecycle proof", "sha256": "19d3d5ac207ae5a2ca132d64d243d9198a74cb090d34bd365eae0b1f04ccea51"},
+        {"path": "skills/slice-supervisor/scripts/assemble_receipt.py", "role": "durable receipt assembly producer", "sha256": "1edefa4428ed9d43a88e29733d54848da21be730b4acd41ed272388a57f73f1f"},
+        {"path": "skills/slice-supervisor/scripts/append_metrics.py", "role": "durable validation and append owner", "sha256": "0a4fcf2affd14af801cc03df831966e60e1330bedb92637511e74e9c3b336bc9"},
+        {"path": "skills/slice-supervisor/scripts/finalize_receipt.py", "role": "audit and compact-continuation finalizer", "sha256": "aaf3f92943be6f38e9c6e4d7a47838c100525c1e7034d1bb45a88bcd6e0c94cc"},
+        {"path": "skills/slice-supervisor/scripts/resume_campaign.py", "role": "read-only durable handoff consumer", "sha256": "61f371b88666f5acbbfc18e5ff13ff89fe04409756b68d808731d4e4894e320b"},
+        {"path": "skills/slice-supervisor/tests/test_assemble_receipt.py", "role": "semantic and telemetry fixture source", "sha256": "8eb66671161ad1ea0cb117372c5e34b672bd49d3b5d062a42f1696bbb42d4541"},
+        {"path": "skills/slice-supervisor/tests/test_append_metrics.py", "role": "write-boundary fixture and validation evidence", "sha256": "0c00dca79167eaedcd5f9732f83e7f27a55b80020c58866c377db194bdfe5b53"},
+        {"path": "skills/slice-builder/scripts/run_gate.py", "role": "deterministic gate dependency loaded by the reference module", "sha256": "c8fee4d50fc5689c253fb1ef76a4b86159a3c8a916b76db9a764fbe5c0ed0dba"}
+      ],
+      "deterministic_evidence": [
+        "The immutable pre-review and post-review refs differ by exactly one file and 96 inserted lines.",
+        "The focused route-reopening test passes from an isolated archive of the exact post-review checkpoint.",
+        "All five historical reference-campaign lifecycle tests pass from the same isolated archive.",
+        "Python compilation succeeds for the assemble, append, finalize, and resume production scripts in the isolated checkpoint."
+      ],
+      "limitations": [
+        "Clean truth is bounded to the stated route-reopening contract and artifact manifest, not every defect in the repository.",
+        "The original reviewer was instructed not to execute tests; benchmark reviewers may use the sealed deterministic evidence and their configured tools.",
+        "The case is correlated with the existing c6 slice 9 pair and is descriptive evidence, not another independent sample."
+      ]
+    }
+  ]
+}

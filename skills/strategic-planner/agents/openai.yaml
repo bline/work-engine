@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategic Planner"
+  short_description: "Reconcile execution evidence with product strategy"
+  default_prompt: "Use $strategic-planner to reassess the roadmap from current durable evidence."

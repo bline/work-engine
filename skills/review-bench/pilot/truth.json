@@ -1,0 +1,82 @@
+{
+  "artifact_type": "review_bench_truth_v2",
+  "schema_version": 2,
+  "bench_id": "work-engine-historical-pilot-20260820",
+  "supersedes": {
+    "artifact_type": "review_bench_truth_v1",
+    "path": "truth.v1.json",
+    "sha256": "cdb51dc9b6ea3c6338ea1f0ab9274ca038ffa545b85308ff4058c0aebf447a62"
+  },
+  "adjudication_amendments": [
+    {
+      "amendment_id": "caller-context-correction-20260820",
+      "adjudicated_at": "2026-08-20T18:30:00-06:00",
+      "adjudicator": "codex-root-with-user-confirmed-caller-context-review",
+      "reason": "Caller analysis established that the documented direct non-named append path reaches the invalid current-write state and therefore violates an explicit case acceptance criterion, even though supported named-campaign recovery bounds the downstream consequence.",
+      "evidence": [
+        "The pre-review append_metrics.main directly invokes validate_current_write before durable append for the documented non-named terminal-receipt path.",
+        "The pre-review validator accepts accepted remaining-work continuation_context when producer_metrics.campaign_source is absent.",
+        "The named finalizer cannot produce this state because assemble_receipt always projects a validated campaignSource before append.",
+        "Supported resume uses fresh successful named-campaign preflight and rejects the invalid record on campaign-source mismatch; the source-less recovery reproduction used malformed preflight outside the documented workflow.",
+        "The case contract explicitly requires continuation context to belong only to named-campaign writes and assigns current-write validation to one owner."
+      ],
+      "changes": [
+        {
+          "case_id": "c6-slice9-pre-review",
+          "finding_id": null,
+          "field": "expected_verdict",
+          "before": "accepted",
+          "after": "rejected"
+        },
+        {
+          "case_id": "c6-slice9-pre-review",
+          "finding_id": "continuation-allowed-without-named-campaign",
+          "field": "finding.blocking",
+          "before": false,
+          "after": true
+        },
+        {
+          "case_id": "c6-slice9-pre-review",
+          "finding_id": "continuation-allowed-without-named-campaign",
+          "field": "finding.adjudication",
+          "before": "Confirmed by source comparison and executable pre/post reproduction; retained as a nonblocking ownership defect under the accepted slice contract.",
+          "after": "Confirmed by source comparison, executable pre/post reproduction, and supported-caller analysis. The defect is medium severity because ordinary named recovery rejects it, but it blocks this case because the documented direct append boundary violates an explicit acceptance criterion."
+        }
+      ],
+      "limitations": [
+        "This correction changes gold adjudication, not the recorded reviewer outputs or their evidence-calibrated-review/1.0 protocol identity."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "c6-slice9-pre-review",
+      "expected_verdict": "rejected",
+      "findings": [
+        {
+          "truth_id": "continuation-allowed-without-named-campaign",
+          "severity": "medium",
+          "blocking": true,
+          "category": "state-ownership",
+          "claim": "The current-write validator accepts continuation_context on a receipt without authoritative producer_metrics.campaign_source, allowing non-named writes to claim named-campaign continuation state.",
+          "evidence": [
+            "In the reconstructed append_metrics.py, validate_current_write requires context for resumable named campaigns but has no inverse check rejecting supplied context when campaign_source is absent.",
+            "A direct execution against the checkpoint reproduced successful validation of an accepted remaining-work receipt containing continuation_context but no campaign_source.",
+            "The recorded repair adds the inverse validation and its regression test; the same execution against the repaired implementation rejects the receipt."
+          ],
+          "adjudication": "Confirmed by source comparison, executable pre/post reproduction, and supported-caller analysis. The defect is medium severity because ordinary named recovery rejects it, but it blocks this case because the documented direct append boundary violates an explicit acceptance criterion.",
+          "tags": ["persistence", "named-campaign", "current-write-validation", "negative-path"]
+        }
+      ],
+      "adjudication_notes": [
+        "The historical high claim that malformed records from other runs should be ignored was rejected: the accepted contract intentionally treated any malformed shared JSONL history as an unsafe fail-closed condition.",
+        "Two later low findings requested missing regression coverage for already-correct behavior; they are nonblocking observations rather than defects in this pre-review truth set.",
+        "Caller-context adjudication separates bounded practical severity from contract blocking: the supported direct append caller reaches the ownership violation, while supported named resume rejects the resulting source mismatch."
+      ]
+    }
+  ],
+  "limitations": [
+    "Truth covers the acceptance contract and recorded review boundary, not every possible defect in the repository.",
+    "The original sealed v1 judgment is preserved by path and digest; this v2 artifact corrects it through an explicit adjudication amendment."
+  ]
+}

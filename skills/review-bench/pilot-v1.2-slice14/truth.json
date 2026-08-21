@@ -1,0 +1,24 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-slice14-clean-20260820",
+  "cases": [
+    {
+      "case_id": "c6-slice14-route-reopening-clean",
+      "expected_verdict": "accepted",
+      "findings": [],
+      "adjudication_notes": [
+        "The source transcript contains the exact additive patch and records the post-review test hash as 19d3d5ac207ae5a2ca132d64d243d9198a74cb090d34bd365eae0b1f04ccea51; the sealed checkpoint reproduces it.",
+        "The recorded pre-slice-15 resume-test hash 7a6aeb89e0c5f217603cae456b32232f25d31763cb9e9c13c5d8a2aac2005df4 also matches the checkpoint, excluding later terminal-state work from the reviewed snapshot.",
+        "Exact-snapshot execution passed the focused route-reopening test, all five reference lifecycle tests, and production-script compilation.",
+        "Static and runtime evidence establish durable route-revision ownership, compact handoff separation, read-only exact resume, contiguous identity, later handoff consumption, and completed nonresumability.",
+        "The historical review's low observation correctly describes two assertions as regression guards but identifies no violated acceptance criterion or material defect."
+      ]
+    }
+  ],
+  "limitations": [
+    "Truth is bounded to this case contract and artifact manifest.",
+    "This case is correlated with the c6 slice 9 campaign cases and must not be treated as an independent sample.",
+    "Future evidence can correct sealed truth only through a provenance-bearing superseding artifact."
+  ]
+}

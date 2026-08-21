@@ -1,0 +1,11 @@
+{
+  "artifact_type": "review_bench_scoring_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "sol-codex-high-c6-slice9-clean-run1",
+  "finding_dispositions": [],
+  "missed_truth_ids": [],
+  "adjudicator": "codex-root-against-sealed-clean-truth-and-direct-source",
+  "limitations": []
+}

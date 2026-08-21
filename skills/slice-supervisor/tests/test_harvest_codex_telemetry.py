@@ -59,6 +59,64 @@ class TelemetryHarvesterTest(unittest.TestCase):
         self.assertEqual([], measurements["peak_context_tokens"]["provenance"])
         self.assertEqual(3, measurements["input_tokens"]["provenance"][0]["ordinal"])
         self.assertEqual(4, ingress["builder_runtime"]["binding_provenance"]["terminal_event"]["ordinal"])
+        self.assertEqual([], ingress["builder_runtime"]["binding_provenance"]["interrupted_turns"])
+
+    def test_interrupted_intermediate_turn_preserves_terminal_truth(self) -> None:
+        child = records(COMPLETE)
+        child.insert(
+            1,
+            {
+                "timestamp": "2026-08-18T18:00:01Z",
+                "type": "event_msg",
+                "payload": {"type": "task_started", "turn_id": "interrupted-turn", "started_at": 90},
+            },
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = write_records(Path(temporary), "interrupted.jsonl", child)
+            ingress = self.harvest([path])
+
+        runtime = ingress["builder_runtime"]
+        self.assertEqual("child-turn", runtime["source_identity"]["terminal_turn_id"])
+        interrupted = runtime["binding_provenance"]["interrupted_turns"]
+        self.assertEqual(1, len(interrupted))
+        self.assertEqual("interrupted-turn", interrupted[0]["turn_id"])
+        self.assertEqual("interrupted", interrupted[0]["state"])
+        self.assertEqual("unavailable", interrupted[0]["completion_availability"])
+        self.assertEqual([], interrupted[0]["completion_provenance"])
+        measurements = runtime["measurements"]
+        self.assertEqual(2, measurements["turn_count"]["value"])
+        self.assertEqual(2, len(measurements["turn_count"]["provenance"]))
+        self.assertEqual(13, measurements["wall_clock_seconds"]["value"])
+        self.assertEqual(2, len(measurements["wall_clock_seconds"]["provenance"]))
+        self.assertEqual(120, measurements["input_tokens"]["value"])
+
+    def test_duplicate_and_unknown_turn_events_fail_closed(self) -> None:
+        for name, mutate, message in (
+            (
+                "duplicate-start",
+                lambda child: child.insert(2, copy.deepcopy(child[1])),
+                "duplicate turn ids",
+            ),
+            (
+                "unknown-completion",
+                lambda child: child[-1]["payload"].update(turn_id="unknown-turn"),
+                "unknown turn",
+            ),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                child = records(COMPLETE)
+                mutate(child)
+                path = write_records(Path(temporary), f"{name}.jsonl", child)
+                with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, message):
+                    self.harvest([path])
+
+    def test_trailing_event_after_latest_completion_fails_closed(self) -> None:
+        child = records(COMPLETE)
+        child.append(copy.deepcopy(child[2]))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = write_records(Path(temporary), "trailing.jsonl", child)
+            with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "does not end"):
+                self.harvest([path])
 
     def test_missing_child_fails_closed(self) -> None:
         with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "found 0"):
@@ -78,6 +136,30 @@ class TelemetryHarvesterTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = write_records(Path(temporary), "mismatch.jsonl", child)
             with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "does not corroborate"):
+                self.harvest([path])
+
+    def test_missing_session_identity_fails_closed(self) -> None:
+        child = copy.deepcopy(records(COMPLETE))
+        child[0]["payload"].pop("id")
+        with tempfile.TemporaryDirectory() as temporary:
+            path = write_records(Path(temporary), "missing-id.jsonl", child)
+            with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "nonempty id"):
+                self.harvest([path])
+
+    def test_nonmonotonic_wall_clock_fails_closed(self) -> None:
+        child = copy.deepcopy(records(COMPLETE))
+        child[-1]["payload"]["completed_at"] = 99
+        with tempfile.TemporaryDirectory() as temporary:
+            path = write_records(Path(temporary), "reversed-clock.jsonl", child)
+            with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "wall-clock"):
+                self.harvest([path])
+
+    def test_nonfinite_rollout_number_fails_closed(self) -> None:
+        child = copy.deepcopy(records(COMPLETE))
+        child[-1]["payload"]["completed_at"] = float("nan")
+        with tempfile.TemporaryDirectory() as temporary:
+            path = write_records(Path(temporary), "nan-clock.jsonl", child)
+            with self.assertRaisesRegex(HARVESTER.TelemetryIngressError, "non-finite"):
                 self.harvest([path])
 
     def test_agent_path_alone_cannot_bind_interacted_event(self) -> None:

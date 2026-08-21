@@ -1,0 +1,105 @@
+{
+  "artifact_type": "review_bench_result_v2",
+  "schema_version": 2,
+  "bench_id": "work-engine-slice14-clean-20260820",
+  "case_id": "c6-slice14-route-reopening-clean",
+  "result_id": "claude-cli-medium-slice14-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "harness": "claude-cli-isolated-archive",
+    "inference_family": "claude-sonnet-5",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem", "shell", "python-runtime"],
+    "session_id": "684437de-d6ab-499c-81d1-e5a97416f194",
+    "reasoning_effort": "medium",
+    "review_protocol": "evidence-calibrated-review/1.2",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "cdbcd3dac822540395c8cded09e50621181f83a626f6be090f71a2793c0128e6",
+  "verdict": "accepted",
+  "findings": [],
+  "verified_claims": [
+    {
+      "claim_id": "VC-001",
+      "claim": "The revised successor sets a complete route revision and a non-default evidence-guided-replan route, passes through production assembly and append, and is verified again from the durable JSONL record.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py:361-391 constructs the route revision, updates worker_metrics, finalizes it, and checks the returned receipt.",
+        "skills/slice-supervisor/tests/test_reference_campaign.py:439-441 checks the route revision on the JSONL record read from disk.",
+        "skills/slice-supervisor/tests/test_append_metrics.py:74-76 establishes direct as the default workflow route; the five-test reference suite passed in the isolated snapshot."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "The revised successor records one complete route revision durably in worker_metrics with a non-default replacement workflow route."
+      ]
+    },
+    {
+      "claim_id": "VC-002",
+      "claim": "Production continuation projection preserves useful durable decisions while structurally excluding route-revision and workflow-route bookkeeping.",
+      "evidence": [
+        "skills/slice-supervisor/scripts/finalize_receipt.py:27-59 limits continuation projection to the compact continuation fields.",
+        "skills/slice-supervisor/tests/test_reference_campaign.py:378-397 appends the useful predecessor consequence and asserts route bookkeeping is absent from the persisted continuation."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Compact continuation preserves the useful predecessor handoff consequence while excluding route-revision and workflow-route bookkeeping."
+      ]
+    },
+    {
+      "claim_id": "VC-003",
+      "claim": "Resume reconstructs the exact compact handoff and does not mutate the durable history.",
+      "evidence": [
+        "skills/slice-supervisor/scripts/resume_campaign.py:53-99 reads and validates history without a write path.",
+        "skills/slice-supervisor/tests/test_reference_campaign.py:403-408 compares file bytes before and after resume and compares the resumed handoff with the exact finalized handoff."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Resume returns the exact compact handoff without mutating durable campaign history."
+      ]
+    },
+    {
+      "claim_id": "VC-004",
+      "claim": "A third contiguous successor consumes the revised handoff, completes, and becomes nonresumable with no next identity or handoff.",
+      "evidence": [
+        "skills/slice-supervisor/tests/test_reference_campaign.py:410-437 builds slice 3 from the resumed handoff, checks predecessor consumption, verifies completed nonresumability, and checks identities 1, 2, and 3.",
+        "skills/slice-supervisor/scripts/resume_campaign.py:76-77 maps objective completion to the production nonresumable result."
+      ],
+      "confidence": "high",
+      "acceptance_criteria": [
+        "Exactly contiguous campaign identities lead to a later successor that consumes the handoff and completes, after which resume is nonresumable."
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-001",
+      "category": "scope_integrity",
+      "claim": "All eight manifested artifact hashes matched the supplied snapshot.",
+      "evidence": ["A bounded SHA-256 check of all case.json artifacts returned a match for every listed file."],
+      "confidence": "high"
+    },
+    {
+      "observation_id": "OBS-002",
+      "category": "regression_safety",
+      "claim": "The lifecycle-adjacent production and reference suites passed without failures.",
+      "evidence": ["The reviewer ran 45 adjacent tests and five reference-campaign tests in the isolated snapshot; all 50 passed."],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "No Git history or provenance was used; the pre-review baseline was not independently reconstructed by the reviewer.",
+    "Coverage was bounded to the supplied artifact manifest and directly imported files.",
+    "Tests ran only in the supplied Python 3.14 environment."
+  ],
+  "timing": {
+    "started_at": "2026-08-21T01:28:37Z",
+    "completed_at": "2026-08-21T01:31:02Z",
+    "wall_clock_seconds": 145.073,
+    "cost_usd": 1.1337687,
+    "input_tokens": 38,
+    "output_tokens": 12298
+  }
+}

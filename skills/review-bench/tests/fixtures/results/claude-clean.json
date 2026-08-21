@@ -1,0 +1,26 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "clean-closure",
+  "result_id": "claude-clean",
+  "attempt_id": "attempt-1",
+  "reviewer": {
+    "provider": "anthropic",
+    "model": "claude",
+    "harness": "claude-cli",
+    "inference_family": "claude",
+    "fresh_context": true,
+    "tool_access": ["read", "grep"],
+    "reasoning_effort": "not_configurable",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "verdict": "accepted",
+  "findings": [],
+  "limitations": [],
+  "timing": {"started_at": "2026-08-20T00:02:00Z", "completed_at": "2026-08-20T00:03:00Z", "wall_clock_seconds": 60, "input_tokens": 1200, "output_tokens": 200}
+}

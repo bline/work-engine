@@ -1,0 +1,36 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "fixture-bench",
+  "case_id": "defective-state",
+  "result_id": "claude-defect",
+  "attempt_id": "attempt-1",
+  "reviewer": {
+    "provider": "anthropic",
+    "model": "claude",
+    "harness": "claude-cli",
+    "inference_family": "claude",
+    "fresh_context": true,
+    "tool_access": ["read", "grep"],
+    "reasoning_effort": "not_configurable",
+    "review_protocol": "evidence-calibrated-review/1.0",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verdict": "rejected",
+  "findings": [
+    {
+      "finding_id": "c1",
+      "severity": "high",
+      "blocking": true,
+      "category": "identity",
+      "claim": "Reload replaces the durable identity.",
+      "evidence": ["src/state.py:42 allocates a new identifier during reload."],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [],
+  "timing": {"started_at": "2026-08-20T00:00:00Z", "completed_at": "2026-08-20T00:01:00Z", "wall_clock_seconds": 60, "input_tokens": 1500, "output_tokens": 300}
+}

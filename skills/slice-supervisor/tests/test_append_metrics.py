@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import os
@@ -150,7 +151,130 @@ def make_config_v2(record: dict[str, object]) -> None:
     )
 
 
+def make_same_model_review_v2(record: dict[str, object]) -> None:
+    make_config_v2(record)
+    configured = {
+        "provider": "codex",
+        "skill": "codex-adversarial-review",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "low",
+        "evidence_class": "accepted_same_model_review",
+        "isolation": "fresh_process",
+    }
+    context = record["engine_config"]["builder"]["context"]
+    del context["independent_review"]
+    context["adversarial_review"] = configured
+    metrics = record["worker_metrics"]
+    del metrics["independent_review_identity"]
+    metrics["adversarial_review_identity"] = {
+        **configured,
+        "builder_context_inherited": False,
+        "model_relationship": "same_model",
+        "independence_claimed": False,
+    }
+    metrics["provider_role_metrics"]["adversarial_review"] = (
+        metrics["provider_role_metrics"].pop("independent_review")
+    )
+
+
 class AppendMetricsCompatibilityTest(unittest.TestCase):
+    def test_same_model_review_provenance_is_exact_and_not_independence(self) -> None:
+        record = base_record(4)
+        make_same_model_review_v2(record)
+        APPEND_METRICS.validate(record)
+        for field, value in (
+            ("builder_context_inherited", True),
+            ("model_relationship", "independent_model"),
+            ("independence_claimed", True),
+        ):
+            invalid = copy.deepcopy(record)
+            invalid["worker_metrics"]["adversarial_review_identity"][field] = value
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError):
+                    APPEND_METRICS.validate(invalid)
+
+    def test_same_model_review_cannot_satisfy_independent_requirement(self) -> None:
+        record = base_record(4)
+        make_same_model_review_v2(record)
+        record["engine_config"]["validation"]["requirements"] = ["independent_review"]
+        record["validation_requirement_results"] = {"independent_review": "blocked"}
+        with self.assertRaisesRegex(ValueError, "cannot satisfy"):
+            APPEND_METRICS.validate(record)
+
+    def test_completion_projection_accepts_open_provenance_and_rejects_weak_evidence(self) -> None:
+        checkpoint = {
+            "checkpoint_commit_oid": "a" * 40,
+            "checkpoint_tree_oid": "b" * 40,
+            "task_patch_digest": "c" * 64,
+        }
+        proposal = {
+            "schema_version": 2,
+            "subject": "feat: preserve authorized change",
+            "body": "",
+            "paths": ["task.txt"],
+            **checkpoint,
+            "provenance": {
+                "schema_version": 1,
+                "producer": "replacement builder from durable evidence",
+                "evidence": [
+                    {"kind": "accepted task patch", "digest": "c" * 64},
+                    {"kind": "terminal continuation context", "digest": "e" * 64},
+                ],
+            },
+        }
+        completion = {
+            "schema_version": 1,
+            "state": "declined",
+            "repository": "/tmp/repository",
+            "run_id": "test-run",
+            "slice_number": 1,
+            "proposal": proposal,
+            "proposal_digest": __import__("hashlib").sha256(
+                json.dumps(proposal, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest(),
+            "expected_branch": "main",
+            "expected_head_oid": "f" * 40,
+            "commit_oid": None,
+            "reason": "user declined",
+        }
+        record = {"status": "accepted", "run_id": "test-run", "slice_number": 1}
+        APPEND_METRICS.validate_completion_commit_projection(completion, record, checkpoint)
+
+        retained = copy.deepcopy(completion)
+        retained["proposal"]["provenance"] = {
+            "schema_version": 1,
+            "producer": "completing builder with retained context",
+            "evidence": [{"kind": "accepted task patch", "digest": "c" * 64}],
+        }
+        retained["proposal_digest"] = __import__("hashlib").sha256(
+            json.dumps(retained["proposal"], sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        APPEND_METRICS.validate_completion_commit_projection(retained, record, checkpoint)
+        self.assertNotEqual(completion["proposal_digest"], retained["proposal_digest"])
+
+        weak = copy.deepcopy(completion)
+        weak["proposal"]["provenance"]["evidence"] = []
+        weak["proposal_digest"] = __import__("hashlib").sha256(
+            json.dumps(weak["proposal"], sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        with self.assertRaisesRegex(ValueError, "nonempty array"):
+            APPEND_METRICS.validate_completion_commit_projection(
+                weak, record, checkpoint
+            )
+
+        for field, replacement in (
+            ("checkpoint_commit_oid", "1" * 40),
+            ("checkpoint_tree_oid", "2" * 40),
+            ("task_patch_digest", "3" * 64),
+        ):
+            misbound = copy.deepcopy(completion)
+            misbound["proposal"][field] = replacement
+            misbound["proposal_digest"] = __import__("hashlib").sha256(
+                json.dumps(misbound["proposal"], sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "bind the accepted checkpoint"):
+                APPEND_METRICS.validate_completion_commit_projection(misbound, record, checkpoint)
+
     def test_accepts_historical_and_current_schema_versions(self) -> None:
         for version in (1, 2, 3, 4):
             with self.subTest(version=version):

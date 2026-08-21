@@ -1,0 +1,162 @@
+{
+  "artifact_type": "review_bench_case_packet_v1",
+  "bench_id": "site2json-visual-observation-defective-20260820",
+  "case": {
+    "artifacts": [
+      {
+        "path": "docs/roadmap.md",
+        "role": "task objective and scope",
+        "sha256": "4a8f9eb177da5f8243c6ebb067ecb8885ab9c53e2484273c588370cb23b5e042"
+      },
+      {
+        "path": "docs/visual-evidence-architecture.md",
+        "role": "session-only observation architecture",
+        "sha256": "5a05855b7b777a5e4a00107cc7116e69da246e0f4952c702647961478c43fcd2"
+      },
+      {
+        "path": "extension/content/page-picker.js",
+        "role": "page selection and click provenance producer",
+        "sha256": "45ca75769a079880c658dcb8475475936f7a92c57d1dc92c1bc6565c65eaab39"
+      },
+      {
+        "path": "extension/editor/sidebar-composition-graph.js",
+        "role": "Graph semantic target adapter",
+        "sha256": "fbd959d190e0bf1f7e64a2d79c8e8a4e21030c6e14a4b0f3036dbe62386079c0"
+      },
+      {
+        "path": "extension/editor/sidebar-detection-first.js",
+        "role": "Detection semantic target adapter",
+        "sha256": "0c796a12cd02a283a55a528bcbaa6feb1f52517149d5b63bc4f31c5c3128775a"
+      },
+      {
+        "path": "extension/editor/sidebar-visual-evidence.js",
+        "role": "UI observation orchestration",
+        "sha256": "99005feb8d0ed616067b73893d66d0b6b0db3e609e189be05cad695c8ac4d26b"
+      },
+      {
+        "path": "extension/editor/sidebar.html",
+        "role": "Visual Evidence authoring surface",
+        "sha256": "181c04f2796ad092c9bc3f0cf34216de12a576727320c601c2409b62fd242221"
+      },
+      {
+        "path": "extension/editor/sidebar.mjs",
+        "role": "sidebar integration boundary",
+        "sha256": "fdf3a4ee0fe7355edf6dd27c4185c90fbe4ed26596ce607dc11e285c3b44e289"
+      },
+      {
+        "path": "extension/ir/visual-evidence-contract.js",
+        "role": "observation schema and validator",
+        "sha256": "9b4d7b689fc36bde2d4ecd7f94edd6e5ecdb19fd3d4810dea5cfe0af4e9c0bfe"
+      },
+      {
+        "path": "extension/ir/visual-evidence-observation.js",
+        "role": "authored observation normalizer",
+        "sha256": "67a6def654b62cdd85eb24a74846a490423750ea6dcd9e75ddc284559c4479ab"
+      },
+      {
+        "path": "package.json",
+        "role": "test and module configuration",
+        "sha256": "615777dbf6b845b816ff6829e43169286e57c726df802fd636b054cc295a7cde"
+      },
+      {
+        "path": "tests/sidebar-visual-evidence.test.js",
+        "role": "sidebar observation integration tests",
+        "sha256": "ff9822d1b9b7133410b44c1ed3aad3b43e66024b78a1c624441cc311a58725af"
+      },
+      {
+        "path": "tests/visual-evidence-contract.test.js",
+        "role": "contract boundary tests",
+        "sha256": "e44f7f23378f669bec4569ab698cf412f076ef3617fb5ac0e4569d7a9c576628"
+      }
+    ],
+    "case_id": "visual-evidence-authored-observation-pre-review",
+    "change_profile": {
+      "changed_files": 13,
+      "consequences": [
+        "workflow_blocking",
+        "state_corrupting"
+      ],
+      "evidence_types": [
+        "static_source",
+        "deterministic_test",
+        "runtime_inspection",
+        "historical_reconstruction"
+      ],
+      "novelty": "new_ownership",
+      "route_class": "runtime_cross_boundary",
+      "semantic_domains": [
+        "runtime",
+        "schema",
+        "ui_visual",
+        "integrity"
+      ],
+      "topologies": [
+        "cross_module"
+      ]
+    },
+    "contract": {
+      "acceptance_criteria": [
+        "Detection and Graph projects expose canonical alias-free semantic targets derived from their authoritative models.",
+        "A rendered selection, or an explicit unresolved result, produces one contract-valid session observation with truthful status, action, interpretation, and provenance.",
+        "Ambiguous Graph paths remain unresolved, preserve their alternatives, and retain recorded click evidence without inventing semantic certainty.",
+        "The session-only observation contains no raw live objects or copied page text and is not consumed by persistence, inference, or runtime execution."
+      ],
+      "excluded_scope": [
+        "Persisting Visual Evidence observations into project or output schemas",
+        "Changing extraction, inference, or runtime execution semantics",
+        "Adding OCR, image recognition, or automatic semantic disambiguation",
+        "Redesigning the Detection or Composition Graph interfaces"
+      ],
+      "goal": "Normalize Detection and Graph selections into one validated, session-only Visual Evidence observation that preserves truthful status, action, interpretation, alternatives, and provenance without entering persisted or inferred project state."
+    },
+    "deterministic_evidence": [
+      "The reconstructed pre-review snapshot passes all 10 focused Visual Evidence tests that existed at its review boundary.",
+      "All 13 manifest hashes match the immutable pre-review ref and its archived tree.",
+      "The independently reconstructed post-review checkpoint differs from this tree in only the observation normalizer and its focused integration test."
+    ],
+    "limitations": [
+      "The historical review and repaired checkpoint are sealed truth evidence and are not included in the blinded reviewer packet.",
+      "Truth is bounded to the stated contract and 13-file artifact manifest, not every defect in Site2JSON.",
+      "Medium reconstruction confidence limits how strongly this single case can support model-selection policy."
+    ],
+    "review_class": "implementation",
+    "risk": "high",
+    "snapshot": {
+      "digest": "7ea148539e201994d52aae122e04891890809cfc59f786b63e3356f31c336459",
+      "identity": "refs/work-engine/review-bench/visual-observation/pre-review",
+      "kind": "reconstructed",
+      "limitations": [
+        "The exact transient pre-review worktree was not retained; this artifact-bounded tree reverses the two accepted production repairs and their two named regression tests from the independently reconstructed post-review checkpoint.",
+        "One task-owned test was untracked at the historical baseline, so its surviving bytes come from the descendant workspace rather than a commit-bound blob.",
+        "The synthetic commit chronology is not historical; the tree OID and archive digest identify the review snapshot."
+      ],
+      "reconstruction_confidence": "medium",
+      "repository": "/home/bline/code/site2json",
+      "tree_oid": "7490bb2083f0f5b44048a9bfde858f5b060d76b7"
+    },
+    "title": "Normalize Visual Evidence authored observations"
+  },
+  "protocol": {
+    "confidence_scale": [
+      "high",
+      "medium",
+      "low"
+    ],
+    "name": "evidence-calibrated-review",
+    "prompt": "Act as a read-only independent verification reviewer. Treat material claims as hypotheses, verify them from the supplied snapshot, and check the most plausible contradictory path. Report acceptance-critical uncertainty as blocked_unverified instead of assuming it away. Stop once material claims reach high confidence. Do not treat builder rationale or passing tests alone as proof. Before assigning blocking status, trace the relevant producer, validation or ownership boundary, supported caller, and consumer. Separate supported production reachability from malformed or contract-excluded direct invocation. A bounded practical consequence does not make an explicit acceptance-criterion violation nonblocking; report severity and blocking as separate judgments. Return result schema v2. Put only defects or material risks in findings. Put evidence-backed acceptance conclusions in verified_claims and identify the acceptance criteria they support. Put real non-defect improvements or out-of-contract notes in observations. Verified claims and observations have no severity or blocking label. Classify each claim once.",
+    "severities": [
+      "critical",
+      "high",
+      "medium",
+      "low"
+    ],
+    "verdicts": [
+      "accepted",
+      "rejected",
+      "blocked_unverified",
+      "stale_snapshot"
+    ],
+    "version": "1.2"
+  },
+  "schema_version": 1
+}

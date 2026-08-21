@@ -1,0 +1,33 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "sol-codex-high-c6-slice9-clean-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "harness": "codex-subagent-isolated-archive",
+    "inference_family": "gpt-5.6",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem", "shell", "python-runtime"],
+    "reasoning_effort": "high",
+    "review_protocol": "evidence-calibrated-review/1.1",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": []
+  },
+  "snapshot_digest": "708d93f697bc4fb7b125435063a249db7e52fd9b7be4b7d05c9b7a0bd786d0b3",
+  "verdict": "accepted",
+  "findings": [],
+  "limitations": [
+    "Review was bounded to the supplied snapshot and packet artifacts; Git history and external repository state were not inspected.",
+    "All 52 supervisor Python tests passed independently with bytecode generation disabled. Node preflight tests were not replayed because the snapshot intentionally omits installed dependencies; their source and relevant production path were inspected.",
+    "Started and completed timestamps are orchestration bounds; the Codex subagent harness did not expose provider wall-clock or token measurements."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T18:56:27-06:00",
+    "completed_at": "2026-08-20T19:00:02-06:00"
+  }
+}

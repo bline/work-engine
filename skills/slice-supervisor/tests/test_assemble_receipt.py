@@ -110,8 +110,18 @@ class ReceiptAssemblerTest(unittest.TestCase):
     def test_observed_runtime_telemetry_overrides_semantic_self_report(self) -> None:
         semantic = self.semantic_receipt()
         authoritative_config = semantic["engine_config"].copy()
+        telemetry = ingress()
+        telemetry["builder_runtime"]["binding_provenance"]["interrupted_turns"] = [
+            {
+                "turn_id": "interrupted-turn",
+                "state": "interrupted",
+                "start_event": provenance(2, "task_started"),
+                "completion_availability": "unavailable",
+                "completion_provenance": [],
+            }
+        ]
         assembled = ASSEMBLER.assemble(
-            semantic, ingress(), preflight_result(authoritative_config)
+            semantic, telemetry, preflight_result(authoritative_config)
         )
 
         metrics = assembled["worker_metrics"]
@@ -125,11 +135,40 @@ class ReceiptAssemblerTest(unittest.TestCase):
         self.assertEqual(7, authoritative["measurements"]["reasoning_tokens"]["value"])
         self.assertEqual("child-thread", authoritative["source_identity"]["child_thread_id"])
         self.assertEqual("/rollouts/child", authoritative["artifacts"]["child"])
+        self.assertEqual(
+            "interrupted-turn",
+            authoritative["binding_provenance"]["interrupted_turns"][0]["turn_id"],
+        )
         self.assertNotIn("tool_runtime", authoritative)
         APPEND_METRICS.validate(assembled)
 
         self.assertEqual(999, semantic["worker_metrics"]["builder_input_tokens"])
         self.assertNotIn("telemetry_ingress", semantic["producer_metrics"])
+
+    def test_preflight_projects_authorized_same_model_review_provenance(self) -> None:
+        semantic = self.semantic_receipt()
+        APPEND_TESTS.make_same_model_review_v2(semantic)
+        authoritative_config = semantic["engine_config"].copy()
+        authoritative_config["amendments"] = [
+            {
+                "timestamp": "2026-08-21T00:00:00-06:00",
+                "changed_fields": ["builder.context.adversarial_review"],
+                "prior_values": {"review": "claude"},
+                "new_values": {"review": "codex"},
+                "reason": "Claude quota unavailable; same-model review approved.",
+                "human_approval": "I approve Sol low as accepted same-model review.",
+            }
+        ]
+        assembled = ASSEMBLER.assemble(
+            semantic, ingress(), preflight_result(authoritative_config)
+        )
+        review = assembled["worker_metrics"]["adversarial_review_identity"]
+        self.assertEqual(review["evidence_class"], "accepted_same_model_review")
+        self.assertEqual(review["model"], "gpt-5.6-sol")
+        self.assertEqual(review["reasoning_effort"], "low")
+        self.assertFalse(review["independence_claimed"])
+        self.assertEqual(len(assembled["engine_config"]["amendments"]), 1)
+        APPEND_METRICS.validate(assembled)
 
     def test_preflight_configuration_overrides_semantic_transcription(self) -> None:
         semantic = self.semantic_receipt()

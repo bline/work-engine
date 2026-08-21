@@ -1,0 +1,80 @@
+{
+  "artifact_type": "review_bench_result_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-paired-clean-20260820",
+  "case_id": "c6-slice9-post-medium-fix-clean",
+  "result_id": "claude-cli-medium-c6-slice9-clean-run1",
+  "attempt_id": "run-1",
+  "reviewer": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "harness": "claude-cli-isolated-archive",
+    "inference_family": "claude-sonnet",
+    "fresh_context": true,
+    "tool_access": ["isolated-filesystem-read", "glob", "grep"],
+    "reasoning_effort": "medium",
+    "review_protocol": "evidence-calibrated-review/1.1",
+    "pass_count": 1,
+    "aggregation_strategy": "none",
+    "aggregation_members": [],
+    "session_id": "a1d9b5a9-6fca-4ac6-a58a-7430d0cb7d87"
+  },
+  "snapshot_digest": "708d93f697bc4fb7b125435063a249db7e52fd9b7be4b7d05c9b7a0bd786d0b3",
+  "verdict": "accepted",
+  "findings": [
+    {
+      "finding_id": "F1",
+      "severity": "low",
+      "blocking": false,
+      "category": "observation",
+      "claim": "The named-campaign continuation ownership check in append_metrics.py:validate_current_write correctly ties continuation_context validity to the presence of producer_metrics.campaign_source (set exclusively by assemble_receipt.py's unconditional assignment at scripts/assemble_receipt.py:124, invoked only via the named-campaign finalize_receipt.py path). All three branches (resumable+named+missing continuation fails; continuation present on non-named write fails; continuation present on non-resumable terminal fails) correctly implement 'Continuation context belongs only to named-campaign writes and has one current-write validation owner' and 'Current named accepted receipts with remaining work require validated continuation context; completed, stopped, and failed terminals omit it.'",
+      "evidence": [
+        "skills/slice-supervisor/scripts/append_metrics.py:606-622 (validate_current_write)",
+        "skills/slice-supervisor/scripts/assemble_receipt.py:106-126 (campaign_source is the sole producer, guarded by fail-closed already-present check)",
+        "skills/slice-supervisor/tests/test_append_metrics.py:477-508 (test_current_named_resumable_write_requires_exact_continuation exercises all three branches including the previously-inverted ownership check)"
+      ],
+      "confidence": "high"
+    },
+    {
+      "finding_id": "F2",
+      "severity": "low",
+      "blocking": false,
+      "category": "observation",
+      "claim": "resume_campaign.py correctly implements 'unique ordered contiguous selected-run history' validation, deep-equality binding of both engine_config and campaign_source, fail-closed behavior on malformed/mismatched state (raises rather than returning a structured result), and structured resumable/nonresumable results for accepted-with-remaining-work, accepted-complete, stopped, and failed terminals, matching the receipt-schema.md contract and satisfying 'Resume validates unique ordered contiguous selected-run history and binds both authoritative engine configuration and campaign source' and 'Trusted terminal outcomes return structured state; malformed history and binding mismatches fail closed.'",
+      "evidence": [
+        "skills/slice-supervisor/scripts/resume_campaign.py:58-99 (resume function: contiguity check line 62-63, binding checks line 66-70, terminal-state dispatch line 72-91)",
+        "skills/slice-supervisor/tests/test_resume_campaign.py:59-97 (covers two-slice resume with exact handoff, objective_or_scope_complete nonresumable terminal, and binding mismatch failure)",
+        "skills/slice-supervisor/references/receipt-schema.md:109-124"
+      ],
+      "confidence": "high"
+    },
+    {
+      "finding_id": "F3",
+      "severity": "low",
+      "blocking": false,
+      "category": "observation",
+      "claim": "Historical receipts (schema versions 1-3, or version-4 receipts lacking continuation_context) remain readable through resume_campaign.py's load_history (which calls the lenient APPEND_METRICS.validate, not validate_current_write) and are correctly classified nonresumable via the 'continuation_unavailable' reason when continuation_context is absent, satisfying 'Historical receipts without continuation context remain readable but nonresumable.'",
+      "evidence": [
+        "skills/slice-supervisor/scripts/resume_campaign.py:31-39 (load_history uses APPEND_METRICS.validate)",
+        "skills/slice-supervisor/scripts/resume_campaign.py:78-80 (context is None -> nonresumable 'continuation_unavailable')",
+        "skills/slice-supervisor/references/receipt-schema.md:104-107"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Reviewed the snapshot directory's file contents directly (Python/Markdown production scripts, tests, and reference docs) rather than executing the Python test suite; the deterministic-evidence claim of '52 passing tests' and Python compilation success was not independently re-run, per read-only/no-test-execution constraints, but static reading of all cited scripts and their corresponding tests shows the logic they exercise is internally consistent with the stated assertions.",
+    "The Node.js campaign-preflight.mjs script and its .mjs test were not read in detail; this is outside the two changed files (append_metrics.py and its test) implicated by the deterministic evidence and outside the core persistence/identity/integrity contract under review, and the packet itself discloses the archive has no node_modules so that path was not independently re-verifiable in this environment either.",
+    "Per instructions, no git history, diff, or other packet/session artifacts were inspected; the claim that the paired checkpoint differs from a pre-review tree by exactly 'two files and six inserted lines' is taken as supplied testimony and was not independently verified against any prior revision — only the current snapshot's logical correctness against the stated acceptance criteria was verified.",
+    "assemble_receipt.py, harvest_codex_telemetry.py, and the telemetry-ingress schema were read only as needed to confirm the campaign_source/continuation_context ownership chain, not exhaustively reviewed for defects outside the contract's route class.",
+    "Provider input_tokens excludes 96045 cache-creation and 446965 cache-read tokens, retained here because the result schema has no cache-token fields."
+  ],
+  "timing": {
+    "started_at": "2026-08-20T18:56:40-06:00",
+    "completed_at": "2026-08-20T18:58:33-06:00",
+    "wall_clock_seconds": 113.327,
+    "cost_usd": 0.8414595,
+    "input_tokens": 20,
+    "output_tokens": 8736
+  }
+}
