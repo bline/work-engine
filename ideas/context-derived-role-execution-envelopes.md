@@ -546,7 +546,16 @@ authorized organizational changes
 organizational compiler
     │
     ▼
-structural + semantic + reachability validation
+deterministic resolution + structural validation
+    │
+    ▼
+semantic obligations + candidate findings
+    │
+    ▼
+attributed judgment + required authority decisions
+    │
+    ▼
+outcome-reachability assessment
     │
     ▼
 persist problem-level execution envelope
@@ -567,6 +576,14 @@ The envelope should be durable enough for:
 - runtime reconstruction;
 - explanation of which organization existed, why each component and relation
   existed, and what every agent could see or do at the time.
+
+“Compiler” describes composition into an immutable problem-level artifact. It
+does not imply that all organizational validity is mechanically decidable. The
+compiler may verify declared identities, relations, boundaries, references,
+digests, and approval artifacts. It may surface semantic obligations and refuse
+to emit while required evidence or decisions are absent. It does not decide
+novel questions of authority, ownership, independence, conditionality, or
+contract equivalence.
 
 ---
 
@@ -747,9 +764,13 @@ Candidate validation questions include:
 - Does the environment preserve the original objective?
 - Does this change require contract-owner approval?
 
-Deterministic tooling can identify structural inconsistencies.
+Deterministic tooling can identify structural inconsistencies and verify that
+required judgment or approval artifacts are present. It cannot promote a
+candidate semantic finding into truth.
 
-Semantic classification remains model-judged and contract changes remain human-authorized.
+Semantic classification remains model-judged and attributed. Contract changes
+remain human-authorized by the owning contract. An unknown classification fails
+closed rather than being resolved through an expansive default.
 
 ---
 
@@ -1206,7 +1227,9 @@ particular role instance.
 
 The boundary that combines the problem specification, invariants, templates,
 capability contracts, static environments, context, and authorized changes;
-validates the result; and emits an immutable execution envelope and projections.
+performs deterministic resolution and structural validation; coordinates
+required semantic judgments and authority decisions without owning them; and
+emits an immutable execution envelope and projections.
 
 ### Runtime projection
 
@@ -1311,3 +1334,167 @@ Most importantly, it preserves the core Work Engine design principle:
 The execution envelope becomes the explicit, inspectable compiled organization
 for one concrete problem. Role projections make each participant's valid space
 legible without fragmenting the organizational source of truth.
+
+---
+
+# 28. The organizational compiler has no grant authority
+
+The compiler is deterministic organizational assembly machinery, not an actor
+that possesses or delegates authority. It must never invent a role, grant,
+relationship, exemption, or semantic classification merely because the result
+appears useful for the problem.
+
+Every organizational change must identify:
+
+- the requesting human or logical actor;
+- the source-envelope revision, when revising an active organization;
+- the changed parameters or relations;
+- the authority reference permitting those changes;
+- the evidence and attributed judgment supporting semantic classifications;
+- whether the change stays inside an existing configurable dimension or changes
+  a contract; and
+- any required contract-owner approval.
+
+The compiler contract should require it to:
+
+- consume only canonical contracts and attributed change requests;
+- preserve field-level source and decision provenance;
+- fail closed on unknown component, parameter, relation, and authority classes;
+- avoid defaults that silently expand authority;
+- verify mechanically decidable references, shapes, digests, and approval
+  presence;
+- emit semantic obligations instead of deciding them;
+- produce an immutable candidate envelope before activation; and
+- never treat successful structural validation as semantic acceptance.
+
+The authority questions therefore remain separate:
+
+```text
+Who owns the assembler contract?
+
+Who authorized each organizational input or change?
+
+Who judged each semantic obligation?
+
+Who approved any resulting contract change?
+```
+
+The compiler answers none of these questions. It preserves and validates their
+attributed answers.
+
+---
+
+# 29. Proposal research is an upstream prerequisite
+
+A problem-specific organization cannot be responsibly compiled from a thin or
+under-researched proposal. Choices about roles, capabilities, information flow,
+independence, mutation, validation, and runtime compatibility depend on durable
+evidence about the actual problem.
+
+The ordinary campaign supervisor should not reconstruct that evidence or choose
+an organization through unsupported repository-domain judgment. The upstream
+flow is instead:
+
+```text
+raw idea
+    ↓
+proposal formation
+    ↓
+evidence-backed proposal research
+    ↓
+execution qualification
+    ↓
+organizational requirements
+    ↓
+authorized organizational proposal
+    ↓
+compiled execution envelope
+    ↓
+campaign supervision
+```
+
+The proposal packet should preserve or reference enough evidence to establish:
+
+- the problem and causal parent;
+- intended consequences and non-goals;
+- architectural placement and credible competing owners;
+- affected contracts and invariants;
+- dependencies and related proposals;
+- required and conditional capabilities;
+- ownership, independence, information-flow, and mutation requirements;
+- validation and acceptance consequences;
+- risks, reversibility, and unresolved uncertainty; and
+- evidence provenance, freshness, limitations, and confidence.
+
+The packet should express organizational requirements before prescribing one
+provider or topology. An authorized planning judgment may then select compatible
+role templates and capability implementations. Provider binding remains a
+runtime linking decision unless provider identity is itself contractual.
+
+Mechanical packet validity is not execution readiness. Research maturity,
+readiness profiles, evidence snapshots, and staleness are developed in
+[Research Maturity, Evidence Snapshots, and Staleness](./research-maturity-evidence-snapshots-and-staleness.md).
+
+The organizational compiler may consume a readiness judgment only when it names
+the canonical owner authorized to make the organizational-compilation decision,
+the exact packet and evidence revisions considered, and any required approval.
+A researcher, packet validator, or freshness detector cannot supply that
+authority merely by producing useful evidence.
+
+---
+
+# 30. Bootstrap research organization
+
+Research needed to qualify a proposal also requires some organization, but this
+does not require the final problem-specific organization to exist first.
+
+A small, bounded research organization can gather placement, ownership,
+contract, risk, capability, and validation evidence:
+
+```text
+minimal proposal-research organization
+        ↓
+durable evidence and unresolved questions
+        ↓
+execution-qualified proposal
+        ↓
+problem-specific organizational compilation
+```
+
+The research organization should be stable enough to bootstrap evidence without
+presupposing the conclusion of the organizational-design question. Deeper or
+specialized research machinery may be added when existing evidence shows that
+it has credible decision value.
+
+---
+
+# 31. Adoption boundary
+
+The vocabulary and representation may be useful before general dynamic
+organizational compilation is justified. The first implementation should compile
+and explain the organization Work Engine already has rather than invent new
+organizational topology.
+
+A behavior-preserving first vertical may:
+
+- consume the existing fixed role contracts and campaign configuration;
+- produce an immutable effective-envelope artifact;
+- retain exact provenance for selected capabilities, providers, scope, and
+  authority;
+- derive role-scoped projections;
+- distinguish required, authorized, and runtime-available capabilities; and
+- render baseline-versus-effective differences for Studio and audit use.
+
+It should not initially:
+
+- create arbitrary new roles;
+- synthesize novel authority delegation;
+- claim general semantic type checking;
+- require continuous research dependency-surface monitoring;
+- dynamically restructure active campaigns; or
+- make contract-affecting decisions without their existing owner.
+
+Observed limitations in that fixed-topology vertical can supply the causal
+parent for later support such as parallel builders, specialist roles, dynamic
+delegation, or mid-run organizational revision. A compelling metaphor alone is
+not sufficient authority to build those mechanisms.

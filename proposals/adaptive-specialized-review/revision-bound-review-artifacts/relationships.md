@@ -1,12 +1,23 @@
 # Relationships: Revision-Bound Review Artifacts
 
+## Depends on: claim-centered evidence lineage
+
+Type: causal semantic dependency.
+
+Review artifacts need stable statement identity, bounded evidence baselines,
+provenance, sensitivity, authority scope, and non-destructive lineage without
+making review the owner of proposal-research claims or general evidence
+history. The review profile adds episode, outcome, finding, conflict, and
+synthesis semantics.
+
 ## Enables: adaptive review-panel coordination
 
 Type: causal semantic dependency.
 
-The coordinator needs a durable target that binds specialist findings and
-synthesis to an exact subject revision and preserves later applicability. This
-does not require a separate acceptance or delivery order.
+The coordinator needs a durable target for specialist findings and synthesis,
+including truthful empty and failure outcomes, context provenance, conflict
+references, and later applicability. This does not require a separate
+acceptance or delivery order.
 
 ## References: durable proposal packets
 
@@ -18,10 +29,10 @@ but do not replace or absorb that ownership.
 
 ## Potentially shared with: implementation review
 
-Type: prospective consumer relationship; non-causal for initial formation.
+Type: prospective consumer relationship; non-causal for current formation.
 
-The same subject, provenance, and applicability semantics may serve
-implementation review. This possibility keeps placement open; it does not
-authorize cross-phase infrastructure or require that consumer in a first
-version.
+Implementation review may share the review-specific profile while requiring a
+different remediation and acceptance lifecycle. This possibility keeps
+placement open; it does not authorize cross-phase infrastructure or require
+that consumer in a first implementation.
 

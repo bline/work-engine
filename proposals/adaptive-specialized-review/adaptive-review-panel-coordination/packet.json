@@ -15,6 +15,10 @@
     {
       "kind": "idea_source",
       "path": "../../../ideas/adaptive-specialized-review-panels.md"
+    },
+    {
+      "kind": "bootstrap_review",
+      "path": "../../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
     }
   ],
   "placement": {
@@ -24,10 +28,11 @@
   "uncertainty": {
     "state": "unresolved",
     "reopening_conditions": [
-      "Dogfooding shows that panel selection and synthesis require different independence or information lifetimes.",
+      "Dogfooding shows that panel selection and synthesis require different independence, information, or durable-state lifetimes.",
       "A specialist registry needs mechanically governed capability metadata rather than an open judgment surface.",
       "Implementation review establishes a primary shared consumer whose boundary conflicts with proposal-local coordination.",
-      "Deterministic evidence proves sufficient for representative proposals without model specialist review."
+      "Deterministic evidence proves sufficient for representative proposals without model specialist review.",
+      "A real revision shows that the proposed readiness projection, downstream applicability judgment, and authority decision cannot remain truthfully distinct."
     ]
   },
   "authority": {
@@ -38,9 +43,8 @@
     {
       "type": "depends_on",
       "target_id": "work-engine.revision-bound-review-artifacts",
-      "rationale": "Adaptive panel coordination needs revision-bound artifact semantics so specialist findings and synthesis retain exact subject identity, provenance, applicability, and non-authoritative status.",
+      "rationale": "Adaptive panel coordination needs the review-artifact profile so specialist episodes, findings, conflicts, truthful outcomes, synthesis references, and later applicability retain exact identity and non-authoritative status.",
       "causal": true
     }
   ]
 }
-

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-centered-evidence-lineage",
+  "family_id": "work-engine.evidence-lineage",
+  "title": "Claim-Centered Evidence Lineage",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/research-maturity-evidence-snapshots-and-staleness.md"
+    },
+    {
+      "kind": "bootstrap_review",
+      "path": "../../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A Git-backed evidence-lineage capability shared beneath proposal research and review artifacts is a plausible semantic owner, but dogfooding has not yet proved which statement, authority, and lineage properties are genuinely cross-domain or where the first adapter should live."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A proposal-research claim and a specialist review finding exercise the candidate and show which identity, provenance, sensitivity, authority, and lineage properties are genuinely shared.",
+      "A domain consumer requires incompatible statement or transition semantics that make one shared contract misleading.",
+      "A named research-maintenance owner and a decision-specific applicability owner exercise freshness and applicability against the same evidence baseline.",
+      "Observed concurrency, external evidence, or runtime recovery requires semantics that Git-backed artifacts and on-demand revalidation cannot preserve."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "enables",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Revision-bound review artifacts need stable statement identity, evidence baselines, provenance, sensitivity, scoped authority, and non-destructive lineage without making the review workflow the general owner of those semantics.",
+      "causal": true
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "Proposal packets may reference evidence-lineage artifacts while retaining ownership of proposal identity, current meaning, lifecycle, uncertainty, relationships, and decision authority.",
+      "causal": false
+    }
+  ]
+}
