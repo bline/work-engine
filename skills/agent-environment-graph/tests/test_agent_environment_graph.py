@@ -90,14 +90,57 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
         self.assertEqual(rendered.count('N_role_builder_3_artifact_view["View"]'), 1)
         self.assertEqual(rendered.count('N_role_builder_4_artifact_view["View"]'), 1)
 
+    def test_mermaid_layout_is_top_down_with_invisible_ordering_edges(self):
+        catalog, environment = self.load_fixture()
+        environment["roles"]["role.builder"]["may_observe"].append("artifact.view")
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn("flowchart TB", rendered)
+        self.assertIn("    direction TB", rendered)
+        self.assertIn(
+            "N_role_builder_4_state_input ~~~ N_role_builder_4_artifact_view",
+            rendered,
+        )
+        self.assertIn(
+            "N_role_builder_1_INV_001 ~~~ N_role_builder_2_capability_validate",
+            rendered,
+        )
+        self.assertEqual(rendered.count("R -->|MAY_OBSERVE|"), 1)
+
+    def test_invariants_use_catalog_text_and_semantic_color(self):
+        catalog, environment = self.load_fixture()
+        rendered = AEG.render(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertIn(
+            'N_role_builder_1_INV_001["INV-001<br/>Human owns contract changes"]',
+            rendered,
+        )
+        self.assertIn("class N_role_builder_1_INV_001 invAuthority", rendered)
+        self.assertIn("classDef invAuthority fill:#fef3c7,color:#451a03", rendered)
+        self.assertIn("one visible entry edge per relation group", rendered)
+        self.assertEqual(rendered.count("## Color legend"), 1)
+        self.assertIn("| 🟡\N{NO-BREAK SPACE}yellow | Authority |", rendered)
+        self.assertIn("🟡\N{NO-BREAK SPACE}authority", rendered)
+        self.assertNotIn(":blue_circle:", rendered)
+
     def test_relationship_table_surfaces_consumes_and_emits(self):
         catalog, environment = self.load_fixture()
         rendered = AEG.render(
             catalog, environment,
             FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
         )
-        self.assertIn("| `CONSUMES` | `state.input` | Input |", rendered)
-        self.assertIn("| `EMITS` | `artifact.view` | View |", rendered)
+        self.assertIn(
+            "| `CONSUMES` | `state.input` | Input | 🔵\N{NO-BREAK SPACE}observation\N{WORD JOINER}/\N{WORD JOINER}input |",
+            rendered,
+        )
+        self.assertIn(
+            "| `EMITS` | `artifact.view` | View | 🟢\N{NO-BREAK SPACE}owned\N{WORD JOINER}/\N{WORD JOINER}output |",
+            rendered,
+        )
 
     def test_relation_matrix_combines_relations_for_one_target(self):
         catalog, environment = self.load_fixture()
@@ -106,7 +149,11 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
             FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
         )
         self.assertIn("## Role × relation matrix", rendered)
-        self.assertIn("| View | OWNS, EMITS |", rendered)
+        self.assertIn(
+            "| View | 🟢\N{NO-BREAK SPACE}owned\N{WORD JOINER}/\N{WORD JOINER}output OWNS, "
+            "🟢\N{NO-BREAK SPACE}owned\N{WORD JOINER}/\N{WORD JOINER}output EMITS |",
+            rendered,
+        )
 
     def test_rendered_table_escapes_pipe_in_mutation_boundary(self):
         catalog, environment = self.load_fixture()
@@ -117,7 +164,49 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
             catalog, environment,
             FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
         )
-        self.assertIn("| `MAY_MUTATE` | `state.input` | Input (boundary: accepted \\| attributed) |", rendered)
+        self.assertIn(
+            "| `MAY_MUTATE` | `state.input` | Input (boundary: accepted \\| attributed) | "
+            "🔴\N{NO-BREAK SPACE}mutation |",
+            rendered,
+        )
+
+    def test_render_site_builds_overview_index_and_role_detail(self):
+        catalog, environment = self.load_fixture()
+        overview, pages = AEG.render_site(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        self.assertEqual(set(pages), {"README.md", "builder.md"})
+        self.assertIn("[Open role view](agent-environment-views/builder.md)", overview)
+        self.assertIn("## Role × relation matrix", overview)
+        self.assertIn("[Open](./builder.md)", pages["README.md"])
+        self.assertIn("# Builder Environment", pages["builder.md"])
+        self.assertIn("## At a glance", pages["builder.md"])
+        self.assertIn("## Environment graph", pages["builder.md"])
+        self.assertIn("## Complete relation table", pages["builder.md"])
+        self.assertIn("[shared legend](../agent-environment-graphs.md#color-legend)", pages["builder.md"])
+
+    def test_site_check_detects_stale_role_page(self):
+        catalog, environment = self.load_fixture()
+        overview, pages = AEG.render_site(
+            catalog, environment,
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "agent-environment-graphs.md"
+            role_dir = root / "agent-environment-views"
+            self.assertEqual(AEG.write_site(output, role_dir, overview, pages), [])
+            AEG.check_site(output, role_dir, overview, pages)
+            manual = role_dir / "manual-notes.md"
+            stale = role_dir / "removed-role.md"
+            manual.write_text("human-authored")
+            stale.write_text(AEG.GENERATED_COMMENT + "\nstale")
+            self.assertEqual(AEG.write_site(output, role_dir, overview, pages), [str(stale)])
+            self.assertTrue(manual.is_file())
+            (role_dir / "builder.md").write_text("stale")
+            with self.assertRaisesRegex(AEG.GraphError, "role page is stale"):
+                AEG.check_site(output, role_dir, overview, pages)
 
 
 if __name__ == "__main__":
