@@ -108,6 +108,24 @@ Move to `awaiting_gate` only when execution is complete. Then authorize the buil
 
 When `approval.uninterrupted_after_plan` is true, execution and gate may share one follow-up. Explicit plan acceptance, phase accounting, configured validation, and both receipts remain mandatory.
 
+### Active slice recovery
+
+Model and provider sessions are runtime bindings, not durable owners of an
+active slice attempt. When a configured planning or review capability is temporarily unavailable,
+preserve the accepted attempt and pending semantic obligation through
+`scripts/live_slice_state.py` as `waiting_on_capability`. Reconstruct that same
+attempt after context or session replacement with
+`scripts/resume_active_slice.py`. The slice workflow alone authorizes and
+interprets transitions; the shared durable-state primitive only publishes
+opaque revisions atomically.
+
+Preserve stable run, slice, attempt, and plan identity, handled consequence IDs,
+reference-only links to stronger artifacts, and the logical actor binding.
+Provider session identity is optional provenance. Capability waiting is
+nonterminal, while retirement prevents stale input from resurrecting the
+attempt. This path is distinct from `resume_campaign.py`; terminal-history
+semantics remain unchanged.
+
 ## Accept and record a slice
 
 Require the configured builder's `audit_receipt` plus its compact `handoff_receipt`. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted. Retain the handoff only for relevant future builder context; never use it as the durable record.
