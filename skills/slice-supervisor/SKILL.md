@@ -111,13 +111,23 @@ When `approval.uninterrupted_after_plan` is true, execution and gate may share o
 ### Active slice recovery
 
 Model and provider sessions are runtime bindings, not durable owners of an
-active slice attempt. When a configured planning or review capability is temporarily unavailable,
-preserve the accepted attempt and pending semantic obligation through
-`scripts/live_slice_state.py` as `waiting_on_capability`. Reconstruct that same
-attempt after context or session replacement with
-`scripts/resume_active_slice.py`. The slice workflow alone authorizes and
-interprets transitions; the shared durable-state primitive only publishes
-opaque revisions atomically.
+active slice attempt. Before a configured planning or review obligation crosses
+a provider boundary, publish its attempt, phase, and pending obligation with
+`scripts/manage_active_slice.py begin`. When that capability is temporarily
+unavailable, preserve the same obligation with `scripts/manage_active_slice.py
+wait` and the expected durable revision. Reconstruct that same attempt after
+context or session replacement with `scripts/resume_active_slice.py`; continue
+only the recovered pending phase.
+
+When the pending obligation is conclusively discharged, or the attempt reaches
+an authoritative terminal outcome already decided by its owner, record
+lifecycle closure with `scripts/manage_active_slice.py retire`. Terminal
+outcomes include, without being limited to, accepted, stopped, and failed. The
+CLI records decisions already made by the model-driven supervisor; it does not
+decide discharge, acceptance, stopping, failure, provider choice, retry,
+scheduling, or authority. The slice workflow alone authorizes and interprets
+transitions; the shared durable-state primitive only publishes opaque revisions
+atomically.
 
 Preserve stable run, slice, attempt, and plan identity, handled consequence IDs,
 reference-only links to stronger artifacts, and the logical actor binding.
