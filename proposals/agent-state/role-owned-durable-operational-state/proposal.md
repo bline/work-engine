@@ -43,6 +43,11 @@ but incomplete for general recovery:
 
 - `docs/agent-environments.yaml` explicitly says the live runtime overlay is
   absent from the verified supervisor/builder/reviewer environment model.
+- Product-direction documents already assign logical identity and role routing,
+  activation, runtime-binding registration, coordination, delivery,
+  subscriptions, reconciliation, health, and bounded projections to the control
+  plane. They explicitly keep workflow meaning and agent-state consequences with
+  their domain owners.
 - Slice live state records identity, actor binding, one pending-obligation
   summary, reference-only authority links, handled transition IDs, waiting, and
   retirement, but only for planning and review.
@@ -183,10 +188,38 @@ proposal packet / receipt / checkpoint / schedule / repository
   and is referenced rather than copied
 ```
 
-The permanent owner of common logical-agent identity, parent/child topology,
-visibility policy, lifecycle queries, and cross-workflow observation remains
-unsettled. Those concerns may belong to the emerging control plane, but this
-proposal does not grant that placement before implementation evidence exists.
+Existing product direction already names the main ownership split:
+
+```text
+control plane
+  owns logical identity and role routing
+  activation and authority leases
+  runtime-binding registry
+  coordination and delivery
+  control-packet lifecycle
+  subscriptions, reconciliation, and health
+  bounded projections of stronger owners
+
+agent state
+  owns recovery-critical operational consequences
+
+workflow owner
+  owns domain meaning and semantic transitions
+
+runtime adapter
+  owns provider-specific observation and execution machinery
+```
+
+The control plane may operate on role execution envelopes and project agent and
+workflow state, but does not acquire their semantic ownership. Agent live state
+therefore references the control-plane-owned logical identity and runtime binding
+while retaining recovery consequences under its role/state owner.
+
+Only the narrower placement questions remain provisional: whether parent/child
+topology is authored with agent-state identity metadata or a control-plane
+registry, where visibility policy is enforced, how lifecycle queries are
+projected, and which physical adapter or process hosts those mechanisms. Shared
+process topology must not erase the named semantic owners.
 
 ## What deserves durable state
 
@@ -339,13 +372,15 @@ named evidence sources. Prove that a replacement planner restores assumptions,
 dependencies, uncertainty, and evidence cutoff without treating remembered
 state as current or gaining roadmap authority.
 
-### Slice 4: topology, observation, and cleanup reconciliation
+### Slice 4: topology, visibility, and control-plane integration
 
-Use control-plane evidence to decide whether logical identity, parent/child
-topology, authorized cross-role observation, lifecycle queries, and semantic
-cleanup require shared machinery beyond role-owned payloads and the opaque
-durable-state primitive. Do not implement coordination, leases, or resource
-claims unless observed consumers require them.
+Integrate role state with the already named control-plane owners for logical
+identity, routing, activation, runtime bindings, coordination, delivery,
+subscriptions, reconciliation, health, and bounded projections. Use
+implementation evidence to settle only parent/child topology representation,
+visibility-policy enforcement, lifecycle-query projection, and semantic cleanup.
+Do not reopen workflow meaning or agent-state consequence ownership, and do not
+implement resource claims unless observed consumers require them.
 
 ## Out of scope
 
@@ -386,8 +421,11 @@ are not role-owned product state.
 
 ## Evidence required before authority decision
 
-- confirm the control plane's current or planned ownership of logical-agent
-  identity, topology, visibility, and lifecycle observation;
+- map current control-plane implementation to the already named ownership of
+  logical identity, routing, activation, runtime bindings, coordination,
+  delivery, subscriptions, reconciliation, health, and bounded projections;
+- determine only the still-provisional owner or enforcement boundary for
+  parent/child topology, state visibility policy, and lifecycle queries;
 - exercise the proposed supervisor/builder projection against a real context
   replacement at implementation and remediation boundaries;
 - show which reviewer findings must be durable outside the provider session

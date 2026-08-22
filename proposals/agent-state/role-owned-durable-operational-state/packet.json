@@ -19,16 +19,25 @@
     {
       "kind": "repository-evidence",
       "path": "../../../docs/workflow-invariants.md"
+    },
+    {
+      "kind": "product-direction",
+      "path": "../../../ideas/work-engine-control-protocol-and-environment-affordances.md"
+    },
+    {
+      "kind": "product-direction",
+      "path": "../../../ideas/context-derived-role-execution-envelopes.md"
     }
   ],
   "placement": {
     "state": "probable",
-    "claim": "Each long-running role workflow should own its resume-critical semantic projection over the shared opaque durable-state primitive. The permanent owner of any common logical-agent identity, topology, visibility, or observation envelope remains unresolved pending control-plane evidence."
+    "claim": "Each long-running role workflow owns its resume-critical semantic projection over the shared opaque durable-state primitive. The control plane owns logical identity and role routing, activation, runtime-binding registration, coordination, delivery, subscriptions, reconciliation, and bounded projections without owning workflow meaning or agent-state consequences. Parent/child topology representation, visibility-policy enforcement, and physical adapter placement remain provisional."
   },
   "uncertainty": {
     "state": "unresolved",
     "reopening_conditions": [
-      "Control-plane implementation establishes an authoritative owner for logical-agent identity, topology, lifecycle queries, or cross-role visibility.",
+      "Implemented control-plane evidence contradicts the named product-direction ownership of logical identity, routing, activation, runtime binding, coordination, delivery, subscriptions, reconciliation, or bounded projections.",
+      "Parent/child topology, visibility-policy enforcement, or lifecycle-query consumers require a different boundary from the provisional agent-state and control-plane split.",
       "A role recovery vertical cannot reconstruct correctly from a role-owned projection plus references to stronger domain artifacts.",
       "The current snapshot cannot be explained from predecessor-linked semantic consequences without relying on provider transcripts, Git reflogs, or model recollection.",
       "Observed multi-writer, topology-query, authorization, or cleanup requirements cannot be supported truthfully by the current Git-ref durable-state adapter.",
