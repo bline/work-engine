@@ -136,6 +136,17 @@ nonterminal, while retirement prevents stale input from resurrecting the
 attempt. This path is distinct from `resume_campaign.py`; terminal-history
 semantics remain unchanged.
 
+For a review provider that supports resumable sessions, assign the reviewer
+runtime session ID before the initial provider call and publish it in
+`actor_binding.runtime_session_id`. Require the builder to use that exact
+binding for the fresh-entry review and every ordinary remediation continuation.
+After supervisor-context replacement, recover the binding with
+`resume_active_slice.py` and resume the provider session instead of recreating
+the review research. The reviewer remains a runtime binding, not the durable
+owner: if it is unavailable or model judgment requires a fresh perspective,
+record replacement provenance and the reset reason while preserving the same
+pending obligation and applicable findings.
+
 ## Accept and record a slice
 
 Require the configured builder's `audit_receipt` plus its compact `handoff_receipt`. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted. Retain the handoff only for relevant future builder context; never use it as the durable record.

@@ -96,6 +96,28 @@ Never describe the builder as a subtask worker. State that it owns the whole sli
 
 Retain the builder returned by `spawn_agent`. Use `followup_task` on that identity for every normal phase so its durable architectural context survives.
 
+Apply the corresponding lifetime rule to the configured reviewer: launch one
+fresh isolated reviewer at the start of a review obligation, then retain that
+reviewer through ordinary remediation while its context remains useful. For a
+Claude reviewer, use the configured persistent session ID and resume it. For a
+Codex same-model reviewer, retain the spawned reviewer identity and use
+`followup_task`. A continuation examines the exact delta and prior findings and
+must not be reported as another fresh review. Reset only from a recorded
+judgment that the premise, scope, architecture, independence need, or context
+fitness materially changed; provider or caller convenience is not a reset
+reason.
+
+When active-slice recovery is configured and this builder launches the
+reviewer, assign the provider's resumable session ID before the initial review
+call and publish it through the active-slice mechanism as
+`actor_binding.runtime_session_id`. After builder or supervisor context
+replacement, recover the binding with `resume_active_slice.py` before issuing
+the next reviewer call; resume that exact session rather than reconstructing
+the review. If the binding cannot be recovered or the provider session is no
+longer available, preserve the pending obligation and applicable findings,
+record the replacement reason and provenance, and label the replacement as a
+new reviewer rather than a continuation.
+
 ### Planning turn
 
 Require read-only evidence and an evidence-based plan only. First assess consequence, reversibility, placement ambiguity, repository familiarity, and the number of ownership/runtime boundaries involved. Select and record a route identity. The named defaults are:
@@ -145,7 +167,15 @@ python3 scripts/run_gate.py --manifest-json \
   '{"checks":[{"requirement":"focused_checks","identity":"focused","command":["python3","-m","unittest"]}]}'
 ```
 
-If a deterministic check fails, diagnose locally or use the configured evidence skill's compact failure-diagnosis path when independence or context isolation adds value, then fix and rerun affected checks. Perform fresh adversarial review when configured or warranted by the profile, evaluate findings, and implement valid in-scope fixes. Finish with the checks needed to prove the final state; repeat the full suite only when configured or when fixes changed its risk surface.
+If a deterministic check fails, diagnose locally or use the configured evidence
+skill's compact failure-diagnosis path when independence or context isolation
+adds value, then fix and rerun affected checks. Start adversarial review fresh
+once when configured or warranted by the profile. Evaluate findings, implement
+valid in-scope fixes, and send each resulting delta back to the same reviewer
+identity. Finish with the checks needed to prove the final state; repeat the
+full suite only when configured or when fixes changed its risk surface. Launch
+a replacement reviewer only after a recorded reset judgment or an unavailable
+retained identity, and preserve that provenance in the receipt.
 
 Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Partition provider effort by evidence mode and preserve compact failure and fallback provenance as required by the audit contract. Do not return raw transcripts, diffs, source excerpts, or test logs.
 

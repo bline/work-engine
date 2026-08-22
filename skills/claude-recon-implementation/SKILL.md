@@ -1,6 +1,6 @@
 ---
 name: claude-recon-implementation
-description: Use Claude CLI for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and adversarial review while preserving Codex context for judgment and implementation. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
+description: Use Claude CLI for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and fresh-entry adversarial review with retained remediation context while preserving Codex context for judgment and implementation. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
 ---
 
 # Claude Recon Implementation
@@ -42,9 +42,10 @@ Claude compact placement alternatives
 → Codex plan and implementation
 → deterministic test gate
    → Claude failure diagnosis when needed
-   → or fresh Claude adversarial review
+   → or fresh-entry Claude adversarial review
 → Codex fixes
-→ repeat deterministic gate and review until accepted
+→ same reviewer evaluates the delta and prior findings
+→ repeat as useful until accepted
 ```
 
 For an obvious, local, reversible boundary with a known producer, consumer, and focused downstream proof, use a direct route: one compact targeted reconnaissance call, Codex judgment and implementation, then proportionate deterministic validation. Escalate to the high-assurance route when evidence reveals competing ownership, hidden consumers, lifecycle conflict, broad fan-out, consequential behavior, or medium/high placement risk. Record the route and why it fits.
@@ -172,7 +173,46 @@ The builder owns ordinary test execution through its deterministic gate. Claude 
 
 If that gate fails and Codex needs diagnostic help, invoke a read-only Claude process with only the failing check identity and exit status, bounded error excerpt, isolation result, task-owned files, accepted placement certificate, and likely diagnostic ranges. Require the smallest likely root-failure set, environment-versus-product assessment, whether task-owned files are in the call path, and exact additional ranges. Do not request adversarial review while deterministic checks are failing.
 
-After required deterministic commands pass, invoke a new read-only Claude process for adversarial review when configured or warranted by medium/high risk, consequential behavior, cross-boundary state, persistence/security/ownership effects, or material uncertainty. Pass the accepted slice and placement certificate, invariants, task-owned manifest and overlaps, concise completion notes, and compact deterministic result. Claude must not edit files, write patches, rerun tests, regenerate assets, update snapshots, or otherwise mutate repository state.
+After required deterministic commands pass, launch one fresh read-only Claude
+reviewer when configured or warranted by medium/high risk, consequential
+behavior, cross-boundary state, persistence/security/ownership effects, or
+material uncertainty. This initial review entry must not inherit a retrieval,
+diagnosis, placement, or builder session. Pass the accepted slice and placement
+certificate, invariants, task-owned manifest and overlaps, concise completion
+notes, and compact deterministic result. Claude must not edit files, write
+patches, rerun tests, regenerate assets, update snapshots, or otherwise mutate
+repository state.
+
+### Retain the reviewer through remediation
+
+The initial independent-review call is fresh once, not fresh on every repair.
+Give it a known UUID with `--session-id`, omit `--no-session-persistence`, and
+verify that the returned JSON `session_id` matches. When active-slice recovery
+is configured, publish that UUID as
+`actor_binding.runtime_session_id` before crossing the provider boundary.
+Disposable placement, reconnaissance, supplemental retrieval, and failure
+diagnosis calls continue to use `--no-session-persistence`; never reuse one of
+those contexts as the reviewer.
+
+After Codex applies a valid finding, invoke the same reviewer with
+`--resume <session-id>`. Supply the exact new subject or delta, affected gate
+evidence, prior finding identities, and remediation summary. Do not resend the
+whole initial research merely to reconstruct context the reviewer already owns.
+Describe the pass as a continuation of the original isolated review episode,
+not as another fresh or independently established review.
+
+If supervisor context is replaced while the provider session remains
+available, recover the pending review obligation and runtime session ID through
+`resume_active_slice.py`, then resume that session. If the provider session is
+lost, reconstruct only from durable subject, findings, and gate evidence and
+record a replacement or reconstructed reviewer truthfully; do not claim
+retained context.
+
+Reset to a genuinely fresh reviewer only when model judgment finds that the
+existing context is no longer fit—for example after a material architectural or
+placement change, a changed review premise, degraded or oversized context, or a
+renewed independence need. Record the reset reason and preserve still-applicable
+findings. A reset is not the default response to an ordinary fix.
 
 Scope review to task-owned changes and only the callers or dependencies necessary to validate them. Treat an unrelated modification as a finding only when evidence shows this task introduced it. Prioritize:
 
