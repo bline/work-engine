@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.adaptive-review-panel-coordination",
+  "source": {
+    "repository_revision": "16f9914025930ec850f452abcf991edf29254a12",
+    "lifecycle_state": "placement_uncertain",
+    "placement_state": "uncertain"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The proposal meaning is approved with provisional placement as one proposal-review coordinator containing selection and synthesis; permanent ownership remains unsettled.",
+    "rationale": "The proposal decision authority approved the proposal meaning and provisionally kept selection and synthesis under one proposal-review coordinator.",
+    "reopening_conditions": [
+      "Dogfooding shows that panel selection and synthesis require different independence, information, or durable-state lifetimes.",
+      "A specialist registry needs mechanically governed capability metadata rather than an open judgment surface.",
+      "Implementation review establishes a primary shared consumer whose boundary conflicts with proposal-local coordination.",
+      "Deterministic evidence proves sufficient for representative proposals without model specialist review.",
+      "A real revision shows that the proposed readiness projection, advisory applicability assessment, downstream reliance judgment, and authority decision cannot remain truthfully distinct.",
+      "A selected review episode produces a material finding that the proposed complete-disposition contract cannot preserve without making synthesis mechanically procedural.",
+      "Dogfooding shows that selection and synthesis require different contexts, lifetimes, or owners."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user proposal disposition in proposal-decision-20260822 attempt-2 plan-v2."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

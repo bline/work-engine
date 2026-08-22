@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.revision-bound-review-artifacts",
+  "source": {
+    "repository_revision": "16f9914025930ec850f452abcf991edf29254a12",
+    "lifecycle_state": "placement_uncertain",
+    "placement_state": "uncertain"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The proposal meaning is approved with provisional placement as a Git-backed review-artifact profile adjacent to proposal packets; permanent ownership remains unsettled.",
+    "rationale": "The proposal decision authority approved the proposal meaning and selected only a provisional first placement.",
+    "reopening_conditions": [
+      "Dogfooding shows that the shared evidence-lineage candidate cannot truthfully support both research claims and review findings, requiring a different dependency boundary.",
+      "A proposal revision exercises reviewer episodes, finding-level applicability, truthful empty or failure outcomes, conflict preservation, and synthesis reference integrity.",
+      "An implementation-review consumer establishes review-specific lifecycle requirements that make a proposal-local profile incorrect.",
+      "Observed review remediation requires transactional or runtime semantics that Git-backed artifacts cannot provide.",
+      "A concrete consumer shows that selection, findings, synthesis, and resolution require different durable owners.",
+      "Implementation review or runtime or concurrency evidence requires a different owner."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user proposal disposition in proposal-decision-20260822 attempt-2 plan-v2."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

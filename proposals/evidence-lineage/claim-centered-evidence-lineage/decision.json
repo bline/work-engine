@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-centered-evidence-lineage",
+  "source": {
+    "repository_revision": "16f9914025930ec850f452abcf991edf29254a12",
+    "lifecycle_state": "placement_uncertain",
+    "placement_state": "uncertain"
+  },
+  "decision": {
+    "disposition": "defer_for_dogfooding",
+    "lifecycle_state": "decided",
+    "placement_state": "uncertain",
+    "placement_claim": "Permanent shared placement is deferred pending further dogfooding. Review-local use of equivalent evidence-lineage semantics is permitted without establishing a shared owner.",
+    "rationale": "The proposal decision authority deferred permanent placement and requested further dogfooding rather than selecting a shared owner.",
+    "reopening_conditions": [
+      "A proposal-research claim and a specialist review finding exercise the candidate and show which identity, provenance, sensitivity, authority, and lineage properties are genuinely shared.",
+      "A domain consumer requires incompatible statement or transition semantics that make one shared contract misleading.",
+      "A domain profile exercises semantic freshness maintenance, advisory applicability assessment, and downstream reliance against the same evidence baseline and shows which roles are genuinely distinct.",
+      "Observed concurrency, external evidence, or runtime recovery requires semantics that Git-backed artifacts and on-demand revalidation cannot preserve.",
+      "One real research claim and one review finding exercise the proposed common contract."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user proposal disposition in proposal-decision-20260822 attempt-2 plan-v2."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

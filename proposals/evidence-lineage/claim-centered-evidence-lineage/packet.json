@@ -3,7 +3,7 @@
   "proposal_id": "work-engine.claim-centered-evidence-lineage",
   "family_id": "work-engine.evidence-lineage",
   "title": "Claim-Centered Evidence Lineage",
-  "lifecycle_state": "placement_uncertain",
+  "lifecycle_state": "decided",
   "narrative": {
     "path": "proposal.md"
   },
@@ -27,7 +27,7 @@
   ],
   "placement": {
     "state": "uncertain",
-    "claim": "A Git-backed evidence-lineage capability shared beneath proposal research and review artifacts is a plausible semantic owner, but dogfooding has not yet proved which statement, authority, and lineage properties are genuinely cross-domain or where the first adapter should live."
+    "claim": "Permanent shared placement is deferred pending further dogfooding. Review-local use of equivalent evidence-lineage semantics is permitted without establishing a shared owner."
   },
   "uncertainty": {
     "state": "unresolved",
@@ -35,7 +35,8 @@
       "A proposal-research claim and a specialist review finding exercise the candidate and show which identity, provenance, sensitivity, authority, and lineage properties are genuinely shared.",
       "A domain consumer requires incompatible statement or transition semantics that make one shared contract misleading.",
       "A domain profile exercises semantic freshness maintenance, advisory applicability assessment, and downstream reliance against the same evidence baseline and shows which roles are genuinely distinct.",
-      "Observed concurrency, external evidence, or runtime recovery requires semantics that Git-backed artifacts and on-demand revalidation cannot preserve."
+      "Observed concurrency, external evidence, or runtime recovery requires semantics that Git-backed artifacts and on-demand revalidation cannot preserve.",
+      "One real research claim and one review finding exercise the proposed common contract."
     ]
   },
   "authority": {
