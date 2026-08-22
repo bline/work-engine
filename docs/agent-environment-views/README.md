@@ -8,11 +8,11 @@ Generated navigation for the role-scoped projections in this directory.
 See the [overall environment view](../agent-environment-graphs.md) for the shared legend,
 cross-role matrix, and deterministic baseline summary.
 
-| Role | Objective | Context lifetime | Detail |
-| --- | --- | --- | --- |
-| Slice Supervisor | Advance the configured campaign through truthful bounded slices without absorbing or performing repository-domain work. | one campaign; compact lifecycle state across slices | [Open](./slice-supervisor.md) |
-| Slice Builder | Own one accepted engineering slice from repository understanding through implementation, validation, remediation, and truthful receipts. | one slice across planning, implementation, and gate phases | [Open](./slice-builder.md) |
-| Independent Reviewer | Provide fresh, read-only falsification or adversarial evidence that reduces correlated builder error for the bounded claim under review. | fresh at entry; isolated and bounded to one review claim or remediation loop | [Open](./independent-reviewer.md) |
+| Role | Objective | Context lifetime | Detail | Analysis input |
+| --- | --- | --- | --- | --- |
+| Slice Supervisor | Advance the configured campaign through truthful bounded slices without absorbing or performing repository-domain work. | one campaign; compact lifecycle state across slices | [Open](./slice-supervisor.md) | [YAML](./slice-supervisor.yaml) |
+| Slice Builder | Own one accepted engineering slice from repository understanding through implementation, validation, remediation, and truthful receipts. | one slice across planning, implementation, and gate phases | [Open](./slice-builder.md) | [YAML](./slice-builder.yaml) |
+| Independent Reviewer | Provide fresh, read-only falsification or adversarial evidence that reduces correlated builder error for the bounded claim under review. | fresh at entry; isolated and bounded to one review claim or remediation loop | [Open](./independent-reviewer.md) | [YAML](./independent-reviewer.yaml) |
 
 These pages are deterministic projections, not editable contract owners. Update
 [`../agent-environments.yaml`](../agent-environments.yaml) or

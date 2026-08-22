@@ -55,14 +55,17 @@ Color and shortened text are presentation metadata, never new semantic truth.
 If a desired label or color cannot be derived from a canonical field, update the
 owning input through the authority process or leave the view unclassified.
 
-Render a navigable page hierarchy: the top-level output owns the shared legend,
-cross-role matrix, summary, findings, and role links; `role-output-dir/README.md`
-is the GitHub directory index; and one slugged page per role owns that role's
-contract summary, graph, complete relation ledger, and applicable authority,
-observation, mutation, transition, and independence details. `check` validates
-the entire generated set. `render` may remove only stale Markdown pages in the
-explicit role output directory that carry this generator's ownership marker;
-preserve every unmarked file.
+Render a navigable artifact hierarchy: the top-level output owns the shared
+legend, cross-role matrix, summary, findings, and role links;
+`role-output-dir/README.md` is the GitHub directory index; one slugged Markdown
+page per role owns that role's compact human-facing graph and relation views;
+and one same-slug YAML projection carries its complete role record, referenced
+entities, full invariant records, and referenced machinery for lossless analysis.
+The YAML projection is generated evidence subordinate to both canonical inputs,
+not an editable contract owner. `check` validates the entire generated set.
+`render` may remove only stale Markdown or YAML artifacts in the explicit role
+output directory that carry this generator's format-appropriate ownership
+marker; preserve every unmarked file.
 
 Read [references/semantic-judgment.md](references/semantic-judgment.md) before
 classifying invariant status, causal parents, ownership, authority,

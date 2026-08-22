@@ -4,7 +4,7 @@
 <!-- invariant-sha256: 8586f785a7b707c8c90583caba8174f5c28b61bb874ca8108e6e54eca0b132d9 -->
 <!-- environment-sha256: ad7a49c73a773d9d077053def9739892a99d00f411558fb2e79df1dbf9fe56c7 -->
 
-[← Overall environment](../agent-environment-graphs.md) · [Role index](./README.md) · [Invariant catalog](../workflow-invariants.md)
+[← Overall environment](../agent-environment-graphs.md) · [Role index](./README.md) · [Invariant catalog](../workflow-invariants.md) · [Lossless YAML projection](./slice-builder.yaml)
 
 This page is a generated role-scoped projection. Its graph is an overview; the relation table is the
 complete declared edge ledger for this role.

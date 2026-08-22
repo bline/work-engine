@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).parents[1]
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -176,15 +178,47 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
             catalog, environment,
             FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
         )
-        self.assertEqual(set(pages), {"README.md", "builder.md"})
+        self.assertEqual(set(pages), {"README.md", "builder.md", "builder.yaml"})
         self.assertIn("[Open role view](agent-environment-views/builder.md)", overview)
         self.assertIn("## Role × relation matrix", overview)
         self.assertIn("[Open](./builder.md)", pages["README.md"])
+        self.assertIn("[YAML](./builder.yaml)", pages["README.md"])
         self.assertIn("# Builder Environment", pages["builder.md"])
+        self.assertIn("[Lossless YAML projection](./builder.yaml)", pages["builder.md"])
         self.assertIn("## At a glance", pages["builder.md"])
         self.assertIn("## Environment graph", pages["builder.md"])
         self.assertIn("## Complete relation table", pages["builder.md"])
         self.assertIn("[shared legend](../agent-environment-graphs.md#color-legend)", pages["builder.md"])
+        projection = yaml.safe_load(pages["builder.yaml"])
+        self.assertEqual(projection["role_id"], "role.builder")
+        self.assertEqual(projection["role"], environment["roles"]["role.builder"])
+        self.assertEqual(projection["direct_invariant_ids"], ["INV-001"])
+        self.assertEqual(projection["entities"]["states"]["state.input"], {"label": "Input"})
+        self.assertEqual(projection["invariants"]["INV-001"]["condition"], "Human owns contract changes.")
+        self.assertEqual(projection["invariants"]["INV-001"]["causal_parent"], "Silent changes are unauthorized.")
+        self.assertEqual(projection["mechanisms"]["MECH-ONE"]["component"], "fixture")
+        self.assertNotIn("…", pages["builder.yaml"])
+
+    def test_role_yaml_closes_transitive_invariant_relations(self):
+        catalog, environment = self.load_fixture()
+        catalog["invariants"]["INV-001"]["relations"] = ["INV-002"]
+        catalog["invariants"]["INV-002"] = {
+            "owner": "system", "applies": "all", "class": "truth",
+            "condition": "Generated analysis preserves related invariant meaning.",
+            "causal_parent": "Dangling invariant references make the projection incomplete.",
+            "enforcement": "generator", "mechanisms": ["MECH-ONE"],
+            "relations": [], "sources": "fixture",
+        }
+        projection = yaml.safe_load(AEG.render_role_yaml(
+            catalog, environment, "role.builder",
+            FIXTURES / "workflow-invariants.md", FIXTURES / "agent-environments.yaml",
+        ))
+        self.assertEqual(projection["direct_invariant_ids"], ["INV-001"])
+        self.assertEqual(set(projection["invariants"]), {"INV-001", "INV-002"})
+        self.assertEqual(
+            projection["invariants"]["INV-002"]["causal_parent"],
+            "Dangling invariant references make the projection incomplete.",
+        )
 
     def test_site_check_detects_stale_role_page(self):
         catalog, environment = self.load_fixture()
@@ -200,10 +234,25 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
             AEG.check_site(output, role_dir, overview, pages)
             manual = role_dir / "manual-notes.md"
             stale = role_dir / "removed-role.md"
+            manual_yaml = role_dir / "manual-notes.yaml"
+            manual_binary_yaml = role_dir / "manual-binary.yaml"
+            stale_yaml = role_dir / "removed-role.yaml"
             manual.write_text("human-authored")
             stale.write_text(AEG.GENERATED_COMMENT + "\nstale")
-            self.assertEqual(AEG.write_site(output, role_dir, overview, pages), [str(stale)])
+            manual_yaml.write_text("human: authored\n")
+            manual_binary_yaml.write_bytes(b"\xff\xfe")
+            stale_yaml.write_text(AEG.GENERATED_YAML_COMMENT + "\nstale: true\n")
+            self.assertEqual(
+                AEG.write_site(output, role_dir, overview, pages),
+                [str(stale), str(stale_yaml)],
+            )
             self.assertTrue(manual.is_file())
+            self.assertTrue(manual_yaml.is_file())
+            self.assertTrue(manual_binary_yaml.is_file())
+            (role_dir / "builder.yaml").write_text("stale")
+            with self.assertRaisesRegex(AEG.GraphError, "role page is stale"):
+                AEG.check_site(output, role_dir, overview, pages)
+            (role_dir / "builder.yaml").write_text(pages["builder.yaml"])
             (role_dir / "builder.md").write_text("stale")
             with self.assertRaisesRegex(AEG.GraphError, "role page is stale"):
                 AEG.check_site(output, role_dir, overview, pages)
