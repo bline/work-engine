@@ -594,16 +594,26 @@ verified primary-workflow catalog in
 parentheses identify the principal current owners; changes must be made at those
 owners before this projection is updated.
 
+`INV-*` references establish support only inside the invariant catalog's
+declared primary-workflow scope. Planning-layer and future-architecture claims
+cite their own contracts or are explicitly qualified by maturity; this section
+does not extend the catalog by analogy.
+
 The current architecture is organized around these derived distinctions:
 
 1. **Human authority is not model confidence.** A recommendation, packet,
    review, schedule, or durable record does not create authority. (`INV-002`)
 2. **Durability is not semantic ownership.** The shared state primitive stores
    opaque revisions; each workflow owns the meaning of its payload.
-   (`DESIGN.md` §1.1; `durable-state` contract)
-3. **Planning is not execution.** Ideas, proposals, evaluation, strategy,
-   roadmaps, campaigns, and implementation have distinct owners and lifetimes.
-   (`INV-005`, `INV-006`, `INV-032`)
+   ([`durable-state` contract](skills/durable-state/SKILL.md))
+3. **Planning artifacts do not authorize execution.** Idea sources, proposal
+   packets, strategic recommendations, campaign contracts, and implementation
+   state have distinct current owners and lifetimes. Evidence-backed proposal
+   evaluation remains exploratory and has no settled owner here.
+   ([`proposal-former`](skills/proposal-former/SKILL.md),
+   [`proposal-packets`](skills/proposal-packets/SKILL.md),
+   [`strategic-planner`](skills/strategic-planner/SKILL.md),
+   [`slice-supervisor`](skills/slice-supervisor/SKILL.md))
 4. **Supervision is not domain work.** The control role owns lifecycle and
    acceptance boundaries; builders or future domain roles own implementation
    judgment. (`INV-005`, `INV-006`)
@@ -618,9 +628,12 @@ The current architecture is organized around these derived distinctions:
 8. **Runtime identity is not logical identity.** Provider sessions may be
    replaced while durable role or attempt identity remains stable. (`INV-016`;
    `slice-supervisor` active-slice recovery contract)
-9. **Projection is not ownership.** UIs, control planes, handoffs, and role
-   environments should reference stronger owners rather than become shadow
-   databases. (`DESIGN.md` §2.3; `INV-022`, `INV-032`)
+9. **Current projections are not owners.** Handoffs and role-environment views
+   remain secondary to the stronger artifacts they reference. Future UI and
+   control-plane projections are intended to preserve the same separation, but
+   that extension is exploratory rather than verified by the primary-workflow
+   catalog. (`DESIGN.md` §2.3; `INV-022`;
+   [`agent-environments.yaml`](docs/agent-environments.yaml))
 10. **Current machinery is not permanent doctrine.** Git refs, SQLite, model
     providers, specific skills, and named routes may be replaced while their
     protected consequences remain true. (`DESIGN.md` §2.2)
