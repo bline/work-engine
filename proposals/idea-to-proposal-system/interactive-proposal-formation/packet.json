@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.proposal-formation",
+  "family_id": "work-engine.idea-to-proposal-system",
+  "title": "Interactive Proposal Formation",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "shared_family_idea_source",
+      "path": "../../../ideas/proposal-packet.md"
+    },
+    {
+      "kind": "formation_idea_source",
+      "path": "../../../ideas/proposal-packet-workflow.md"
+    },
+    {
+      "kind": "formation_idea_source",
+      "path": "../../../ideas/proposal-packet-impl.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/interactive-idea-to-proposal-workflow.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A dedicated Work Engine proposal-former planning capability owns interactive formation judgment and packet interaction without owning packet identity or downstream decisions."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Dogfooding shows formation and strategic portfolio reconciliation cannot be separated without repeated reconstruction.",
+      "Useful interactive continuity requires additional durable session state whose semantic owner can be identified.",
+      "Formation becomes a product-neutral capability with independent consumers that justify extraction from Work Engine."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "Formation has a semantic dependency on the durable packet contract as the canonical target for formed and revised candidate state; this does not impose a mandatory delivery order.",
+      "causal": true
+    }
+  ]
+}

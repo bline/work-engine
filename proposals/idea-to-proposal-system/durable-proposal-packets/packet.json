@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.proposal-packets",
+  "family_id": "work-engine.idea-to-proposal-system",
+  "title": "Durable Proposal Packets",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "shared_family_idea_source",
+      "path": "../../../ideas/proposal-packet.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "Work Engine's planning layer owns proposal-packet semantics through the proposal-packets capability and the human-authored proposals surface."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A primary independently deployable consumer outside engineering campaign planning emerges.",
+      "Observed multi-writer use requires transactional semantics that Git review cannot provide.",
+      "Selective role loading cannot be achieved without a normalized store.",
+      "The required core cannot remain substantially smaller than the optional lifecycle surface."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "enables",
+      "target_id": "work-engine.proposal-formation",
+      "rationale": "Interactive formation has a semantic prerequisite for an intelligible durable target with stable identity, ownership, relationships, uncertainty, and authority semantics; this does not impose a mandatory delivery order.",
+      "causal": true
+    }
+  ]
+}
