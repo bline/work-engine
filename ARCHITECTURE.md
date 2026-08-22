@@ -61,6 +61,7 @@ flowchart TB
     RR[Revision-bound proposal review]
     PE[Evidence-backed evaluation]
     SP[Strategic Planner]
+    SH[Strategic handoff]
     RM[Roadmap and campaign sources]
   end
 
@@ -89,13 +90,13 @@ flowchart TB
   end
 
   H --> I
-  H --> PP
-  H --> RM
+  H -->|exercises proposal authority| PP
+  H -->|selects or authorizes| RM
   I --> F --> PP
   PP -. formed direction .-> RR
   PP -. exploratory direction .-> PE
   PP -. future planning input .-> SP
-  SP --> RM
+  SP --> SH --> H
   RM --> PF --> SS --> SB
   SB --> EV
   SB --> RV
@@ -104,7 +105,8 @@ flowchart TB
   LS --> DS
   SS --> CP --> RC
   SS --> RC
-  CP -->|explicit human authority| CC
+  CP --> CC
+  H -->|authorizes publication| CC
   RC --> SP
 
   RM -. future compilation .-> OC
@@ -117,7 +119,7 @@ flowchart TB
   classDef formed fill:#f3e8ff,stroke:#6b3fa0,color:#1f2937;
   classDef exploratory fill:#f5f5f5,stroke:#6b7280,color:#1f2937,stroke-dasharray:5 4;
   classDef authority fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
-  class RM,SP,PF,SS,SB,EV,RV,GT,DS,LS,CP,RC,CC implemented;
+  class RM,SP,SH,PF,SS,SB,EV,RV,GT,DS,LS,CP,RC,CC implemented;
   class F,PP active;
   class RR formed;
   class I,PE,OC,EE,RT,CTRL exploratory;
@@ -128,6 +130,9 @@ Node fills map exactly to the four maturity classes; human authority is shown
 separately because it is a governing boundary, not a capability maturity.
 Solid edges are relationships supported by current machinery. Dashed edges are
 formed or exploratory relationships that are not yet implemented end to end.
+Component maturity and relationship maturity are independent: an implemented
+component may participate in a formed or exploratory integration, while an
+active component may already support current relationships.
 Neither edge style prescribes a mandatory universal procedure. Work can enter
 through an explicit objective or campaign without first passing through the
 proposal system. Proposal formation, evaluation, and strategic planning are
@@ -168,8 +173,11 @@ Its principal boundaries are:
 - **Proposal packets** give independently decidable candidates stable identity,
   human-readable meaning, typed relationships, uncertainty, and authority
   metadata.
-- **Proposal review and evaluation** challenge meaning and establish decision
-  support without accepting, prioritizing, or implementing a proposal.
+- **Revision-bound proposal review** is a formed direction for challenging the
+  exact proposal revision without accepting or prioritizing it.
+- **Evidence-backed evaluation** is an exploratory consumer that would establish
+  comparable decision support without acquiring proposal or portfolio
+  authority.
 - **Strategic planning** reconciles durable evidence with the roadmap and emits
   advisory planning handoffs.
 - **Roadmaps and campaign sources** select bounded objectives for execution
@@ -181,7 +189,7 @@ lifetimes.
 
 ### 3. Campaign control
 
-The current execution control plane is the `slice-supervisor` skill. It owns:
+The current campaign controller is the `slice-supervisor` skill. It owns:
 
 - effective campaign configuration and provenance;
 - campaign and slice lifecycle state;
@@ -258,8 +266,11 @@ authoritative, independent, accepted, or current.
 The architectural-layer sections above explain why the boundaries exist and
 how they relate. The tables below are the compact reference for each
 component's current maturity and ownership. A material change to either view
-should update both in the same revision; if their maturity wording conflicts,
-the tables govern the classification until the narrative is reconciled.
+should update both in the same revision. The tables are the current
+hand-authored classification reference, not an independent architecture owner;
+any conflict is a documentation defect to reconcile against owning evidence.
+A future accepted structured architecture definition may generate tables and
+diagrams, but this document does not assume or authorize that machinery.
 
 ### Essential backbone
 
@@ -364,22 +375,25 @@ flowchart LR
   P --> V[Mechanical validation]
   P -. formed direction .-> R[Revision-bound review artifacts]
   P -. exploratory direction .-> E[Evidence-backed evaluation]
-  R -. future advice .-> A[Decision authority]
-  E -. future advice .-> A
-  A --> D[Decision record]
-  D --> S[Strategic planning and roadmap]
-  S --> C[Campaign objective]
+  R -. future advice .-> PA[Proposal decision authority]
+  E -. future advice .-> PA
+  PA -->|exercises disposition| D[Decision record]
+  D --> S[Strategic Planner]
+  S --> SH[Advisory strategic handoff]
+  SH --> RA[Roadmap authority]
+  RA --> RM[Roadmap and campaign selection]
+  RM --> C[Campaign objective]
 
   classDef implemented fill:#e8f1fb,stroke:#315b7d,color:#1f2937;
   classDef active fill:#fff3cd,stroke:#8a6d00,color:#1f2937;
   classDef formed fill:#f3e8ff,stroke:#6b3fa0,color:#1f2937;
   classDef exploratory fill:#f5f5f5,stroke:#6b7280,color:#1f2937,stroke-dasharray:5 4;
   classDef authority fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
-  class V,S,C implemented;
+  class V,S,SH,RM,C implemented;
   class F,P,D active;
   class R formed;
   class I,E exploratory;
-  class A authority;
+  class PA,RA authority;
 ```
 
 This diagram uses the same maturity fills and edge semantics as the system view:
@@ -570,33 +584,46 @@ backlog of promises. A future direction becomes product work only when its
 meaning and owner are formed, its authority is explicit, its required
 consequence is accepted, and an implementation objective is authorized.
 
-## Architectural boundaries to preserve while the system grows
+## Derived invariant projection
 
-The machinery may change, but the following distinctions are load-bearing:
+This section is a non-normative architectural projection. It does not establish
+or independently own invariants. The binding definitions remain in
+[`DESIGN.md`](DESIGN.md), the owning skill and schema contracts, and the
+verified primary-workflow catalog in
+[`docs/workflow-invariants.md`](docs/workflow-invariants.md). The references in
+parentheses identify the principal current owners; changes must be made at those
+owners before this projection is updated.
+
+The current architecture is organized around these derived distinctions:
 
 1. **Human authority is not model confidence.** A recommendation, packet,
-   review, schedule, or durable record does not create authority.
+   review, schedule, or durable record does not create authority. (`INV-002`)
 2. **Durability is not semantic ownership.** The shared state primitive stores
    opaque revisions; each workflow owns the meaning of its payload.
+   (`DESIGN.md` §1.1; `durable-state` contract)
 3. **Planning is not execution.** Ideas, proposals, evaluation, strategy,
    roadmaps, campaigns, and implementation have distinct owners and lifetimes.
+   (`INV-005`, `INV-006`, `INV-032`)
 4. **Supervision is not domain work.** The control role owns lifecycle and
    acceptance boundaries; builders or future domain roles own implementation
-   judgment.
+   judgment. (`INV-005`, `INV-006`)
 5. **Evidence retrieval is not independent review.** They may use the same
-   provider but establish different claims.
+   provider but establish different claims. (`INV-012`, `INV-020`)
 6. **Mechanical validity is not semantic acceptance.** Schemas and tests prove
    only the mechanically decidable properties they actually check.
+   (`INV-014`, `INV-015`)
 7. **Private acceptance is not public mutation.** Checkpoints preserve exact
    accepted content; user-visible commits require separate authority.
+   (`INV-024`, `INV-027`)
 8. **Runtime identity is not logical identity.** Provider sessions may be
-   replaced while durable role or attempt identity remains stable.
+   replaced while durable role or attempt identity remains stable. (`INV-016`;
+   `slice-supervisor` active-slice recovery contract)
 9. **Projection is not ownership.** UIs, control planes, handoffs, and role
    environments should reference stronger owners rather than become shadow
-   databases.
+   databases. (`DESIGN.md` §2.3; `INV-022`, `INV-032`)
 10. **Current machinery is not permanent doctrine.** Git refs, SQLite, model
     providers, specific skills, and named routes may be replaced while their
-    protected consequences remain true.
+    protected consequences remain true. (`DESIGN.md` §2.2)
 
 ## Repository map
 
@@ -623,14 +650,27 @@ Update this document when a subsystem boundary, owner, principal information
 flow, runtime topology, or maturity classification materially changes. Link to
 the canonical owner instead of copying detailed schemas or procedures.
 
-When sources disagree, use this authority order for the kind of claim being
-made:
+Source resolution is claim-sensitive and authority-sensitive. No artifact type
+has universal precedence. First identify the claim, its semantic owner, its
+subject and revision, and any authority actually exercised:
 
-1. human authority and normative product contracts;
-2. current owning schemas, skill contracts, and executable behavior;
-3. accepted planning and roadmap evidence;
-4. formed proposals and recorded decisions;
-5. exploratory ideas, notes, and historical reviews.
+| Claim | Canonical owner | Role of other evidence |
+| --- | --- | --- |
+| Granted authority or approval | The human or contract that owns the decision | A verified decision record evidences that authority only for its bound subject, revision, scope, and disposition. |
+| Product invariant | `DESIGN.md` or the more specific owning contract | Executable behavior and tests may reveal compliance or a defect; they do not silently rewrite the contract. |
+| Current interface or wire semantics | The owning schema or capability contract | Executable behavior and tests establish the current realization and expose divergence that must be reconciled. |
+| Current run, acceptance, or recovery state | The owning receipt, checkpoint, live-state record, or repository object with its provenance | Handoffs, projections, and model context are secondary views, not substitute owners. |
+| Proposal identity, meaning, lifecycle, or disposition | The proposal packet's owning artifacts plus any authority-authored decision bound to that proposal | Origin ideas and mechanical validation do not establish semantic quality or decision authority. |
+| Roadmap priority or campaign selection | The roadmap or campaign owner, including any authorized amendment or selection decision | Strategic handoffs and proposal decisions advise or supply inputs only within their stated authority. |
+| Current architecture and maturity | Current owning machinery and this evidence-backed structural synthesis | The roadmap informs transition status; proposals and ideas describe possible later architecture at their recorded maturity. |
+| Speculative future direction | The formed proposal for that candidate meaning, or the idea when no proposal exists | Neither source authorizes implementation or outranks the current owner of another claim. |
+
+An authority-authored decision belongs with the authority that produced it for
+the exact claim it decides; it is not merely a higher-status proposal artifact.
+Conversely, a formed but undecided proposal does not outrank an authorized
+roadmap decision. When current behavior contradicts its owning contract, record
+and resolve the inconsistency rather than treating either side as an automatic
+global winner.
 
 A stale section should be marked or revised rather than rationalized around new
 evidence. This document is a map of the current machine and its evidenced
