@@ -773,7 +773,61 @@ waiting condition rather than automatic invalidation of the proposal research.
 
 ---
 
-# 15. Central architectural statements
+# 15. Ontology minimization audit
+
+The vocabulary in this exploration is provisional. Adding a noun to an idea
+record must not silently create a new canonical entity, schema, lifecycle, or
+authority boundary. Before these ideas become contracts, the vocabulary should
+undergo an explicit minimization audit.
+
+For each proposed concept, ask:
+
+1. Does it need an independent stable identity, owner, and lifecycle?
+2. Would conflating it with another concept permit an invalid state or an
+   authority violation?
+3. Is it canonical state, configuration, metadata, a subtype, or a generated
+   view?
+4. Could it be represented more truthfully as a property or relationship of an
+   existing primitive?
+5. Does a real downstream consumer require the distinction, or is the term only
+   explanatory convenience?
+
+The following is a candidate decomposition for that audit, not an adopted
+ontology or a set of equivalence judgments:
+
+| Concept | Candidate architectural treatment | Reason to test |
+| --- | --- | --- |
+| Claim | Core semantic primitive | Needs stable identity, evidence, producer, status, and independent refresh history |
+| Evidence item | Core evidentiary primitive | Can support or challenge multiple claims and needs its own provenance |
+| Measure | Typed evidence item or observation subtype | Units, scope, and direction may not justify a peer top-level entity |
+| Facet | Classification or index over claims and evidence | May be metadata used to organize inquiry rather than independently owned state |
+| Decision contract | Core authority-bearing contract | Defines evidence requirements, decision owner, tolerated uncertainty, and transition consequence |
+| Readiness profile | Configuration or projection of a decision contract | May express requirements for one decision without becoming a universal proposal state |
+| Portfolio view | Generated projection | Presents selected claims and measures under a comparison contract but owns neither proposal meaning nor priority |
+| Organizational component contract | Possible shared contract family | May hold the common identity, boundary, and compatibility concepts from which role and capability contracts specialize |
+| Role template | Possible organizational-contract subtype | Carries delegated authority, required consequences, independence, and prohibitions |
+| Capability contract | Possible organizational-contract subtype | Describes operational affordances and compatibility without granting organizational authority |
+| Execution envelope | Candidate canonical compiled artifact | Binds authorized organizational requirements to compatible realizations for one problem and run context |
+| Role projection | Generated bounded view | Gives a consumer only the envelope state it may observe and must not become a competing owner |
+
+Some distinctions appear load-bearing even before adoption. In particular, a
+role and a capability cannot be conflated merely because one provider often
+implements both: capability availability does not grant decision authority,
+ownership, or permission to change a contract. Conversely, portfolio views and
+role projections appear intentionally derivative and should not become peer
+canonical primitives merely because they have useful serialized forms.
+
+This table proposes questions and likely treatments; it does not declare that
+any two existing concepts are equivalent. Adopting a merge, subtype relation,
+or canonical ownership rule requires a semantic-judgment artifact with stable
+identity, evidence references, producer attribution, owning authority, and a
+`changes_contract` classification. The audit should prefer the smallest model
+that still prevents invalid states and preserves every required authority
+boundary.
+
+---
+
+# 16. Central architectural statements
 
 > **Research maturity describes supported understanding, not procedural
 > completion.**
@@ -809,3 +863,9 @@ waiting condition rather than automatic invalidation of the proposal research.
 
 > **Later research should build on durable earlier conclusions rather than
 > reconstructing them.**
+
+> **A proposed term should earn independent identity, ownership, and lifecycle;
+> otherwise prefer a property, relationship, subtype, configuration, or view.**
+
+> **Generated projections are subordinate to canonical state and must not
+> become competing owners merely because they are serialized.**

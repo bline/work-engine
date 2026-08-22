@@ -110,3 +110,7 @@ Examples:
 - `decision.md` preserves accepted, deferred, rejected, or superseded proposal decisions.
 
 Exploratory detail that has no downstream value should remain disposable.
+
+The layered maturity, evidence-baseline, claim-sensitivity, and refresh model is
+developed in
+[Research Maturity, Evidence Snapshots, and Staleness](./research-maturity-evidence-snapshots-and-staleness.md).
