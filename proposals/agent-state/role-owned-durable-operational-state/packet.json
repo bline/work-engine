@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.role-owned-durable-operational-state",
+  "family_id": "work-engine.agent-state",
+  "title": "Role-Owned Durable Operational State",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "idea",
+      "path": "../../../ideas/persistent-agent-state.md"
+    },
+    {
+      "kind": "repository-evidence",
+      "path": "../../../docs/agent-environments.yaml"
+    },
+    {
+      "kind": "repository-evidence",
+      "path": "../../../docs/workflow-invariants.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "Each long-running role workflow should own its resume-critical semantic projection over the shared opaque durable-state primitive. The permanent owner of any common logical-agent identity, topology, visibility, or observation envelope remains unresolved pending control-plane evidence."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Control-plane implementation establishes an authoritative owner for logical-agent identity, topology, lifecycle queries, or cross-role visibility.",
+      "A role recovery vertical cannot reconstruct correctly from a role-owned projection plus references to stronger domain artifacts.",
+      "The current snapshot cannot be explained from predecessor-linked semantic consequences without relying on provider transcripts, Git reflogs, or model recollection.",
+      "Observed multi-writer, topology-query, authorization, or cleanup requirements cannot be supported truthfully by the current Git-ref durable-state adapter.",
+      "Independent-review recovery shows that preserving findings outside the provider session compromises the required independence boundary.",
+      "Dogfooding shows that one proposed role profile duplicates stronger packet, receipt, checkpoint, schedule, or repository state rather than referencing it."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "Proposal packets own durable candidate and decision context, while this proposal owns only unfinished live operational position and references packet state rather than duplicating it.",
+      "causal": false
+    }
+  ]
+}
