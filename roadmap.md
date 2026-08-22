@@ -124,21 +124,21 @@ The review-remediation campaign has since established the exact authorized Git
 delta, authoritative completion-commit receipts, a durable nonterminal
 completion-offer lifecycle, open proposal provenance, review-evidence
 applicability, and route-open persistent-state requirements. Those accepted
-outcomes supersede the corresponding gaps in the 2026-08-20 reconciliation
-without rewriting that dated evidence. Executable recovery after context
-replacement remains unproved.
+outcomes are now joined by two accepted active-slice recovery slices. A fresh
+process recovers the same planning or review obligation, handled consequences,
+actor binding, authoritative references, and retirement without stale
+resurrection. These outcomes supersede the corresponding gaps in the 2026-08-20
+and 2026-08-21 reconciliations without erasing their dated evidence.
 
 The current priority order is:
 
 1. reconcile accepted campaign work and keep stopped or user-owned changes
    distinguishable;
-2. establish the authoritative owner and consumers for persistent live campaign
-   and agent state, then implement the smallest evidence-supported recovery
-   boundary, including truthful retryable capability-waiting consequences;
-3. select live-state consumers from implementation evidence; durable review
-   obligations and immutable review subjects are one candidate consumer, while
-   overlap and reservation capabilities remain conditional on actual
-   concurrency or authority constraints;
+2. preserve the accepted active-slice boundary: slice-supervisor owns attempt
+   semantics while durable-state remains an opaque compare-and-swap primitive;
+3. preserve and exercise the first durable proposal-packet contract and its
+   mechanically decidable identity, reference, relationship, uncertainty, and
+   authority consequences without absorbing proposal meaning into runtime state;
 4. establish an atomic, versioned install boundary with a neutral-directory
    smoke test before syncing the repository skill into Codex;
 5. audit contract ownership and imperative runtime instructions;
@@ -321,9 +321,12 @@ a supervisor-owned durable nonterminal offer lifecycle outside terminal metrics
 and the ordinary worktree; the completion adapter retains ownership of real
 branch mutation and authoritative created or refused evidence. Proposal
 provenance is structured and open to truthful producers while remaining bound
-to its checkpoint, tree, and task patch. Some historical records remain on old
-schemas, authoritative builder telemetry is incomplete, and durable general
-mid-slice agent state and partial-artifact recovery do not yet exist.
+to its checkpoint, tree, and task patch. Active slice attempts now have a
+reachable fresh-process lifecycle for pending planning and review obligations:
+slice-supervisor owns their semantic state and durable-state owns only opaque
+compare-and-swap publication. Some historical records remain on old schemas,
+authoritative builder telemetry is incomplete, and durable general agent state
+outside that bounded lifecycle and partial-artifact recovery do not yet exist.
 
 The persistent-state proposals retain durable review obligations as a possible
 consumer rather than selecting the first implementation boundary in advance. A
@@ -338,14 +341,13 @@ and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-revie
 ## Remaining work
 
 - Preserve `null` for unavailable measurements and zero only for observed zero.
-- Add durable live state for active campaigns and agents: stable logical
-  identities distinct from provider runtime identities, phase checkpoints,
-  handled-event disposition, child bindings, baseline ownership, and truthful
-  recovery after context replacement. Select update, retry, and reconstruction
-  mechanics only after the authoritative owner and consumers are established.
+- Extend durable live state only when a named consumer requires semantics beyond
+  the accepted planning/review obligation lifecycle. Preserve stable logical
+  identity separately from provider runtime identity and keep semantic ownership
+  out of the opaque durable-state primitive.
 - Generalize retryable capability or gate unavailability beyond the implemented
-  completion-offer lifecycle without redefining final stopped and failed
-  terminals.
+  active-slice and completion-offer lifecycles only from an identified consumer,
+  without redefining final stopped and failed terminals.
 - Define pending-authority, mid-slice interruption, partial-artifact recovery,
   and deterministic reconciliation semantics.
 - Preserve review obligations durably when an evidence-selected runtime
@@ -739,30 +741,27 @@ and it does not complete the broader standalone-product roadmap.
 
 ---
 
-## Next persistent-state campaign
+## Accepted active-slice recovery foundation
 
-The next campaign should first establish the authoritative live-state owner and
-its consumers from repository evidence. Its implementation slices should remain
-bounded without assuming that a review queue, supervisor integration, general
-scheduling, installed-skill distribution, or a particular storage mechanism
-belongs in the same change.
+The persistent-state campaign established a bounded authoritative owner and a
+reachable consumer. Slice-supervisor owns active attempt identity, pending
+planning/review obligations, handled consequences, waiting state, actor binding,
+authoritative references, and retirement. The shared durable-state capability
+owns only opaque integrity-checked compare-and-swap publication through its
+current Git-ref adapter.
 
-Its intended consequence is:
+Its accepted consequence is:
 
-> A campaign, agent, slice attempt, and plan version can be created and
-> recovered from one durable state owner with enough identity, ordering,
-> crash-safety, and retry semantics to prevent duplicate consequences or stale
-> resurrection, without treating terminal receipts or model context as live
-> state.
+> A fresh process can recover and resume the same active planning or review
+> obligation without duplicating handled consequences, accepting stale writes,
+> resurrecting retired state, or treating terminal receipts and model context as
+> the live-state owner.
 
-The first implementation scope remains an evidence decision. It must separate
-stable logical identity from provider runtime identity, distinguish observed,
-inferred, unresolved, stale, and unavailable facts, reference stronger artifact
-owners, and prove context replacement plus a repeated write/recovery boundary.
-Append-only history, materialized projections, hydration sequencing,
-idempotency mechanisms, and any particular storage technology remain candidate
-routes unless a concrete owner or consumer failure mode makes one irreducible.
-Review-queue records and mutation reservations remain separately reviewable
-coordination capabilities, required only where an identified concurrency or
-authority invariant demands them. Supervisor integration, accepting the
-stopped fifteenth slice, and installed-skill distribution also remain separate.
+This foundation satisfies the recovery prerequisite recorded by the 2026-08-21
+proposal-workflow direction. It does not make runtime state the owner of
+proposal meaning. Durable proposal packets now provide the first bounded
+planning-layer consumer of the prerequisite through their own Git-backed
+semantic contract and repository validator.
+Append-only history, general scheduling, review queues, mutation reservations,
+installed-skill distribution, and broader agent/runtime state remain separate
+objectives until a concrete owner and consumer failure mode requires them.

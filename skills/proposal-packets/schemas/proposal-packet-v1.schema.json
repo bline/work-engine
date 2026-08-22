@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://work-engine.local/schemas/proposal-packet-v1.schema.json",
+  "title": "Work Engine proposal packet manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "proposal_id", "family_id", "title", "lifecycle_state", "narrative", "origin_refs", "placement", "uncertainty", "authority", "relationships"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "proposal_id": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"},
+    "family_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "lifecycle_state": {"enum": ["formed", "placement_uncertain", "evaluated", "decided", "superseded"]},
+    "narrative": {"$ref": "#/$defs/pathReference"},
+    "origin_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/originReference"}},
+    "placement": {"$ref": "#/$defs/placement"},
+    "uncertainty": {"$ref": "#/$defs/uncertainty"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "relationships": {"type": "array", "items": {"$ref": "#/$defs/relationship"}}
+  },
+  "$defs": {
+    "pathReference": {"type": "object", "additionalProperties": false, "required": ["path"], "properties": {"path": {"type": "string", "minLength": 1}}},
+    "originReference": {"type": "object", "additionalProperties": false, "required": ["kind", "path"], "properties": {"kind": {"type": "string", "minLength": 1}, "path": {"type": "string", "minLength": 1}}},
+    "placement": {"type": "object", "additionalProperties": false, "required": ["state", "claim"], "properties": {"state": {"enum": ["uncertain", "probable", "confirmed", "rejected"]}, "claim": {"type": "string", "minLength": 1}}},
+    "uncertainty": {"type": "object", "additionalProperties": false, "required": ["state", "reopening_conditions"], "properties": {"state": {"enum": ["unresolved", "unavailable", "conflicting", "resolved"]}, "reopening_conditions": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["decision_owner", "implementation_authorized"], "properties": {"decision_owner": {"type": "string", "minLength": 1}, "implementation_authorized": {"const": false}}},
+    "relationship": {"type": "object", "additionalProperties": false, "required": ["type", "target_id", "rationale", "causal"], "properties": {"type": {"enum": ["depends_on", "enables", "informs", "related_to", "supersedes", "replaces", "split_from", "merged_from"]}, "target_id": {"type": "string", "minLength": 1}, "rationale": {"type": "string", "minLength": 1}, "causal": {"type": "boolean"}}}
+  }
+}

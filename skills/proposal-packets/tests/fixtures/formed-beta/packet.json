@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.formed-beta",
+  "family_id": "work-engine.fixture-family",
+  "title": "Formed beta",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {"path": "proposal.md"},
+  "origin_refs": [{"kind": "fixture_source", "path": "proposal.md"}],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A planning-layer owner is plausible but remains revisable."
+  },
+  "uncertainty": {
+    "state": "conflicting",
+    "reopening_conditions": ["A competing semantic owner gains a required consumer."]
+  },
+  "authority": {
+    "decision_owner": "user",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.fixture.formed-alpha",
+      "rationale": "Beta needs the identity contract established by alpha.",
+      "causal": true
+    }
+  ]
+}

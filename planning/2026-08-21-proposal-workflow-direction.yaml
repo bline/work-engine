@@ -1,8 +1,8 @@
 schema_version: 1
 strategic_objective: "Reach a recoverable, controlled idea-to-proposal workflow that can turn speculative ideas into durable, reviewed, authority-bound proposal packets"
 evidence_cutoff:
-  roadmap_revision: "sha256:74e52aed4d5ee7d18dd209022a2c9e968f64e3174862e88ba52d672c77c93715"
-  repository_revision: "a326f2fe7cada3725af2b3ba06b6203a68d4f5ad"
+  roadmap_revision: "sha256:4e42acd742ac8874d5bcb6afd6a8c7e30c24c4dc7fd67c27ed5875d26197f716"
+  repository_revision: "29b5ec969a0f27eb4881e8b7abfb9687e645dc7d"
   campaign_terminals:
     - {run_id: "1f721733-736b-4bd2-8f35-9f1ac493d138", slice_number: 1, status: "accepted"}
     - {run_id: "1f721733-736b-4bd2-8f35-9f1ac493d138", slice_number: 2, status: "accepted"}
@@ -13,11 +13,11 @@ evidence_cutoff:
     - {run_id: "3c31301f-5a3c-4ba8-82ab-92279b62a419", slice_number: 3, status: "accepted"}
 continuity: "retained"
 verdict: "reorder"
-current_rationale: "Minimal persistent live state remains the next correctness dependency, but its strategic purpose is now to enable a recoverable proposal workflow. Durable proposal packets, interactive formation, adaptive specialized review, and explicit decision authority should follow state before broader distribution, portfolio evaluation, or closed-loop learning."
+current_rationale: "The accepted active-slice lifecycle satisfies the bounded recovery prerequisite for planning and review obligations, and the first dedicated Git-backed proposal-packet contract now establishes stable identity and deterministic repository validation. Interactive formation, adaptive review, and authority-controlled decisions remain later consumers rather than hidden scope in the packet foundation."
 assumptions:
   confirmed:
-    - evidence: "roadmap.md and the accepted persistent-state route-openness remediation"
-      consequence: "Executable recovery after context replacement remains unproved and should precede reliance on long-lived interactive proposal formation."
+    - evidence: "accepted durable live-state handoffs and reachable fresh-process active-slice lifecycle at repository revision 29b5ec969a0f27eb4881e8b7abfb9687e645dc7d"
+      consequence: "Slice-supervisor owns recoverable planning/review obligation semantics over an opaque durable-state compare-and-swap primitive; the proposal workflow recovery prerequisite is satisfied without transferring proposal ownership into runtime state."
     - evidence: "proposals/idea-to-proposal-system"
       consequence: "Durable proposal packets and interactive proposal formation already have formed candidate boundaries and can become the immediate consumer of the state foundation."
   changed:
@@ -34,8 +34,9 @@ assumptions:
       consequence: "Durability of a role judgment does not make that judgment correct, authoritative, or independent evidence for itself."
 route_changes:
   priorities:
-    - "Run campaigns/persistent-runtime-state-route-open.yaml as the bounded enabling campaign."
-    - "Implement the minimal durable proposal-packet contract and interactive proposal formation after state recovery is proved."
+    - "Preserve the accepted active-slice recovery boundary as the proposal workflow prerequisite."
+    - "Preserve and exercise the minimal durable proposal-packet contract as a dedicated planning-layer capability with stable identity, human-readable meaning, typed relationships, uncertainty, authority metadata, and deterministic validation."
+    - "Implement interactive proposal formation only after the packet target is proven; do not make formation part of packet identity ownership."
     - "Include revision-bound adaptive specialized review and explicit authority-controlled decision transitions in the first controlled proposal lifecycle."
     - "Dogfood the workflow on materially different ideas before selecting further idea-driven implementation."
   dependencies:
@@ -55,15 +56,14 @@ route_changes:
     - "General scheduling, mutation reservations, and review-queue infrastructure unless later evidence establishes a required consumer."
 recommended_campaign:
   disposition: "start_new"
-  objective: "Establish authoritative durable live-state ownership and recovery consequences so active Work Engine campaigns can survive context replacement without duplicated consequences, stale-state resurrection, or dependence on model context"
-  work_source: "campaigns/persistent-runtime-state-route-open.yaml"
-  reason: "This route-open campaign is the accepted bounded foundation for the proposal workflow and does not preselect review, dossier, storage, or coordination machinery."
+  objective: "Establish the minimal durable proposal-packet contract and mechanically prove stable identity, local references, typed relationships, uncertainty, and authority metadata without conflating proposal meaning with runtime state"
+  work_source: "proposals/idea-to-proposal-system/durable-proposal-packets"
+  reason: "The live-state prerequisite is accepted; the packet contract is the next independently useful consumer and does not preselect formation UX, review panels, portfolio evaluation, runtime wiring, or coordination machinery."
 open_uncertainties:
-  - "Which component should own authoritative live state and what storage route best preserves the required recovery consequences."
   - "Whether adaptive review selection and synthesis belong to one proposal-review coordinator or separate review-planning and synthesis capabilities."
   - "Whether architectural review remains one capability with phase-specific projections or later evidence justifies distinct proposal-architecture and implementation-architecture roles."
 authority_required: []
 revisit_when:
-  - "The persistent-state campaign establishes its recovery interface and durable owner."
+  - "The proposal-packet contract is exercised by interactive formation or another real consumer."
   - "Proposal-packet dogfooding reveals missing lifecycle, review-applicability, or authority semantics."
   - "Specialist-review use shows that the proposed open capability registry is either insufficiently expressive or becoming a procedural taxonomy."

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.formed-alpha",
+  "family_id": "work-engine.fixture-family",
+  "title": "Formed alpha",
+  "lifecycle_state": "formed",
+  "narrative": {"path": "proposal.md"},
+  "origin_refs": [{"kind": "fixture_source", "path": "proposal.md"}],
+  "placement": {
+    "state": "probable",
+    "claim": "The proposal-packets planning capability owns packet semantics."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": ["A transactional multi-writer consumer becomes necessary."]
+  },
+  "authority": {
+    "decision_owner": "user",
+    "implementation_authorized": false
+  },
+  "relationships": []
+}
