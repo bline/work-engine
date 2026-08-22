@@ -6,7 +6,7 @@
 - Family ID: `work-engine.agent-state`
 - State: placement uncertain; not evaluated or accepted
 - Decision owner: user or future explicitly authorized architecture owner
-- Evidence cutoff: repository `f9eebc6d803e77438e282b62379ed979c6412d27`, including the canonical variant-architecture map and the accepted proposal-decision implementation
+- Evidence cutoff: repository `f930db532cd494893b17ec805a8cb7666a2468c1`, including the reconciled canonical variant-architecture map and the accepted proposal-decision implementation
 
 The canonical lifecycle and placement metadata is in [`packet.json`](packet.json).
 This narrative owns the proposal's current semantic meaning. The source ideas
