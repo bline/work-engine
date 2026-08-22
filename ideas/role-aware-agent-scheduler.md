@@ -65,6 +65,13 @@ test reports, review evidence, Git state, and other domain truth remain with
 their existing authoritative owners. The control plane stores the coordination
 state and references needed to route those consequences.
 
+The scheduler is one component of this control plane, not its final owner or
+complete boundary. A client-facing control protocol may compose scheduler
+projections with activation, runtime-binding, agent-state, and workflow-owned
+projections while preserving each owner's semantics. The bidirectional client
+and environment-affordance direction is recorded in
+[Work Engine Control Protocol and Environment Affordances](work-engine-control-protocol-and-environment-affordances.md).
+
 ## Identity and activation
 
 Scheduled responsibility belongs to a stable logical recipient, not a model,

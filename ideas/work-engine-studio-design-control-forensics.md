@@ -390,6 +390,31 @@ This packet boundary allows chat, a graphical Studio, a CLI, or a future
 automation client to share the same control semantics without granting any
 client special hidden authority.
 
+The bidirectional protocol, client capability advertisement, workflow-to-client
+requests, and permission-versus-authority distinctions are developed in
+[Work Engine Control Protocol and Environment Affordances](work-engine-control-protocol-and-environment-affordances.md).
+
+## Preferred first client: Visual Studio Code
+
+Visual Studio Code is the preferred first UI candidate. It already places the
+human beside repository source, selections, diagnostics, tests, diffs, and
+workspace trust, so it can prove both useful projection and mediated control
+without requiring the full standalone Studio first.
+
+The extension should be a client of the Work Engine control protocol. It must
+not become the control plane, a durable state owner, or a direct reader of
+scheduler, agent-state, workflow, or provider-runtime storage.
+
+A narrow first experience could combine native role/workflow/agenda tree views
+with a richer environment graph or timeline view, then exercise one typed
+environment observation and one identity-bound human control. Extension reload
+must reconstruct the view and pending consequences from their authoritative
+owners.
+
+VS Code is a first route, not the product boundary. Chat, CLI, a standalone
+Studio, and other IDEs should be able to use the same semantic control protocol
+and environment-affordance contracts.
+
 ## Developer view and visual semantics
 
 A graphical view can do greater justice to Work Engine's structure than a chat
