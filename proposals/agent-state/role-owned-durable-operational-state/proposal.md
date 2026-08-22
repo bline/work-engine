@@ -6,7 +6,7 @@
 - Family ID: `work-engine.agent-state`
 - State: placement uncertain; not evaluated or accepted
 - Decision owner: user or future explicitly authorized architecture owner
-- Evidence cutoff: repository `16f9914025930ec850f452abcf991edf29254a12`, plus the observed proposal-decision campaign through its accepted private checkpoint
+- Evidence cutoff: repository `f9eebc6d803e77438e282b62379ed979c6412d27`, including the canonical variant-architecture map and the accepted proposal-decision implementation
 
 The canonical lifecycle and placement metadata is in [`packet.json`](packet.json).
 This narrative owns the proposal's current semantic meaning. The source ideas
@@ -41,6 +41,10 @@ contains only `planning` and `review`.
 The current implementation is internally consistent with its declared baseline,
 but incomplete for general recovery:
 
+- `ARCHITECTURE.md` is the canonical map of current and forming variant
+  structure. It confirms the role-owned semantic-state boundary, identifies the
+  bounded active-slice vertical, and places the broader control plane at its
+  truthful current maturity rather than presenting it as implemented.
 - `docs/agent-environments.yaml` explicitly says the live runtime overlay is
   absent from the verified supervisor/builder/reviewer environment model.
 - Product-direction documents already assign logical identity and role routing,

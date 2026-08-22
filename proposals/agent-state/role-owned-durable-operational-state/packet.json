@@ -21,6 +21,10 @@
       "path": "../../../docs/workflow-invariants.md"
     },
     {
+      "kind": "canonical-architecture-map",
+      "path": "../../../ARCHITECTURE.md"
+    },
+    {
       "kind": "product-direction",
       "path": "../../../ideas/work-engine-control-protocol-and-environment-affordances.md"
     },
