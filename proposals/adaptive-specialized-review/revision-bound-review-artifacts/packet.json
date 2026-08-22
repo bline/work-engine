@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.revision-bound-review-artifacts",
+  "family_id": "work-engine.adaptive-specialized-review",
+  "title": "Revision-Bound Review Artifacts",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/adaptive-specialized-review-panels.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A Git-backed review-artifact contract adjacent to proposal packets is a plausible initial owner, but evidence has not resolved whether the durable contract belongs to proposal review or to a shared cross-phase review substrate."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Dogfooding shows that proposal packet references alone can preserve revision identity, finding provenance, applicability, and supersession without a distinct review-artifact contract.",
+      "An implementation-review consumer establishes shared lifecycle requirements that make a proposal-local owner incorrect.",
+      "Observed review remediation requires transactional or runtime semantics that Git-backed artifacts cannot provide.",
+      "A concrete consumer shows that selection, findings, synthesis, and resolution require different durable owners."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "enables",
+      "target_id": "work-engine.adaptive-review-panel-coordination",
+      "rationale": "Adaptive coordination needs a durable way to bind findings and synthesis to an exact subject revision and preserve later applicability; this semantic dependency does not impose a mandatory delivery order.",
+      "causal": true
+    }
+  ]
+}
+

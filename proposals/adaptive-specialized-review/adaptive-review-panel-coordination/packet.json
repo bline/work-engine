@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.adaptive-review-panel-coordination",
+  "family_id": "work-engine.adaptive-specialized-review",
+  "title": "Adaptive Review-Panel Coordination",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/adaptive-specialized-review-panels.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A proposal-review coordination capability is the immediate candidate, but evidence has not resolved whether selection and synthesis share one owner or whether the capability belongs to a shared cross-phase review substrate."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Dogfooding shows that panel selection and synthesis require different independence or information lifetimes.",
+      "A specialist registry needs mechanically governed capability metadata rather than an open judgment surface.",
+      "Implementation review establishes a primary shared consumer whose boundary conflicts with proposal-local coordination.",
+      "Deterministic evidence proves sufficient for representative proposals without model specialist review."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Adaptive panel coordination needs revision-bound artifact semantics so specialist findings and synthesis retain exact subject identity, provenance, applicability, and non-authoritative status.",
+      "causal": true
+    }
+  ]
+}
+
