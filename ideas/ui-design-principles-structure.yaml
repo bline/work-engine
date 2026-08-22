@@ -1,0 +1,641 @@
+schema_version: 1
+document_id: site2json.design-principles-structure
+status: draft_decomposition
+scope:
+  domain: human-facing product and interface design
+  source_document: UI Design Principles
+  principles:
+    - principle.truth
+    - principle.maintainability
+    - principle.explainability
+    - principle.aesthetics
+
+sources:
+  design_principles: DESIGN_PRINCIPLES.md
+
+semantics:
+  description: >-
+    This document decomposes the Site2JSON design principles into stable
+    human-facing product properties, mutable design machinery, and live
+    interface state. It does not prescribe one visual style, layout, interaction
+    model, or implementation route.
+  layers:
+    invariant_structure: >-
+      Human/product properties that must remain true across valid redesigns.
+    variant_structure: >-
+      Presentation, interaction, organizational, and implementation machinery
+      that may change while preserving the invariants.
+    live_overlay: >-
+      Current system state, evidence, provenance, uncertainty, ownership, and
+      other facts represented by a particular interface instance.
+    judgment: >-
+      Contextual design choice about how to compose the available variant
+      structure so the current interface satisfies all applicable invariants.
+  relation_meanings:
+    protects: the principle directly protects the invariant property
+    must_preserve: the principle may not trade away the invariant property
+    may_realize_through: the variant mechanism may help realize the principle
+    must_represent_when_relevant: live state must remain legible when it materially affects user understanding
+    reinforces: the principle supports another principle without subsuming it
+    constrained_by: the principle's realization is bounded by another invariant or principle
+    forbids: the resulting design state is incompatible with the principle
+  interpretation_rules:
+    - >-
+      An invariant constrains the resulting human/product state, not a preferred
+      implementation route.
+    - >-
+      A mechanism named in variant structure is an available design affordance,
+      not a mandatory technique unless an owning external contract makes it so.
+    - >-
+      A live state category is not required to appear everywhere; it must remain
+      visible where omitting it would materially distort understanding.
+    - >-
+      The four principles are co-equal. A design does not satisfy the system by
+      maximizing one principle while silently violating another.
+    - >-
+      Human perception is part of correctness: a semantically accurate interface
+      can still violate the design system if relevant structure is needlessly
+      hidden, disconnected, misleading, or cognitively burdensome.
+
+entities:
+  invariants:
+    UI-INV-001:
+      label: Material truth remains faithful
+      condition: >-
+        Human-facing representations remain faithful to materially relevant
+        underlying system reality and do not substitute a simpler fiction where
+        the real state can be represented clearly.
+    UI-INV-002:
+      label: Presentation does not fabricate process
+      condition: >-
+        Visual treatment, animation, motion, state changes, and narrative cues do
+        not imply observations, events, causality, certainty, or system behavior
+        that did not actually occur.
+    UI-INV-003:
+      label: Relevant uncertainty remains visible
+      condition: >-
+        Uncertainty, unresolved state, competing interpretations, confidence,
+        provenance, drift, fallback, arbitration, and similar non-final state
+        remain visible wherever hiding them would materially misrepresent the
+        system.
+    UI-INV-004:
+      label: User responsibility follows authored control
+      condition: >-
+        The user does not acquire maintenance responsibility for system decisions
+        or structure merely by interacting with adjacent or enclosing parts of
+        the product.
+    UI-INV-005:
+      label: Ownership is granular
+      condition: >-
+        The smallest meaningful authored or explicitly assumed decision is the
+        unit at which user ownership and maintenance responsibility attach.
+    UI-INV-006:
+      label: Safe automation retains its burden
+      condition: >-
+        Complexity and maintenance that the system can safely carry remain the
+        system's responsibility rather than being transferred unnecessarily to
+        users or maintainers.
+    UI-INV-007:
+      label: Implementation and documentation stay aligned
+      condition: >-
+        Product documentation and internal explanatory structure remain faithful
+        to the implemented system; stale documentation is treated as a defect,
+        not accepted as a parallel description.
+    UI-INV-008:
+      label: Relevant relationships are perceptible
+      condition: >-
+        Relationships required for correct user understanding are exposed in a
+        form that does not require unnecessary mental reconstruction from
+        disconnected representations.
+    UI-INV-009:
+      label: Interface explains through use
+      condition: >-
+        Normal interaction exposes enough structure, correspondence, and context
+        for users to begin understanding the system without requiring prior
+        mastery of external documentation.
+    UI-INV-010:
+      label: Failure states are explanatory
+      condition: >-
+        Errors, conflicts, and uncertainty expose enough causal and contextual
+        information for the user to understand what happened, where it happened,
+        why it matters, and what can meaningfully happen next.
+    UI-INV-011:
+      label: Repeated use builds capability
+      condition: >-
+        Repeated interaction tends to increase the user's operational
+        understanding of the system rather than preserving avoidable dependence
+        on opaque behavior or external instructions.
+    UI-INV-012:
+      label: Form reinforces comprehension
+      condition: >-
+        Visual and interaction form assists perception of relevant structure,
+        hierarchy, state, process, and meaning rather than competing with or
+        obscuring them.
+    UI-INV-013:
+      label: Perceptual emphasis tracks importance
+      condition: >-
+        Differences in visual or interaction emphasis correspond to meaningful
+        differences in semantic importance, state, or user attention.
+    UI-INV-014:
+      label: Aesthetic treatment cannot conceal truth
+      condition: >-
+        Beauty, polish, simplification, motion, and composition do not hide
+        materially relevant complexity, uncertainty, provenance, or failure.
+    UI-INV-015:
+      label: System remains worth understanding and caring for
+      condition: >-
+        Internal and external form remain coherent enough to support
+        comprehension, stewardship, extension, and continued care rather than
+        making maintenance unnecessarily hostile or disposable.
+    UI-INV-016:
+      label: Principles are jointly binding
+      condition: >-
+        Truth, Maintainability, Explainability, and Aesthetics remain co-equal
+        design constraints; satisfying one does not justify silently violating
+        another.
+    UI-INV-017:
+      label: Complexity is carried at the cheapest responsible layer
+      condition: >-
+        Necessary complexity is borne by the system, interface, implementation,
+        or documentation layer best able to manage it without distorting truth
+        or transferring avoidable cognitive and maintenance burden downstream.
+    UI-INV-018:
+      label: Representation remains semantically redundant where perception can fail
+      condition: >-
+        Meaning required for correct understanding is not carried exclusively by
+        a presentation channel that can reasonably fail for the user, such as
+        color alone, motion alone, spatial proximity alone, or iconography without
+        interpretable context.
+
+  live_states:
+    state.observation:
+      label: What the system observed
+    state.inference:
+      label: What the system inferred
+    state.decision:
+      label: Current system decision
+    state.alternative:
+      label: Competing or rejected alternative
+    state.uncertainty:
+      label: Uncertainty and unresolved state
+    state.confidence:
+      label: Confidence
+    state.provenance:
+      label: Provenance and source relationship
+    state.nested_relationship:
+      label: Nested semantic relationship
+    state.variant_resolution:
+      label: Variant resolution
+    state.drift:
+      label: Drift
+    state.fallback:
+      label: Fallback
+    state.arbitration:
+      label: Arbitration
+    state.error:
+      label: Error or conflict state
+    state.user_review:
+      label: User-reviewed decision
+    state.user_modification:
+      label: User-modified decision
+    state.user_pin:
+      label: Explicitly pinned decision
+    state.automatic_state:
+      label: Automatically maintainable state
+    state.approval_required:
+      label: State requiring user approval before change
+    state.source_page:
+      label: Source page representation
+    state.semantic_model:
+      label: Semantic model representation
+    state.extracted_output:
+      label: Extracted output representation
+
+  mechanisms:
+    mechanism.spatial_arrangement:
+      label: Spatial arrangement
+      affords: proximity, grouping, hierarchy, and structural correspondence
+    mechanism.visual_hierarchy:
+      label: Visual hierarchy
+      affords: attention ordering and importance signaling
+    mechanism.labels:
+      label: Labels and semantic text
+      affords: explicit naming and non-visual semantic redundancy
+    mechanism.synchronized_highlighting:
+      label: Synchronized highlighting
+      affords: direct correspondence across multiple representations
+    mechanism.motion:
+      label: Motion and animation
+      affords: state-transition and process communication
+    mechanism.interaction:
+      label: Direct interaction
+      affords: exploration, manipulation, inspection, and learning through use
+    mechanism.progressive_disclosure:
+      label: Progressive disclosure
+      affords: bounded cognitive load while preserving deeper detail
+    mechanism.contextual_explanation:
+      label: Contextual explanation
+      affords: local causal or semantic interpretation
+    mechanism.visible_provenance:
+      label: Visible provenance
+      affords: source tracing and evidence inspection
+    mechanism.states_and_icons:
+      label: Meaningful states and icons
+      affords: compact recurring state recognition
+    mechanism.color:
+      label: Color
+      affords: semantic grouping, state distinction, and attention support
+    mechanism.typography:
+      label: Typography and weight
+      affords: hierarchy, grouping, rhythm, and emphasis
+    mechanism.spacing:
+      label: Spacing
+      affords: grouping, separation, rhythm, and cognitive segmentation
+    mechanism.contrast:
+      label: Contrast
+      affords: distinction, attention, and perceptual hierarchy
+    mechanism.composition:
+      label: Composition
+      affords: coherent whole-view organization
+    mechanism.timing:
+      label: Timing
+      affords: pacing, transition legibility, and interaction feel
+    mechanism.restraint:
+      label: Restraint
+      affords: reduced visual competition and preserved signal
+    mechanism.error_localization:
+      label: Error localization
+      affords: showing what failed and where
+    mechanism.causal_explanation:
+      label: Causal explanation
+      affords: showing why a state or error occurred
+    mechanism.next_action_context:
+      label: Next-action context
+      affords: showing meaningful available response without requiring a manual
+    mechanism.ownership_markers:
+      label: Ownership and responsibility markers
+      affords: distinguishing inferred, reviewed, modified, pinned, and approval-bound state
+    mechanism.automatic_maintenance:
+      label: Automatic maintenance
+      affords: retaining system responsibility for untouched state
+    mechanism.modular_architecture:
+      label: Modular architecture
+      affords: local reasoning, change isolation, extension, and refactoring
+    mechanism.tests:
+      label: Tests
+      affords: mechanically checked implementation expectations
+    mechanism.documentation:
+      label: Documentation
+      affords: rigorous reference and deeper understanding
+    mechanism.terminology:
+      label: Terminology
+      affords: conceptual coherence across product and implementation
+    mechanism.project_organization:
+      label: Project organization
+      affords: navigability and stewardship
+    mechanism.developer_experience:
+      label: Developer experience
+      affords: comprehensible and maintainable internal interaction
+    mechanism.demonstration:
+      label: Demonstrations and screencasts
+      affords: public explanation and experiential communication
+
+principles:
+  principle.truth:
+    label: Truth
+    objective: >-
+      Keep the human-facing product as close as practical to materially relevant
+      underlying reality so users can understand what the system observed,
+      inferred, decided, considered, and still does not know.
+    protects:
+      - UI-INV-001
+      - UI-INV-002
+      - UI-INV-003
+      - UI-INV-014
+      - UI-INV-016
+      - UI-INV-018
+    must_represent_when_relevant:
+      - state.observation
+      - state.inference
+      - state.decision
+      - state.alternative
+      - state.uncertainty
+      - state.confidence
+      - state.provenance
+      - state.nested_relationship
+      - state.variant_resolution
+      - state.drift
+      - state.fallback
+      - state.arbitration
+      - state.error
+    may_realize_through:
+      - mechanism.labels
+      - mechanism.synchronized_highlighting
+      - mechanism.motion
+      - mechanism.contextual_explanation
+      - mechanism.visible_provenance
+      - mechanism.states_and_icons
+      - mechanism.color
+      - mechanism.error_localization
+      - mechanism.causal_explanation
+    constrained_by:
+      - principle.explainability
+      - principle.aesthetics
+    reinforces:
+      - principle.explainability
+      - principle.maintainability
+      - principle.aesthetics
+    forbids:
+      - simplified presentation that materially falsifies the underlying system
+      - simulated animation or process that implies events which did not occur
+      - hiding uncertainty or unresolved state when its absence implies false certainty
+      - presenting inference as observation without a visible distinction
+      - presenting unavailable provenance as known provenance
+      - visual polish that makes a false or unsupported state appear authoritative
+
+  principle.maintainability:
+    label: Maintainability
+    objective: >-
+      Keep responsibility attached to the smallest meaningful authored decision,
+      preserve safe automation for everything else, and keep the internal system
+      understandable, refactorable, tested, and aligned with its documentation.
+    protects:
+      - UI-INV-004
+      - UI-INV-005
+      - UI-INV-006
+      - UI-INV-007
+      - UI-INV-015
+      - UI-INV-016
+      - UI-INV-017
+    must_represent_when_relevant:
+      - state.user_review
+      - state.user_modification
+      - state.user_pin
+      - state.automatic_state
+      - state.approval_required
+      - state.provenance
+    may_realize_through:
+      - mechanism.ownership_markers
+      - mechanism.automatic_maintenance
+      - mechanism.modular_architecture
+      - mechanism.tests
+      - mechanism.documentation
+      - mechanism.terminology
+      - mechanism.project_organization
+      - mechanism.developer_experience
+      - mechanism.progressive_disclosure
+    constrained_by:
+      - principle.truth
+      - principle.explainability
+      - principle.aesthetics
+    reinforces:
+      - principle.truth
+      - principle.explainability
+      - principle.aesthetics
+    forbids:
+      - making untouched inferred state the user's maintenance responsibility
+      - treating modification of one decision as ownership of a larger enclosing model
+      - transferring safely automatable complexity to the user for implementation convenience
+      - documentation that materially disagrees with the implemented system
+      - internal organization that makes ordinary extension or refactoring needlessly opaque
+      - product behavior that obscures whether state is automatic, reviewed, modified, or pinned
+
+  principle.explainability:
+    label: Explainability
+    objective: >-
+      Make the product reveal its own structure and behavior through use so the
+      user can perceive relationships, understand decisions and failures, and
+      become more capable through repeated interaction.
+    protects:
+      - UI-INV-008
+      - UI-INV-009
+      - UI-INV-010
+      - UI-INV-011
+      - UI-INV-012
+      - UI-INV-013
+      - UI-INV-016
+      - UI-INV-018
+    must_represent_when_relevant:
+      - state.observation
+      - state.inference
+      - state.decision
+      - state.alternative
+      - state.uncertainty
+      - state.provenance
+      - state.error
+      - state.source_page
+      - state.semantic_model
+      - state.extracted_output
+      - state.user_modification
+    may_realize_through:
+      - mechanism.spatial_arrangement
+      - mechanism.visual_hierarchy
+      - mechanism.labels
+      - mechanism.synchronized_highlighting
+      - mechanism.motion
+      - mechanism.interaction
+      - mechanism.progressive_disclosure
+      - mechanism.contextual_explanation
+      - mechanism.visible_provenance
+      - mechanism.states_and_icons
+      - mechanism.error_localization
+      - mechanism.causal_explanation
+      - mechanism.next_action_context
+      - mechanism.color
+      - mechanism.typography
+      - mechanism.spacing
+      - mechanism.contrast
+      - mechanism.composition
+    correspondence_sets:
+      extraction_understanding:
+        - state.source_page
+        - state.semantic_model
+        - state.extracted_output
+      decision_understanding:
+        - state.observation
+        - state.inference
+        - state.decision
+        - state.alternative
+        - state.uncertainty
+        - state.provenance
+      failure_understanding:
+        - state.error
+        - state.user_modification
+        - state.uncertainty
+        - state.provenance
+    constrained_by:
+      - principle.truth
+      - principle.maintainability
+      - principle.aesthetics
+    reinforces:
+      - principle.truth
+      - principle.maintainability
+      - principle.aesthetics
+    forbids:
+      - requiring users to reconstruct an important relationship from disconnected screens when direct correspondence is practical
+      - opaque error states that name a failure without enough context to understand it
+      - interfaces whose ordinary use never reveals the concepts needed to operate them
+      - documentation used as compensation for avoidable interface opacity
+      - visual complexity that adds information without improving comprehension
+      - semantic distinctions carried only by inaccessible or ambiguous presentation cues
+
+  principle.aesthetics:
+    label: Aesthetics
+    objective: >-
+      Make the system coherent, satisfying, and worth caring for while using
+      visual and structural form to improve comprehension, stewardship, and the
+      experience of continued use and maintenance.
+    protects:
+      - UI-INV-012
+      - UI-INV-013
+      - UI-INV-014
+      - UI-INV-015
+      - UI-INV-016
+      - UI-INV-018
+    must_represent_when_relevant:
+      - state.decision
+      - state.uncertainty
+      - state.error
+      - state.provenance
+      - state.nested_relationship
+      - state.source_page
+      - state.semantic_model
+      - state.extracted_output
+    may_realize_through:
+      - mechanism.spatial_arrangement
+      - mechanism.visual_hierarchy
+      - mechanism.motion
+      - mechanism.color
+      - mechanism.typography
+      - mechanism.spacing
+      - mechanism.contrast
+      - mechanism.composition
+      - mechanism.timing
+      - mechanism.restraint
+      - mechanism.terminology
+      - mechanism.project_organization
+      - mechanism.developer_experience
+      - mechanism.documentation
+      - mechanism.demonstration
+    application_surfaces:
+      - user interface
+      - internal architecture
+      - code structure and style
+      - documentation
+      - terminology
+      - project organization
+      - developer experience
+      - distribution and public presentation
+      - demonstrations and screencasts
+      - motion and interaction
+      - whole-project coherence
+    constrained_by:
+      - principle.truth
+      - principle.maintainability
+      - principle.explainability
+    reinforces:
+      - principle.truth
+      - principle.maintainability
+      - principle.explainability
+    forbids:
+      - beauty that conceals materially relevant complexity or uncertainty
+      - visual emphasis unrelated to semantic importance
+      - motion that decorates without communicating state, process, or useful feel
+      - composition that makes relationships harder to perceive
+      - technically correct forms that remain needlessly confusing or graceless
+      - internal design whose ugliness or incoherence materially discourages understanding and stewardship
+
+cross_principle_contract:
+  objective: >-
+    Produce designs in which truth, explainability, maintainability, and
+    aesthetics reinforce one another rather than being optimized as separable
+    concerns.
+  bound_by:
+    - UI-INV-016
+    - UI-INV-017
+    - UI-INV-018
+  invalid_tradeoffs:
+    truthful_but_incomprehensible: >-
+      Accurate information is present but organized so poorly that the user
+      cannot reasonably perceive the relationships required for understanding.
+    explainable_but_unmaintainable: >-
+      The interface communicates well by transferring unnecessary ownership,
+      configuration, or maintenance burden to the user or future maintainers.
+    beautiful_but_misleading: >-
+      Visual polish, simplification, or motion creates a cleaner experience by
+      concealing uncertainty, provenance, failure, or real process.
+    maintainable_but_hostile: >-
+      The implementation is mechanically maintainable while the resulting
+      product or project remains unnecessarily difficult or unpleasant to
+      understand, extend, or inhabit.
+  combined_interpretation:
+    truth: what must be represented faithfully
+    explainability: how relevant reality becomes understandable
+    maintainability: where responsibility and complexity live over time
+    aesthetics: how coherent form supports perception, care, and experience
+
+analysis_queries:
+  invariant_route_test: >-
+    For each claimed UI invariant, ask whether a materially invalid human/product
+    state would result regardless of which valid visual or implementation route
+    produced it. If not, the statement is probably a mechanism, preference, or
+    current design choice rather than invariant structure.
+  truth_gap: >-
+    Find materially relevant underlying states, uncertainty, provenance,
+    alternatives, or process facts that the interface hides, flattens, or
+    represents as more certain or final than they are.
+  fabricated_process: >-
+    Find animation, motion, sequencing, labels, or visual transitions that imply
+    observations, causality, decisions, or system events that did not occur.
+  ownership_leak: >-
+    Find interface actions where touching one decision silently transfers
+    maintenance responsibility for adjacent, inferred, or enclosing state.
+  automation_burden_shift: >-
+    Find complexity that the system can safely maintain but has transferred to
+    the user, documentation reader, or future maintainer for implementation
+    convenience.
+  documentation_drift: >-
+    Find documentation, terminology, examples, or conceptual diagrams that no
+    longer describe the implemented product accurately.
+  reconstruction_burden: >-
+    Find relationships the user must mentally reconstruct from disconnected
+    views even though the interface already possesses enough information to show
+    the correspondence directly.
+  explanation_gap: >-
+    Find errors, uncertainty, or decisions that expose a result without enough
+    local context to understand what happened, why, where, or what meaningful
+    action remains.
+  learning_stagnation: >-
+    Find recurring interactions that remain opaque after repeated use and do not
+    progressively expose the concepts needed for independent understanding.
+  perceptual_mismatch: >-
+    Find visual emphasis, grouping, hierarchy, motion, weight, spacing, or
+    contrast that communicates importance or relationship inconsistent with the
+    underlying semantics.
+  single_channel_semantics: >-
+    Find required meaning carried only by color, motion, location, iconography,
+    or another presentation channel whose loss would make the state ambiguous.
+  aesthetic_truth_conflict: >-
+    Find simplification, polish, or composition that improves appearance by
+    concealing uncertainty, provenance, conflict, or necessary complexity.
+  principle_tradeoff: >-
+    Find designs justified as satisfying one principle while materially
+    violating another; treat the conflict as an unresolved design problem rather
+    than an accepted success.
+  redundant_mechanism: >-
+    Find visual or interaction mechanisms that add cognitive or maintenance
+    complexity without adding a meaningful distinction, reachable understanding,
+    accessibility benefit, or experiential value.
+  orphan_mechanism: >-
+    Find presentation or interaction mechanisms with no clear path to a protected
+    invariant, required state distinction, user objective, or coherent aesthetic
+    consequence.
+  variant_overreach: >-
+    Find current mechanisms such as color, layout, motion, highlighting,
+    progressive disclosure, or ownership markers that have been promoted into
+    mandatory doctrine even though another design route could preserve every
+    invariant.
+  cross_surface_incoherence: >-
+    Find terminology, visual language, documentation, developer experience, or
+    public presentation that communicates incompatible models of the same
+    underlying system.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Site2JSON Design Principles"
+  short_description: "Apply Site2JSON's four-part design system"
+  default_prompt: "Use $site2json-design-principles to review this design against Truth, Maintainability, Explainability, and Aesthetics."
