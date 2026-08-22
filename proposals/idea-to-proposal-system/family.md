@@ -2,8 +2,10 @@
 
 ## Status
 
-Formed proposal family. The files in this directory are authored proposal
-artifacts, not yet the canonical packet format proposed by this family.
+Formed proposal family. Its two proposals use the canonical version-1 packet
+manifest while retaining human-readable narrative and supporting artifacts.
+Mechanical validity does not evaluate or accept either proposal and does not
+authorize implementation.
 
 ## Origin
 

@@ -7,6 +7,11 @@
 - State: formed; placement probable; not evaluated or accepted
 - Decision owner: user or future explicitly authorized portfolio owner
 
+The canonical lifecycle and relationship metadata is in [`packet.json`](packet.json).
+This narrative owns the proposal's current semantic meaning. Supporting packet
+artifacts record its [placement](placement.md), [relationships](relationships.md),
+and proposed [implementation plan](implementation-plan.md).
+
 ## Problem
 
 Raw engineering ideas are intentionally cheap and speculative. Before they can
