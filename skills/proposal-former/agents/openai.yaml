@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proposal Former"
+  short_description: "Turn raw ideas into durable proposal candidates"
+  default_prompt: "Use $proposal-former to form or revise truthful proposal packet state from this idea."

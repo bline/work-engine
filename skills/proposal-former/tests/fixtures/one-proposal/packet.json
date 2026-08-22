@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.explain-stopped-automation",
+  "family_id": "work-engine.fixture.proposal-formation",
+  "title": "Explain stopped automation",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "idea_source",
+      "path": "idea.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The campaign supervisor should own a durable operator-facing explanation because it owns terminal stop classification and continuation state."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A consumer requires explanation across workflows that are not owned by campaign supervision.",
+      "Existing terminal receipts already expose the needed cause and authority without reconstruction."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or explicitly authorized product owner",
+    "implementation_authorized": false
+  },
+  "relationships": []
+}
