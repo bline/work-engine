@@ -10,8 +10,10 @@ review meaning into runtime state.
 
 The profile would consume shared statement, baseline, provenance, sensitivity,
 authority-scope, and lineage semantics from the separately formed
-claim-centered-evidence-lineage candidate. Shared semantic ownership and the
-location of the first proposal-local adapter remain different decisions.
+claim-centered-evidence-lineage candidate if it is accepted as their shared
+owner. Otherwise the profile still requires equivalent consequences from
+another valid owner. Shared semantic ownership and the location of the first
+proposal-local adapter remain different decisions.
 
 Placement remains uncertain. Implementation review may reuse the
 review-specific profile, but no implementation consumer has established whether
@@ -57,4 +59,3 @@ Reconsider placement when a proposal revision exercises the profile, an
 implementation-review consumer supplies discriminating lifecycle requirements,
 selection and synthesis need different owners, or observed concurrency requires
 semantics unavailable from Git-backed state.
-

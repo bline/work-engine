@@ -50,11 +50,14 @@ evidence, or judgments.
 When a research or review role records an evidence-backed statement, that
 domain workflow produces the judgment and a shared evidence-lineage boundary
 preserves its identity, baseline, provenance, sensitivity, authority scope, and
-lineage. A downstream domain consumer reads the statement and makes only the
-freshness, applicability, readiness, or decision judgment it is authorized to
-make. Dogfooding research and review examples must prove that the shared fields
-remain truthful. This is not satisfied by storing prose in a packet, reporting
-a changed file, or validating that required fields exist.
+lineage. A domain profile names any role authorized to maintain a canonical
+live claim or produce an advisory applicability assessment. A downstream
+decision owner decides whether to rely on that assessment, whether the evidence
+is ready for its exact transition, and whether residual uncertainty is
+acceptable within its authority. Dogfooding research and review examples must
+prove that the shared fields remain truthful. This is not satisfied by storing
+prose in a packet, reporting a changed file, or validating that required fields
+exist.
 
 ## Reopening conditions
 

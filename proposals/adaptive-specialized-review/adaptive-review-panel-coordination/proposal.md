@@ -4,8 +4,8 @@
 
 - Proposal ID: `work-engine.adaptive-review-panel-coordination`
 - Family ID: `work-engine.adaptive-specialized-review`
-- State: placement uncertain; this revision has not been reviewed, evaluated,
-  accepted, or authorized
+- State: placement uncertain; revised after bootstrap review continuation and
+  not closure-reviewed, evaluated, accepted, or authorized
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority
@@ -42,13 +42,16 @@ The capability would:
   context without contaminating initial judgments with other conclusions;
 - preserve continuation context when useful while labeling it as continuation
   rather than another fresh review;
-- retain supported findings, conflicts, limitations, and unresolved state
-  without voting or averaging them away;
+- ensure the authoritative review artifact accounts for every material finding
+  and conflict produced by selected review episodes with an attributed,
+  profile-defined disposition and reason, without voting or averaging them
+  away;
 - synthesize consequences such as advisory readiness for an authority decision,
   warranted revision, unresolved material uncertainty, or binding-contract
   conflict;
-- reference every finding and conflict consumed by synthesis and distinguish
-  coordinator inference from specialist findings; and
+- reference every retained finding and conflict in synthesis, keep every other
+  material output visibly dispositioned, and distinguish coordinator inference
+  from specialist findings; and
 - bind outputs to revision-bound review artifacts so later freshness and
   decision-specific applicability can be judged by their authorized owners.
 
@@ -99,8 +102,12 @@ opinions, and a coordinator inference is not an independent finding.
 
 Required property: synthesis retains and references findings, conflicts,
 uncertainty, limitations, and next authority needs rather than reducing them to
-a vote. Any synthesis-introduced inference remains attributed to the
-coordinator.
+a vote. In the authoritative review artifact, coordination accounts for every
+material finding and conflict produced by selected episodes with an attributed
+disposition and reason from the applicable domain profile. The contract does
+not prescribe the coordinator's internal ordering or impose one universal
+exhaustive disposition list. Any synthesis-introduced inference remains
+attributed to the coordinator.
 
 ### Binding conflict and philosophical alignment are distinct
 
@@ -117,12 +124,14 @@ binding conflict.
 
 Reason: diagnostic judgment and downstream authority have different owners.
 
-Required property: selection, specialist findings, synthesis, freshness
-maintenance, downstream applicability, decision readiness, proposal revision,
-evaluation, acceptance, roadmap mutation, and implementation authorization
-remain distinct transitions. A synthesis may advise that evidence appears ready
-for an authority decision; the named decision owner judges applicability,
-readiness, and residual uncertainty for that exact transition.
+Required property: selection, specialist findings, synthesis, any
+profile-specific freshness maintenance, advisory applicability assessment,
+downstream reliance, decision readiness, proposal revision, evaluation,
+acceptance, roadmap mutation, and implementation authorization remain distinct
+transitions. A synthesis or another authorized role may provide an attributed
+advisory applicability assessment; the named decision owner decides whether to
+rely on it and judges readiness and residual uncertainty for that exact
+transition.
 
 ### Persistence does not inflate authority
 
@@ -142,10 +151,12 @@ synthesis need separate owners, context lifetimes, or durable-state lifecycles.
 This candidate owns coordination judgment only if accepted. Specialist roles
 own their scoped diagnoses. The review-artifact profile owns review
 representation. The shared evidence-lineage candidate owns only its proposed
-cross-domain statement semantics. An authorized maintenance role owns freshness
-for its claim domain. The downstream decision owner judges applicability and
-readiness. The proposal former owns candidate revision, and the named authority
-owns acceptance, deferral, rejection, or scope change.
+cross-domain statement semantics if later selected as their owner. A domain
+profile names a freshness-maintenance role only when needed and may authorize
+an advisory applicability assessor. The downstream decision owner decides
+whether to rely on that assessment and judges readiness. The proposal former
+owns candidate revision, and the named authority owns acceptance, deferral,
+rejection, or scope change.
 
 ## Relationships
 
@@ -165,8 +176,9 @@ judgment or authority.
   contexts before choosing their lifetime boundary.
 - Test whether the registry can remain open and model-interpreted without
   becoming ambiguous or procedural.
-- Review a revised proposal to exercise finding applicability, retained
-  remediation context, and a fresh-perspective reset after changed premises.
+- Review a revised proposal to exercise finding applicability and retained
+  remediation context, using a fresh-perspective reset only when a material
+  premise or context-fitness judgment warrants it.
 - Verify that synthesis references preserve conflicts and that a downstream
   decision owner can make applicability and readiness judgments without the
   coordinator acquiring them.
@@ -176,9 +188,10 @@ judgment or authority.
 ## Authority
 
 This revised candidate does not perform review, declare semantic freshness,
-decide applicability or readiness, revise or accept a proposal, change
-architecture or roadmap state, waive binding doctrine, or authorize
-implementation. Those transitions remain with their named owners.
+produce or rely on an applicability assessment, decide readiness, revise or
+accept a proposal, change architecture or roadmap state, waive binding
+doctrine, or authorize implementation. Those transitions remain with their
+named owners.
 
 ## Acceptance consequence
 

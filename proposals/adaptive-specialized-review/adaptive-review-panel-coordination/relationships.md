@@ -19,10 +19,11 @@ dependencies do not impose mandatory acceptance or delivery order.
 Type: non-authoritative consumer relationship.
 
 The named decision owner receives supported findings, conflicts, limitations,
-unresolved consequences, and an advisory readiness projection. That owner—not
-the coordinator—judges applicability, readiness, and residual uncertainty for
-the exact proposal decision. Review does not accept, reject, defer, or
-prioritize the proposal.
+unresolved consequences, and an advisory readiness projection. An authorized
+role may also supply an attributed applicability assessment. The decision
+owner—not the coordinator or assessor—decides whether to rely on it and judges
+readiness and residual uncertainty for the exact proposal decision. Review does
+not accept, reject, defer, or prioritize the proposal.
 
 ## Advises: proposal formation and evaluation
 

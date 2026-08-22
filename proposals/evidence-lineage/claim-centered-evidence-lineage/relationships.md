@@ -1,13 +1,16 @@
 # Relationships: Claim-Centered Evidence Lineage
 
-## Enables: revision-bound review artifacts
+## Conditionally enables: revision-bound review artifacts
 
-Type: causal semantic dependency.
+Type: conditional owner relationship; the required semantics are causal, but
+acceptance of this placement candidate is not.
 
 Review findings need stable statement identity, evidence baselines, provenance,
 sensitivity, scoped authority, and non-destructive lineage. The review-artifact
-profile adds reviewer episodes, review outcomes, conflicts, and synthesis
-without becoming the general owner of those shared semantics.
+profile adds reviewer episodes, review outcomes, conflicts, and synthesis. If
+this candidate is selected as the shared owner it supplies the common
+semantics; otherwise the review profile still requires equivalent consequences
+from another valid owner.
 
 ## Related to: durable proposal packets
 

@@ -1,14 +1,16 @@
 # Relationships: Revision-Bound Review Artifacts
 
-## Depends on: claim-centered evidence lineage
+## Conditionally depends on: claim-centered evidence lineage
 
-Type: causal semantic dependency.
+Type: conditional owner relationship; the semantic consequences are causal,
+but this particular shared owner remains a placement hypothesis.
 
 Review artifacts need stable statement identity, bounded evidence baselines,
 provenance, sensitivity, authority scope, and non-destructive lineage without
 making review the owner of proposal-research claims or general evidence
 history. The review profile adds episode, outcome, finding, conflict, and
-synthesis semantics.
+synthesis semantics. If the shared candidate is not accepted as owner, another
+valid owner must still provide those consequences.
 
 ## Enables: adaptive review-panel coordination
 
@@ -35,4 +37,3 @@ Implementation review may share the review-specific profile while requiring a
 different remediation and acceptance lifecycle. This possibility keeps
 placement open; it does not authorize cross-phase infrastructure or require
 that consumer in a first implementation.
-

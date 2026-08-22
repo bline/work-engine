@@ -21,6 +21,10 @@
       "path": "../../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
     },
     {
+      "kind": "bootstrap_review_continuation",
+      "path": "../../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md"
+    },
+    {
       "kind": "idea_evidence",
       "path": "../../../ideas/research-maturity-evidence-snapshots-and-staleness.md"
     }
@@ -47,8 +51,8 @@
     {
       "type": "depends_on",
       "target_id": "work-engine.claim-centered-evidence-lineage",
-      "rationale": "Review artifacts need the candidate shared statement identity, evidence baseline, provenance, sensitivity, authority-scope, and lineage semantics without owning proposal-research claims or general evidence history.",
-      "causal": true
+      "rationale": "Review artifacts causally require statement identity, evidence baseline, provenance, sensitivity, authority-scope, and lineage semantics. They consume this candidate only if it is selected as the shared owner; another valid owner must provide equivalent consequences if dogfooding rejects that placement.",
+      "causal": false
     },
     {
       "type": "enables",

@@ -4,8 +4,8 @@
 
 - Proposal ID: `work-engine.revision-bound-review-artifacts`
 - Family ID: `work-engine.adaptive-specialized-review`
-- State: placement uncertain; this revision has not been reviewed, evaluated,
-  accepted, or authorized
+- State: placement uncertain; revised after bootstrap review continuation and
+  not closure-reviewed, evaluated, accepted, or authorized
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority
@@ -23,11 +23,15 @@ reviewer actually received, whether a review was omitted or failed rather than
 passed, and how synthesis preserved the source findings without becoming an
 authority decision.
 
-The profile would consume the separately formed
+The profile requires the semantic consequences proposed by the separately
+formed
 [`work-engine.claim-centered-evidence-lineage`](../../evidence-lineage/claim-centered-evidence-lineage/proposal.md)
-candidate for shared subject, statement, baseline, provenance, sensitivity,
-authority-scope, and lineage semantics. This candidate owns only the additional
-semantics that make those statements truthful review artifacts.
+candidate: subject, statement, baseline, provenance, sensitivity,
+authority-scope, and lineage semantics. It consumes that candidate if later
+accepted as the shared owner; another valid owner must supply equivalent
+consequences if dogfooding rejects the shared placement hypothesis. This
+candidate owns only the additional semantics that make those statements
+truthful review artifacts.
 
 ## Proposed product change
 
@@ -45,8 +49,11 @@ needed by real proposal-review consumers. Candidate semantics include:
 - truthful outcomes that distinguish not requested or inapplicable, deliberately
   omitted, deterministic-only evidence, reviewer unavailable or failed,
   completed with no findings, and completed with findings;
-- synthesis references to every source finding and conflict it consumes, with
-  synthesis-introduced inferences distinguished from specialist findings;
+- complete attributed disposition of every material finding and conflict
+  produced by selected review episodes in the authoritative review artifact;
+  profile-owned dispositions may include retained, deferred, inapplicable, or
+  omitted, synthesis references every source it retains, and introduced
+  inferences remain distinct from specialist findings;
 - review-specific applicability, partial-applicability, refresh, composition,
   supersession, correction, and invalidation consequences over shared lineage;
   and
@@ -94,21 +101,31 @@ without reporting omitted, unavailable, blocked, or failed work as passed.
 Reason: prose synthesis can otherwise paraphrase away a supported conflict or
 launder a coordinator inference into an independent finding.
 
-Required property: synthesis references source finding and conflict identities,
-preserves unresolved limitations, and labels any newly introduced inference.
-Mechanical checks may verify references; they cannot judge intellectual
-faithfulness.
+Required property: the authoritative review artifact accounts for every
+material finding and conflict produced by selected episodes with an attributed
+disposition and reason. Each domain profile owns the allowed disposition
+vocabulary; examples include retained, deferred, inapplicable, and omitted,
+but they are not a universal exhaustive list. Synthesis references every source
+it retains, preserves unresolved limitations, and labels any newly introduced
+inference. The contract constrains the published consequence, not the
+coordinator's internal ordering. Mechanical checks may verify recorded output
+coverage and references; they cannot decide whether an item is material,
+whether a disposition is wise, or whether synthesis is intellectually
+faithful.
 
 ### Review judgment and downstream authority remain separate
 
 Reason: reviewers and coordinators produce decision support; they do not own
 the decision that consumes it.
 
-Required property: specialists own their scoped findings, the coordinator owns
-its synthesis judgment, an authorized domain maintenance owner judges semantic
-freshness, and the downstream decision owner judges applicability and readiness
-for its exact transition. Proposal revision, acceptance, roadmap mutation, and
-implementation authorization remain with their named owners.
+Required property: specialists own their scoped findings and the coordinator
+owns its synthesis judgment. A review-domain profile names a maintenance owner
+only when it maintains canonical live review claims and may name an authorized
+role to produce an attributed advisory applicability assessment. The downstream
+decision owner decides whether to rely on that assessment, whether evidence is
+ready for its exact transition, and whether residual uncertainty is acceptable.
+Proposal revision, acceptance, roadmap mutation, and implementation
+authorization remain with their named owners.
 
 ### Persistence does not create evidence or authority
 
@@ -139,10 +156,12 @@ candidate owns only the proposed review-specific profile if accepted.
 
 ## Relationships
 
-This candidate causally depends on claim-centered evidence lineage and causally
-enables adaptive review-panel coordination. Neither dependency imposes a
-mandatory acceptance or delivery order. The coordinator may run ephemerally,
-but its proposed durable consequence requires truthful review artifacts.
+This candidate causally requires the semantic consequences described by
+claim-centered evidence lineage and consumes that candidate only if it is
+selected as their shared owner. It causally enables adaptive review-panel
+coordination. Neither dependency imposes a mandatory acceptance or delivery
+order. The coordinator may run ephemerally, but its proposed durable
+consequence requires truthful review artifacts.
 
 ## Uncertainty and evidence needs
 
@@ -151,6 +170,8 @@ but its proposed durable consequence requires truthful review artifacts.
   establish the schema.
 - Review a changed proposal revision to test finding-level applicability,
   retained reviewer context, correction, supersession, and synthesis references.
+- Exercise a selected episode that produces an adverse finding and verify that
+  synthesis cannot make it disappear by excluding it from a consumed subset.
 - Exercise omitted, unavailable, failed, no-finding, and finding-bearing review
   outcomes without converting absence into success.
 - Determine which review fields must be mechanically closed rather than
@@ -163,11 +184,13 @@ but its proposed durable consequence requires truthful review artifacts.
 ## Authority
 
 This revised candidate does not establish the shared or review artifact
-contract, perform review, declare semantic freshness, decide applicability or
-readiness, revise or accept a proposal, alter roadmap priority, or authorize
-implementation. Those transitions remain with their named owners. The
-currently unresolved research-maintenance and organizational-planning roles are
-acceptance or implementation conditions, not authority inferred by this packet.
+contract, perform review, declare semantic freshness, produce or rely on an
+applicability assessment, decide readiness, revise or accept a proposal, alter
+roadmap priority, or authorize implementation. Those transitions remain with
+their named owners. Future research-maintenance or organizational-planning
+roles must be authorized by the domain contract that owns their own future
+transition; they are not acceptance or implementation prerequisites for this
+review-specific proposal.
 
 ## Acceptance consequence
 
@@ -175,4 +198,3 @@ If later accepted and implemented, a fresh consumer can determine the exact
 subject, review episode, findings, outcome, conflicts, synthesis sources, and
 applicability of review evidence without trusting a transcript, mistaking
 absence for success, or confusing persistent decision support with authority.
-

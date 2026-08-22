@@ -7,7 +7,9 @@
   [`ideas/research-maturity-evidence-snapshots-and-staleness.md`](../../ideas/research-maturity-evidence-snapshots-and-staleness.md)
 - Related downstream context:
   [`ideas/context-derived-role-execution-envelopes.md`](../../ideas/context-derived-role-execution-envelopes.md)
-- State: candidate family formed from live idea evidence; not reviewed,
+- Review continuation:
+  [`adaptive-specialized-review/fca5cbe`](../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md)
+- State: candidate family revised from review evidence; not closure-reviewed,
   evaluated, accepted, prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
@@ -28,9 +30,11 @@ owners and consequences have not yet been formed.
 Proposal research claims and specialist review findings need overlapping
 evidence semantics but remain different domain judgments. Proposal packets own
 proposal identity and current meaning. Research workflows would own research
-claims and freshness maintenance. Review workflows would own findings, review
-episodes, and synthesis. Downstream decision owners judge applicability and
-readiness for their exact decisions.
+claims and any profile-specific freshness maintenance they require. Review
+workflows would own findings, review episodes, and synthesis. An authorized
+role may produce an advisory applicability assessment, while downstream
+decision owners decide whether to rely on it and judge readiness for their
+exact decisions.
 
 A separate candidate preserves the possibility of a shared semantic primitive
 without silently broadening the identity of either the durable-proposal-packet

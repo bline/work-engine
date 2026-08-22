@@ -19,6 +19,10 @@
     {
       "kind": "bootstrap_review",
       "path": "../../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
+    },
+    {
+      "kind": "bootstrap_review_continuation",
+      "path": "../../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md"
     }
   ],
   "placement": {
@@ -32,7 +36,8 @@
       "A specialist registry needs mechanically governed capability metadata rather than an open judgment surface.",
       "Implementation review establishes a primary shared consumer whose boundary conflicts with proposal-local coordination.",
       "Deterministic evidence proves sufficient for representative proposals without model specialist review.",
-      "A real revision shows that the proposed readiness projection, downstream applicability judgment, and authority decision cannot remain truthfully distinct."
+      "A real revision shows that the proposed readiness projection, advisory applicability assessment, downstream reliance judgment, and authority decision cannot remain truthfully distinct.",
+      "A selected review episode produces a material finding that the proposed complete-disposition contract cannot preserve without making synthesis mechanically procedural."
     ]
   },
   "authority": {

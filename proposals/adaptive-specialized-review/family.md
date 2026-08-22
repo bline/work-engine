@@ -6,8 +6,11 @@
 - Origin: [`ideas/adaptive-specialized-review-panels.md`](../../ideas/adaptive-specialized-review-panels.md)
 - Revision evidence:
   [`reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md`](../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md)
-- State: revised candidate family; this revision has not been reviewed,
-  evaluated, accepted, prioritized, or authorized for implementation
+- Continuation evidence:
+  [`reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md`](../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md)
+- State: revised candidate family; this revision has not received closure
+  review and is not evaluated, accepted, prioritized, or authorized for
+  implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 This family separates two independently decidable changes that share an origin:
@@ -22,13 +25,14 @@ This family separates two independently decidable changes that share an origin:
 
 The second candidate has a causal semantic dependency on the first: adaptive
 coordination needs a truthful durable target for revision-bound findings and
-their applicability. The first candidate now has its own causal semantic
-dependency on
+their applicability. The first candidate causally requires the semantics
+proposed by
 [`work-engine.claim-centered-evidence-lineage`](../evidence-lineage/claim-centered-evidence-lineage/proposal.md),
-which owns only the proposed shared statement, baseline, provenance,
-sensitivity, authority-scope, and lineage semantics. These relationships do not
-require separate delivery or acceptance order and do not establish that any
-placement is correct.
+but consumes that candidate only if it is selected as the shared owner. Another
+valid owner must supply equivalent statement, baseline, provenance,
+sensitivity, authority-scope, and lineage consequences if dogfooding rejects
+that placement. These relationships do not require separate delivery or
+acceptance order and do not establish that any placement is correct.
 
 ## Why these are separate proposals
 

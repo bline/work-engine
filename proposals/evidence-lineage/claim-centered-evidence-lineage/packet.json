@@ -19,6 +19,10 @@
     {
       "kind": "bootstrap_review",
       "path": "../../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
+    },
+    {
+      "kind": "bootstrap_review_continuation",
+      "path": "../../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md"
     }
   ],
   "placement": {
@@ -30,7 +34,7 @@
     "reopening_conditions": [
       "A proposal-research claim and a specialist review finding exercise the candidate and show which identity, provenance, sensitivity, authority, and lineage properties are genuinely shared.",
       "A domain consumer requires incompatible statement or transition semantics that make one shared contract misleading.",
-      "A named research-maintenance owner and a decision-specific applicability owner exercise freshness and applicability against the same evidence baseline.",
+      "A domain profile exercises semantic freshness maintenance, advisory applicability assessment, and downstream reliance against the same evidence baseline and shows which roles are genuinely distinct.",
       "Observed concurrency, external evidence, or runtime recovery requires semantics that Git-backed artifacts and on-demand revalidation cannot preserve."
     ]
   },
@@ -42,8 +46,8 @@
     {
       "type": "enables",
       "target_id": "work-engine.revision-bound-review-artifacts",
-      "rationale": "Revision-bound review artifacts need stable statement identity, evidence baselines, provenance, sensitivity, scoped authority, and non-destructive lineage without making the review workflow the general owner of those semantics.",
-      "causal": true
+      "rationale": "If this candidate is selected as the shared semantic owner, revision-bound review artifacts can consume its stable statement identity, evidence baselines, provenance, sensitivity, scoped authority, and non-destructive lineage. The review profile causally requires those consequences, not acceptance of this particular placement hypothesis.",
+      "causal": false
     },
     {
       "type": "related_to",

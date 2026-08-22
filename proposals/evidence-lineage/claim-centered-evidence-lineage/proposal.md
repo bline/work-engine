@@ -4,7 +4,8 @@
 
 - Proposal ID: `work-engine.claim-centered-evidence-lineage`
 - Family ID: `work-engine.evidence-lineage`
-- State: placement uncertain; not reviewed, evaluated, accepted, or authorized
+- State: placement uncertain; revised after bootstrap review continuation and
+  not closure-reviewed, evaluated, accepted, or authorized
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority
@@ -80,16 +81,21 @@ authority scope for the exact judgment. Domain contracts name the roles. An
 unresolved owner remains unresolved rather than being inferred from possession
 of the packet, compiler, validator, planner, coordinator, or supervisor role.
 
-### Freshness, applicability, and readiness have different owners
+### Assessment and downstream reliance remain distinct
 
-Reason: maintaining a canonical claim, applying it to a particular decision,
-and deciding that a transition is ready have different consequences.
+Reason: maintaining a canonical live claim, assessing whether evidence applies
+to a particular decision, relying on that assessment, and deciding that a
+transition is ready have different consequences. Not every immutable
+historical statement requires an active freshness-maintenance role.
 
-Required property: an authorized domain maintenance role judges semantic
-freshness for its bounded claim; the downstream decision owner judges
-applicability and readiness for its exact decision; only that decision owner
-may accept residual uncertainty within authority it already has. Contract
-changes remain with the owning contract's required human authority.
+Required property: a domain profile names an authorized maintenance role when
+it owns a canonical live claim and may name an authorized role to produce an
+attributed advisory applicability assessment. The downstream decision owner
+judges whether to rely on that assessment, whether evidence is sufficient and
+ready for its exact transition, and whether to accept residual uncertainty
+within authority it already has. Producing an assessment does not acquire the
+authority to rely on it or execute the transition. Contract changes remain
+with the owning contract's required human authority.
 
 ### Mechanical impact is not semantic invalidation
 
@@ -109,7 +115,10 @@ new observation are different consequences.
 Required property: applicability, partial applicability, refresh, composition,
 supersession, correction, and invalidation remain distinguishable. A domain
 profile may narrow allowed relations, but may not use one relation to conceal a
-different semantic transition.
+different semantic transition. Composition identifies every constituent
+statement revision, its distinct subject and evidence baseline, and known
+coverage gaps; it never implies that an integrated state was jointly reviewed
+when only its constituents were examined separately.
 
 ## Boundary and placement
 
@@ -133,11 +142,13 @@ not own:
 
 ## Relationships
 
-This candidate causally enables revision-bound review artifacts by supplying a
-shared foundation for statement identity, evidence baselines, provenance,
-sensitivity, authority scope, and lineage. Proposal packets are a neighboring
-owner: they may reference this evidence while retaining the proposal's current
-meaning and lifecycle.
+Revision-bound review artifacts causally require statement identity, evidence
+baselines, provenance, sensitivity, authority scope, and truthful lineage. If
+this candidate is later accepted as the shared semantic owner, it enables that
+profile by supplying those consequences. The causal requirement attaches to
+the semantics, not to acceptance of this particular placement hypothesis.
+Proposal packets are a neighboring owner: they may reference this evidence
+while retaining the proposal's current meaning and lifecycle.
 
 A later proposal-research-maturity candidate could also consume this contract,
 but no such proposal is formed here. Prospective implementation-review reuse is
@@ -149,9 +160,12 @@ an evidence need, not current scope or implementation justification.
   genuinely shared minimum and domain-specific extensions.
 - Exercise a proposal revision where some statements remain applicable and
   others require refresh, correction, or supersession.
-- Establish canonical contracts for the currently unresolved
-  research-maintenance and organizational-planning owners before their
-  transitions become executable.
+- Exercise a domain profile that actually needs semantic freshness maintenance
+  and distinguish that role from advisory applicability assessment and the
+  downstream authority that relies on evidence.
+- Establish any future research-maintenance or organizational-planning
+  authority in the domain contract that owns its transition, without making
+  those speculative roles prerequisites for review artifacts.
 - Determine which sensitivity references must be closed fields and which remain
   narrative, especially for negative or structural-query claims.
 - Test on-demand revalidation before considering continuous monitoring.
@@ -161,9 +175,10 @@ an evidence need, not current scope or implementation justification.
 ## Authority
 
 This formed candidate does not establish an artifact schema, declare any
-evidence current, judge applicability or readiness, assign unresolved role
-authority, change another contract, accept a proposal, alter roadmap priority,
-or authorize implementation. Those transitions remain with their named owners.
+evidence current, produce or rely on an applicability assessment, judge
+readiness, assign unresolved role authority, change another contract, accept a
+proposal, alter roadmap priority, or authorize implementation. Those
+transitions remain with their named owners.
 
 ## Acceptance consequence
 
