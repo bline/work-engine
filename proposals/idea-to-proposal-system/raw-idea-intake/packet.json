@@ -43,7 +43,7 @@
     {
       "type": "enables",
       "target_id": "work-engine.proposal-formation",
-      "rationale": "Formation can consume a source-bound, claim-addressable candidate projection without owning raw capture, intake reconciliation, or cleanup; intake readiness does not require every proposal to pass through this capability.",
+      "rationale": "Formation can consume a source-bound, claim-addressable candidate projection without owning raw capture, intake reconciliation, or cleanup, and owns immutable publication of each surviving complete packet before semantic review; intake readiness does not require every proposal to pass through this capability.",
       "causal": true
     },
     {

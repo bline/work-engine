@@ -84,6 +84,18 @@ human decisions after context replacement.
 Required property: resume-critical proposal state is persisted before control
 passes; the handoff is a projection, not the canonical copy.
 
+### Published meaning precedes semantic review
+
+Reason: if a reviewer starts from mutable working-tree meaning, initial
+formation and review-driven remediation collapse into unattributed history and
+the reviewer cannot bind an exact subject.
+
+Required property: once formation judges a candidate complete enough for
+review, it uses the proposal-packet contract to publish the complete packet at
+an immutable Git revision before handing control to semantic review. Publication
+records formed meaning; it does not review, accept, prioritize, or authorize the
+proposal.
+
 ### Semantic completion is not form completion
 
 Reason: required fields can be filled with shallow or invented content while a
@@ -109,6 +121,7 @@ In scope:
 - interactive semantic formation and decomposition;
 - repository-grounded placement and duplication checks;
 - incremental packet updates and resume;
+- immutable publication of complete formed packets before semantic review;
 - proposal-family and relationship maintenance;
 - explicit uncertainty and route revision;
 - compact completion and handoff projections.

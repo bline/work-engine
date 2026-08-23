@@ -26,15 +26,33 @@ assessment may produce no proposal or several candidate handoffs.
 
 ## Candidate physical placement
 
-A repository-local validated surface separate from cheap raw capture is the
-probable first adapter. A top-level `idea-intake/` directory would make this
-boundary visible, while an explicit `ideas/intake/` hierarchy could preserve the
-same ownership with less top-level structure. Exercise both consequences before
-settling the physical layout.
+A dedicated sibling planning skill, provisionally `skills/idea-intake/`, is the
+probable first capability adapter. It keeps raw interpretation distinct from
+`skills/proposal-former`, which consumes surviving candidate meaning, and
+`skills/proposal-packets`, which validates formed packet structure. The final
+skill name remains revisable, but folding intake semantics into either sibling
+is not an equivalent placement.
+
+A repository-local validated record surface separate from cheap raw capture is
+also required. A top-level `idea-intake/` directory would make this boundary
+visible, while an explicit `ideas/intake/` hierarchy could preserve the same
+ownership with less top-level structure. Exercise both consequences before
+settling the record layout. The existing
+`ideas/history/2026-08-22-pre-reconciliation/` path means a pre-reconciliation
+archive; do not reuse `ideas/history/` for post-intake retention unless the two
+lifecycle meanings become structurally distinguishable.
 
 Git owns source and assessment history. The intake record must bind immutable
 source identity strongly enough that later movement does not silently change
 meaning or leave proposal origins dangling.
+
+The current `ideas/README.md` and `ideas/reconciliation-map.json` remain the
+attributed manual reconciliation snapshot for sources not yet represented by an
+intake record. During migration they are evidence, not unquestioned truth. Once
+an exact source revision has a claim-level intake assessment, that assessment
+owns its disposition at that grain; the older file-level snapshot remains
+historical provenance or a rebuildable compatibility projection and cannot
+override the later record.
 
 ## Rejected placements
 
@@ -68,5 +86,6 @@ mistaken for each other by people or tooling.
 
 Reopen placement when exercised intake shows that the proposed record cannot
 survive source movement, that formation must reconstruct material assessment,
-that the physical split adds no decision value, or that concurrent/external
-consumers require a different durability boundary.
+that the capability or record split adds no decision value, that existing
+reconciliation cannot migrate without dual ownership, or that
+concurrent/external consumers require a different durability boundary.

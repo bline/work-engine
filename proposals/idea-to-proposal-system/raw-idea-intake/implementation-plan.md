@@ -11,7 +11,9 @@ closed fields preserve identity, exact source revision, provenance, authority,
 references, current disposition, and non-authorization. Bind representative
 raw sources covering duplicate, promoted, apparently implemented, split,
 genuinely novel, uncertain, and no-proposal outcomes before using their results
-to revise the contract.
+to revise the contract. Include one source from the existing manual
+reconciliation snapshot and preserve that file-level disposition as attributed
+prior evidence rather than a concurrent semantic owner.
 
 ## Validation and history
 
@@ -34,11 +36,12 @@ fixed questionnaire or universal state sequence.
 Exercise a fresh proposal former using only one bounded intake projection and
 named on-demand evidence. Confirm that formation can create zero, one, or
 several proposal candidates without rereading the entire raw-idea collection or
-treating intake judgment as proposal authority. Before semantic review, publish
-each complete formed packet to an immutable Git revision so the review subject,
-formation baseline, and any review-driven revisions remain distinguishable.
-Publication records meaning; it does not review, accept, prioritize, or
-authorize the proposal.
+treating intake judgment as proposal authority. Before semantic review, the
+proposal-formation owner publishes each complete formed packet through the
+packet contract to an immutable Git revision so the review subject, formation
+baseline, and any review-driven revisions remain distinguishable. Publication
+records meaning; it does not review, accept, prioritize, or authorize the
+proposal.
 
 ## Workflow dogfood and placement decision
 

@@ -34,6 +34,10 @@ Create an intake capability and durable record profile with these semantic
 owners:
 
 - the raw idea owns the author's exact source;
+- the current `ideas/README.md` and `ideas/reconciliation-map.json` own the
+  attributed manual reconciliation snapshot that predates intake records; they
+  are prior evidence for migration, not a second canonical owner after an exact
+  source revision has a claim-level intake assessment;
 - the intake record owns one attributed interpretation of an immutable source
   revision, including material claim identities, evidence cutoffs, relationship
   nominations, adjudicated dispositions, uncertainty, and reopening conditions;
@@ -104,10 +108,12 @@ raw notes and conversation context.
 ### Formed meaning is published before review
 
 Desired outcome: when intake leads to proposal formation, the complete formed
-proposal packet is published at an immutable Git revision before semantic
-review begins. Review, remediation, and later decisions can bind exact proposal
+proposal packet is handed to the proposal-formation owner, which publishes it
+through the packet contract at an immutable Git revision before semantic review
+begins. Review, remediation, and later decisions can bind exact proposal
 revisions, making the proposal's initial meaning and subsequent changes
-inspectable without granting publication any review or acceptance authority.
+inspectable without granting intake or publication any review or acceptance
+authority.
 
 Invalid outcome: reviewers begin from mutable working-tree meaning, formation
 and review-driven remediation collapse into one unattributed revision, or a
@@ -142,11 +148,14 @@ obligation while the intake record retains assessment history and meaning.
 In scope:
 
 - stable raw-idea and source-revision binding;
+- migration from the existing manual reconciliation snapshot without creating
+  a second owner for later claim-level dispositions;
 - attributed claim identification and assessment revision;
 - evidence cutoffs, relationship nomination, and authorized disposition;
 - uncertainty, conflicts, reopening conditions, and partial outcomes;
 - compact resumable assessment state and proposal-formation handoff;
-- publication of a complete formed proposal packet before semantic review;
+- a handoff that requires the formation owner to publish a complete proposal
+  packet before semantic review;
 - stable provenance across authorized source movement; and
 - truthful no-proposal and unresolved outcomes.
 
@@ -174,6 +183,12 @@ Out of scope:
   complete raw-idea directory or assessment conversation.
 - Determine whether the bounded claim-lineage minimum can serve intake without
   turning experimental evidence semantics into premature production placement.
+- Exercise migration from `ideas/reconciliation-map.json`: preserve its
+  attributed file-level disposition as prior evidence, then prove a later
+  claim-level intake revision is not overridden by that historical projection.
+- Evaluate the existing `ideas/history/2026-08-22-pre-reconciliation/` meaning
+  before selecting any hierarchy that would reuse `ideas/history/` for a
+  different lifecycle boundary.
 
 ## Authority
 

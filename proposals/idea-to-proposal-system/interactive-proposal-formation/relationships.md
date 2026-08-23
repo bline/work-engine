@@ -5,7 +5,10 @@
 Type: semantic dependency, not mandatory delivery order.
 
 The capability needs a defined target contract to persist authoritative state.
-The contract and capability may be implemented together.
+The contract and capability may be implemented together. When formation hands a
+candidate to semantic review, formation owns invoking publication of the
+complete packet at an immutable Git revision; packet machinery owns artifact
+shape and mechanical validation, not semantic readiness or review authority.
 
 ## Hands off to: evidence-backed proposal evaluation
 
