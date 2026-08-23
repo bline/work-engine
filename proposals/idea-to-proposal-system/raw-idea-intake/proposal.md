@@ -101,6 +101,19 @@ Invalid outcome: the handoff becomes the only durable copy, intake creates
 proposal identity, or formation must reconstruct the material assessment from
 raw notes and conversation context.
 
+### Formed meaning is published before review
+
+Desired outcome: when intake leads to proposal formation, the complete formed
+proposal packet is published at an immutable Git revision before semantic
+review begins. Review, remediation, and later decisions can bind exact proposal
+revisions, making the proposal's initial meaning and subsequent changes
+inspectable without granting publication any review or acceptance authority.
+
+Invalid outcome: reviewers begin from mutable working-tree meaning, formation
+and review-driven remediation collapse into one unattributed revision, or a
+later reader cannot distinguish what was originally proposed from what changed
+because of review.
+
 ### Cleanup remains a separate authorized consequence
 
 Desired outcome: an intake record may recommend movement, archival, merging,
@@ -133,6 +146,7 @@ In scope:
 - evidence cutoffs, relationship nomination, and authorized disposition;
 - uncertainty, conflicts, reopening conditions, and partial outcomes;
 - compact resumable assessment state and proposal-formation handoff;
+- publication of a complete formed proposal packet before semantic review;
 - stable provenance across authorized source movement; and
 - truthful no-proposal and unresolved outcomes.
 

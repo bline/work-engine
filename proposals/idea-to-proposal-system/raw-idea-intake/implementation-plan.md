@@ -34,7 +34,11 @@ fixed questionnaire or universal state sequence.
 Exercise a fresh proposal former using only one bounded intake projection and
 named on-demand evidence. Confirm that formation can create zero, one, or
 several proposal candidates without rereading the entire raw-idea collection or
-treating intake judgment as proposal authority.
+treating intake judgment as proposal authority. Before semantic review, publish
+each complete formed packet to an immutable Git revision so the review subject,
+formation baseline, and any review-driven revisions remain distinguishable.
+Publication records meaning; it does not review, accept, prioritize, or
+authorize the proposal.
 
 ## Workflow dogfood and placement decision
 
