@@ -130,22 +130,37 @@ actor binding, authoritative references, and retirement without stale
 resurrection. These outcomes supersede the corresponding gaps in the 2026-08-20
 and 2026-08-21 reconciliations without erasing their dated evidence.
 
+The proposal-workflow direction has also advanced beyond its dated handoff.
+The repository now has mechanically validated durable proposal packets,
+adaptive proposal formation, authority-controlled decision recording, a
+provisional revision-bound specialized-review procedure, approved candidate
+meanings for review artifacts and adaptive panel coordination, and a successful
+bounded claim-lineage dogfood. Independent-review episodes can preserve their
+own remediation state and history through an authority-bound profile, including
+bounded MCP access. These are substantial foundations, but they do not yet form
+one controlled idea-to-proposal lifecycle. Raw idea intake remains an active
+idea, review artifacts and panel coordination remain approved candidate
+meanings rather than implemented capabilities, and no end-to-end exercise has
+yet carried a source-bound intake through formation, revision, review, and an
+authority-owned disposition.
+
 The current priority order is:
 
-1. reconcile accepted campaign work and keep stopped or user-owned changes
-   distinguishable;
-2. preserve the accepted active-slice boundary: slice-supervisor owns attempt
-   semantics while durable-state remains an opaque compare-and-swap primitive;
-3. preserve and exercise the first durable proposal-packet contract and its
-   mechanically decidable identity, reference, relationship, uncertainty, and
-   authority consequences without absorbing proposal meaning into runtime state;
+1. reconcile accepted campaign work and keep stopped, experimental, and
+   user-owned changes distinguishable;
+2. complete the controlled proposal workflow from low-friction raw idea intake
+   through claim-addressable assessment, proposal formation, revision-bound
+   adaptive review, and an explicit authority-owned disposition;
+3. preserve the implemented packet, decision, claim-lineage, active-slice,
+   transition-history, and reviewer-state boundaries while the completed
+   workflow exercises them as real consumers;
 4. establish an atomic, versioned install boundary with a neutral-directory
    smoke test before syncing the repository skill into Codex;
 5. audit contract ownership and imperative runtime instructions;
 6. complete standalone documentation, CI, versioning, and release surfaces;
-7. promote proposal formation, strategic planning, and closed-loop learning
-   into durable portfolio machinery after the runtime can preserve their state
-   truthfully.
+7. promote evidence-backed evaluation, portfolio selection, organizational
+   planning, and closed-loop learning only after the proposal workflow can
+   hand them durable, authority-bounded proposal state.
 
 This order is current strategic guidance, not an invariant procedure. A
 strategic planning break should confirm or revise it when durable execution
@@ -325,8 +340,19 @@ to its checkpoint, tree, and task patch. Active slice attempts now have a
 reachable fresh-process lifecycle for pending planning and review obligations:
 slice-supervisor owns their semantic state and durable-state owns only opaque
 compare-and-swap publication. Some historical records remain on old schemas,
-authoritative builder telemetry is incomplete, and durable general agent state
-outside that bounded lifecycle and partial-artifact recovery do not yet exist.
+authoritative builder telemetry is incomplete, and partial-artifact recovery
+does not yet exist.
+
+The Git-ref durable-state adapter now retains predecessor-linked immutable
+history with exact-revision reads, deterministic bounded temporal listing, and
+reachability across Git garbage collection. Active-slice recovery can
+reconstruct a selected retained revision without replaying effects. A separate
+independent-review-state profile preserves one authority-bound adversarial
+review and remediation episode with compare-and-swap transitions, generation
+fencing, attributed findings, pending actions, retirement, and bounded MCP
+access. These implementations establish shared durability mechanics and one
+real role-owned profile; they do not make durable-state or MCP the semantic
+owner of every future role.
 
 The persistent-state proposals retain durable review obligations as a possible
 consumer rather than selecting the first implementation boundary in advance. A
@@ -350,9 +376,9 @@ and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-revie
   without redefining final stopped and failed terminals.
 - Define pending-authority, mid-slice interruption, partial-artifact recovery,
   and deterministic reconciliation semantics.
-- Preserve review obligations durably when an evidence-selected runtime
-  consumer requires it; retain immutable subject, material assumptions,
-  established consequence, limitations, and lineage.
+- Exercise the implemented independent-review episode profile through the
+  revision-bound proposal-review consumer while keeping final review artifacts,
+  proposal decisions, and claim revisions with their stronger owners.
 - Make consequential use of existing review evidence establish applicability
   to the candidate state or record refresh, supersession, or composition.
 - Expose overlap analysis, protected scopes, and reservations as coordination
@@ -375,7 +401,120 @@ and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-revie
 
 ---
 
-# Workstream 4 — Stabilize the capability and adapter architecture
+# Workstream 4 — Complete the controlled idea-to-proposal workflow
+
+**Status: active; packet, formation, decision, evidence-lineage, and reviewer-state foundations exist.**
+
+## Invariant outcome
+
+Work Engine can turn low-ceremony speculative idea sources into durable,
+claim-addressable assessments and then into zero, one, or several independently
+decidable proposal candidates. Each surviving proposal can be revised,
+challenged by a consequence-selected specialist review panel, and presented to
+the named authority for an explicit disposition without allowing intake,
+formation, review, persistence, or mechanical validation to acquire that
+authority.
+
+Raw capture, intake assessment, proposal meaning, review evidence, claim
+history, and authority decisions remain distinct durable owners. Physical
+organization may change as the workflow is exercised, but a move or cleanup
+operation must not erase source identity, provenance, assessment history, or
+resolvable proposal origins.
+
+This workstream ends at a durable authority-owned proposal disposition and a
+truthful handoff to downstream planning. Evidence-backed portfolio comparison,
+roadmap activation, organizational compilation, campaign authorization, and
+implementation remain separate consumers.
+
+## Current evidence
+
+- `proposal-packets` owns stable proposal identity, closed manifest and decision
+  contracts, repository discovery, typed relationships, and deterministic
+  validation. Eight current repository proposal packets validate mechanically.
+- `proposal-former` supplies the initial adaptive formation contract and a
+  transcript-free one-idea/one-proposal consumer proof. Split, merge,
+  duplication, reopening, and human-scope-change scenarios remain to be
+  exercised as one coherent capability.
+- Authority-controlled proposal decisions are implemented and have recorded
+  real user dispositions without changing roadmap priority or authorizing
+  implementation.
+- The bootstrap proposal-review procedure has exercised fresh specialist entry,
+  retained remediation context, multi-perspective synthesis, and truthful
+  authority separation on several real proposal revisions.
+- Proposal meanings for revision-bound review artifacts and adaptive review-panel
+  coordination are approved with provisional placement, but neither capability
+  is implemented as a durable product boundary.
+- The bounded claim-lineage dogfood passed stable-identity, non-authoritative
+  `may_affect`, changed and retained-unchanged refresh, and exact-revision
+  reliance proofs. Its placement and completeness remain experimental.
+- Independent-review episode state, retained transition history, and bounded MCP
+  access now preserve reviewer remediation context without making live role
+  state the owner of final review artifacts or decisions.
+- [`ideas/raw-idea-intake-and-claim-assessment.md`](ideas/raw-idea-intake-and-claim-assessment.md)
+  defines a candidate source-bound intake consequence, claim-level assessment,
+  proposal-formation handoff, and cleanup-authority boundary. It remains an
+  active idea rather than a formed or implemented contract.
+
+## Remaining work
+
+- Establish a structured intake owner that binds an exact raw-source revision,
+  preserves stable idea identity, distinguishes extracted source claims from
+  assessor inference, records evidence cutoffs and authority, and can return a
+  truthful unresolved or no-proposal result.
+- Reconcile intake claims against current architecture, implementation,
+  proposals, reviews, and other assessed ideas without turning similarity or
+  code matches into automatic semantic decisions.
+- Preserve claim-level intake dispositions, uncertainty, reopening conditions,
+  and the smallest useful handoff to proposal formation. Keep raw-source cleanup
+  as a separately authorized repository consequence.
+- Extend formation evidence across one-to-zero, one-to-one, split, merge,
+  duplicate, reopened-placement, and human-scope-change outcomes without making
+  those cases a mandatory procedural sequence.
+- Implement a revision-bound review-artifact profile that preserves exact
+  subject identity, episode context, stable findings, assumptions, limitations,
+  conflicts, truthful empty or failure outcomes, applicability lineage,
+  synthesis references, and non-authoritative decision readiness.
+- Implement adaptive review-panel coordination that selects perspectives from
+  material consequences, records relevant omissions and failures, retains
+  specialist ownership, preserves disagreement, and never treats synthesis as
+  a vote or authority decision.
+- Connect the live independent-review episode profile to the review workflow as
+  resumable operational state while publishing final findings and synthesis to
+  their stronger durable artifact owner.
+- Exercise the whole boundary on materially different raw ideas and proposal
+  revisions before deciding permanent intake layout, shared claim placement,
+  review storage, or richer control-plane integration.
+- Reconcile the dated proposal-workflow planning handoff and roadmap evidence
+  after each accepted vertical so completed prerequisites do not remain listed
+  as future work.
+
+## Completion evidence
+
+- A raw idea remains cheap to capture and can later be assessed against one
+  exact immutable source revision without silently changing subject when the
+  file changes or moves.
+- Representative duplicate, promoted, apparently implemented, split, genuinely
+  novel, uncertain, and no-surviving-candidate cases retain truthful attributed
+  dispositions; none is forced into a proposal or cleanup action.
+- A fresh proposal former consumes one intake projection without rereading the
+  entire idea collection or reconstructing the assessment conversation.
+- Formation produces durable zero, one, split, merge, revision, and
+  human-decision consequences while packet validation continues to establish
+  only mechanically decidable properties.
+- A changed proposal revision receives a consequence-selected specialist panel;
+  exact findings, omitted or unavailable perspectives, retained remediation,
+  conflicts, applicability, and synthesis references remain reconstructable
+  without a review transcript.
+- The named proposal authority can record an explicit disposition from the
+  durable packet and review evidence without review, validation, or persistence
+  acquiring acceptance, roadmap, or implementation authority.
+- At least one end-to-end exercise reaches a decided proposal and another
+  truthfully reaches no proposal or unresolved intake, with source provenance,
+  claim lineage, resume state, and downstream handoff still intact.
+
+---
+
+# Workstream 5 — Stabilize the capability and adapter architecture
 
 **Status: planned; provider and evidence foundations exist.**
 
@@ -423,7 +562,7 @@ review. Some skills still couple provider products to preferred workflows.
 
 ---
 
-# Workstream 5 — Prove the campaign lifecycle
+# Workstream 6 — Prove the campaign lifecycle
 
 **Status: active; core multi-slice lifecycle evidence exists.**
 
@@ -470,7 +609,7 @@ receipt or blocking checkpoint continuation.
 
 ---
 
-# Workstream 6 — Make validation consequence-driven
+# Workstream 7 — Make validation consequence-driven
 
 **Status: planned; deterministic gate runner is preserve.**
 
@@ -519,7 +658,7 @@ runtime instructions still turn risk signals into mandatory stage rules.
 
 ---
 
-# Workstream 7 — Build useful observability and evaluation
+# Workstream 8 — Build useful observability and evaluation
 
 **Status: planned; historical measurements are incomplete.**
 
@@ -577,7 +716,7 @@ local exports and interpreter caches are not part of that publication boundary.
 
 ---
 
-# Workstream 8 — Make the repository explain and sustain itself
+# Workstream 9 — Make the repository explain and sustain itself
 
 **Status: planned.**
 
@@ -627,7 +766,7 @@ contracts repeat the same ideas.
 
 ---
 
-# Workstream 9 — Release the completed standalone foundation
+# Workstream 10 — Release the completed standalone foundation
 
 **Status: planned.**
 
@@ -649,6 +788,10 @@ been implemented.
   campaign stops truthfully.
 - Capability roles are distinct and adapters report truthful availability,
   use, failure, and fallback.
+- A controlled idea-to-proposal workflow preserves source-bound intake,
+  claim-addressable assessment, adaptive formation, revision-bound review, and
+  authority-owned disposition without turning the workflow into implementation
+  authority.
 - Deterministic and semantic validation boundaries are demonstrated.
 - Current telemetry supports limited, explicitly scoped evaluation.
 - Standalone documentation, contribution, CI, versioning, and release surfaces
@@ -761,7 +904,11 @@ This foundation satisfies the recovery prerequisite recorded by the 2026-08-21
 proposal-workflow direction. It does not make runtime state the owner of
 proposal meaning. Durable proposal packets now provide the first bounded
 planning-layer consumer of the prerequisite through their own Git-backed
-semantic contract and repository validator.
-Append-only history, general scheduling, review queues, mutation reservations,
-installed-skill distribution, and broader agent/runtime state remain separate
-objectives until a concrete owner and consumer failure mode requires them.
+semantic contract and repository validator. Proposal formation and
+authority-controlled decision recording have since become additional consumers.
+The shared Git-ref adapter now retains application-owned transition history,
+and the independent-review profile supplies one bounded role-owned state
+consumer with MCP access. General scheduling, review queues, mutation
+reservations, installed-skill distribution, and broader role profiles remain
+separate objectives until a concrete owner and consumer failure mode requires
+them.
