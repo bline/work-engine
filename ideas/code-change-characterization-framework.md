@@ -2,7 +2,10 @@
 
 ## Status
 
-Exploratory design note.
+Promoted formation source. Current candidate meaning is owned by
+[`work-engine.code-change-characterization-profile`](../proposals/empirical-agent-research/code-change-characterization-profile/proposal.md).
+This document remains the original exploratory design evidence and does not
+authorize implementation.
 
 This document defines a proposed framework for representing code changes as structured, measurable objects.
 

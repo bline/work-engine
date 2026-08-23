@@ -36,6 +36,12 @@
       "reason": "Outcome calibration only."
     },
     {
+      "original": "code-change-characterization-framework.md",
+      "disposition": "Promoted",
+      "target": "proposals/empirical-agent-research/code-change-characterization-profile/",
+      "reason": "Formed as a reusable exact-subject derived-evidence profile; the idea remains provenance rather than a competing current owner."
+    },
+    {
       "original": "context-compaction-as-role-resume-event.md",
       "disposition": "Promoted / absorbed",
       "target": "proposals/agent-state/role-owned-durable-operational-state + organizational-execution-envelopes.md durable-role profile",

@@ -46,6 +46,7 @@ The goal is not to rewrite history. Original idea files remain useful provenance
 | `adaptive-specialized-review-panels.md` | Promoted | `proposals/adaptive-specialized-review/` | No active clean idea; proposal family owns remaining candidate meaning. |
 | `architectural-review.md` | Retained / narrowed | `architectural-review.md` | Diagnostic capability retained; historical blocking consequence remains an explicit unresolved authority/policy question. |
 | `closed-loop-engineering-learning.md` | Retained / narrowed | `closed-loop-engineering-learning.md` | Outcome calibration only. |
+| `code-change-characterization-framework.md` | Promoted | `proposals/empirical-agent-research/code-change-characterization-profile/` | Formed as a reusable exact-subject derived-evidence profile; the idea remains provenance rather than a competing current owner. |
 | `context-compaction-as-role-resume-event.md` | Promoted / absorbed | agent-state proposal + `organizational-execution-envelopes.md` durable-role profile | The proposal owns recovery semantics; the clean idea retains profile binding/composition only. |
 | `context-derived-role-execution-envelopes.md` | Retained / narrowed | `organizational-execution-envelopes.md` | Organization assembly and system/profile/role definition retained; control/runtime/UI/research details moved to their owners. |
 | `durable-review-queue-and-scope-coordination.md` | Retained / narrowed | `review-scope-coordination.md` | Only applicability/mutation coordination; checkpoint and review-artifact semantics moved to implemented/proposed owners. |
@@ -101,6 +102,17 @@ Adaptive specialized review and revision-bound review artifact semantics are rep
 - `proposals/adaptive-specialized-review/`.
 
 The clean review-scope idea therefore owns only mutable-scope/applicability coordination.
+
+### Empirical agent research
+
+Code-change characterization has been promoted into:
+
+- `proposals/empirical-agent-research/code-change-characterization-profile`.
+
+The proposal family also owns the newly formed raw agent-execution evidence
+archive candidate. These candidates preserve change and environment evidence
+for future research without making either artifact benchmark truth, operational
+state, reviewer-selection authority, or implementation authority.
 
 ### Scheduler / control plane
 

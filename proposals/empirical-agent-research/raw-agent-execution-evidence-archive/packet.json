@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.raw-agent-execution-evidence-archive",
+  "family_id": "work-engine.empirical-agent-research",
+  "title": "Raw Agent Execution Evidence Archive",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "../formation-evidence.md"
+    },
+    {
+      "kind": "research_question_inventory",
+      "path": "../future-question-inventory.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A provider-neutral, access-controlled research-evidence archive should own lossless trace bytes and capture integrity, while provider adapters own collection and existing Work Engine artifacts retain semantic authority; the physical service and retention owner remain undecided."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A real Codex slice exercises raw inference tracing across tool invocation, compaction, and a child agent and reveals missing provider evidence or an incorrect archive boundary.",
+      "A Claude review episode exercises append-safe prefix capture and shows that provider file mutation, sidechains, or attachments require a different capture identity.",
+      "Measured compression, retrieval, encryption, or retention behavior makes the proposed chunked content-addressed realization unsuitable.",
+      "Security, privacy, consent, or deletion requirements cannot be satisfied by a shared research archive.",
+      "An exercised consumer shows that some proposed raw payload belongs to a stronger existing domain owner or must not be retained.",
+      "A provider introduces a supported trace facility that changes the adapter boundary or makes ordinary-session fallback unnecessary."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio and data-governance owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.code-change-characterization-profile",
+      "rationale": "Execution evidence and change characterization are independent explanatory objects that can be joined for agent and reviewer research without sharing semantic ownership.",
+      "causal": false
+    },
+    {
+      "type": "informs",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Bound raw traces can establish reviewer environment and observable episode evidence while revision-bound review artifacts continue to own findings, outcomes, conflicts, synthesis, and applicability.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "Operational state owns correct continuation and explicitly excludes transcript persistence; the archive owns optional forensic evidence and cannot become a recovery correctness dependency.",
+      "causal": false
+    }
+  ]
+}

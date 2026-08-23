@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.code-change-characterization-profile",
+  "family_id": "work-engine.empirical-agent-research",
+  "title": "Code Change Characterization Profile",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/code-change-characterization-framework.md"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "../formation-evidence.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A shared derived-evidence capability should own recomputable characterizations of exact repository change subjects, while Git and checkpoints own subjects and architecture, claims, tests, reviews, runtime observations, and outcomes retain their existing semantic owners."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A deterministic profile over real slice checkpoints cannot distinguish user baseline changes, task-owned change, candidate attempts, and remediation without changing checkpoint identity semantics.",
+      "Before/after structural analysis at immutable revisions cannot be supplied by existing or bounded repository-evidence adapters with truthful coverage provenance.",
+      "Semantic fields repeatedly duplicate architecture, invariant, claim, review, or runtime ownership rather than remaining attributed derived observations.",
+      "Review Bench cases show that task/problem or evidence-environment differences dominate code-change properties and require a different comparison unit.",
+      "Profile composition across candidate, remediation, accepted, and campaign subjects cannot preserve non-additive topology and impact without misleading aggregation.",
+      "A non-review consumer demonstrates a different minimal common profile or that separate domain profiles are more truthful than one shared characterization."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.raw-agent-execution-evidence-archive",
+      "rationale": "Change characteristics and execution evidence are independent explanatory objects that can be joined for agent and reviewer research without sharing ownership.",
+      "causal": false
+    },
+    {
+      "type": "informs",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "A review artifact can reference an exact recomputable change profile to describe its subject while retaining ownership of reviewer episodes, findings, outcomes, conflicts, synthesis, and applicability.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "Semantic change effects need attributed statements, evidence cutoffs, provenance, authority scope, and revision lineage, but this candidate does not select the experimental shared claim-lineage proposal as their permanent owner.",
+      "causal": false
+    }
+  ]
+}
