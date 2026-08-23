@@ -49,6 +49,13 @@ def main() -> int:
     begin.add_argument("--phase", required=True)
     begin.add_argument("--obligation-json", required=True)
     begin.add_argument("--authoritative-refs-json", default="[]")
+    begin.add_argument("--accepted-boundary-json")
+
+    publish_phase = commands.add_parser("publish-phase")
+    publish_phase.add_argument("--identity-json", required=True)
+    publish_phase.add_argument("--expected-revision", required=True)
+    publish_phase.add_argument("--phase", required=True)
+    publish_phase.add_argument("--consequence-json", required=True)
 
     wait = commands.add_parser("wait")
     wait.add_argument("--identity-json", required=True)
@@ -75,15 +82,21 @@ def main() -> int:
                 phase=args.phase,
                 pending_obligation=json_value(args.obligation_json, "obligation JSON"),
                 authoritative_refs=json_value(args.authoritative_refs_json,
-                                              "authoritative refs JSON"))
+                                              "authoritative refs JSON"),
+                accepted_boundary=(json_value(args.accepted_boundary_json,
+                                              "accepted boundary JSON")
+                                   if args.accepted_boundary_json else None))
         else:
             current = current_at_revision(store, identity, args.expected_revision)
             if args.command == "wait":
                 result = LIVE.wait_on_capability(store, current, event_id=args.event_id,
                     capability=args.capability, provider=args.provider, reason=args.reason)
-            else:
+            elif args.command == "retire":
                 result = LIVE.retire(store, current, event_id=args.event_id,
                     outcome=args.outcome, reason=args.reason)
+            else:
+                result = LIVE.publish_phase_consequence(store, current, phase=args.phase,
+                    consequence=json_value(args.consequence_json, "consequence JSON"))
     except (json.JSONDecodeError, OSError, RuntimeError, ValueError) as error:
         print(f"manage_active_slice: {error}", file=sys.stderr)
         return 2

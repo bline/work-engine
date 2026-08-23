@@ -52,9 +52,11 @@ class LiveSliceStateTest(unittest.TestCase):
             replay = self.fresh(repository, "--capability", "independent_review",
                                 "--recovery-event-id", "provider-recovered-1")
             self.assertEqual(resumed["durable_revision"], replay["durable_revision"])
-            self.assertEqual(1, replay["handled_consequences"].count(
+            internal = LIVE.load(store, self.identity)
+            self.assertIsNotNone(internal)
+            self.assertEqual(1, internal["handled_consequences"].count(
                 '["resume_capability","provider-recovered-1"]'))
-            retired = LIVE.retire(store, replay, event_id="provider-recovered-1",
+            retired = LIVE.retire(store, internal, event_id="provider-recovered-1",
                                   outcome="accepted", reason="same raw id, different kind")
             self.assertEqual("retired", retired["status"])
             self.assertIn('["retire","provider-recovered-1"]', retired["handled_consequences"])
@@ -76,6 +78,59 @@ class LiveSliceStateTest(unittest.TestCase):
         self.assertNotEqual(LIVE.stable_key(shifted), LIVE.stable_key(other))
         with self.assertRaisesRegex(ValueError, "slice_number"):
             LIVE.validate_identity({**self.identity, "slice_number": True})
+
+    def test_phase_publication_replay_conflict_uncertainty_and_ordering(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            store = LIVE.DURABLE.GitRefDurableStateStore(repository)
+            active = LIVE.create(store, identity=self.identity,
+                actor_binding={"logical_actor_id": "builder-1", "provider": "codex",
+                               "runtime_session_id": None}, phase="planning",
+                pending_obligation={"obligation_id": "implementation-1", "kind": "implementation",
+                                    "summary": "Implement accepted slice"},
+                authoritative_refs=[], accepted_boundary={
+                    "reference": "plan:1", "integrity_sha256": "a" * 64})
+            consequence = {"consequence_id": "implementation-1", "summary": "complete",
+                "certainty": "established", "uncertainty_reason": None,
+                "references": [{"kind": "manifest", "reference": "manifest:1",
+                                "integrity_sha256": "b" * 64}]}
+            published = LIVE.publish_phase_consequence(
+                store, active, phase="implementation", consequence=consequence)
+            replay = LIVE.publish_phase_consequence(
+                store, published, phase="implementation", consequence=consequence)
+            self.assertEqual(published["durable_revision"], replay["durable_revision"])
+            with self.assertRaisesRegex(ValueError, "conflicts"):
+                LIVE.publish_phase_consequence(store, published, phase="implementation",
+                    consequence={**consequence, "summary": "different"})
+            gate_uncertain = LIVE.publish_phase_consequence(store, published, phase="gate",
+                consequence={"consequence_id": "gate-1", "summary": "gate completion unknown",
+                    "certainty": "uncertain", "uncertainty_reason": "mailbox interrupted",
+                    "references": []})
+            self.assertEqual("uncertain", gate_uncertain["latest_phase_consequence"]["certainty"])
+            with self.assertRaisesRegex(ValueError, "regress"):
+                LIVE.publish_phase_consequence(store, gate_uncertain, phase="implementation",
+                    consequence={**consequence, "consequence_id": "implementation-2"})
+
+    def test_legacy_active_attempt_is_recovered_without_inventing_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            store = LIVE.DURABLE.GitRefDurableStateStore(repository)
+            legacy = {"schema_version": 1, "identity": self.identity,
+                "actor_binding": {"logical_actor_id": "builder-1", "provider": None,
+                                  "runtime_session_id": None},
+                "phase": "planning", "status": "active",
+                "pending_obligation": {"obligation_id": "plan-1", "kind": "planning",
+                                       "summary": "Plan slice"},
+                "handled_consequences": [], "authoritative_refs": [],
+                "waiting": None, "retirement": None}
+            store.publish(LIVE.stable_key(self.identity), LIVE.canonical(legacy), None)
+            recovered = LIVE.load(store, self.identity)
+            self.assertIsNotNone(recovered)
+            self.assertEqual(2, recovered["schema_version"])
+            self.assertIsNone(recovered["accepted_boundary"])
+            self.assertIsNone(recovered["latest_phase_consequence"])
 
 
 if __name__ == "__main__":

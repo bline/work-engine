@@ -133,6 +133,27 @@ when its loss would risk incorrect continuation or material re-synthesis.
 Token cost is evidence of materiality, never evidence that the conclusion is
 correct or authoritative.
 
+## Continuous publication boundary
+
+A role must publish a resume-critical semantic consequence as soon as losing
+it would risk incorrect continuation, duplicate an effect, lose authority
+context, or require material reconstruction. Publication timing follows the
+value and risk of the consequence; it must not wait merely for a convenient
+workflow phase, terminal receipt, checkpoint, handoff, or anticipated context
+compaction.
+
+Before a runtime return, mailbox delivery, provider-session transition, or
+role handoff can leave a transient channel as the only copy, the owning
+workflow must publish the consequence itself or an integrity-bound reference
+to its stronger canonical owner. A compact phase-completion consequence may be
+required even when the enclosing slice is not yet terminal.
+
+Advance warning of compaction may permit an efficient flush, but correctness
+must not depend on receiving that warning. If publication cannot be established
+after interruption, recovery must expose the consequence as uncertain and
+reconcile it from authoritative evidence rather than infer completion from
+remembered context or runtime liveness.
+
 ## Mechanism-open reconstruction
 
 The binding requirement is that the current projection be reconstructable,

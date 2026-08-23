@@ -39,7 +39,7 @@
       "original": "context-compaction-as-role-resume-event.md",
       "disposition": "Promoted / absorbed",
       "target": "proposals/agent-state/role-owned-durable-operational-state + organizational-execution-envelopes.md durable-role profile",
-      "reason": "The formed proposal owns context-replacement recovery semantics. The clean organizational idea retains only the unresolved reusable-profile binding and composition layer."
+      "reason": "The formed proposal owns continuous-publication and context-replacement recovery semantics. The clean organizational idea retains only the unresolved reusable-profile binding and composition layer."
     },
     {
       "original": "context-derived-role-execution-envelopes.md",

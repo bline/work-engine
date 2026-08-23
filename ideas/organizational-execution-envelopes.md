@@ -147,7 +147,10 @@ consequential continuation.
 
 That recovery consequence is owned by the formed role-owned durable
 operational-state proposal. The profile owns only which class of roles receives
-the binding; it does not redefine the consequence or a role's state schema.
+the binding; it does not redefine the consequence or a role's state schema. The
+same proposal also owns the continuous-publication boundary: resume-critical
+consequences become durable when losing them becomes materially unsafe, rather
+than waiting for a phase boundary, handoff, or anticipated context compaction.
 
 ## Profile composition and configuration authority
 

@@ -16,8 +16,9 @@ if SPEC is None or SPEC.loader is None:
 DURABLE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DURABLE)
 
-PHASES = {"planning", "review"}
+PHASES = {"planning", "implementation", "gate", "review"}
 STATUSES = {"active", "waiting_on_capability", "retired"}
+PHASE_ORDER = {"planning": 0, "implementation": 1, "review": 2, "gate": 3}
 
 
 def fail(message: str) -> None:
@@ -26,6 +27,11 @@ def fail(message: str) -> None:
 
 def canonical(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+
+
+def is_sha256(value: Any) -> bool:
+    return (isinstance(value, str) and len(value) == 64
+            and all(character in "0123456789abcdef" for character in value))
 
 
 def validate_identity(value: Any) -> None:
@@ -46,8 +52,8 @@ def stable_key(identity: dict[str, Any]) -> str:
 def validate(value: Any) -> dict[str, Any]:
     fields = {"schema_version", "identity", "actor_binding", "phase", "status",
               "pending_obligation", "handled_consequences", "authoritative_refs",
-              "waiting", "retirement"}
-    if not isinstance(value, dict) or set(value) != fields or value["schema_version"] != 1:
+              "accepted_boundary", "latest_phase_consequence", "waiting", "retirement"}
+    if not isinstance(value, dict) or set(value) != fields or value["schema_version"] != 2:
         fail("live slice state fields or schema are invalid")
     validate_identity(value["identity"])
     actor = value["actor_binding"]
@@ -75,6 +81,16 @@ def validate(value: Any) -> dict[str, Any]:
         or set(item) != {"kind", "reference"}
         or any(not isinstance(part, str) or not part for part in item.values()) for item in refs):
         fail("authoritative_refs must contain reference-only objects")
+    boundary = value["accepted_boundary"]
+    if boundary is not None:
+        if (not isinstance(boundary, dict)
+                or set(boundary) != {"reference", "integrity_sha256"}
+                or not isinstance(boundary["reference"], str) or not boundary["reference"]
+                or not is_sha256(boundary["integrity_sha256"])):
+            fail("accepted_boundary is invalid")
+    consequence = value["latest_phase_consequence"]
+    if consequence is not None:
+        validate_phase_consequence(consequence)
     waiting = value["waiting"]
     if value["status"] == "waiting_on_capability":
         if not isinstance(waiting, dict) or set(waiting) != {"capability", "provider", "reason", "obligation_id"}:
@@ -95,14 +111,52 @@ def validate(value: Any) -> dict[str, Any]:
     return value
 
 
+def validate_phase_consequence(value: Any) -> dict[str, Any]:
+    fields = {"consequence_id", "summary", "certainty", "uncertainty_reason", "references"}
+    if not isinstance(value, dict) or set(value) != fields:
+        fail("phase consequence fields are invalid")
+    if any(not isinstance(value[field], str) or not value[field]
+           for field in ("consequence_id", "summary")):
+        fail("phase consequence identity and summary must be nonempty strings")
+    if value["certainty"] not in {"established", "uncertain"}:
+        fail("phase consequence certainty is invalid")
+    reason = value["uncertainty_reason"]
+    if value["certainty"] == "uncertain":
+        if not isinstance(reason, str) or not reason:
+            fail("uncertain phase consequence requires a reason")
+    elif reason is not None:
+        fail("established phase consequence cannot carry an uncertainty reason")
+    refs = value["references"]
+    if not isinstance(refs, list) or any(
+        not isinstance(item, dict)
+        or set(item) != {"kind", "reference", "integrity_sha256"}
+        or not isinstance(item["kind"], str) or not item["kind"]
+        or not isinstance(item["reference"], str) or not item["reference"]
+        or not is_sha256(item["integrity_sha256"]) for item in refs):
+        fail("phase consequence references are invalid")
+    if value["certainty"] == "established" and not refs:
+        fail("established phase consequence requires an integrity-bound reference")
+    return value
+
+
 def semantic(value: dict[str, Any]) -> dict[str, Any]:
     return {key: item for key, item in value.items()
             if key not in {"durable_revision", "durable_provenance"}}
 
 
+def upgrade(value: Any) -> Any:
+    legacy_fields = {"schema_version", "identity", "actor_binding", "phase", "status",
+                     "pending_obligation", "handled_consequences", "authoritative_refs",
+                     "waiting", "retirement"}
+    if isinstance(value, dict) and value.get("schema_version") == 1 and set(value) == legacy_fields:
+        return {**value, "schema_version": 2, "accepted_boundary": None,
+                "latest_phase_consequence": None}
+    return value
+
+
 def decode(stored: Any) -> dict[str, Any]:
     try:
-        value = json.loads(stored.payload)
+        value = upgrade(json.loads(stored.payload))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         fail(f"invalid live slice payload: {error}")
     validate(value)
@@ -128,10 +182,12 @@ def publish(store: Any, value: dict[str, Any], revision: str | None) -> dict[str
 
 
 def create(store: Any, *, identity: dict[str, Any], actor_binding: dict[str, Any], phase: str,
-           pending_obligation: dict[str, Any], authoritative_refs: list[dict[str, str]]) -> dict[str, Any]:
-    return publish(store, {"schema_version": 1, "identity": identity, "actor_binding": actor_binding,
+           pending_obligation: dict[str, Any], authoritative_refs: list[dict[str, str]],
+           accepted_boundary: dict[str, str] | None = None) -> dict[str, Any]:
+    return publish(store, {"schema_version": 2, "identity": identity, "actor_binding": actor_binding,
         "phase": phase, "status": "active", "pending_obligation": pending_obligation,
         "handled_consequences": [], "authoritative_refs": authoritative_refs,
+        "accepted_boundary": accepted_boundary, "latest_phase_consequence": None,
         "waiting": None, "retirement": None}, None)
 
 
@@ -168,6 +224,55 @@ def resume_capability(store: Any, current: dict[str, Any], *, event_id: str,
             fail("state is not waiting on the specified capability")
         return {**value, "status": "active", "waiting": None}
     return transition(store, current, "resume_capability", event_id, apply)
+
+
+def publish_phase_consequence(store: Any, current: dict[str, Any], *, phase: str,
+                              consequence: dict[str, Any]) -> dict[str, Any]:
+    validate(semantic(current))
+    validate_phase_consequence(consequence)
+    if phase not in {"implementation", "gate"}:
+        fail("only implementation or gate phase consequences may be published")
+    if current["status"] == "retired":
+        fail("retired slice attempt cannot transition")
+    digest = hashlib.sha256(canonical(consequence)).hexdigest()
+    for encoded in current["handled_consequences"]:
+        parts = json.loads(encoded)
+        if (len(parts) >= 2 and parts[0] == "publish_phase_consequence"
+                and parts[1] == consequence["consequence_id"]):
+            if len(parts) == 3 and parts[2] == digest:
+                return current
+            fail("phase consequence identity conflicts with its durable content")
+    if PHASE_ORDER[phase] < PHASE_ORDER[current["phase"]]:
+        fail("phase consequence cannot regress the active phase")
+    updated = {**semantic(current), "phase": phase,
+               "latest_phase_consequence": consequence}
+    updated["handled_consequences"] = [*updated["handled_consequences"], json.dumps(
+        ["publish_phase_consequence", consequence["consequence_id"], digest],
+        separators=(",", ":"))]
+    return publish(store, updated, current["durable_revision"])
+
+
+def projection(value: dict[str, Any]) -> dict[str, Any]:
+    validate(semantic(value))
+    actor = value["actor_binding"]
+    return {
+        "schema_version": 1,
+        "identity": value["identity"],
+        "phase": value["phase"],
+        "status": value["status"],
+        "pending_obligation": value["pending_obligation"],
+        "accepted_boundary": value["accepted_boundary"],
+        "latest_phase_consequence": value["latest_phase_consequence"],
+        "authoritative_refs": value["authoritative_refs"],
+        "waiting": value["waiting"],
+        "retirement": value["retirement"],
+        "runtime_binding": {"logical_actor_id": actor["logical_actor_id"],
+                            "provider": actor["provider"],
+                            "runtime_session_id": actor["runtime_session_id"],
+                            "semantic": False},
+        "durable_revision": value["durable_revision"],
+        "durable_provenance": value["durable_provenance"],
+    }
 
 
 def retire(store: Any, current: dict[str, Any], *, event_id: str,

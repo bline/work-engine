@@ -88,10 +88,10 @@ The broad persistent-agent-state direction has been promoted into:
 
 - `proposals/agent-state/role-owned-durable-operational-state`.
 
-Context replacement and reconstruction consequences remain owned by that formed
-proposal. The clean organizational idea retains the distinct unresolved question
-of how a reusable durable-role profile binds those consequences to applicable
-roles without redefining them.
+Continuous publication, context replacement, and reconstruction consequences
+remain owned by that formed proposal. The clean organizational idea retains the
+distinct unresolved question of how a reusable durable-role profile binds those
+consequences to applicable roles without redefining them.
 
 ### Review system
 

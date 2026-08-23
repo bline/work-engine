@@ -13,6 +13,10 @@
       "path": "../../../ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state.md"
     },
     {
+      "kind": "idea",
+      "path": "../../../ideas/history/2026-08-22-pre-reconciliation/context-compaction-as-role-resume-event.md"
+    },
+    {
       "kind": "repository-evidence",
       "path": "../../../docs/agent-environments.yaml"
     },

@@ -152,9 +152,43 @@ Require:
 
 After explicit `procedural_auto_approval` or `human_approval`, send the accepted slice and placement certificate verbatim. Require the vertical semantic proof before broad implementation or presentation polish. If the selected owner or consumer cannot support it, return a boundary-change request instead of implementing a locally coherent substitute. Then require implementation, relevant documentation, and inexpensive configured checks, followed by a stop immediately before the final gate. Require the task-owned file manifest, baseline overlaps, vertical and targeted results, unresolved concerns, and gate readiness.
 
+Before returning that implementation result through the builder mailbox, publish
+its compact phase consequence through the supervisor-owned active-slice
+mechanism. The durable consequence names the accepted boundary and uses
+integrity-bound references for implementation artifacts; it does not copy the
+transcript, hidden reasoning, or raw test output. A successful transient return
+is not a substitute for publication. If interruption makes completion
+uncertain, preserve or publish that uncertainty and require recovery from the
+durable projection instead of inferring success from runtime state.
+
+Use the stable identity supplied by the supervisor and recover its current
+`durable_revision` with `skills/slice-supervisor/scripts/resume_active_slice.py`
+immediately before publication. Then invoke the CAS boundary directly:
+
+```bash
+python3 skills/slice-supervisor/scripts/manage_active_slice.py \
+  --repository <repository> publish-phase \
+  --identity-json '<run/slice/attempt/plan identity>' \
+  --expected-revision '<recovered durable_revision>' \
+  --phase implementation \
+  --consequence-json '<compact integrity-bound consequence>'
+```
+
+For the final gate use the same command with `--phase gate` and the then-current
+recovered revision. A revision conflict means publication did not establish the
+consequence; recover and reconcile instead of retrying against an assumed state
+or returning the transient result as complete.
+
 ### Gate turn
 
 Authorize the configured validation profile. Build an explicit ordered manifest and run it with `scripts/run_gate.py`. The script is the canonical owner of deterministic execution, fail-fast behavior, and compact gate results; pass command arguments as arrays and never interpolate a shell command.
+
+After the gate result and any required review consequences are final but before
+returning them through the builder mailbox, publish the compact gate-phase
+consequence to the same active slice attempt. Bind established completion to
+the gate/review artifacts by integrity identity. `run_gate.py` remains the
+deterministic execution owner; its transient output alone is not durable
+workflow publication.
 
 For `engineering-proportional`, always include the vertical semantic proof, changed-file/workspace integrity, and focused tests. Add freshness checks when generated or derived artifacts may be affected. Add broader regression suites when the change crosses shared/runtime boundaries, has broad fan-out, changes persistence/schema/build behavior, or focused checks cannot bound the risk. Require fresh independent adversarial review for medium/high risk, consequential user-visible or runtime behavior, security/persistence/ownership changes, or material uncertainty. Record why omitted stages were not needed; omission is a scoped judgment, not evidence that a stage passed.
 

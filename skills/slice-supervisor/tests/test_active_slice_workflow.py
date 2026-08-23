@@ -92,6 +92,46 @@ class ActiveSliceWorkflowTest(unittest.TestCase):
                 ["git", "-C", str(repository), "status", "--short"], text=True,
                 stdout=subprocess.PIPE, check=True).stdout)
 
+    def test_phase_consequence_survives_runtime_and_mailbox_loss(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            identity = json.dumps(self.identity)
+            boundary = {"reference": "plan:plan-1", "integrity_sha256": "a" * 64}
+            active = self.manage(repository, "begin", "--identity-json", identity,
+                "--actor-binding-json", json.dumps({"logical_actor_id": "builder-1",
+                    "provider": "codex", "runtime_session_id": "lost-runtime"}),
+                "--phase", "planning", "--obligation-json", json.dumps({
+                    "obligation_id": "implementation-1", "kind": "implementation",
+                    "summary": "Implement accepted slice"}),
+                "--accepted-boundary-json", json.dumps(boundary),
+                "--authoritative-refs-json", json.dumps([
+                    {"kind": "accepted_plan", "reference": "plan:plan-1"}]))
+            consequence = {
+                "consequence_id": "implementation-complete-1",
+                "summary": "Implementation completed and is ready for gate",
+                "certainty": "established",
+                "uncertainty_reason": None,
+                "references": [{"kind": "implementation_manifest",
+                    "reference": "manifest:sha256:123", "integrity_sha256": "b" * 64}],
+            }
+            published = self.manage(repository, "publish-phase",
+                "--identity-json", identity,
+                "--expected-revision", active["durable_revision"],
+                "--phase", "implementation", "--consequence-json", json.dumps(consequence))
+
+            # A new process has neither the builder result nor its runtime/mailbox state.
+            recovered = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity).stdout)
+            self.assertEqual(self.identity, recovered["identity"])
+            self.assertEqual("implementation", recovered["phase"])
+            self.assertEqual(boundary, recovered["accepted_boundary"])
+            self.assertEqual(active["pending_obligation"], recovered["pending_obligation"])
+            self.assertEqual(consequence, recovered["latest_phase_consequence"])
+            self.assertEqual(published["durable_revision"], recovered["durable_revision"])
+            self.assertFalse(recovered["runtime_binding"]["semantic"])
+            self.assertNotIn("handled_consequences", recovered)
+
 
 if __name__ == "__main__":
     unittest.main()

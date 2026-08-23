@@ -136,6 +136,23 @@ nonterminal, while retirement prevents stale input from resurrecting the
 attempt. This path is distinct from `resume_campaign.py`; terminal-history
 semantics remain unchanged.
 
+Implementation and gate completion can cross a builder return or mailbox
+boundary before the enclosing slice is terminal. Before that transient channel
+can become the only copy, require the builder-side workflow to publish the
+compact phase consequence with `scripts/manage_active_slice.py publish-phase`.
+Bind established consequences to integrity-identified implementation, artifact,
+or gate evidence. If interruption prevents completion from being established,
+publish an explicit uncertain consequence when recovery can do so safely; never
+infer completion from runtime liveness or remembered delivery.
+
+`scripts/resume_active_slice.py` returns the supervisor's compact recovery
+projection: stable attempt identity, current phase, accepted boundary, pending
+obligation, latest phase consequence, authoritative references, lifecycle
+state, and durable provenance. Its `runtime_binding` is explicitly nonsemantic.
+The projection is not a general interface to model context, transcripts, hidden
+reasoning, or worker control-plane state. Continue only from the recovered
+semantic consequence and its integrity-bound references.
+
 For a review provider that supports resumable sessions, assign the reviewer
 runtime session ID before the initial provider call and publish it in
 `actor_binding.runtime_session_id`. Require the builder to use that exact

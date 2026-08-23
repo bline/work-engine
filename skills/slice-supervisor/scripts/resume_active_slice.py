@@ -31,10 +31,11 @@ def resume(repository: Path, identity: dict, *, capability: str | None = None,
     if state["identity"] != identity:
         raise ValueError("active slice attempt identity mismatch")
     if capability is None and recovery_event_id is None:
-        return state
+        return LIVE.projection(state)
     if not capability or not recovery_event_id:
         raise ValueError("capability and recovery_event_id must be supplied together")
-    return LIVE.resume_capability(store, state, event_id=recovery_event_id, capability=capability)
+    return LIVE.projection(LIVE.resume_capability(
+        store, state, event_id=recovery_event_id, capability=capability))
 
 
 def main() -> int:
@@ -56,4 +57,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
