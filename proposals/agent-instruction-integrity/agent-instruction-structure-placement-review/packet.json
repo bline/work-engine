@@ -3,7 +3,7 @@
   "proposal_id": "work-engine.agent-instruction-structure-placement-review",
   "family_id": "work-engine.agent-instruction-integrity",
   "title": "Agent-Instruction Structure and Placement Review",
-  "lifecycle_state": "formed",
+  "lifecycle_state": "decided",
   "narrative": {
     "path": "proposal.md"
   },
@@ -23,7 +23,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "A distinct specialist review capability owns diagnosis of materially normative agent-facing text structure and placement; implementation review is its primary consumer, while proposal review selects it only when the proposal itself contains or changes actual instruction contracts."
+    "claim": "Proposal meaning is approved for a distinct agent-instruction structure and placement reviewer whose primary consumer is implementation review of actual normative agent-facing text and whose proposal-review use is conditional on present instruction contracts. The probable repository-local skill placement remains subject to the proposal's named dogfood and reopening conditions."
   },
   "uncertainty": {
     "state": "unresolved",

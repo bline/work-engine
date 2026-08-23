@@ -6,8 +6,8 @@
 - Origin:
   [`ideas/agent-instruction-structure-and-placement-review.md`](../../ideas/agent-instruction-structure-and-placement-review.md)
 - Source revision: `dee25c3`
-- State: formed candidate family; not reviewed, evaluated, accepted,
-  prioritized, or authorized for implementation
+- State: formed family containing one reviewed and approved proposal; not
+  separately prioritized or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 This family currently contains one independently decidable candidate:

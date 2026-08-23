@@ -5,15 +5,20 @@
 - Proposal ID: `work-engine.agent-instruction-structure-placement-review`
 - Family ID: `work-engine.agent-instruction-integrity`
 - Source revision: `dee25c3`
-- State: formed; placement probable; not reviewed, decided, or authorized for
-  implementation
+- State: reviewed and decided; proposal meaning approved with probable
+  placement; not prioritized or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
-The canonical lifecycle, placement, uncertainty, relationship, and authority
-metadata is in [`packet.json`](packet.json). This narrative owns the proposal's
-current meaning. Supporting artifacts describe its [placement](placement.md),
-[relationships](relationships.md), and a possible
+The canonical lifecycle projection is in [`packet.json`](packet.json), and the
+authority-authored disposition is in [`decision.json`](decision.json). This
+narrative owns the proposal's current meaning. Supporting artifacts describe
+its [placement](placement.md), [relationships](relationships.md), and a possible
 [implementation shape](implementation-plan.md).
+
+Following specialized bootstrap review and retained-context remediation, the
+user approved this proposal's meaning. That decision preserved probable
+placement and the named dogfood uncertainty; it did not settle permanent
+architecture, change roadmap priority, or authorize implementation.
 
 ## Candidate and consequence
 

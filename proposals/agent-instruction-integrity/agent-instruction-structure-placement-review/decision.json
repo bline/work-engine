@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.agent-instruction-structure-placement-review",
+  "source": {
+    "repository_revision": "8722842bf2f622fb885872cdbbf6a14abb76fa52",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "Proposal meaning is approved for a distinct agent-instruction structure and placement reviewer whose primary consumer is implementation review of actual normative agent-facing text and whose proposal-review use is conditional on present instruction contracts. The probable repository-local skill placement remains subject to the proposal's named dogfood and reopening conditions.",
+    "rationale": "The selected architecture/placement, doctrine/authority, and lifecycle/applicability panel reached decision readiness after retained-context remediation. Seven actionable findings were verified resolved, one low lifecycle-sharing question was preserved as a dogfood uncertainty, and the user explicitly approved the reviewed proposal meaning.",
+    "reopening_conditions": [
+      "Dogfood cannot produce materially distinct findings from existing architecture, doctrine-authority, or seam review.",
+      "The two-question diagnostic systematically demotes exact routes that are causally required for safety, authority, validity, or observability.",
+      "A fresh reviewer cannot judge instruction placement without loading so much neighboring context that a distinct specialist loses its bounded-context value.",
+      "Proposal and implementation subjects require incompatible reviewer contracts or evidence lifecycles.",
+      "Observed consumers require a different skill, profile, review-artifact, or coordination owner than the probable placement."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user statement 'I approve' immediately after bootstrap review closure at repository revision 8722842bf2f622fb885872cdbbf6a14abb76fa52."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}
