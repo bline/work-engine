@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-lineage-backbone-dogfood",
+  "family_id": "work-engine.evidence-lineage",
+  "title": "Claim-Lineage Backbone Dogfood",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "semantic_candidate",
+      "path": "../claim-centered-evidence-lineage/proposal.md"
+    },
+    {
+      "kind": "authority_decision",
+      "path": "../claim-centered-evidence-lineage/decision.json"
+    },
+    {
+      "kind": "review_synthesis",
+      "path": "../../../reviews/proposals/claim-centered-evidence-lineage/cd50e79/synthesis.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The first exercise should use reversible Git-backed dogfood artifacts adjacent to the evidence-lineage proposal family and a replaceable local query projection. This is experimental placement only and does not select a permanent shared owner, store, schema, or runtime boundary."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Fixture selection cannot identify one real proposal-research claim and one real specialist-review finding with immutable pre-change baselines and truthful authority provenance.",
+      "The smallest faithful representation requires domain-specific semantics that cannot share stable identity, exact revisions, impact nomination, refresh outcome, and exact-revision reliance.",
+      "A changed conclusion cannot be attributed without granting implementation completion semantic refresh authority or fabricating causality.",
+      "A retained-unchanged result cannot create a new evidence-bound revision without misleadingly implying that the proposition changed.",
+      "The local projection cannot be rebuilt from canonical dogfood records or begins to act as the owner of claim meaning or causal judgment.",
+      "The exercise reveals that the four backbone behaviors are inseparable from a deferred lifecycle, delivery, recovery, or concurrency consequence."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "The exercise consumes the candidate's stable claim identity, exact revision, impact nomination, refresh judgment, and reliance semantics as a hypothesis under test; dependency does not approve that candidate or its placement.",
+      "causal": true
+    },
+    {
+      "type": "informs",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "Dogfood results may support revision, rejection, decomposition, or a later authority decision about the semantic candidate, but cannot perform any of those transitions automatically.",
+      "causal": false
+    },
+    {
+      "type": "informs",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Using one real specialist finding can reveal which lineage fields are genuinely shared and which remain review-owned without changing the review-artifact proposal's decision state.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "A proposal artifact may rely on an exact dogfood claim revision while proposal packets retain proposal identity, lifecycle, uncertainty, relationships, and decision authority.",
+      "causal": false
+    }
+  ]
+}

@@ -13,17 +13,23 @@
   evaluated, accepted, prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
-This family currently contains one independently decidable candidate:
+This family currently contains two independently decidable candidates:
 
 1. [`claim-centered-evidence-lineage`](claim-centered-evidence-lineage/proposal.md)
    defines the candidate shared identity, provenance, sensitivity, authority,
    and lineage semantics for durable evidence-backed statements.
+2. [`claim-lineage-backbone-dogfood`](claim-lineage-backbone-dogfood/proposal.md)
+   proposes one controlled, reversible exercise of the four smallest backbone
+   behaviors. It produces evidence about the semantic candidate without
+   accepting its placement or authorizing broader evidence infrastructure.
 
-The candidate is deliberately smaller than the originating research-maturity
-idea. It does not establish proposal-research maturity levels, readiness
-profiles, a research workflow, continuous monitoring, or organizational
-compilation. Those remain possible consumers or later proposals whose own
-owners and consequences have not yet been formed.
+The semantic candidate is deliberately smaller than the originating
+research-maturity idea, and the dogfood candidate is deliberately smaller than
+the semantic candidate's full evidence boundary. Neither establishes
+proposal-research maturity levels, readiness profiles, a research workflow,
+continuous monitoring, or organizational compilation. Those remain possible
+consumers or later proposals whose own owners and consequences have not yet
+been formed.
 
 ## Why this is a separate family
 
@@ -50,10 +56,12 @@ requirements. The research-maturity idea independently needs the same minimum
 properties for proposal-research claims, while adding domain-specific maturity,
 freshness, and readiness semantics.
 
-This is evidence for forming a shared candidate, not evidence that its final
-placement, schema, or implementation is correct. Placement remains uncertain
-until at least research and review consumers exercise the candidate semantics
-and expose what is genuinely shared.
+This is evidence for forming a shared candidate and a bounded dogfood proposal,
+not evidence that either proposal's final placement, schema, or implementation
+is correct. Placement remains uncertain until research and review consumers
+exercise the candidate semantics and expose what is genuinely shared. The
+backbone dogfood can reduce that uncertainty but cannot by itself satisfy the
+larger adversarial lifecycle and recovery evidence boundary.
 
 ## Authority boundary
 
