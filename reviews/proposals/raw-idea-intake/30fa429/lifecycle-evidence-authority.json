@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "raw-idea-intake-30fa429-lifecycle-evidence-generation-1",
+  "identity": {
+    "run_id": "proposal-workflow-bootstrap-review",
+    "slice_number": 1,
+    "attempt_id": "raw-idea-intake-30fa429",
+    "plan_version": "bootstrap-review-procedure-v1",
+    "review_obligation_id": "raw-idea-intake-lifecycle-evidence",
+    "review_episode_id": "abda4c6b-f964-4c66-b8f6-6a25564e3e67"
+  },
+  "source": {
+    "owner": "bootstrap-review-coordinator",
+    "reference": "reviews/proposals/raw-idea-intake/30fa429/subject.md",
+    "revision": "3c0bc4fcce92d5a1ddf53331e495037204fcc531",
+    "integrity_sha256": "b501aa03c50675bf91a903a6bfe9a3b8704b37fd67be038d05754c7e14b11b2c",
+    "freshness_rule": "exact_revision"
+  },
+  "writer": {
+    "logical_actor_id": "raw-idea-intake-lifecycle-evidence-reviewer",
+    "provider": "claude",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "claude-runtime",
+      "reference": "abda4c6b-f964-4c66-b8f6-6a25564e3e67",
+      "revision": "generation-1",
+      "integrity_sha256": "acdf77284041f94ab8f6f7b0c02d7fbfb88a85a15741bbe8d9ae79e060d922c5",
+      "freshness_rule": "exact_revision"
+    }
+  },
+  "readers": [
+    "independent_reviewer",
+    "coordinating_builder",
+    "slice_supervisor"
+  ],
+  "initial_subject": [
+    {
+      "owner": "bootstrap-review-subject",
+      "reference": "reviews/proposals/raw-idea-intake/30fa429/subject.md",
+      "revision": "3c0bc4fcce92d5a1ddf53331e495037204fcc531",
+      "integrity_sha256": "b501aa03c50675bf91a903a6bfe9a3b8704b37fd67be038d05754c7e14b11b2c",
+      "freshness_rule": "exact_revision"
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}
