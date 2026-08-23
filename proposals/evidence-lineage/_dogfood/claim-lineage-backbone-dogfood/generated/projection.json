@@ -1,0 +1,101 @@
+{
+  "canonical_input_manifest": [
+    {
+      "path": "records/claim-lineage-records.json",
+      "sha256": "020164eda9b76a1ab1c661d6d663bc26bfd6652dfbfed1c817ca7130e8682ea5"
+    }
+  ],
+  "completeness_boundary": "only the two pre-bound fixtures and one identity-fork counterfixture",
+  "excluded_scope": [
+    "automatic discovery",
+    "transitive propagation",
+    "continuous monitoring",
+    "production storage",
+    "permanent placement"
+  ],
+  "projection_schema_version": 1,
+  "proofs": {
+    "cells": {
+      "authority_and_provenance": {
+        "status": "pass"
+      },
+      "authorized_refresh_both_paths": {
+        "status": "pass"
+      },
+      "exact_revision_reliance": {
+        "status": "pass"
+      },
+      "known_outcome_limitation_preserved": {
+        "status": "pass"
+      },
+      "non_authoritative_may_affect": {
+        "status": "pass"
+      },
+      "publication_topology_preserved": {
+        "status": "pass"
+      },
+      "stable_identity_and_fork": {
+        "status": "pass"
+      }
+    },
+    "positive_four_proof_demonstration": true,
+    "run_valid": true
+  },
+  "record_counts": {
+    "authority_grants": 6,
+    "claims": 3,
+    "edges": 14,
+    "episodes": 2,
+    "events": 2,
+    "judgments": 2,
+    "nominations": 2,
+    "reliances": 2,
+    "revisions": 5
+  },
+  "record_schema": {
+    "path": "schema/claim-lineage-dogfood-v1.schema.json",
+    "sha256": "9a126e28193c8a062751b3a60d8cc5f285ec0d7e96151570265c0e6fc9e3c03c",
+    "version": 1
+  },
+  "selection_cutoff": "22b2112fa951d79c4fcf707b28155d0ecdcb715d",
+  "source_ids": [
+    "authority.interpretation",
+    "authority.original.r",
+    "authority.original.v",
+    "authority.refresh.r",
+    "authority.refresh.v",
+    "authority.reliance",
+    "edge.counter-contrasts-r",
+    "edge.episode-r-trigger",
+    "edge.episode-v-trigger",
+    "edge.judgment-r-produces",
+    "edge.judgment-v-cause",
+    "edge.judgment-v-produces",
+    "edge.nom-r-source",
+    "edge.nom-r-target",
+    "edge.nom-v-source",
+    "edge.nom-v-target",
+    "edge.r2-refreshes-r1",
+    "edge.reliance-r",
+    "edge.reliance-v",
+    "edge.v2-refreshes-v1",
+    "episode.refresh-r",
+    "episode.refresh-v",
+    "event.proposal-context-lineage-change",
+    "event.reviewer-retention-completion",
+    "judgment.refresh-r",
+    "judgment.refresh-v",
+    "nomination.completion-to-r",
+    "nomination.completion-to-v",
+    "reliance.dogfood-r/v1",
+    "reliance.dogfood-v/v1",
+    "work-engine.dogfood.claim.reviewer-context-retention",
+    "work-engine.dogfood.claim.reviewer-context-retention/r1",
+    "work-engine.dogfood.claim.reviewer-context-retention/r2",
+    "work-engine.dogfood.finding.review-context-lineage-gap",
+    "work-engine.dogfood.finding.review-context-lineage-gap/r1",
+    "work-engine.dogfood.finding.review-context-lineage-gap/r2",
+    "work-engine.dogfood.policy.reviewer-context-retention",
+    "work-engine.dogfood.policy.reviewer-context-retention/r1"
+  ]
+}
