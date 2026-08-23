@@ -23,6 +23,7 @@ The goal is not to rewrite history. Original idea files remain useful provenance
 
 | Idea | Semantic owner of the idea |
 | --- | --- |
+| `agent-instruction-structure-and-placement-review.md` | Structure, authority scope, loading reach, and placement of normative agent-facing text |
 | `architectural-review.md` | Diagnostic architectural review capability |
 | `closed-loop-engineering-learning.md` | Post-implementation calibration/learning |
 | `organizational-execution-envelopes.md` | Problem-specific organization assembly |
