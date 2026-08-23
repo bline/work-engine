@@ -85,6 +85,51 @@ The model may alter, skip, reorder, combine, or replace non-binding procedural s
 
 Procedures should therefore have **escape by judgment**, not exhaustive exception tables.
 
+### 1.5 Outcome-derived design
+
+The hierarchy above can be applied as one compact design method:
+
+> **Define the space, not the solution. Expose the machine, not the route.**
+
+Define the desired and invalid outcomes, authority boundaries, and observable
+evidence without embedding a preferred solution. Derive only the structure
+required to preserve those distinctions, then expose enough composable
+machinery to make valid outcomes reachable and observable. Leave route,
+sequence, trigger mechanisms, and tuning to judgment unless causality makes
+them part of the contract.
+
+"Complete" means complete enough at the owning contract boundary to distinguish
+valid from invalid states. It does not mean that every future situation or
+implementation is known. Likewise, the machinery should be sufficient for the
+required outcome space, not an exhaustive inventory of every possible tool.
+
+The resulting layers are:
+
+```text
+outcomes    → the desired and invalid observable states
+structure   → the durable identities, relationships, and boundaries required
+mechanics   → ways to realize, enforce, observe, and change that structure
+knobs       → bounded adaptation of mechanics that preserves every invariant
+projections → consumer views of the owned semantic structure
+```
+
+Mechanics and knobs must not silently redefine the outcome space. Retention,
+visibility, authority, deletion, and similar choices are ordinary knobs only
+inside ranges that preserve the owning contract; outside those ranges they are
+contract changes.
+
+This method gives four useful design tests:
+
+- If a requirement can be violated while every protected outcome remains valid,
+  it is probably procedure rather than invariant structure.
+- If removing a field or relationship makes valid and invalid states
+  indistinguishable, it is probably required semantic structure.
+- If a capability does not make a meaningful valid outcome reachable or
+  observable, it may be redundant machinery.
+- If a trigger or sequence can be replaced without changing correctness, it is
+  a mechanism rather than doctrine. The transition condition and any timing
+  required for correctness may still be binding.
+
 ---
 
 
@@ -663,4 +708,3 @@ When adding or changing Work Engine behavior, ask:
 Encode the first as contracts, invariants, authority boundaries, and deterministic checks.
 
 Describe the desired consequences and available capabilities for the second, then leave the route open to model judgment.
-
