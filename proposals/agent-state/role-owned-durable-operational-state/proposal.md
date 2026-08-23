@@ -6,448 +6,368 @@
 - Family ID: `work-engine.agent-state`
 - State: placement uncertain; not evaluated or accepted
 - Decision owner: user or future explicitly authorized architecture owner
-- Evidence cutoff: repository `f930db532cd494893b17ec805a8cb7666a2468c1`, including the reconciled canonical variant-architecture map and the accepted proposal-decision implementation
+- Evidence cutoff: repository
+  `64601908458501f0a8d73825587b46fbc6e691b6`, including the canonical
+  architecture scoping correction
+- Review lineage: specialized review dispositions are owned by
+  `reviews/proposals/role-owned-durable-operational-state/`; this narrative
+  does not infer or duplicate their current closure state
 
 The canonical lifecycle and placement metadata is in [`packet.json`](packet.json).
-This narrative owns the proposal's current semantic meaning. The source ideas
-remain speculative origin material rather than current proposal authority.
+This narrative owns the proposal's current semantic meaning. Source ideas and
+review judgments remain attributed formation inputs, not acceptance or
+implementation authority.
+
+## Independently decidable consequence
+
+Define a common semantic contract for compact, role-owned, durable operational
+state. The contract protects recovery correctness while leaving concrete
+history representation, role-profile schemas, physical hosting, and future
+control-plane integration open to evidence.
+
+This candidate does **not** authorize or bundle implementation of supervisor,
+builder, reviewer, planner, or control-plane profiles. Each profile requires a
+separately formed and authorized consequence. A profile may exercise this
+contract during evaluation without making its mechanism or placement permanent.
 
 ## Problem
 
-Long-running Work Engine roles still keep resume-critical operational truth in
+Long-running Work Engine roles still keep some resume-critical truth only in
 model or provider context. Current durable mechanisms preserve important but
 different truths:
 
 - proposal packets preserve candidate and decision context;
 - receipts and checkpoints preserve terminal slice evidence and accepted trees;
-- the scheduler preserves future obligations;
-- provider session IDs preserve a route back to retained reviewer context; and
+- schedules preserve future obligations and delivery state;
+- provider session IDs preserve a route back to retained runtime context; and
 - `durable-state` atomically stores opaque values under stable keys.
 
-None of those mechanisms by itself preserves the complete live operational
-position of every role. A context replacement can therefore force expensive
-re-synthesis, lose an unfinished judgment, or resurrect an event whose
-consequence was already handled.
+None alone preserves the unfinished operational position of an arbitrary role.
+A context replacement can therefore force material re-synthesis, lose an
+unfinished judgment, or cause an already processed event to be acted on again.
 
-This failure was observed during the first proposal-decision transition. The
-supervisor durably recorded that the user approved three dispositions, but the
-live record did not contain the dispositions themselves. Continuation succeeded
-only because the conversation compaction happened to preserve them. The same
-mechanism also rejected an `implementation` phase because its current vocabulary
-contains only `planning` and `review`.
+The observed trigger was a proposal-decision transition whose durable slice
+state recorded that three user dispositions had been approved without storing
+the dispositions or an integrity-bound reference to them. Recovery succeeded
+only because conversation compaction happened to retain their content. The
+same state vocabulary could not represent the subsequent implementation phase.
 
 ## Repository diagnosis
 
-The current implementation is internally consistent with its declared baseline,
-but incomplete for general recovery:
+At the evidence cutoff:
 
-- `ARCHITECTURE.md` is the canonical map of current and forming variant
-  structure. It confirms the role-owned semantic-state boundary, identifies the
-  bounded active-slice vertical, and places the broader control plane at its
-  truthful current maturity rather than presenting it as implemented.
-- `docs/agent-environments.yaml` explicitly says the live runtime overlay is
-  absent from the verified supervisor/builder/reviewer environment model.
-- Product-direction documents already assign logical identity and role routing,
-  activation, runtime-binding registration, coordination, delivery,
-  subscriptions, reconciliation, health, and bounded projections to the control
-  plane. They explicitly keep workflow meaning and agent-state consequences with
-  their domain owners.
-- Slice live state records identity, actor binding, one pending-obligation
-  summary, reference-only authority links, handled transition IDs, waiting, and
-  retirement, but only for planning and review.
-- Inter-slice campaign resume reconstructs accepted terminal state from receipts,
-  continuation context, and checkpoints; it explicitly does not recover
-  unfinished mid-slice work.
-- The builder contract retains one runtime identity across planning,
-  implementation, gate, and remediation, but does not publish a role-owned live
-  semantic projection.
-- Reviewer continuity retains a provider session through remediation. If the
-  provider session is lost, the contract expects reconstruction from durable
-  subject, findings, and gate evidence, but current live state preserves the
-  subject obligation and session binding rather than the findings themselves.
-- The strategic planner explicitly reconstructs from its last handoff and named
-  sources until persistent agent-state infrastructure exists.
-- Proposal formation correctly writes resume-critical proposal consequences to
-  the packet before handoff. That solves proposal-domain continuity, not arbitrary
-  unfinished role execution.
-- Role scheduling owns scheduled obligations and delivery state, not the active
-  role's current reasoning consequence or recovery position.
+- `ARCHITECTURE.md` verifies the bounded slice-supervisor campaign vertical and
+  role-owned workflow semantics, while explicitly keeping broader future
+  control-plane and UI projection structure exploratory.
+- Slice live state records a limited set of supervisor facts for planning and
+  review, but not a complete unfinished implementation or remediation position.
+- Campaign resume reconstructs accepted terminal state from receipts,
+  continuation context, and checkpoints; it does not promise mid-slice role
+  recovery.
+- Builder continuity and retained reviewer sessions reduce reconstruction cost
+  but remain provider/runtime bindings rather than durable correctness owners.
+- Proposal formation already writes material candidate consequences to its
+  packet. That is the right domain-specific pattern, but it does not cover an
+  unfinished role judgment that cannot yet be placed in the packet.
+- The strategic planner currently reconstructs from a durable handoff and
+  named evidence sources.
+- The shared `durable-state` capability supplies opaque integrity-checked
+  compare-and-swap publication. It does not supply workflow meaning, authority,
+  event completion, visibility, retention, or history semantics.
 
-Direct source search at the evidence cutoff found the shared `durable-state`
-adapter consumed by slice-supervisor live-state code, but no equivalent durable
-role projection for builder, reviewer, or strategic planner. Generated Python
-cache directories are excluded from the structural index and have no bearing on
-this source-level conclusion.
+This establishes a recovery gap and a reusable durability mechanism. It does
+not establish one universal schema, mandatory predecessor chains, or the
+permanent location of a general control plane.
 
-## Intended consequence
+## State and ownership taxonomy
 
-Every long-running role whose correctness depends on accumulated context has a
-small, externally durable, role-owned semantic projection sufficient for a
-replacement context to determine:
-
-- what is operationally true now;
-- which authoritative boundary and accepted objective govern the work;
-- which decisions and external events have already had consequences;
-- what remains pending, unresolved, stale, or blocked;
-- which provider or child runtime may be resumed when still available;
-- which stronger domain artifacts establish referenced facts; and
-- which expensive-to-reconstruct judgments must be preserved as attributed
-  consequences rather than recomputed from transcripts.
-
-A successful recovery does not require the full transcript, hidden reasoning,
-or accidental survival of a conversation summary.
-
-## State taxonomy
-
-Workflow semantic state and agent live state are related but not identical.
+“Agent state” is a convenience phrase, not a third semantic owner.
 
 ```text
-workflow semantic state
-  what is true about the work independent of one runtime
-  phase, accepted boundary, pending authority, route, findings,
-  validation, disposition, and terminal consequence
+role-owned workflow projection
+  current operational facts and attributed judgments whose meaning belongs to
+  the role workflow
 
-agent live state
-  what is true about the logical role's current execution binding
-  logical agent identity, provider session, active obligation,
-  parent/child binding, continuity mode, and recovery position
+runtime binding facts
+  provider session, process, child, and observed liveness facts owned by the
+  runtime or coordination mechanism that establishes them
+
+stronger domain facts
+  proposal, receipt, checkpoint, schedule, repository, review, or authority
+  records owned by their existing contracts
 ```
 
-The workflow remains the semantic owner. Agent live state references the exact
-workflow-state revision it is executing and adds only runtime and recovery
-facts. A provider session is therefore replaceable without changing workflow
-truth, while a workflow transition cannot be inferred merely from a session
-appearing active or terminal.
+The recovery view composes these through references. It does not copy them into
+one universal owner. A runtime binding may be replaced without changing
+workflow truth; a workflow transition cannot be inferred merely from runtime
+liveness.
 
-## Current snapshot and consequence history
+Every field in a role profile must declare one of three modes:
 
-Recovery and audit require two different durable projections.
+| Mode | Meaning | Required provenance |
+| --- | --- | --- |
+| role-owned | The workflow owns and may transition the fact or attributed judgment. | role instance, workflow/attempt identity, state revision, transition owner |
+| referenced | A stronger artifact or service owns the fact. | owner identity, exact revision or integrity identity, freshness rule |
+| derived | The value is recomputable and non-authoritative. | named inputs, derivation version, invalidation rule |
 
-### Current snapshot
+A profile fails stale or reports unresolved state when a required reference no
+longer satisfies its integrity or freshness rule. It must not silently preserve
+a copied older value as current truth.
 
-Each role maintains one integrity-checked current snapshot containing the
-smallest state needed to resume efficiently. It identifies the active workflow
-revision, logical agent and runtime binding, pending obligation, unresolved
-state, handled-consequence frontier, and references to stronger artifacts.
+## Protected recovery consequences
 
-The snapshot answers:
+A conforming role profile must allow a replacement context to determine:
 
-> What is operationally true now, and what must happen next?
+- the stable role instance and workflow or attempt it is recovering;
+- the exact accepted boundary or authority record governing the next action;
+- what role-owned facts and attributed judgments are operationally current;
+- what remains pending, uncertain, stale, blocked, or awaiting authority;
+- which source events already produced a protected consequence;
+- which runtime binding may be resumed and which generation is allowed to act;
+- which stronger artifacts must be refreshed before continuing; and
+- which next semantic action is authorized.
 
-### Semantic transition history
+Recovery must not require a transcript, hidden reasoning, or accidental
+conversation-summary survival. A compact attributed conclusion may be durable
+when its loss would risk incorrect continuation or material re-synthesis.
+Token cost is evidence of materiality, never evidence that the conclusion is
+correct or authoritative.
 
-Authority decisions, route revisions, handled external events, finding
-dispositions, runtime replacements, waits, and terminal transitions require a
-predecessor-linked consequence record. Each record should identify:
+## Mechanism-open reconstruction
 
-- the owning workflow and logical role;
-- predecessor and resulting state revisions;
-- a stable transition or event identity;
-- the attributed actor and actual authority evidence where applicable;
-- the compact semantic consequence;
-- stronger artifact references and their integrity identity;
-- observation time and freshness boundary; and
-- whether the transition remains active, was superseded, or became stale.
+The binding requirement is that the current projection be reconstructable,
+integrity-checked, idempotent, crash-safe, and explainable from durable
+consequences. A predecessor-linked record is one candidate, not a mandated
+architecture.
 
-The transition history answers:
+A role profile must declare:
 
-> Which authorized or observed consequence produced the current state, and has
-> this event already been handled?
+- its atomic publication unit and concurrency-precondition boundary;
+- how a crash before, during, or after publication is detected and reconciled;
+- how the protected consequence behind a current fact can be identified;
+- how supersession, correction, invalidation, and uncertainty are represented;
+- which records remain reachable for recovery or audit;
+- its retention, replay-suppression marker or equivalent, and physical-deletion
+  rules; and
+- how multiple or replaced writers are fenced.
 
-The current snapshot may be replaced atomically as state advances. Required
-transition consequences must remain traversable until they have been projected
-into another durable owner and semantic cleanup is safe. Incidental intermediate
-checkpoints need not be retained forever.
+If a profile chooses a predecessor chain, journal, or multi-object protocol, it
+must additionally prove atomic publication or a prepare/commit recovery rule,
+immutable roots, reachability, and garbage-collection safety. Git object or
+reflog survival does not satisfy this contract by itself.
 
-The opaque durability primitive may provide predecessor linkage, immutable
-revision storage, and compare-and-swap mechanics, but it does not interpret the
-event or grant its authority. The role workflow continues to own transition
-meaning, retention consequence, and reconstruction rules.
+## Event and consequence identity
 
-Git object or reflog survival is not sufficient history unless a Work Engine
-contract makes the predecessor chain addressable, integrity-checked, and
-recoverable. Likewise, a cumulative list of handled IDs can prevent one replay
-without explaining the consequence that was handled.
-
-## Ownership and placement consequence
-
-Do not choose between a slice-state owner and a universal agent-state semantic
-owner.
-
-The role workflow owns the meaning and transitions of its operational state.
-The existing `durable-state` capability remains an opaque, authority-neutral
-mechanism for atomic publication, integrity checking, and compare-and-swap
-revisions. Stronger domain owners remain unchanged:
+Do not use one “handled ID” for several lifecycle meanings. A profile dealing
+with external events distinguishes:
 
 ```text
-role workflow
-  owns semantic projection and authorized transitions
-        |
-        v
-durable-state primitive
-  owns opaque publication mechanics only
+source event identity
+  identity and revision assigned by the event's authoritative source
 
-proposal packet / receipt / checkpoint / schedule / repository
-  continues to own its existing domain truth
-  and is referenced rather than copied
+delivery attempt identity
+  one routing or redelivery attempt
+
+transition attempt identity
+  one proposed role-state mutation
+
+protected consequence identity
+  the integrity-bound result whose completion makes replay unnecessary
 ```
 
-Existing product direction already names the main ownership split:
+An event is complete only when an authorized disposition and its protected
+consequence are durable. A timeout or lost acknowledgement produces an
+uncertain state that must be reconciled; it must not be converted into
+“handled.” Late or out-of-order delivery consults the source revision and
+protected consequence before suppression. Terminal suppression remains
+explainable and durably marked by the profile's declared mechanism for the
+required retention period.
 
-```text
-control plane
-  owns logical identity and role routing
-  activation and authority leases
-  runtime-binding registry
-  coordination and delivery
-  control-packet lifecycle
-  subscriptions, reconciliation, and health
-  bounded projections of stronger owners
+## Authority and epistemic contract
 
-agent state
-  owns recovery-critical operational consequences
+Actor attribution is not authentication or authorization. Every
+authority-bearing state transition names:
 
-workflow owner
-  owns domain meaning and semantic transitions
+- the authorized transition owner and writer;
+- the verifier or verification rule;
+- exact subject, revision, scope, and intended consequence;
+- preconditions and, when applicable, expiry, revocation, or generation;
+- integrity-bound authority evidence; and
+- fail-closed behavior for missing, stale, conflicting, or inapplicable input.
 
-runtime adapter
-  owns provider-specific observation and execution machinery
-```
+A stored model judgment additionally identifies its epistemic class, attributed
+author or owning role, evidence cutoff, material premises, invalidation or
+freshness surface, and permitted consumer use. The role may continue from that
+judgment, refresh it, or mark it stale according to the profile. It may not
+treat its own persisted judgment as new evidence merely because it became
+durable.
 
-The control plane may operate on role execution envelopes and project agent and
-workflow state, but does not acquire their semantic ownership. Agent live state
-therefore references the control-plane-owned logical identity and runtime binding
-while retaining recovery consequences under its role/state owner.
+## Handoff, retirement, and deletion
 
-Only the narrower placement questions remain provisional: whether parent/child
-topology is authored with agent-state identity metadata or a control-plane
-registry, where visibility policy is enforced, how lifecycle queries are
-projected, and which physical adapter or process hosts those mechanisms. Shared
-process topology must not erase the named semantic owners.
+A source role cannot transfer semantic ownership merely by writing a target
+reference. A completed handoff requires an integrity-bound consequence proving
+that the authorized target has assumed responsibility without an ownership gap.
+Explicit target acceptance is one realization; a domain-authorized atomic
+transfer may be another. The source remains responsible for its prior
+consequence until the governing contract establishes transfer or a different
+authorized terminal disposition.
 
-## What deserves durable state
+Retirement records why the role no longer acts and which owner now protects
+each required consequence. A tombstone or equivalent durable suppression
+mechanism prevents ambiguity and replay for the declared retention consequence.
+Physical deletion is a separate authorized operation; storage cleanup cannot
+manufacture semantic retirement.
 
-Durability should be based on reconstruction consequence, not on whether a fact
-is currently present in context.
+## Minimum first-profile safeguards
 
-Persist a consequence when losing it would risk incorrect continuation,
-authority loss, duplicated work, event resurrection, or material re-synthesis.
-High token cost is useful evidence that re-synthesis is material, but cost alone
-does not make remembered reasoning authoritative.
+Any first dogfood profile—regardless of which role is selected—must include
+rather than defer:
 
-Prefer references when another owner already has the truth. Persist compact
-attributed conclusions only when the role itself owns the current operational
-judgment. Do not store transcripts, hidden reasoning, raw source dumps, diffs,
-or test logs.
+- stable role-instance, workflow/attempt, and exact governing configuration and
+  authority-boundary identity, including an execution-envelope identity only
+  when an authorized envelope exists;
+- one authorized-writer generation, fence, or evidence of quiescence;
+- explicit read visibility for every consumer and reviewer-independence rule;
+- integrity and freshness checks for every required reference;
+- event/consequence separation when external events are consumed;
+- crash reconciliation and retention behavior; and
+- proof of the next resumed semantic action.
 
-## Initial role projections
+These safeguards may initially be local to the exercised profile. Their
+presence does not settle future shared control-plane placement.
 
-### Slice supervisor
+## Role-profile formation boundaries
 
-The supervisor projection should cover every active phase, including
-implementation, gate preparation, remediation, acceptance, stopping, and
-authority waiting. It should preserve the exact accepted semantic boundary or
-an integrity-bound reference to it, active builder identity, handled external
-event consequences, current phase obligation, pending authority decisions,
-applicable route revisions, and the accepted or stopped consequence.
+The following are evidence-seeking profile candidates, not consequences
+accepted or authorized by this proposal.
 
-### Slice builder
+### Supervisor and builder recovery
 
-The builder projection should preserve the accepted objective and placement
-certificate, current route and retired routes, task-owned and baseline-overlap
-manifests, established repository evidence references, completed and remaining
-validation, open review findings, unresolved questions, and the current
-implementation or remediation obligation.
+A slice-workflow profile could preserve the supervisor-owned phase and accepted
+boundary while a separate builder profile owns its unfinished engineering
+position. The builder references the accepted boundary rather than copying it.
+Repository evidence and validation output remain referenced artifacts. This
+profile should test interruption during implementation and remediation.
 
-It should not duplicate source code, exploration transcripts, or raw gate
-output. A replacement builder should be able to reconstruct the bounded
-engineering position and then refresh current repository truth.
+### Reviewer recovery
 
-### Independent reviewer
+A review profile must keep these distinct:
 
-The reviewer projection should preserve the review subject identity,
-independence boundary, provider/runtime binding, claims examined, attributed
-findings and their current dispositions, current delta, gate-evidence
-references, and remaining uncertainties.
+- specialist observation or finding;
+- builder response;
+- specialist re-evaluation;
+- coordinator synthesis;
+- residual-risk acceptance by its authorized owner;
+- gate result; and
+- slice or proposal decision.
 
-Visibility must remain restricted so durability does not leak builder reasoning
-into a fresh reviewer or turn cross-role state access into universal shared
-memory. A retained provider session remains the preferred efficient route; the
-durable projection is the truthful recovery source when that session is lost.
+Same-session continuation should remain the efficient route. Reconstructed
+replacement should consume only the review subject, the reviewer's own durable
+findings and limitations, the bounded delta, and permitted gate evidence. It
+must be labeled continuity or reconstructed continuation of the original review
+episode—not a new fresh-independence claim—and preserve the original visibility
+boundary rather than exposing universal cross-role memory.
 
-### Strategic planner
+### Strategic-planner recovery
 
-The planner projection should preserve its current strategic thesis, active and
-stale assumptions, dependency and priority rationale, deferred opportunities,
-open uncertainties, evidence cutoff, last reconciled proposal/campaign state,
-and continuity mode. It remains advisory and cannot mutate roadmap or campaign
-authority merely because its state is durable.
+A planner profile could preserve a current thesis, assumptions, dependencies,
+priority rationale, uncertainties, evidence cutoff, and last reconciled state.
+It remains advisory. A durable recommendation cannot mutate a roadmap or make
+continuation strategically authorized.
 
-### Proposal former and other artifact-centered roles
+### Artifact-centered roles
 
-When a role's authoritative domain artifact already contains everything needed
-for resumption, that artifact remains the recovery source. Proposal formation
-should continue checkpointing resume-critical semantic consequences into the
-packet as soon as losing them would require repeating a material decision.
+When a proposal packet, review artifact, receipt, or other domain artifact
+already contains everything needed for recovery, that artifact remains the
+source. A separate live projection is justified only for unfinished operational
+state that cannot yet truthfully be written to its domain owner.
 
-A separate live projection is justified only for unfinished operational state
-that cannot yet truthfully be written to the domain artifact. This test avoids
-creating duplicate state merely to make every role look structurally uniform.
+## Placement questions kept open
 
-### Role scheduler
+The current repository verifies a bounded campaign controller. Product
+direction describes a broader control plane, but its permanent decomposition is
+not accepted architecture merely because it is useful to this proposal.
 
-The scheduler remains the owner of scheduled obligations, routing, delivery,
-and acknowledgement state. It may reference a logical role or agent identity,
-but schedule durability must not be mistaken for role execution-state
-durability or activation authority.
+Future formation must separately determine for identity, parent/child topology,
+visibility, and lifecycle queries:
 
-## Required invariants
+- source policy: who defines the rule;
+- authoritative owner: who may change the fact;
+- enforcement point: who prevents invalid action;
+- observation source: who can establish current runtime truth; and
+- projection/query owner: who serves bounded views to consumers.
 
-### Durability does not inflate authority
+Logical identity, routing, activation, runtime bindings, delivery,
+subscriptions, reconciliation, and health are plausible control-plane concerns.
+They remain placement hypotheses until accepted or demonstrated by the relevant
+contract. Workflow meaning remains with the workflow even if one process hosts
+several mechanisms.
 
-A role must not treat its own prior judgment as new evidence merely because the
-judgment became durable. Publication records an authorized consequence; it does
-not accept architecture, priority, implementation, or review findings.
+## Evidence required before an authority decision
 
-### State preserves consequence, not transcript
+- Form one independently decidable role profile with the minimum safeguards
+  above and identify every field as role-owned, referenced, or derived.
+- Exercise recovery after process/context loss without a transcript and have
+  the replacement perform the next authorized semantic action, producing a
+  downstream artifact or consequence.
+- Inject failures before, during, and after publication; retry event delivery;
+  test stale references, stale authority, lost acknowledgement, and an old
+  writer attempting to continue after replacement.
+- Demonstrate that stronger packets, receipts, checkpoints, schedules, review
+  artifacts, and repository revisions remain canonical and are not copied.
+- Measure reconstruction work and durable payload size without treating token
+  savings as correctness evidence.
+- Compare at least two viable history/publication realizations or record why
+  the exercised constraints discriminate in favor of one.
+- Use exercised consumers to evaluate whether identity, visibility, topology,
+  or lifecycle projection belongs in a shared control plane or remains local.
 
-State contains the smallest current facts and attributed judgments needed for
-reconstruction. Raw prompts, chain-of-thought, transcripts, broad repository
-copies, and logs remain excluded.
-
-### Stronger owners remain authoritative
-
-Agent state references proposal packets, receipts, checkpoints, schedules,
-repository revisions, and gate artifacts. It does not silently become a second
-canonical copy of their truth.
-
-### Runtime identity is a binding, not durable identity
-
-Provider session and thread IDs are resumable provenance. A stable Work Engine
-logical identity owns the role state even when its runtime binding is replaced.
-
-### Independence constrains visibility
-
-Durable storage availability does not imply cross-role read authority. Fresh
-reviewers must not inherit builder reasoning, and unrelated roles must not gain
-universal memory access.
-
-### Handled events remain handled
-
-External interactions record their durable operational consequence so context
-replacement cannot make an old request current again.
-
-### Recovery refreshes reality
-
-Reconstruction restores operational position, then refreshes mutable external
-truth from its owner. A durable projection is not assumed current merely because
-its bytes remain readable.
-
-### Cleanup is semantic
-
-State may be retired only after every consequence required for active recovery,
-authorized handoff, or audit exists in an appropriate durable owner.
-
-## Proposed implementation sequence
-
-### Slice 1: complete the slice-workflow recovery vertical
-
-Expand the supervisor-owned active-slice projection across planning,
-implementation, gate, remediation, acceptance, and waiting. Bind the exact
-accepted-plan consequence rather than only a conversation reference. Add a
-builder-owned projection sufficient to recover the accepted boundary, current
-route, task manifest, validation progress, findings, and pending work. Prove a
-fresh replacement can continue an interrupted implementation without replaying
-the transcript or resurrecting a handled event. Establish the predecessor-linked
-transition record and derived-current-snapshot vertical in this slice rather
-than treating opaque CAS revisions as semantic history.
-
-### Slice 2: reviewer recovery without research recreation
-
-Persist the bounded review subject, finding ledger, dispositions, delta and gate
-references alongside the already durable reviewer session binding. Prove both
-same-session continuation and truthful reconstructed replacement when the
-provider session is unavailable. Preserve the independence visibility boundary.
-
-### Slice 3: strategic-planner state
-
-Define and dogfood a planner-owned projection over its last durable handoff and
-named evidence sources. Prove that a replacement planner restores assumptions,
-dependencies, uncertainty, and evidence cutoff without treating remembered
-state as current or gaining roadmap authority.
-
-### Slice 4: topology, visibility, and control-plane integration
-
-Integrate role state with the already named control-plane owners for logical
-identity, routing, activation, runtime bindings, coordination, delivery,
-subscriptions, reconciliation, health, and bounded projections. Use
-implementation evidence to settle only parent/child topology representation,
-visibility-policy enforcement, lifecycle-query projection, and semantic cleanup.
-Do not reopen workflow meaning or agent-state consequence ownership, and do not
-implement resource claims unless observed consumers require them.
+Parsing a saved snapshot, recreating a prompt, or merely opening a replacement
+session does not satisfy the recovery proof.
 
 ## Out of scope
 
-- full transcript or hidden-reasoning persistence;
-- automatic authority, acceptance, scheduling, or roadmap mutation;
-- universal cross-agent memory;
-- distributed locking, parallel mutation claims, or resource leases;
-- replacing proposal packets, receipts, checkpoints, schedules, or Git history;
-- requiring one storage backend permanently;
-- treating token cost as semantic authority;
-- broad runtime introspection beyond recovery evidence needed by initial roles.
+- full transcript, hidden-reasoning, raw source, diff, or test-log persistence;
+- automatic acceptance, authority, scheduling, gate passage, or roadmap change;
+- universal cross-role memory or one universal semantic state owner;
+- permanently selecting predecessor chains, event sourcing, Git refs, or any
+  other storage/history realization;
+- permanently allocating future control-plane ownership;
+- distributed resource claims not required by an exercised profile; and
+- implementation authorization for any role profile.
 
 ## Alternatives
 
 ### Extend only slice-supervisor live state
 
-Insufficient. It would fix the immediately observed phase gap while leaving the
-builder, reviewer, and strategic planner dependent on retained context. It also
-encourages the supervisor to own semantic state produced by other roles.
+This may be a valid first profile but is not a complete semantic foundation. It
+must not cause the supervisor to own builder, reviewer, or planner judgments.
 
 ### Create one universal agent-state schema
 
-Not preferred. Role obligations, authority, visibility, and lifetimes differ.
-A universal payload would either become vague or flatten meaningful role
-boundaries. Share durability mechanics; keep semantic projections role-owned.
+Not preferred. Roles have different obligations, authorities, visibility, and
+lifetimes. Reuse the recovery contract and opaque durability mechanics while
+keeping profile semantics role-owned.
 
-### Store everything in proposal packets or receipts
+### Put unfinished work in packets or receipts
 
-Incorrect ownership. Proposal packets explain why a candidate exists, and
-receipts explain terminal outcomes. Neither should become a mutable store for
-unfinished campaign, implementation, review, or planning position.
+Only when those artifacts' domain contracts already own the consequence.
+Proposal packets explain candidates and decisions; receipts explain terminal
+slice outcomes. Neither should become a generic mutable live-state store.
 
-### Depend on retained provider sessions and conversation compaction
+### Depend on retained sessions and conversation compaction
 
-Insufficient. Retention is valuable for context economy but is not a durable
-correctness boundary. Provider sessions can fail, and conversation summaries
-are not role-owned product state.
-
-## Evidence required before authority decision
-
-- map current control-plane implementation to the already named ownership of
-  logical identity, routing, activation, runtime bindings, coordination,
-  delivery, subscriptions, reconciliation, health, and bounded projections;
-- determine only the still-provisional owner or enforcement boundary for
-  parent/child topology, state visibility policy, and lifecycle queries;
-- exercise the proposed supervisor/builder projection against a real context
-  replacement at implementation and remediation boundaries;
-- show which reviewer findings must be durable outside the provider session
-  without leaking builder context;
-- measure whether role projections materially reduce reconstruction work while
-  remaining smaller than transcripts and domain artifacts; and
-- prove that predecessor-linked consequence history can explain the current
-  snapshot without relying on Git reflogs, provider transcripts, or model
-  recollection; and
-- validate that packet, receipt, checkpoint, schedule, and repository owners
-  remain non-duplicated and authoritative.
+Useful for context economy, insufficient for correctness. Provider sessions can
+fail and conversation summaries are not role-owned product state.
 
 ## Acceptance consequence
 
-This proposal is successful when a supervisor, builder, reviewer, and strategic
-planner can each lose model context at a representative active boundary and a
-truthfully authorized replacement can reconstruct the role's current position,
-continue from referenced authoritative evidence, preserve handled consequences,
-explain the predecessor-linked consequences that produced the current snapshot,
-and avoid replaying completed synthesis—without persisting transcripts,
-inflating authority, or collapsing role independence.
+An authority decision on this proposal decides only whether Work Engine should
+adopt the mechanism-open semantic contract above for future role-state profiles:
+role-owned current operational meaning, references to stronger owners,
+explicit authority and epistemic provenance, distinct event and consequence
+identity, fenced and crash-safe recovery, and truthful handoff and retirement.
+
+It does not select a schema, storage/history mechanism, role-profile rollout,
+control-plane placement, roadmap priority, or implementation authority. Those
+remain separately formed and authorized decisions.

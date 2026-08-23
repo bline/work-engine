@@ -31,22 +31,27 @@
     {
       "kind": "product-direction",
       "path": "../../../ideas/context-derived-role-execution-envelopes.md"
+    },
+    {
+      "kind": "bootstrap-review",
+      "path": "../../../reviews/proposals/role-owned-durable-operational-state/6d451a9/synthesis.md"
     }
   ],
   "placement": {
     "state": "probable",
-    "claim": "Each long-running role workflow owns its resume-critical semantic projection over the shared opaque durable-state primitive. The control plane owns logical identity and role routing, activation, runtime-binding registration, coordination, delivery, subscriptions, reconciliation, and bounded projections without owning workflow meaning or agent-state consequences. Parent/child topology representation, visibility-policy enforcement, and physical adapter placement remain provisional."
+    "claim": "Each long-running role workflow owns the meaning of its resume-critical operational projection and references stronger domain and runtime owners. The shared durable-state primitive may supply opaque publication mechanics without owning semantics. Concrete history representation, role-profile schemas, physical hosting, and broader control-plane allocation remain provisional and must be resolved from exercised consumer evidence."
   },
   "uncertainty": {
     "state": "unresolved",
     "reopening_conditions": [
-      "Implemented control-plane evidence contradicts the named product-direction ownership of logical identity, routing, activation, runtime binding, coordination, delivery, subscriptions, reconciliation, or bounded projections.",
-      "Parent/child topology, visibility-policy enforcement, or lifecycle-query consumers require a different boundary from the provisional agent-state and control-plane split.",
+      "An exercised role profile shows that workflow meaning or a recovery-critical operational consequence belongs to a stronger existing domain owner rather than the role workflow.",
+      "Identity, parent/child topology, visibility, or lifecycle-query consumers require a different split among source policy, authoritative ownership, enforcement, observation, and projection.",
       "A role recovery vertical cannot reconstruct correctly from a role-owned projection plus references to stronger domain artifacts.",
-      "The current snapshot cannot be explained from predecessor-linked semantic consequences without relying on provider transcripts, Git reflogs, or model recollection.",
-      "Observed multi-writer, topology-query, authorization, or cleanup requirements cannot be supported truthfully by the current Git-ref durable-state adapter.",
+      "No viable publication or history realization can provide fenced, crash-safe, idempotent, integrity-checked and explainable reconstruction without transcripts, Git reflogs, or model recollection.",
+      "Observed writer replacement, authorization, event reconciliation, handoff, retention, or cleanup requirements cannot be represented without changing the proposed semantic contract.",
       "Independent-review recovery shows that preserving findings outside the provider session compromises the required independence boundary.",
-      "Dogfooding shows that one proposed role profile duplicates stronger packet, receipt, checkpoint, schedule, or repository state rather than referencing it."
+      "Dogfooding shows that a proposed profile duplicates stronger packet, receipt, checkpoint, schedule, review, authority, or repository state rather than referencing it.",
+      "Evidence establishes a shared control-plane owner for one of the currently provisional identity, topology, visibility, lifecycle, or runtime-binding consequences."
     ]
   },
   "authority": {
@@ -57,7 +62,7 @@
     {
       "type": "related_to",
       "target_id": "work-engine.proposal-packets",
-      "rationale": "Proposal packets own durable candidate and decision context, while this proposal owns only unfinished live operational position and references packet state rather than duplicating it.",
+      "rationale": "Proposal packets own durable candidate and decision context. This proposal defines a candidate contract for role workflows to preserve unfinished operational position while referencing packet state rather than duplicating it.",
       "causal": false
     }
   ]
