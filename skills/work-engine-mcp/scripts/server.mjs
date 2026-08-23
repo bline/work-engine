@@ -78,6 +78,51 @@ const exactReferenceSchema = z.object({
   freshness_rule: z.string().min(1),
 }).strict();
 
+const reviewFindingSchema = z.object({
+  finding_id: z.string().min(1),
+  attributed_reviewer: z.string().min(1),
+  reviewer_generation: z.number().int().positive(),
+  severity: z.string().min(1),
+  observation: z.string().min(1),
+  evidence_references: z.array(exactReferenceSchema).min(1),
+  status: z.enum([
+    "open",
+    "remediation_presented",
+    "verified_resolved",
+    "withdrawn",
+    "unresolved",
+  ]),
+  remediation_references: z.array(exactReferenceSchema),
+}).strict();
+
+const reviewResultPayloadSchema = z.object({
+  findings: z.array(reviewFindingSchema),
+  unresolved_questions: z.array(z.string().min(1)),
+  evidence_references: z.array(exactReferenceSchema),
+  claim_references: z.array(exactReferenceSchema),
+}).strict();
+
+const reviewTransitionPayloadSchema = z.union([
+  reviewResultPayloadSchema,
+  z.object({
+    reviewed_subject: z.array(exactReferenceSchema).min(1),
+    evidence_references: z.array(exactReferenceSchema).min(1),
+  }).strict(),
+  z.object({
+    reason: z.string().min(1),
+    reconciliation_action: z.string().min(1),
+  }).strict(),
+  z.object({
+    reason: z.string().min(1),
+    pending_next_action: z.string().min(1),
+  }).strict(),
+  z.object({
+    outcome: z.string().min(1),
+    reason: z.string().min(1),
+    protected_references: z.array(exactReferenceSchema).min(1),
+  }).strict(),
+]);
+
 async function main() {
   const options = serverArguments(process.argv.slice(2));
   const repository = await realpath(path.resolve(options.repository));
@@ -211,7 +256,10 @@ async function main() {
             "replace_writer",
             "retire_episode",
           ]),
-          payload: z.record(z.string(), z.unknown()),
+          payload: reviewTransitionPayloadSchema.describe(
+            "Action-specific payload. record_initial_result and record_re_evaluation use " +
+            "the findings payload; every finding requires its own exact evidence_references.",
+          ),
         },
         outputSchema: { result: z.unknown() },
       },

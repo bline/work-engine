@@ -190,7 +190,13 @@ test("recovers an authority-bound review episode and fences the prior writer", a
 
   const firstClient = await connect(repository, authority1);
   const tools = await firstClient.listTools();
-  assert.ok(tools.tools.some((tool) => tool.name === "advance_independent_review_episode"));
+  const advanceTool = tools.tools.find((tool) => tool.name === "advance_independent_review_episode");
+  assert.ok(advanceTool);
+  const payloadVariants = advanceTool.inputSchema.properties.payload.anyOf;
+  const findingVariant = payloadVariants.find((variant) =>
+    variant.properties?.findings?.items?.properties?.finding_id);
+  assert.ok(findingVariant);
+  assert.ok(findingVariant.properties.findings.items.required.includes("evidence_references"));
   const begun = await firstClient.callTool({
     name: "begin_independent_review_episode",
     arguments: { transition_id: "begin-1", evidence_references: [], claim_references: [], unresolved_questions: [] },
