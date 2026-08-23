@@ -1,0 +1,49 @@
+version: 2
+objective: "Implement the approved agent-instruction structure and placement review proposal as one bounded slice, including independent bootstrap review and real dogfood on agent-facing instruction surfaces"
+
+work_source:
+  kind: file
+  value: "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/implementation-authorization.md"
+
+builder:
+  skill: "slice-builder"
+  model: "gpt-5.6-sol"
+  reasoning_effort: "low"
+  context:
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
+
+validation:
+  profile: "engineering-proportional"
+  requirements:
+    - semantic_proof
+    - risk_proportional_checks
+    - workspace_integrity
+
+metrics:
+  path: "metrics/agent-instruction-review.jsonl"
+
+limits:
+  slices: 1
+
+approval:
+  plan: "procedural_when_safe"
+  uninterrupted_after_plan: false
+
+notifications:
+  intervention: true
+  completion: false
+
+slice_completion_commit:
+  prompt: enabled
+
+stop_on:
+  - objective_complete
+  - human_judgment
+  - unresolved_architecture
+  - quota_exhaustion
+  - validation_nonconvergence
