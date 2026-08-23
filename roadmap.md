@@ -138,27 +138,45 @@ meanings for review artifacts and adaptive panel coordination, and a successful
 bounded claim-lineage dogfood. Independent-review episodes can preserve their
 own remediation state and history through an authority-bound profile, including
 bounded MCP access. These are substantial foundations, but they do not yet form
-one controlled idea-to-proposal lifecycle. Raw idea intake remains an active
-idea, review artifacts and panel coordination remain approved candidate
+one controlled idea-to-proposal lifecycle. Raw idea intake is now a formed
+proposal whose seven bootstrap-review findings are closed at revision
+`89a3a38`, but its authority-owned disposition and implementation remain
+pending. Review artifacts and panel coordination remain approved candidate
 meanings rather than implemented capabilities, and no end-to-end exercise has
 yet carried a source-bound intake through formation, revision, review, and an
 authority-owned disposition.
+
+The newly recorded
+[`agent-instruction-structure-and-placement-review`](ideas/agent-instruction-structure-and-placement-review.md)
+idea exposes a more immediate structural-integrity dependency. Agent-facing
+text affects every future skill, role, and workflow, while current review roles
+do not specialize in whether a normative instruction preserves a necessary
+distinction or is placed at the correct authority, scope, and loading layer.
+The user has prioritized intake of this capability before further expansion of
+agent-facing instruction surfaces. That priority does not accept the idea or
+make it a universal review gate.
 
 The current priority order is:
 
 1. reconcile accepted campaign work and keep stopped, experimental, and
    user-owned changes distinguishable;
-2. complete the controlled proposal workflow from low-friction raw idea intake
-   through claim-addressable assessment, proposal formation, revision-bound
-   adaptive review, and an explicit authority-owned disposition;
-3. preserve the implemented packet, decision, claim-lineage, active-slice,
+2. treat agent-instruction structure and placement review as a critical
+   structural-integrity interruption: carry the committed idea through intake,
+   formation, specialized review, and bounded dogfood before expanding skills,
+   roles, or workflow instruction surfaces;
+3. resume and complete the controlled proposal workflow from low-friction raw
+   idea intake through claim-addressable assessment, proposal formation,
+   revision-bound adaptive review, and an explicit authority-owned disposition;
+   the reviewed raw-intake proposal remains paused at its authority-decision
+   boundary rather than rejected or implementation-authorized;
+4. preserve the implemented packet, decision, claim-lineage, active-slice,
    transition-history, and reviewer-state boundaries while the completed
    workflow exercises them as real consumers;
-4. establish an atomic, versioned install boundary with a neutral-directory
+5. establish an atomic, versioned install boundary with a neutral-directory
    smoke test before syncing the repository skill into Codex;
-5. audit contract ownership and imperative runtime instructions;
-6. complete standalone documentation, CI, versioning, and release surfaces;
-7. promote evidence-backed evaluation, portfolio selection, organizational
+6. audit contract ownership and imperative runtime instructions;
+7. complete standalone documentation, CI, versioning, and release surfaces;
+8. promote evidence-backed evaluation, portfolio selection, organizational
    planning, and closed-loop learning only after the proposal workflow can
    hand them durable, authority-bounded proposal state.
 
@@ -238,10 +256,17 @@ but several still encode current preferred routes as mandatory sequences. The
 receipt validator now accepts any nonempty workflow-route identity; `direct`
 and `falsified-placement` remain named defaults rather than a closed product
 enum. Tests exercise additional identities and preserve route revisions with
-their retired decisions and retained evidence.
+their retired decisions and retained evidence. The committed exploratory
+agent-instruction structure and placement review now supplies a compact
+two-question diagnostic and distinguishes normative-text placement from system
+or component placement, but it has not yet passed intake, formation, review, or
+dogfood.
 
 ## Remaining work
 
+- Form and review the agent-instruction structure and placement capability, then
+  dogfood it on materially agent-facing skill and workflow text before treating
+  it as a reusable review specialist.
 - Inventory binding runtime commands and classify each as invariant,
   consequence, capability affordance, current observation, or default route.
 - Retain only commands whose violation breaks authority, ownership, security,
@@ -254,8 +279,9 @@ their retired decisions and retained evidence.
   them.
 - Keep read-only independent review, user-work preservation, configuration
   identity, and required receipt provenance as hard boundaries.
-- Add a small doctrine-compliance review to feature design without attempting
-  to mechanically lint semantic judgment.
+- Reconcile the older broad doctrine-compliance-review outcome with the more
+  precise instruction-structure candidate rather than creating duplicate review
+  owners or attempting to mechanically lint semantic judgment.
 
 ## Completion evidence
 
@@ -430,7 +456,8 @@ implementation remain separate consumers.
 
 - `proposal-packets` owns stable proposal identity, closed manifest and decision
   contracts, repository discovery, typed relationships, and deterministic
-  validation. Eight current repository proposal packets validate mechanically.
+  validation. Nine current proposal packets plus three fixtures validate
+  mechanically.
 - `proposal-former` supplies the initial adaptive formation contract and a
   transcript-free one-idea/one-proposal consumer proof. Split, merge,
   duplication, reopening, and human-scope-change scenarios remain to be
@@ -450,13 +477,22 @@ implementation remain separate consumers.
 - Independent-review episode state, retained transition history, and bounded MCP
   access now preserve reviewer remediation context without making live role
   state the owner of final review artifacts or decisions.
-- [`ideas/raw-idea-intake-and-claim-assessment.md`](ideas/raw-idea-intake-and-claim-assessment.md)
-  defines a candidate source-bound intake consequence, claim-level assessment,
-  proposal-formation handoff, and cleanup-authority boundary. It remains an
-  active idea rather than a formed or implemented contract.
+- `work-engine.raw-idea-intake` now defines the formed source-bound intake
+  consequence, claim-level assessment, proposal-formation handoff, manual-map
+  migration, and cleanup-authority boundary. Its adaptive bootstrap review is
+  closed with no remaining finding; acceptance, final placement, and
+  implementation remain separately pending.
+- [`ideas/agent-instruction-structure-and-placement-review.md`](ideas/agent-instruction-structure-and-placement-review.md)
+  is the user-prioritized critical intake subject before further skill and
+  workflow instruction expansion. It is still an exploratory idea, not an
+  accepted reviewer contract.
 
 ## Remaining work
 
+- Pause further advancement of the reviewed raw-intake proposal at its
+  authority-decision boundary while the critical instruction-review idea is
+  assessed; later resume from the immutable proposal and review artifacts
+  without reconstructing this planning decision.
 - Establish a structured intake owner that binds an exact raw-source revision,
   preserves stable idea identity, distinguishes extracted source claims from
   assessor inference, records evidence cutoffs and authority, and can return a

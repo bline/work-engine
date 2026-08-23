@@ -2,8 +2,10 @@
 
 ## Status
 
-Exploratory specialized-review capability. This idea does not create a review
-gate, accept its own placement, or authorize changes to agent-facing text.
+Exploratory specialized-review capability, prioritized by the user as a
+critical structural-integrity intake before further skill and workflow
+instruction expansion. This priority does not create a review gate, accept the
+idea or its placement, or authorize changes to agent-facing text.
 
 ## Problem
 
