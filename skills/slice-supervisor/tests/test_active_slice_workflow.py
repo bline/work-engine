@@ -132,6 +132,32 @@ class ActiveSliceWorkflowTest(unittest.TestCase):
             self.assertFalse(recovered["runtime_binding"]["semantic"])
             self.assertNotIn("handled_consequences", recovered)
 
+            first_page = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity, "--history-limit", "1").stdout)
+            self.assertEqual([published["durable_revision"]],
+                             [item["revision"] for item in first_page["items"]])
+            self.assertEqual(published["durable_revision"], first_page["next_cursor"])
+            second_page = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity, "--history-limit", "1",
+                "--history-cursor", first_page["next_cursor"]).stdout)
+            self.assertEqual([active["durable_revision"]],
+                             [item["revision"] for item in second_page["items"]])
+            self.assertIsNone(second_page["next_cursor"])
+
+            selected = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity,
+                "--revision", active["durable_revision"]).stdout)
+            self.assertEqual("planning", selected["phase"])
+            self.assertIsNone(selected["latest_phase_consequence"])
+            self.assertEqual(active["durable_revision"], selected["durable_revision"])
+
+            unchanged = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity).stdout)
+            self.assertEqual(published["durable_revision"], unchanged["durable_revision"])
+            self.assertEqual("", subprocess.run(
+                ["git", "-C", str(repository), "status", "--short"], text=True,
+                stdout=subprocess.PIPE, check=True).stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

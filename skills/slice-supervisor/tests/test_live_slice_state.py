@@ -100,6 +100,10 @@ class LiveSliceStateTest(unittest.TestCase):
             replay = LIVE.publish_phase_consequence(
                 store, published, phase="implementation", consequence=consequence)
             self.assertEqual(published["durable_revision"], replay["durable_revision"])
+            history = LIVE.list_history(store, self.identity, cursor=None, limit=10)
+            self.assertEqual(2, len(history["items"]))
+            self.assertEqual(published["durable_revision"], history["items"][0]["revision"])
+            self.assertEqual(active["durable_revision"], history["items"][1]["revision"])
             with self.assertRaisesRegex(ValueError, "conflicts"):
                 LIVE.publish_phase_consequence(store, published, phase="implementation",
                     consequence={**consequence, "summary": "different"})

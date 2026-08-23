@@ -175,6 +175,30 @@ def load(store: Any, identity: dict[str, Any]) -> dict[str, Any] | None:
     return value
 
 
+def load_revision(store: Any, identity: dict[str, Any], revision: str) -> dict[str, Any]:
+    key = stable_key(identity)
+    # Cursor validation proves the selected object is retained by the accepted head.
+    store.list_revisions(key, revision, 1)
+    value = decode(store.read_revision(key, revision))
+    if value["identity"] != identity:
+        fail("durable live slice identity does not match its stable key")
+    return value
+
+
+def list_history(store: Any, identity: dict[str, Any], *, cursor: str | None,
+                 limit: int) -> dict[str, Any]:
+    page = store.list_revisions(stable_key(identity), cursor, limit)
+    items = []
+    for stored in page.values:
+        value = decode(stored)
+        if value["identity"] != identity:
+            fail("durable live slice identity does not match its stable key")
+        items.append({"revision": stored.revision,
+                      "predecessor_revision": stored.predecessor_revision,
+                      "state": projection(value)})
+    return {"items": items, "next_cursor": page.next_cursor}
+
+
 def publish(store: Any, value: dict[str, Any], revision: str | None) -> dict[str, Any]:
     payload = semantic(value)
     validate(payload)

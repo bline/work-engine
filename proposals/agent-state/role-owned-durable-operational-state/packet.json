@@ -43,7 +43,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "Each long-running role workflow owns the meaning of its resume-critical operational projection and references stronger domain and runtime owners. The shared durable-state primitive may supply opaque publication mechanics without owning semantics. Concrete history representation, role-profile schemas, physical hosting, and broader control-plane allocation remain provisional and must be resolved from exercised consumer evidence."
+    "claim": "Each long-running role workflow owns the meaning of its resume-critical operational projection and transition lineage, while referencing stronger domain and runtime owners. Retained history must be deterministically queryable in temporal sequence and support reading or reconstructing a selected retained revision without repeating effects. A future UI may project that sequence visually. The shared durable-state primitive may supply opaque publication mechanics without owning semantics. Concrete history representation, role-profile schemas, physical hosting, and broader control-plane allocation remain provisional and must be resolved from exercised consumer evidence."
   },
   "uncertainty": {
     "state": "unresolved",
@@ -68,6 +68,12 @@
       "target_id": "work-engine.proposal-packets",
       "rationale": "Proposal packets own durable candidate and decision context. This proposal defines a candidate contract for role workflows to preserve unfinished operational position while referencing packet state rather than duplicating it.",
       "causal": false
+    },
+    {
+      "type": "enables",
+      "target_id": "work-engine.operational-state-transition-history",
+      "rationale": "The related history candidate exercises the transition-lineage and visual-replay consequences required by this semantic contract without making one physical history mechanism universal.",
+      "causal": true
     }
   ]
 }

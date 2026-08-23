@@ -7,8 +7,8 @@
 - State: placement uncertain; not evaluated or accepted
 - Decision owner: user or future explicitly authorized architecture owner
 - Evidence cutoff: repository
-  `64601908458501f0a8d73825587b46fbc6e691b6`, including the canonical
-  architecture scoping correction
+  `23f2e44dcb43421330c979525234b31ddbf54b93`, including the first
+  continuous phase-consequence publication slice
 - Review lineage: specialized review dispositions are owned by
   `reviews/proposals/role-owned-durable-operational-state/`; this narrative
   does not infer or duplicate their current closure state
@@ -21,9 +21,18 @@ implementation authority.
 ## Independently decidable consequence
 
 Define a common semantic contract for compact, role-owned, durable operational
-state. The contract protects recovery correctness while leaving concrete
-history representation, role-profile schemas, physical hosting, and future
-control-plane integration open to evidence.
+state. The contract protects recovery correctness and requires ordered
+transition history sufficient for downstream reconstruction, while leaving the
+concrete history representation, role-profile schemas, physical hosting, and
+future control-plane integration open to evidence.
+
+The user has identified a future UI timeline as one consumer. The history
+contract only needs to provide transitions in deterministic temporal order and
+allow a selected retained revision to be read or reconstructed. The UI owns how
+that sequence becomes a visual time-slice experience. This decision requires
+durable semantic transition lineage; it does not select event sourcing, a
+database, Git refs, a graph store, a control plane, or any other physical
+realization.
 
 This candidate does **not** authorize or bundle implementation of supervisor,
 builder, reviewer, planner, or control-plane profiles. Each profile requires a
@@ -74,6 +83,13 @@ At the evidence cutoff:
 - The shared `durable-state` capability supplies opaque integrity-checked
   compare-and-swap publication. It does not supply workflow meaning, authority,
   event completion, visibility, retention, or history semantics.
+- The first continuous-publication slice durably preserves the current latest
+  implementation or gate consequence and handled consequence identities. It
+  does not retain a supported, queryable sequence of full prior role-state
+  revisions.
+- Claim-lineage dogfood demonstrates stable semantic identity, exact revisions,
+  refresh outcomes, and typed lineage for epistemic claims. Those mechanics are
+  useful evidence, but claim history does not own operational workflow history.
 
 This establishes a recovery gap and a reusable durability mechanism. It does
 not establish one universal schema, mandatory predecessor chains, or the
@@ -133,6 +149,37 @@ when its loss would risk incorrect continuation or material re-synthesis.
 Token cost is evidence of materiality, never evidence that the conclusion is
 correct or authoritative.
 
+## Ordered transition history
+
+Current operational state and its transition history are different projections
+of the same role-owned semantics. A conforming profile must preserve enough
+immutable, ordered lineage to:
+
+- identify every retained semantic revision and its predecessor or other
+  explicit ordering relation;
+- attribute the transition owner, writer, trigger, authority boundary,
+  evidence references, and observed publication time;
+- distinguish a proposed transition, an authorized durable consequence, a
+  correction, a supersession, uncertainty, and retirement;
+- reconstruct the role-owned semantic projection at any retained revision;
+- explain why the current projection differs from a selected prior projection;
+  and
+- serve bounded, deterministically ordered transition queries without replaying
+  a model transcript.
+
+A UI may turn the ordered sequence into a visual time-slice replay, and an MCP
+service may expose authorized history queries. Those are consumer projections,
+not additional requirements on the history representation and not new semantic
+owners. Reading or reconstructing history must not re-run a tool, redeliver an
+event, recreate a commit, resume a provider session, or repeat any external
+effect.
+
+The current projection may be stored directly, derived from history, or use a
+snapshot-plus-tail design. Whichever realization a profile chooses must prove
+that the current projection and retained history cannot silently disagree.
+Snapshots may bound reconstruction cost, but they cannot erase the lineage
+required by the profile's retention contract.
+
 ## Continuous publication boundary
 
 A role must publish a resume-critical semantic consequence as soon as losing
@@ -156,16 +203,18 @@ remembered context or runtime liveness.
 
 ## Mechanism-open reconstruction
 
-The binding requirement is that the current projection be reconstructable,
-integrity-checked, idempotent, crash-safe, and explainable from durable
-consequences. A predecessor-linked record is one candidate, not a mandated
-architecture.
+The binding requirement is that the current projection and retained transition
+history be reconstructable, integrity-checked, idempotent, crash-safe, and
+explainable from durable consequences. A predecessor-linked record is one
+candidate, not a mandated architecture.
 
 A role profile must declare:
 
 - its atomic publication unit and concurrency-precondition boundary;
 - how a crash before, during, or after publication is detected and reconciled;
 - how the protected consequence behind a current fact can be identified;
+- how retained revisions are ordered, queried, and reconstructed for visual
+  replay;
 - how supersession, correction, invalidation, and uncertainty are represented;
 - which records remain reachable for recovery or audit;
 - its retention, replay-suppression marker or equivalent, and physical-deletion
@@ -252,6 +301,8 @@ rather than defer:
 - integrity and freshness checks for every required reference;
 - event/consequence separation when external events are consumed;
 - crash reconciliation and retention behavior; and
+- bounded historical reconstruction and sequential history listing without
+  repeating effects;
 - proof of the next resumed semantic action.
 
 These safeguards may initially be local to the exercised profile. Their
@@ -338,6 +389,11 @@ several mechanisms.
   artifacts, and repository revisions remain canonical and are not copied.
 - Measure reconstruction work and durable payload size without treating token
   savings as correctness evidence.
+- Reconstruct at least one earlier operational revision and list a bounded,
+  deterministically ordered sequence explaining the transition to current state
+  without invoking an external effect.
+- Demonstrate snapshot/history consistency, correction without destructive
+  rewriting, and retained-history behavior across replacement and cleanup.
 - Compare at least two viable history/publication realizations or record why
   the exercised constraints discriminate in favor of one.
 - Use exercised consumers to evaluate whether identity, visibility, topology,
@@ -349,6 +405,8 @@ session does not satisfy the recovery proof.
 ## Out of scope
 
 - full transcript, hidden-reasoning, raw source, diff, or test-log persistence;
+- effectful replay of tools, messages, commits, provider sessions, or external
+  actions from historical state;
 - automatic acceptance, authority, scheduling, gate passage, or roadmap change;
 - universal cross-role memory or one universal semantic state owner;
 - permanently selecting predecessor chains, event sourcing, Git refs, or any
@@ -385,9 +443,10 @@ fail and conversation summaries are not role-owned product state.
 
 An authority decision on this proposal decides only whether Work Engine should
 adopt the mechanism-open semantic contract above for future role-state profiles:
-role-owned current operational meaning, references to stronger owners,
-explicit authority and epistemic provenance, distinct event and consequence
-identity, fenced and crash-safe recovery, and truthful handoff and retirement.
+role-owned current operational meaning, retained and sequentially queryable
+transition lineage, references to stronger owners, explicit authority and
+epistemic provenance, distinct event and consequence identity, fenced and
+crash-safe recovery, and truthful handoff and retirement.
 
 It does not select a schema, storage/history mechanism, role-profile rollout,
 control-plane placement, roadmap priority, or implementation authority. Those

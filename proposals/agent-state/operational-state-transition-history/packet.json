@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.operational-state-transition-history",
+  "family_id": "work-engine.agent-state",
+  "title": "Operational State Transition History",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal",
+      "path": "../role-owned-durable-operational-state/proposal.md"
+    },
+    {
+      "kind": "idea",
+      "path": "../../../ideas/role-decision-trace.md"
+    },
+    {
+      "kind": "idea",
+      "path": "../../../ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state.md"
+    },
+    {
+      "kind": "canonical-architecture-map",
+      "path": "../../../ARCHITECTURE.md"
+    },
+    {
+      "kind": "dogfood-evidence",
+      "path": "../../evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/evidence-report.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "Role workflows own transition semantics and authority. The history contract requires atomic immutable lineage, deterministic sequential queries, reconstruction, and retention safety, but current evidence does not decide whether those mechanics belong within each workflow, in a shared durability layer, or in a future control plane. UI and MCP layers remain consumers rather than semantic owners."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "The first exercised profile cannot maintain atomic consistency between current projection and retained history under interruption and writer replacement.",
+      "History queries require copying stronger claim, receipt, checkpoint, schedule, authority, repository, or runtime facts instead of retaining exact references.",
+      "A viable realization cannot provide deterministic reconstruction, stable pagination, retention safety, and explainable correction without relying on Git reflogs or unreachable objects.",
+      "Visual replay consumers require effectful behavior or authority semantics beyond read-only historical projection.",
+      "Operational and epistemic histories cannot share compatible identity or query mechanics without collapsing their distinct semantic owners.",
+      "Exercised security or reviewer-independence requirements require a different visibility, hosting, or projection boundary.",
+      "Evidence establishes that history mechanics belong entirely within each workflow profile and no reusable capability has a coherent bounded responsibility."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "Transition history requires the role-owned state contract to define semantic ownership, authoritative references, publication consequences, fencing, recovery, handoff, and retirement.",
+      "causal": true
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "Claim-lineage semantics provide exercised identity, revision, refresh, reliance, and typed-edge evidence that can inform shared mechanics while epistemic and operational ownership remain separate.",
+      "causal": false
+    }
+  ]
+}
