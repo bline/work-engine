@@ -26,6 +26,12 @@ architectural placement authority. When the underlying capability owner is
 uncertain or stale, it emits a consequence for architectural diagnosis or the
 owning decision role.
 
+The separate `work-engine.agent-instruction-integrity` family reflects this
+semantic subject. Adaptive specialized review owns prospective selection and
+review-artifact coordination, while this family owns the candidate meaning of
+instruction diagnosis. Neither family must be accepted for the other to remain
+independently decidable.
+
 ## Rejected placements
 
 ### Architectural diagnostic review
@@ -42,6 +48,15 @@ Rejected as the sole owner. Doctrine review can identify binding conflicts and
 authority inflation, but this specialist also distinguishes local mechanisms,
 defaults, examples, loading reach, and misplaced text that may not violate a
 binding contract.
+
+### Cross-cutting seam review
+
+Rejected as the sole owner. Seam review diagnoses what must remain true when
+ownership, state, authority, data, or lifecycle crosses subsystem boundaries.
+Instruction review instead diagnoses the normative text that agents load and
+obey. Both are applicable when an instruction creates or changes a real seam;
+mentioning several subsystems or neighboring reviewer roles is not sufficient
+by itself.
 
 ### Skill authoring
 
@@ -67,3 +82,7 @@ requirements, incompatible proposal and implementation roles, a valid shared
 owner in another review capability, or consumers requiring a different
 artifact/state boundary.
 
+Shared proposal and implementation semantics are provisional. If their subject
+or evidence lifecycles diverge, retain the protected instruction distinctions
+while allowing separate adapters or invocation contracts rather than forcing
+one procedural route.

@@ -52,6 +52,17 @@ These are reasoning affordances, not a mandatory sentence-by-sentence form.
 The reviewer concentrates on materially normative text and investigates only
 the placement context needed to judge it.
 
+The diagnostic method is shared design reasoning, not the exclusive property
+of this specialist. Doctrine, architecture, seam, authoring, and other roles may
+ask the same questions within their own subjects. This specialist owns only the
+bounded application of those questions to the structure, reach, and placement
+of actual agent-facing instruction surfaces.
+
+In the shorthand, `valid` is not a closed taxonomy or a replacement for the
+governing contract. It includes whatever distinctions that contract makes
+material, including ownership, provenance, mutation or read-only boundaries,
+and other validity conditions not repeated in the compact question.
+
 ## Required properties
 
 ### Structure and mechanism remain distinguishable
@@ -95,7 +106,10 @@ actual normative instruction escapes review because it is stored outside a
 Desired outcome: a finding identifies the exact instruction and revision, its
 placement and owner, the protected distinction or failure to identify one,
 route necessity, consequence, evidence, confidence, limitations, and a
-recommended outcome such as retain, restate, split, move, demote, or remove.
+recommended outcome such as retain, restate, split, move, demote, or remove. It
+also states whether its consequence is grounded in a binding `DESIGN.md`
+contract, non-binding `PHILOSOPHY.md` reasoning, both with their distinct
+effects preserved, or another explicitly named authority source.
 
 Invalid outcome: the reviewer emits vague philosophical-alignment criticism,
 mechanically lints style, or treats a preferred rewrite as proof that the
@@ -114,9 +128,11 @@ or treats persistence of its own judgment as evidence.
 ### The capability does not certify itself
 
 Desired outcome: initial implementation is reviewed by an independent
-specialist applying the candidate contract without inheriting the builder or
-the implemented skill's own self-assessment. Later changes preserve truthful
-review provenance and ordinary remediation continuation.
+specialist capability whose review contract and rubric are not the newly built
+skill under test. It applies the accepted candidate distinctions without
+inheriting the builder or the implemented skill's own self-assessment. Later
+changes preserve truthful review provenance and ordinary remediation
+continuation.
 
 Invalid outcome: successful execution of the new skill is presented as proof
 that its own instructions are structurally aligned.
@@ -127,6 +143,12 @@ The probable semantic owner is a distinct instruction-structure and placement
 review capability. Its primary consumer is implementation review of actual
 agent-facing surfaces. Adaptive proposal review is a conditional consumer only
 when the proposal's present content is itself normative agent text.
+
+Until an adaptive coordinator is accepted and implemented, the current
+bootstrap proposal-review procedure is an interim selection route for proposals
+that actually contain such text. It does not become the specialist's semantic
+owner, and this proposal remains usable without accepting the coordinator
+candidate.
 
 This specialist does not own general system placement, doctrine, seam
 coherence, skill creation, review coordination, proposal formation, or
@@ -168,7 +190,10 @@ Out of scope:
 - Exercise an instruction outside `SKILL.md` so storage location is not mistaken
   for applicability.
 - Determine whether proposal and implementation review can share one specialist
-  contract and retained-state profile after actual use.
+  semantic contract and retained-state profile after actual use. The current
+  proposal preserves shared semantics as a hypothesis; dogfood may justify
+  separate lifecycle adapters without transferring instruction-diagnosis
+  ownership.
 
 ## Authority
 
@@ -184,4 +209,3 @@ owner can see whether materially normative agent text preserves a named
 distinction, whether correctness requires its prescribed route, whether it
 lives at the right instructional layer, and what remains uncertain—without
 turning philosophy into a fixed procedure or the reviewer into an authority.
-

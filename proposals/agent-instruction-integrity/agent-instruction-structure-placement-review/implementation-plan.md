@@ -20,10 +20,12 @@ list of acceptable instruction types.
 
 ## Independent bootstrap review
 
-Have a fresh specialist apply the accepted candidate contract directly to the
-implemented skill and supporting instructions without inheriting builder
-reasoning or treating the skill's own output as proof. Preserve findings and
-ordinary same-session remediation through the established review path.
+Have a fresh, independently defined review capability apply the accepted
+candidate contract directly to the implemented skill and supporting
+instructions. Its review contract and rubric must not be the newly built skill
+under test, and it must not inherit builder reasoning or treat the skill's own
+output as proof. Preserve findings and ordinary same-session remediation
+through the established review path.
 
 ## Real dogfood
 

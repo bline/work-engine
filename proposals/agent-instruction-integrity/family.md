@@ -21,6 +21,13 @@ authority review, cross-cutting seam review, skill authoring, and adaptive panel
 coordination. Those capabilities may supply context, consume findings, or be
 selected alongside it without becoming its semantic owner.
 
+This is a separate family because its durable subject is the integrity and
+loading placement of agent-facing instruction surfaces, not the coordination or
+representation of specialist review episodes. The adaptive-specialized-review
+family may eventually select or publish this specialist, but it does not own
+the specialist's instruction diagnosis. Keeping the candidates in separate
+families lets either boundary be accepted, revised, or rejected independently.
+
 Implementation review is the primary candidate consumer because it can inspect
 the actual skill, role, prompt, workflow, template, or instruction-loading
 surface. Proposal review is conditional: the specialist has decision value only
@@ -40,4 +47,3 @@ all agent-readable prose into a universal review gate.
 This family records candidate meaning only. It does not review an instruction,
 amend doctrine, select a panel, accept a proposal or implementation, change
 roadmap priority, or authorize implementation.
-
