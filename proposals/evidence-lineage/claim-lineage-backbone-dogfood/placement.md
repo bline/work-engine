@@ -19,6 +19,15 @@ this experimental boundary. The proposal does not mandate a database, a graph
 store, a service, or a production package merely because those are possible
 realizations.
 
+The current proposal-packet capability recursively treats every `packet.json`
+under its repository root as a proposal manifest. Dogfood records placed near
+the proposal family must therefore use an unmistakably experimental namespace
+and filenames that cannot enter proposal-packet discovery accidentally. An
+authorized execution should demonstrate in a disposable checkout that adding
+and removing the experimental machinery does not change proposal-packet or
+review-artifact meaning or validation. Historical evidence records may remain
+when their owners and non-production status are explicit.
+
 ## Ownership boundaries
 
 - The proposal or review workflow owns the original semantic judgment.

@@ -19,9 +19,10 @@ parent's `defer_for_dogfooding` decision, or authorize implementation.
 
 ## Candidate and consequence
 
-Run one controlled, reversible dogfood exercise that determines whether the
-smallest claim-lineage backbone can truthfully represent real proposal-research
-and specialist-review evidence. A fresh consumer should be able to reconstruct
+Run one controlled, reversible dogfood exercise that demonstrates how the
+smallest claim-lineage backbone represents real proposal-research and
+specialist-review evidence and can expose a semantic mismatch when one occurs.
+A fresh consumer should be able to reconstruct
 what proposition persisted, which immutable evidence world each revision
 examined, which implementation or change event merely nominated possible
 impact, what authorized refresh judgment retained or changed the conclusion,
@@ -43,18 +44,30 @@ full lifecycle, delivery, recovery, or monitoring system.
 The output is evidence for a later proposal or portfolio decision. It is not a
 first implementation slice smuggled into formation.
 
-## Four backbone proofs
+## Valid execution and positive demonstration
 
-The dogfood succeeds only if one coherent exercise demonstrates all four
-consequences below.
+A dogfood run is valid when it preserves its pre-bound subjects, authority
+state, observed outcomes, unresolved gaps, exclusions, projection limits, and
+proof failures without changing the criteria after seeing the result. A valid
+run may produce negative, incomplete, ambiguous, or authority-blocked evidence.
+Those outcomes must not be repaired by selecting replacement fixtures or
+manufacturing a missing judgment.
+
+A positive backbone demonstration is a narrower result claim. It requires one
+coherent valid run to establish all four consequences below across both the
+research and review fixtures. Failure to obtain a positive result does not make
+the run invalid.
+
+## Four backbone proofs
 
 ### 1. Stable claim identity survives revision
 
-At least one stable claim identity has two immutable revisions whose bounded
-subject, question, quantification, and authority domain remain constant while
-the evidence baseline or supported conclusion changes. A material change to
-those identity-defining fields forks a new claim identity instead of being
-hidden as another revision.
+Each fixture has a stable claim identity with two immutable revisions whose
+bounded subject, question, quantification, and authority domain remain constant
+while the evidence baseline or supported conclusion changes. One bounded
+counterfixture changes exactly one identity-defining field and must create a
+new stable identity with an explicit cross-identity relationship rather than
+hiding the change as another revision.
 
 ### 2. Implementation can nominate `may_affect`
 
@@ -68,29 +81,36 @@ inapplicable, refreshed, or causally changed.
 
 The exercise contains both terminal paths:
 
-- an attributed refresh judgment creates a new evidence-bound revision with
-  `retained_unchanged` and no `changed_because_of` edge; and
+- an authorized, attributed refresh judgment creates a new evidence-bound
+  revision with `retained_unchanged` and no `changed_because_of` edge; and
 - an authorized refresh judgment creates a revised conclusion and records only
   the causal events it actually adjudicated through `changed_because_of`.
 
 Opening an episode, investigating it, and reaching a terminal judgment remain
-separate durable facts. The implementation producer does not acquire refresh
-authority merely because it nominated the impact.
+separate durable facts. Both terminal judgments must bind authority effective
+for that exact claim, domain, and outcome. The implementation producer does not
+acquire refresh authority merely because it nominated the impact.
 
 ### 4. Reliance targets an exact revision
 
-A versioned downstream reliance record identifies the exact consumer revision,
-decision scope, and claim revision used. A `may_affect` nomination produces at
-most a derived candidate-impact warning. Neither the warning nor a later claim
-revision silently advances the reliance, mutates the consumer, or authorizes
-reopening.
+A versioned downstream reliance record for each fixture identifies the exact
+consumer revision, decision scope, and claim revision used. The record must
+either cite direct evidence of historical reliance or represent a newly
+versioned dogfood consumer that prospectively adopts the exact claim revision.
+Retrospective correspondence without direct reliance evidence is labeled as an
+attributed inference and cannot satisfy this proof. A `may_affect` nomination
+produces at most a derived candidate-impact warning. Neither the warning nor a
+later claim revision silently advances the reliance, mutates the consumer, or
+authorizes reopening.
 
 ## Controlled subject selection
 
-Selecting subjects after seeing the produced outcomes would permit
-cherry-picking and make the exercise weak evidence. The executing plan must
-therefore durably bind a small fixture-selection artifact to immutable source
-revisions before it produces dogfood records. The selection must contain:
+Selecting subjects after seeing the produced dogfood outcomes would permit
+post-encoding substitution and make the exercise weak evidence. Historical
+source outcomes may already be known, so pre-binding alone cannot make their
+selection outcome-independent. The executing plan must therefore durably bind
+a small fixture-selection artifact to immutable source revisions before it
+produces dogfood records. The selection must contain:
 
 - one material proposal-research claim that existed before the chosen source
   event;
@@ -102,16 +122,56 @@ revisions before it produces dogfood records. The selection must contain:
   checkpoint, commit, or repository-change event proposed as the source of
   candidate impact; and
 - an explanation of why the two examples exercise shared semantics rather than
-  merely sharing field names.
+  merely sharing field names;
+- the bounded candidate population considered, the selector and its authority,
+  the outcome information available during selection, excluded candidates and
+  reasons, and whether selection was purposive or outcome-independent; and
+- one identity-fork counterfixture that changes exactly one identity-defining
+  field.
 
 The examples must be real repository judgments, not claims authored solely to
 make the expected outcome pass. A fixture may use historical immutable Git and
 review artifacts, so the experiment need not modify production code merely to
-manufacture a change event.
+manufacture a change event. A purposively selected historical pair can support
+a two-case representability demonstration and expose counterexamples; it cannot
+be reported as outcome-independent falsification.
 
 Selection is invalid if the same dogfood output is treated as new evidence for
 its own architectural correctness. A role must not treat its own prior judgment
 as independent evidence merely because that judgment became durable.
+
+## Fixture authority and proof coverage
+
+Before producing a terminal refresh or reliance record, the fixture contract
+must bind the authority actually available for each semantic act. Execution
+authority, attribution, and possession of an artifact are insufficient. For
+each research and review fixture it records:
+
+| Semantic act | Required binding |
+| --- | --- |
+| Original judgment | source owner, producer, authority scope, and evidence of the grant |
+| Dogfood claim-boundary interpretation | role allowed to interpret the source judgment into the experimental claim boundary, with scope and limitations |
+| Terminal refresh judgment | domain owner or explicitly experimental refresh authority effective for the exact claim and outcome |
+| Reliance | consumer and decision owner authorized to adopt the exact revision for the declared scope |
+| Consumer reopening | downstream owner that may retain, supersede, or reopen the reliance |
+
+Experimental refresh authority may establish only a dogfood-local judgment. It
+does not change the canonical proposal or review conclusion unless the source
+domain's owner separately authorizes that consequence. A missing authority
+binding remains an explicit authority-blocked result and prevents a positive
+proof for that fixture.
+
+The fixture-selection artifact also owns a closed proof-coverage matrix:
+
+| Fixture | Stable identity | Provenance and authority | `may_affect` | Authorized refresh | Exact-revision reliance | Terminal path |
+| --- | --- | --- | --- | --- | --- | --- |
+| Proposal-research claim | required | required | required | required | required | unchanged or changed |
+| Specialist-review finding | required | required | required | required | required | the other terminal path |
+
+One of the two fixtures additionally supplies the bounded identity-fork
+counterfixture. Domain-specific fields and every unexercised or
+authority-blocked cell remain visible. Sharing field names does not satisfy a
+cell.
 
 ## Candidate artifact boundary
 
@@ -142,12 +202,18 @@ owners and are referenced rather than copied or reinterpreted.
 The dogfood result should preserve:
 
 - the bound fixture selection and repository evidence cutoff;
+- the authority and proof-coverage matrices, including blocked or unexercised
+  cells;
+- the fixture candidate population, selection knowledge, exclusions, and
+  purposive or outcome-independent selection classification;
 - every canonical record and typed relationship used in each proof;
 - the authority that produced each original and refresh judgment;
 - proof queries and their projection provenance;
 - observed mismatches between research-claim and review-finding needs;
 - failures, unresolved outcomes, and any manual interpretation required;
 - whether the projection rebuilt deterministically from canonical records; and
+- whether the run was valid and, separately, whether it produced a positive
+  four-proof demonstration; and
 - a recommendation to retain, revise, split, or reject the tested semantic
   minimum, clearly labeled as advisory.
 
@@ -199,15 +265,18 @@ candidate representation or placement is correct.
 
 ## Validation consequence
 
-A later implementation should provide executable checks that establish the
-four backbone proofs from the canonical dogfood artifacts and should rebuild
-the query projection from empty state. Schema validation alone is insufficient:
-the proof must show the identity, authority, outcome, and reliance distinctions
-in the resulting evidence graph.
+A later implementation should provide executable checks that determine each
+proof cell from the canonical dogfood artifacts and should rebuild the query
+projection from empty state. The rebuild binds an exact canonical-input
+manifest, schema/build version, cutoff, exclusions or failures, and output
+digest. Schema validation alone is insufficient: the proof must show the
+identity, authority, outcome, and reliance distinctions in the resulting
+evidence graph.
 
-A negative or ambiguous result is valid dogfood evidence when preserved
-truthfully. The implementation must not weaken a proof condition merely to make
-the experiment pass.
+A negative, incomplete, ambiguous, or authority-blocked result is valid
+dogfood evidence when preserved truthfully. The implementation must not weaken
+a proof condition, substitute a fixture, or invent authority merely to obtain a
+positive demonstration.
 
 ## Authority
 
@@ -216,7 +285,9 @@ schema implementation, fixture selection, semantic refresh judgment, changes to
 existing packets or reviews, roadmap mutation, or a slice-supervisor campaign.
 Any later execution requires an authority-owned disposition bound to this exact
 proposal revision and must preserve the parent proposal's still-open placement
-and evidence boundaries.
+and evidence boundaries. That disposition authorizes only the execution it
+names; it does not by itself supply original-judgment, claim-interpretation,
+refresh, reliance, or reopening authority missing from a fixture contract.
 
 ## Acceptance consequence
 
