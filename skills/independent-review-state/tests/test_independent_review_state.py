@@ -21,21 +21,45 @@ def reference(owner="checkpoint", name="subject", revision="r1"):
             "integrity_sha256": DIGEST, "freshness_rule": "exact_revision"}
 
 
-def authority(generation=1, predecessor=None, episode="episode-1"):
+def authority(generation=1, predecessor=None, episode="episode-1", provider="claude",
+              runtime_owner="claude-runtime", runtime_reference=None):
+    runtime_reference = runtime_reference or f"session-{generation}"
     return {"schema_version": 1, "profile": STATE.PROFILE, "grant_id": f"grant-{generation}",
             "identity": {"run_id": "run", "slice_number": 1, "attempt_id": "attempt",
                          "plan_version": "plan", "review_obligation_id": "review-1",
                          "review_episode_id": episode},
             "source": reference("human-authority", "accepted-review-profile", "decision-1"),
-            "writer": {"logical_actor_id": "reviewer", "provider": "claude",
+            "writer": {"logical_actor_id": "reviewer", "provider": provider,
                        "generation": generation,
-                       "runtime_session_ref": reference("claude-runtime", f"session-{generation}", f"g{generation}")},
-            "readers": ["independent_reviewer", "coordinating_builder", "slice_supervisor"],
+                       "runtime_session_ref": reference(runtime_owner, runtime_reference, f"g{generation}")},
+            "readers": ["adversarial_reviewer" if provider == "codex" else "independent_reviewer",
+                        "coordinating_builder", "slice_supervisor"],
             "initial_subject": [reference()], "expires_at": None,
             "predecessor_revision": predecessor}
 
 
 class IndependentReviewStateTest(unittest.TestCase):
+    def test_codex_same_model_reviewer_uses_same_episode_contract(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            store = STATE.DURABLE.GitRefDurableStateStore(repository, namespace="independent-review-state")
+            grant = authority(provider="codex", runtime_owner="codex-collaboration",
+                              runtime_reference="/root/slice/reviewer")
+            current = STATE.begin(store, grant, STATE.digest(grant), {
+                "transition_id": "codex-begin", "evidence_references": [],
+                "claim_references": [], "unresolved_questions": []})
+            reviewed = STATE.advance(store, grant, STATE.digest(grant), current["durable_revision"],
+                "record_initial_result", "codex-result", {"findings": [],
+                    "unresolved_questions": [], "evidence_references": [], "claim_references": []})
+
+            self.assertEqual("codex", reviewed["writer_binding"]["provider"])
+            self.assertIn("adversarial_reviewer",
+                          reviewed["authority_binding"]["authorized_readers"])
+            self.assertEqual("/root/slice/reviewer",
+                             reviewed["writer_binding"]["runtime_session_ref"]["reference"])
+            self.assertEqual("reported", reviewed["current_review_phase"])
+
     def test_recovery_history_and_writer_fence(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)

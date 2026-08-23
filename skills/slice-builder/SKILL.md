@@ -107,9 +107,28 @@ judgment that the premise, scope, architecture, independence need, or context
 fitness materially changed; provider or caller convenience is not a reset
 reason.
 
+Provision the same authority-bound review-episode state for either retained
+review provider. Before the initial provider boundary, bind the exact subject,
+writer generation, authority provenance, and resumable runtime reference. For
+Codex, predeclare the canonical reviewer task target, bind it as provider
+`codex`, and verify the target returned by `spawn_agent`; give that reviewer the
+authority file and repository-local review-state adapter. For Claude, bind and
+verify the assigned persistent session UUID and expose the same profile through
+the configured MCP adapter. In either case the reviewer begins the episode,
+publishes its attributed result, and reads it back before returning. Ordinary
+remediation uses that same identity and episode. State availability or
+persistence never upgrades accepted same-model review into independent-review
+evidence.
+
+Give either reviewer the same bounded observational state needed by the review:
+exact active-slice current or retained history and validated claim-lineage
+projections when material. Provider transport may differ, but subject identity,
+freshness, limits, and authority may not. Never substitute raw private-state
+enumeration or unvalidated claim files for the bounded projection.
+
 When active-slice recovery is configured and this builder launches the
-reviewer, assign the provider's resumable session ID before the initial review
-call and publish it through the active-slice mechanism as
+reviewer, assign the provider's resumable runtime reference before the initial
+review call and publish it through the active-slice mechanism as
 `actor_binding.runtime_session_id`. After builder or supervisor context
 replacement, recover the binding with `resume_active_slice.py` before issuing
 the next reviewer call; resume that exact session rather than reconstructing

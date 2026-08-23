@@ -51,17 +51,25 @@ session UUID on the initial call and use `--resume <session-id>` for later
 passes. Disposable reconnaissance, placement mapping, and diagnosis sessions
 must not be reused as reviewers.
 
-When the authority-bound independent-review state surface is configured, it is
-part of the ordinary Claude reviewer path. Before the initial provider call,
-the coordinator publishes an episode manifest binding the exact subject,
-reviewer UUID, writer generation, readers, and authority provenance. The same
-initial call receives read-only evidence tools and only that episode's narrow
-state transitions. The reviewer begins the episode, records its attributed
-result, and reads it back before returning. This avoids a second turn that only
-reconstructs and retranscribes findings.
+When the authority-bound review-state surface is configured, it is part of the
+ordinary retained-reviewer path for both Claude and Codex. Before the initial
+provider call, the coordinator publishes an episode manifest binding the exact
+subject, provider-specific resumable runtime reference, writer generation,
+readers, and authority provenance. A Claude call receives the episode through
+its narrow MCP surface. A Codex reviewer receives the same semantic profile
+through the repository-local authority-bound adapter and is bound to its
+predeclared canonical spawned target. The reviewer begins the episode, records
+its attributed result, and reads it back before returning. This avoids a second
+turn that only reconstructs and retranscribes findings.
 
-The coordinator verifies the provider's returned session ID against the durable
-binding. The reviewer does not self-certify runtime identity unless an
+Selected reviewers also receive equivalent bounded observational access to
+exact active-slice history and validated claim-lineage projections when those
+records are material to the review. Claude may receive them through MCP and a
+spawned Codex reviewer through repository-local readers. Neither route grants
+claim applicability, arbitrary durable-key discovery, or additional authority.
+
+The coordinator verifies the provider's returned session or spawned-target
+identity against the durable binding. The reviewer does not self-certify runtime identity unless an
 available tool actually exposes that observation. A launch manifest scopes the
 writer but does not authenticate the MCP peer; trusted-launcher admission
 remains a separate fact.

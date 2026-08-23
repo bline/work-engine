@@ -22,7 +22,7 @@ SPEC.loader.exec_module(DURABLE)
 PROFILE = "independent-adversarial-review-episode-v1"
 FINDING_STATUSES = {"open", "remediation_presented", "verified_resolved", "withdrawn", "unresolved"}
 PHASES = {"initial_review", "remediation", "re_evaluation", "reported"}
-READERS = {"independent_reviewer", "coordinating_builder", "slice_supervisor"}
+READERS = {"independent_reviewer", "adversarial_reviewer", "coordinating_builder", "slice_supervisor"}
 
 
 def fail(message: str) -> None:

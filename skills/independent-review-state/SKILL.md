@@ -1,15 +1,23 @@
 ---
 name: independent-review-state
-description: Preserve one authorized independent adversarial-review episode across same-session remediation and truthful reviewer replacement.
+description: Preserve one authority-bound retained adversarial-review episode across same-session remediation and truthful reviewer replacement without creating an independence claim.
 ---
 
 # Independent Review State
 
-This profile owns only the unfinished operational state of one independent
+This profile owns only the unfinished operational state of one retained
 adversarial-review episode. It preserves the exact reviewed subject, the
 reviewer's attributed findings and observed remediation status, unresolved
 questions, pending next action, exact evidence and claim references, and the
 reviewer generation and resumable runtime-session reference.
+
+The profile name is historical. The state is provider-neutral and does not
+establish that a reviewer is independent, cross-model, or cross-provider.
+Provider selection, isolation, model relationship, and evidence class remain
+owned by the review configuration and receipt. A Codex same-model reviewer may
+use this profile while remaining `accepted_same_model_review` with
+`independence_claimed: false`; its manifest uses the `adversarial_reviewer`
+reader role rather than implying independent-review status.
 
 The profile does not own semantic acceptance, supervisor or implementation
 state, proposal decisions, claims, packets, receipts, checkpoints, schedules,

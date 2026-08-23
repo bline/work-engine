@@ -288,7 +288,7 @@ diagrams, but this document does not assume or authorize that machinery.
 | Slice execution | Implemented | `slice-builder` | One coherent engineering slice from reconnaissance through proof | Campaign lifecycle or cross-slice strategy |
 | Durable-state primitive | Implemented | `durable-state` | Atomic publication and integrity-checked reads of opaque values | Payload meaning or transition authority |
 | Active-slice recovery | Implemented | `slice-supervisor` over `durable-state` | Bounded vertical for pending planning/review obligations, waiting, recovery, and retirement | General durable state for every role or phase |
-| Independent-review episode state | Implemented bounded profile | `independent-review-state` over `durable-state` | Resume-critical state for one authority-bound adversarial-review and remediation episode | Slice acceptance, supervisor or implementation state, claims, or generic role state |
+| Review-episode state | Implemented bounded profile | `independent-review-state` over `durable-state` | Resume-critical state for one authority-bound retained adversarial-review and remediation episode, without establishing its evidence class or independence | Slice acceptance, supervisor or implementation state, claims, or generic role state |
 | Proposal packets | Active construction | `proposal-packets` plus packet repository | Implemented identity and validation foundation being extended with authority-authored decision recording | Proposal meaning, value, priority, or implementation authority |
 | Proposal formation | Active construction | `proposal-former` | Implemented model-facing foundation for semantic formation and revision of packets | Evaluation, acceptance, portfolio priority, or execution |
 | Strategic reconciliation | Implemented | `strategic-planner` | Advisory reconciliation of evidence and roadmap assumptions into a durable recommendation | Roadmap mutation, campaign amendment, or user approval |
@@ -348,16 +348,18 @@ The accepted active-slice vertical can:
 4. recover the same pending phase in a fresh process; and
 5. retire the attempt so stale state cannot resurrect it.
 
-The first separately owned role-state profile preserves one independent
+The first separately owned role-state profile preserves one retained
 adversarial-review episode across its initial fresh entry and ordinary
 remediation loop. An episode-scoped authority manifest binds its exact subject,
 writer generation, runtime-session reference, visibility, and authority
 provenance. The profile retains attributed findings, unresolved questions, and
 the next review action through compare-and-swap revisions. Replacement is
 generation-fenced and labeled reconstructed continuation; it does not create a
-new fresh-independence claim. The manifest constrains the exposed capability but
-does not authenticate the MCP peer, which remains a launcher and operating-
-system trust boundary.
+new fresh-independence claim. The profile is provider-neutral: Claude and Codex
+reviewers may use the same semantic state contract while their configured
+evidence class and independence claims remain distinct. The manifest constrains
+the exposed capability but does not authenticate the MCP peer, which remains a
+launcher and operating-system trust boundary.
 
 This does not provide a general live semantic projection for every builder,
 planner, or future organizational role. The formed
