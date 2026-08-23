@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "work-engine-review-state-doctrine": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "skills/work-engine-mcp/scripts/server.mjs",
+        "--repository",
+        ".",
+        "--review-authority-file",
+        "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/doctrine-authority.json"
+      ]
+    }
+  }
+}

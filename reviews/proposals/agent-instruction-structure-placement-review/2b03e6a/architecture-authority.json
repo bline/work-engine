@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "agent-instruction-review-2b03e6a-architecture-generation-1",
+  "identity": {
+    "run_id": "proposal-workflow-bootstrap-review",
+    "slice_number": 2,
+    "attempt_id": "agent-instruction-review-2b03e6a",
+    "plan_version": "bootstrap-review-procedure-v1",
+    "review_obligation_id": "agent-instruction-review-architecture-placement",
+    "review_episode_id": "6187820b-021e-42ff-b797-7a363fc48ed5"
+  },
+  "source": {
+    "owner": "bootstrap-review-coordinator",
+    "reference": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/subject.md",
+    "revision": "4fc0098713caa7774e789b762785ff6f925ab0b9",
+    "integrity_sha256": "573fa26050d86aee1e2e8a91ed9e9b514aebb103a9e852cc8975214b6fd0aaa0",
+    "freshness_rule": "exact_revision"
+  },
+  "writer": {
+    "logical_actor_id": "agent-instruction-proposal-architecture-reviewer",
+    "provider": "claude",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "claude-runtime",
+      "reference": "6187820b-021e-42ff-b797-7a363fc48ed5",
+      "revision": "generation-1",
+      "integrity_sha256": "7752dba44c509cb909bc9dbd4ee2c87598b6db9d65c4ea85d05c06ca8a19e03c",
+      "freshness_rule": "exact_revision"
+    }
+  },
+  "readers": [
+    "independent_reviewer",
+    "coordinating_builder",
+    "slice_supervisor"
+  ],
+  "initial_subject": [
+    {
+      "owner": "bootstrap-review-subject",
+      "reference": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/subject.md",
+      "revision": "4fc0098713caa7774e789b762785ff6f925ab0b9",
+      "integrity_sha256": "573fa26050d86aee1e2e8a91ed9e9b514aebb103a9e852cc8975214b6fd0aaa0",
+      "freshness_rule": "exact_revision"
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}
