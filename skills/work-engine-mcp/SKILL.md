@@ -27,6 +27,11 @@ is launched with `--review-authority-file`, it additionally exposes the narrow
 `skills/independent-review-state/SKILL.md`. That surface is fixed to one review
 episode and does not accept arbitrary durable keys or payloads.
 
+For a retained Claude review, provision this authority-bound surface in the
+initial review call so the reviewer can publish its own attributed result before
+returning and later resume from the same episode. Do not add it to disposable
+reconnaissance, placement, diagnosis, or falsification calls.
+
 The launch manifest verifies profile scope, authority provenance, and writer
 generation; it does not authenticate the MCP peer as Claude. Caller admission
 belongs to the trusted launcher, operating-system permissions, and MCP tool

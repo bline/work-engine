@@ -51,6 +51,28 @@ session UUID on the initial call and use `--resume <session-id>` for later
 passes. Disposable reconnaissance, placement mapping, and diagnosis sessions
 must not be reused as reviewers.
 
+When the authority-bound independent-review state surface is configured, it is
+part of the ordinary Claude reviewer path. Before the initial provider call,
+the coordinator publishes an episode manifest binding the exact subject,
+reviewer UUID, writer generation, readers, and authority provenance. The same
+initial call receives read-only evidence tools and only that episode's narrow
+state transitions. The reviewer begins the episode, records its attributed
+result, and reads it back before returning. This avoids a second turn that only
+reconstructs and retranscribes findings.
+
+The coordinator verifies the provider's returned session ID against the durable
+binding. The reviewer does not self-certify runtime identity unless an
+available tool actually exposes that observation. A launch manifest scopes the
+writer but does not authenticate the MCP peer; trusted-launcher admission
+remains a separate fact.
+
+For a remediation pass, the retained reviewer receives the exact new subject
+and bounded delta, records that remediation subject in its episode, evaluates
+only its own applicable findings, and publishes the re-evaluation before
+returning. Failed or rejected transitions remain failed attempts, not durable
+review state. Preserve the structured reviewer output and report the state gap
+truthfully until it is repaired or reconstructed.
+
 Keep reviewer targets or provider session IDs available until the review
 obligation reaches a terminal consequence. Session persistence is a runtime
 optimization and provenance fact, not the durable owner of findings or

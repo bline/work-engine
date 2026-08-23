@@ -194,6 +194,27 @@ Disposable placement, reconnaissance, supplemental retrieval, and failure
 diagnosis calls continue to use `--no-session-persistence`; never reuse one of
 those contexts as the reviewer.
 
+When authority-bound independent-review state is available, make it part of the
+initial reviewer call rather than adding it after findings exist. Before
+provider entry, publish the exact review subject, reviewer UUID, writer
+generation, and episode authority manifest. Launch the Work Engine MCP with
+that manifest and expose its narrow review-state tools alongside the reviewer's
+read-only evidence tools. The reviewer begins its episode, performs the review,
+records its attributed initial result, and reads the resulting state before it
+returns. The coordinator verifies the returned provider session ID; the
+reviewer is not required to self-observe runtime identity through a tool that
+does not expose it.
+
+On remediation, resume the same provider session with the same episode-bound
+state tools. Give it the new exact subject and bounded delta; it records the
+remediation subject, re-evaluates its own findings, and publishes that
+re-evaluation before returning. If state publication fails, retain the exact
+structured reviewer result, report the operational state as incomplete, and
+repair or reconstruct truthfully. Never report an attempted transition as
+durable. This standard path applies only to retained review episodes; do not
+give mutable episode state to disposable placement, reconnaissance, diagnosis,
+or falsification calls.
+
 After Codex applies a valid finding, invoke the same reviewer with
 `--resume <session-id>`. Supply the exact new subject or delta, affected gate
 evidence, prior finding identities, and remediation summary. Do not resend the
