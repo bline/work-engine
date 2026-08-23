@@ -1,0 +1,88 @@
+{
+  "profile": "engineering-proportional",
+  "status": "passed",
+  "manifest": [
+    {
+      "requirement": "semantic_proof",
+      "identity": "real-surface-subject-immutability",
+      "command": [
+        "git",
+        "diff",
+        "--exit-code",
+        "2387a321f01b82d8c4916e211f2a17f3f1091dcf",
+        "--",
+        "skills/claude-recon-implementation/SKILL.md",
+        "skills/work-engine-mcp/SKILL.md",
+        "reviews/proposals/bootstrap-review-procedure.md"
+      ],
+      "asserted_consequence": "The reviewed real surfaces remain byte-equivalent to the baseline identities bound by subject.md; semantic case judgments are recorded in that immutable dogfood artifact.",
+      "evidence_references": [
+        "reviews/implementations/agent-instruction-review/2387a32/subject.md",
+        "git:2387a321f01b82d8c4916e211f2a17f3f1091dcf:skills/claude-recon-implementation/SKILL.md",
+        "git:2387a321f01b82d8c4916e211f2a17f3f1091dcf:skills/work-engine-mcp/SKILL.md",
+        "git:2387a321f01b82d8c4916e211f2a17f3f1091dcf:reviews/proposals/bootstrap-review-procedure.md"
+      ]
+    },
+    {
+      "requirement": "risk_proportional_checks",
+      "identity": "skill-package",
+      "command": [
+        "python3",
+        "/home/bline/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "skills/agent-instruction-review"
+      ],
+      "asserted_consequence": "The candidate package satisfies skill naming, frontmatter, metadata, and scaffold-completeness checks.",
+      "evidence_references": [
+        "skills/agent-instruction-review/SKILL.md",
+        "skills/agent-instruction-review/references/finding-contract.md",
+        "skills/agent-instruction-review/agents/openai.yaml"
+      ]
+    },
+    {
+      "requirement": "workspace_integrity",
+      "identity": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "asserted_consequence": "Tracked task changes contain no Git whitespace errors.",
+      "evidence_references": [
+        "planning/agent-instruction-review/slice-01-accepted-plan.md",
+        "skills/agent-instruction-review/",
+        "reviews/implementations/agent-instruction-review/2387a32/"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "requirement": "semantic_proof",
+      "identity": "real-surface-subject-immutability",
+      "state": "passed",
+      "exit_status": 0,
+      "duration_seconds": 0.003
+    },
+    {
+      "requirement": "risk_proportional_checks",
+      "identity": "skill-package",
+      "state": "passed",
+      "exit_status": 0,
+      "duration_seconds": 0.054
+    },
+    {
+      "requirement": "workspace_integrity",
+      "identity": "diff-check",
+      "state": "passed",
+      "exit_status": 0,
+      "duration_seconds": 0.006
+    }
+  ],
+  "totals": {
+    "configured": 3,
+    "executed": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "duration_seconds": 0.062,
+  "failed_check": null
+}

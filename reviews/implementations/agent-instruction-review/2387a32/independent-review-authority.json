@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "agent-instruction-review-s1-codex-generation-1",
+  "identity": {
+    "run_id": "agent-instruction-review-20260823",
+    "slice_number": 1,
+    "attempt_id": "attempt-1-review-2",
+    "plan_version": "planning-v1",
+    "review_obligation_id": "gate-review-slice-1",
+    "review_episode_id": "73172428-3ff6-4947-9f73-791a5d40da1a"
+  },
+  "source": {
+    "owner": "user-authority-via-slice-supervisor",
+    "reference": "campaigns/agent-instruction-review.yaml",
+    "revision": "sha256:1a49fcf52b21e4c7d628575ae8d9b4eb898416265f34136e4e7ef91c75db656f",
+    "integrity_sha256": "1a49fcf52b21e4c7d628575ae8d9b4eb898416265f34136e4e7ef91c75db656f",
+    "freshness_rule": "exact_revision"
+  },
+  "writer": {
+    "logical_actor_id": "/root/agent_instruction_review_s1/codex_review_1",
+    "provider": "codex",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "codex-collaboration",
+      "reference": "/root/agent_instruction_review_s1/codex_review_1",
+      "revision": "generation-1",
+      "integrity_sha256": "7cc8beb1a0e8a486f5dcb4152018b5625a5c688a54b5d72e7434488067dfc0af",
+      "freshness_rule": "exact_revision"
+    }
+  },
+  "readers": [
+    "adversarial_reviewer",
+    "coordinating_builder",
+    "slice_supervisor"
+  ],
+  "initial_subject": [
+    {
+      "owner": "slice-builder",
+      "reference": "skills/agent-instruction-review/SKILL.md",
+      "revision": "working-tree-sha256:a9a0df0b2f7059d0f7dd7bc5f23aa1acafb875b1d429d8bef4c4af6245bb3d90",
+      "integrity_sha256": "a9a0df0b2f7059d0f7dd7bc5f23aa1acafb875b1d429d8bef4c4af6245bb3d90",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "slice-builder",
+      "reference": "skills/agent-instruction-review/references/finding-contract.md",
+      "revision": "working-tree-sha256:c64a4018f1cde074ea1fc54aedd9a1473bb3393fca708a36f0d4fcfae2d0c709",
+      "integrity_sha256": "c64a4018f1cde074ea1fc54aedd9a1473bb3393fca708a36f0d4fcfae2d0c709",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "slice-builder",
+      "reference": "reviews/implementations/agent-instruction-review/2387a32/subject.md",
+      "revision": "working-tree-sha256:3f6144ee2eb0018240e5b34b63d33a241dd0763127bb89ee8f15137bdc766bff",
+      "integrity_sha256": "3f6144ee2eb0018240e5b34b63d33a241dd0763127bb89ee8f15137bdc766bff",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "deterministic-gate",
+      "reference": "reviews/implementations/agent-instruction-review/2387a32/gate.json",
+      "revision": "working-tree-sha256:b5f8867796024e024f26e22d9551feea544006983bb68fbda5693ea1cee97480",
+      "integrity_sha256": "b5f8867796024e024f26e22d9551feea544006983bb68fbda5693ea1cee97480",
+      "freshness_rule": "exact_revision"
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}
