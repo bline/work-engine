@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.agent-instruction-structure-placement-review",
+  "family_id": "work-engine.agent-instruction-integrity",
+  "title": "Agent-Instruction Structure and Placement Review",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/agent-instruction-structure-and-placement-review.md"
+    },
+    {
+      "kind": "roadmap_priority",
+      "path": "../../../roadmap.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A distinct specialist review capability owns diagnosis of materially normative agent-facing text structure and placement; implementation review is its primary consumer, while proposal review selects it only when the proposal itself contains or changes actual instruction contracts."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Dogfood cannot produce materially distinct findings from existing architecture, doctrine-authority, or seam review.",
+      "The two-question diagnostic systematically demotes exact routes that are causally required for safety, authority, validity, or observability.",
+      "A fresh reviewer cannot judge instruction placement without loading so much neighboring context that a distinct specialist loses its bounded-context value.",
+      "Proposal and implementation subjects require incompatible reviewer contracts or evidence lifecycles.",
+      "Observed consumers require a different skill, profile, review-artifact, or coordination owner than the probable placement."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.adaptive-review-panel-coordination",
+      "rationale": "Adaptive coordination may select this specialist when materially normative agent text is present, but the reviewer can operate without the coordinator and retains ownership of its scoped findings.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "A mature workflow may publish findings through the shared review-artifact profile, but initial dogfood can use exact Git-bound review records without accepting that proposal's placement.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-formation",
+      "rationale": "Instruction findings may advise proposal revision when a proposal contains actual normative agent text; ordinary proposals that merely anticipate future instruction implementation do not select this reviewer.",
+      "causal": false
+    }
+  ]
+}
