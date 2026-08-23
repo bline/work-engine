@@ -39,6 +39,15 @@ With two correlated checkpoints and one attempt per effort/case, these results a
 descriptive only. They support keeping effort variants as potentially complementary,
 not selecting one as the production reviewer.
 
+These attempts are also explicitly a pre-claims baseline. As Work Engine is
+built, each sufficiently identified slice should preserve immutable checkpoints,
+its effective contract, deterministic evidence, and review/remediation provenance
+as a later candidate. Once proposal, claim, reliance, reopening, and Codebase
+Memory evidence can be supplied faithfully, selected snapshots should be rerun
+under a new claim-aware protocol. After the system is complete, naturally occurring
+reviews become a third, prospective production evidence class rather than being
+pooled silently with reconstructed development cases.
+
 ## Relationship to the earlier visual case
 
 The historical Visual Evidence development run did use Chrome Vision for rendered
@@ -63,4 +72,3 @@ evidence) as part of the case and give every reviewer the same packet.
 - `results/` — four fresh result-v2 attempts
 - `scoring/` — finding-level adjudication
 - `report.json` — generated descriptive comparison
-
