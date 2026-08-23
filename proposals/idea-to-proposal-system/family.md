@@ -2,9 +2,9 @@
 
 ## Status
 
-Formed proposal family. Its two proposals use the canonical version-1 packet
+Formed proposal family. Its three proposals use the canonical version-1 packet
 manifest while retaining human-readable narrative and supporting artifacts.
-Mechanical validity does not evaluate or accept either proposal and does not
+Mechanical validity does not evaluate or accept any proposal and does not
 authorize implementation.
 
 ## Origin
@@ -15,7 +15,8 @@ candidate changes:
 - `ideas/proposal-packet.md`;
 - `ideas/proposal-packet-workflow.md`;
 - `ideas/proposal-packet-impl.md`; and
-- `ideas/interactive-idea-to-proposal-workflow.md`.
+- `ideas/interactive-idea-to-proposal-workflow.md`; and
+- `ideas/raw-idea-intake-and-claim-assessment.md`.
 
 Those documents remain source material. They are not contracts, evidence, or
 implementation authority.
@@ -30,16 +31,21 @@ roadmap entry.
 
 ## Family decomposition
 
-This family contains two proposals:
+This family contains three proposals:
 
-1. `durable-proposal-packets` defines the durable object and its ownership.
-2. `interactive-proposal-formation` adds a model-centered capability that
+1. `raw-idea-intake` defines the source-bound assessment that can reconcile a
+   raw idea into zero, one, or several candidate handoffs without rewriting the
+   source or forcing proposal creation.
+2. `durable-proposal-packets` defines the durable proposal object and its
+   ownership.
+3. `interactive-proposal-formation` adds a model-centered capability that
    creates and revises those objects with a human.
 
-They are separate because the packet contract is useful without an interactive
-formation capability, while formation needs some durable target contract.
-They may be designed and delivered in the same implementation campaign; that
-is a route choice, not a required proposal-ordering rule.
+They are separate because raw-source assessment may yield no proposal, the
+packet contract is useful without either authoring capability, and formation
+owns candidate meaning rather than intake interpretation. They may be exercised
+or delivered together when that preserves the same ownership boundaries; this
+decomposition does not impose one mandatory runtime sequence.
 
 Evidence-backed evaluation, proposal-backed roadmap selection, and calibration
 from implementation outcomes remain later proposals. They are consumers of
@@ -56,9 +62,11 @@ authorized planning contract.
 ## Family relationship
 
 ```text
-durable-proposal-packets
+raw-idea-intake
         enables
 interactive-proposal-formation
+        writes
+durable-proposal-packets
         enables
 evidence-backed evaluation
         informs

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.raw-idea-intake",
+  "family_id": "work-engine.idea-to-proposal-system",
+  "title": "Raw Idea Intake and Claim Assessment",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/raw-idea-intake-and-claim-assessment.md"
+    },
+    {
+      "kind": "roadmap_priority",
+      "path": "../../../roadmap.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A dedicated planning-layer intake capability owns attributed interpretation and claim-level assessment of exact raw-idea revisions; raw sources, proposal packets, claim history, and repository cleanup retain their separate owners."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Dogfooding shows that stable intake identity and provenance cannot survive practical source movement without changing the proposal-packet origin contract.",
+      "Claim assessment across duplicate, implemented, split, and novel ideas cannot share a truthful minimum without collapsing domain-specific judgments.",
+      "A separate top-level intake surface adds no meaningful retrieval, validation, or context-loading value over a clearly partitioned ideas hierarchy.",
+      "Formation repeatedly must reread the complete raw source or redo intake reconciliation because the proposed handoff omits material candidate meaning.",
+      "Observed consumers require transactional, concurrent, or external-evidence semantics that repository-local Git-backed artifacts cannot preserve."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "enables",
+      "target_id": "work-engine.proposal-formation",
+      "rationale": "Formation can consume a source-bound, claim-addressable candidate projection without owning raw capture, intake reconciliation, or cleanup; intake readiness does not require every proposal to pass through this capability.",
+      "causal": true
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "Intake records may become stable proposal origins while proposal packets retain proposal identity, current meaning, lifecycle, relationships, uncertainty, and decision authority.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "Intake needs stable assessment-claim revisions, evidence baselines, and adjudicated relationship history, but this proposal does not select the experimental shared claim-lineage candidate as their permanent owner.",
+      "causal": false
+    }
+  ]
+}
