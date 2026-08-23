@@ -1,0 +1,183 @@
+{
+  "source_snapshot": "work-engine(10).tbz2",
+  "generated_set": [
+    "architectural-review.md",
+    "closed-loop-engineering-learning.md",
+    "control-plane-and-client-protocol.md",
+    "cross-cutting-seam-review.md",
+    "environment-adapter-and-host-provided-runtime-services.md",
+    "evidence-backed-proposal-evaluation.md",
+    "organizational-execution-envelopes.md",
+    "proposal-backed-portfolio-selection.md",
+    "proposal-research-maturity-and-freshness.md",
+    "review-scope-coordination.md",
+    "role-decision-trace.md",
+    "runtime-adapter.md",
+    "ui-review-capability.md",
+    "work-engine-studio.md"
+  ],
+  "dispositions": [
+    {
+      "original": "adaptive-specialized-review-panels.md",
+      "disposition": "Promoted",
+      "target": "proposals/adaptive-specialized-review/",
+      "reason": "No active clean idea; proposal family owns remaining candidate meaning."
+    },
+    {
+      "original": "architectural-review.md",
+      "disposition": "Retained / narrowed",
+      "target": "architectural-review.md",
+      "reason": "Diagnostic architecture capability only. Historical blocking consequence retained as an unresolved authority/policy question; the reviewer is not silently granted stop authority."
+    },
+    {
+      "original": "closed-loop-engineering-learning.md",
+      "disposition": "Retained / narrowed",
+      "target": "closed-loop-engineering-learning.md",
+      "reason": "Outcome calibration only."
+    },
+    {
+      "original": "context-compaction-as-role-resume-event.md",
+      "disposition": "Promoted / absorbed",
+      "target": "proposals/agent-state/role-owned-durable-operational-state + organizational-execution-envelopes.md durable-role profile",
+      "reason": "The formed proposal owns context-replacement recovery semantics. The clean organizational idea retains only the unresolved reusable-profile binding and composition layer."
+    },
+    {
+      "original": "context-derived-role-execution-envelopes.md",
+      "disposition": "Retained / narrowed",
+      "target": "organizational-execution-envelopes.md",
+      "reason": "Organization assembly plus system/profile/role definition and configuration-authority semantics; control/runtime/UI/research details moved to their owners."
+    },
+    {
+      "original": "durable-review-queue-and-scope-coordination.md",
+      "disposition": "Retained / narrowed",
+      "target": "review-scope-coordination.md",
+      "reason": "Only applicability/mutation coordination; checkpoint and review-artifact semantics moved to implemented/proposed owners."
+    },
+    {
+      "original": "environment-adapter-and-host-provided-runtime-services.md",
+      "disposition": "Retained / narrowed",
+      "target": "environment-adapter-and-host-provided-runtime-services.md",
+      "reason": "Provider-neutral host-service integration remains unimplemented; duplicate discussion was compressed while semantic ownership, capability negotiation, portability, and provenance boundaries were retained."
+    },
+    {
+      "original": "evidence-backed-proposal-evaluation.md",
+      "disposition": "Split",
+      "target": "evidence-backed-proposal-evaluation.md; proposal-backed-portfolio-selection.md",
+      "reason": "Evaluation and portfolio selection are independently decidable. Typed claims/measures and conditional comparison-contract semantics remain with evaluation."
+    },
+    {
+      "original": "git-backed-slice-checkpoints.md",
+      "disposition": "Implemented",
+      "target": "skills/slice-checkpoint + slice-supervisor checkpoint lifecycle",
+      "reason": "Remove from active ideas."
+    },
+    {
+      "original": "interactive-idea-to-proposal-workflow.md",
+      "disposition": "Implemented foundation",
+      "target": "proposals/idea-to-proposal-system/interactive-proposal-formation + skills/proposal-former",
+      "reason": "The implemented skill is an active-construction foundation; the proposal family owns remaining candidate meaning, so the ancestor is removed from active ideas."
+    },
+    {
+      "original": "persistent-agent-state-and-runtime-introspection.md",
+      "disposition": "Superseded / decomposed",
+      "target": "proposals/agent-state/role-owned-durable-operational-state + control/runtime/Studio + role-decision-trace + review-scope-coordination + closed-loop-learning ideas",
+      "reason": "Broad ancestor no longer useful as one idea. General future resource-claim coordination is explicitly retained by the control-plane idea."
+    },
+    {
+      "original": "persistent-agent-state.md",
+      "disposition": "Promoted",
+      "target": "proposals/agent-state/role-owned-durable-operational-state",
+      "reason": "Remove from active ideas."
+    },
+    {
+      "original": "persistent-strategic-planner.md",
+      "disposition": "Implemented role; persistence generalized elsewhere",
+      "target": "skills/strategic-planner + agent-state proposal",
+      "reason": "Remove from active ideas."
+    },
+    {
+      "original": "proposal-packet-impl.md",
+      "disposition": "Implemented foundation",
+      "target": "proposals/idea-to-proposal-system + skills/proposal-former",
+      "reason": "The implemented skill is an active-construction foundation; the proposal family owns remaining candidate meaning."
+    },
+    {
+      "original": "proposal-packet-workflow.md",
+      "disposition": "Implemented foundation",
+      "target": "proposals/idea-to-proposal-system + skills/proposal-former",
+      "reason": "The implemented skill is an active-construction foundation; the proposal family owns remaining candidate meaning."
+    },
+    {
+      "original": "proposal-packet.md",
+      "disposition": "Implemented foundation",
+      "target": "proposals/idea-to-proposal-system/durable-proposal-packets + skills/proposal-packets",
+      "reason": "The implemented skill is an active-construction foundation; the proposal family owns remaining candidate meaning."
+    },
+    {
+      "original": "research-maturity-evidence-snapshots-and-staleness.md",
+      "disposition": "Retained / narrowed",
+      "target": "proposal-research-maturity-and-freshness.md",
+      "reason": "Shared claim-lineage semantics are now a formed proposal and are referenced, not redefined."
+    },
+    {
+      "original": "role-aware-agent-scheduler.md",
+      "disposition": "Partially implemented / remaining scope absorbed",
+      "target": "skills/role-scheduler + control-plane-and-client-protocol.md",
+      "reason": "Scheduler prototype is current machinery; broader activation/client issues belong to control plane."
+    },
+    {
+      "original": "role-decision-trace-and-work-dossier-v2.md",
+      "disposition": "Retained / narrowed",
+      "target": "role-decision-trace.md",
+      "reason": "Decision lineage retained; dossier demoted to a possible Studio projection."
+    },
+    {
+      "original": "seams-principles-review.md",
+      "disposition": "Retained / narrowed",
+      "target": "cross-cutting-seam-review.md",
+      "reason": "Cross-boundary coherence only."
+    },
+    {
+      "original": "slice-completion-commit-prompt.md",
+      "disposition": "Implemented / superseded",
+      "target": "skills/slice-completion-commit + supervisor completion-offer lifecycle",
+      "reason": "Remove from active ideas."
+    },
+    {
+      "original": "ui-review.md",
+      "disposition": "Retained / scoped",
+      "target": "ui-review-capability.md",
+      "reason": "Project-facing UI review capability, separate from Work Engine Studio."
+    },
+    {
+      "original": "work-engine-codex-runtime-adapter-boundary-analysis.md",
+      "disposition": "Retained / narrowed",
+      "target": "runtime-adapter.md",
+      "reason": "Runtime binding/execution only."
+    },
+    {
+      "original": "work-engine-control-protocol-and-environment-affordances.md",
+      "disposition": "Retained / narrowed",
+      "target": "control-plane-and-client-protocol.md",
+      "reason": "Control-plane/client protocol only."
+    },
+    {
+      "original": "work-engine-studio-design-control-forensics.md",
+      "disposition": "Retained / narrowed",
+      "target": "work-engine-studio.md",
+      "reason": "Human-facing design/control/forensics surface only."
+    },
+    {
+      "original": "ui-design-principles-structure.yaml",
+      "disposition": "Not an active Work Engine idea",
+      "target": "skills/ui-design-principles / project-specific source",
+      "reason": "Structural draft for Site2JSON design principles; keep out of active Work Engine idea set."
+    },
+    {
+      "original": "workflow.diff",
+      "disposition": "Not an idea",
+      "target": "none",
+      "reason": "Historical diff between proposal-workflow drafts; remove from active idea set."
+    }
+  ]
+}
