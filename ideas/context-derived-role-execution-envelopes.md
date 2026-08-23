@@ -29,7 +29,9 @@ system invariants and human authority
         +
 role templates and capability contracts
         +
-static environment configuration
+system environment and reusable role profiles
+        +
+specific role definitions
         +
 current context and authorized configuration changes
         ↓
@@ -102,9 +104,11 @@ The architecture becomes safer if the system makes these categories explicit.
 
 ---
 
-# 2. Four source and runtime layers
+# 2. Five source and runtime layers
 
-The model has four primary layers.
+The model has five primary layers. The second and third layers may be stored as
+separate YAML documents while remaining parts of one static organizational
+definition system.
 
 ## 2.1 Essential role templates and skill contracts
 
@@ -152,7 +156,140 @@ It is a different contract.
 
 ---
 
-## 2.2 Static role environment configuration
+## 2.2 System environment and reusable role profiles
+
+This layer factors structural relationships that should not be repeated in
+every concrete role definition.
+
+A **system environment** binds structure that genuinely applies to every role,
+such as user-authority boundaries, the non-authoritative status of model
+context, common provenance requirements, and globally available machinery.
+
+A **reusable role profile** binds structure shared by a declared class of roles,
+such as durable operational recovery, independent-review isolation, repository
+mutation, or scheduled-role obligations. A profile is composable structural
+configuration, not a role identity and not a capability implementation.
+
+Conceptually:
+
+```text
+role-definitions/
+  system.yaml
+  profiles/
+    durable-role.yaml
+    independent-reviewer.yaml
+    repository-mutator.yaml
+  roles/
+    slice-supervisor.yaml
+    slice-builder.yaml
+    proposal-former.yaml
+    strategic-planner.yaml
+```
+
+The exact paths and file count are implementation choices. The semantic split
+is the important part.
+
+An illustrative system environment:
+
+```yaml
+schema_version: 1
+environment_id: work-engine.system
+
+bound_by:
+  - INV-001
+  - INV-002
+  - INV-023
+
+available_capabilities:
+  - capability.durable_state
+  - capability.agent_state
+
+global_boundaries:
+  context:
+    authority: non_authoritative
+    lifetime: ephemeral
+  runtime_binding:
+    authority: non_semantic
+```
+
+An illustrative reusable profile:
+
+```yaml
+profile:
+  id: profile.durable_role
+  applies_when:
+    operational_state: durable
+
+  requires:
+    - capability.agent_state
+
+  context_continuity:
+    consequence:
+      before_consequential_continuation:
+        - recover_role_state
+        - refresh_authoritative_references
+        - reconcile_uncertain_actions
+        - bind_new_context_generation
+
+    conversation_summary:
+      classification: non_authoritative_hint
+```
+
+The profile establishes the shared recovery property. It does not define what
+`campaign_phase`, `proposal_revision`, `review_finding`, or another role-owned
+state field means. That remains with the concrete role or workflow definition.
+
+System and profile files should bind canonical invariant and capability
+identities rather than duplicate their definitions:
+
+```text
+invariant definition
+  owns what the invariant means
+
+capability contract
+  owns what the machinery affords and excludes
+
+system/profile YAML
+  owns which class of roles receives those bindings
+```
+
+### Profile composition and authority
+
+Composition must be deterministic, provenance-bearing, and fail closed on
+semantic conflict. A useful source shape is:
+
+```text
+system environment
+  + explicitly selected reusable profiles
+  + concrete role definition
+  + authorized problem-level changes
+  → effective role projection
+```
+
+Profiles may add shared constraints, requirements, references, and default
+machinery. They do not independently:
+
+- create a role objective or semantic identity;
+- redefine a referenced invariant or capability;
+- grant authority unavailable to the role contract;
+- weaken an intrinsic prohibition;
+- transfer state or artifact ownership;
+- make available machinery required merely because it exists; or
+- resolve a conflict by last-file-wins precedence.
+
+Every effective field should retain its contributing source identity and
+revision. Compatible set-valued constraints may compose. Contradictory
+authority, ownership, mutation, visibility, independence, or lifecycle claims
+require the owning authority or fail compilation. An execution envelope may
+narrow an authorized affordance; expansion requires configuration authority
+whose scope permits that exact change.
+
+This keeps reusable profiles from becoming mixins that silently rewrite role
+contracts.
+
+---
+
+## 2.3 Specific role environment definition
 
 This layer defines the role's normal structural environment.
 
@@ -171,6 +308,10 @@ Example:
 
 ```yaml
 role: role.builder
+
+profiles:
+  - profile.durable_role
+  - profile.repository_mutator
 
 invariants:
   - INV-001
@@ -211,7 +352,7 @@ It is the static basis from which execution-specific environments may be derived
 
 ---
 
-## 2.3 Context-derived execution envelope
+## 2.4 Context-derived execution envelope
 
 The execution envelope is the compiled organization for a particular problem.
 It may contain several instantiated roles and capabilities. Each role instance
@@ -223,7 +364,8 @@ It is derived from:
 - the problem objective and required consequences;
 - system invariants and human authority;
 - relevant role templates and skill/capability contracts;
-- static role environments;
+- the system environment and selected reusable profiles;
+- specific role environments;
 - current workflow state;
 - accepted scope;
 - proposal constraints;
@@ -284,7 +426,7 @@ compiled for this problem.
 
 ---
 
-## 2.4 Runtime projection
+## 2.5 Runtime projection
 
 Runtime state answers what is actually available now.
 
@@ -368,9 +510,10 @@ must not imply the role can invoke it.
 
 ---
 
-# 4. The static configuration is not necessarily a ceiling
+# 4. The compiled static configuration is not necessarily a ceiling
 
-A previous framing treated the role's static environment as a maximum authority envelope.
+A previous framing treated the role's compiled system/profile/specific-role
+environment as a maximum authority envelope.
 
 That is too restrictive as a general rule.
 
@@ -537,7 +680,10 @@ system invariants + human authority
 role templates + capability contracts
     │
     ▼
-static environments + workflow context
+system environment + selected reusable profiles
+    │
+    ▼
+specific role environments + workflow context
     │
     ▼
 authorized organizational changes
@@ -863,7 +1009,8 @@ This can become a lint target:
 
 # 15. Variants and invariants
 
-The role's static environment is built from two broad categories.
+The role's compiled static definition—system environment, selected profiles,
+and specific role environment—is built from two broad categories.
 
 ## Invariant structure
 
@@ -906,7 +1053,9 @@ The current Agent Environment Graph can naturally evolve into an intermediate
 representation and debugger for compiled organizations. It can represent:
 
 ```text
-static role environment
+system environment
+selected reusable profiles
+specific role environment
 problem-level execution envelope
 role-scoped envelope projection
 runtime realization
@@ -1209,7 +1358,19 @@ required guarantees.
 Reusable operational machinery with declared inputs, outputs, effects,
 invariants, implementations, and configurable dimensions.
 
-### Static environment
+### System environment
+
+Universal role bindings and boundaries that apply to every Work Engine role
+without redefining their referenced invariants or capabilities.
+
+### Reusable role profile
+
+Composable structural bindings for an explicitly selected class of roles. A
+profile supplies shared constraints, requirements, and machinery relationships
+without becoming a role identity, granting authority, or owning role-specific
+state meaning.
+
+### Specific role environment
 
 Normal/configurable role structure and machinery.
 
@@ -1226,7 +1387,8 @@ particular role instance.
 ### Organizational compiler
 
 The boundary that combines the problem specification, invariants, templates,
-capability contracts, static environments, context, and authorized changes;
+capability contracts, system environment, reusable profiles, specific role
+environments, context, and authorized changes;
 performs deterministic resolution and structural validation; coordinates
 required semantic judgments and authority decisions without owning them; and
 emits an immutable execution envelope and projections.
@@ -1255,7 +1417,9 @@ Versioned effective envelope.
                            │
           ROLE TEMPLATES + CAPABILITY CONTRACTS
                            │
-          STATIC ENVIRONMENTS + CURRENT CONTEXT
+       SYSTEM ENVIRONMENT + REUSABLE PROFILES
+                           │
+       SPECIFIC ROLE ENVIRONMENTS + CURRENT CONTEXT
                            │
              AUTHORIZED ORGANIZATIONAL CHANGES
                            │
@@ -1282,7 +1446,14 @@ Versioned effective envelope.
 
 > **A skill or capability contract defines reusable operational machinery.**
 
-> **A static environment defines its normal configurable world.**
+> **The system environment binds structure that genuinely applies to every
+> role.**
+
+> **A reusable role profile composes shared structural relationships without
+> creating role identity or authority.**
+
+> **A specific role environment defines that role's normal configurable
+> world.**
 
 > **An execution envelope is the compiled organizational structure for a
 > particular problem.**
@@ -1478,12 +1649,20 @@ organizational topology.
 A behavior-preserving first vertical may:
 
 - consume the existing fixed role contracts and campaign configuration;
+- separate universal system bindings, one reusable profile, and one concrete
+  role definition while preserving current behavior;
 - produce an immutable effective-envelope artifact;
 - retain exact provenance for selected capabilities, providers, scope, and
   authority;
 - derive role-scoped projections;
 - distinguish required, authorized, and runtime-available capabilities; and
 - render baseline-versus-effective differences for Studio and audit use.
+
+The first profile should prove reuse across at least two compatible role
+definitions or establish why its shared ownership is still preferable to
+duplication. Compilation should retain field-level source provenance and reject
+an attempted profile composition that weakens authority, ownership, mutation,
+visibility, independence, or lifecycle constraints.
 
 It should not initially:
 
