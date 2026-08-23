@@ -4,13 +4,14 @@
 
 - Family ID: `work-engine.evidence-lineage`
 - Primary origin:
-  [`ideas/research-maturity-evidence-snapshots-and-staleness.md`](../../ideas/research-maturity-evidence-snapshots-and-staleness.md)
+  [`research-maturity-evidence-snapshots-and-staleness.md`](../../ideas/history/2026-08-22-pre-reconciliation/research-maturity-evidence-snapshots-and-staleness.md)
 - Related downstream context:
-  [`ideas/context-derived-role-execution-envelopes.md`](../../ideas/context-derived-role-execution-envelopes.md)
+  [`context-derived-role-execution-envelopes.md`](../../ideas/history/2026-08-22-pre-reconciliation/context-derived-role-execution-envelopes.md)
 - Review continuation:
   [`adaptive-specialized-review/fca5cbe`](../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md)
-- State: candidate family revised from review evidence; not closure-reviewed,
-  evaluated, accepted, prioritized, or authorized for implementation
+- State: shared semantic candidate deferred for dogfooding; bounded backbone
+  dogfood meaning approved after review; neither candidate is prioritized or
+  authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 This family currently contains two independently decidable candidates:
@@ -19,9 +20,10 @@ This family currently contains two independently decidable candidates:
    defines the candidate shared identity, provenance, sensitivity, authority,
    and lineage semantics for durable evidence-backed statements.
 2. [`claim-lineage-backbone-dogfood`](claim-lineage-backbone-dogfood/proposal.md)
-   proposes one controlled, reversible exercise of the four smallest backbone
-   behaviors. It produces evidence about the semantic candidate without
-   accepting its placement or authorizing broader evidence infrastructure.
+   has approved meaning for one controlled, reversible exercise of the four
+   smallest backbone behaviors. It may produce evidence about the semantic
+   candidate without accepting permanent placement or authorizing broader
+   evidence infrastructure.
 
 The semantic candidate is deliberately smaller than the originating
 research-maturity idea, and the dogfood candidate is deliberately smaller than
@@ -56,17 +58,19 @@ requirements. The research-maturity idea independently needs the same minimum
 properties for proposal-research claims, while adding domain-specific maturity,
 freshness, and readiness semantics.
 
-This is evidence for forming a shared candidate and a bounded dogfood proposal,
-not evidence that either proposal's final placement, schema, or implementation
-is correct. Placement remains uncertain until research and review consumers
-exercise the candidate semantics and expose what is genuinely shared. The
-backbone dogfood can reduce that uncertainty but cannot by itself satisfy the
-larger adversarial lifecycle and recovery evidence boundary.
+This is evidence for the shared candidate and a reviewed, meaning-approved
+bounded dogfood proposal, not evidence that either proposal's final placement,
+schema, or implementation is correct. Placement remains uncertain until
+research and review consumers exercise the candidate semantics and expose what
+is genuinely shared. The backbone dogfood can reduce that uncertainty but
+cannot by itself satisfy the larger adversarial lifecycle and recovery evidence
+boundary.
 
 ## Authority boundary
 
-These formation artifacts do not establish an evidence schema, declare any
-claim fresh or applicable, assign unresolved research-maintenance or
-organizational-planning authority, accept a proposal, change the roadmap, or
-authorize implementation. Persistence records the candidate and its provenance;
-it does not increase the authority of the judgments it describes.
+The dogfood decision approves only its proposal meaning. These artifacts do not
+establish an evidence schema, declare any claim fresh or applicable, assign
+unresolved research-maintenance or organizational-planning authority, accept
+the parent semantic proposal, change the roadmap, or authorize implementation.
+Persistence records each candidate, disposition, and provenance; it does not
+increase the authority of the judgments it describes.

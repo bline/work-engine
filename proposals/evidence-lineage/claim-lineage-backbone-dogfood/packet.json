@@ -3,7 +3,7 @@
   "proposal_id": "work-engine.claim-lineage-backbone-dogfood",
   "family_id": "work-engine.evidence-lineage",
   "title": "Claim-Lineage Backbone Dogfood",
-  "lifecycle_state": "placement_uncertain",
+  "lifecycle_state": "decided",
   "narrative": {
     "path": "proposal.md"
   },
@@ -27,7 +27,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "The first exercise should use reversible Git-backed dogfood artifacts adjacent to the evidence-lineage proposal family and a replaceable local query projection. This is experimental placement only and does not select a permanent shared owner, store, schema, or runtime boundary."
+    "claim": "Proposal meaning is approved for a controlled two-fixture claim-lineage backbone dogfood. Git-local experimental placement remains provisional and does not select a permanent shared owner, schema, store, or runtime boundary."
   },
   "uncertainty": {
     "state": "unresolved",

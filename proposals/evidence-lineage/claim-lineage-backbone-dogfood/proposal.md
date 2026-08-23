@@ -4,18 +4,22 @@
 
 - Proposal ID: `work-engine.claim-lineage-backbone-dogfood`
 - Family ID: `work-engine.evidence-lineage`
-- State: placement uncertain; formed for later evaluation; not accepted,
-  prioritized, or authorized for implementation
+- State: proposal meaning approved with probable experimental placement; not
+  prioritized or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
-The canonical formation metadata is in [`packet.json`](packet.json). This
+The canonical lifecycle projection is in [`packet.json`](packet.json), and the
+authority-authored disposition is in [`decision.json`](decision.json). This
 narrative owns the proposal's current meaning. Supporting artifacts describe
-its [experimental placement](placement.md) and
-[relationships](relationships.md).
+its [experimental placement](placement.md) and [relationships](relationships.md).
 
 The user authorized formation of this packet after semantic review closed on
 the parent candidate. That instruction did not accept the proposal, change the
 parent's `defer_for_dogfooding` decision, or authorize implementation.
+Following specialized review and retained remediation, the user separately
+approved this dogfood proposal's meaning. That decision did not accept the
+parent proposal, settle permanent placement, change roadmap priority, or
+authorize dogfood execution.
 
 ## Candidate and consequence
 
@@ -280,20 +284,22 @@ positive demonstration.
 
 ## Authority
 
-This packet forms a proposal only. It does not authorize artifact creation,
-schema implementation, fixture selection, semantic refresh judgment, changes to
-existing packets or reviews, roadmap mutation, or a slice-supervisor campaign.
-Any later execution requires an authority-owned disposition bound to this exact
-proposal revision and must preserve the parent proposal's still-open placement
-and evidence boundaries. That disposition authorizes only the execution it
-names; it does not by itself supply original-judgment, claim-interpretation,
-refresh, reliance, or reopening authority missing from a fixture contract.
+The authority decision approves this proposal's meaning only. It does not
+authorize artifact creation, schema implementation, fixture selection, semantic
+refresh judgment, changes to existing packets or reviews, roadmap mutation, or
+a slice-supervisor campaign. Any later execution requires separate explicit
+authority bound to this decided proposal and must preserve the parent
+proposal's still-open placement and evidence boundaries. Execution authority
+authorizes only the work it names; it does not by itself supply
+original-judgment, claim-interpretation, refresh, reliance, or reopening
+authority missing from a fixture contract.
 
 ## Acceptance consequence
 
-If later accepted and executed, the repository gains a bounded, inspectable
-piece of evidence about whether stable revision identity, non-authoritative
-impact nomination, explicit unchanged-or-changed refresh, and exact-revision
-reliance form a coherent shared backbone across proposal research and review.
-The result makes the next semantic and placement decision better informed
-without pretending to have completed the broader evidence-lineage system.
+If separately authorized and executed, the repository gains a bounded,
+inspectable piece of evidence about whether stable revision identity,
+non-authoritative impact nomination, explicit unchanged-or-changed refresh, and
+exact-revision reliance form a coherent shared backbone across proposal
+research and review. The result makes the next semantic and placement decision
+better informed without pretending to have completed the broader
+evidence-lineage system.

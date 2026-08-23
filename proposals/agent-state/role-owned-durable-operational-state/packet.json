@@ -10,7 +10,7 @@
   "origin_refs": [
     {
       "kind": "idea",
-      "path": "../../../ideas/persistent-agent-state.md"
+      "path": "../../../ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state.md"
     },
     {
       "kind": "repository-evidence",
@@ -26,11 +26,11 @@
     },
     {
       "kind": "product-direction",
-      "path": "../../../ideas/work-engine-control-protocol-and-environment-affordances.md"
+      "path": "../../../ideas/history/2026-08-22-pre-reconciliation/work-engine-control-protocol-and-environment-affordances.md"
     },
     {
       "kind": "product-direction",
-      "path": "../../../ideas/context-derived-role-execution-envelopes.md"
+      "path": "../../../ideas/history/2026-08-22-pre-reconciliation/context-derived-role-execution-envelopes.md"
     },
     {
       "kind": "bootstrap-review",

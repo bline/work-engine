@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-lineage-backbone-dogfood",
+  "source": {
+    "repository_revision": "d9ecf28b5f6e83dde8d0cc9c1c3b72bfd7cbe26e",
+    "lifecycle_state": "placement_uncertain",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "Proposal meaning is approved for a controlled two-fixture claim-lineage backbone dogfood. Git-local experimental placement remains provisional and does not select a permanent shared owner, schema, store, or runtime boundary.",
+    "rationale": "The specialized architecture, lifecycle/evidence, and doctrine/authority review reached decision readiness after retained-context remediation, and the user explicitly approved the resulting proposal meaning.",
+    "reopening_conditions": [
+      "Fixture selection cannot identify one real proposal-research claim and one real specialist-review finding with immutable pre-change baselines and truthful authority provenance.",
+      "The smallest faithful representation requires domain-specific semantics that cannot share stable identity, exact revisions, impact nomination, refresh outcome, and exact-revision reliance.",
+      "A changed conclusion cannot be attributed without granting implementation completion semantic refresh authority or fabricating causality.",
+      "A retained-unchanged result cannot create a new evidence-bound revision without misleadingly implying that the proposition changed.",
+      "The local projection cannot be rebuilt from canonical dogfood records or begins to act as the owner of claim meaning or causal judgment.",
+      "The exercise reveals that the four backbone behaviors are inseparable from a deferred lifecycle, delivery, recovery, or concurrency consequence."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user statement 'I approve' after review closure was committed at d9ecf28b5f6e83dde8d0cc9c1c3b72bfd7cbe26e."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}
