@@ -1,71 +1,80 @@
+# Closed-Loop Engineering Learning
 
-### `closed-loop-engineering-learning.md`
+## Status
 
-**Idea:** Connect proposal predictions with Work Engine execution metrics and explicit implementation failure modes.
+Exploratory product-learning idea.
 
-**Problem:** Work Engine already measures execution, but those observations do not yet systematically improve future proposal evaluation and implementation decisions.
+## Idea
 
-**Proposed consequence:** Completed work produces calibration evidence:
+Connect proposal expectations with observed implementation outcomes so completed work can improve future proposal evaluation and planning.
+
+Work Engine already records substantial execution evidence. The missing capability is a durable feedback loop from **predicted consequences** to **observed consequences**.
+
+## Current evidence
+
+Implemented machinery already produces:
+
+- proposal packets and proposal decisions;
+- campaign and slice receipts;
+- validation outcomes;
+- review evidence;
+- route revisions;
+- provider/runtime telemetry; and
+- strategic planning handoffs.
+
+Those artifacts are evidence, but they are not yet systematically used to calibrate future proposal judgments.
+
+## Required consequence
+
+A completed change can preserve a comparison such as:
 
 ```text
-predicted cost        ↔ observed cost
-predicted complexity  ↔ observed effort
-predicted fan-out     ↔ observed fan-out
-predicted risk        ↔ repairs / regressions
-predicted validation  ↔ observed validation cost
-predicted impact      ↔ later measured consequence
-confidence            ↔ prediction accuracy
+proposal expectation
+    expected value
+    expected complexity
+    expected architectural reach
+    expected validation burden
+    expected risk
+
+        ↓ compare with
+
+implementation outcome
+    actual scope
+    actual review burden
+    route revisions
+    failures / recoveries
+    validation evidence
+    observed maintenance consequences
 ```
 
-The execution record should additionally distinguish actionable failure modes such as:
+The result is calibration evidence that later evaluators and planners may use.
 
-```text
-placement failure
-skill-understanding failure
-capability/tool-use failure
-context-bloat failure
-validation failure
-route failure
-authority failure
-provenance failure
-```
+## Does not own
 
-Those observations become empirical priors for later decisions rather than new mandatory rules.
+This idea does not own:
 
-For example:
+- raw execution metrics;
+- proposal evaluation itself;
+- roadmap priority;
+- automatic policy changes;
+- model selection;
+- reward optimization;
+- acceptance of future proposals.
 
-```text
-proposal class
-→ historically high placement-error rate
-→ future evaluator receives stronger evidence that
-   placement uncertainty deserves attention
-```
+Learning evidence informs later judgment; it does not turn historical correlation into authority.
 
-not:
+## Important boundary
 
-```text
-proposal class
-→ placement error happened before
-→ always run procedure X
-```
+A prediction can be wrong because:
 
-**Key design question:** How do we attribute failure modes strongly enough to learn from them without pretending causal certainty that the receipts cannot establish?
+- the proposal was poorly understood;
+- implementation execution was poor;
+- the environment changed;
+- the chosen route was unusually difficult;
+- the prediction was reasonable but uncertainty realized badly.
 
----
+The learning system must retain enough provenance to avoid flattening those cases into one score.
 
-I like this split because there’s a natural dependency graph without making it one monolithic feature:
+## Compact statement
 
-```text
-proposal packets
-      ↓
-proposal formation + placement
-      ↓
-evidence-backed evaluation
-      ↓
-proposal-backed roadmap
-      ↓
-Work Engine execution
-      ↓
-closed-loop learning
-      └──────────────→ improves future evaluation
-
+> Compare what the proposal expected with what implementation actually established, and preserve that difference as evidence for future judgment.

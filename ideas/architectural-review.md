@@ -1,164 +1,86 @@
-Yes — I think that separation is stronger.
+# Architectural Diagnostic Review
 
-The architectural review should be **diagnostic**, while the proposal workflow is **constructive**.
+## Status
 
-That gives you a much cleaner chain of responsibility:
+Exploratory capability idea.
 
-```text
-accumulated execution evidence
-        ↓
-architectural review
-        ↓
-"there is / is not a material architectural problem"
-        ↓
-if blocking:
-    stop execution
-    surface review
-        ↓
-proposal workflow
-        ↓
-develop candidate response
-        ↓
-falsify / compare / refine
-        ↓
-human approves proposal
-        ↓
-architecture changes
-```
+## Idea
 
-The architectural reviewer does **not** need to solve the problem. In fact, I think it is probably better if it doesn't. Its job is to say things like:
+Provide a dedicated diagnostic review that asks whether the **current system model, ownership, decomposition, or placement appears wrong**.
 
-* boundary A is no longer holding;
-* responsibility B is repeatedly leaking into C;
-* assumption X has been contradicted by execution evidence;
-* the current decomposition is creating repeated cross-cutting changes;
-* continuing under the existing architecture is likely to compound the problem.
+Its output is evidence for proposal formation. It does not design or approve the repair.
 
-Then it produces enough evidence for the proposal system to work from.
+## Current evidence
 
-That keeps two different reasoning modes separate:
+Work Engine already separates:
 
-> **Architectural review:** “What appears to be wrong with the current system model?”
+- campaign supervision from repository-domain work;
+- proposal formation from proposal decision authority;
+- independent implementation review from builder judgment; and
+- strategic planning from campaign execution.
 
-> **Proposal workflow:** “Given that problem, what should we change, and why is this solution preferable?”
+What is still missing is a reusable capability whose explicit subject is the architecture itself.
 
-That is a really useful distinction because otherwise the reviewer can become attached to its own diagnosis *and* its own solution. A separate proposal process gets a fresh reasoning context and can even conclude that the review identified a real symptom but proposed the wrong interpretation.
+## Required consequence
 
-### Confidence as blocking authority also makes sense
+A useful architectural review can identify:
 
-I would make confidence part of the architecture review's consequence, but I wouldn't let confidence alone determine blocking. Something like:
+- the architectural claim being challenged;
+- the observed symptoms and supporting evidence;
+- suspected ownership, placement, or decomposition defects;
+- affected contracts or invariants;
+- credible competing explanations;
+- confidence and limitations;
+- the consequence of continuing without reconsideration; and
+- conditions that should reopen or deepen the review.
 
-```text
-architectural finding:
-    severity
-    confidence
-    evidence
-    affected assumptions
-    expected consequence of continuing
-```
+The result should be diagnostic enough that proposal formation can work from it without repeating the same investigation.
 
-Then the planner judges the combined result.
+## Authority boundary
 
-For example:
+Architectural review:
 
-```text
-low confidence + severe possibility
-    → surface / accumulate evidence
-    → usually continue
+- may diagnose;
+- may challenge current ownership or placement;
+- may recommend proposal formation or reopening;
+- may identify that continued execution is unsafe when the evidence is material;
+- may emit an explicitly attributed recommendation to pause or stop, including
+  severity, confidence, expected consequence of continuing, and limitations.
 
-medium confidence + material architectural risk
-    → planner may stop
+It does not:
 
-high confidence + material architectural defect
-    → stop strongly indicated
-```
+- author the final architecture;
+- accept a proposal;
+- authorize implementation;
+- mutate the repository;
+- replace strategic planning; or
+- certify its own proposed repair.
 
-Your idea of **medium or high confidence as a necessary condition for blocking** is a good guardrail. It prevents speculative architectural criticism from repeatedly halting execution.
+### Blocking consequence remains separately owned
 
-I'd phrase the invariant approximately as:
+The historical idea allowed a material architectural finding with at least
+medium confidence to block continued execution. This clean capability retains
+the need to represent that consequence, but does not silently grant blocking
+authority to the reviewer.
 
-> **An architectural review may block continued execution only when it identifies a material architectural concern with at least medium confidence.**
+Whether a finding actually pauses a campaign belongs to the owning campaign,
+planning, or human-authority contract. A future adoption decision must identify:
 
-But I would avoid:
+- who may disposition a stop recommendation;
+- whether any finding class is automatically blocking;
+- the materiality and confidence evidence required;
+- what can continue safely while disposition is pending; and
+- how the stop and later resumption are recorded.
 
-```text
-if confidence >= medium:
-    block
-```
+Until that authority is established, the review produces diagnostic evidence
+and an escalation recommendation, not an authoritative workflow transition.
 
-because medium confidence in something trivial shouldn't stop anything.
+## Relationship to other ideas
 
-The real condition is closer to:
+- **Proposal research maturity** determines whether enough evidence exists to rely on the diagnosis for a later decision.
+- **Cross-cutting seam review** judges coherence across boundaries after or around concrete changes; it is not a substitute for architectural diagnosis.
+- **Organizational execution envelopes** may eventually consume architecture-qualified requirements, but do not own this diagnostic function.
 
-```text
-material_consequence
-AND
-confidence >= medium
-AND
-continuing unchanged is no longer reasonably supportable
-```
+## Compact statement
 
-That preserves model judgment.
-
-### Low-confidence findings still have value
-
-I wouldn't throw them away. They can become **architectural observations** in durable state.
-
-That's actually where this system gets interesting:
-
-```text
-slice 4:
-  low-confidence boundary concern
-
-slice 7:
-  another low-confidence observation
-
-slice 9:
-  same boundary causes placement ambiguity
-
-slice 11:
-  review finds cross-layer repair
-
-architectural review:
-  accumulated evidence now supports
-  medium/high-confidence finding
-```
-
-So you don't need every review to discover a blocker in one shot. The architecture reviewer can reason over accumulated observations.
-
-That fits extremely well with your planner's existing idea that execution produces semantic deltas and durable consequences instead of forcing higher-level agents to replay all the raw work. The planner proposal already expects execution evidence to include things like new dependencies, route revisions, limitations, prediction-vs-observation deltas, and changed assumptions. 
-
-I think you've now got three nicely separated artifacts:
-
-```text
-ARCHITECTURAL REVIEW
-diagnosis
-- what appears wrong
-- evidence
-- confidence
-- consequence of continuing
-- affected architectural assumptions
-
-
-PROPOSAL
-response
-- proposed change
-- alternatives
-- placement
-- expected impact
-- risk
-- migration implications
-- falsification evidence
-
-
-ARCHITECTURE
-authority
-- the human-approved governing design
-```
-
-And that separation gives you an especially valuable property:
-
-**A reviewer can stop the machine without being allowed to redesign it.**
-
-Then the proposal machinery can take over and do the much richer exploratory reasoning necessary to decide what the redesign should actually be. I think that's substantially safer and conceptually cleaner than making “architectural review” mean both diagnosis and repair.
-
+> Architectural review diagnoses the system model. Proposal formation decides what change to propose.
