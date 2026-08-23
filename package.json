@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "preflight": "node skills/slice-supervisor/scripts/campaign-preflight.mjs campaigns/roadmap.yaml",
-    "test": "npm run test:supervisor && npm run test:chrome-vision",
+    "test": "npm run test:supervisor && npm run test:work-engine-mcp && npm run test:chrome-vision",
     "test:supervisor": "node --test skills/slice-supervisor/tests/campaign-preflight.test.mjs",
+    "test:work-engine-mcp": "node --test skills/work-engine-mcp/tests/*.test.mjs",
     "test:chrome-vision": "npm --prefix skills/chrome-vision test"
   },
   "dependencies": {
-    "yaml": "^2.9.0"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "engines": {
     "node": ">=22"

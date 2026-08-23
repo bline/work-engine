@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "work-engine": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "skills/work-engine-mcp/scripts/server.mjs",
+        "--repository",
+        "."
+      ]
+    }
+  }
+}

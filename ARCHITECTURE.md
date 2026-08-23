@@ -77,6 +77,8 @@ flowchart TB
   subgraph D[Durable artifacts and state]
     DS[Opaque durable-state primitive]
     LS[Active-slice state]
+    CL[Claim-lineage dogfood records]
+    LP[Generated lineage projection]
     CP[Private checkpoints]
     RC[Receipts and handoffs]
     CC[Optional completion commit]
@@ -103,6 +105,11 @@ flowchart TB
   SB --> GT
   SS <--> LS
   LS --> DS
+  H -->|experimental refresh and reliance authority| CL
+  PP -. referenced source and reliance .-> CL
+  RV -. referenced source .-> CL
+  CP -. nominated change evidence .-> CL
+  CL --> LP
   SS --> CP --> RC
   SS --> RC
   CP --> CC
@@ -119,7 +126,7 @@ flowchart TB
   classDef formed fill:#f3e8ff,stroke:#6b3fa0,color:#1f2937;
   classDef exploratory fill:#f5f5f5,stroke:#6b7280,color:#1f2937,stroke-dasharray:5 4;
   classDef authority fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
-  class RM,SP,SH,PF,SS,SB,EV,RV,GT,DS,LS,CP,RC,CC implemented;
+  class RM,SP,SH,PF,SS,SB,EV,RV,GT,DS,LS,CL,LP,CP,RC,CC implemented;
   class F,PP active;
   class RR formed;
   class I,PE,OC,EE,RT,CTRL exploratory;
@@ -281,6 +288,7 @@ diagrams, but this document does not assume or authorize that machinery.
 | Slice execution | Implemented | `slice-builder` | One coherent engineering slice from reconnaissance through proof | Campaign lifecycle or cross-slice strategy |
 | Durable-state primitive | Implemented | `durable-state` | Atomic publication and integrity-checked reads of opaque values | Payload meaning or transition authority |
 | Active-slice recovery | Implemented | `slice-supervisor` over `durable-state` | Bounded vertical for pending planning/review obligations, waiting, recovery, and retirement | General durable state for every role or phase |
+| Independent-review episode state | Implemented bounded profile | `independent-review-state` over `durable-state` | Resume-critical state for one authority-bound adversarial-review and remediation episode | Slice acceptance, supervisor or implementation state, claims, or generic role state |
 | Proposal packets | Active construction | `proposal-packets` plus packet repository | Implemented identity and validation foundation being extended with authority-authored decision recording | Proposal meaning, value, priority, or implementation authority |
 | Proposal formation | Active construction | `proposal-former` | Implemented model-facing foundation for semantic formation and revision of packets | Evaluation, acceptance, portfolio priority, or execution |
 | Strategic reconciliation | Implemented | `strategic-planner` | Advisory reconciliation of evidence and roadmap assumptions into a durable recommendation | Roadmap mutation, campaign amendment, or user approval |
@@ -299,6 +307,8 @@ diagrams, but this document does not assume or authorize that machinery.
 | Comparative Repository Analysis | Implemented | Produces compatible evidence-backed repository profiles under a frozen comparison contract. |
 | Review Bench | Implemented | Research harness that compares review providers and harnesses without turning benchmark scores into production approval. |
 | Claude and Codex review adapters | Implemented | Supply repository reconnaissance, diagnosis, or read-only review under distinct provider and independence contracts. |
+| Claim-lineage backbone | Implemented bounded dogfood | Git-backed experimental records preserve stable claim identity, immutable revisions, impact nominations, authorized refresh judgments, exact-revision reliance, and typed lineage edges. The rebuildable projection owns no claim meaning, authority, causality, or completeness beyond its declared inputs. |
+| Work Engine MCP projection | Implemented bounded dogfood | Exposes read-only active-slice and experimental claim-lineage projections. An explicitly episode-bound launch may also expose the narrow independent-review-state transition surface; MCP remains transport rather than semantic owner or peer authentication. |
 | UI design principles | Implemented | Retained Site2JSON compatibility surface; it is not a generic Work Engine UI architecture owner. |
 
 ## Durable-state architecture
@@ -338,8 +348,19 @@ The accepted active-slice vertical can:
 4. recover the same pending phase in a fresh process; and
 5. retire the attempt so stale state cannot resurrect it.
 
-This does not yet provide a general live semantic projection for every builder,
-reviewer, planner, or future organizational role. The formed
+The first separately owned role-state profile preserves one independent
+adversarial-review episode across its initial fresh entry and ordinary
+remediation loop. An episode-scoped authority manifest binds its exact subject,
+writer generation, runtime-session reference, visibility, and authority
+provenance. The profile retains attributed findings, unresolved questions, and
+the next review action through compare-and-swap revisions. Replacement is
+generation-fenced and labeled reconstructed continuation; it does not create a
+new fresh-independence claim. The manifest constrains the exposed capability but
+does not authenticate the MCP peer, which remains a launcher and operating-
+system trust boundary.
+
+This does not provide a general live semantic projection for every builder,
+planner, or future organizational role. The formed
 role-owned-durable-operational-state proposal is investigating that broader
 boundary while preserving stronger domain owners such as packets, receipts,
 checkpoints, schedules, and repositories.
@@ -409,6 +430,56 @@ closed-loop learning remain exploratory consumers.
 Proposal work does not have to precede every campaign. The proposal system is
 for preserving candidate product decisions; the campaign system can execute any
 already-authorized bounded objective.
+
+## Claim-lineage backbone dogfood
+
+The implemented claim-lineage dogfood tests a small shared epistemic boundary
+across one proposal-research claim and one specialist-review finding. Its
+canonical input is a Git-backed, closed-schema record set under
+`proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/`. Generated
+projections and the evidence report are replaceable views over those records.
+
+```text
+existing proposal, review, and repository evidence
+                         │
+                         ▼
+       stable claim identity + immutable revisions
+                         │
+        implementation nominates may_affect
+                         │
+                         ▼
+       authority-bound refresh episode and judgment
+               │ retained_unchanged
+               └ changed + changed_because_of
+                         │
+                         ▼
+             exact-revision downstream reliance
+                         │
+                         ▼
+               rebuildable query projection
+```
+
+The records distinguish mechanical suspicion from semantic adjudication:
+
+- an implementation event may nominate that an exact claim revision could be
+  affected, but does not acquire authority to make the claim stale or false;
+- reopening records that the claim was actually reconsidered, including the
+  important terminal case where its conclusion was retained unchanged;
+- `changed_because_of` records only causality adjudicated by the authorized
+  refresh owner; and
+- downstream reliance names an exact claim revision and never advances or
+  reopens itself merely because another revision exists.
+
+The bounded run passed its four intended proofs: stable identity across
+revision, non-authoritative impact nomination, both authorized refresh paths,
+and exact-revision reliance. That result establishes representability for two
+purposively selected historical fixtures with known outcomes. It does not
+establish outcome-independent falsification, a production registry, permanent
+placement, automatic discovery or propagation, continuous freshness
+monitoring, or acceptance of the broader claim-centered evidence-lineage
+proposal. Existing proposal packets, review artifacts, completion evidence,
+checkpoints, and Git objects remain canonical for their own facts and are
+referenced rather than absorbed by the dogfood records.
 
 ## Campaign and slice lifecycle
 
@@ -499,8 +570,9 @@ proper owner:
 | Builder reasoning context | Current builder runtime | Slice | Useful temporary knowledge, not durable product state |
 | Active pending obligation | Owning workflow over `durable-state` | Attempt | Durable state references stronger artifacts and prevents stale replay |
 | Proposal meaning and identity | Proposal packet | Candidate lifecycle | Formation or validation does not grant decision authority |
+| Experimental claim identity and revision history | Claim-lineage dogfood canonical records | Dogfood run and immutable revision lineage | Refresh authority owns semantic reconciliation; implementations only nominate impact, and the generated projection owns no meaning |
 | Strategic recommendation | Strategic planning handoff | Strategic evidence cutoff | Advisory; cannot mutate the roadmap or campaign |
-| Review subject and findings | Review artifact or bounded reviewer context | Review revision/remediation loop | Later reliance must establish applicability to the candidate state |
+| Review subject and findings | Review artifact or bounded reviewer context; `independent-review-state` while its authorized episode is unfinished | Review revision/remediation loop | The profile owns reviewer-attributed operational state only; acceptance, gate state, remediation content, and claims remain referenced owners |
 | Gate result | Gate receipt | Candidate/check execution | Records observed check state, not semantic acceptance |
 | Accepted repository content | Private checkpoint | Slice and recovery history | Separate from branch `HEAD` and user-visible publication |
 | Terminal audit history | Terminal receipt store | Durable campaign history | Exactly one validated terminal per run and slice when enabled |
