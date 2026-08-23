@@ -1,0 +1,119 @@
+{
+  "artifact_type": "review_bench_truth_v2",
+  "schema_version": 2,
+  "bench_id": "work-engine-role-state-paired-20260823",
+  "supersedes": {"artifact_type": "review_bench_truth_v1", "path": "truth.v1.json", "sha256": "901841026bd0aaebdcb60f8644c14c17be0d851acc0dc0719893421846d52760"},
+  "adjudication_amendments": [
+    {
+      "amendment_id": "exact-snapshot-negative-path-correction-20260823",
+      "adjudicated_at": "2026-08-23T15:03:00-06:00",
+      "adjudicator": "codex-root-exact-snapshot-human-adjudication",
+      "reason": "Bounded executable probes and direct source analysis established acceptance-criterion violations that the initial source-only truth treated as nonblocking or missed. The correction preserves the original truth artifact and records changed verdicts and blocking judgments explicitly.",
+      "evidence": [
+        "Candidate 1 rejects an identical successful advance retry because expected-revision validation precedes handled-transition lookup; candidate 2 reorders those checks.",
+        "Candidate 2 rejects an identical begin retry even though begin records a transition identity.",
+        "Candidate 2 accepts a successor authority naming a different initial subject because replacement does not compare it with the retained episode subject.",
+        "Candidate 2 accepts an ordinary result transition after mark_uncertain, retaining uncertain status while overwriting the reconciliation action.",
+        "The begin, replacement-subject, and uncertainty paths are unchanged in candidate 1.",
+        "The frozen contract explicitly requires exact subject validation, attributable and auditable remediation lineage, retry idempotency, and mechanically enforced uncertainty and retirement."
+      ],
+      "changes": [
+        {"case_id": "role-state-candidate-1-pre-remediation", "finding_id": null, "field": "expected_verdict", "before": "accepted", "after": "rejected"},
+        {"case_id": "role-state-candidate-1-pre-remediation", "finding_id": "remediation-status-without-evidence", "field": "finding.blocking", "before": false, "after": true},
+        {"case_id": "role-state-candidate-1-pre-remediation", "finding_id": "new-finding-attribution-self-declared", "field": "finding.blocking", "before": false, "after": true},
+        {"case_id": "role-state-candidate-2-post-remediation", "finding_id": null, "field": "expected_verdict", "before": "accepted", "after": "rejected"}
+      ],
+      "limitations": [
+        "The amendment was made before scoring but after fresh attempts began; reviewer claims were not accepted as truth without independent exact-snapshot reproduction and contract adjudication.",
+        "Newly discovered findings are visible in the amended case sets and described in this amendment evidence."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "role-state-candidate-1-pre-remediation",
+      "expected_verdict": "rejected",
+      "findings": [
+        {
+          "truth_id": "advance-retry-not-idempotent", "severity": "medium", "blocking": true, "category": "idempotency",
+          "claim": "A successful advance transition cannot be retried with its original compare-and-swap request because stale expected-revision rejection occurs before the recorded transition identity is checked.",
+          "evidence": ["Candidate 1 checks current durable_revision against expected before handled_transition_ids.", "An identical exact-snapshot retry after successful publication raises expected durable revision does not match current review state.", "Candidate 2 reverses the checks and adds a successful replay assertion."],
+          "adjudication": "Confirmed by source and executable reproduction. The failure is recoverable and medium severity, but blocks the explicit retry-idempotency criterion.",
+          "tags": ["persistence", "cas", "idempotency", "retry"]
+        },
+        {
+          "truth_id": "begin-retry-not-idempotent", "severity": "medium", "blocking": true, "category": "idempotency",
+          "claim": "Episode creation records a transition identity but rejects an identical retry after the first publication instead of returning the established state.",
+          "evidence": ["begin rejects every request once an episode exists before consulting the recorded begin transition identity.", "An identical exact-snapshot begin retry raises review episode already exists or initial writer generation is invalid.", "The behavior is unchanged in candidate 2."],
+          "adjudication": "Confirmed by source and executable reproduction. Lost acknowledgement can make creation recovery fail, violating the explicit retry-idempotency criterion.",
+          "tags": ["persistence", "creation", "idempotency", "retry"]
+        },
+        {
+          "truth_id": "remediation-status-without-evidence", "severity": "medium", "blocking": true, "category": "audit-lineage",
+          "claim": "A finding can enter remediation_presented or verified_resolved without an exact remediation reference, and an initial review can submit a finding already in a remediation status.",
+          "evidence": ["Candidate 1 validates remediation_references syntactically but does not require one for remediation statuses.", "Candidate 1 record_initial_result accepts globally valid remediation statuses and references.", "Candidate 2 adds both invariants and focused negative tests."],
+          "adjudication": "Confirmed by source analysis. Medium severity; blocking because the explicit criterion requires auditable remediation lineage.",
+          "tags": ["persistence", "audit", "remediation", "negative-path"]
+        },
+        {
+          "truth_id": "new-finding-attribution-self-declared", "severity": "low", "blocking": true, "category": "identity-attribution",
+          "claim": "New findings accept self-declared reviewer and generation values that need not match the authorized writer generation.",
+          "evidence": ["Candidate 1 validates attribution only as a nonempty actor and positive generation.", "Initial and re-evaluation transitions do not bind new attribution to authority.writer.", "Candidate 2 adds writer-bound validation and a rejection test."],
+          "adjudication": "Confirmed by source and bounded reproduction. Practical severity is low, while the explicit attributable-lineage criterion makes it blocking.",
+          "tags": ["identity", "attribution", "generation", "provenance"]
+        },
+        {
+          "truth_id": "replacement-subject-not-bound", "severity": "medium", "blocking": true, "category": "authority-binding",
+          "claim": "Reviewer replacement accepts a successor authority manifest naming a different initial subject, leaving the new authority binding inconsistent with the retained episode subject.",
+          "evidence": ["replace_writer checks generation and predecessor but not authority.initial_subject against current reviewed_subject.", "An exact-snapshot mismatched-subject successor is accepted while state retains the previous subject.", "The profile says the manifest constrains the episode subject."],
+          "adjudication": "Confirmed by source and executable reproduction. Retained state bounds severity, but exact subject authority is not validated as required.",
+          "tags": ["authority", "subject", "replacement", "identity"]
+        },
+        {
+          "truth_id": "uncertainty-not-lifecycle-fenced", "severity": "medium", "blocking": true, "category": "lifecycle",
+          "claim": "After mark_uncertain, ordinary transitions can overwrite pending_next_action while leaving the state structurally uncertain, so reconciliation is not mechanically enforced.",
+          "evidence": ["advance blocks only retired status before ordinary action dispatch.", "An exact-snapshot result transition after mark_uncertain succeeds with status and uncertainty retained but a changed pending action.", "The documented lifecycle places uncertain before retirement and records a reconciliation action."],
+          "adjudication": "Confirmed by source and executable reproduction. The contradictory state is recoverable but blocks the mechanically enforced lifecycle criterion.",
+          "tags": ["lifecycle", "uncertainty", "state-machine", "reconciliation"]
+        },
+        {
+          "truth_id": "documented-lifecycle-paths-unproven", "severity": "low", "blocking": false, "category": "test-coverage",
+          "claim": "Candidate 1 tests do not exercise successful advance replay or the documented uncertainty and retirement paths.",
+          "evidence": ["Candidate 1 has two profile tests without replay, mark_uncertain, retire_episode, or post-retirement assertions.", "The documentation claims retry idempotency, uncertainty, retirement, and non-reactivation.", "Candidate 2 adds advance replay and uncertainty-to-retirement assertions."],
+          "adjudication": "Confirmed as a bounded validation gap distinct from the reproduced defects; low severity and nonblocking.",
+          "tags": ["tests", "idempotency", "lifecycle", "regression"]
+        }
+      ],
+      "adjudication_notes": ["Candidate 1 violates four of five explicit criteria and is rejected despite passing existing tests.", "Claude found two lineage gaps and missing coverage but missed the shared authority and lifecycle defects and treated explicit criterion violations as nonblocking.", "Both Sol efforts reproduced the advance retry failure; high also found attribution, subject, and uncertainty failures."]
+    },
+    {
+      "case_id": "role-state-candidate-2-post-remediation",
+      "expected_verdict": "rejected",
+      "findings": [
+        {
+          "truth_id": "begin-retry-not-idempotent", "severity": "medium", "blocking": true, "category": "idempotency",
+          "claim": "Episode creation records a transition identity but rejects an identical retry after the first publication instead of returning the established state.",
+          "evidence": ["Candidate 2 begin rejects every request once an episode exists before consulting the recorded identity.", "An identical exact-snapshot begin retry raises review episode already exists or initial writer generation is invalid.", "The MCP begin tool requires transition_id."],
+          "adjudication": "Confirmed by source and executable reproduction. Medium severity and blocking under the retry-idempotency criterion.",
+          "tags": ["persistence", "creation", "idempotency", "retry"]
+        },
+        {
+          "truth_id": "replacement-subject-not-bound", "severity": "medium", "blocking": true, "category": "authority-binding",
+          "claim": "Reviewer replacement accepts a successor authority manifest naming a different initial subject, leaving authority binding inconsistent with the retained episode subject.",
+          "evidence": ["Candidate 2 replacement does not compare authority.initial_subject with current reviewed_subject.", "An exact-snapshot mismatched-subject successor is accepted.", "The profile says the manifest constrains the exact episode subject."],
+          "adjudication": "Confirmed by source and executable reproduction. Medium severity and blocking under exact-subject validation.",
+          "tags": ["authority", "subject", "replacement", "identity"]
+        },
+        {
+          "truth_id": "uncertainty-not-lifecycle-fenced", "severity": "medium", "blocking": true, "category": "lifecycle",
+          "claim": "After mark_uncertain, ordinary transitions can overwrite pending_next_action while leaving the state structurally uncertain, so reconciliation is not mechanically enforced.",
+          "evidence": ["Candidate 2 advance blocks only retired status.", "An exact-snapshot result transition after mark_uncertain succeeds with contradictory durable fields.", "The documented lifecycle places uncertain before retirement and records a reconciliation action."],
+          "adjudication": "Confirmed by source and executable reproduction. Medium severity and blocking under the lifecycle criterion.",
+          "tags": ["lifecycle", "uncertainty", "state-machine", "reconciliation"]
+        }
+      ],
+      "adjudication_notes": ["Candidate 2 fixes candidate 1 advance replay, remediation evidence, finding attribution, and some test gaps.", "It remains rejected because three shared defects survive remediation.", "Sol-low found all three surviving defects; Sol-high found begin retry but missed subject and uncertainty paths."]
+    }
+  ],
+  "limitations": ["Truth is bounded to these contracts and exact manifests.", "The paired post-remediation checkpoint is not a clean negative case after corrected adjudication.", "Severity reflects recoverable consequences; blocking separately reflects explicit criterion violations.", "Future correction requires another provenance-bearing superseding artifact."]
+}

@@ -1,0 +1,141 @@
+{
+  "artifact_type": "review_bench_corpus_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-role-state-paired-20260823",
+  "protocol": {
+    "name": "evidence-calibrated-review",
+    "version": "1.2",
+    "prompt": "Act as a read-only independent verification reviewer. Treat material claims as hypotheses, verify them from the supplied snapshot, and check the most plausible contradictory path. Report acceptance-critical uncertainty as blocked_unverified instead of assuming it away. Stop once material claims reach high confidence. Do not treat builder rationale or passing tests alone as proof. Before assigning blocking status, trace the relevant producer, validation or ownership boundary, supported caller, and consumer. Separate supported production reachability from malformed or contract-excluded direct invocation. A bounded practical consequence does not make an explicit acceptance-criterion violation nonblocking; report severity and blocking as separate judgments. Return result schema v2. Put only defects or material risks in findings. Put evidence-backed acceptance conclusions in verified_claims and identify the acceptance criteria they support. Put real non-defect improvements or out-of-contract notes in observations. Verified claims and observations have no severity or blocking label. Classify each claim once.",
+    "verdicts": ["accepted", "rejected", "blocked_unverified", "stale_snapshot"],
+    "severities": ["critical", "high", "medium", "low"],
+    "confidence_scale": ["high", "medium", "low"]
+  },
+  "cases": [
+    {
+      "case_id": "role-state-candidate-1-pre-remediation",
+      "title": "Durable independent-review episode state before review remediation",
+      "review_class": "implementation",
+      "risk": "high",
+      "change_profile": {
+        "route_class": "persistent_state_identity_integrity",
+        "semantic_domains": ["persistence", "identity", "integrity", "lifecycle", "security", "tests_docs"],
+        "topologies": ["cross_module", "cross_process", "concurrency_sensitive"],
+        "novelty": "new_ownership",
+        "evidence_types": ["static_source", "deterministic_test", "persisted_artifact", "human_judgment", "historical_reconstruction"],
+        "consequences": ["recoverable", "workflow_blocking", "state_corrupting", "security_sensitive"],
+        "changed_files": 7
+      },
+      "contract": {
+        "goal": "Enable an authorized independent reviewer to persist and recover only its own review-episode operational state across remediation, with exact episode and generation authority, immutable finding lineage, idempotent compare-and-swap transitions, explicit uncertainty and retirement, and no generic, supervisor, proposal, claim, or repository mutation authority.",
+        "acceptance_criteria": [
+          "The profile persists only one authority-bound review episode and cannot mutate supervisor state, proposal decisions, claims, checkpoints, schedules, repository content, or generic durable state.",
+          "The exact episode, subject, writer generation, predecessor revision, and authorized readers are validated and stale or cross-episode writers are fenced.",
+          "Finding lineage and remediation evidence remain attributable and auditable across initial review, remediation, re-evaluation, and reviewer replacement.",
+          "Compare-and-swap transitions are retry-idempotent and the documented uncertainty and retirement lifecycle is mechanically enforced.",
+          "The episode-scoped MCP surface exposes only the bounded read and transition operations and preserves the same authority and lifecycle constraints end to end."
+        ],
+        "excluded_scope": [
+          "MCP peer authentication beyond the authority manifest and trusted launcher boundary",
+          "Using persisted reviewer state as semantic slice acceptance or production review approval",
+          "Persistence for placement, reconnaissance, diagnosis, or falsification roles",
+          "Physical deletion or retention pruning of review history"
+        ]
+      },
+      "snapshot": {
+        "kind": "checkpoint",
+        "identity": "refs/work-engine/checkpoints/claude-role-state-mcp-20260823/slice-1/candidate-1",
+        "digest": "39e9c29dfe5d39e3991c1dbeb3794f386111408f42ef0f9ad2ec85cfa0d6ea40",
+        "reconstruction_confidence": "high",
+        "limitations": [
+          "The checkpoint is an immutable full-tree Git archive of commit 508fe3865d19e3aa767e70e1a33389333c2ff527.",
+          "Historical Claude output is retained as provenance and was not used as an executable oracle."
+        ],
+        "repository": "/home/bline/code/work-engine",
+        "tree_oid": "70de7a9ad03f7a6854e001581750233a7c05c698"
+      },
+      "artifacts": [
+        {"path": "skills/independent-review-state/SKILL.md", "role": "review-episode ownership and lifecycle contract", "sha256": "201af833cfffb623ff6ce6d3b25895edfe2866febb28ea164c80dec52cc37413"},
+        {"path": "skills/independent-review-state/scripts/independent_review_state.py", "role": "authority-bound durable state implementation", "sha256": "895087222b6601957f9e75fa08fcad27e8a3de79eabca2c5a70deea51d5de2da"},
+        {"path": "skills/independent-review-state/tests/test_independent_review_state.py", "role": "profile recovery, fencing, and mutation tests", "sha256": "733f9c7760d3e6105c4f4af5709504fd7b1ee4ca3800814c6652d8740a964d2a"},
+        {"path": "skills/work-engine-mcp/SKILL.md", "role": "bounded MCP adapter contract", "sha256": "445d8b501633154616f88a0b706fb622bad80c68a0534aca996a9f573424088e"},
+        {"path": "skills/work-engine-mcp/scripts/server.mjs", "role": "episode-scoped MCP transport", "sha256": "f161bbe64fdcc6a1255869faa1a43e0dd2dfaa83e4dedd90a97d195f6cec86ed"},
+        {"path": "skills/work-engine-mcp/tests/server.test.mjs", "role": "MCP surface and recovery proof", "sha256": "1bfa72d9c9a9391eb094dbd7af5644a33c9a0a212f71721a0362e8743a8bf3af"},
+        {"path": "ARCHITECTURE.md", "role": "system ownership and authority boundary", "sha256": "653acb04f67efaa7af9b3de3305531b0abdf19bb5aec3bf4211241365fe71d01"}
+      ],
+      "deterministic_evidence": [
+        "The checkpoint manifest records task patch e7335d475ff17c883c5fd8989c3b9d7769030f026925d8192b218dad4d6c34c7 and six of six validation gates passing.",
+        "The exact archived checkpoint passes both independent-review-state tests.",
+        "With the repository's installed dependencies mounted read-only by convention, the exact archived checkpoint passes all five work-engine MCP tests.",
+        "Candidate 1 and candidate 2 differ only in the state implementation and its tests."
+      ],
+      "limitations": [
+        "Truth is bounded to the stated contract and manifested artifacts, not every repository defect.",
+        "The original Claude reviewer did not execute tests and marked all reported findings nonblocking.",
+        "This case is paired with the remediated checkpoint and is not an independent real-world change."
+      ]
+    },
+    {
+      "case_id": "role-state-candidate-2-post-remediation",
+      "title": "Durable independent-review episode state after review remediation",
+      "review_class": "implementation",
+      "risk": "high",
+      "change_profile": {
+        "route_class": "persistent_state_identity_integrity",
+        "semantic_domains": ["persistence", "identity", "integrity", "lifecycle", "security", "tests_docs"],
+        "topologies": ["cross_module", "cross_process", "concurrency_sensitive"],
+        "novelty": "new_ownership",
+        "evidence_types": ["static_source", "deterministic_test", "persisted_artifact", "human_judgment", "historical_reconstruction"],
+        "consequences": ["recoverable", "workflow_blocking", "state_corrupting", "security_sensitive"],
+        "changed_files": 7
+      },
+      "contract": {
+        "goal": "Enable an authorized independent reviewer to persist and recover only its own review-episode operational state across remediation, with exact episode and generation authority, immutable finding lineage, idempotent compare-and-swap transitions, explicit uncertainty and retirement, and no generic, supervisor, proposal, claim, or repository mutation authority.",
+        "acceptance_criteria": [
+          "The profile persists only one authority-bound review episode and cannot mutate supervisor state, proposal decisions, claims, checkpoints, schedules, repository content, or generic durable state.",
+          "The exact episode, subject, writer generation, predecessor revision, and authorized readers are validated and stale or cross-episode writers are fenced.",
+          "Finding lineage and remediation evidence remain attributable and auditable across initial review, remediation, re-evaluation, and reviewer replacement.",
+          "Compare-and-swap transitions are retry-idempotent and the documented uncertainty and retirement lifecycle is mechanically enforced.",
+          "The episode-scoped MCP surface exposes only the bounded read and transition operations and preserves the same authority and lifecycle constraints end to end."
+        ],
+        "excluded_scope": [
+          "MCP peer authentication beyond the authority manifest and trusted launcher boundary",
+          "Using persisted reviewer state as semantic slice acceptance or production review approval",
+          "Persistence for placement, reconnaissance, diagnosis, or falsification roles",
+          "Physical deletion or retention pruning of review history"
+        ]
+      },
+      "snapshot": {
+        "kind": "checkpoint",
+        "identity": "refs/work-engine/checkpoints/claude-role-state-mcp-20260823/slice-1/candidate-2",
+        "digest": "64d5cb73651ba63dd2db56db6b17191583b7d9d34f2b25b6a0a4025f90f13e30",
+        "reconstruction_confidence": "high",
+        "limitations": [
+          "The checkpoint is an immutable full-tree Git archive of commit f3453e122379aedb021fd6eb33bbb71ea5c75727.",
+          "Claude's post-remediation re-evaluation reused the original review session and therefore is not a fresh clean-case review."
+        ],
+        "repository": "/home/bline/code/work-engine",
+        "tree_oid": "52d65b6179e3fa87f60dc897edf52e6fd9a7715a"
+      },
+      "artifacts": [
+        {"path": "skills/independent-review-state/SKILL.md", "role": "review-episode ownership and lifecycle contract", "sha256": "201af833cfffb623ff6ce6d3b25895edfe2866febb28ea164c80dec52cc37413"},
+        {"path": "skills/independent-review-state/scripts/independent_review_state.py", "role": "authority-bound durable state implementation", "sha256": "364f034512ea673616b16dc3e4ec424ebcab5b79d916cae39175faa07b68d104"},
+        {"path": "skills/independent-review-state/tests/test_independent_review_state.py", "role": "profile recovery, fencing, and mutation tests", "sha256": "16f73abb3c4069e63c758e83c4cf249e1df02128e650d284b21862b8e54a3051"},
+        {"path": "skills/work-engine-mcp/SKILL.md", "role": "bounded MCP adapter contract", "sha256": "445d8b501633154616f88a0b706fb622bad80c68a0534aca996a9f573424088e"},
+        {"path": "skills/work-engine-mcp/scripts/server.mjs", "role": "episode-scoped MCP transport", "sha256": "f161bbe64fdcc6a1255869faa1a43e0dd2dfaa83e4dedd90a97d195f6cec86ed"},
+        {"path": "skills/work-engine-mcp/tests/server.test.mjs", "role": "MCP surface and recovery proof", "sha256": "1bfa72d9c9a9391eb094dbd7af5644a33c9a0a212f71721a0362e8743a8bf3af"},
+        {"path": "ARCHITECTURE.md", "role": "system ownership and authority boundary", "sha256": "653acb04f67efaa7af9b3de3305531b0abdf19bb5aec3bf4211241365fe71d01"}
+      ],
+      "deterministic_evidence": [
+        "The checkpoint manifest records task patch 48b4ea0dd05d3d1d2ecee90593eacf89175d462907d06371501eae57aabe7957 and six of six validation gates passing.",
+        "The exact archived checkpoint passes all three independent-review-state tests.",
+        "With the repository's installed dependencies mounted read-only by convention, the exact archived checkpoint passes all five work-engine MCP tests.",
+        "The candidate-1-to-candidate-2 repair is limited to 59 insertions and 3 deletions in the state implementation and its tests."
+      ],
+      "limitations": [
+        "Truth is bounded to the stated contract and manifested artifacts, not every repository defect.",
+        "The historical post-remediation review is useful remediation evidence but is not independent of the original review.",
+        "This case is paired with the pre-remediation checkpoint and is not an independent real-world change."
+      ]
+    }
+  ]
+}

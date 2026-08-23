@@ -1,0 +1,55 @@
+{
+  "artifact_type": "review_bench_historical_provenance_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-role-state-paired-20260823",
+  "historical_reviewer": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "reasoning_effort": "medium",
+    "session_id": "440d3e04-a9f0-4c23-a308-c75e650c5d3b",
+    "transcript": "/home/bline/.claude/projects/-home-bline-code-work-engine/440d3e04-a9f0-4c23-a308-c75e650c5d3b.jsonl",
+    "initial_context": "fresh independent adversarial review of candidate 1",
+    "remediation_context": "same-session retained re-evaluation of candidate 2",
+    "test_execution": false
+  },
+  "historical_outcome": {
+    "candidate_1_acceptable_as_is": true,
+    "candidate_1_findings": [
+      {"id": "finding-1-remediation-evidence-not-required", "severity": "medium", "blocking": false},
+      {"id": "finding-2-attribution-self-declared", "severity": "low", "blocking": false},
+      {"id": "finding-3-untested-idempotency-and-lifecycle-paths", "severity": "low", "blocking": false}
+    ],
+    "candidate_2_re_evaluation": "All three historical findings were reported resolved with source and test evidence."
+  },
+  "checkpoint_provenance": [
+    {
+      "case_id": "role-state-candidate-1-pre-remediation",
+      "commit_oid": "508fe3865d19e3aa767e70e1a33389333c2ff527",
+      "tree_oid": "70de7a9ad03f7a6854e001581750233a7c05c698",
+      "archive_sha256": "39e9c29dfe5d39e3991c1dbeb3794f386111408f42ef0f9ad2ec85cfa0d6ea40",
+      "task_patch_digest": "e7335d475ff17c883c5fd8989c3b9d7769030f026925d8192b218dad4d6c34c7",
+      "manifest_digest": "e9c6d33f71cadd82263e573417d97df879e90d51e11ff9e7cff57ffecd067433",
+      "gate_receipt_digest": "2dd0ea180555a59601e5d1762ad55a5b07de33ada3e6de6f2910085488f25518"
+    },
+    {
+      "case_id": "role-state-candidate-2-post-remediation",
+      "commit_oid": "f3453e122379aedb021fd6eb33bbb71ea5c75727",
+      "tree_oid": "52d65b6179e3fa87f60dc897edf52e6fd9a7715a",
+      "archive_sha256": "64d5cb73651ba63dd2db56db6b17191583b7d9d34f2b25b6a0a4025f90f13e30",
+      "task_patch_digest": "48b4ea0dd05d3d1d2ecee90593eacf89175d462907d06371501eae57aabe7957",
+      "manifest_digest": "24f8c4a3e42fecd1b5d695fb5a9c05a23958e07272956e62675be80e0b435f63",
+      "gate_receipt_digest": "f629fd2026c3bf97ab18a7096f7a39a02649627ce19d652dc21dcef45453bdcf"
+    }
+  ],
+  "accepted_plan": {
+    "plan_version": "independent-review-state-v1",
+    "scope_revision": "accepted-plan-a5265cb977578c70",
+    "revision": "143fb80554913314ebddd92fb7a33c7619434673",
+    "sha256": "a5265cb977578c70c9e98ab78b2359cb89aa14f6237550dfa808290b5089b3e2"
+  },
+  "limitations": [
+    "The historical Claude objects predate result schema v2 and are not rewritten as current-format benchmark results.",
+    "The clean checkpoint re-evaluation is retained-context remediation evidence, not a fresh clean-case attempt.",
+    "Historical agreement did not determine the sealed truth; exact source, checkpoint identity, test execution, and human adjudication did."
+  ]
+}

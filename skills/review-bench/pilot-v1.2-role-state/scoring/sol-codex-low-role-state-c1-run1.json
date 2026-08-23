@@ -1,0 +1,6 @@
+{
+  "artifact_type":"review_bench_scoring_v1","schema_version":1,"bench_id":"work-engine-role-state-paired-20260823","case_id":"role-state-candidate-1-pre-remediation","result_id":"sol-codex-low-role-state-c1-run1",
+  "finding_dispositions":[{"result_finding_id":"F-001","disposition":"true_positive","truth_finding_ids":["advance-retry-not-idempotent","begin-retry-not-idempotent"],"evidence_valid":true,"notes":"The reproduced advance failure directly matches truth; the same finding also correctly identifies the separate begin replay failure. High severity overstates the medium truth calibration."}],
+  "missed_truth_ids":["remediation-status-without-evidence","new-finding-attribution-self-declared","replacement-subject-not-bound","uncertainty-not-lifecycle-fenced","documented-lifecycle-paths-unproven"],
+  "adjudicator":"codex-root-against-amended-executable-truth","limitations":["One compound result finding maps to two related truth findings.","Schema v1 does not score severity calibration or verified-claim completeness beyond result validation."]
+}

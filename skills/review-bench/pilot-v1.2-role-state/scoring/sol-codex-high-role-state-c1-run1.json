@@ -1,0 +1,11 @@
+{
+  "artifact_type":"review_bench_scoring_v1","schema_version":1,"bench_id":"work-engine-role-state-paired-20260823","case_id":"role-state-candidate-1-pre-remediation","result_id":"sol-codex-high-role-state-c1-run1",
+  "finding_dispositions":[
+    {"result_finding_id":"F-001","disposition":"true_positive","truth_finding_ids":["advance-retry-not-idempotent","begin-retry-not-idempotent"],"evidence_valid":true,"notes":"Both retry failures are confirmed; high severity overstates the medium truth calibration."},
+    {"result_finding_id":"F-002","disposition":"true_positive","truth_finding_ids":["new-finding-attribution-self-declared"],"evidence_valid":true,"notes":"Directly matches the writer-attribution defect; high severity overstates low truth severity."},
+    {"result_finding_id":"F-003","disposition":"true_positive","truth_finding_ids":["replacement-subject-not-bound"],"evidence_valid":true,"notes":"Directly matches the independently reproduced successor-subject mismatch; high severity overstates medium truth severity."},
+    {"result_finding_id":"F-004","disposition":"true_positive","truth_finding_ids":["uncertainty-not-lifecycle-fenced"],"evidence_valid":true,"notes":"Directly matches the independently reproduced uncertain-state transition; high severity overstates medium truth severity."}
+  ],
+  "missed_truth_ids":["remediation-status-without-evidence","documented-lifecycle-paths-unproven"],
+  "adjudicator":"codex-root-against-amended-executable-truth","limitations":["The test-coverage observation is not a finding and therefore does not count as detecting the separate truth finding under the classify-once protocol.","Schema v1 does not score severity calibration."]
+}

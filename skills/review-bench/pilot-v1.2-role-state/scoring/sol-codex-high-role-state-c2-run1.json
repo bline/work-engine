@@ -1,0 +1,5 @@
+{
+  "artifact_type":"review_bench_scoring_v1","schema_version":1,"bench_id":"work-engine-role-state-paired-20260823","case_id":"role-state-candidate-2-post-remediation","result_id":"sol-codex-high-role-state-c2-run1",
+  "finding_dispositions":[{"result_finding_id":"IRS-001","disposition":"true_positive","truth_finding_ids":["begin-retry-not-idempotent"],"evidence_valid":true,"notes":"Directly matches the reproduced begin replay failure with correctly calibrated medium severity."}],
+  "missed_truth_ids":["replacement-subject-not-bound","uncertainty-not-lifecycle-fenced"],"adjudicator":"codex-root-against-amended-executable-truth","limitations":["The result positively verified the exact-subject criterion despite the reproduced successor-subject mismatch; scoring schema v1 has no disposition field for incorrect verified claims."]
+}

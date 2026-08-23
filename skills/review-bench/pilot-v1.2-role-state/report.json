@@ -1,0 +1,319 @@
+{
+  "artifact_type": "review_bench_report_v1",
+  "bench_id": "work-engine-role-state-paired-20260823",
+  "by_route_class": {
+    "persistent_state_identity_integrity": {
+      "openai|gpt-5.6-sol|codex-subagent-isolated-archive|high|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell": {
+        "aggregation_members": [],
+        "aggregation_strategy": "none",
+        "attempts": 2,
+        "blocked_unverified": 0,
+        "blocking_detected": 6,
+        "blocking_label_overstatements": 0,
+        "blocking_label_understatements": 0,
+        "blocking_opportunities": 9,
+        "blocking_recall": 0.666667,
+        "case_count": 2,
+        "defect_recall": 0.6,
+        "duplicate_findings": 0,
+        "evidence_valid_findings": 5,
+        "evidence_validity": 1.0,
+        "false_accepts": 0,
+        "false_blocks": 0,
+        "false_positive_findings": 0,
+        "finding_precision": 1.0,
+        "harness": "codex-subagent-isolated-archive",
+        "inference_family": "gpt-5.6",
+        "model": "gpt-5.6-sol",
+        "nonblocking_observation_findings": 0,
+        "pass_count": 1,
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "reported_findings": 5,
+        "resource_efficiency": {
+          "cost_usd_per_truth_detected": null,
+          "total_tokens_per_truth_detected": null,
+          "wall_clock_seconds_per_truth_detected": null
+        },
+        "resources": {
+          "cost_usd": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "input_tokens": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "output_tokens": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "wall_clock_seconds": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          }
+        },
+        "review_protocol": "evidence-calibrated-review/1.2",
+        "reviewer_observations": 1,
+        "severity_overstatements": 4,
+        "severity_understatements": 0,
+        "tool_access": [
+          "isolated-filesystem",
+          "node-runtime",
+          "python-runtime",
+          "shell"
+        ],
+        "true_positive_findings": 5,
+        "truth_detected": 6,
+        "truth_opportunities": 10,
+        "verified_claims": 5
+      },
+      "openai|gpt-5.6-sol|codex-subagent-isolated-archive|low|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell": {
+        "aggregation_members": [],
+        "aggregation_strategy": "none",
+        "attempts": 2,
+        "blocked_unverified": 0,
+        "blocking_detected": 5,
+        "blocking_label_overstatements": 0,
+        "blocking_label_understatements": 0,
+        "blocking_opportunities": 9,
+        "blocking_recall": 0.555556,
+        "case_count": 2,
+        "defect_recall": 0.5,
+        "duplicate_findings": 0,
+        "evidence_valid_findings": 4,
+        "evidence_validity": 1.0,
+        "false_accepts": 0,
+        "false_blocks": 0,
+        "false_positive_findings": 0,
+        "finding_precision": 1.0,
+        "harness": "codex-subagent-isolated-archive",
+        "inference_family": "gpt-5.6",
+        "model": "gpt-5.6-sol",
+        "nonblocking_observation_findings": 0,
+        "pass_count": 1,
+        "provider": "openai",
+        "reasoning_effort": "low",
+        "reported_findings": 4,
+        "resource_efficiency": {
+          "cost_usd_per_truth_detected": null,
+          "total_tokens_per_truth_detected": null,
+          "wall_clock_seconds_per_truth_detected": null
+        },
+        "resources": {
+          "cost_usd": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "input_tokens": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "output_tokens": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          },
+          "wall_clock_seconds": {
+            "average": null,
+            "observations": 0,
+            "total": null
+          }
+        },
+        "review_protocol": "evidence-calibrated-review/1.2",
+        "reviewer_observations": 0,
+        "severity_overstatements": 4,
+        "severity_understatements": 0,
+        "tool_access": [
+          "isolated-filesystem",
+          "node-runtime",
+          "python-runtime",
+          "shell"
+        ],
+        "true_positive_findings": 4,
+        "truth_detected": 5,
+        "truth_opportunities": 10,
+        "verified_claims": 4
+      }
+    }
+  },
+  "configurations": {
+    "openai|gpt-5.6-sol|codex-subagent-isolated-archive|high|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell": {
+      "aggregation_members": [],
+      "aggregation_strategy": "none",
+      "attempts": 2,
+      "blocked_unverified": 0,
+      "blocking_detected": 6,
+      "blocking_label_overstatements": 0,
+      "blocking_label_understatements": 0,
+      "blocking_opportunities": 9,
+      "blocking_recall": 0.666667,
+      "case_count": 2,
+      "defect_recall": 0.6,
+      "duplicate_findings": 0,
+      "evidence_valid_findings": 5,
+      "evidence_validity": 1.0,
+      "false_accepts": 0,
+      "false_blocks": 0,
+      "false_positive_findings": 0,
+      "finding_precision": 1.0,
+      "harness": "codex-subagent-isolated-archive",
+      "inference_family": "gpt-5.6",
+      "model": "gpt-5.6-sol",
+      "nonblocking_observation_findings": 0,
+      "pass_count": 1,
+      "provider": "openai",
+      "reasoning_effort": "high",
+      "reported_findings": 5,
+      "resource_efficiency": {
+        "cost_usd_per_truth_detected": null,
+        "total_tokens_per_truth_detected": null,
+        "wall_clock_seconds_per_truth_detected": null
+      },
+      "resources": {
+        "cost_usd": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "input_tokens": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "output_tokens": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "wall_clock_seconds": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        }
+      },
+      "review_protocol": "evidence-calibrated-review/1.2",
+      "reviewer_observations": 1,
+      "severity_overstatements": 4,
+      "severity_understatements": 0,
+      "tool_access": [
+        "isolated-filesystem",
+        "node-runtime",
+        "python-runtime",
+        "shell"
+      ],
+      "true_positive_findings": 5,
+      "truth_detected": 6,
+      "truth_opportunities": 10,
+      "verified_claims": 5
+    },
+    "openai|gpt-5.6-sol|codex-subagent-isolated-archive|low|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell": {
+      "aggregation_members": [],
+      "aggregation_strategy": "none",
+      "attempts": 2,
+      "blocked_unverified": 0,
+      "blocking_detected": 5,
+      "blocking_label_overstatements": 0,
+      "blocking_label_understatements": 0,
+      "blocking_opportunities": 9,
+      "blocking_recall": 0.555556,
+      "case_count": 2,
+      "defect_recall": 0.5,
+      "duplicate_findings": 0,
+      "evidence_valid_findings": 4,
+      "evidence_validity": 1.0,
+      "false_accepts": 0,
+      "false_blocks": 0,
+      "false_positive_findings": 0,
+      "finding_precision": 1.0,
+      "harness": "codex-subagent-isolated-archive",
+      "inference_family": "gpt-5.6",
+      "model": "gpt-5.6-sol",
+      "nonblocking_observation_findings": 0,
+      "pass_count": 1,
+      "provider": "openai",
+      "reasoning_effort": "low",
+      "reported_findings": 4,
+      "resource_efficiency": {
+        "cost_usd_per_truth_detected": null,
+        "total_tokens_per_truth_detected": null,
+        "wall_clock_seconds_per_truth_detected": null
+      },
+      "resources": {
+        "cost_usd": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "input_tokens": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "output_tokens": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        },
+        "wall_clock_seconds": {
+          "average": null,
+          "observations": 0,
+          "total": null
+        }
+      },
+      "review_protocol": "evidence-calibrated-review/1.2",
+      "reviewer_observations": 0,
+      "severity_overstatements": 4,
+      "severity_understatements": 0,
+      "tool_access": [
+        "isolated-filesystem",
+        "node-runtime",
+        "python-runtime",
+        "shell"
+      ],
+      "true_positive_findings": 4,
+      "truth_detected": 5,
+      "truth_opportunities": 10,
+      "verified_claims": 4
+    }
+  },
+  "limitations": [
+    "Metrics are descriptive and do not establish statistical equivalence.",
+    "Repeated attempts within a case are correlated.",
+    "Pairwise detection uses the union across attempts for each configuration and case.",
+    "Ground truth and finding correspondence depend on recorded adjudication."
+  ],
+  "pairwise_complementarity": [
+    {
+      "interpretation": "descriptive union across attempts; adjudicate before policy use",
+      "joint_miss_rate": 0.2,
+      "left": "openai|gpt-5.6-sol|codex-subagent-isolated-archive|high|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell",
+      "left_conditional_recall_given_right_miss": 0.6,
+      "left_false_positive_findings": 0,
+      "left_incremental_truth_per_additional_false_positive": null,
+      "right": "openai|gpt-5.6-sol|codex-subagent-isolated-archive|low|evidence-calibrated-review/1.2|1|none||isolated-filesystem,node-runtime,python-runtime,shell",
+      "right_conditional_recall_given_left_miss": 0.5,
+      "right_false_positive_findings": 0,
+      "right_incremental_truth_per_additional_false_positive": null,
+      "shared_cases": 2,
+      "truth_jointly_detected": 3,
+      "truth_jointly_missed": 2,
+      "truth_opportunities": 10,
+      "truth_unique_to_left": 3,
+      "truth_unique_to_right": 2,
+      "union_recall": 0.8
+    }
+  ],
+  "schema_version": 1,
+  "status": "descriptive_only",
+  "truth_adjudication_amendments": [
+    "exact-snapshot-negative-path-correction-20260823"
+  ],
+  "truth_artifact_type": "review_bench_truth_v2"
+}

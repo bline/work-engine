@@ -23,6 +23,13 @@ claims, or aggregate call counts as ground truth.
   statistical claims.
 - Never convert a bench result into acceptance of the reviewed production
   slice.
+- Preserve each sufficiently identified development slice as a baseline review
+  candidate when its exact checkpoint, contract, deterministic evidence, and
+  original review provenance are available. Candidate preservation does not
+  establish truth or require immediate benchmark execution.
+- Keep pre-claims development evidence, later claim-aware reruns, and
+  post-build production evidence distinguishable. Do not pool them merely
+  because they concern the same repository or reviewer model.
 
 Read [artifact-contracts.md](references/artifact-contracts.md) when authoring
 or adjudicating corpus, truth, result, or scoring artifacts.
@@ -33,6 +40,10 @@ selecting new cases or running new reviews. The frozen
 for results that identify those protocols. A contract change requires a new
 protocol version; do not reinterpret existing reviewer outputs under revised
 rules.
+Read
+[claims-aware-evaluation-roadmap.md](references/claims-aware-evaluation-roadmap.md)
+when preserving slice candidates or planning comparisons that add proposal
+packets, claim revisions, Codebase Memory projections, or production evidence.
 
 ## Modes
 
@@ -41,6 +52,12 @@ rules.
 Use `inventory-history` to find receipts with review or repair evidence and to
 identify missing snapshot information. Session matches are forensic candidates,
 not automatically valid cases.
+
+During active system development, prefer capturing the current slice's
+immutable candidate and accepted checkpoints at completion time rather than
+depending on later transcript archaeology. Admission, truth adjudication, and
+review attempts may happen later when the required comparison capability is
+available.
 
 ```bash
 python3 skills/review-bench/scripts/review_bench.py inventory-history \

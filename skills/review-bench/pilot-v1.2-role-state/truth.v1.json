@@ -1,0 +1,78 @@
+{
+  "artifact_type": "review_bench_truth_v1",
+  "schema_version": 1,
+  "bench_id": "work-engine-role-state-paired-20260823",
+  "cases": [
+    {
+      "case_id": "role-state-candidate-1-pre-remediation",
+      "expected_verdict": "accepted",
+      "findings": [
+        {
+          "truth_id": "remediation-status-without-evidence",
+          "severity": "medium",
+          "blocking": false,
+          "category": "audit-lineage",
+          "claim": "A finding can enter remediation_presented or verified_resolved without an exact remediation reference, and an initial review can submit a finding already in a remediation status, permitting the persisted audit trail to claim remediation that never occurred.",
+          "evidence": [
+            "Candidate 1 validate_finding validates remediation_references syntactically but does not require a reference for remediation_presented or verified_resolved status.",
+            "Candidate 1 record_initial_result accepts every globally valid finding status and does not reject remediation references on the initial transition.",
+            "Candidate 2 adds both invariants and focused negative tests, confirming the reachable validation gap without relying on the historical review as truth."
+          ],
+          "adjudication": "Human source adjudication confirms a material audit-lineage defect. It is nonblocking because ordinary authorized reviewers can still produce correct state and the case contract does not make hostile self-misreporting an authentication boundary.",
+          "tags": ["persistence", "audit", "remediation", "negative-path"]
+        },
+        {
+          "truth_id": "new-finding-attribution-self-declared",
+          "severity": "low",
+          "blocking": false,
+          "category": "identity-attribution",
+          "claim": "New findings accept self-declared attributed_reviewer and reviewer_generation values that need not match the currently authorized writer generation.",
+          "evidence": [
+            "Candidate 1 validates attribution fields only as a nonempty actor string and positive generation integer.",
+            "Candidate 1 record_initial_result and record_re_evaluation do not bind newly introduced finding attribution to authority.writer.",
+            "Candidate 2 adds validate_new_finding_attribution at both transition boundaries and a focused rejection test."
+          ],
+          "adjudication": "Human source adjudication confirms incorrect attribution can be persisted by an otherwise authorized writer. The authority manifest still fences the episode writer, so this is a nonblocking provenance-quality defect rather than a writer-authentication bypass.",
+          "tags": ["identity", "attribution", "generation", "provenance"]
+        },
+        {
+          "truth_id": "documented-lifecycle-paths-unproven",
+          "severity": "low",
+          "blocking": false,
+          "category": "test-coverage",
+          "claim": "The tests do not exercise successful transition replay or the documented uncertainty and retirement paths, leaving material lifecycle claims without focused regression proof.",
+          "evidence": [
+            "Candidate 1 has two profile tests covering recovery and fencing plus claim-field and finding-lineage rejection, but no successful replay, mark_uncertain, retire_episode, or post-retirement rejection assertions.",
+            "The profile documentation explicitly claims retry idempotency, explicit uncertainty, retirement, and non-reactivation.",
+            "Candidate 2 adds replay and uncertainty-to-retirement lifecycle assertions; the exact archived post-remediation suite passes three tests."
+          ],
+          "adjudication": "Human source and exact-snapshot test adjudication confirm a bounded validation gap. The underlying paths are present and no contrary runtime behavior was demonstrated, so the gap is low severity and nonblocking.",
+          "tags": ["tests", "idempotency", "lifecycle", "regression"]
+        }
+      ],
+      "adjudication_notes": [
+        "The expected verdict remains accepted because all confirmed findings are nonblocking under the frozen contract.",
+        "The exact checkpoint passes its two profile tests and five MCP tests; passing tests do not negate the three bounded gaps.",
+        "Claude's historical findings align with the independently adjudicated source deltas, but the historical output was treated only as discovery and provenance evidence."
+      ]
+    },
+    {
+      "case_id": "role-state-candidate-2-post-remediation",
+      "expected_verdict": "accepted",
+      "findings": [],
+      "adjudication_notes": [
+        "Candidate 2 requires exact remediation references for remediation statuses and forbids initial findings from claiming remediation.",
+        "Candidate 2 binds every newly introduced finding to the authorized writer actor and generation while preserving existing lineage.",
+        "Candidate 2 checks handled transition identity before stale expected-revision rejection, making an exact retry return the current durable result.",
+        "The exact checkpoint passes three profile tests, including replay, uncertainty, retirement, and post-retirement rejection, plus five MCP integration tests.",
+        "No material defect was established within the frozen contract and artifact boundary."
+      ]
+    }
+  ],
+  "limitations": [
+    "Truth is bounded to these case contracts and exact artifact manifests.",
+    "The pair measures defect detection and clean-case restraint on one correlated change; it does not estimate general reviewer effectiveness.",
+    "The third pre-remediation truth item is a material validation gap, not proof that the implemented lifecycle behavior was incorrect.",
+    "Future evidence can correct this truth only through a provenance-bearing superseding artifact."
+  ]
+}

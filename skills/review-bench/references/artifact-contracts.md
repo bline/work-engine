@@ -4,6 +4,36 @@ The deterministic validator in `scripts/review_bench.py` is authoritative for
 field names and closed vocabularies. These notes explain the separation of
 responsibilities.
 
+## Candidate lifecycle and evidence eras
+
+A preserved review candidate is not yet a corpus case. During development, a
+slice may be retained for later use when it has:
+
+- an immutable pre-review, candidate, repaired, or accepted checkpoint;
+- the exact slice contract and acceptance criteria effective at that snapshot;
+- deterministic evidence and artifact identities;
+- original reviewer and remediation provenance when available; and
+- explicit reconstruction limitations for anything not checkpointed directly.
+
+Candidate capture must not invent expected findings or verdicts. Corpus
+admission and truth adjudication remain separate later acts.
+
+Keep three evidence eras distinguishable:
+
+1. **Pre-claims development baseline** — the reviewer receives the snapshot,
+   contract, and then-available evidence without the future claim system.
+2. **Claim-aware replay** — the same snapshot is reviewed with a frozen,
+   snapshot-appropriate proposal, claim, reliance, and Codebase Memory evidence
+   packet under a newly versioned protocol.
+3. **Post-build production evidence** — naturally occurring reviews use the
+   completed system and produce prospective claim and reliance evidence as part
+   of ordinary work.
+
+Do not backfill future claims into an old baseline attempt or describe a
+claim-aware replay as historical production behavior. Compatible analysis may
+pair attempts by snapshot, but reports must preserve evidence era, protocol,
+harness, graph generation, and supplied artifact identities.
+
 ## Corpus
 
 `review_bench_corpus_v1` contains the shared protocol and blinded cases. Each
@@ -109,6 +139,13 @@ nonblocking_observation
 It also records whether the finding's evidence is valid and exactly which
 truth findings were missed. This explicit mapping avoids unreliable lexical
 matching between differently worded findings.
+
+Scoring v1 does not adjudicate the correctness of `verified_claims`; it only
+counts them. Claim-aware evaluation must add an explicit disposition for false,
+stale, inapplicable, insufficiently supported, and correctly verified claims
+before those results inform reviewer policy. A false high-confidence verified
+claim may be more consequential than an ordinary missed finding and must not be
+hidden by defect precision or recall.
 
 ## Report
 
