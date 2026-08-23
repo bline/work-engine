@@ -7,6 +7,14 @@ review artifacts is the current candidate semantic owner. Its first adapter may
 live adjacent to proposal packets because that is the first controlled consumer,
 but physical proximity must not settle permanent ownership.
 
+Canonical history and query acceleration are separate placement questions. The
+candidate semantic owner preserves stable claim identity, immutable revisions,
+refresh judgments, evidence baselines, and typed lineage. A SQLite edge table,
+graph database, in-memory traversal, or other index may project that history for
+many-to-many queries without becoming its semantic owner. Dogfooding should
+record the required queries and observed scale before selecting a durable query
+adapter.
+
 Placement remains uncertain. The proposal-research workflow is not yet formed,
 and review artifacts have not yet exercised the shared vocabulary across a real
 revision. The current evidence establishes credible consumers, not a confirmed
@@ -42,8 +50,33 @@ manifest into research history, review findings, or freshness state.
 ### Persistent runtime state
 
 Rejected as an assumed canonical owner. Runtime machinery may later retain an
-active refresh obligation, but it does not own the durable meaning of claims,
-evidence, or judgments.
+active reliance on an exact claim revision or a pending refresh obligation, but
+it does not own the durable meaning or history of claims, evidence, or
+judgments.
+
+### Implementation-completion evidence
+
+Neighboring producer, not semantic owner. Completion evidence may produce an
+independently identified impact nomination that targets exact claim revisions
+through `may_affect` and records the implementation's observed facts, change
+evidence, baseline transition, and consequences already established under
+separately named authority. It cannot declare a claim stale, false, refreshed,
+applicable, or causally changed merely because implementation completed.
+
+### Control-plane delivery or scheduler
+
+Transport and coordination candidates, not evidence owners. A general delivery
+capability may route a durable refresh obligation to an active authorized role.
+The scheduler may share that delivery machinery for time-triggered work, but
+neither mechanism acquires claim meaning, refresh authority, or role-activation
+authority.
+
+### Query projection
+
+Generated view, not canonical owner. It may materialize reverse dependencies,
+candidate-impact views, transitive reliance, and epistemic-churn statistics.
+It must be rebuildable from canonical claim and judgment history and must expose
+its source revision, projection version, and coverage limits.
 
 ## Placement certificate candidate
 
@@ -64,4 +97,8 @@ exist.
 Reconsider placement when separately formed research and review consumers
 exercise the candidate, when a real revision distinguishes shared from
 domain-specific lineage, or when external evidence, concurrency, or recovery
-requires semantics unavailable from Git-backed on-demand artifacts.
+requires semantics unavailable from Git-backed on-demand artifacts. Also
+reconsider the canonical/query split when representative many-to-many traversals
+show that the first projection cannot meet consumer scale or freshness needs,
+without treating projection pressure as proof that a graph store should own
+semantic history.
