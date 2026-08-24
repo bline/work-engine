@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wind Walker"
+  short_description: "Save nessisary context to state and clear context. Unbound save state, unbound clear context"
+  default_prompt: "Use $wind-walker to manage context"
