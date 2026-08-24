@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "raw-intake-s1-claude-generation-1",
+  "identity": {
+    "run_id": "5a74bd5c-3ebc-4e6e-9d93-07dd96aede5a",
+    "slice_number": 1,
+    "attempt_id": "attempt-4",
+    "plan_version": "accepted-v1",
+    "review_obligation_id": "raw-intake-s1-claude-adversarial-review",
+    "review_episode_id": "raw-intake-s1-claude-review-episode-1"
+  },
+  "source": {
+    "owner": "user-authority-via-slice-supervisor",
+    "reference": "proposals/idea-to-proposal-system/raw-idea-intake/implementation-authorization.md",
+    "revision": "sha256:af99fda569768b04e4c799c9f68147b7d38df50dbaa20afdde9e3a13dd0025f1",
+    "integrity_sha256": "af99fda569768b04e4c799c9f68147b7d38df50dbaa20afdde9e3a13dd0025f1",
+    "freshness_rule": "exact_revision"
+  },
+  "writer": {
+    "logical_actor_id": "raw-intake-s1-claude-reviewer",
+    "provider": "claude",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "claude-session",
+      "reference": "d485df46-5984-40d8-b8ba-b6c755db0193",
+      "revision": "generation-1",
+      "integrity_sha256": "78fac091c71b28b11d18cb0cc04121de13d367b3613563232f6291ae6615d299",
+      "freshness_rule": "exact_revision"
+    }
+  },
+  "readers": [
+    "independent_reviewer",
+    "coordinating_builder",
+    "slice_supervisor"
+  ],
+  "initial_subject": [
+    {
+      "owner": "slice-checkpoint",
+      "reference": "refs/work-engine/checkpoints/5a74bd5c-3ebc-4e6e-9d93-07dd96aede5a/slice-1/candidate-1",
+      "revision": "commit:cf1412f7b6a3209d92a24667c538e16fa4afa33c#tree:934e9d16c3721795fbc9b843c5aaa90a5d7a9912#plan:accepted-v1#scope:raw-intake-s1-v1",
+      "integrity_sha256": "b3e58bffaf479915475729d9af7c675caaf94f80e156560af871557f76c4d0cd",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "deterministic-gate",
+      "reference": "raw-intake-s1-deterministic-pre-review-gate",
+      "revision": "accepted-v1/raw-intake-s1-v1",
+      "integrity_sha256": "4f427bf1dac001846e3c8c115ce0546fd7d4b3744aa3fe25615bc7b16897f8d9",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "agent-instruction-review",
+      "reference": "refs/work-engine/live-state/1b1346f2b729b5603c625ee66d5516cf8797337296ac63928f7e5e6ced06a957",
+      "revision": "341e00219bbad4c7702e6d977b7bef142c14d7e4",
+      "integrity_sha256": "9d75e1dd16cac751029bd732891d703a6003cde2cf24e0754a67855e1face39e",
+      "freshness_rule": "exact_revision"
+    },
+    {
+      "owner": "slice-supervisor",
+      "reference": "planning/raw-idea-intake/slice-01-accepted-plan.md",
+      "revision": "accepted-v1",
+      "integrity_sha256": "857b30a600ad5d6fbad369e4c224767a13525c611aab0160ddd89d3a6b05c31c",
+      "freshness_rule": "exact_revision"
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}

@@ -1,0 +1,42 @@
+schema_version: 1
+strategic_objective: "Complete the controlled idea-to-proposal workflow while preserving separate proposal, roadmap, and implementation authority"
+evidence_cutoff:
+  roadmap_revision: "sha256:e283619356353618cf26735da1e2d2a88b41bc2e1a4b5fd0b77516118ec7933b"
+  repository_revision: "0a71dfada0852b3d8445961ffeef9b15c27e0b43"
+  campaign_terminals: []
+continuity: "reconstructed"
+verdict: "continue"
+current_rationale: "The revision-bound bootstrap review closed all seven raw-idea-intake findings at proposal revision 89a3a38e99176565f9c76bffbefc0f7c9541afdb, and the named user authority has now approved the proposal meaning with probable placement. This completes the proposal's authority-decision transition without settling final architecture, changing roadmap priority, or authorizing implementation."
+assumptions:
+  confirmed:
+    - evidence: "reviews/proposals/raw-idea-intake/89a3a38/synthesis.md"
+      consequence: "The formed proposal reached review closure with no unresolved material finding and was ready for the proposal decision owner."
+    - evidence: "proposals/idea-to-proposal-system/raw-idea-intake/decision.json"
+      consequence: "The candidate meaning and probable planning-layer intake boundary are approved by the named authority."
+  changed:
+    - evidence: "proposals/idea-to-proposal-system/raw-idea-intake/decision.json"
+      consequence: "Roadmap statements that the raw-intake proposal is paused at or pending its authority decision are stale."
+  invalidated: []
+route_changes:
+  priorities: []
+  dependencies:
+    - "Any implementation campaign for raw idea intake requires a separate explicit implementation grant bound to the decided proposal and its review evidence."
+  newly_important:
+    - "Use the decided packet and review closure as the durable work source for downstream planning instead of reconstructing proposal meaning from the raw idea."
+  deferred:
+    - "Permanent intake-record placement, broader claim-lineage ownership, and repository cleanup remain evidence-dependent decisions."
+recommended_campaign:
+  disposition: "none"
+  objective: null
+  work_source: "proposals/idea-to-proposal-system/raw-idea-intake"
+  reason: "Proposal approval is complete, but the packet decision explicitly preserves implementation_authorized: false; campaign launch requires a separate user grant."
+open_uncertainties:
+  - "Whether dogfooding selects a top-level idea-intake record surface or a partitioned ideas hierarchy."
+  - "Whether intake should consume the shared claim-lineage minimum or retain a local assessment-claim profile."
+  - "Whether repository-local Git-backed records remain sufficient for future concurrent or external consumers."
+authority_required:
+  - "Explicit implementation authorization before launching a campaign or mutating product capabilities for work-engine.raw-idea-intake."
+revisit_when:
+  - "The user grants or declines implementation authority."
+  - "Dogfooding or migration evidence triggers a recorded reopening condition."
+  - "A downstream consumer materially changes the required intake durability or ownership boundary."

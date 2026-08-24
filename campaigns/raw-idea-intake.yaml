@@ -1,0 +1,39 @@
+version: 2
+objective: "Implement the approved Raw Idea Intake and Claim Assessment proposal completely, using as many coherent slices as needed."
+work_source:
+  kind: file
+  value: "../proposals/idea-to-proposal-system/raw-idea-intake/proposal.md"
+builder:
+  skill: slice-builder
+  model: gpt-5.6-sol
+  reasoning_effort: low
+  context:
+    repository_evidence:
+      provider: codex-codebase-memory
+      skill: repo-search
+    adversarial_review:
+      provider: codex
+      skill: codex-adversarial-review
+      model: gpt-5.6-sol
+      reasoning_effort: low
+      evidence_class: accepted_same_model_review
+      isolation: fresh_process
+amendments:
+  - timestamp: 2026-08-24T02:57:57-06:00
+    changed_fields:
+      - builder.context.independent_review
+      - builder.context.adversarial_review
+    prior_values:
+      review_role: independent_review
+      provider: claude
+      skill: claude-recon-implementation
+    new_values:
+      review_role: adversarial_review
+      provider: codex
+      skill: codex-adversarial-review
+      model: gpt-5.6-sol
+      reasoning_effort: low
+      evidence_class: accepted_same_model_review
+      isolation: fresh_process
+    reason: "Claude is unavailable until its weekly quota reset; temporarily use a fresh Sol Low Codex reviewer without an independence claim."
+    human_approval: "The user authorized Sol Low as the replacement reviewer until the Claude weekly reset."

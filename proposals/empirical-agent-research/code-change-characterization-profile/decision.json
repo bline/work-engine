@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.code-change-characterization-profile",
+  "source": {
+    "repository_revision": "0da2d771ada490a9ac8a9a02aea295433dbb8b4d",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The proposal meaning is approved with provisional placement as a shared derived-evidence capability that owns recomputable characterizations of exact repository change subjects while existing domain artifacts retain semantic authority.",
+    "rationale": "The user explicitly accepted the Code Change Characterization Profile and separately authorized its deterministic baseline. The decision approves the proposal meaning and probable placement while preserving semantic, historical-graph, composition, and Review Bench uncertainties for dogfooding.",
+    "reopening_conditions": [
+      "A deterministic profile over real slice checkpoints cannot distinguish user baseline changes, task-owned change, candidate attempts, and remediation without changing checkpoint identity semantics.",
+      "Before/after structural analysis at immutable revisions cannot be supplied by existing or bounded repository-evidence adapters with truthful coverage provenance.",
+      "Semantic fields repeatedly duplicate architecture, invariant, claim, review, or runtime ownership rather than remaining attributed derived observations.",
+      "Review Bench cases show that task/problem or evidence-environment differences dominate code-change properties and require a different comparison unit.",
+      "Profile composition across candidate, remediation, accepted, and campaign subjects cannot preserve non-additive topology and impact without misleading aggregation.",
+      "A non-review consumer demonstrates a different minimal common profile or that separate domain profiles are more truthful than one shared characterization."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user statement on 2026-08-23: 'I accept and authorize the deterministic Code Change Profile baseline.'"
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

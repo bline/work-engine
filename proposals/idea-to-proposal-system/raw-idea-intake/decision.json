@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.raw-idea-intake",
+  "source": {
+    "repository_revision": "0a71dfada0852b3d8445961ffeef9b15c27e0b43",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The proposal meaning is approved with provisional placement as a dedicated planning-layer intake capability that owns attributed interpretation and claim-level assessment of exact raw-idea revisions while raw sources, proposal packets, claim history, and repository cleanup retain their separate owners.",
+    "rationale": "The user explicitly approved the proposal after the revision-bound bootstrap review closed all seven findings at proposal revision 89a3a38e99176565f9c76bffbefc0f7c9541afdb. This decision accepts the candidate meaning and probable ownership boundary while preserving the proposal's unexercised migration, layout, claim-lineage, and dogfood evidence needs.",
+    "reopening_conditions": [
+      "Dogfooding shows that stable intake identity and provenance cannot survive practical source movement without changing the proposal-packet origin contract.",
+      "Claim assessment across duplicate, implemented, split, and novel ideas cannot share a truthful minimum without collapsing domain-specific judgments.",
+      "A separate top-level intake surface adds no meaningful retrieval, validation, or context-loading value over a clearly partitioned ideas hierarchy.",
+      "Formation repeatedly must reread the complete raw source or redo intake reconciliation because the proposed handoff omits material candidate meaning.",
+      "Observed consumers require transactional, concurrent, or external-evidence semantics that repository-local Git-backed artifacts cannot preserve."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user statement on 2026-08-23: 'I approve the proposal. Let's move this along that workflow.'"
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

@@ -1,0 +1,46 @@
+version: 2
+objective: >-
+  Implement the user-authorized deterministic Code Change Profile baseline:
+  bind representative immutable Work Engine change subjects and produce the
+  first recomputable deterministic profile vertical described by phases 1 and
+  2 of the accepted implementation plan, without implementing semantic
+  classification, Review Bench policy, or the raw execution evidence archive.
+work_source:
+  kind: file
+  value: ../proposals/empirical-agent-research/code-change-characterization-profile/implementation-plan.md
+builder:
+  skill: "slice-builder"
+  model: "gpt-5.6-sol"
+  reasoning_effort: "low"
+  context:
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    adversarial_review:
+      provider: "codex"
+      skill: "codex-adversarial-review"
+      model: "gpt-5.6-sol"
+      reasoning_effort: "low"
+      evidence_class: "accepted_same_model_review"
+      isolation: "fresh_process"
+limits:
+  slices: 1
+amendments:
+  - timestamp: "2026-08-23T18:56:11-06:00"
+    changed_fields:
+      - "builder.context.independent_review"
+      - "builder.context.adversarial_review"
+    prior_values:
+      builder.context.independent_review:
+        provider: "claude"
+        skill: "claude-recon-implementation"
+    new_values:
+      builder.context.adversarial_review:
+        provider: "codex"
+        skill: "codex-adversarial-review"
+        model: "gpt-5.6-sol"
+        reasoning_effort: "low"
+        evidence_class: "accepted_same_model_review"
+        isolation: "fresh_process"
+    reason: "Claude quota was unavailable; the user authorized Sol low for this low-risk review obligation."
+    human_approval: "This is low risk. I authorize the use of Sol low for review."
