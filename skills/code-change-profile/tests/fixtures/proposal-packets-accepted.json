@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "construction_method": "full_slice_checkpoint_lifecycle_receipt",
+  "evidence_cutoff": "2026-08-22T07:46:37.871Z",
+  "checkpoint": {
+    "schema_version": 1,
+    "checkpoint_id": "3c40f57c344366777aba3f24382d3b12ff7a1f13944d9ed5f6642cadcb5a4d69",
+    "checkpoint_kind": "accepted",
+    "repository": "${REPOSITORY}",
+    "run_id": "7af29b89-3401-4278-a0cd-a03721c8639f",
+    "slice_number": 1,
+    "candidate_attempt": 1,
+    "baseline_commit_oid": "29b5ec969a0f27eb4881e8b7abfb9687e645dc7d",
+    "baseline_tree_oid": "76e2fc2103958dcaf603ef800d2e9493371ceca4",
+    "checkpoint_commit_oid": "7fb4f87794f11af5694f6a66efefd995228aae05",
+    "checkpoint_tree_oid": "f9f4ea3cb9f71bde2c0d24e54892f9ddf32744ea",
+    "candidate_checkpoint_id": "ffd5bf8d08206dbfe6a310ab578c33854ca13f3c4c487d046d5c1d0ace64f4df",
+    "parent_checkpoint_commit_oid": "73c58904612f061a2209be2d3100cfd7349aa51e",
+    "plan_version": "1",
+    "scope_revision": "1",
+    "gate_receipt_digest": "042895fe53e33bddb7863d455c07aed64a4fc71b06f826efdf16bcd3d5cb56d5",
+    "task_patch_digest": "f6904b0e5df4ab5962aaf2eb5a5f0f01ff6dd07ebb3c2417a2e7941dac4ed8a2",
+    "manifest_digest": "3247a5da9684007fee6a937dd3cc3f71f5dacc1f79cf68adb828461b130fbbee",
+    "ref": "refs/work-engine/checkpoints/7af29b89-3401-4278-a0cd-a03721c8639f/slice-1/accepted",
+    "created_at": "2026-08-22T07:24:13Z",
+    "limitations": [],
+    "paths": [
+      {"path":"roadmap.md","action":"include","attribution":"task_owned","content_digest":"4e42acd742ac8874d5bcb6afd6a8c7e30c24c4dc7fd67c27ed5875d26197f716"},
+      {"path":"planning/2026-08-21-proposal-workflow-direction.yaml","action":"include","attribution":"task_owned","content_digest":"561c115f087c6bec6463d104006a887cc9fa98b8929c533b7d41afdc700cf85c"},
+      {"path":"skills/proposal-packets/SKILL.md","action":"include","attribution":"task_owned","content_digest":"3cbc9f1a569fa3d5f9e398dc5b323b5d0e10caae331c38f94e1359bf1d9c6937"},
+      {"path":"skills/proposal-packets/references/packet-contract.md","action":"include","attribution":"task_owned","content_digest":"a453edb3bf528c091f0dab08e089b9509fd73ad19a23560825dc2df7431e0855"},
+      {"path":"skills/proposal-packets/schemas/proposal-packet-v1.schema.json","action":"include","attribution":"task_owned","content_digest":"4df78ffe4a88ef715e6ac96b52eda8c5169b0fcbcaf96f479a73ad7c4269c920"},
+      {"path":"skills/proposal-packets/scripts/proposal_packets.py","action":"include","attribution":"task_owned","content_digest":"1a008f7dcfd5b133463df8bdd1b4e44257d6d08fb406b0dd98f71021b6a72997"},
+      {"path":"skills/proposal-packets/tests/test_proposal_packets.py","action":"include","attribution":"task_owned","content_digest":"f9c2bfaecb7ac206591ad7317ba0804a2462c24923e05647debb13c66e05fe4f"},
+      {"path":"skills/proposal-packets/tests/fixtures/formed-alpha/packet.json","action":"include","attribution":"task_owned","content_digest":"ca9e1166e681682d1024cfce47a0e902eeafacbb92e37b60cdb536e208041e32"},
+      {"path":"skills/proposal-packets/tests/fixtures/formed-alpha/proposal.md","action":"include","attribution":"task_owned","content_digest":"6237c571182fb24b866e91cf6ac1bee681139a16ca15b521ff5a858caed949d1"},
+      {"path":"skills/proposal-packets/tests/fixtures/formed-beta/packet.json","action":"include","attribution":"task_owned","content_digest":"7b12e25fb7d9139ab1eedafb942b257b4eb3017c59770c4fe3e2f8960428cf44"},
+      {"path":"skills/proposal-packets/tests/fixtures/formed-beta/proposal.md","action":"include","attribution":"task_owned","content_digest":"5a1a75db152bf7858be84affb609d5c23c101102c1c0da77dad2c36fa1b73527"}
+    ]
+  }
+}

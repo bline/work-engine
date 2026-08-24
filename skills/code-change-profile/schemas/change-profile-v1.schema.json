@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.change-profile.v1",
+  "type": "object",
+  "required": ["schema_version", "analyzer", "provenance", "subject", "subject_digest", "observations", "coverage", "limitations", "profile_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "analyzer": {
+      "type": "object",
+      "required": ["name", "version", "source_sha256", "checkpoint_validator_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "work-engine-deterministic-baseline"},
+        "version": {"const": "1"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "checkpoint_validator_sha256": {"const": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["producer", "derivation_sources"],
+      "additionalProperties": false,
+      "properties": {
+        "producer": {
+          "type": "object",
+          "required": ["name", "version", "source_sha256", "checkpoint_validator_sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"const": "work-engine-deterministic-baseline"},
+            "version": {"const": "1"},
+            "source_sha256": {"$ref": "#/$defs/sha256"},
+            "checkpoint_validator_sha256": {"const": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"}
+          }
+        },
+        "derivation_sources": {
+          "type": "object",
+          "required": ["checkpoint_subject", "repository_trees", "checkpoint_validator", "git_runtime", "python_runtime", "structural_graph", "invariant_catalog", "classifier"],
+          "additionalProperties": false,
+          "properties": {
+            "checkpoint_subject": {"$ref": "#/$defs/used_source"},
+            "repository_trees": {"$ref": "#/$defs/used_source"},
+            "checkpoint_validator": {"$ref": "#/$defs/used_source"},
+            "git_runtime": {"$ref": "#/$defs/git_runtime_source"},
+            "python_runtime": {"$ref": "#/$defs/python_runtime_source"},
+            "structural_graph": {"$ref": "#/$defs/deferred_source"},
+            "invariant_catalog": {"$ref": "#/$defs/deferred_source"},
+            "classifier": {"$ref": "#/$defs/deferred_source"}
+          }
+        }
+      }
+    },
+    "subject": {"$ref": "change-subject-v1.schema.json"},
+    "subject_digest": {"$ref": "#/$defs/sha256"},
+    "observations": {
+      "type": "object",
+      "required": ["files", "file_count", "line_totals", "hunk_count", "file_categories", "test_file_count", "documentation_file_count", "configuration_file_count", "changed_symbols", "module_distribution"],
+      "additionalProperties": false,
+      "properties": {
+        "files": {"$ref": "#/$defs/measurement"},
+        "file_count": {"$ref": "#/$defs/measurement"},
+        "line_totals": {"$ref": "#/$defs/measurement"},
+        "hunk_count": {"$ref": "#/$defs/measurement"},
+        "file_categories": {"$ref": "#/$defs/measurement"},
+        "test_file_count": {"$ref": "#/$defs/measurement"},
+        "documentation_file_count": {"$ref": "#/$defs/measurement"},
+        "configuration_file_count": {"$ref": "#/$defs/measurement"},
+        "changed_symbols": {"$ref": "#/$defs/measurement"},
+        "module_distribution": {"$ref": "#/$defs/measurement"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["manifest_paths", "profiled_paths", "path_scope"],
+      "additionalProperties": false,
+      "properties": {
+        "manifest_paths": {"type": "integer", "minimum": 0},
+        "profiled_paths": {"type": "integer", "minimum": 0},
+        "path_scope": {"const": "attributed checkpoint manifest"}
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "profile_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "used_source": {
+      "type": "object",
+      "required": ["use_state", "identity"],
+      "additionalProperties": false,
+      "properties": {
+        "use_state": {"const": "used"},
+        "identity": {
+          "type": "object", "minProperties": 1,
+          "additionalProperties": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "git_runtime_source": {
+      "type": "object",
+      "required": ["use_state", "identity"],
+      "additionalProperties": false,
+      "properties": {
+        "use_state": {"const": "used"},
+        "identity": {
+          "type": "object",
+          "required": ["version", "executable_sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {"type": "string", "minLength": 1},
+            "executable_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    },
+    "python_runtime_source": {
+      "type": "object",
+      "required": ["use_state", "identity"],
+      "additionalProperties": false,
+      "properties": {
+        "use_state": {"const": "used"},
+        "identity": {
+          "type": "object",
+          "required": ["implementation", "version", "executable_sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "implementation": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "executable_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    },
+    "deferred_source": {
+      "type": "object",
+      "required": ["use_state", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "use_state": {"const": "not_used"},
+        "reason": {"const": "deferred_by_profile_scope"}
+      }
+    },
+    "measurement": {
+      "oneOf": [
+        {"type": "object", "required": ["state", "value"], "additionalProperties": false, "properties": {"state": {"const": "observed"}, "value": {}}},
+        {"type": "object", "required": ["state", "reason"], "additionalProperties": false, "properties": {"state": {"enum": ["unknown", "unsupported", "failed", "not_applicable"]}, "reason": {"type": "string", "minLength": 1}}}
+      ]
+    }
+  }
+}

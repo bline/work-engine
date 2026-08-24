@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.change-subject.v1",
+  "type": "object",
+  "required": ["schema_version", "construction_method", "evidence_cutoff", "repository", "checkpoint", "limitations"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "construction_method": {"const": "full_slice_checkpoint_lifecycle_receipt"},
+    "evidence_cutoff": {"type": "string", "minLength": 1},
+    "repository": {"type": "string", "minLength": 1},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "checkpoint": {
+      "type": "object",
+      "required": ["schema_version", "checkpoint_id", "checkpoint_kind", "candidate_checkpoint_id", "parent_checkpoint_commit_oid", "baseline_commit_oid", "baseline_tree_oid", "checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest", "manifest_digest", "gate_receipt_digest", "run_id", "slice_number", "candidate_attempt", "plan_version", "scope_revision", "paths", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": 1},
+        "checkpoint_id": {"$ref": "#/$defs/sha256"},
+        "checkpoint_kind": {"enum": ["accepted", "stopped"]},
+        "candidate_checkpoint_id": {"type": "string", "minLength": 1},
+        "parent_checkpoint_commit_oid": {"$ref": "#/$defs/git_oid"},
+        "baseline_commit_oid": {"$ref": "#/$defs/git_oid"},
+        "baseline_tree_oid": {"$ref": "#/$defs/git_oid"},
+        "checkpoint_commit_oid": {"$ref": "#/$defs/git_oid"},
+        "checkpoint_tree_oid": {"$ref": "#/$defs/git_oid"},
+        "task_patch_digest": {"$ref": "#/$defs/sha256"},
+        "manifest_digest": {"$ref": "#/$defs/sha256"},
+        "gate_receipt_digest": {"$ref": "#/$defs/sha256"},
+        "run_id": {"type": "string", "minLength": 1},
+        "slice_number": {"type": "integer", "minimum": 1},
+        "candidate_attempt": {"type": "integer", "minimum": 1},
+        "plan_version": {"type": "string", "minLength": 1},
+        "scope_revision": {"type": "string", "minLength": 1},
+        "ref": {"type": "string", "minLength": 1},
+        "paths": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "action", "attribution", "content_digest"],
+            "additionalProperties": false,
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "action": {"enum": ["include", "delete"]},
+              "attribution": {"enum": ["task_owned", "user_owned_baseline", "pre_existing_overlap", "generated_dependency", "validation_dependency"]},
+              "content_digest": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "git_oid": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"}
+  }
+}
