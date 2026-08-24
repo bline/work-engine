@@ -13,9 +13,13 @@ builder:
     repository_evidence:
       skill: "repo-search"
       provider: "codex-codebase-memory"
-    independent_review:
-      skill: "claude-recon-implementation"
-      provider: "claude"
+    adversarial_review:
+      provider: "codex"
+      skill: "codex-adversarial-review"
+      model: "gpt-5.6-sol"
+      reasoning_effort: "low"
+      evidence_class: "accepted_same_model_review"
+      isolation: "fresh_process"
 
 validation:
   profile: "engineering-proportional"
@@ -40,6 +44,26 @@ notifications:
 
 slice_completion_commit:
   prompt: enabled
+
+amendments:
+  - timestamp: "2026-08-23T16:34:00-06:00"
+    changed_fields:
+      - "builder.context.independent_review"
+      - "builder.context.adversarial_review"
+    prior_values:
+      builder.context.independent_review:
+        provider: "claude"
+        skill: "claude-recon-implementation"
+    new_values:
+      builder.context.adversarial_review:
+        provider: "codex"
+        skill: "codex-adversarial-review"
+        model: "gpt-5.6-sol"
+        reasoning_effort: "low"
+        evidence_class: "accepted_same_model_review"
+        isolation: "fresh_process"
+    reason: "Claude returned a session-limit error before review; the user explicitly authorized Codex Sol/low for this specific review."
+    human_approval: "I approve a codex Sol low reviewer for this specific review. please proceed."
 
 stop_on:
   - objective_complete
