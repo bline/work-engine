@@ -64,6 +64,18 @@ decidable proposals. Do not invent a candidate merely to complete a form. Do
 not merge candidates merely because they share an origin, and do not create new
 identity when a revision or lineage relationship better preserves truth.
 
+When formation completes with no surviving proposal, preserve an attributed
+durable disposition that distinguishes that semantic outcome from absence,
+interruption, or failure. The disposition records the bounded input, evidence
+used, rationale, producer, and non-authorizing consequence needed by a fresh
+consumer. This is the zero-packet specialization of the entrypoint's
+resume-critical persistence rule: the disposition owns current formation
+meaning when no packet survives, while packet manifest, narrative, and
+validation requirements remain binding for every surviving candidate. It does
+not create proposal identity or require proposal-packet state; mechanically
+closing a general formation-episode profile remains a separate design decision
+that requires a demonstrated consumer.
+
 ## Validation and handoff
 
 Validate the bounded packet repository using `proposal-packets` before handoff.
