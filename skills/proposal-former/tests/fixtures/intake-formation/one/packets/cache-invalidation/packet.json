@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.cache-invalidation",
+  "family_id": "work-engine.fixture.intake-formation",
+  "title": "Define observable cache invalidation",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "intake_projection",
+      "path": "../../../projection.json"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "The cache owner is the semantic-owner hypothesis, while exposure may belong at a cache event surface or shared telemetry boundary."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Runtime-consumer evidence shows that another boundary owns invalidation semantics.",
+      "Observability has independent consumers, value, lifecycle, or a distinct shared-telemetry owner."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or explicitly authorized product owner",
+    "implementation_authorized": false
+  },
+  "relationships": []
+}

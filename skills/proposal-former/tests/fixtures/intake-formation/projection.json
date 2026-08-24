@@ -1,0 +1,107 @@
+{
+  "assessment_id": "work-engine.intake.cache-formation",
+  "assessment_revision": 1,
+  "authority": {
+    "evidence_refs": [
+      "evidence.authority"
+    ],
+    "owner": "fixture user",
+    "scope": "assess and exercise formation without downstream authority"
+  },
+  "candidates": [
+    {
+      "candidate": {
+        "boundary": "Cache semantics and observability, excluding dashboard UI.",
+        "evidence_still_needed": [
+          "runtime consumer inventory"
+        ],
+        "meaning": "Define observable cache invalidation behavior.",
+        "next_consumer": "proposal-former",
+        "placement_hypotheses": [
+          "cache owner",
+          "shared telemetry owner"
+        ],
+        "unresolved_decisions": [
+          "whether observability is independently decidable"
+        ]
+      },
+      "claim_id": "claim.cache-formation",
+      "disposition": {
+        "authority_ref": "evidence.authority",
+        "rationale": "The fixture user authorized this bounded formation exercise.",
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated"
+      },
+      "evidence_refs": [
+        "evidence.authority",
+        "evidence.repository"
+      ],
+      "relationship_refs": [],
+      "revision": 1,
+      "source_range": {
+        "content_sha256": "4c54389a16c1876adfad5014b71d2b9075f2868d39e17c5571a84d359275fbbc",
+        "line_end": 2,
+        "line_start": 1
+      },
+      "statement": "Define cache invalidation behavior and make its outcomes observable.",
+      "statement_kind": "source_assertion",
+      "uncertainty": [
+        "Whether behavior and observability are independently decidable."
+      ]
+    }
+  ],
+  "canonical_record": "records/cache-formation/record.json",
+  "evidence": [
+    {
+      "attribution": "Bounded fixture evidence owned by fixture user.",
+      "evidence_id": "evidence.authority",
+      "kind": "human_decision",
+      "owner": "fixture user",
+      "reference": "evidence/authority.md",
+      "revision": "2a0c6a1833817e8eac47ef5ffc60172e34d57832",
+      "verification": {
+        "freshness_rule": "exact_revision",
+        "integrity_sha256": "ca1fe2694bfc1561b95a24b2163c742bbe964e0d1425eae7cdb33af35001c9e7",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Bounded fixture evidence owned by temporary repository.",
+      "evidence_id": "evidence.repository",
+      "kind": "repository_observation",
+      "owner": "temporary repository",
+      "reference": "evidence/repository.md",
+      "revision": "2a0c6a1833817e8eac47ef5ffc60172e34d57832",
+      "verification": {
+        "freshness_rule": "exact_revision",
+        "integrity_sha256": "70195bffcce68188b9caa32030b39678f9dde4d06d580c2d93543806dc77c921",
+        "mode": "repository_file"
+      }
+    }
+  ],
+  "idea_id": "work-engine.idea.cache-formation",
+  "non_authorization": {
+    "cleanup_authorized": false,
+    "implementation_authorized": false,
+    "permanent_placement_settled": false,
+    "proposal_accepted": false,
+    "roadmap_priority_changed": false
+  },
+  "projection_kind": "proposal_formation_candidate",
+  "proposal_refs": [],
+  "relationships": [],
+  "reopening_conditions": [
+    "Runtime consumer evidence changes the candidate boundary."
+  ],
+  "schema_version": 1,
+  "source": {
+    "blob_oid": "b49f6d48719c35cf9e680ab7450b44a616a6c66f",
+    "path": "ideas/cache.md",
+    "range": {
+      "content_sha256": "4c54389a16c1876adfad5014b71d2b9075f2868d39e17c5571a84d359275fbbc",
+      "line_end": 2,
+      "line_start": 1
+    },
+    "repository_revision": "2a0c6a1833817e8eac47ef5ffc60172e34d57832"
+  }
+}

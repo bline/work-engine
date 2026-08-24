@@ -1,0 +1,8 @@
+{
+  "evidence_id": "evidence.manual",
+  "kind": "prior_reconciliation",
+  "owner": "ideas reconciliation snapshot",
+  "reference": "ideas/reconciliation-map.json",
+  "revision": "replaced-by-test-revision",
+  "attribution": "Prior file-level evidence, not the current claim owner."
+}

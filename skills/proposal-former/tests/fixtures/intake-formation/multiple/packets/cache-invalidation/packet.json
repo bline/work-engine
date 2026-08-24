@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.cache-invalidation-semantics",
+  "family_id": "work-engine.fixture.intake-formation-split",
+  "title": "Define cache invalidation semantics",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "intake_projection",
+      "path": "../../../projection.json"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The cache state owner should define invalidation transitions independently of their presentation."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Runtime evidence assigns invalidation transitions to another owner.",
+      "Exposure proves inseparable from the cache contract and the split should recombine."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or explicitly authorized product owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "enables",
+      "target_id": "work-engine.fixture.cache-invalidation-observability",
+      "rationale": "A stable outcome vocabulary and contract make truthful observation possible.",
+      "causal": true
+    }
+  ]
+}

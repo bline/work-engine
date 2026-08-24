@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.fixture.cache-invalidation-observability",
+  "family_id": "work-engine.fixture.intake-formation-split",
+  "title": "Expose cache invalidation observability",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "intake_projection",
+      "path": "../../../projection.json"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "The observation boundary should expose invalidation outcomes without owning cache mutation semantics."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Consumer evidence shows observability is not independently decidable.",
+      "An existing telemetry owner already supplies the complete consequence.",
+      "No runtime consumer needs a distinct exposure capability."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or explicitly authorized product owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.fixture.cache-invalidation-semantics",
+      "rationale": "Observable signals depend on stable invalidation outcome semantics.",
+      "causal": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Idea Intake"
+  short_description: "Assess exact raw-idea revisions"
+  default_prompt: "Use $idea-intake to assess this raw idea into source-bound, claim-addressable intake state."
