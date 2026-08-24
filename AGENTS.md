@@ -16,3 +16,19 @@ follow [the role-scheduler skill](skills/role-scheduler/SKILL.md) at startup.
 Reconcile overdue, due, and near-term items before ordinary work that could make
 them stale or invisible. Do not emulate durable scheduling by storing future
 obligations only in model context or an unobserved terminal.
+
+## Continuous Wind Walker
+
+In the first turn of every new context window created by a session restart,
+context reset, or compaction, invoke and follow `$wind-walker` before resuming
+unfinished work. Perform this invocation in the new context window so the
+skill governs recovery and continuation there.
+
+Before intentionally replacing context, invoke `$wind-walker` and ensure all
+continuation-critical objectives, authority boundaries, commitments,
+unresolved obligations, and references have durable owners. If that cannot be
+established, do not replace context.
+
+If replacement occurs outside the agent's control, invoke `$wind-walker` in
+the new context window and stop rather than continue when correct recovery
+still depends on meaning lost with the prior context.
