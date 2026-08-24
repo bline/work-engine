@@ -3,7 +3,7 @@
   "proposal_id": "work-engine.raw-idea-intake",
   "family_id": "work-engine.idea-to-proposal-system",
   "title": "Raw Idea Intake and Claim Assessment",
-  "lifecycle_state": "formed",
+  "lifecycle_state": "decided",
   "narrative": {
     "path": "proposal.md"
   },
@@ -23,7 +23,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "A dedicated planning-layer intake capability owns attributed interpretation and claim-level assessment of exact raw-idea revisions; raw sources, proposal packets, claim history, and repository cleanup retain their separate owners."
+    "claim": "The proposal meaning is approved with provisional placement as a dedicated planning-layer intake capability that owns attributed interpretation and claim-level assessment of exact raw-idea revisions while raw sources, proposal packets, claim history, and repository cleanup retain their separate owners."
   },
   "uncertainty": {
     "state": "unresolved",

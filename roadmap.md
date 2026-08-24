@@ -141,7 +141,9 @@ bounded MCP access. These are substantial foundations, but they do not yet form
 one controlled idea-to-proposal lifecycle. Raw idea intake is now a formed
 proposal whose seven bootstrap-review findings are closed at revision
 `89a3a38`, but its authority-owned disposition and implementation remain
-pending. Review artifacts and panel coordination remain approved candidate
+separate. The user has now approved its candidate meaning with probable
+placement through an authority-owned decision record; implementation remains
+unauthorized. Review artifacts and panel coordination remain approved candidate
 meanings rather than implemented capabilities, and no end-to-end exercise has
 yet carried a source-bound intake through formation, revision, review, and an
 authority-owned disposition.
@@ -167,8 +169,9 @@ The current priority order is:
 3. resume and complete the controlled proposal workflow from low-friction raw
    idea intake through claim-addressable assessment, proposal formation,
    revision-bound adaptive review, and an explicit authority-owned disposition;
-   the reviewed raw-intake proposal remains paused at its authority-decision
-   boundary rather than rejected or implementation-authorized;
+   the reviewed raw-intake proposal has crossed its authority-decision boundary
+   with approved meaning and probable placement, but remains separately
+   unauthorized for implementation;
 4. preserve the implemented packet, decision, claim-lineage, active-slice,
    transition-history, and reviewer-state boundaries while the completed
    workflow exercises them as real consumers;
@@ -479,9 +482,10 @@ implementation remain separate consumers.
   state the owner of final review artifacts or decisions.
 - `work-engine.raw-idea-intake` now defines the formed source-bound intake
   consequence, claim-level assessment, proposal-formation handoff, manual-map
-  migration, and cleanup-authority boundary. Its adaptive bootstrap review is
-  closed with no remaining finding; acceptance, final placement, and
-  implementation remain separately pending.
+  migration, and cleanup-authority boundary. Its adaptive bootstrap review
+  closed with no remaining finding, and the user approved its candidate meaning
+  with probable placement through an authority-owned decision record. Final
+  placement and implementation remain separately unsettled and unauthorized.
 - [`ideas/agent-instruction-structure-and-placement-review.md`](ideas/agent-instruction-structure-and-placement-review.md)
   is the user-prioritized critical intake subject before further skill and
   workflow instruction expansion. It is still an exploratory idea, not an
@@ -489,10 +493,10 @@ implementation remain separate consumers.
 
 ## Remaining work
 
-- Pause further advancement of the reviewed raw-intake proposal at its
-  authority-decision boundary while the critical instruction-review idea is
-  assessed; later resume from the immutable proposal and review artifacts
-  without reconstructing this planning decision.
+- Hand the decided raw-intake proposal to downstream planning without treating
+  approval as final placement, roadmap reprioritization, implementation
+  authorization, or evidence that its remaining migration and dogfood questions
+  are resolved.
 - Establish a structured intake owner that binds an exact raw-source revision,
   preserves stable idea identity, distinguishes extracted source claims from
   assessor inference, records evidence cutoffs and authority, and can return a

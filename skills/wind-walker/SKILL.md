@@ -1,17 +1,28 @@
 ---
 name: wind-walker
-description: Leave the past in the trace. Carry only what matters. Preserve continuation-relevant information durably, then replace temporary context when safe. #StateSavedMyLife
+description: Treat model context as temporary working memory and replace it only when correct continuation is independent of context-only meaning. #StateSavedMyLife
 ---
 
 # Wind Walker
 
-The current context window is temporary working memory, not durable workflow
-state. Its model-visible contents may be lost or replaced without preserving
-their meaning. The context grows across rounds; as it grows, inference cost and
-latency can rise while efficiency and contextual focus decrease. Any
-information that future work may depend on must have a durable representation
-rather than exist only in the current context. Context replacement is valid
-only when correct continuation no longer depends on any information represented
-solely in the current context. Unresolved meaning from direct human interaction
-is continuation-relevant information and must not be lost through context
-replacement.
+Model-visible context is temporary working memory, not a durable owner of
+workflow meaning. Its contents may be replaced, while carrying them forward can
+increase cost and latency and cloud the judgment currently at hand. Durable
+semantic owners, references, and context-replacement capabilities make
+different context lifetimes possible; they do not require replacement.
+
+Context replacement is valid only when correct continuation depends on no
+meaning represented solely in the current context. Replacement must not
+silently or without authority alter workflow meaning, including the objective,
+governing authority, commitments, or unresolved obligations. A durable
+representation of unresolved human interaction may remove dependence on the
+old context; it neither resolves the interaction nor transfers the human's
+authority.
+
+Continuation independence does not require reconstructing or summarizing the
+context being left behind. Only meaning that future work may legitimately
+depend on needs an adequate durable representation or reference to its semantic
+owner; other material may remain historical or disappear. What matters, where
+it belongs, and whether replacement improves the current work remain model
+judgment within the governing contracts. If the current environment cannot
+preserve required meaning, safe context replacement is unavailable.

@@ -3,7 +3,7 @@
   "proposal_id": "work-engine.code-change-characterization-profile",
   "family_id": "work-engine.empirical-agent-research",
   "title": "Code Change Characterization Profile",
-  "lifecycle_state": "formed",
+  "lifecycle_state": "decided",
   "narrative": {
     "path": "proposal.md"
   },
@@ -23,7 +23,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "A shared derived-evidence capability should own recomputable characterizations of exact repository change subjects, while Git and checkpoints own subjects and architecture, claims, tests, reviews, runtime observations, and outcomes retain their existing semantic owners."
+    "claim": "The proposal meaning is approved with provisional placement as a shared derived-evidence capability that owns recomputable characterizations of exact repository change subjects while existing domain artifacts retain semantic authority."
   },
   "uncertainty": {
     "state": "unresolved",
