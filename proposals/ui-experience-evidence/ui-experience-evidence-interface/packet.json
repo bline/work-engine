@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.ui-experience-evidence-interface",
+  "family_id": "work-engine.ui-experience-evidence",
+  "title": "UI Experience Evidence Interface",
+  "lifecycle_state": "placement_uncertain",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "idea_source",
+      "path": "../../../ideas/ui-experience-evidence.md"
+    },
+    {
+      "kind": "consumer_idea",
+      "path": "../../../ideas/ui-review-capability.md"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "../formation-evidence.md"
+    }
+  ],
+  "placement": {
+    "state": "uncertain",
+    "claim": "A UI experience-evidence façade over generic evidence lineage, Chrome Vision, product adapters, and review consumers is the probable semantic boundary; permanent package, service, storage, query, and capture ownership remain unresolved pending real dogfood."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A real view cannot retain stable semantic identity separately from the navigation or fixture mechanism used to reach it.",
+      "Structural, pixel, temporal, interaction, and accessibility evidence require incompatible freshness or authority semantics that make one experience-evidence façade misleading.",
+      "The claim-centered lineage candidate cannot represent observation applicability and exact reviewer reliance without erasing the distinction between captured facts and semantic claims.",
+      "Four dimension-specific review consumers do not materially reuse evidence or require incompatible state projections that defeat the proposed sharing boundary.",
+      "Cached provider analysis cannot preserve enough source, contract, model, limitation, and usage provenance to be safely reused without repeating the call.",
+      "Selective impact nomination proves either too coarse to save meaningful work or too incomplete to support truthful freshness judgments.",
+      "A real accessibility probe shows that product-specific applicability and governing criteria cannot remain separate from generic probe evidence.",
+      "A production consumer requires concurrency, delivery, authorization, privacy, retention, or recovery consequences intentionally deferred by the first dogfood."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "The candidate requires equivalent stable identity, exact revision, provenance, impact nomination, refresh judgment, lineage, and exact-revision reliance semantics. Depending on those consequences does not accept the current shared-placement hypothesis.",
+      "causal": true
+    },
+    {
+      "type": "informs",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "Real UI observation and derived-analysis dogfood can reveal which lineage semantics are genuinely shared with claims and which require a distinct domain profile; its result cannot decide the parent candidate automatically.",
+      "causal": false
+    },
+    {
+      "type": "enables",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "If accepted, exact UI evidence and claim revisions can support revision-bound UI findings without review artifacts absorbing browser capture, provider analysis, or observation freshness.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.adaptive-review-panel-coordination",
+      "rationale": "An adaptive coordinator may select UI review perspectives that reuse this evidence, while selection, reviewer independence, synthesis, and downstream authority remain review-coordination concerns.",
+      "causal": false
+    }
+  ]
+}

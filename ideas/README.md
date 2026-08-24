@@ -34,6 +34,7 @@ The goal is not to rewrite history. Original idea files remain useful provenance
 | `role-decision-trace.md` | Durable semantic decision lineage |
 | `cross-cutting-seam-review.md` | Cross-boundary design/contract coherence review |
 | `ui-review-capability.md` | Project UI design-review role/capability |
+| `ui-experience-evidence.md` | Shared, revisioned evidence for exact rendered views, interactions, accessibility probes, and UI-review reliance |
 | `environment-adapter-and-host-provided-runtime-services.md` | Provider-neutral host-service integration |
 | `runtime-adapter.md` | Provider-neutral runtime execution/binding |
 | `control-plane-and-client-protocol.md` | Coordination/control/client protocol |
