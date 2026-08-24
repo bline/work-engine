@@ -569,6 +569,268 @@ Potential measurements include:
 
 These may later be correlated with problem-solving behavior and outcomes.
 
+### 19.1 Reset Safety and Reset Benefit Are Independent Decisions
+
+Wind Walker already has a strong correctness invariant:
+
+> **Context replacement is valid only when correct continuation no longer depends on meaning represented solely in the current context.**
+
+That invariant answers whether reset is **safe**. It does not answer whether
+reset is **beneficial**.
+
+The decision should therefore remain explicitly separated:
+
+```text
+SAFE TO RESET?
+    continuation state complete?
+        no  → retain context
+        yes ↓
+
+WORTH RESETTING?
+    expected burden of retained context
+        compared with
+    expected rehydration cost
+        ↓
+    model judgment
+```
+
+Safety is a hard boundary. Benefit is an optimization judgment inside that
+boundary. A favorable cost estimate must never compensate for incomplete
+continuation state.
+
+### 19.2 Continuation-Completeness Observability
+
+The model currently judges continuation independence semantically. It would
+benefit from a structured projection showing whether each required category has
+a durable owner or remains unresolved:
+
+```yaml
+continuation_state:
+  objective: durable
+  authority: durable
+  accepted_boundary: durable
+  unresolved_obligations: durable
+  findings: durable
+  evidence_references: durable
+  work_identity: durable
+  human_meaning: none_unresolved
+```
+
+This projection must not become a universal checklist that falsely declares an
+open world complete. Required categories remain role- and contract-specific.
+The projection should reference the actual semantic owners rather than becoming
+a competing owner of objectives, authority, findings, or human meaning.
+
+Missing, unknown, or unresolved required categories prohibit reset. Field
+presence alone cannot prove that no context-only obligation exists; the final
+continuation-completeness judgment remains model responsibility.
+
+The latest state-complete checkpoint should have a stable identity bound to:
+
+- the logical agent or role identity;
+- the context-window identity;
+- the applicable role and contract revision;
+- the durable revisions or integrity-bound references relied upon;
+- the continuation-state projection;
+- the model's attributed completeness judgment; and
+- any unresolved or unknown category that prevented completeness.
+
+The checkpoint is a durable decision receipt and reference boundary, not a
+reasoning transcript.
+
+### 19.3 Context-Benefit Observability
+
+Once safety is established, a separate observation packet can expose evidence
+relevant to whether old working memory is more burdensome than useful.
+
+#### Context pressure
+
+- current context occupancy in tokens;
+- model context-window capacity where available;
+- proportion of the window occupied;
+- context occupancy at the latest state-complete checkpoint; and
+- post-checkpoint context growth.
+
+#### Context age
+
+- turns since the last context replacement;
+- inference calls since the last replacement;
+- tool cycles since the last replacement; and
+- elapsed time where it has decision value.
+
+#### Context redundancy
+
+- context whose useful consequences already have durable owners;
+- evidence already compiled into findings, decisions, or artifacts; and
+- completed work whose source material remains retrievable on demand.
+
+#### Context competition
+
+- active instruction layers;
+- accumulated evidence domains;
+- completed reasoning phases still model-visible;
+- stale or superseded decisions still present; and
+- active obligations competing for attention.
+
+#### Rehydration cost
+
+- estimated tokens required to reconstruct the smallest sufficient environment;
+- required instruction and role material;
+- durable-state projections and evidence handles that must be loaded;
+- likely repository or artifact rereads; and
+- uncertainty or confidence in the estimate.
+
+The deterministic system should expose observations and provenance where it
+can. Semantic properties such as redundancy and competition may remain
+model-estimated evidence. They should not be presented as mechanically proven
+facts.
+
+### 19.4 Token Accounting Must Distinguish Occupancy from Usage
+
+The most useful derived measurement is likely **context growth since the latest
+state-complete checkpoint**. Its operands must describe context occupancy in the
+same context window:
+
+```text
+current_context_tokens: 118000
+checkpoint_context_tokens: 47000
+post_checkpoint_context_growth: 71000
+estimated_rehydration_tokens: 9000
+```
+
+Cumulative API or rollout `input_tokens` cannot safely substitute for current
+context occupancy. Cumulative usage counts repeated inference inputs and may be
+affected by caching. Subtracting cumulative token totals would measure tokens
+processed since the checkpoint, not how much checkpoint-era context remains
+active.
+
+The telemetry vocabulary should therefore distinguish at least:
+
+```text
+current_context_tokens
+context_tokens_at_checkpoint
+post_checkpoint_context_growth
+tokens_processed_since_checkpoint
+```
+
+All measurements should retain observed, estimated, and unavailable as distinct
+states.
+
+### 19.5 Reasoning-Phase Closure
+
+Reasoning-phase closure can provide useful context-competition evidence:
+
+```yaml
+completed_phases:
+  - evidence_acquisition
+  - falsification
+  - implementation_route_selection
+active_phase:
+  - remediation
+```
+
+Several completed reasoning domains remaining in active context while only one
+later phase remains live may indicate that replacement would improve focus.
+
+Phase identities must remain consequences of the actual role and work rather
+than a universal mandatory workflow. A phase may be considered complete only
+when its future-relevant consequences have durable owners. Merely labeling a
+phase complete does not make its context disposable.
+
+### 19.6 Immediate Telemetry Surface
+
+A minimal useful first version would expose four model-facing observations:
+
+1. current context occupancy;
+2. tokens and turns since the last context replacement;
+3. the identity and context-token baseline of the latest state-complete
+   checkpoint; and
+4. the estimated token footprint of the smallest sufficient rehydration
+   environment.
+
+A more precise packet might be:
+
+```yaml
+context_window:
+  id: window-7
+  current_tokens:
+    availability: observed
+    value: 118000
+  context_limit_tokens:
+    availability: observed
+    value: 1050000
+  turns_in_window: 31
+
+continuation_checkpoint:
+  id: continuation-checkpoint-42
+  context_window_id: window-7
+  context_tokens_at_checkpoint: 47000
+  durable_revision: revision-91
+  unresolved_or_unknown: []
+
+rehydration:
+  manifest_ref: rehydration-manifest-42
+  estimated_tokens: 9000
+  estimation_method: tokenized_manifest
+  confidence: observed_inputs
+```
+
+The agent can derive post-checkpoint growth and compare it with rehydration cost
+without the product prescribing a reset threshold.
+
+### 19.7 Current Work Engine Placement and Feasibility
+
+The present Work Engine implementation already has several useful foundations:
+
+- Wind Walker owns the continuation-independence invariant and leaves beneficial
+  replacement to model judgment;
+- Codex can expose a native new-context capability in the effective agent
+  environment;
+- slice-supervisor telemetry already carries token, turn, and runtime
+  measurements, although current-context occupancy may be unavailable;
+- durable live slice state already preserves role identity, phase, pending
+  obligation, accepted boundary, authoritative references, durable revision,
+  and a latest phase consequence; and
+- continuation projections already preserve durable decisions, affected
+  boundaries, unresolved concerns, and deferred scope across slices.
+
+The missing work is primarily an observability and projection layer:
+
+1. bind runtime measurements and reset events to context-window identity;
+2. expose actual context occupancy rather than inferring it from cumulative
+   token usage;
+3. derive a role-specific continuation-completeness projection from existing
+   semantic owners;
+4. create an explicit smallest-sufficient rehydration manifest whose footprint
+   can be estimated or measured; and
+5. record reset decisions and later outcomes so environmental research can test
+   which signals predict benefit.
+
+A narrow implementation for active slice builders appears feasible with the
+current durable-state and telemetry foundations. Generalizing continuation
+completeness across every role is a larger semantic design task because each
+role has different authoritative state and unresolved-meaning boundaries.
+
+### 19.8 Evidence-Calibrated Policy
+
+Wind Walker should not hard-code a rule such as `reset at 50% context use`.
+Instead, its model-facing consequence can remain:
+
+> **Use available context, continuation-completeness, and rehydration-cost evidence to judge when obsolete working memory has become more burdensome than useful.**
+
+Reset decisions and outcomes can then be correlated with:
+
+- correctness and later defects;
+- token and latency cost;
+- repeated evidence acquisition and tool use;
+- review findings and remediation;
+- route revision and stale-decision rates;
+- reorientation cost; and
+- behavioral differences between retention and replacement.
+
+Those observations may improve future judgment and environment design. They do
+not silently redefine the safety invariant or create an automatic reset policy.
+
 ---
 
 ## 20. Provenance
@@ -796,4 +1058,3 @@ So before we even think about submitting a PR, I would have Codex run this very 
 > Check whether installed codex-cli 0.149.0 contains and can enable `Feature::TokenBudget`, whether doing so exposes the direct-model `new_context` tool to normal workers and subagents, and whether a subagent invoking it receives a fresh model-visible context window while preserving the same agent/thread lineage. Do not modify Work Engine.
 
 [1]: https://github.com/openai/codex/pull/27488 "[codex] Add new context window tool by pakrym-oai · Pull Request #27488 · openai/codex · GitHub"
-
