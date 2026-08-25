@@ -131,13 +131,21 @@ export class CodexAppServerAdapter {
     protocol = PINNED_PROTOCOL,
     providerRuntimeProfile = PINNED_PROVIDER_RUNTIME,
     configuredProviderFeatures = [],
+    transitionGate = null,
   }) {
+    if (transitionGate
+        && (typeof transitionGate.runTurnAdmission !== "function"
+          || typeof transitionGate.admitToolEffect !== "function")) {
+      throw new TypeError("transition gate must provide turn and tool-effect admission");
+    }
     this.transport = transport;
     this.registry = registry;
+    if (transitionGate) this.registry.setTransitionGate?.(transitionGate);
     this.skillResolver = skillResolver;
     this.protocol = protocol;
     this.providerRuntimeProfile = providerRuntimeProfile;
     this.configuredProviderFeatures = configuredProviderFeatures;
+    this.transitionGate = transitionGate;
     this.negotiated = null;
     this.threadTools = new Map();
     this.turnCompletionOutcomes = new Map();
@@ -285,6 +293,21 @@ export class CodexAppServerAdapter {
         }],
       };
     }
+    if (this.transitionGate) {
+      const admission = await this.transitionGate.admitToolEffect({
+        threadId: request.params?.threadId,
+        request,
+      });
+      if (!admission?.allowed) {
+        return {
+          success: false,
+          contentItems: [{
+            type: "inputText",
+            text: "Dynamic tool effects are unavailable while a context transition is fenced",
+          }],
+        };
+      }
+    }
     return bridge.dispatch(request.params);
   }
 
@@ -295,6 +318,41 @@ export class CodexAppServerAdapter {
     skills = [],
     toolBridge = null,
     requestContext = null,
+    transitionLease = null,
+  }) {
+    requireText(role?.logicalRoleInstanceId, "logical role instance id");
+    if (transitionLease) this.requireProviderCapability("model_context_replacement");
+    if (!this.transitionGate) {
+      if (transitionLease) {
+        throw new Error("transition lease delivery requires an adapter transition gate");
+      }
+      return this.#deliverTurn({
+        role, text, clientUserMessageId, skills, toolBridge, requestContext,
+      });
+    }
+    return this.transitionGate.runTurnAdmission({
+      logicalRoleInstanceId: role.logicalRoleInstanceId,
+      text,
+      transitionLease,
+      skills,
+      toolBridge,
+      requestContext,
+    }, (admissionPermit) => this.#deliverTurn({
+      role, text, clientUserMessageId, skills, toolBridge, requestContext,
+      boundControlTurn: Boolean(transitionLease),
+      transitionAdmissionPermit: admissionPermit,
+    }));
+  }
+
+  async #deliverTurn({
+    role,
+    text,
+    clientUserMessageId,
+    skills = [],
+    toolBridge = null,
+    requestContext = null,
+    boundControlTurn = false,
+    transitionAdmissionPermit = null,
   }) {
     if (!this.negotiated) throw new Error("App Server adapter is not initialized");
     requireText(role?.logicalRoleInstanceId, "logical role instance id");
@@ -306,8 +364,15 @@ export class CodexAppServerAdapter {
     const dynamicTools = toolBridge?.specs() ?? [];
     if (dynamicTools.length > 0) this.#requireCapability("thread_scoped_dynamic_tools");
     const threadOptions = checkedThreadOptions(role);
+    let binding = await this.registry.get(role.logicalRoleInstanceId);
+    if (boundControlTurn && !binding) {
+      throw new Error("retirement control turn requires an existing runtime binding");
+    }
+    const environmentDynamicTools = boundControlTurn
+      ? (this.threadTools.get(binding.threadId)?.specs() ?? [])
+      : dynamicTools;
     const bindingFingerprint = environmentFingerprint({
-      dynamicTools,
+      dynamicTools: environmentDynamicTools,
       providerCapabilities: this.negotiated.provider,
       role,
       threadOptions,
@@ -325,7 +390,6 @@ export class CodexAppServerAdapter {
       threadOptions,
       environmentFingerprint: bindingFingerprint,
     })).digest("hex");
-    let binding = await this.registry.get(role.logicalRoleInstanceId);
     let createdThread = false;
     let threadId;
 
@@ -387,7 +451,7 @@ export class CodexAppServerAdapter {
         protocolVersion: this.negotiated.protocolVersion,
         environmentFingerprint: bindingFingerprint,
         expectedBindingRevision: null,
-      });
+      }, { transitionAdmissionPermit });
       createdThread = true;
     }
 

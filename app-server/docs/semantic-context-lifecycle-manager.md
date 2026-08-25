@@ -313,6 +313,30 @@ transition observation from being recorded as `accepted`, or a failed action
 from being recorded as success. Schema or chain validity never grants
 transition authority.
 
+The implemented checkpoint-publication foundation consumes the authenticated
+projection, complete continuation candidate, and integrity-valid semantic
+verification. Only an `accepted` verifier disposition can proceed. Before
+publication, a destination-owned callback must revalidate the exact objective,
+authorized-action, canonical authority, durable human consequence, and original
+human-source reference set. It returns an authority revision and attributed
+evidence; incomplete coverage, invalid authority, or unresolved authority fails
+closed.
+
+Publication then submits the complete continuation state, its verification, and
+one `checkpoint_published` ledger entry through a single compare-and-swap store
+operation. The comparison binds logical role, thread, runtime-binding revision,
+observed source revision, authority revision, predecessor checkpoint revision,
+and predecessor ledger revision. The reference store independently verifies the
+checkpoint digest, ledger linkage, and subject continuity before committing
+both records. A stale or conflicting fence, duplicate candidate, unresolved
+verification, or invalid authority returns no publication claim.
+
+The publisher accepts an injected atomic store contract. The included in-memory
+realization proves the boundary and race outcomes inside one process; it does
+not provide authenticated writing, protected durable storage, cross-process
+serialization, or recovery. Publication is not retirement readiness or
+transition authorization, and this implementation delivers no actuator turn.
+
 ## Compiled continuation state
 
 The universal continuation schema should remain compact while preserving exact
@@ -548,6 +572,31 @@ the actuator turn.
 > occur under one revision-bound transition lease. Any competing input, effect,
 > or runtime-binding change revokes the lease before actuation.
 
+The implemented transition-lease foundation consumes the complete checkpoint,
+its publication-ledger entry, and the exact post-publication source, binding,
+authority, checkpoint, and ledger fence. It independently verifies their digest,
+linkage, and subject continuity before appending an accepted readiness entry and
+issuing an immutable lease revision. The in-process gate then serializes adapter
+turn admission, dynamic-tool effects, and role-binding mutation for that logical
+role.
+
+Before actuator delivery, a competing domain turn or binding mutation revokes
+readiness before it proceeds. A competing dynamic-tool effect is denied and
+revokes readiness. Once retirement delivery begins, competing domain turns,
+tool effects, and binding mutations remain outside the retiring revision. The
+adapter admits only the exact deterministic `context_retirement_ready` text,
+with no skill input, request-context item, or newly supplied dynamic-tool
+bridge. It requires the negotiated target-model context-replacement capability
+and records `actuation_requested` as `attempted` before sending `turn/start`.
+Delivery failure records a failed ledger entry rather than success evidence.
+
+This reference gate is in-memory and provides only one-process serialization.
+It does not provide a protected durable lease, fence provider-native input or
+tool-effect paths outside the adapter, prove model compliance, observe a
+`new_context` tool call, or classify a transition. The target model is therefore
+asked to clear its own context, but this slice neither invokes `new_context` nor
+claims that clearing occurred.
+
 `thread/compact/start` must not be treated as equivalent to `new_context`
 without version-pinned live evidence of its actual semantics. Likewise, an item
 or event named `contextCompaction` does not by itself prove whether the provider
@@ -555,6 +604,14 @@ summarized, replaced, or otherwise transformed context. The current live proof
 therefore combines same-thread identity, a distinct successor context-window
 identifier, exact predecessor linkage, post-transition request-context
 visibility, and App Server transition notifications.
+
+The implemented event-driven boundary subscribes before retirement delivery,
+so the slow model-side round does not require lifecycle polling and a fast
+notification cannot race subscription. It accepts only a pinned compaction
+signal whose thread and turn match the exact retirement delivery. That signal
+records `transition_observed: unresolved` and authorizes one reconciliation
+challenge; it does not record successful replacement. The runtime also awaits
+the retirement turn's terminal notification before starting rehydration.
 
 ## Rehydration
 
@@ -576,6 +633,22 @@ Reconciliation should establish:
 The prior context need not remain concurrently runnable, but its revision,
 checkpoint, source references, and transition evidence must remain recoverable
 until reconciliation is accepted.
+
+The in-process reference gate now binds the predecessor context-window ID into
+the lease before actuation. After the matching transition signal, it injects
+the complete published checkpoint and a lease/checkpoint/thread/nonce challenge
+through request context while reloading the caller-supplied exact skill set and
+denying tools. The successor returns a closed receipt. Host validation requires
+the exact immutable predecessor ID, a distinct non-empty current window ID,
+the exact challenge bindings, all required continuation claims established, and
+no reported uncertainty. Malformed, mismatched, false, or uncertain receipts
+remain `unreconciled`; only an accepted receipt releases domain turns, tool
+effects, and binding changes.
+
+This receipt is a model assertion checked against host-owned bindings, not an
+authenticated provider context-window attestation. The required live probe must
+still establish that the pinned runtime exposes truthful window lineage to the
+successor and that the strategic planner can reconcile a real checkpoint.
 
 Until the provider supports a concurrently testable successor or a reversible
 context transition, this is a recoverable semantic handoff rather than atomic
@@ -726,7 +799,7 @@ The current scaffold does not yet prove the complete lifecycle:
   source material, binding host-owned provenance and revisions, requiring five
   cited verification checks, and deriving the verification disposition in
   code; a live inference adapter, provider/context independence proof,
-  checkpoint acceptance, and authority revalidation remain unbuilt;
+  and live-model quality evidence remain unbuilt;
 - the host now preserves human-interaction status independently from loading
   disposition, applies only the irreducible fail-closed combinations above,
   requires one cited verifier evaluation per interaction, and derives the
@@ -736,6 +809,21 @@ The current scaffold does not yet prove the complete lifecycle:
   records with closed event/status vocabulary and a tamper-evident predecessor
   chain; authenticated writing, protected durable storage, completeness, and
   authoritative ledger recovery remain unbuilt;
+- the host can now publish a complete, accepted checkpoint and its publication
+  ledger evidence through one revision-fenced compare-and-swap boundary after
+  exact authority revalidation; the included store is in-memory and does not
+  provide protected durable storage, authenticated writing, or cross-process
+  serialization;
+- the host can now acquire an in-process revision-bound transition lease and
+  deliver one exact sterile retirement control turn while gating adapter domain
+  turns, dynamic-tool effects, and role-binding mutations;
+- the same in-process gate now subscribes before retirement, uses an exact
+  pinned compaction notification as an event-driven wake-up, records the signal
+  as unresolved, injects one exact checkpoint-bound reconciliation challenge,
+  validates predecessor/successor window lineage and continuation claims, and
+  releases domain work only after acceptance; protected durable leasing,
+  provider-native ingress fencing, authenticated window identity, and live
+  strategic-planner reconciliation remain unbuilt;
 - the adapter now compiles request-bound evidence into a deterministic text
   item inside the pinned `TurnStartParams.input` field; a live temporary
   manifest role returned a runtime-random context value, and the production
@@ -781,14 +869,23 @@ while every invariant remains preserved.
    model-side `new_context` route in the production adapter through a pinned,
    explicitly configured, target-model provider profile without treating
    configuration as transition evidence.
-9. Implement revision-fenced checkpoint publication and the sterile retirement
-   control turn.
-10. Prove checkpoint injection and semantic reconciliation on
-   the strategic planner.
-11. Run shadow mode across multiple roles: compile and score candidates without
+9. **Completed foundation implementation:** publish an accepted checkpoint and
+   its ledger evidence through an atomic source-, binding-, authority-,
+   checkpoint-, and ledger-revision fence without enabling retirement.
+10. **Completed foundation implementation:** acquire an in-process
+    revision-bound transition lease and deliver an exact sterile retirement
+    control turn without claiming model actuation or transition success.
+11. **Completed foundation implementation:** subscribe before retirement, use
+   the pinned compaction notification as a no-polling wake-up without treating
+   it as semantic proof, inject one exact checkpoint, and mechanically gate an
+   exact predecessor-linked reconciliation receipt before releasing domain
+   work.
+12. Prove live checkpoint injection and semantic reconciliation on the
+   strategic planner.
+13. Run shadow mode across multiple roles: compile and score candidates without
    clearing context.
-12. Enable bounded retirement experiments, retain predecessor evidence, and
-    compare total lifecycle cost and continuation correctness.
+14. Enable bounded retirement experiments, retain predecessor evidence, and
+   compare total lifecycle cost and continuation correctness.
 
 ## Relationship to neighboring documents
 

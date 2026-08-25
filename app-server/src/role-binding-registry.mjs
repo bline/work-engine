@@ -38,9 +38,20 @@ function requireIdentity(value, label) {
 export class FileRoleBindingRegistry {
   #writeTail = Promise.resolve();
 
-  constructor(filePath, { now = () => new Date().toISOString() } = {}) {
+  constructor(filePath, { now = () => new Date().toISOString(), transitionGate = null } = {}) {
     this.filePath = path.resolve(filePath);
     this.now = now;
+    this.setTransitionGate(transitionGate);
+  }
+
+  setTransitionGate(transitionGate) {
+    if (transitionGate && typeof transitionGate.runBindingAdmission !== "function") {
+      throw new TypeError("binding transition gate must provide binding admission");
+    }
+    if (this.transitionGate && transitionGate !== this.transitionGate) {
+      throw new TypeError("role binding registry transition gate cannot be replaced");
+    }
+    this.transitionGate = transitionGate;
   }
 
   async #readState() {
@@ -86,7 +97,15 @@ export class FileRoleBindingRegistry {
     return state.bindings[logicalRoleInstanceId] ?? null;
   }
 
-  async bind({
+  bind(input, { transitionAdmissionPermit = null } = {}) {
+    if (!this.transitionGate) return this.#bind(input);
+    return this.transitionGate.runBindingAdmission({
+      logicalRoleInstanceId: input?.logicalRoleInstanceId,
+      admissionPermit: transitionAdmissionPermit,
+    }, () => this.#bind(input));
+  }
+
+  async #bind({
     logicalRoleInstanceId,
     threadId,
     protocolVersion,

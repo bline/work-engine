@@ -3,6 +3,8 @@ export * from "./codex-app-server-adapter.mjs";
 export * from "./codex-lifecycle-notification-source.mjs";
 export * from "./context-lifecycle-evidence.mjs";
 export * from "./context-lifecycle-ledger.mjs";
+export * from "./context-checkpoint-publication.mjs";
+export * from "./context-transition-lease.mjs";
 export * from "./continuation-state.mjs";
 export * from "./observed-context-projection.mjs";
 export * from "./dynamic-tool-bridge.mjs";

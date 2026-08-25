@@ -148,14 +148,23 @@ export function appendLifecycleLedgerEntry(previousEntry, input) {
   });
 }
 
+export function verifyLifecycleLedgerEntry(candidate, previousEntry = null) {
+  try {
+    validateEntryIntegrity(candidate);
+    if (previousEntry) validateEntryIntegrity(previousEntry);
+    return candidate.sequence === (previousEntry?.sequence ?? 0) + 1
+      && candidate.previousRevision === (previousEntry?.entryRevision ?? null);
+  } catch {
+    return false;
+  }
+}
+
 export function verifyLifecycleLedger(entries) {
   try {
     if (!Array.isArray(entries)) return false;
     let previous = null;
     for (const candidate of entries) {
-      validateEntryIntegrity(candidate);
-      if (candidate.sequence !== (previous?.sequence ?? 0) + 1
-          || candidate.previousRevision !== (previous?.entryRevision ?? null)) return false;
+      if (!verifyLifecycleLedgerEntry(candidate, previous)) return false;
       previous = candidate;
     }
     return true;

@@ -30,6 +30,18 @@ The first vertical provides:
   interaction state;
 - a storage-neutral lifecycle-ledger record contract with constrained event
   truth statuses and a verifiable SHA-256 predecessor chain;
+- a revision-fenced checkpoint publisher that requires accepted semantic
+  verification and exact authority revalidation, then atomically compares
+  source, binding, authority, checkpoint-predecessor, and ledger-predecessor
+  revisions before storing a checkpoint and its publication evidence;
+- a revision-bound in-process transition lease that validates the published
+  checkpoint and ledger fence, records readiness, and gates adapter turn,
+  dynamic-tool, and runtime-binding ingress around one sterile retirement
+  control-turn request; and
+- an event-driven transition/reconciliation path that subscribes before
+  retirement, admits only a pinned matching compaction signal as a wake-up,
+  injects the exact checkpoint once, and keeps domain work fenced until an
+  exact predecessor-linked reconciliation receipt is accepted;
 - a provider-neutral semantic inference harness that verifies projected source
   bytes, runs distinct compiler and verifier capabilities, and derives the
   verification disposition in host code; and
@@ -99,6 +111,48 @@ reference. The verifier must return one source-bound closure/loading evaluation
 for every interaction, and its aggregate interaction check must agree with
 those evaluations. `escalate` remains unresolved even when the underlying
 classification is supported.
+
+Checkpoint publication remains a code-owned consequence after semantic
+verification. The publisher stores the complete continuation state and its
+verification only after a destination authority owner returns evidence covering
+the exact referenced authority set. The injected store operation must compare
+the observed source revision, runtime binding, authority revision, predecessor
+checkpoint, and predecessor ledger entry in one atomic write. The included
+in-memory store proves that contract deterministically but is neither protected
+nor durable. A rejected or failed attempt does not produce a
+`checkpoint_published` ledger claim. This boundary does not establish
+retirement readiness, acquire a transition lease, deliver an actuator turn, or
+invoke `new_context`.
+
+The transition-lease foundation consumes the complete published checkpoint,
+its publication ledger entry, and the exact post-publication fence. Lease
+acquisition appends accepted readiness evidence. Before the adapter delivers a
+retirement control turn it verifies the active lease, requires the negotiated
+target-model context-replacement capability, admits only the deterministic
+host directive, and records an attempted actuation request. A competing domain
+turn or binding change revokes readiness before proceeding; a dynamic-tool
+effect is denied and revokes readiness. Once actuator delivery has begun,
+competing domain turns, tool effects, and binding changes remain outside the
+retiring revision. Failed delivery records failure rather than actuation
+success.
+
+The included gate serializes these boundaries only inside one process. It is
+not protected durable lease storage, does not observe provider-native or
+external input or tool-effect paths, and a compaction notification alone cannot
+establish that `new_context` produced the required successor semantics. The
+runtime subscribes before actuator delivery and waits on notifications rather
+than polling. A pinned, same-thread compaction signal for the exact retirement
+turn records only an unresolved transition observation and unlocks one
+checkpoint-bound rehydration turn. The predecessor context-window ID is part of
+the immutable lease subject; the successor receipt must report that exact
+predecessor, a distinct current window, the exact lease/checkpoint/thread/nonce,
+and supported continuation claims with no hidden uncertainty. Only then does
+the gate record accepted reconciliation and release domain work.
+
+The fake-transport tests prove event ordering, checkpoint injection, receipt
+validation, and fail-closed admission. They do not prove live model compliance,
+authenticate the model-reported context-window identifiers, or replace the
+still-required live strategic-planner reconciliation probe.
 
 ## Protocol bindings
 
