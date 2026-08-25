@@ -9,6 +9,8 @@ The first vertical provides:
 
 - a JSON-lines stdio transport for App Server;
 - initialization and fail-closed capability/version negotiation;
+- pinned provider-runtime negotiation for model-context replacement, requiring
+  explicit `token_budget` configuration and target-model invocation semantics;
 - a durable logical-role-to-thread binding registry;
 - a closed, digest-attributed runtime manifest that projects logical role
   templates, thread settings, and exact skill inputs;
@@ -19,7 +21,18 @@ The first vertical provides:
   terminal failure propagation and final agent-output extraction;
 - a bounded provider-neutral lifecycle evidence collector fed by a
   version-pinned Codex notification normalizer for token usage and context
-  transition signals; and
+  transition signals;
+- deterministic `observed-context-v1` construction with closed trust and
+  instruction-applicability vocabulary, explicit completeness limits, and
+  Ed25519 host attestation;
+- closed `continuation-state-v1` candidate validation with exact source and
+  authority references, deterministic candidate revisions, and explicit human
+  interaction state;
+- a storage-neutral lifecycle-ledger record contract with constrained event
+  truth statuses and a verifiable SHA-256 predecessor chain;
+- a provider-neutral semantic inference harness that verifies projected source
+  bytes, runs distinct compiler and verifier capabilities, and derives the
+  verification disposition in host code; and
 - deterministic parsing and request-binding validation of the strategic
   planner's version-1 YAML handoff.
 
@@ -45,6 +58,48 @@ Provider `contextCompaction` items remain explicitly `unclassified`; neither
 their names nor their presence establish semantic context replacement. This
 collector is an observation surface, not the future durable lifecycle ledger.
 
+The observed-context projector accepts only attributed content references; it
+does not copy raw content or claim access to the provider's literal effective
+prompt. Every projection retains mandatory unknowns for the effective model
+input, provider instructions, and hidden reasoning state. Its source revision
+binds the normalized role, runtime binding, visible-item inventory, governing
+sources, activated skill digests, lifecycle snapshot, expected next work,
+completeness state, and explicit omissions. A domain-separated Ed25519
+signature authenticates the projector component and build revision. Successful
+verification proves construction integrity for those declared inputs, not
+projection completeness, semantic sufficiency, or retirement readiness.
+
+Continuation validation establishes the shape and content revision of a
+compiler candidate; it does not accept or publish that candidate, revalidate
+its authority references, or establish retirement readiness. The lifecycle
+ledger helpers distinguish observations, attempts, failures, unresolved facts,
+and accepted decisions and reject event/status combinations that would turn an
+attempt into a success claim. Their hash chain detects mutation of retained
+records but does not provide durable storage, authenticate the writer, or make
+the in-memory chain authoritative by itself.
+
+The semantic inference harness is currently proven against recorded bounded
+fixtures. It verifies the observed-context signature, admits exactly the
+projected source references, checks every supplied content digest, and supplies
+the same bounded material to compiler and verifier calls. The compiler can emit
+only semantic continuation fields; the host attaches subject, timestamps,
+inference provenance, and the candidate revision. The verifier must report all
+five required checks and cited blockers or uncertainty, while the host derives
+`accepted`, `rejected`, or `unresolved`. Distinct capability objects and
+inference identifiers prove separate calls, not provider, model, or reasoning-
+context independence. No live inference adapter, checkpoint publication,
+retirement authorization, or actuation is implemented by this harness.
+
+Human-interaction evaluation is part of the same bounded verifier pass rather
+than a third role. The compiler must keep semantic status separate from loading
+disposition. Host checks prevent ambiguous meaning from being compiled away,
+open meaning from being omitted, active governing meaning from becoming
+reference-only, and a claimed compiled consequence from lacking its durable
+reference. The verifier must return one source-bound closure/loading evaluation
+for every interaction, and its aggregate interaction check must agree with
+those evaluations. `escalate` remains unresolved even when the underlying
+classification is supported.
+
 ## Protocol bindings
 
 [`protocol-bindings.lock.json`](protocol-bindings.lock.json) pins the Codex CLI
@@ -61,6 +116,17 @@ closure of the selected protocol types under `generated/`.
 The current foundation deliberately uses only stable APIs from Codex CLI
 `0.149.1`. Experimental APIs must be added to the lock and capability profile
 explicitly; their presence in a newer App Server does not silently enable them.
+
+Model-context replacement is not represented as an App Server request in the
+generated protocol lock. The adapter therefore gates the provider-neutral
+`model_context_replacement` capability through a separate pinned provider
+runtime profile. Selection requires an explicit host declaration that
+`token_budget` is configured, fixes the mechanism to model-invoked
+`new_context`, and requires observed transition evidence. This declaration is
+configuration evidence only: it does not prove that the tool was exposed or
+that a transition occurred. Provider capabilities cannot be widened after
+adapter initialization, and the selected provider profile participates in the
+retained thread's environment fingerprint.
 
 ## Runtime manifest
 

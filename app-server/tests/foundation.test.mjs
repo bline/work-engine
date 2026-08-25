@@ -11,8 +11,11 @@ import {
   DynamicToolBridge,
   ExactSkillResolver,
   FileRoleBindingRegistry,
+  MODEL_CONTEXT_REPLACEMENT_CAPABILITY,
+  PINNED_PROVIDER_RUNTIME,
   REQUEST_CONTEXT_INPUT_PREFIX,
   negotiateCapabilities,
+  negotiateProviderCapabilities,
 } from "../src/index.mjs";
 
 class FakeTransport {
@@ -139,6 +142,136 @@ test("runtime capability pin matches the generated-binding lock", async () => {
   const negotiated = negotiateCapabilities(["thread_start"]);
   assert.equal(negotiated.protocolVersion, lock.codexCliVersion);
   assert.equal(negotiated.initializeCapabilities.experimentalApi, lock.experimental);
+});
+
+test("model context replacement requires the pinned target-model feature gate", () => {
+  assert.throws(
+    () => negotiateProviderCapabilities({
+      required: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+    }),
+    /requires configured feature token_budget/,
+  );
+  const negotiated = negotiateProviderCapabilities({
+    required: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+    configuredFeatures: ["token_budget"],
+  });
+  assert.deepEqual(negotiated.selected[MODEL_CONTEXT_REPLACEMENT_CAPABILITY], {
+    mechanism: "new_context",
+    invocation: "target_model",
+    requiredFeature: "token_budget",
+    configurationEvidence: "host_declared",
+    transitionEvidenceRequired: true,
+  });
+
+  assert.throws(
+    () => negotiateProviderCapabilities({
+      required: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+      configuredFeatures: ["token_budget"],
+      profile: {
+        ...PINNED_PROVIDER_RUNTIME,
+        capabilities: {
+          [MODEL_CONTEXT_REPLACEMENT_CAPABILITY]: {
+            ...PINNED_PROVIDER_RUNTIME.capabilities[MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+            invocation: "host",
+          },
+        },
+      },
+    }),
+    /profile is not fail-closed/,
+  );
+});
+
+test("adapter rejects unconfigured provider capabilities before initialization", async (t) => {
+  const { directory, skillRoot } = await fixture(t);
+  const transport = new FakeTransport();
+  const adapter = new CodexAppServerAdapter({
+    transport,
+    registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
+    skillResolver: await ExactSkillResolver.create([skillRoot]),
+  });
+  await assert.rejects(
+    adapter.initialize({
+      requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+    }),
+    /requires configured feature token_budget/,
+  );
+  assert.deepEqual(transport.requests, []);
+});
+
+test("adapter exposes only explicitly negotiated provider capabilities", async (t) => {
+  const { directory, skillRoot } = await fixture(t);
+  const adapter = new CodexAppServerAdapter({
+    transport: new FakeTransport(),
+    registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
+    skillResolver: await ExactSkillResolver.create([skillRoot]),
+    configuredProviderFeatures: ["token_budget"],
+  });
+  await adapter.initialize({
+    requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+  });
+  assert.equal(
+    adapter.requireProviderCapability(MODEL_CONTEXT_REPLACEMENT_CAPABILITY).invocation,
+    "target_model",
+  );
+  assert.throws(
+    () => adapter.requireProviderCapability("unknown_provider_capability"),
+    /was not negotiated/,
+  );
+});
+
+test("adapter cannot widen provider capabilities after initialization", async (t) => {
+  const { directory, skillRoot } = await fixture(t);
+  const adapter = new CodexAppServerAdapter({
+    transport: new FakeTransport(),
+    registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
+    skillResolver: await ExactSkillResolver.create([skillRoot]),
+    configuredProviderFeatures: ["token_budget"],
+  });
+  await adapter.initialize();
+  await assert.rejects(
+    adapter.initialize({
+      requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+    }),
+    /was not negotiated/,
+  );
+});
+
+test("provider capability configuration is bound to the retained role thread", async (t) => {
+  const { directory, skillRoot } = await fixture(t);
+  const registryPath = path.join(directory, "bindings.json");
+  const role = {
+    logicalRoleInstanceId: "planner:provider-profile",
+    threadOptions: { cwd: directory },
+  };
+  const first = new CodexAppServerAdapter({
+    transport: new FakeTransport(),
+    registry: new FileRoleBindingRegistry(registryPath),
+    skillResolver: await ExactSkillResolver.create([skillRoot]),
+    configuredProviderFeatures: ["token_budget"],
+  });
+  await first.initialize({
+    requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+  });
+  await first.deliverTurn({
+    role,
+    text: "Bind this provider profile.",
+    clientUserMessageId: "provider-profile-1",
+  });
+
+  const incompatible = new CodexAppServerAdapter({
+    transport: new FakeTransport(),
+    registry: new FileRoleBindingRegistry(registryPath),
+    skillResolver: await ExactSkillResolver.create([skillRoot]),
+  });
+  await incompatible.initialize();
+  await assert.rejects(
+    incompatible.deliverTurn({
+      role,
+      text: "Do not resume under another provider profile.",
+      clientUserMessageId: "provider-profile-2",
+    }),
+    /runtime environment changed; replace the runtime binding/,
+  );
 });
 
 test("role bindings persist by logical identity and require revision-bound replacement", async (t) => {

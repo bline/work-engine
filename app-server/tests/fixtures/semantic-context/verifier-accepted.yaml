@@ -1,0 +1,50 @@
+checks:
+  - name: sufficiency
+    status: pass
+    rationale: Required continuation meaning is represented or referenced.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+  - name: attribution
+    status: pass
+    rationale: Every semantic claim cites supplied material.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+  - name: authority_preservation
+    status: pass
+    rationale: Authority claims resolve to the supplied human source.
+    sourceRefs:
+      - reference: user-message:proceed
+        sha256: "__HUMAN_SHA__"
+  - name: interaction_closure
+    status: pass
+    rationale: The completed authorization remains active and source-bound.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+  - name: source_binding
+    status: pass
+    rationale: Candidate and observed-context revisions match the supplied subjects.
+    sourceRefs:
+      - reference: observed-context
+        sha256: "__SOURCE_SHA__"
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+interactionEvaluations:
+  - interactionId: interaction-proceed
+    sourceRef:
+      reference: user-message:proceed
+      sha256: "__HUMAN_SHA__"
+    status: closed_but_active
+    nextContextDisposition: compiled_consequence
+    closure: supported
+    loading: supported
+    rationale: The authorization is complete, remains active, and its durable consequence is loaded.
+    sourceRefs:
+      - reference: user-message:proceed
+        sha256: "__HUMAN_SHA__"
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+blockers: []
+uncertainty: []

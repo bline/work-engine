@@ -1,0 +1,81 @@
+objective:
+  statement: Continue the accepted App Server foundation slice.
+  authorityRef:
+    reference: user-message:proceed
+    sha256: "__HUMAN_SHA__"
+workPosition:
+  phase: implementation
+  currentUnit: semantic-context-inference
+completedConsequences:
+  - id: consequence-observed-context
+    statement: The host constructed an authenticated observed-context projection.
+    sourceRefs:
+      -
+        reference: evidence:observed-context
+        sha256: "__EVIDENCE_SHA__"
+activeCommitments:
+  - id: commitment-no-retirement
+    statement: Do not actuate retirement in this slice.
+    sourceRefs:
+      - reference: user-message:proceed
+        sha256: "__HUMAN_SHA__"
+decisions:
+  - id: decision-provider-neutral
+    statement: Keep compiler and verifier behind provider-neutral inference capabilities.
+    sourceRefs:
+      - reference: evidence:observed-context
+        sha256: "__EVIDENCE_SHA__"
+humanInteractions:
+  - id: interaction-proceed
+    kind: implementation_authorization
+    status: closed_but_active
+    authorityEffect: Authorizes the next bounded App Server slice.
+    durableConsequenceRef:
+      reference: user-message:proceed
+      sha256: "__HUMAN_SHA__"
+    sourceRef:
+      reference: user-message:proceed
+      sha256: "__HUMAN_SHA__"
+    nextContextDisposition: compiled_consequence
+authorityDependencies:
+  canonicalRecords:
+    - reference: user-message:proceed
+      sha256: "__HUMAN_SHA__"
+  revalidationRequired:
+    - authorized next action
+unresolved:
+  - id: unresolved-live-provider
+    statement: No live semantic inference provider has been selected.
+    sourceRefs:
+      -
+        reference: expected-next-work:semantic-inference
+        sha256: "__NEXT_SHA__"
+governingEnvironment:
+  roleContract:
+    reference: skills/strategic-planner/SKILL.md
+    sha256: "__SKILL_SHA__"
+  instructionsToReload:
+    - reference: skills/strategic-planner/SKILL.md
+      sha256: "__SKILL_SHA__"
+  activatedSkills:
+    - reference: skills/strategic-planner/SKILL.md
+      sha256: "__SKILL_SHA__"
+canonicalReferences:
+  - reference: evidence:observed-context
+    sha256: "__EVIDENCE_SHA__"
+authorizedNextAction:
+  kind: validate
+  objective: Challenge the continuation candidate against the same bounded material.
+  authorityRef:
+    reference: user-message:proceed
+    sha256: "__HUMAN_SHA__"
+roleState:
+  schema: strategic-planner-continuation-v1
+  value:
+    disposition: continue
+uncertainty:
+  - id: uncertainty-hidden-context
+    statement: The provider's exact effective model input remains unknown.
+    sourceRefs:
+      - reference: expected-next-work:semantic-inference
+        sha256: "__NEXT_SHA__"

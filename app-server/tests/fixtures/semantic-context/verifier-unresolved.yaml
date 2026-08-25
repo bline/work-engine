@@ -1,0 +1,53 @@
+checks:
+  - name: sufficiency
+    status: pass
+    rationale: The candidate covers the declared material.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+  - name: attribution
+    status: pass
+    rationale: Claims cite supplied references.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+  - name: authority_preservation
+    status: pass
+    rationale: Authority remains source-bound.
+    sourceRefs:
+      - reference: user-message:proceed
+        sha256: "__HUMAN_SHA__"
+  - name: interaction_closure
+    status: uncertain
+    rationale: The fixture does not establish whether all later human input was projected.
+    sourceRefs:
+      - reference: observed-context
+        sha256: "__SOURCE_SHA__"
+  - name: source_binding
+    status: pass
+    rationale: Revisions match the supplied subjects.
+    sourceRefs:
+      - reference: continuation-state-candidate
+        sha256: "__CANDIDATE_SHA__"
+interactionEvaluations:
+  - interactionId: interaction-proceed
+    sourceRef:
+      reference: user-message:proceed
+      sha256: "__HUMAN_SHA__"
+    status: closed_but_active
+    nextContextDisposition: compiled_consequence
+    closure: uncertain
+    loading: supported
+    rationale: Later human input may have overtaken the recorded authorization.
+    sourceRefs:
+      - reference: observed-context
+        sha256: "__SOURCE_SHA__"
+      - reference: user-message:proceed
+        sha256: "__HUMAN_SHA__"
+blockers: []
+uncertainty:
+  - id: uncertainty-later-input
+    statement: Projection completeness cannot establish absence of later human input.
+    sourceRefs:
+      - reference: observed-context
+        sha256: "__SOURCE_SHA__"

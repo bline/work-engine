@@ -1,8 +1,11 @@
 import {
+  CapabilityError,
   FOUNDATION_CAPABILITIES,
   PINNED_PROTOCOL,
+  PINNED_PROVIDER_RUNTIME,
   assertCompatibleServer,
   negotiateCapabilities,
+  negotiateProviderCapabilities,
 } from "./capabilities.mjs";
 import { createHash } from "node:crypto";
 import { compileRequestContextInput } from "./request-context-input.mjs";
@@ -100,10 +103,11 @@ function canonicalJson(value) {
   return JSON.stringify(value);
 }
 
-function environmentFingerprint({ dynamicTools, role, threadOptions }) {
+function environmentFingerprint({ dynamicTools, providerCapabilities, role, threadOptions }) {
   return createHash("sha256").update(canonicalJson({
     developerInstructions: role.developerInstructions ?? null,
     dynamicTools,
+    providerCapabilities,
     runtimeEnvironmentRevision: role.runtimeEnvironmentRevision ?? null,
     threadOptions,
   })).digest("hex");
@@ -125,11 +129,15 @@ export class CodexAppServerAdapter {
     registry,
     skillResolver,
     protocol = PINNED_PROTOCOL,
+    providerRuntimeProfile = PINNED_PROVIDER_RUNTIME,
+    configuredProviderFeatures = [],
   }) {
     this.transport = transport;
     this.registry = registry;
     this.skillResolver = skillResolver;
     this.protocol = protocol;
+    this.providerRuntimeProfile = providerRuntimeProfile;
+    this.configuredProviderFeatures = configuredProviderFeatures;
     this.negotiated = null;
     this.threadTools = new Map();
     this.turnCompletionOutcomes = new Map();
@@ -142,17 +150,36 @@ export class CodexAppServerAdapter {
   async initialize({
     clientInfo = { name: "work-engine", title: "Work Engine", version: "0.1.0" },
     requiredCapabilities = FOUNDATION_CAPABILITIES,
+    requiredProviderCapabilities = [],
   } = {}) {
-    if (this.negotiated) return this.negotiated;
-    const negotiated = negotiateCapabilities(requiredCapabilities, this.protocol);
+    if (this.negotiated) {
+      for (const name of requiredCapabilities) this.#requireCapability(name);
+      for (const name of requiredProviderCapabilities) this.requireProviderCapability(name);
+      return this.negotiated;
+    }
+    const appServer = negotiateCapabilities(requiredCapabilities, this.protocol);
+    const provider = negotiateProviderCapabilities({
+      required: requiredProviderCapabilities,
+      configuredFeatures: this.configuredProviderFeatures,
+      profile: this.providerRuntimeProfile,
+      protocol: this.protocol,
+    });
     const response = await this.transport.request("initialize", {
       clientInfo,
-      capabilities: negotiated.initializeCapabilities,
+      capabilities: appServer.initializeCapabilities,
     });
     assertCompatibleServer(response, this.protocol);
     this.transport.notify("initialized");
-    this.negotiated = negotiated;
-    return negotiated;
+    this.negotiated = Object.freeze({ ...appServer, provider });
+    return this.negotiated;
+  }
+
+  requireProviderCapability(name) {
+    const capability = this.negotiated?.provider?.selected?.[name];
+    if (!capability) {
+      throw new CapabilityError(`provider capability was not negotiated: ${name}`);
+    }
+    return capability;
   }
 
   onNotification(handler) {
@@ -279,7 +306,12 @@ export class CodexAppServerAdapter {
     const dynamicTools = toolBridge?.specs() ?? [];
     if (dynamicTools.length > 0) this.#requireCapability("thread_scoped_dynamic_tools");
     const threadOptions = checkedThreadOptions(role);
-    const bindingFingerprint = environmentFingerprint({ dynamicTools, role, threadOptions });
+    const bindingFingerprint = environmentFingerprint({
+      dynamicTools,
+      providerCapabilities: this.negotiated.provider,
+      role,
+      threadOptions,
+    });
 
     const skillItems = await this.skillResolver.resolve(skills);
     const requestContextItem = compileRequestContextInput(requestContext);

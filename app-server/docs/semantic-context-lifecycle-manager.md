@@ -125,6 +125,21 @@ The source revision must bind every input on which a retirement decision
 depends: visible items, governing instructions, skill revisions, durable state,
 role identity, runtime binding, lifecycle position, and expected next work.
 
+The implemented `observed-context-v1` foundation constructs this projection
+from attributed content references rather than copied content. It uses closed
+trust and instruction-applicability values, requires explicit source-inventory
+completeness and omissions, preserves the three provider unknowns above, binds
+the current lifecycle snapshot, and rejects a snapshot whose thread differs
+from the runtime binding. Its canonical source revision is authenticated with a
+domain-separated Ed25519 signature carrying the host component, build revision,
+and key identity. Independent verification rejects source, trust, construction,
+signature, or key tampering.
+
+This attestation establishes which host construction signed which declared
+projection bytes. It does not prove that the declared inventory was complete,
+that the model literally saw those items, or that retirement is safe. Durable
+ledger anchoring and destination authorization remain separate requirements.
+
 ### Transport security and projection trust
 
 The observed-context projection crosses a security boundary. Content does not
@@ -136,23 +151,32 @@ producer attribution, content reference, and integrity evidence of each item:
 ```yaml
 visible_items:
   - identity: thread-item-123
-    origin: user
+    origin: human
     trust_class: human_authority_input
     instruction_applicability: contract_defined
-    content_ref: "..."
+    content_ref:
+      kind: thread-item
+      reference: thread-item-123
+      sha256: "<lowercase-sha256>"
 
   - identity: thread-item-124
-    origin: retrieved_web_content
+    origin: retrieved_content
     trust_class: untrusted_data
     instruction_applicability: none
-    content_ref: "..."
+    content_ref:
+      kind: thread-item
+      reference: thread-item-124
+      sha256: "<lowercase-sha256>"
 
   - identity: thread-item-125
-    origin: tool_result
+    origin: tool
     trust_class: attributed_evidence
     instruction_applicability: none
     producer: codebase-memory
-    content_ref: "..."
+    content_ref:
+      kind: thread-item
+      reference: thread-item-125
+      sha256: "<lowercase-sha256>"
 ```
 
 The compiler and verifier should receive only the least privilege needed for
@@ -199,6 +223,27 @@ extraction vocabulary includes:
 Roles may contribute a typed `role_state` extension. A role-specific extension
 does not transfer ownership of the shared lifecycle machinery to that role.
 
+The implemented fixture-driven inference foundation places this judgment
+behind a provider-neutral compiler capability. Before invocation, the host
+verifies the observed-context attestation and admits exactly one digest-matching
+content value for every projected visible item, governing source, activated
+skill, and expected-next-work reference. Missing, additional, duplicate, or
+digest-mismatched material fails before model inference. The model emits only
+the semantic body; the host owns and attaches schema identity, logical subject,
+source and binding revisions, timestamp, compiler provenance, invocation
+identity, and the deterministic candidate revision.
+
+Every semantic record emitted through this boundary must cite supplied source
+material. Authority, governing-environment, canonical, and human-interaction
+references must also resolve inside the bounded material, and activated-skill
+references must exactly match the observed projection. Reload instructions are
+limited to projected governing sources and activated skills, so ordinary data
+cannot be promoted into governing instructions through compiler output. These
+mechanical checks establish attribution and binding constraints, not the truth
+or sufficiency of the model's semantic judgment. Raw loaded material is
+provided to the bounded inference calls but is not retained in the returned
+inspection result.
+
 ### Semantic verifier
 
 A separate bounded verification pass should attempt to falsify the candidate's
@@ -209,6 +254,25 @@ repairing ambiguity into apparent readiness.
 Verification reduces semantic omission risk; it cannot establish access to
 hidden provider context. Retirement must remain fail-closed when the available
 projection is insufficient for a consequential continuation claim.
+
+The implemented verifier foundation receives the exact compilation input and
+the host-bound candidate through a separate injected inference capability. It
+must challenge `sufficiency`, `attribution`, `authority_preservation`,
+`interaction_closure`, and `source_binding`, citing supplied material or the
+exact observed-context and candidate revisions for every check and finding.
+The model cannot emit a verdict: host code derives `rejected` from any failed
+check or blocker, `unresolved` from remaining uncertainty, and `accepted` only
+when every check passes without blockers or uncertainty. It then binds the
+result to a deterministic verification revision.
+
+Separate capability objects and distinct inference invocation identities
+prevent accidental reuse of one call as both judgments. They do not prove a
+different provider, model, hidden reasoning context, or organizationally
+independent reviewer. Provider-specific disposable-context enforcement and a
+live model-quality proof remain future integration work. Even an `accepted`
+verification is only the outcome of this bounded challenge; it is not
+checkpoint publication, lifecycle readiness, retirement authorization, or
+transition evidence.
 
 ### Lifecycle ledger
 
@@ -231,57 +295,99 @@ should record:
 The ledger must not claim a transition, checkpoint publication, or successful
 rehydration merely because it was attempted.
 
+The implemented `context-lifecycle-ledger-v1` foundation is a storage-neutral
+record contract, not yet the authoritative durable ledger described above. It
+assigns a monotonic sequence, binds each entry to its predecessor revision, and
+hashes normalized entry content. Whole-chain verification detects content
+mutation, reordering, and broken predecessor linkage within the supplied
+chain. It cannot detect omission of a valid suffix without an external anchor,
+authenticate the writer, prove that a supplied chain is complete, or persist
+records. Those properties remain responsibilities of the eventual protected
+ledger owner.
+
+The closed event vocabulary currently distinguishes observations, checkpoint
+candidates, verification, readiness, publication, actuation requests,
+transition observations, reconciliation, and failures. Status constraints
+prevent an actuation request from being recorded as more than `attempted`, a
+transition observation from being recorded as `accepted`, or a failed action
+from being recorded as success. Schema or chain validity never grants
+transition authority.
+
 ## Compiled continuation state
 
 The universal continuation schema should remain compact while preserving exact
 source references for authoritative or ambiguous meaning.
 
+The implemented JavaScript-facing `continuation-state-v1` representation uses
+the exact property names and reference shapes below:
+
 ```yaml
-schema_version: 1
+schemaVersion: 1
+type: work-engine.continuation-state
 
 subject:
-  logical_role_instance: strategic-planner:main
-  runtime_binding_revision: 4
-  source_revision: "sha256:..."
-  compiled_at: "2026-08-25T00:00:00Z"
+  logicalRoleInstanceId: strategic-planner:main
+  runtimeBindingRevision: 4
+  sourceRevision: "sha256:<lowercase-sha256>"
+
+compiledAt: "2026-08-25T00:00:00Z"
+compiler:
+  producer: work-engine.semantic-context-compiler
+  model: compiler-model
+  version: "1"
+  inferenceId: "compiler-inference-id"
 
 objective:
   statement: "Keep the Work Engine roadmap coherent"
-  authority_ref: "user-message:..."
+  authorityRef:
+    reference: "user-message:..."
+    sha256: "<lowercase-sha256>"
 
-work_position:
+workPosition:
   phase: implementation
-  current_unit: planner-evidence-delivery-remediation
+  currentUnit: planner-evidence-delivery-remediation
 
-completed_consequences: []
-active_commitments: []
+completedConsequences: []
+activeCommitments: []
 decisions: []
 
-human_interactions: []
+humanInteractions: []
 
-authority_dependencies:
-  canonical_records: []
-  revalidation_required: []
+authorityDependencies:
+  canonicalRecords: []
+  revalidationRequired: []
 
 unresolved: []
 
-governing_environment:
-  role_contract: "..."
-  instructions_to_reload: []
-  activated_skills: []
+governingEnvironment:
+  roleContract:
+    reference: "skills/strategic-planner/SKILL.md"
+    sha256: "<lowercase-sha256>"
+  instructionsToReload: []
+  activatedSkills: []
 
-canonical_references: []
+canonicalReferences: []
 
-authorized_next_action:
+authorizedNextAction:
   kind: remediate
   objective: "Deliver planner evidence through a supported model-visible input"
+  authorityRef:
+    reference: "authority-record:..."
+    sha256: "<lowercase-sha256>"
 
-role_state:
+roleState:
   schema: strategic-planner-continuation-v1
   value: {}
 
 uncertainty: []
 ```
+
+Validation adds a deterministic `candidateRevision`; it does not add an
+accepted checkpoint revision. The candidate revision binds normalized content
+for later verification and ledger evidence, but it does not prove semantic
+sufficiency, confer authority, publish a checkpoint, or authorize retirement.
+Downstream owners must revalidate referenced authority before accepting the
+candidate.
 
 The state is compiled meaning, not a transcript summary. Exploratory reasoning,
 closed conversation, and raw tool output should be omitted unless legitimate
@@ -294,20 +400,28 @@ merely to make retirement convenient. The compiler should classify interaction
 state separately from its next-context loading disposition.
 
 ```yaml
-human_interactions:
+humanInteractions:
   - id: "user-message:..."
     kind: implementation_authorization
     status: closed_but_active
-    authority_effect: "authorizes changes under app-server/"
-    durable_consequence_ref: "authority-record:..."
-    source_ref: "thread-item:..."
-    next_context_disposition: compiled_consequence
+    authorityEffect: "authorizes changes under app-server/"
+    durableConsequenceRef:
+      reference: "authority-record:..."
+      sha256: "<lowercase-sha256>"
+    sourceRef:
+      reference: "thread-item:..."
+      sha256: "<lowercase-sha256>"
+    nextContextDisposition: compiled_consequence
 
   - id: "user-message:..."
     kind: clarification
     status: open
-    source_ref: "thread-item:..."
-    next_context_disposition: exact
+    authorityEffect: null
+    durableConsequenceRef: null
+    sourceRef:
+      reference: "thread-item:..."
+      sha256: "<lowercase-sha256>"
+    nextContextDisposition: exact
 ```
 
 Candidate statuses are:
@@ -332,6 +446,27 @@ authority. The original interaction remains durably addressable. An assistant
 response alone does not prove completion of an implementation request, an
 approval decision, or another interaction whose consequence remains pending.
 
+The implemented human-interaction boundary preserves this separation through
+both deterministic constraints and model judgment. An interaction source must
+resolve to a projected human-authored item. A `compiled_consequence` requires a
+durable consequence reference; `ambiguous` meaning must remain `exact` or
+`escalate`; `open` meaning cannot be omitted; and `closed_but_active` meaning
+cannot become `reference_only` or be omitted. These are fail-closed boundary
+conditions, not an exhaustive status/disposition routing table. Other valid
+combinations remain subject to the bounded compiler and verifier's semantic
+judgment.
+
+For every compiled interaction, the verifier must return exactly one evaluation
+bound to the same interaction identity, human source, claimed status, and
+loading disposition. It separately assesses closure as `supported`,
+`contradicted`, or `uncertain` and loading as `supported`, `insufficient`, or
+`uncertain`, with attributed evidence. Host code derives the aggregate
+`interaction_closure` check from those evaluations and rejects a contradictory
+aggregate claim. Any contradiction or insufficient loading fails the check;
+remaining uncertainty, an `ambiguous` status, or `escalate` keeps it uncertain.
+The evaluation cannot mutate the candidate, and neither omission nor a
+supported classification resolves a human interaction.
+
 ## Retirement and `new_context` actuation
 
 Preservation and retirement are independent decisions. Rising pressure may
@@ -346,6 +481,26 @@ preserving the App Server thread identity. The host still cannot treat it as a
 stable direct App Server request. Therefore the target model remains a narrow
 transition actuator even though every other lifecycle responsibility belongs to
 the code-owned service.
+
+The production adapter now represents configured support for this route only
+through the provider-neutral `model_context_replacement` capability. Its pinned
+provider profile fixes the current mechanism to `new_context`, the invocation
+owner to `target_model`, the
+required provider feature to `token_budget`, and post-request transition
+evidence to mandatory. Adapter initialization fails before the App Server
+handshake when the capability is requested without an explicit host declaration
+that the feature is configured. The capability set cannot be widened after
+initialization, and its profile is included in the durable role-thread
+environment fingerprint so an incompatible process cannot silently resume the
+binding.
+
+This gate authenticates neither provider configuration nor transition success.
+The host declaration is configuration evidence, not a capability handshake or
+proof that the tool appeared in the model context. The exact live probe binds
+the declaration to an App Server process launched with `--enable token_budget`,
+while lifecycle observations and successor reconciliation remain necessary to
+classify any requested transition. No production retirement directive or
+actuator turn is implemented by this gate.
 
 The current mechanism hypothesis is:
 
@@ -538,6 +693,12 @@ The current scaffold does not yet prove the complete lifecycle:
 - the pinned protocol exposes persisted turns and token telemetry but not an
   exact effective-context read;
 - `new_context` is not a pinned direct App Server client request;
+- the adapter now fail-closed negotiates a provider-neutral
+  `model_context_replacement` capability only for the pinned target-model
+  mechanism with explicit `token_budget` configuration, prevents capability
+  widening after initialization, and binds the selected provider profile to the
+  retained role thread; the configuration declaration is not a provider
+  handshake or transition-success claim;
 - an opt-in live integration probe against pinned Codex CLI 0.149.1 enabled the
   `token_budget` feature, invoked model-side `new_context`, preserved the exact
   App Server thread id, observed a distinct successor context-window id with
@@ -551,6 +712,30 @@ The current scaffold does not yet prove the complete lifecycle:
   notifications into immutable, bounded, provider-neutral lifecycle
   observations; compaction observations remain explicitly unclassified and the
   run-local collector is not a durable lifecycle ledger;
+- the host can now construct and independently verify a signed
+  `observed-context-v1` projection binding attributed item references, trust and
+  instruction applicability, governing sources, exact skill digests, runtime
+  binding, lifecycle evidence, expected next work, omissions, and mandatory
+  provider unknowns; key custody and durable ledger anchoring remain unbuilt;
+- the host can now validate and revision-bind a closed
+  `continuation-state-v1` compiler candidate, including exact authority and
+  source references and explicit human-interaction status and loading
+  disposition;
+- the host can now run a provider-neutral compiler and distinct verifier
+  against recorded bounded fixtures, rejecting unprojected or digest-mismatched
+  source material, binding host-owned provenance and revisions, requiring five
+  cited verification checks, and deriving the verification disposition in
+  code; a live inference adapter, provider/context independence proof,
+  checkpoint acceptance, and authority revalidation remain unbuilt;
+- the host now preserves human-interaction status independently from loading
+  disposition, applies only the irreducible fail-closed combinations above,
+  requires one cited verifier evaluation per interaction, and derives the
+  aggregate interaction check without treating omission, assistant output, or
+  escalation as resolution;
+- the host can now construct and verify storage-neutral lifecycle-ledger
+  records with closed event/status vocabulary and a tamper-evident predecessor
+  chain; authenticated writing, protected durable storage, completeness, and
+  authoritative ledger recovery remain unbuilt;
 - the adapter now compiles request-bound evidence into a deterministic text
   item inside the pinned `TurnStartParams.input` field; a live temporary
   manifest role returned a runtime-random context value, and the production
@@ -558,7 +743,7 @@ The current scaffold does not yet prove the complete lifecycle:
   objective, evidence-cutoff, continuity, schema, and terminal validation; and
 - these live turns establish request transport, the first planning handoff, and
   a bounded same-thread context-window transition; they do not yet establish an
-  authenticated effective-context projection, checkpoint reconciliation, or
+  exact effective model-input inventory, checkpoint reconciliation, or
   production retirement semantics.
 
 These are implementation premises to test, not reasons to weaken the semantic
@@ -578,13 +763,24 @@ while every invariant remains preserved.
 3. **Completed foundation implementation:** normalize pinned token telemetry and
    provider transition signals into bounded provider-neutral lifecycle
    observations without treating signal names as semantic proof.
-4. Add the authenticated observed-context projection contract.
-5. Define and validate `continuation-state-v1` and the lifecycle-ledger schema.
-6. Implement the hidden semantic compiler and verifier against recorded bounded
-   fixtures before allowing retirement.
-7. Add human-interaction closure and loading-disposition evaluation.
-8. Capability-gate the proven model-side `new_context` route in the production
-   adapter.
+4. **Completed foundation implementation:** construct and independently verify
+   an authenticated `observed-context-v1` projection while preserving explicit
+   completeness limits and provider unknowns.
+5. **Completed foundation implementation:** define and validate
+   `continuation-state-v1` candidates and storage-neutral, tamper-evident
+   lifecycle-ledger records without confusing validation with publication or
+   durable authority.
+6. **Completed foundation implementation:** run a hidden provider-neutral
+   semantic compiler and distinct verifier against recorded bounded fixtures,
+   with host-owned source admission, provenance, revision binding, and
+   disposition derivation. This does not enable retirement.
+7. **Completed foundation implementation:** evaluate human-interaction closure
+   and loading disposition as separate, source-bound dimensions, with
+   host-derived aggregate status and fail-closed ambiguity or escalation.
+8. **Completed foundation implementation:** capability-gate the proven
+   model-side `new_context` route in the production adapter through a pinned,
+   explicitly configured, target-model provider profile without treating
+   configuration as transition evidence.
 9. Implement revision-fenced checkpoint publication and the sterile retirement
    control turn.
 10. Prove checkpoint injection and semantic reconciliation on

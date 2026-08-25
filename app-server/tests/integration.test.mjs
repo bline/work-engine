@@ -13,6 +13,7 @@ import {
   ExactSkillResolver,
   FileRoleBindingRegistry,
   ManifestRoleRuntime,
+  MODEL_CONTEXT_REPLACEMENT_CAPABILITY,
   PINNED_PROTOCOL,
   StdioJsonRpcTransport,
   StrategicPlannerRuntime,
@@ -191,10 +192,13 @@ roles:
     transport,
     registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
     skillResolver: await ExactSkillResolver.create([skillRoot]),
+    configuredProviderFeatures: ["token_budget"],
   });
   const lifecycleEvidence = new ContextLifecycleEvidenceCollector();
   attachCodexLifecycleEvidence({ adapter, collector: lifecycleEvidence });
-  await adapter.initialize();
+  await adapter.initialize({
+    requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+  });
   const runtime = new ManifestRoleRuntime({
     adapter,
     manifest: await loadRuntimeManifest(manifestPath),
