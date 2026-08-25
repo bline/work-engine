@@ -133,15 +133,16 @@ export function normalizeLifecycleObservation(observation) {
 }
 
 export class ContextLifecycleEvidenceCollector {
-  constructor({ retentionLimit = 256 } = {}) {
+  constructor({ retentionLimit = 256, initialSequence = 0 } = {}) {
     if (!Number.isSafeInteger(retentionLimit) || retentionLimit < 1) {
       throw new TypeError(
         "lifecycle evidence retention limit must be a positive safe integer",
       );
     }
+    requireNonNegativeInteger(initialSequence, "lifecycle evidence initial sequence");
     this.retentionLimit = retentionLimit;
-    this.nextSequence = 1;
-    this.droppedThroughSequence = 0;
+    this.nextSequence = initialSequence + 1;
+    this.droppedThroughSequence = initialSequence;
     this.retained = [];
   }
 

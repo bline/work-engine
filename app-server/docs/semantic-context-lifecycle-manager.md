@@ -799,6 +799,37 @@ checkpoint, authorize retirement, or claim that one provider telemetry field
 is an exact active-context measurement. Provider adapters or configured
 measurement profiles own that interpretation.
 
+The first Codex measurement profile uses the latest completed turn's
+`last.totalTokens / modelContextWindow`, floors the ratio to basis points, and
+clamps it at 10000. Its profile and source observation are digest-bound in the
+pressure evidence. This is an intentionally replaceable scheduling proxy, not
+an assertion that `last.totalTokens` is exact active-context occupancy. A
+missing context-window value produces unavailable pressure evidence.
+
+The retained-role shadow wrapper waits for turn completion, then joins only a
+token-usage observation carrying that exact turn ID with the durable role
+binding and role-scoped coordinator. Stale usage is not applied to the new
+turn. Comfortable observations can be persisted without an observed-context
+projection; when the schedule requires semantic inspection, the host must
+supply the authenticated projection and exact bounded source materials rather
+than asking the wrapper to infer a source inventory.
+
+Process restart must restore pressure scheduling and evidence ordering
+together. The runtime derives the global pressure-observation sequence floor
+from all integrity-checked durable episodes and starts the notification collector above
+it. For each role, it restores the latest disposition only when the durable
+episode's pressure-policy revision matches the configured policy. Policy
+change resets the disposition to `comfortable` while retaining the sequence
+floor. This avoids both loss of hysteresis and silent reuse of an old sequence
+as new evidence.
+
+Host assembly must preserve that ordering: open and validate durable state,
+derive the sequence floor, construct the collector, subscribe to provider
+notifications, and only then admit retained-role turns. Per-role coordinators
+are constructed lazily from the configured policy and the latest compatible
+durable disposition. The host owns notification detachment, while the caller
+continues to own adapter and database lifetimes.
+
 ### Critical preservation failure and human recovery
 
 With the configured `token_budget` behavior, mandatory provider compaction may
@@ -1074,8 +1105,11 @@ while every invariant remains preserved.
    checkpoint publications, lifecycle-ledger heads, and revision fences through
    a schema-migrated transactional SQLite adapter with restart and competing
    writer evidence.
-16. Run shadow mode across multiple roles: compile and score candidates without
-   clearing context, then compare revision-homogeneous lifecycle outcomes.
+16. **In progress:** route completed retained-role turns through the configured
+   Codex pressure profile and durable shadow coordinator. Next, construct
+   authenticated source projections for the first real roles, then compile and
+   score candidates without clearing context and compare revision-homogeneous
+   lifecycle outcomes.
 17. Enable bounded retirement experiments, retain predecessor evidence, and
    compare total lifecycle cost and continuation correctness.
 

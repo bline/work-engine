@@ -102,6 +102,7 @@ test("high pressure can skip stages without granting lifecycle authority", () =>
     "disposition",
     "lastObservation",
     "lastTransition",
+    "minimumSequence",
     "policyRevision",
     "schemaVersion",
   ]);

@@ -137,6 +137,39 @@ database encryption, authenticated writers, backup/restore tooling, or
 multi-host coordination. The database location must remain outside tracked
 canonical repository content unless the operator explicitly chooses otherwise.
 
+`TokenUsagePressureProjector` turns one retained thread's latest normalized
+Codex token-usage observation into a revision-bound basis-point observation.
+Its schema-version-1 profile deliberately names
+`last.totalTokens / modelContextWindow`; that is an experimental scheduling
+measurement, not a claim that either provider field exactly represents the
+active model context. Unknown window size remains unavailable rather than
+being estimated silently.
+
+`RetainedRoleShadowLifecycleRuntime` composes normal manifest-role delivery,
+turn completion, thread-specific lifecycle evidence, the pressure projector,
+and a role-scoped `ShadowContextLifecycleCoordinator`. It refuses stale token
+usage from an earlier turn. At inspection thresholds, construction of the
+authenticated observed-context projection and its bounded source materials
+remains an injected host responsibility. The wrapper has no transition lease
+or context-replacement path.
+
+Restart recovery derives two coupled values from integrity-checked lifecycle
+episodes: the latest role disposition when its pressure-policy revision still
+matches, and the global durable pressure-observation sequence floor. A changed policy
+resets the disposition to `comfortable` but never resets the sequence floor.
+The new lifecycle collector starts above that floor, and the restored pressure
+controller rejects observations at or below it, preserving hysteresis without
+mistaking post-restart sequence reuse for new evidence.
+
+`createRetainedRoleShadowHost` is the supported assembly boundary. It derives
+the durable sequence floor before subscribing to provider notifications, then
+lazily restores one pressure controller and constructs one coordinator per
+logical role. Concurrent first use shares the same coordinator construction.
+Role policy, schedule, inference runtime, checkpoint publisher, and semantic
+projection remain explicit injected dependencies. Closing the host detaches
+only lifecycle observation; it does not close caller-owned storage or the App
+Server adapter.
+
 The observed-context projector accepts only attributed content references; it
 does not copy raw content or claim access to the provider's literal effective
 prompt. Every projection retains mandatory unknowns for the effective model

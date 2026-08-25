@@ -190,12 +190,16 @@ function transitionReason(previous, current, pressure, policy) {
 }
 
 export class ContextPressureController {
-  constructor({ policy, initialDisposition = "comfortable" }) {
+  constructor({ policy, initialDisposition = "comfortable", minimumSequence = 0 }) {
     if (!DISPOSITION_SET.has(initialDisposition)) {
       throw new TypeError("context pressure initial disposition is unsupported");
     }
+    if (!Number.isSafeInteger(minimumSequence) || minimumSequence < 0) {
+      throw new TypeError("context pressure minimum sequence must be a non-negative safe integer");
+    }
     this.policy = validateContextPressurePolicy(policy);
     this.disposition = initialDisposition;
+    this.minimumSequence = minimumSequence;
     this.lastObservation = null;
     this.lastTransition = null;
   }
@@ -205,6 +209,7 @@ export class ContextPressureController {
       schemaVersion: 1,
       policyRevision: this.policy.policyRevision,
       disposition: this.disposition,
+      minimumSequence: this.minimumSequence,
       lastObservation: this.lastObservation,
       lastTransition: this.lastTransition,
     });
@@ -220,6 +225,9 @@ export class ContextPressureController {
     }
     if (this.lastObservation && observation.sequence <= this.lastObservation.sequence) {
       throw new TypeError("context pressure observation sequence must increase monotonically");
+    }
+    if (!this.lastObservation && observation.sequence <= this.minimumSequence) {
+      throw new TypeError("context pressure observation sequence must exceed the recovered floor");
     }
     const previousDisposition = this.disposition;
     const disposition = dispositionFor(
