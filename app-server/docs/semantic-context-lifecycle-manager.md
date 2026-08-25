@@ -340,8 +340,10 @@ only when the accepted checkpoint is sufficient and replacing the context is
 semantically safe and economically advantageous.
 
 The currently observed `new_context` capability is model-invoked,
-undocumented, and feature-gated. The host cannot presently treat it as a stable
-direct App Server request. Therefore the target model remains a narrow
+undocumented, and feature-gated. A live probe against the pinned Codex CLI
+0.149.1 established that it can replace the model context window while
+preserving the App Server thread identity. The host still cannot treat it as a
+stable direct App Server request. Therefore the target model remains a narrow
 transition actuator even though every other lifecycle responsibility belongs to
 the code-owned service.
 
@@ -393,8 +395,11 @@ the actuator turn.
 
 `thread/compact/start` must not be treated as equivalent to `new_context`
 without version-pinned live evidence of its actual semantics. Likewise, an item
-or event named `contextCompaction` does not prove whether the provider
-summarized, replaced, or otherwise transformed context.
+or event named `contextCompaction` does not by itself prove whether the provider
+summarized, replaced, or otherwise transformed context. The current live proof
+therefore combines same-thread identity, a distinct successor context-window
+identifier, exact predecessor linkage, post-transition request-context
+visibility, and App Server transition notifications.
 
 ## Rehydration
 
@@ -533,17 +538,28 @@ The current scaffold does not yet prove the complete lifecycle:
 - the pinned protocol exposes persisted turns and token telemetry but not an
   exact effective-context read;
 - `new_context` is not a pinned direct App Server client request;
-- its model-side feature gate, invocation evidence, and successor-window signals
-  require a version-bounded live probe;
-- direct fresh-window identity and transition classification remain unresolved;
+- an opt-in live integration probe against pinned Codex CLI 0.149.1 enabled the
+  `token_budget` feature, invoked model-side `new_context`, preserved the exact
+  App Server thread id, observed a distinct successor context-window id with
+  exact predecessor linkage, delivered a fresh request-context marker, and
+  observed context-compaction plus token-usage notifications;
+- those combined observations establish the bounded same-thread replacement
+  route for this pinned version, but they do not authenticate a production
+  checkpoint, serialize concurrent input, or classify every other compaction
+  path;
+- the adapter boundary now normalizes pinned token-usage and compaction
+  notifications into immutable, bounded, provider-neutral lifecycle
+  observations; compaction observations remain explicitly unclassified and the
+  run-local collector is not a durable lifecycle ledger;
 - the adapter now compiles request-bound evidence into a deterministic text
   item inside the pinned `TurnStartParams.input` field; a live temporary
   manifest role returned a runtime-random context value, and the production
   strategic-planner role returned a version-1 handoff that passed exact
   objective, evidence-cutoff, continuity, schema, and terminal validation; and
-- these live turns establish request transport and the first planning handoff,
-  not observed-context projection, context-transition, or reconciliation
-  semantics.
+- these live turns establish request transport, the first planning handoff, and
+  a bounded same-thread context-window transition; they do not yet establish an
+  authenticated effective-context projection, checkpoint reconciliation, or
+  production retirement semantics.
 
 These are implementation premises to test, not reasons to weaken the semantic
 contract.
@@ -556,19 +572,26 @@ while every invariant remains preserved.
 1. **Completed foundation evidence:** prove one live request-bound planning
    handoff using the pinned model-visible request-context input implemented by
    the adapter.
-2. Add the provider-neutral telemetry and observed-context projection contract.
-3. Define and validate `continuation-state-v1` and the lifecycle-ledger schema.
-4. Implement the hidden semantic compiler and verifier against recorded bounded
+2. **Completed foundation evidence:** prove the pinned model-side `new_context`
+   route replaces a context window without replacing the retained App Server
+   thread and that a new request-context value is visible afterward.
+3. **Completed foundation implementation:** normalize pinned token telemetry and
+   provider transition signals into bounded provider-neutral lifecycle
+   observations without treating signal names as semantic proof.
+4. Add the authenticated observed-context projection contract.
+5. Define and validate `continuation-state-v1` and the lifecycle-ledger schema.
+6. Implement the hidden semantic compiler and verifier against recorded bounded
    fixtures before allowing retirement.
-5. Add human-interaction closure and loading-disposition evaluation.
-6. Probe and capability-gate the model-side `new_context` actuation path.
-7. Implement revision-fenced checkpoint publication and the sterile retirement
+7. Add human-interaction closure and loading-disposition evaluation.
+8. Capability-gate the proven model-side `new_context` route in the production
+   adapter.
+9. Implement revision-fenced checkpoint publication and the sterile retirement
    control turn.
-8. Prove fresh-window detection, checkpoint injection, and reconciliation on
+10. Prove checkpoint injection and semantic reconciliation on
    the strategic planner.
-9. Run shadow mode across multiple roles: compile and score candidates without
+11. Run shadow mode across multiple roles: compile and score candidates without
    clearing context.
-10. Enable bounded retirement experiments, retain predecessor evidence, and
+12. Enable bounded retirement experiments, retain predecessor evidence, and
     compare total lifecycle cost and continuation correctness.
 
 ## Relationship to neighboring documents
@@ -589,8 +612,8 @@ while every invariant remains preserved.
 - Which component owns final retirement authorization once compiler and verifier
   agree?
 - Which model/provider and freshness contract should compile and verify state?
-- What exact App Server evidence identifies the model-side `new_context` call
-  and its successor window?
+- Which subset of the proven transition signals must a production lifecycle
+  ledger retain, and how should their absence or disagreement be classified?
 - How should live human input preempt a pending retirement control turn?
 - Which interaction classes require exact source loading rather than a compiled
   consequence?

@@ -1,5 +1,7 @@
 export * from "./capabilities.mjs";
 export * from "./codex-app-server-adapter.mjs";
+export * from "./codex-lifecycle-notification-source.mjs";
+export * from "./context-lifecycle-evidence.mjs";
 export * from "./dynamic-tool-bridge.mjs";
 export * from "./role-binding-registry.mjs";
 export * from "./request-context-input.mjs";

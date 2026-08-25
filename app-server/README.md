@@ -13,10 +13,13 @@ The first vertical provides:
 - a closed, digest-attributed runtime manifest that projects logical role
   templates, thread settings, and exact skill inputs;
 - exact `SKILL.md` input resolution within configured roots;
-- thread-scoped dynamic-tool declaration and dispatch; and
+- thread-scoped dynamic-tool declaration and dispatch;
 - idempotent turn delivery through client message IDs;
 - bounded consumption of stable `turn/completed` notifications, including
-  terminal failure propagation and final agent-output extraction; and
+  terminal failure propagation and final agent-output extraction;
+- a bounded provider-neutral lifecycle evidence collector fed by a
+  version-pinned Codex notification normalizer for token usage and context
+  transition signals; and
 - deterministic parsing and request-binding validation of the strategic
   planner's version-1 YAML handoff.
 
@@ -33,6 +36,14 @@ live adapter retains a bounded result cache so fast notifications cannot race
 their consumer. A replay whose completion is no longer retained fails with an
 explicit reconciliation requirement instead of waiting for an event that has
 already occurred.
+
+Lifecycle evidence follows the same ownership boundary. The Codex notification
+source validates supported provider payloads and projects them into immutable
+token-usage or context-transition observations. The in-memory collector assigns
+a run-local sequence, bounds retention, and produces per-thread snapshots.
+Provider `contextCompaction` items remain explicitly `unclassified`; neither
+their names nor their presence establish semantic context replacement. This
+collector is an observation surface, not the future durable lifecycle ledger.
 
 ## Protocol bindings
 
@@ -100,8 +111,9 @@ npm run test:app-server
 The default suite uses a fake transport and temporary binding stores. The
 optional local integration suite requires the pinned `codex` executable. It
 proves initialization, model visibility of a runtime-random request-context
-value through a temporary manifest role, and an exact request-bound handoff
-through the production strategic-planner role:
+value through a temporary manifest role, same-thread context-window replacement
+with normalized lifecycle evidence, and an exact request-bound handoff through
+the production strategic-planner role:
 
 ```bash
 npm run test:app-server:integration
