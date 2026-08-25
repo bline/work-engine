@@ -235,12 +235,43 @@ function normalizeProvenance(value, label) {
   };
 }
 
+function normalizeUsage(value, label) {
+  if (value == null) {
+    return {
+      inputTokens: null,
+      cachedInputTokens: null,
+      outputTokens: null,
+      costMicrounits: null,
+    };
+  }
+  record(value, label);
+  rejectUnknown(
+    value,
+    new Set(["inputTokens", "cachedInputTokens", "outputTokens", "costMicrounits"]),
+    label,
+  );
+  const field = (name) => {
+    const item = value[name] ?? null;
+    if (item !== null && (!Number.isSafeInteger(item) || item < 0)) {
+      throw new TypeError(`${label} ${name} must be a non-negative safe integer or null`);
+    }
+    return item;
+  };
+  return {
+    inputTokens: field("inputTokens"),
+    cachedInputTokens: field("cachedInputTokens"),
+    outputTokens: field("outputTokens"),
+    costMicrounits: field("costMicrounits"),
+  };
+}
+
 function normalizeInferenceResult(value, label) {
   record(value, label);
-  rejectUnknown(value, new Set(["outputText", "provenance"]), label);
+  rejectUnknown(value, new Set(["outputText", "provenance", "usage"]), label);
   return {
     outputText: text(value.outputText, `${label} outputText`),
     provenance: normalizeProvenance(value.provenance, `${label} provenance`),
+    usage: normalizeUsage(value.usage, `${label} usage`),
   };
 }
 
@@ -583,7 +614,13 @@ const VERIFIER_OUTPUT_CONTRACT = deepFreeze({
 });
 
 export class SemanticContextInferenceRuntime {
-  constructor({ compiler, verifier, resolvePublicKey, now = () => new Date().toISOString() }) {
+  constructor({
+    compiler,
+    verifier,
+    resolvePublicKey,
+    now = () => new Date().toISOString(),
+    monotonicNow = () => performance.now(),
+  }) {
     if (!compiler || typeof compiler.infer !== "function") {
       throw new TypeError("semantic context runtime requires a compiler inference capability");
     }
@@ -597,10 +634,14 @@ export class SemanticContextInferenceRuntime {
       throw new TypeError("semantic context runtime requires an observed-context key resolver");
     }
     if (typeof now !== "function") throw new TypeError("semantic context runtime now must be a function");
+    if (typeof monotonicNow !== "function") {
+      throw new TypeError("semantic context runtime monotonicNow must be a function");
+    }
     this.compiler = compiler;
     this.verifier = verifier;
     this.resolvePublicKey = resolvePublicKey;
     this.now = now;
+    this.monotonicNow = monotonicNow;
   }
 
   async inspect({ projection, sourceMaterials, signal } = {}) {
@@ -609,17 +650,20 @@ export class SemanticContextInferenceRuntime {
     }
     const materials = loadBoundedMaterials(projection, sourceMaterials);
     const compilationInput = semanticCompilationInput(projection, materials);
+    const compilerStarted = this.monotonicNow();
     const compilerResult = normalizeInferenceResult(await this.compiler.infer(Object.freeze({
       instructions: SEMANTIC_CONTEXT_COMPILER_INSTRUCTIONS,
       input: compilationInput,
       outputContract: COMPILER_OUTPUT_CONTRACT,
       signal,
     })), "semantic compiler result");
+    const compilerDurationMs = Math.max(0, Math.round(this.monotonicNow() - compilerStarted));
     const candidate = compileCandidate(compilerResult.outputText, {
       projection,
       provenance: compilerResult.provenance,
       compiledAt: text(this.now(), "semantic compiler timestamp"),
     });
+    const verifierStarted = this.monotonicNow();
     const verifierResult = normalizeInferenceResult(await this.verifier.infer(Object.freeze({
       instructions: SEMANTIC_CONTEXT_VERIFIER_INSTRUCTIONS,
       input: {
@@ -639,6 +683,7 @@ export class SemanticContextInferenceRuntime {
       outputContract: VERIFIER_OUTPUT_CONTRACT,
       signal,
     })), "semantic verifier result");
+    const verifierDurationMs = Math.max(0, Math.round(this.monotonicNow() - verifierStarted));
     if (verifierResult.provenance.inferenceId === compilerResult.provenance.inferenceId) {
       throw new TypeError("semantic verifier must have a distinct inference invocation identity");
     }
@@ -652,6 +697,10 @@ export class SemanticContextInferenceRuntime {
       sourceRevision: projection.sourceRevision,
       candidate,
       verification,
+      measurements: {
+        compiler: { durationMs: compilerDurationMs, ...compilerResult.usage },
+        verifier: { durationMs: verifierDurationMs, ...verifierResult.usage },
+      },
     });
   }
 }

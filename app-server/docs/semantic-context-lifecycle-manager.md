@@ -682,6 +682,168 @@ Measurements should include:
 Thresholds and inspection timing are optimization knobs, not product doctrine.
 The safety and authority invariants bound the optimization space.
 
+The implemented shadow foundation now records one integrity-bound lifecycle
+episode for every supplied pressure observation, including observations for
+which semantic inspection is not scheduled. An explicit, revision-bound shadow
+schedule selects the pressure dispositions that invoke the existing compiler
+and verifier and whether an accepted result is offered to the checkpoint
+publisher. The coordinator contains no transition lease, retirement directive,
+or context-replacement capability, and every receipt records
+`retirementAttempted: false`.
+
+Each episode binds the logical role and runtime binding, pressure observation
+and policy, shadow schedule, measurement source, observed-context revision when
+present, semantic and checkpoint outcomes, failure stage, and available cost
+measurements. Inference providers may report input, cached-input, output-token,
+and cost observations; the host independently measures inference and
+publication duration and checkpoint bytes. Retained-context and avoided-token
+estimates remain nullable and require an identified estimation method and
+revision. Missing telemetry remains missing rather than being interpreted as
+zero.
+
+The reference episode store remains available in-memory, and the same injected
+boundary now has a restart-safe SQLite implementation. The SQLite adapter uses
+a versioned schema and one explicit caller-owned database path. It stores
+immutable episode payloads under unique episode and content revisions, making
+exact replay idempotent across connections while rejecting changed evidence.
+Deterministic summary projection refuses to combine different pressure-policy
+or schedule revisions and reports both measurement totals and observed/missing
+counts. This creates the evidence surface for a future feedback loop without
+granting the statistics authority to change policy:
+
+```text
+revision-bound lifecycle episodes
+→ coverage-qualified aggregate outcomes
+→ compare explicit policy revisions
+→ propose threshold or scheduling changes
+→ shadow-test the new revision
+→ authorized configuration adoption
+```
+
+This loop may optimize when lifecycle work begins and whether its expected cost
+is justified. It cannot weaken semantic verification, authority preservation,
+checkpoint freshness, quarantine, or reconciliation because those are outside
+the optimization surface.
+
+The same SQLite transaction boundary stores a checkpoint publication and its
+ledger evidence, advances the lifecycle-ledger head, and conditionally advances
+the complete source, binding, authority, checkpoint, and ledger fence. A
+separate compare-and-swap operation can advance source, binding, or authority
+state while preserving the existing checkpoint and ledger heads, allowing a
+later checkpoint to name its real predecessor. Restart reads revalidate stored
+episode, checkpoint, and ledger revisions before returning them.
+
+This is local process-independent durability, not a protected distributed
+ledger. WAL mode, foreign keys, `FULL` synchronous writes, a busy timeout, and
+file mode `0600` provide a practical single-host base. They do not authenticate
+writers, encrypt the database, fence another host, prove backup completeness,
+or make SQLite the owner of canonical claims. Node 22 also labels its built-in
+SQLite API experimental; the storage contract isolates that driver choice.
+
+### Configurable pressure scheduling and hysteresis
+
+The host may project measured context pressure into four scheduling
+dispositions:
+
+```text
+comfortable
+  lifecycle inference has no pressure-derived scheduling value
+
+approaching
+  bounded replaceability and compilation-cost estimation may be worthwhile
+
+replacement_candidate
+  checkpoint compilation and verification have credible scheduling value
+
+critical
+  preservation and an already-safe transition take scheduling priority
+```
+
+These dispositions describe runtime scheduling pressure. They do not prescribe
+model behavior, determine what meaning must be preserved, authorize retirement,
+or make a checkpoint valid. Pressure remains evidence alongside semantic value,
+reconstructability, authority, uncertainty, and cost. The lifecycle service
+must not ask ordinary roles to monitor or classify their own pressure.
+
+Each boundary has separately configurable entry and exit values. A wider exit
+band provides hysteresis, preventing repeated assessment when noisy utilization
+hovers near one boundary. Implementations may also configure measurement
+sources, minimum observation intervals, estimation cooldowns, and retry timing.
+Initial values are experimental profiles to be tuned through real workloads,
+not defaults promoted into doctrine.
+
+Pressure scheduling, checkpoint validity, and transition progress remain
+orthogonal state:
+
+```text
+pressure disposition
+  comfortable | approaching | replacement_candidate | critical
+
+checkpoint disposition
+  absent | compiling | rejected | accepted | stale
+
+transition disposition
+  idle | ready | actuating | unreconciled | reconciled
+```
+
+Hysteresis applies only to pressure-derived scheduling. A semantic, authority,
+human-interaction, source, or runtime-binding revision that overtakes a
+checkpoint invalidates readiness immediately. Falling pressure cannot make a
+stale checkpoint current, and critical pressure cannot convert unresolved
+continuation into accepted continuation.
+
+The pressure controller should therefore be deterministic and policy-driven.
+It consumes a host-supplied utilization observation and returns a pressure
+disposition plus transition evidence. It does not invoke inference, publish a
+checkpoint, authorize retirement, or claim that one provider telemetry field
+is an exact active-context measurement. Provider adapters or configured
+measurement profiles own that interpretation.
+
+### Critical preservation failure and human recovery
+
+With the configured `token_budget` behavior, mandatory provider compaction may
+replace the working window rather than preserve it through an opaque summary.
+If pressure becomes critical while safe semantic continuation is unavailable,
+another target-role turn can therefore destroy continuation-relevant meaning.
+The service must not treat mandatory compaction as a fallback handoff.
+
+At that boundary, the host quarantines the affected logical role: it stops new
+model turns and effects from entering that context, preserves the unresolved
+failure evidence, and surfaces the recovery decision outside the pressured
+role. Critical scheduling may prioritize compilation or an already-ready
+transition, but it never weakens compilation, verification, publication,
+authority, or reconciliation requirements.
+
+Notification is a required consequence but need not be bound to a channel. An
+ephemeral notification inference may receive the bounded failure evidence and
+a notification skill that describes the need to reach the user without naming
+SMS, email, webhooks, or another implementation. Codex capability discovery can
+then expose whichever authorized notification interfaces the user already
+configured. The lifecycle service does not acquire the user's notification
+credentials or duplicate that configuration.
+
+The notification outcome must be observable. A successful delivery retains its
+delivery receipt. If no notification interface is available, an authorized
+local capability may preserve a pending message as an artifact whose path and
+digest are returned to the host. Platform-local notifications are optional
+affordances rather than lifecycle doctrine. A tool attempt without a delivery
+receipt or retrievable pending artifact is not a successful notification.
+
+The user may recover conservatively by exporting the visible model history to a
+temporary artifact before authorizing context clearing. The host binds that
+artifact by reference and digest, retains its confidentiality and lifetime
+constraints, and supplies it to the successor alongside the accepted checkpoint
+and canonical references. Reconciliation must distinguish recovered transcript
+material from canonical state and unresolved meaning. The export neither
+captures hidden reasoning or provider-only instructions nor grants its content
+new authority. It is human-supplied recovery evidence, not restoration of the
+exact retired model state.
+
+The notification channel, pressure values, cooldowns, retry timing, recovery
+artifact location, and retention period are configurable. Quarantine on unsafe
+critical exhaustion, truthful failure evidence, user authority over recovery,
+and fail-closed reconciliation are not.
+
 ## Invariants
 
 1. Correct continuation must not depend on meaning represented only in the
@@ -716,6 +878,13 @@ The safety and authority invariants bound the optimization space.
     transition lease that competing input, effects, or binding changes revoke.
 16. Recovery claims semantic continuation from durable evidence, not restoration
     of the exact retired model context.
+17. Pressure thresholds may schedule lifecycle work but cannot establish
+    semantic readiness or relax a failed preservation boundary.
+18. When another target-role turn risks destructive clearing and safe
+    continuation is unavailable, the affected role remains quarantined until an
+    authorized recovery path is established.
+19. Notification delivery must be evidenced by a delivery receipt or an
+    observable pending-message artifact; an attempted route is not delivery.
 
 ## App Server architecture manifest projection
 
@@ -824,6 +993,18 @@ The current scaffold does not yet prove the complete lifecycle:
   releases domain work only after acceptance; protected durable leasing,
   provider-native ingress fencing, authenticated window identity, and live
   strategic-planner reconciliation remain unbuilt;
+- the host can now combine an explicit pressure policy and shadow schedule with
+  the existing semantic inference and checkpoint-publication boundaries, emit
+  integrity-bound per-observation episode receipts, and summarize only
+  revision-homogeneous measurements with missing-data coverage; the lightweight
+  reference store remains in-memory and no policy is tuned or adopted
+  automatically;
+- the host now provides a schema-migrated SQLite adapter that preserves episode
+  identity across restarts and connections, atomically stores checkpoint plus
+  ledger evidence while advancing their revision fence, restores and verifies
+  current heads, and rejects stale competing writers; role bindings, transition
+  leases, outcome annotations, backup/restore, authenticated writers,
+  encryption, and multi-host coordination remain unbuilt;
 - the adapter now compiles request-bound evidence into a deterministic text
   item inside the pinned `TurnStartParams.input` field; a live temporary
   manifest role returned a runtime-random context value, and the production
@@ -882,9 +1063,20 @@ while every invariant remains preserved.
    work.
 12. Prove live checkpoint injection and semantic reconciliation on the
    strategic planner.
-13. Run shadow mode across multiple roles: compile and score candidates without
-   clearing context.
-14. Enable bounded retirement experiments, retain predecessor evidence, and
+13. **Completed foundation implementation:** provide a deterministic
+   configurable pressure-disposition controller with hysteresis, without
+   binding telemetry interpretation or retirement policy.
+14. **Completed foundation implementation:** compose pressure scheduling,
+   semantic inspection, optional accepted-checkpoint publication, and
+   integrity-bound episode telemetry in a shadow coordinator from which
+   retirement is mechanically absent.
+15. **Completed foundation implementation:** persist shadow episodes,
+   checkpoint publications, lifecycle-ledger heads, and revision fences through
+   a schema-migrated transactional SQLite adapter with restart and competing
+   writer evidence.
+16. Run shadow mode across multiple roles: compile and score candidates without
+   clearing context, then compare revision-homogeneous lifecycle outcomes.
+17. Enable bounded retirement experiments, retain predecessor evidence, and
    compare total lifecycle cost and continuation correctness.
 
 ## Relationship to neighboring documents
@@ -911,6 +1103,18 @@ while every invariant remains preserved.
 - Which interaction classes require exact source loading rather than a compiled
   consequence?
 - How are role-specific continuation schemas registered and versioned?
-- What uncertainty threshold blocks retirement rather than triggering another
-  bounded inspection?
+- Which host-owned telemetry projection best estimates active-context pressure
+  for each provider profile?
+- Which initial pressure bands, cooldowns, and retry timing should shadow mode
+  test before real-world tuning?
+- How should later correctness, repair, and productive-resumption outcomes be
+  appended to immutable SQLite lifecycle episodes without rewriting them?
+- What evidence and authority boundary promotes a shadow comparison into a new
+  active pressure-policy or scheduling revision?
+- After unresolved preservation reaches critical pressure, when should the
+  supervisor retry bounded inference versus immediately request human recovery?
+- What closed receipt distinguishes delivered notification from a retrievable
+  pending-message artifact, and where should the fallback artifact live?
+- How long should a human-exported recovery transcript remain available after
+  reconciliation?
 - How long must predecessor checkpoints and transition evidence be retained?

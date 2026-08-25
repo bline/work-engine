@@ -153,6 +153,65 @@ function normalizeFence(value) {
   });
 }
 
+export function validateContextCheckpointFence(value) {
+  return normalizeFence(value);
+}
+
+export function verifyContextCheckpointPublication(value) {
+  try {
+    record(value, "checkpoint publication");
+    const { checkpointRevision, ...checkpoint } = value;
+    return value.schemaVersion === CONTEXT_CHECKPOINT_SCHEMA_VERSION
+      && value.type === CONTEXT_CHECKPOINT_TYPE
+      && revision(checkpoint) === checkpointRevision;
+  } catch {
+    return false;
+  }
+}
+
+export function validateContextCheckpointPublicationAttempt({
+  expectedFence,
+  publication,
+  ledgerEntry,
+  previousLedgerEntry = null,
+}) {
+  const expected = normalizeFence(expectedFence);
+  if (!verifyContextCheckpointPublication(publication)) {
+    throw new TypeError("checkpoint publication integrity is invalid");
+  }
+  const { checkpointRevision } = publication;
+  const subject = record(publication.subject, "checkpoint publication subject");
+  for (const field of [
+    "logicalRoleInstanceId", "threadId", "bindingRevision", "sourceRevision", "authorityRevision",
+  ]) {
+    if (subject[field] !== expected[field]) {
+      throw new TypeError(`checkpoint publication subject does not match expected ${field}`);
+    }
+  }
+  if (publication.predecessorCheckpointRevision !== expected.publicationRevision) {
+    throw new TypeError("checkpoint publication predecessor does not match its fence");
+  }
+  if ((previousLedgerEntry?.entryRevision ?? null) !== expected.ledgerRevision
+      || !verifyLifecycleLedgerEntry(ledgerEntry, previousLedgerEntry)) {
+    throw new TypeError("checkpoint publication ledger predecessor is invalid");
+  }
+  if (previousLedgerEntry
+      && (previousLedgerEntry.subject.logicalRoleInstanceId !== expected.logicalRoleInstanceId
+        || previousLedgerEntry.subject.threadId !== expected.threadId
+        || previousLedgerEntry.subject.bindingRevision !== expected.bindingRevision)) {
+    throw new TypeError("checkpoint publication ledger predecessor belongs to another subject");
+  }
+  if (ledgerEntry.subject.logicalRoleInstanceId !== expected.logicalRoleInstanceId
+      || ledgerEntry.subject.threadId !== expected.threadId
+      || ledgerEntry.subject.bindingRevision !== expected.bindingRevision
+      || ledgerEntry.eventType !== "checkpoint_published"
+      || ledgerEntry.status !== "observed"
+      || ledgerEntry.details.checkpointRevision !== checkpointRevision) {
+    throw new TypeError("checkpoint publication ledger evidence does not match the checkpoint");
+  }
+  return freeze({ expected, publication, ledgerEntry, previousLedgerEntry });
+}
+
 function rejected(reason, details = {}) {
   return freeze({ status: "rejected", reason, ...details });
 }
@@ -185,43 +244,12 @@ export class InMemoryContextCheckpointPublicationStore {
   }
 
   compareAndSwapPublication({ expectedFence, publication, ledgerEntry, previousLedgerEntry = null }) {
-    const expected = normalizeFence(expectedFence);
-    record(publication, "checkpoint publication");
-    const { checkpointRevision, ...checkpoint } = publication;
-    if (publication.schemaVersion !== CONTEXT_CHECKPOINT_SCHEMA_VERSION
-        || publication.type !== CONTEXT_CHECKPOINT_TYPE
-        || revision(checkpoint) !== checkpointRevision) {
-      throw new TypeError("checkpoint publication integrity is invalid");
-    }
-    const subject = record(publication.subject, "checkpoint publication subject");
-    for (const field of [
-      "logicalRoleInstanceId", "threadId", "bindingRevision", "sourceRevision", "authorityRevision",
-    ]) {
-      if (subject[field] !== expected[field]) {
-        throw new TypeError(`checkpoint publication subject does not match expected ${field}`);
-      }
-    }
-    if (publication.predecessorCheckpointRevision !== expected.publicationRevision) {
-      throw new TypeError("checkpoint publication predecessor does not match its fence");
-    }
-    if ((previousLedgerEntry?.entryRevision ?? null) !== expected.ledgerRevision
-        || !verifyLifecycleLedgerEntry(ledgerEntry, previousLedgerEntry)) {
-      throw new TypeError("checkpoint publication ledger predecessor is invalid");
-    }
-    if (previousLedgerEntry
-        && (previousLedgerEntry.subject.logicalRoleInstanceId !== expected.logicalRoleInstanceId
-          || previousLedgerEntry.subject.threadId !== expected.threadId
-          || previousLedgerEntry.subject.bindingRevision !== expected.bindingRevision)) {
-      throw new TypeError("checkpoint publication ledger predecessor belongs to another subject");
-    }
-    if (ledgerEntry.subject.logicalRoleInstanceId !== expected.logicalRoleInstanceId
-        || ledgerEntry.subject.threadId !== expected.threadId
-        || ledgerEntry.subject.bindingRevision !== expected.bindingRevision
-        || ledgerEntry.eventType !== "checkpoint_published"
-        || ledgerEntry.status !== "observed"
-        || ledgerEntry.details.checkpointRevision !== checkpointRevision) {
-      throw new TypeError("checkpoint publication ledger evidence does not match the checkpoint");
-    }
+    const { expected } = validateContextCheckpointPublicationAttempt({
+      expectedFence,
+      publication,
+      ledgerEntry,
+      previousLedgerEntry,
+    });
     const state = this.states.get(expected.logicalRoleInstanceId);
     if (!state) return rejected("missing_lifecycle_fence");
     const current = state.fence;

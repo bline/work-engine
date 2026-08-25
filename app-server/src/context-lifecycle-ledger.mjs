@@ -159,6 +159,15 @@ export function verifyLifecycleLedgerEntry(candidate, previousEntry = null) {
   }
 }
 
+export function verifyLifecycleLedgerEntryIntegrity(candidate) {
+  try {
+    validateEntryIntegrity(candidate);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function verifyLifecycleLedger(entries) {
   try {
     if (!Array.isArray(entries)) return false;

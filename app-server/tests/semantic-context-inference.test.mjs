@@ -128,9 +128,10 @@ function materials() {
 }
 
 class RecordedCompiler {
-  constructor(outputText, { inferenceId = "compiler-inference-1" } = {}) {
+  constructor(outputText, { inferenceId = "compiler-inference-1", usage = undefined } = {}) {
     this.outputText = outputText;
     this.inferenceId = inferenceId;
+    this.usage = usage;
     this.requests = [];
   }
 
@@ -144,14 +145,16 @@ class RecordedCompiler {
         version: "1",
         inferenceId: this.inferenceId,
       },
+      ...(this.usage === undefined ? {} : { usage: this.usage }),
     };
   }
 }
 
 class RecordedVerifier {
-  constructor(outputFactory, { inferenceId = "verifier-inference-1" } = {}) {
+  constructor(outputFactory, { inferenceId = "verifier-inference-1", usage = undefined } = {}) {
     this.outputFactory = outputFactory;
     this.inferenceId = inferenceId;
+    this.usage = usage;
     this.requests = [];
   }
 
@@ -165,16 +168,18 @@ class RecordedVerifier {
         version: "1",
         inferenceId: this.inferenceId,
       },
+      ...(this.usage === undefined ? {} : { usage: this.usage }),
     };
   }
 }
 
-function runtime({ compiler, verifier, keys, timestamps } = {}) {
+function runtime({ compiler, verifier, keys, timestamps, monotonicNow } = {}) {
   return new SemanticContextInferenceRuntime({
     compiler,
     verifier,
     resolvePublicKey: (keyId) => keyId === "fixture-key-1" ? keys.publicKey : null,
     now: () => timestamps.shift(),
+    ...(monotonicNow ? { monotonicNow } : {}),
   });
 }
 
@@ -217,6 +222,43 @@ test("recorded compiler and distinct verifier produce one bound inspection resul
   assert.equal(compiler.requests[0].input.materials[0].contentRef != null, true);
   assert.equal(verifier.requests[0].input.candidate.candidateRevision, inspection.candidate.candidateRevision);
   assert.equal(JSON.stringify(inspection).includes(CONTENT.skill), false);
+  assert.equal(inspection.measurements.compiler.inputTokens, null);
+  assert.ok(inspection.measurements.compiler.durationMs >= 0);
+});
+
+test("inference telemetry is normalized and host-timed without affecting semantic output", async () => {
+  const { keys, projection } = observedFixture();
+  const compiler = new RecordedCompiler(await fixture("compiler-valid.yaml"), {
+    usage: { inputTokens: 800, cachedInputTokens: 200, outputTokens: 90, costMicrounits: 12 },
+  });
+  const verifier = new RecordedVerifier(acceptedVerifierOutput, {
+    usage: { inputTokens: 1_000, cachedInputTokens: 0, outputTokens: 70, costMicrounits: 15 },
+  });
+  const times = [0, 7, 10, 19];
+  const inspection = await runtime({
+    compiler,
+    verifier,
+    keys,
+    timestamps: ["2026-08-25T18:00:00.000Z", "2026-08-25T18:00:01.000Z"],
+    monotonicNow: () => times.shift(),
+  }).inspect({ projection, sourceMaterials: materials() });
+  assert.deepEqual(inspection.measurements, {
+    compiler: {
+      durationMs: 7,
+      inputTokens: 800,
+      cachedInputTokens: 200,
+      outputTokens: 90,
+      costMicrounits: 12,
+    },
+    verifier: {
+      durationMs: 9,
+      inputTokens: 1_000,
+      cachedInputTokens: 0,
+      outputTokens: 70,
+      costMicrounits: 15,
+    },
+  });
+  assert.equal(inspection.verification.disposition, "accepted");
 });
 
 test("bounded material loading rejects omissions, additions, digest mismatch, and projection tampering", async () => {

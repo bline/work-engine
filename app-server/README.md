@@ -22,6 +22,18 @@ The first vertical provides:
 - a bounded provider-neutral lifecycle evidence collector fed by a
   version-pinned Codex notification normalizer for token usage and context
   transition signals;
+- a provider-neutral pressure controller that requires an explicit
+  revision-bound basis-point policy and applies deterministic hysteresis without
+  invoking inference or acquiring checkpoint or retirement authority;
+- a shadow lifecycle coordinator that composes pressure scheduling, semantic
+  inspection, and optional accepted-checkpoint publication while making context
+  retirement mechanically unreachable;
+- integrity-bound shadow episode receipts, an injected append boundary, and
+  revision-homogeneous summaries for later policy comparison without treating
+  missing telemetry as zero;
+- a schema-migrated SQLite state adapter for restart-safe lifecycle episodes,
+  checkpoint fences, checkpoint publications, and lifecycle-ledger heads with
+  transactional compare-and-swap semantics;
 - deterministic `observed-context-v1` construction with closed trust and
   instruction-applicability vocabulary, explicit completeness limits, and
   Ed25519 host attestation;
@@ -69,6 +81,61 @@ a run-local sequence, bounds retention, and produces per-thread snapshots.
 Provider `contextCompaction` items remain explicitly `unclassified`; neither
 their names nor their presence establish semantic context replacement. This
 collector is an observation surface, not the future durable lifecycle ledger.
+
+Pressure disposition is a separate scheduling surface. The controller accepts
+host-projected utilization rather than interpreting provider token telemetry,
+and it requires callers to supply every entry and exit threshold. It returns
+`comfortable`, `approaching`, `replacement_candidate`, or `critical` with the
+policy revision, exact observation, prior disposition, and transition reason.
+Each observation names its measurement source and SHA-256-bound source revision;
+sequences must increase monotonically. Hysteresis prevents repeated boundary
+crossings, while exact immediate replay is idempotent and conflicting reuse
+fails. The controller has no default production values and cannot compile
+state, validate checkpoint freshness, quarantine a role, notify a user, or
+authorize context replacement.
+
+The shadow coordinator consumes an explicit revision-bound schedule declaring
+which pressure dispositions justify inspection and whether an accepted result
+should be offered to the checkpoint publisher. Every observation produces an
+integrity-bound episode receipt, including skipped inspections and failures.
+The receipt binds the logical role, runtime binding, pressure policy, schedule,
+measurement source, observed-context source when present, semantic outcome,
+checkpoint outcome, and the invariant fact that no retirement was requested.
+Exact request replay is idempotent; changed evidence under the same episode
+identity fails.
+
+Inference capabilities may report normalized token and cost measurements, while
+the host independently measures call duration. Episode telemetry can also carry
+attributed retained-context and counterfactual avoided-token estimates. Missing
+measurements remain `null`. Summary projection is allowed only across one exact
+pressure-policy and shadow-schedule revision and reports coverage alongside
+totals. The lightweight reference episode store is in-memory. The SQLite
+adapter below provides restart-safe local persistence. Outcome follow-up after
+a later real transition and policy recommendation or adoption remain outside
+this foundation.
+
+For restart-safe local operation, `openSqliteAppServerStateStore` opens an
+explicit caller-owned path and applies the versioned App Server state schema.
+The adapter implements the same episode `get`/`append`/`receipts` boundary and
+the checkpoint publisher's atomic store boundary. One transaction inserts the
+immutable checkpoint and ledger evidence, advances the lifecycle-ledger head,
+and conditionally advances the complete checkpoint fence. A separate CAS
+operation advances source, authority, or runtime-binding fence fields without
+rewriting checkpoint or ledger history.
+
+The connection enables foreign keys, WAL journaling, a configured busy timeout,
+and `FULL` synchronous durability; the database file is restricted to mode
+`0600`. Exact episode replay is idempotent across connections, while changed
+episode evidence and stale checkpoint writers fail. Stored JSON is revalidated
+against its content revision when read. The current adapter uses Node's built-in
+`node:sqlite` implementation, which Node 22 still reports as experimental.
+The driver is isolated behind the storage boundary for later replacement.
+
+The SQLite schema does not yet own role bindings, delivery state, transition
+leases, notification outbox state, or canonical claims. It also does not provide
+database encryption, authenticated writers, backup/restore tooling, or
+multi-host coordination. The database location must remain outside tracked
+canonical repository content unless the operator explicitly chooses otherwise.
 
 The observed-context projector accepts only attributed content references; it
 does not copy raw content or claim access to the provider's literal effective
