@@ -96,6 +96,8 @@ export class StrategicPlannerRuntime {
       },
       text:
         "Reconcile the supplied strategic objective with the referenced durable evidence. " +
+        "Copy strategic_objective, evidence_cutoff, and continuity from request context " +
+        "exactly; request-binding validation rejects any rephrasing of those fields. " +
         "Return one compact version-1 strategic planning handoff; do not mutate its owners.",
     });
     const completion = await this.adapter.waitForTurnCompletion({

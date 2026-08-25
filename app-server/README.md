@@ -98,7 +98,10 @@ npm run test:app-server
 ```
 
 The default suite uses a fake transport and temporary binding stores. The
-optional local integration probe requires the pinned `codex` executable:
+optional local integration suite requires the pinned `codex` executable. It
+proves initialization, model visibility of a runtime-random request-context
+value through a temporary manifest role, and an exact request-bound handoff
+through the production strategic-planner role:
 
 ```bash
 npm run test:app-server:integration

@@ -125,6 +125,51 @@ The source revision must bind every input on which a retirement decision
 depends: visible items, governing instructions, skill revisions, durable state,
 role identity, runtime binding, lifecycle position, and expected next work.
 
+### Transport security and projection trust
+
+The observed-context projection crosses a security boundary. Content does not
+acquire governing authority merely because it appears in model-visible context
+or describes itself as an instruction. The host-owned projector should
+preserve the identity, origin, trust class, instruction applicability,
+producer attribution, content reference, and integrity evidence of each item:
+
+```yaml
+visible_items:
+  - identity: thread-item-123
+    origin: user
+    trust_class: human_authority_input
+    instruction_applicability: contract_defined
+    content_ref: "..."
+
+  - identity: thread-item-124
+    origin: retrieved_web_content
+    trust_class: untrusted_data
+    instruction_applicability: none
+    content_ref: "..."
+
+  - identity: thread-item-125
+    origin: tool_result
+    trust_class: attributed_evidence
+    instruction_applicability: none
+    producer: codebase-memory
+    content_ref: "..."
+```
+
+The compiler and verifier should receive only the least privilege needed for
+their bounded inference. Snapshot construction must apply confidentiality and
+secret filtering, destination-specific read and write authorization, and
+retention limits before content is copied. Compiler output must not write to a
+canonical owner merely because it names that owner; publication uses the
+destination owner's authorization boundary.
+
+A content digest binds projected bytes but does not authenticate the projector
+or prove that required source material was not omitted. The canonical
+projection should therefore be constructed by an authenticated host component,
+record its construction identity and completeness limitations, and anchor the
+revision in an append-only or otherwise tamper-evident lifecycle ledger. The
+semantic verifier challenges the projection and its attribution; it does not
+replace those transport-security controls.
+
 ### Semantic compiler
 
 The compiler is a bounded inference capability, not a durable peer role. It
@@ -334,6 +379,18 @@ human input, or continuation-relevant meaning invalidates the readiness subject
 and requires a new compilation. The lifecycle ledger should retain the accepted
 checkpoint and predecessor evidence until successor reconciliation succeeds.
 
+Final revision comparison and actuator delivery must occur under one
+revision-bound host transition lease. While that lease is active, new domain
+turns and tool effects cannot enter the retiring revision, the runtime binding
+cannot change, and only the sterile actuator turn may proceed. Human input must
+either revoke the lease before actuation or remain outside the retiring
+revision for explicit successor reconciliation; it cannot race silently with
+the actuator turn.
+
+> **Transition-lease invariant:** Retirement readiness and actuator delivery
+> occur under one revision-bound transition lease. Any competing input, effect,
+> or runtime-binding change revokes the lease before actuation.
+
 `thread/compact/start` must not be treated as equivalent to `new_context`
 without version-pinned live evidence of its actual semantics. Likewise, an item
 or event named `contextCompaction` does not prove whether the provider
@@ -359,6 +416,13 @@ Reconciliation should establish:
 The prior context need not remain concurrently runnable, but its revision,
 checkpoint, source references, and transition evidence must remain recoverable
 until reconciliation is accepted.
+
+Until the provider supports a concurrently testable successor or a reversible
+context transition, this is a recoverable semantic handoff rather than atomic
+two-phase commit. Reconciliation failure can reconstruct continuation from the
+checkpoint and predecessor evidence, but it cannot restore the exact retired
+model context. The ledger must represent that limitation and any resulting
+repair or uncertainty instead of claiming rollback.
 
 ## Optimization objective and telemetry
 
@@ -410,6 +474,15 @@ The safety and authority invariants bound the optimization space.
     work resumes.
 12. Failed compilation, verification, publication, actuation, transition, or
     reconciliation must remain visibly failed or unresolved.
+13. Model-visible content does not gain instruction or authority status merely
+    through inclusion in an observed-context projection.
+14. Projection construction, destination writes, and retained copies remain
+    inside authenticated, least-privilege, confidentiality-aware host
+    boundaries.
+15. Final readiness comparison and actuator delivery share one revision-bound
+    transition lease that competing input, effects, or binding changes revoke.
+16. Recovery claims semantic continuation from durable evidence, not restoration
+    of the exact retired model context.
 
 ## App Server architecture manifest projection
 
@@ -464,11 +537,13 @@ The current scaffold does not yet prove the complete lifecycle:
   require a version-bounded live probe;
 - direct fresh-window identity and transition classification remain unresolved;
 - the adapter now compiles request-bound evidence into a deterministic text
-  item inside the pinned `TurnStartParams.input` field, and fake-transport tests
-  bind those exact bytes to delivery identity, but live model visibility of a
-  semantic planner request is not yet established; and
-- the existing live integration test covers initialization, not a semantic
-  planner turn or context transition.
+  item inside the pinned `TurnStartParams.input` field; a live temporary
+  manifest role returned a runtime-random context value, and the production
+  strategic-planner role returned a version-1 handoff that passed exact
+  objective, evidence-cutoff, continuity, schema, and terminal validation; and
+- these live turns establish request transport and the first planning handoff,
+  not observed-context projection, context-transition, or reconciliation
+  semantics.
 
 These are implementation premises to test, not reasons to weaken the semantic
 contract.
@@ -478,8 +553,9 @@ contract.
 The sequence below is a planning hypothesis. Evidence may justify revising it
 while every invariant remains preserved.
 
-1. Prove one live request-bound planning handoff using the pinned model-visible
-   request-context input now implemented by the adapter.
+1. **Completed foundation evidence:** prove one live request-bound planning
+   handoff using the pinned model-visible request-context input implemented by
+   the adapter.
 2. Add the provider-neutral telemetry and observed-context projection contract.
 3. Define and validate `continuation-state-v1` and the lifecycle-ledger schema.
 4. Implement the hidden semantic compiler and verifier against recorded bounded
