@@ -1,0 +1,353 @@
+{
+  "assessment_id": "work-engine.intake.semantic-context-manager",
+  "assessment_revision": 3,
+  "authority": {
+    "evidence_refs": [
+      "evidence.intake-authority"
+    ],
+    "owner": "user",
+    "scope": "Revise and assess the exact Semantic Context Manager raw source against the adopted App Server and Wind Walker direction, preserve attributed runtime evidence and neighboring ownership conflicts, and project surviving candidate meaning without accepting a proposal or authorizing formation, implementation, cleanup, permanent placement, or roadmap change."
+  },
+  "candidates": [
+    {
+      "candidate": {
+        "boundary": "Centralized App Server lifecycle observation and semantic-difference inspection; provider-neutral runtime observations; pressure-triggered preservation; separately judged clearing; owner-validated durable writes; exact thread, context-window, instruction, skill, durable-state, actor, lifecycle, and next-work binding; bounded target-role correction; manual thread/compact/start after readiness as the observed fresh-context initiation surface; multi-signal transition classification; post-transition reconciliation; and an external lifecycle ledger. Excludes semantic-durability doctrine ownership, role-state or authority ownership, App Server protocol ownership, opaque summarizing compaction, automatic runtime migration, fixed thresholds, mandatory boundary clearing, recursive management, broad human-facing application, and downstream implementation authority.",
+        "evidence_still_needed": [
+          "Exercise one strategic-planner App Server thread with a Wind Walker observer and seed mandatory continuation consequences to measure omission, distortion, target-role correction, replacement, rehydration, reconciliation, and net lifecycle cost.",
+          "Establish a trusted snapshot subject and source contract for effective instructions, activated skills, messages, tool evidence, authority events, actor binding, durable revisions, and expected next work.",
+          "Demonstrate that specialist inspection cannot delay publication required by stronger role-state or domain owners.",
+          "Exercise one fenced manual thread/compact/start transition after readiness while retaining the inspected revision, durable handoff, and evidence needed to diagnose rehydration until exact acknowledgement.",
+          "Falsify the proposed role, runtime-port, and host-orchestrator placement against credible competing owners.",
+          "Adversarially review transport trust, prompt-injection, confidentiality, retention, least privilege, and replacement authority before effectful use."
+        ],
+        "meaning": "Define a durable Wind Walker observer for non-human-facing role threads that removes continuous context-lifetime self-management from ordinary roles while preserving target-role semantic ownership, bounded correction or veto, exact snapshot fencing, native fresh-context readiness, transition classification, rehydration, and evidence-based clearing judgment.",
+        "next_consumer": "proposal-former",
+        "placement_hypotheses": [
+          "A durable Wind Walker role contract consuming a provider-neutral App Server observation port while stronger owners retain semantic safety, role state, and authority.",
+          "A non-human-facing context-lifecycle service whose external ledger is separate from App Server runtime bindings and target-role canonical state.",
+          "A bounded experimental role paired first with a read-only strategic-planner vertical until evidence supports permanent placement."
+        ],
+        "unresolved_decisions": [
+          "Which component owns the canonical Wind Walker role contract, lifecycle ledger, and replacement authorization.",
+          "What stable App Server observations identify context windows and distinguish fresh replacement, summarizing compaction, and unknown transition.",
+          "Whether a separate direct new_context host method exists beyond the observed thread/compact/start initiation surface.",
+          "How to fence preservation before automatic exhaustion and recover when replacement precedes readiness.",
+          "Whether any human-facing context class can safely share this candidate boundary."
+        ]
+      },
+      "claim_id": "claim.context-manager-runtime-allocation",
+      "disposition": {
+        "authority_ref": "evidence.intake-authority",
+        "rationale": "The authorized revision-3 intake retains one distinct Wind Walker role-allocation and lifecycle-coordination consequence not owned by the formed semantic doctrine, observation proposal, App Server scaffold, runtime/environment ideas, or stronger role-state owner; manual fresh-context replacement is now observed, the hooks-first route remains superseded, and the scaffold remains a separate enabling idea.",
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated"
+      },
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations",
+        "evidence.app-server-runtime-experiment",
+        "evidence.app-server-scaffold-idea",
+        "evidence.semantic-durability-proposal",
+        "evidence.context-observability-proposal",
+        "evidence.prior-semantic-intake",
+        "evidence.runtime-adapter-idea",
+        "evidence.environment-adapter-idea",
+        "evidence.role-state-proposal"
+      ],
+      "relationship_refs": [
+        "relationship.context-manager-semantic-durability",
+        "relationship.context-manager-observability",
+        "relationship.context-manager-runtime-adapter",
+        "relationship.context-manager-environment-adapter",
+        "relationship.context-manager-role-state"
+      ],
+      "revision": 3,
+      "source_range": {
+        "content_sha256": "46a4b3dad5a5c5732ac980732c8cc6bf647b652f437370f76b248238437f01b5",
+        "line_end": 885,
+        "line_start": 1
+      },
+      "statement": "Allocate centralized context observation, semantic-difference inspection, preservation coordination, transition-readiness judgment, transition classification, and rehydration verification to a durable Wind Walker role, while target roles retain semantic ownership and bounded correction or veto.",
+      "statement_kind": "assessor_interpretation",
+      "uncertainty": [
+        "No current capability proves an exact trusted projection of the effective model input and governing environment.",
+        "The observed manual fresh-context behavior must be reverified for every supported App Server version.",
+        "The raw probe transcript and complete context-window identifiers are absent from the recovered intake evidence.",
+        "The host may not be able to preserve a revision-bound recovery subject or intervene before automatic exhaustion.",
+        "Specialist inspection and bounded validation may cost more tokens or attention than they save.",
+        "Transport provenance, prompt-injection resistance, confidentiality, retention, and least-privilege boundaries need adversarial review before effectful use.",
+        "Canonical placement among role, runtime, environment, and governing design projections remains unresolved.",
+        "Human-facing contexts may require a separate or narrower candidate because unresolved interaction meaning cannot be guessed into durable closure."
+      ]
+    }
+  ],
+  "canonical_record": "ideas/intake/semantic-context-manager/record.json",
+  "evidence": [
+    {
+      "attribution": "The user adopted the App Server and Wind Walker direction, then confirmed that manual thread/compact/start under token_budget triggers a fresh context-window transition on the same durable thread without legacy summarizing-compaction behavior.",
+      "evidence_id": "evidence.intake-authority",
+      "kind": "human_decision",
+      "owner": "user",
+      "reference": "ideas/intake/semantic-context-manager/authority.md",
+      "revision": "5612fa5e744c956bc31cb250c48971674b7fd761",
+      "verification": {
+        "freshness_rule": "Exact checkpointed authority attribution; later direct human correction supersedes it.",
+        "integrity_sha256": "41b1fcaf36394096e0ade4dc2612cfa45ed2a06a96d5de6ec78047505daa8dd5",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Bounded doctrine, proposal, intake, automatic and manual App Server context-transition, scaffold, role-port, host-capability, and conflict observations made through revision-3 intake.",
+      "evidence_id": "evidence.repository-observations",
+      "kind": "repository_observation",
+      "owner": "primary idea-intake assessor",
+      "reference": "ideas/intake/semantic-context-manager/repository-observations.md",
+      "revision": "5612fa5e744c956bc31cb250c48971674b7fd761",
+      "verification": {
+        "freshness_rule": "Current only for the recorded evidence checkpoint and the documented Codex surfaces observed on 2026-08-24.",
+        "integrity_sha256": "7aa179d820b0dcbeb00047bbbbf84abf2dd9f8e1c202fedada19ec33140ea48f",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Bounded automatic experiment plus user-confirmed manual thread/compact/start experiment observing fresh context-window transitions on one durable App Server thread without legacy summarizing-compaction behavior, while retaining the overloaded contextCompaction event-label limitation.",
+      "evidence_id": "evidence.app-server-runtime-experiment",
+      "kind": "repository_observation",
+      "owner": "primary idea-intake assessor",
+      "reference": "ideas/intake/semantic-context-manager/app-server-runtime-evidence.md",
+      "revision": "5612fa5e744c956bc31cb250c48971674b7fd761",
+      "verification": {
+        "freshness_rule": "Applies only to the recorded alpha build and configuration; repeat against every supported version and retain the raw protocol transcript before using exact runtime identities.",
+        "integrity_sha256": "8985b038f526cc43441751eab242b8683dfadfb5e3f140c3a28e80432ef3cde2",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Neighboring raw idea that owns the parallel App Server scaffold, logical-role thread bindings, skill and tool injection, capability migration, and role-port order without absorbing Context Manager semantics.",
+      "evidence_id": "evidence.app-server-scaffold-idea",
+      "kind": "repository_observation",
+      "owner": "raw App Server scaffold and role-port idea",
+      "reference": "ideas/codex-app-server-scaffold-and-role-port.md",
+      "revision": "5612fa5e744c956bc31cb250c48971674b7fd761",
+      "verification": {
+        "freshness_rule": "Reassess the enabling boundary after scaffold intake, proposal formation, implementation evidence, or a provider-direction change.",
+        "integrity_sha256": "db443be1debc503b938b09f909f8125b1234731d52f0a43c69c2452afc030887",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Formed neighboring proposal that owns semantic-durability and context-lifetime judgment doctrine but not the specialist runtime allocation.",
+      "evidence_id": "evidence.semantic-durability-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.semantic-durability-context-lifetime",
+      "reference": "proposals/agent-state/semantic-durability-context-lifetime/packet.json",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess duplication and candidate boundaries if this proposal is revised, decided, or superseded.",
+        "integrity_sha256": "183d8cebafc657e460c49db203f3ea842b98353b2d0a8a4ece0f8656ca6a6a63",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Approved neighboring observation contract that exposes context evidence while withholding safety, judgment, role-state, and effect authority.",
+      "evidence_id": "evidence.context-observability-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.context-decision-observability",
+      "reference": "proposals/agent-state/context-decision-observability/packet.json",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess composition if its decision, packet, placement, or implementation authority changes.",
+        "integrity_sha256": "46ff03086c68c9d7f5da4520a81fc240c3126403bce96c70629282597811497b",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Prior exact-source intake separating semantic judgment, bounded memento, and empirical calibration candidates.",
+      "evidence_id": "evidence.prior-semantic-intake",
+      "kind": "prior_reconciliation",
+      "owner": "work-engine.intake.semantic-durability-context-lifetime",
+      "reference": "ideas/intake/semantic-durability-context-lifetime/record.json",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess the refinement relationship if that intake or its proposal handoffs change.",
+        "integrity_sha256": "5c83ae2b0083634342ee569c040a1abdb1bffb622668de49568ac2619ddc0da4",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Existing raw idea that assigns provider actor lifecycle, topology, binding, and capability reporting to a runtime adapter.",
+      "evidence_id": "evidence.runtime-adapter-idea",
+      "kind": "repository_observation",
+      "owner": "raw provider-neutral runtime-adapter idea",
+      "reference": "ideas/runtime-adapter.md",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess the enabling boundary after runtime-adapter intake, formation, or revision.",
+        "integrity_sha256": "7fd5471c2369030580d9edd0690699650463ff8aa70b82495f9ad7da9f40272b",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Existing raw idea assigning host capability discovery and provider realization selection to environment machinery without semantic ownership transfer.",
+      "evidence_id": "evidence.environment-adapter-idea",
+      "kind": "repository_observation",
+      "owner": "raw environment-adapter idea",
+      "reference": "ideas/environment-adapter-and-host-provided-runtime-services.md",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess capability-discovery placement after environment-adapter intake, formation, or revision.",
+        "integrity_sha256": "e8d97a8c4b1a26c2becce429713e1aec9030b5f451921d6b81ee5bc3edb28a63",
+        "mode": "repository_file"
+      }
+    },
+    {
+      "attribution": "Stronger neighboring proposal for publication and recovery of resume-critical role state.",
+      "evidence_id": "evidence.role-state-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.role-owned-durable-operational-state",
+      "reference": "proposals/agent-state/role-owned-durable-operational-state/packet.json",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b",
+      "verification": {
+        "freshness_rule": "Reassess the conflict boundary if required publication or recovery semantics change.",
+        "integrity_sha256": "e86100a371d48c57d6e956ffbd6023153e4b9f8278b07214f12dbfa112e4f8ca",
+        "mode": "repository_file"
+      }
+    }
+  ],
+  "idea_id": "work-engine.idea.semantic-context-manager",
+  "non_authorization": {
+    "cleanup_authorized": false,
+    "implementation_authorized": false,
+    "permanent_placement_settled": false,
+    "proposal_accepted": false,
+    "roadmap_priority_changed": false
+  },
+  "projection_kind": "proposal_formation_candidate",
+  "proposal_refs": [
+    {
+      "path": "../../../proposals/agent-state/semantic-durability-context-lifetime/packet.json",
+      "proposal_id": "work-engine.semantic-durability-context-lifetime",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b"
+    },
+    {
+      "path": "../../../proposals/agent-state/context-decision-observability/packet.json",
+      "proposal_id": "work-engine.context-decision-observability",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b"
+    },
+    {
+      "path": "../../../proposals/agent-state/role-owned-durable-operational-state/packet.json",
+      "proposal_id": "work-engine.role-owned-durable-operational-state",
+      "revision": "3e5fa574719940216458270def6a13c06e65540b"
+    }
+  ],
+  "relationships": [
+    {
+      "authority_ref": null,
+      "evidence_refs": [
+        "evidence.semantic-durability-proposal",
+        "evidence.prior-semantic-intake",
+        "evidence.repository-observations"
+      ],
+      "rationale": "The formed proposal owns continuation safety and economic context-lifetime judgment; this source adds a candidate durable Wind Walker allocation for observation, preservation coordination, transition readiness, classification, and rehydration verification.",
+      "relationship_id": "relationship.context-manager-semantic-durability",
+      "source_claim_id": "claim.context-manager-runtime-allocation",
+      "status": "nominated",
+      "target": {
+        "id": "work-engine.semantic-durability-context-lifetime",
+        "kind": "proposal",
+        "reference": "proposals/agent-state/semantic-durability-context-lifetime/packet.json"
+      },
+      "type": "possibly_refines"
+    },
+    {
+      "authority_ref": null,
+      "evidence_refs": [
+        "evidence.context-observability-proposal",
+        "evidence.repository-observations"
+      ],
+      "rationale": "The approved observation projection can supply bounded pressure, thread, context-window, and lifecycle evidence, while Wind Walker remains a consumer that owns neither those source facts nor replacement authority.",
+      "relationship_id": "relationship.context-manager-observability",
+      "source_claim_id": "claim.context-manager-runtime-allocation",
+      "status": "nominated",
+      "target": {
+        "id": "work-engine.context-decision-observability",
+        "kind": "proposal",
+        "reference": "proposals/agent-state/context-decision-observability/packet.json"
+      },
+      "type": "possibly_refines"
+    },
+    {
+      "authority_ref": null,
+      "evidence_refs": [
+        "evidence.runtime-adapter-idea",
+        "evidence.app-server-scaffold-idea",
+        "evidence.app-server-runtime-experiment",
+        "evidence.repository-observations"
+      ],
+      "rationale": "The App Server scaffold exercises the existing provider-neutral runtime seam as the first realization; provider mechanics and role-port structure remain enabling neighbors rather than a second Context Manager candidate.",
+      "relationship_id": "relationship.context-manager-runtime-adapter",
+      "source_claim_id": "claim.context-manager-runtime-allocation",
+      "status": "nominated",
+      "target": {
+        "id": "work-engine.idea.runtime-adapter",
+        "kind": "idea",
+        "reference": "ideas/runtime-adapter.md"
+      },
+      "type": "possibly_refines"
+    },
+    {
+      "authority_ref": null,
+      "evidence_refs": [
+        "evidence.environment-adapter-idea",
+        "evidence.repository-observations"
+      ],
+      "rationale": "Automatic adapter detection is bounded host capability negotiation and must not infer role identity, authority, or continuity.",
+      "relationship_id": "relationship.context-manager-environment-adapter",
+      "source_claim_id": "claim.context-manager-runtime-allocation",
+      "status": "nominated",
+      "target": {
+        "id": "work-engine.idea.environment-adapter",
+        "kind": "idea",
+        "reference": "ideas/environment-adapter-and-host-provided-runtime-services.md"
+      },
+      "type": "possibly_refines"
+    },
+    {
+      "authority_ref": null,
+      "evidence_refs": [
+        "evidence.role-state-proposal",
+        "evidence.repository-observations"
+      ],
+      "rationale": "Wind Walker would conflict with the stronger owner if observation, preservation coordination, or its lifecycle ledger delayed, copied, or replaced publication required when a resume-critical role consequence is established.",
+      "relationship_id": "relationship.context-manager-role-state",
+      "source_claim_id": "claim.context-manager-runtime-allocation",
+      "status": "nominated",
+      "target": {
+        "id": "work-engine.role-owned-durable-operational-state",
+        "kind": "proposal",
+        "reference": "proposals/agent-state/role-owned-durable-operational-state/packet.json"
+      },
+      "type": "possibly_conflicts_with"
+    }
+  ],
+  "reopening_conditions": [
+    "The semantic-durability proposal or another accepted owner adopts the complete Wind Walker role allocation and lifecycle-ledger consequence, eliminating independent proposal value.",
+    "Runtime experimentation shows that no trusted revision-bound projection of the effective governing environment can be produced for specialist inspection.",
+    "The host cannot preserve a revision-bound recovery subject or reconcile a fresh context against the exact handoff after replacement.",
+    "Measurement shows that specialist inspection and bounded target-role validation do not credibly reduce total lifecycle cost or preserve mandatory continuation consequences.",
+    "The App Server scaffold, runtime-adapter, or environment-adapter intake establishes a conflicting owner for role binding, actor discovery, capability negotiation, or runtime migration.",
+    "Supported App Server versions cannot expose enough thread, context-window, token, and transition evidence to distinguish fresh replacement from summarizing compaction.",
+    "Human-facing evaluation shows that unresolved interaction meaning requires a materially different candidate boundary."
+  ],
+  "schema_version": 1,
+  "source": {
+    "blob_oid": "1c924a6aaf7af70f2d62176ca47a9655df94b169",
+    "path": "ideas/01-semantic-context-manager-proposal.md",
+    "range": {
+      "content_sha256": "46a4b3dad5a5c5732ac980732c8cc6bf647b652f437370f76b248238437f01b5",
+      "line_end": 885,
+      "line_start": 1
+    },
+    "repository_revision": "5612fa5e744c956bc31cb250c48971674b7fd761"
+  }
+}
