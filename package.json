@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "preflight": "node skills/slice-supervisor/scripts/campaign-preflight.mjs campaigns/roadmap.yaml",
-    "test": "npm run test:supervisor && npm run test:work-engine-mcp && npm run test:chrome-vision",
+    "test": "npm run test:supervisor && npm run test:work-engine-mcp && npm run test:chrome-vision && npm run test:app-server",
+    "test:app-server": "node --test app-server/tests/*.test.mjs",
+    "test:app-server:integration": "WORK_ENGINE_APP_SERVER_INTEGRATION=1 node --test app-server/tests/integration.test.mjs",
+    "generate:app-server-protocol": "node app-server/scripts/generate-protocol-bindings.mjs",
     "test:supervisor": "node --test skills/slice-supervisor/tests/campaign-preflight.test.mjs",
     "test:work-engine-mcp": "node --test skills/work-engine-mcp/tests/*.test.mjs",
     "test:chrome-vision": "npm --prefix skills/chrome-vision test"
