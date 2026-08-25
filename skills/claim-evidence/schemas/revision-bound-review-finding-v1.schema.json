@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.claim-evidence.profile.revision-bound-review-finding.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["finding_id", "severity", "episode", "outcome"],
+  "properties": {"finding_id": {"type": "string", "minLength": 1}, "severity": {"type": "string", "minLength": 1}, "episode": {"type": "string", "minLength": 1}, "outcome": {"type": "string", "minLength": 1}}
+}

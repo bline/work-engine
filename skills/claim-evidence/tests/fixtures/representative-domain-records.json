@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "records": [
+    {"profile": "proposal-research-v1", "namespace": "proposal-research", "stable_subject_id": "production-interface-placement", "statement_identity": "The shared capability owns production claim mechanics.", "profile_payload": {"materiality": "material", "support_qualification": "supported"}},
+    {"profile": "revision-bound-review-finding-v1", "namespace": "review", "stable_subject_id": "production-interface-boundary-finding", "statement_identity": "The MCP transport must not own claim semantics.", "profile_payload": {"finding_id": "PCEI-REVIEW-001", "severity": "high", "episode": "production-interface-review", "outcome": "open"}}
+  ],
+  "limitations": ["Representative production-contract fixtures; they do not accept a proposal or review outcome."]
+}

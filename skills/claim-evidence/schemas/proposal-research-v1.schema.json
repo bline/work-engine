@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.claim-evidence.profile.proposal-research.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["materiality", "support_qualification"],
+  "properties": {"materiality": {"type": "string", "minLength": 1}, "support_qualification": {"type": "string", "minLength": 1}}
+}

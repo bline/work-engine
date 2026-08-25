@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.claim-evidence.operation.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "operation_id", "action", "profile", "expected_state", "payload"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "operation_id": {"type": "string", "minLength": 1},
+    "action": {"enum": ["create_claim", "publish_revision", "publish_lineage", "record_reliance", "retire_reliance", "retract_revision"]},
+    "profile": {"enum": ["proposal-research-v1", "revision-bound-review-finding-v1"]},
+    "expected_state": {"type": ["string", "null"]},
+    "payload": {"type": "object"}
+  }
+}

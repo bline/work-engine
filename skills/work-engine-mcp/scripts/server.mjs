@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFile } from "node:child_process";
-import { readFile, realpath } from "node:fs/promises";
+import { realpath } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -14,30 +14,19 @@ const execFileAsync = promisify(execFile);
 const MAX_OUTPUT = 16 * 1024 * 1024;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WORK_ENGINE_ROOT = path.resolve(HERE, "../../..");
-const CLAIM_COLLECTIONS = [
-  "authority_grants",
-  "claims",
-  "revisions",
-  "events",
-  "nominations",
-  "episodes",
-  "judgments",
-  "reliances",
-  "edges",
-];
-
 function serverArguments(argv) {
-  const options = { repository: process.cwd(), reviewAuthority: null };
+  const options = { repository: process.cwd(), reviewAuthority: null, claimRoot: null };
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
     const value = argv[index + 1];
-    if (!value || !["--repository", "--review-authority-file"].includes(flag)) {
+    if (!value || !["--repository", "--review-authority-file", "--claim-root"].includes(flag)) {
       throw new Error(
-        "usage: server.mjs [--repository PATH] [--review-authority-file PATH]",
+        "usage: server.mjs [--repository PATH] [--review-authority-file PATH] [--claim-root PATH]",
       );
     }
     if (flag === "--repository") options.repository = value;
-    else options.reviewAuthority = value;
+    else if (flag === "--review-authority-file") options.reviewAuthority = value;
+    else options.claimRoot = value;
   }
   return options;
 }
@@ -130,17 +119,19 @@ async function main() {
     WORK_ENGINE_ROOT,
     "skills/slice-supervisor/scripts/resume_active_slice.py",
   );
-  const claimRoot = path.join(
+  const claimScript = path.join(
     WORK_ENGINE_ROOT,
-    "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood",
+    "skills/claim-evidence/scripts/claim_evidence.py",
   );
-  const claimScript = path.join(claimRoot, "scripts/claim_lineage_dogfood.py");
   const reviewStateScript = path.join(
     WORK_ENGINE_ROOT,
     "skills/independent-review-state/scripts/independent_review_state.py",
   );
   const reviewAuthority = options.reviewAuthority
     ? await realpath(path.resolve(options.reviewAuthority))
+    : null;
+  const claimRoot = options.claimRoot
+    ? await realpath(path.resolve(options.claimRoot))
     : null;
 
   const server = new McpServer({ name: "work-engine", version: "0.1.0" });
@@ -308,53 +299,84 @@ async function main() {
     },
   );
 
-  server.registerTool(
-    "query_claim_lineage_dogfood",
-    {
-      description:
-        "Query validated records from the final synthetic claim-lineage dogfood. " +
-        "Results are experimental, deliberately incomplete, and do not imply production placement.",
-      inputSchema: {
-        ids: z.array(z.string().min(1)).min(1).max(50).optional().describe("Exact record IDs"),
-        types: z.array(z.string().min(1)).min(1).max(20).optional().describe("Exact record types"),
-        limit: z.number().int().min(1).max(100).default(50),
-      },
-      outputSchema: { result: z.unknown() },
-    },
-    async ({ ids, types, limit }) => {
-      await runJson(
-        "python3",
-        [claimScript, "verify", "--root", claimRoot],
-        { cwd: WORK_ENGINE_ROOT },
-      );
-      const records = JSON.parse(
-        await readFile(path.join(claimRoot, "records/claim-lineage-records.json"), "utf8"),
-      );
-      const projection = JSON.parse(
-        await readFile(path.join(claimRoot, "generated/projection.json"), "utf8"),
-      );
-      const idSet = ids ? new Set(ids) : null;
-      const typeSet = types ? new Set(types) : null;
-      const matches = CLAIM_COLLECTIONS.flatMap((collection) =>
-        records[collection].map((record) => ({ collection, ...record })),
-      ).filter((record) => (!idSet || idSet.has(record.id)) &&
-        (!typeSet || typeSet.has(record.type)));
+  if (claimRoot) {
+    const callClaimEvidence = async (args) => result(await runJson(
+      "python3", [claimScript, "--root", claimRoot, ...args], { cwd: repository },
+    ));
+    const discoveryCriteriaSchema = z.object({
+      namespace: z.string().min(1).optional(),
+      subject_kind: z.string().min(1).optional(),
+      stable_subject_id: z.string().min(1).optional(),
+      profile: z.string().min(1).optional(),
+      producer: z.string().min(1).optional(),
+      support_qualification: z.string().min(1).optional(),
+      sensitivity_reference: z.string().min(1).optional(),
+      evidence_baseline: z.string().min(1).optional(),
+      content_reference: z.string().min(1).optional(),
+      consumer: z.string().min(1).optional(),
+    }).strict().refine((criteria) => Object.keys(criteria).length > 0, {
+      message: "discovery criteria must not be empty",
+    });
 
-      return result({
-        projection_owner: "work-engine-mcp",
-        semantic_owner: "claim-lineage-dogfood",
-        authorization_scope: "read_only_experimental",
-        completeness_boundary: projection.completeness_boundary,
-        excluded_scope: projection.excluded_scope,
-        canonical_input_manifest: projection.canonical_input_manifest,
-        query: { ids: ids ?? null, types: types ?? null, limit },
-        total_matches: matches.length,
-        truncated: matches.length > limit,
-        records: matches.slice(0, limit),
-        limitations: records.limitations,
-      });
-    },
-  );
+    server.registerTool(
+      "discover_claim_evidence",
+      {
+        description:
+          "Discover bounded production claim candidates. Results do not assess applicability.",
+        inputSchema: { criteria: discoveryCriteriaSchema },
+        outputSchema: { result: z.unknown() },
+      },
+      async ({ criteria }) => callClaimEvidence([
+        "discover", "--criteria-json", JSON.stringify(criteria),
+      ]),
+    );
+
+    server.registerTool(
+      "resolve_claim_evidence",
+      {
+        description: "Resolve one exact production claim or immutable revision identity.",
+        inputSchema: { identity: z.string().min(1) },
+        outputSchema: { result: z.unknown() },
+      },
+      async ({ identity }) => callClaimEvidence(["resolve", "--identity", identity]),
+    );
+
+    server.registerTool(
+      "traverse_claim_evidence",
+      {
+        description: "Traverse typed predecessors or successors from one exact claim revision.",
+        inputSchema: {
+          revision: z.string().min(1),
+          direction: z.enum(["predecessors", "successors", "both"]).default("both"),
+        },
+        outputSchema: { result: z.unknown() },
+      },
+      async ({ revision, direction }) => callClaimEvidence([
+        "traverse", "--revision", revision, "--direction", direction,
+      ]),
+    );
+
+    server.registerTool(
+      "query_claim_evidence_reliance",
+      {
+        description:
+          "Inspect direct reliance on one exact claim revision or reverse reliance by consumer.",
+        inputSchema: {
+          revision: z.string().min(1).optional(),
+          consumer: z.string().min(1).optional(),
+        },
+        outputSchema: { result: z.unknown() },
+      },
+      async ({ revision, consumer }) => {
+        if (Boolean(revision) === Boolean(consumer)) {
+          throw new Error("supply exactly one reliance query key");
+        }
+        return callClaimEvidence([
+          "reliance", revision ? "--revision" : "--consumer", revision ?? consumer,
+        ]);
+      },
+    );
+  }
 
   await server.connect(new StdioServerTransport());
 }

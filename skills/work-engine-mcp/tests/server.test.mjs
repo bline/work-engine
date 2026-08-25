@@ -20,9 +20,10 @@ const IDENTITY = {
   plan_version: "plan-1",
 };
 
-async function connect(repository = ROOT, authority = null) {
+async function connect(repository = ROOT, authority = null, claimRoot = null) {
   const args = [SERVER, "--repository", repository];
   if (authority) args.push("--review-authority-file", authority);
+  if (claimRoot) args.push("--claim-root", claimRoot);
   const transport = new StdioClientTransport({
     command: process.execPath,
     args,
@@ -32,6 +33,62 @@ async function connect(repository = ROOT, authority = null) {
   const client = new Client({ name: "work-engine-mcp-test", version: "0.1.0" });
   await client.connect(transport);
   return client;
+}
+
+const CLAIM_SCRIPT = path.join(ROOT, "skills/claim-evidence/scripts/claim_evidence.py");
+
+function directClaim(root, args) {
+  return JSON.parse(execFileSync("python3", [CLAIM_SCRIPT, "--root", root, ...args], {
+    encoding: "utf8",
+  }));
+}
+
+function createClaimRoot(root) {
+  const setup = String.raw`
+import importlib.util
+import json
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+module_path = Path(sys.argv[2])
+test_path = Path(sys.argv[3])
+
+def load_module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+ce = load_module("claim_evidence", module_path)
+fixtures = load_module("claim_evidence_test_helpers", test_path)
+case = fixtures.ClaimEvidenceTest()
+store = ce.blank_store()
+authority = fixtures.authority("proposal-research-v1", "producer-candidate-a")
+case.admit(store, authority)
+research_payload = fixtures.revision("proposal-research-v1")
+research_payload["evidence_references"][0]["status"] = "unavailable"
+research_payload["confidence"] = 9007199254740991
+research = ce.apply_operation(store, fixtures.request("mcp-create-research", "create_claim", "proposal-research-v1", {"subject": fixtures.subject("proposal-research", "candidate-a"), "statement_identity": "stable proposition", "initial_revision": research_payload}), authority)["result_identity"]
+review, _ = case.publish_claim(store, "revision-bound-review-finding-v1", "review", "finding-a", "mcp-create-review")
+claim_id = research.rsplit("@", 1)[0]
+second = ce.apply_operation(store, fixtures.request("mcp-next", "publish_revision", "proposal-research-v1", {"claim_id": claim_id, "revision": fixtures.revision("proposal-research-v1")}, research), authority)["result_identity"]
+ce.apply_operation(store, fixtures.request("mcp-edge", "publish_lineage", "proposal-research-v1", {"relationship": "supersession", "sources": [research], "target": second}), authority)
+reliance_payload = {"consumer": "proposal:mcp-consumer", "consumer_revision": "tree-mcp", "decision_scope": "formation", "claim_revision_id": research, "state": "active", "predecessor_reliance": None}
+ce.apply_operation(store, fixtures.request("mcp-rely", "record_reliance", "proposal-research-v1", reliance_payload), authority)
+store["projection_boundary"].update({"actual_content_set": "bounded MCP equivalence fixture", "source_watermark": "tree-mcp", "excluded_inputs": ["excluded-source"], "failed_inputs": ["failed-source"], "freshness": "current_for_tree_mcp", "completeness": "partial"})
+ce.validate_store(store)
+store_path, projection_path = ce.paths(root)
+store_path.parent.mkdir(parents=True, exist_ok=True)
+(store_path.parent / "store.lock").touch()
+ce.atomic_write(store_path, store)
+ce.atomic_write(projection_path, ce.build_projection(store))
+print(json.dumps({"claim": claim_id, "research": research, "second": second, "review": review}))
+`;
+  return JSON.parse(execFileSync("python3", [
+    "-c", setup, root, CLAIM_SCRIPT,
+    path.join(ROOT, "skills/claim-evidence/tests/test_claim_evidence.py"),
+  ], { encoding: "utf8" }));
 }
 
 const SHA = "a".repeat(64);
@@ -94,7 +151,6 @@ test("lists only the bounded read-only tool surface", async (t) => {
     listed.tools.map((tool) => tool.name).sort(),
     [
       "list_active_slice_history",
-      "query_claim_lineage_dogfood",
       "read_active_slice_state",
     ],
   );
@@ -153,29 +209,77 @@ test("reads current state and retained history without mutating the repository",
   assert.equal(after, before);
 });
 
-test("rejects empty claim filters instead of implying there are no matches", async (t) => {
-  const client = await connect();
+test("projects production claim reads with exact CLI semantics and no mutation surface", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-mcp-claims."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const ids = createClaimRoot(directory);
+  const client = await connect(ROOT, null, directory);
   t.after(() => client.close());
-  const response = await client.callTool({
-    name: "query_claim_lineage_dogfood",
-    arguments: { ids: [] },
-  });
-  assert.equal(response.isError, true);
-});
 
-test("returns validated experimental claim records with visible limits", async (t) => {
-  const client = await connect();
-  t.after(() => client.close());
-  const response = await client.callTool({
-    name: "query_claim_lineage_dogfood",
-    arguments: { types: ["claim_revision"], limit: 2 },
+  const listed = await client.listTools();
+  const claimTools = listed.tools.map((tool) => tool.name).filter((name) => name.includes("claim"));
+  assert.deepEqual(claimTools.sort(), [
+    "discover_claim_evidence",
+    "query_claim_evidence_reliance",
+    "resolve_claim_evidence",
+    "traverse_claim_evidence",
+  ]);
+  assert.ok(claimTools.every((name) => !/(apply|init|publish|rebuild|write)/.test(name)));
+
+  const cases = [
+    {
+      tool: "discover_claim_evidence",
+      arguments: { criteria: { namespace: "proposal-research", profile: "proposal-research-v1" } },
+      cli: ["discover", "--criteria-json", JSON.stringify({ namespace: "proposal-research", profile: "proposal-research-v1" })],
+    },
+    {
+      tool: "resolve_claim_evidence",
+      arguments: { identity: ids.research },
+      cli: ["resolve", "--identity", ids.research],
+    },
+    {
+      tool: "traverse_claim_evidence",
+      arguments: { revision: ids.research, direction: "successors" },
+      cli: ["traverse", "--revision", ids.research, "--direction", "successors"],
+    },
+    {
+      tool: "query_claim_evidence_reliance",
+      arguments: { revision: ids.research },
+      cli: ["reliance", "--revision", ids.research],
+    },
+    {
+      tool: "query_claim_evidence_reliance",
+      arguments: { consumer: "proposal:mcp-consumer" },
+      cli: ["reliance", "--consumer", "proposal:mcp-consumer"],
+    },
+  ];
+  const before = execFileSync("find", [directory, "-printf", "%P %s %T@\n"], { encoding: "utf8" });
+  for (const item of cases) {
+    const response = await client.callTool({ name: item.tool, arguments: item.arguments });
+    assert.equal(response.isError, undefined);
+    assert.deepEqual(response.structuredContent.result, directClaim(directory, item.cli));
+    assert.equal(response.structuredContent.result.projection_schema_version, 1);
+    assert.equal(response.structuredContent.result.completeness, "partial");
+    assert.deepEqual(response.structuredContent.result.excluded_inputs, ["excluded-source"]);
+    assert.deepEqual(response.structuredContent.result.failed_inputs, ["failed-source"]);
+    assert.equal(response.structuredContent.result.unresolved_references[0].status, "unavailable");
+  }
+  const exactResolution = await client.callTool({
+    name: "resolve_claim_evidence", arguments: { identity: ids.research },
   });
-  const value = response.structuredContent.result;
-  assert.equal(value.authorization_scope, "read_only_experimental");
-  assert.equal(value.records.length, 2);
-  assert.equal(value.truncated, true);
-  assert.match(value.completeness_boundary, /two pre-bound fixtures/);
-  assert.ok(value.canonical_input_manifest[0].sha256);
+  assert.equal(exactResolution.structuredContent.result.revision.confidence, Number.MAX_SAFE_INTEGER);
+  const after = execFileSync("find", [directory, "-printf", "%P %s %T@\n"], { encoding: "utf8" });
+  assert.equal(after, before);
+
+  const emptyDiscovery = await client.callTool({
+    name: "discover_claim_evidence", arguments: { criteria: {} },
+  });
+  assert.equal(emptyDiscovery.isError, true);
+  const ambiguousReliance = await client.callTool({
+    name: "query_claim_evidence_reliance",
+    arguments: { revision: ids.research, consumer: "proposal:mcp-consumer" },
+  });
+  assert.equal(ambiguousReliance.isError, true);
 });
 
 test("recovers an authority-bound review episode and fences the prior writer", async (t) => {

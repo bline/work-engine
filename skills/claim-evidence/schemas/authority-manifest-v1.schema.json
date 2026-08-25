@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.claim-evidence.authority-manifest.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "grant_id", "actor", "profile", "permissions", "decision_scope", "authority_reference"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "grant_id": {"type": "string", "minLength": 1},
+    "actor": {"type": "string", "minLength": 1},
+    "profile": {"enum": ["proposal-research-v1", "revision-bound-review-finding-v1"]},
+    "permissions": {"type": "array", "uniqueItems": true, "items": {"enum": ["create_claim", "publish_revision", "publish_lineage", "record_reliance", "retire_reliance", "retract_revision"]}},
+    "decision_scope": {"type": "string", "minLength": 1},
+    "authority_reference": {"$ref": "claim-evidence-core-v1.schema.json#/$defs/exact_reference"}
+  }
+}

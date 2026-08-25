@@ -1,6 +1,6 @@
 ---
 name: work-engine-mcp
-description: Expose bounded read-only Work Engine state and experimental claim-lineage projections to MCP consumers. Do not use it to publish state, authorize transitions, or infer production claim placement.
+description: Expose bounded Work Engine state and production claim-evidence reads to MCP consumers. Do not use it to publish claims, authorize workflow transitions, or infer claim applicability.
 ---
 
 # Work Engine MCP
@@ -15,11 +15,25 @@ meaning, transition validity, authority, or completeness. It exposes only:
 - the current or an exact retained revision of one explicitly identified
   active-slice attempt;
 - bounded, newest-first history for that same exact attempt identity; and
-- validated records from the explicitly experimental claim-lineage dogfood.
+- when the trusted launcher selects one production claim root, bounded
+  discovery, exact resolution, lineage traversal, and direct or reverse
+  exact-revision reliance from the shared claim-evidence owner.
 
 Callers must supply the full active-slice identity. The adapter does not
 discover campaigns or infer which attempt is current. Claim results retain the
-dogfood projection's completeness boundary and excluded scope.
+claim-evidence projection's exact identity, schema and build versions,
+freshness, completeness, actual content set, exclusions, failures, and
+unresolved references. Discovery returns candidates with applicability not
+assessed; the adapter does not select a newest revision or reinterpret domain
+judgment.
+
+The launcher may bind a production root with `--claim-root`. Tool callers
+cannot select or change that root. Without that launch binding the production
+claim tools are absent. The adapter invokes the claim-evidence read owner and
+does not implement filtering, projection enrichment, publication, authority
+admission, initialization, or rebuild semantics itself. A claim read must not
+create canonical files, projections, locks, or directories, including when it
+fails.
 
 Without an episode authority manifest, all tools are read-only. When the server
 is launched with `--review-authority-file`, it additionally exposes the narrow
