@@ -90,6 +90,15 @@ adds only the dependencies and potential portfolio consequences needed for
 reconciliation. Neither projection may imply evaluation, acceptance, priority,
 or authority absent from canonical state.
 
+A proposal-review projection identifies any present materially normative
+agent-facing text, instruction-loading or precedence consequence, and exact
+route claimed as mandatory, with exact subject references and uncertainty. The
+proposal former does not select reviewers or decide specialist applicability;
+the review coordinator consumes this projection and owns those transitions.
+Merely proposing that a future implementation create a skill or prompt is an
+observed absence of a present instruction consequence, not speculative review
+applicability.
+
 Formation is semantically complete only when a fresh intended consumer can use
 the durable state without reconstructing the formation conversation. Otherwise
 persist the missing consequence or report the unresolved owner/context instead

@@ -32,11 +32,14 @@ ambiguity, or claims the current index interface cannot establish. Record the
 actual evidence mode and every fallback; never describe fallback evidence as
 indexed evidence.
 
-Independence is an evidence capability, not a mandatory phase. Use a fresh
-perspective when it materially reduces correlated reasoning risk relative to
-the decision's importance. Preserve freshness for placement falsification and
-adversarial review; do not pay for independence when the need is ordinary
-retrieval or deterministic validation.
+Independence is an evidence capability, not a mandatory phase. The builder uses
+freshness when it owns an evidence route such as placement falsification, and it
+projects correlated-risk, consequence, and uncertainty signals for the
+supervisor's specialist selection. It does not add or omit adversarial review
+for its own implementation. After the supervisor selects a perspective, the
+builder preserves the configured provider's required fresh entry and manages
+reviewer continuity through remediation. Do not pay for independence when the
+need is ordinary retrieval or deterministic validation.
 
 ## Adapt without losing truth
 

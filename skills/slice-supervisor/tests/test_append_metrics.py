@@ -101,6 +101,28 @@ def base_record(version: int) -> dict[str, object]:
             },
             "fallbacks": [],
         }
+    if version >= 5:
+        record["worker_metrics"]["review_selection"] = {
+            "selection_owner": "slice-supervisor",
+            "state": "decided",
+            "state_reason": None,
+            "subject": {
+                "revision": "candidate-1",
+                "references": ["refs/work-engine/checkpoints/test-run/candidate-1"],
+            },
+            "specialists": [
+                {
+                    "skill": "agent-instruction-review",
+                    "selection": "omitted",
+                    "selection_reason": "The fixture has no agent-instruction consequence.",
+                    "execution": "not_run",
+                    "applicability": None,
+                    "result_ref": None,
+                    "finding_ids": [],
+                    "unresolved_finding_ids": [],
+                }
+            ],
+        }
     return record
 
 
@@ -151,13 +173,15 @@ def make_config_v2(record: dict[str, object]) -> None:
     )
 
 
-def make_same_model_review_v2(record: dict[str, object]) -> None:
+def make_same_model_review_v2(
+    record: dict[str, object], reasoning_effort: str = "low"
+) -> None:
     make_config_v2(record)
     configured = {
         "provider": "codex",
         "skill": "codex-adversarial-review",
         "model": "gpt-5.6-sol",
-        "reasoning_effort": "low",
+        "reasoning_effort": reasoning_effort,
         "evidence_class": "accepted_same_model_review",
         "isolation": "fresh_process",
     }
@@ -177,7 +201,139 @@ def make_same_model_review_v2(record: dict[str, object]) -> None:
     )
 
 
+def add_review_selection(record: dict[str, object]) -> None:
+    record["worker_metrics"]["review_selection"] = {
+        "selection_owner": "slice-supervisor",
+        "state": "decided",
+        "state_reason": None,
+        "subject": {
+            "revision": "candidate-1",
+            "references": ["refs/work-engine/checkpoints/test-run/candidate-1"],
+        },
+        "specialists": [
+            {
+                "skill": "agent-instruction-review",
+                "selection": "selected",
+                "selection_reason": "The subject changes normative agent instructions.",
+                "execution": "completed",
+                "applicability": "applicable",
+                "result_ref": "reviews/test-run/agent-instruction-review.md",
+                "finding_ids": ["AIR-001"],
+                "unresolved_finding_ids": [],
+            }
+        ],
+    }
+
+
 class AppendMetricsCompatibilityTest(unittest.TestCase):
+    def test_v5_requires_review_selection_while_v4_remains_readable(self) -> None:
+        historical = base_record(4)
+        APPEND_METRICS.validate(historical)
+        current = base_record(5)
+        del current["worker_metrics"]["review_selection"]
+        with self.assertRaisesRegex(ValueError, "requires worker_metrics.review_selection"):
+            APPEND_METRICS.validate(current)
+
+    def test_review_selection_preserves_selection_execution_and_applicability(self) -> None:
+        record = base_record(5)
+        add_review_selection(record)
+        APPEND_METRICS.validate(record)
+
+        cases = []
+        missing_specialist = copy.deepcopy(record)
+        missing_specialist["worker_metrics"]["review_selection"]["specialists"][0]["skill"] = "security-review"
+        cases.append(missing_specialist)
+        builder_owned = copy.deepcopy(record)
+        builder_owned["worker_metrics"]["review_selection"]["selection_owner"] = "slice-builder"
+        cases.append(builder_owned)
+        invalid_omission = copy.deepcopy(record)
+        entry = invalid_omission["worker_metrics"]["review_selection"]["specialists"][0]
+        entry.update({"selection": "omitted", "execution": "completed"})
+        cases.append(invalid_omission)
+        unresolved_not_found = copy.deepcopy(record)
+        unresolved_not_found["worker_metrics"]["review_selection"]["specialists"][0]["unresolved_finding_ids"] = ["AIR-999"]
+        cases.append(unresolved_not_found)
+        for invalid in cases:
+            with self.subTest(invalid=invalid["worker_metrics"]["review_selection"]):
+                with self.assertRaises(ValueError):
+                    APPEND_METRICS.validate(invalid)
+
+    def test_review_selection_records_truthful_selection_omission(self) -> None:
+        record = base_record(4)
+        add_review_selection(record)
+        entry = record["worker_metrics"]["review_selection"]["specialists"][0]
+        entry.update(
+            {
+                "selection": "omitted",
+                "selection_reason": "The subject has no present agent-instruction consequence.",
+                "execution": "not_run",
+                "applicability": None,
+                "result_ref": None,
+                "finding_ids": [],
+                "unresolved_finding_ids": [],
+            }
+        )
+        APPEND_METRICS.validate(record)
+
+    def test_review_selection_records_pre_candidate_terminal_state(self) -> None:
+        record = base_record(5)
+        record["worker_metrics"]["review_selection"] = {
+            "selection_owner": "slice-supervisor",
+            "state": "not_reached",
+            "state_reason": "The slice stopped during planning before candidate creation.",
+            "subject": None,
+            "specialists": [],
+        }
+        APPEND_METRICS.validate(record)
+
+        accepted = copy.deepcopy(record)
+        accepted.update(
+            status="accepted",
+            stop_reason=None,
+            plan_acceptance="procedural_auto_approval",
+            validation_requirement_results={"focused_checks": "passed"},
+            placement_certificate={"owner": "terminal receipt"},
+            placement_verdict="confirmed",
+            placement_risk="medium",
+            vertical_semantic_test="receipt proof",
+            vertical_semantic_test_passed=True,
+            more_in_scope_work_remains=False,
+        )
+        with self.assertRaisesRegex(ValueError, "must be decided"):
+            APPEND_METRICS.validate(accepted)
+
+        for field, value in (
+            ("state_reason", None),
+            ("subject", {"revision": "fabricated", "references": ["fabricated"]}),
+            ("specialists", [{"skill": "agent-instruction-review"}]),
+        ):
+            invalid = copy.deepcopy(record)
+            invalid["worker_metrics"]["review_selection"][field] = value
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError):
+                    APPEND_METRICS.validate(invalid)
+
+    def test_review_selection_records_candidate_bound_undecided_terminal_state(self) -> None:
+        record = base_record(5)
+        record["worker_metrics"]["review_selection"] = {
+            "selection_owner": "slice-supervisor",
+            "state": "undecided",
+            "state_reason": "The configured review provider became unavailable before disposition.",
+            "subject": {
+                "revision": "candidate-1",
+                "references": ["refs/work-engine/checkpoints/test-run/candidate-1"],
+            },
+            "specialists": [],
+        }
+        APPEND_METRICS.validate(record)
+
+        invalid = copy.deepcopy(record)
+        invalid["worker_metrics"]["review_selection"]["specialists"] = [
+            {"skill": "agent-instruction-review"}
+        ]
+        with self.assertRaisesRegex(ValueError, "cannot contain specialist dispositions"):
+            APPEND_METRICS.validate(invalid)
+
     def test_same_model_review_provenance_is_exact_and_not_independence(self) -> None:
         record = base_record(4)
         make_same_model_review_v2(record)
@@ -192,6 +348,11 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             with self.subTest(field=field):
                 with self.assertRaises(ValueError):
                     APPEND_METRICS.validate(invalid)
+
+    def test_same_model_review_accepts_model_selected_reasoning_effort(self) -> None:
+        record = base_record(4)
+        make_same_model_review_v2(record, reasoning_effort="medium")
+        APPEND_METRICS.validate(record)
 
     def test_same_model_review_cannot_satisfy_independent_requirement(self) -> None:
         record = base_record(4)
@@ -276,11 +437,11 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
                 APPEND_METRICS.validate_completion_commit_projection(misbound, record, checkpoint)
 
     def test_accepts_historical_and_current_schema_versions(self) -> None:
-        for version in (1, 2, 3, 4):
+        for version in (1, 2, 3, 4, 5):
             with self.subTest(version=version):
                 self.assertEqual(version, APPEND_METRICS.validate(base_record(version))["schema_version"])
 
-    def test_cli_rejects_legacy_write_without_touching_destination_and_appends_v4(self) -> None:
+    def test_cli_rejects_legacy_write_without_touching_destination_and_appends_v5(self) -> None:
         existing_record = base_record(4)
         existing_record["slice_number"] = 2
         seed = json.dumps(existing_record, separators=(",", ":")).encode() + b"\n"
@@ -303,10 +464,10 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             )
 
             self.assertEqual(2, legacy.returncode)
-            self.assertIn("new durable receipts require schema_version 4", legacy.stderr)
+            self.assertIn("new durable receipts require schema_version 5", legacy.stderr)
             self.assertEqual(seed, metrics_path.read_bytes())
 
-            current_record = base_record(4)
+            current_record = base_record(5)
             current = subprocess.run(
                 [
                     "python3",
@@ -328,7 +489,7 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
     def test_cli_rejects_duplicate_identity_without_touching_destination(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             metrics_path = Path(directory) / "metrics.jsonl"
-            original = base_record(4)
+            original = base_record(5)
             metrics_path.write_text(
                 json.dumps(original, separators=(",", ":")) + "\n",
                 encoding="utf-8",
@@ -358,7 +519,7 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
     def test_cli_allows_only_one_concurrent_terminal_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             metrics_path = Path(directory) / "metrics.jsonl"
-            record = base_record(4)
+            record = base_record(5)
             command = [
                 "python3",
                 str(SCRIPT),
@@ -402,7 +563,7 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
                     "--path",
                     str(metrics_path),
                     "--record-json",
-                    json.dumps(base_record(4)),
+                    json.dumps(base_record(5)),
                 ],
                 capture_output=True,
                 text=True,
@@ -422,7 +583,7 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
                 "fsync",
                 side_effect=real_fsync,
             ) as fsync:
-                APPEND_METRICS.append(metrics_path, base_record(4))
+                APPEND_METRICS.append(metrics_path, base_record(5))
 
             self.assertEqual(2, fsync.call_count)
 
@@ -599,7 +760,7 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             APPEND_METRICS.validate(handoff)
 
     def test_current_named_resumable_write_requires_exact_continuation(self) -> None:
-        record = base_record(4)
+        record = base_record(5)
         record.update(
             status="accepted",
             stop_reason=None,
@@ -632,11 +793,11 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             APPEND_METRICS.validate_current_write(record)
 
     def test_audit_identity_fields_match_durable_schema(self) -> None:
-        audit = base_record(4)
+        audit = base_record(5)
         self.assertEqual("Contract test", audit["slice_title"])
         self.assertEqual("Prove receipt compatibility", audit["slice_goal"])
         self.assertNotIn("slice_statement", audit)
-        self.assertEqual(4, APPEND_METRICS.validate(audit)["schema_version"])
+        self.assertEqual(5, APPEND_METRICS.validate(audit)["schema_version"])
 
     def test_v4_requires_evidence_provenance(self) -> None:
         record = base_record(4)

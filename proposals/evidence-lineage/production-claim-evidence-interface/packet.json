@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.production-claim-evidence-interface",
+  "family_id": "work-engine.evidence-lineage",
+  "title": "Production Claim Evidence Interface",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "semantic_parent",
+      "path": "../claim-centered-evidence-lineage/proposal.md"
+    },
+    {
+      "kind": "parent_decision",
+      "path": "../claim-centered-evidence-lineage/decision.json"
+    },
+    {
+      "kind": "dogfood_evidence",
+      "path": "../_dogfood/claim-lineage-backbone-dogfood/evidence-report.md"
+    },
+    {
+      "kind": "semantic_review",
+      "path": "../../../reviews/proposals/claim-centered-evidence-lineage/cd50e79/synthesis.md"
+    },
+    {
+      "kind": "existing_external_projection_contract",
+      "path": "../../../skills/work-engine-mcp/SKILL.md"
+    },
+    {
+      "kind": "existing_external_projection_implementation",
+      "path": "../../../skills/work-engine-mcp/scripts/server.mjs"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A repository-local shared claim-evidence capability is the probable canonical owner of the closed production record contract and transport-neutral operations. Domain workflows own their judgments and profiles; a Codex skill and external MCP adapter are projections over the same owner."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "A real proposal-research or review consumer cannot discover applicable claims without domain semantics that would make the shared core misleading.",
+      "The minimum production schema cannot represent exact subjects, evidence baselines, authority, limitations, sensitivity, lineage, reliance, and truthful projection completeness without absorbing domain-owned judgment.",
+      "A transport-neutral operation cannot give Codex skills and external read-only MCP consumers equivalent state meaning and provenance.",
+      "Authority-bound publication cannot distinguish attribution from admission or prevent an unauthorized producer from exercising a domain transition.",
+      "Representative production queries require a canonical database or runtime service rather than a rebuildable projection over durable records."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "split_from",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "This candidate isolates the production substrate and interface from the semantic parent's complete lifecycle so it can be accepted and implemented without claiming the later operational phase is complete.",
+      "causal": true
+    },
+    {
+      "type": "enables",
+      "target_id": "work-engine.claim-maintenance-and-reliance-propagation",
+      "rationale": "The later operational phase requires stable production claim identities, exact revisions, authority-bound publication, reliance records, and truthful query projections from this interface.",
+      "causal": true
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Revision-bound review findings are an initial domain profile and consumer while retaining ownership of reviewer episodes, severity, synthesis, and review outcomes.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.proposal-packets",
+      "rationale": "Proposal packets may rely on exact claim revisions while continuing to own proposal identity, meaning, lifecycle, and decision authority.",
+      "causal": false
+    }
+  ]
+}

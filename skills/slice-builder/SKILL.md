@@ -5,13 +5,35 @@ description: Launch and control one capable Codex engineering worker that owns a
 
 # Slice Builder
 
-Act as the engineering adapter for one coherent slice. Do not decompose the slice among small workers and do not use `implementation-orchestrator`. The builder owns repository understanding, architectural judgment, implementation, targeted checks, the configured evidence/review gate, valid fixes, and the final receipt.
+Act as the engineering adapter for one coherent slice. Do not decompose the
+slice among small workers and do not use `implementation-orchestrator`. The
+builder owns repository understanding, architectural judgment, implementation,
+targeted and deterministic checks, execution of the supervisor-selected review
+plan through the configured provider, valid fixes, and the final receipt. It
+does not select or omit specialist reviewers for its own work.
 
-The caller remains the supervisor. It owns the campaign configuration, plan acceptance, limits, durable metrics, continuation, and human escalation; it must not inspect or implement repository work.
+The caller remains the supervisor. It owns the campaign configuration, plan
+acceptance, specialist selection, limits, durable metrics, continuation, and
+human escalation; it must not inspect or implement repository work.
 
-Read the effective work-engine configuration and [references/decision-policy.md](references/decision-policy.md) completely. This adapter supports engineering campaigns whose validation requirements can be mapped to repository checks, freshness checks, visual inspection, and adversarial review. Before planning, explicitly reject unsupported validation requirements or a non-engineering objective. Never silently downgrade a gate. Normalize provider metrics by semantic role while preserving provider-native measurements in `additional_metrics`.
+Read the effective work-engine configuration,
+[references/decision-policy.md](references/decision-policy.md), and the
+[supervisor-owned review-selection contract](../slice-supervisor/references/review-selection.md)
+completely. This adapter supports engineering campaigns whose validation
+requirements can be mapped to repository checks, freshness checks, visual
+inspection, and adversarial review. Before planning, explicitly reject
+unsupported validation requirements or a non-engineering objective. Never
+silently downgrade a gate. Normalize provider metrics by semantic role while
+preserving provider-native measurements in `additional_metrics`.
 
-Keep invariants, acceptance conditions, routes, and recovery decisions distinct. Invariants and explicit configuration remain binding. Select an evidence and validation route proportionate to the slice instead of treating every available stage as mandatory. When evidence invalidates a premise, preserve applicable observations, mark dependent decisions stale, revise the route, and return for renewed plan acceptance. Do not turn a recoverable route correction into either silent scope expansion or automatic failure.
+Keep invariants, acceptance conditions, routes, and recovery decisions distinct.
+Invariants and explicit configuration remain binding. Select an evidence and
+deterministic-validation route proportionate to the slice instead of treating
+every available stage as mandatory. Review selection belongs to the supervisor.
+When evidence invalidates a premise, preserve applicable observations, mark
+dependent decisions stale, revise the route, and return for renewed plan
+acceptance. Do not turn a recoverable route correction into either silent scope
+expansion or automatic failure.
 
 ## Launch the builder
 
@@ -82,7 +104,18 @@ require a configuration amendment. Record the actual mode and transition reason;
 mere tool availability is not a fallback event. Selecting `claude-filesystem` as
 the repository provider remains a distinct explicit configuration choice.
 
-Require the worker to use each resolved skill faithfully for the stages selected by the accepted route. Before planning, confirm that repository retrieval supports the needed evidence and that the independent-review role supports every configured or risk-required independence stage. A `direct` route may use the builder's own read-only repository observation when no explicit configuration or risk condition requires independent evidence. If a defaulted provider is unavailable, record the failed attempt and continue directly only when the same acceptance condition can still be met; an explicitly selected provider or independence requirement remains binding. Retrieval success never satisfies a required independent review. Ordinary test execution belongs to this builder, not either evidence role.
+Require the worker to use each resolved skill faithfully for the evidence stages
+in the accepted route and every specialist later selected by the supervisor.
+Before planning, confirm that repository retrieval supports the needed evidence
+and that the configured review role can execute selected semantic specialist
+contracts without changing their finding ownership or evidence class. A
+`direct` route may use the builder's own read-only repository observation when
+no explicit configuration or risk condition requires independent evidence. If
+a defaulted provider is unavailable, record the failed attempt and continue
+directly only when the same acceptance condition can still be met; an explicitly
+selected provider or independence requirement remains binding. Retrieval
+success never satisfies a required review. Ordinary test execution belongs to
+this builder, not either evidence role.
 
 When a placement or review clause predictably depends on an external or
 unindexed artifact, require the configured Claude call to provision bounded
@@ -171,6 +204,15 @@ Require:
 
 After explicit `procedural_auto_approval` or `human_approval`, send the accepted slice and placement certificate verbatim. Require the vertical semantic proof before broad implementation or presentation polish. If the selected owner or consumer cannot support it, return a boundary-change request instead of implementing a locally coherent substitute. Then require implementation, relevant documentation, and inexpensive configured checks, followed by a stop immediately before the final gate. Require the task-owned file manifest, baseline overlaps, vertical and targeted results, unresolved concerns, and gate readiness.
 
+Also return the candidate-ready review-selection projection defined by the
+supervisor's contract. Supply the exact attributed manifest and integrity
+identities needed for the supervisor to bind an immutable candidate, then
+identify artifact roles, changed semantic contracts, and whether materially
+normative agent-facing text is `present`, `absent`, or `uncertain`. This is
+subject evidence for the supervisor; do not select reviewers, declare a
+specialist applicable, anticipate findings, or inspect unrelated files merely
+to fill the projection.
+
 Before returning that implementation result through the builder mailbox, publish
 its compact phase consequence through the supervisor-owned active-slice
 mechanism. The durable consequence names the accepted boundary and uses
@@ -209,11 +251,24 @@ the gate/review artifacts by integrity identity. `run_gate.py` remains the
 deterministic execution owner; its transient output alone is not durable
 workflow publication.
 
-For `engineering-proportional`, always include the vertical semantic proof, changed-file/workspace integrity, and focused tests. Add freshness checks when generated or derived artifacts may be affected. Add broader regression suites when the change crosses shared/runtime boundaries, has broad fan-out, changes persistence/schema/build behavior, or focused checks cannot bound the risk. Require fresh independent adversarial review for medium/high risk, consequential user-visible or runtime behavior, security/persistence/ownership changes, or material uncertainty. Record why omitted stages were not needed; omission is a scoped judgment, not evidence that a stage passed.
+For `engineering-proportional`, always include the vertical semantic proof,
+changed-file/workspace integrity, and focused tests. Add freshness checks when
+generated or derived artifacts may be affected. Add broader regression suites
+when the change crosses shared/runtime boundaries, has broad fan-out, changes
+persistence/schema/build behavior, or focused checks cannot bound the risk.
+Project medium/high risk, consequential user-visible or runtime behavior,
+security/persistence/ownership changes, and material uncertainty for supervisor
+review selection; do not turn those observations into a builder-owned panel.
+Record why omitted deterministic stages were not needed; omission is a scoped
+judgment, not evidence that a stage passed.
 
 Keep the configured profile identity unchanged. A high-risk proportional run may select the same breadth as `engineering-full`, but record that as `validation_breadth`, not as a profile change.
 
-For `engineering-full`, run vertical proof and changed-file boundary first, then `git diff --check`, applicable prechecks/freshness, focused tests, the full suite, and fresh adversarial review. Explicit configured requirements override profile defaults and must not be waived.
+For `engineering-full`, run vertical proof and changed-file boundary first, then
+`git diff --check`, applicable prechecks/freshness, focused tests, and the full
+suite. Its configured fresh adversarial-review requirement is a binding input to
+the supervisor's selection plan and must be executed after selection. Explicit
+configured requirements override profile defaults and must not be waived.
 
 ```bash
 python3 scripts/run_gate.py --manifest-json \
@@ -222,13 +277,17 @@ python3 scripts/run_gate.py --manifest-json \
 
 If a deterministic check fails, diagnose locally or use the configured evidence
 skill's compact failure-diagnosis path when independence or context isolation
-adds value, then fix and rerun affected checks. Start adversarial review fresh
-once when configured or warranted by the profile. Evaluate findings, implement
-valid in-scope fixes, and send each resulting delta back to the same reviewer
-identity. Finish with the checks needed to prove the final state; repeat the
-full suite only when configured or when fixes changed its risk surface. Launch
-a replacement reviewer only after a recorded reset judgment or an unavailable
-retained identity, and preserve that provenance in the receipt.
+adds value, then fix and rerun affected checks. After deterministic readiness,
+stop until the supervisor returns an exact selection plan. Execute every
+selected specialist through the configured review provider without adding,
+omitting, replacing, or merging perspectives. A selected
+`agent-instruction-review` uses its repository-local skill contract and finding
+contract; provider identity does not absorb specialist identity. Evaluate
+findings, implement valid in-scope fixes, and send each resulting delta back to
+the same reviewer identity. Finish with the checks needed to prove the final
+state; repeat the full suite only when configured or when fixes changed its risk
+surface. Launch a replacement reviewer only after a recorded reset judgment or
+an unavailable retained identity, and preserve that provenance in the receipt.
 
 Return both receipt views defined in [references/builder-receipt.md](references/builder-receipt.md) and [references/handoff-receipt.md](references/handoff-receipt.md). Partition provider effort by evidence mode and preserve compact failure and fallback provenance as required by the audit contract. Do not return raw transcripts, diffs, source excerpts, or test logs.
 

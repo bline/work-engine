@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "checkpoint_id": "b22910caffa55a2a875a71bfa4eba7b228e915e66fce0e98f8b1833849864eea",
+  "checkpoint_kind": "candidate",
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "context-decision-observability-review-20260824",
+  "slice_number": 1,
+  "candidate_attempt": 2,
+  "baseline_commit_oid": "cdc9e3fa5d300e5edc737faf38edf85a336fbdcf",
+  "baseline_tree_oid": "32de1b26be5e4d22300ddc0972eaf8c98c6f05be",
+  "checkpoint_commit_oid": "a09026a32387710f7ee901dce52c091f10245ed6",
+  "checkpoint_tree_oid": "17df286db65b6d0bc1849e50e995fd36245969b5",
+  "parent_checkpoint_commit_oid": "6eebd58acd991e62e6a85b5ac89de42f0712a74e",
+  "plan_version": "context-decision-observability-proposal-review-v1",
+  "scope_revision": "remediated-context-decision-observability-v2",
+  "gate_receipt_digest": "c8f303ce465983c44eaf757d1c3ed53b5240844c916f09a28d17c33d18fd795d",
+  "task_patch_digest": "fd6ef0723f037ad42a45e2e93c3c3fabe28741489778f80089c1b60ddf2f0cec",
+  "ref": "refs/work-engine/checkpoints/context-decision-observability-review-20260824/slice-1/candidate-2",
+  "manifest_digest": "957e3a8159fa77c3a952720e5bc69b43dfa8f35e7f8229a699e05fd6fceb7300",
+  "created_at": "2026-08-24T21:17:37Z",
+  "limitations": []
+}

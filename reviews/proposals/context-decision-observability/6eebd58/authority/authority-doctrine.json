@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "context-observability-authority-review-g1",
+  "identity": {
+    "run_id": "context-decision-observability-review-20260824",
+    "slice_number": 1,
+    "attempt_id": "candidate-1",
+    "plan_version": "context-decision-observability-proposal-review-v1",
+    "review_obligation_id": "authority-and-doctrine",
+    "review_episode_id": "context-observability-authority-6eebd58"
+  },
+  "source": {
+    "owner": "human-authority",
+    "reference": "conversation:shall-we-proceed",
+    "revision": "2026-08-24",
+    "integrity_sha256": "f1954ac9c1e6d8f9d2180e2664c6fe79f302efeb7e96f977983001daa88e0d3c",
+    "freshness_rule": "Later human correction or withdrawal supersedes this review direction."
+  },
+  "writer": {
+    "logical_actor_id": "/root/context_obs_authority",
+    "provider": "codex",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "codex-collaboration",
+      "reference": "/root/context_obs_authority",
+      "revision": "generation-1",
+      "integrity_sha256": "843bf0e74fe81285c79c0c64eeea22bbb8cdb2ad027423f901ad3a45acdc2b8e",
+      "freshness_rule": "Exact predeclared spawned target for this retained review episode."
+    }
+  },
+  "readers": ["adversarial_reviewer", "coordinating_builder", "slice_supervisor"],
+  "initial_subject": [
+    {
+      "owner": "slice-checkpoint",
+      "reference": "refs/work-engine/checkpoints/context-decision-observability-review-20260824/slice-1/candidate-1",
+      "revision": "6eebd58acd991e62e6a85b5ac89de42f0712a74e",
+      "integrity_sha256": "414c00adf90b490eb0c0fb2111db271fa176e8ae093597a856194fb47c842f92",
+      "freshness_rule": "Exact immutable checkpoint commit and task patch digest."
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}

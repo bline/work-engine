@@ -30,3 +30,12 @@ Return a role-scoped projection that identifies the canonical packet and only
 the meaning, placement, relationships, uncertainty, evidence needs, and named
 references useful to its consumer. A projection is a convenience view, never
 the durable owner and never a substitute for unresolved state.
+
+For a proposal-review consumer, also identify whether present candidate content
+contains materially normative agent-facing text, changes instruction loading or
+precedence, or claims an exact route is mandatory. Name the exact subject
+references and preserve uncertainty. This is selection input for the
+proposal-review coordinator, not a panel choice or an
+`agent-instruction-review` applicability decision. A proposal that only
+anticipates a future instruction artifact records that absence instead of
+manufacturing present instruction consequences.

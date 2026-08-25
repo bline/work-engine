@@ -59,7 +59,7 @@ class FinalizeReceiptTest(unittest.TestCase):
 
             records = [json.loads(line) for line in destination.read_text().splitlines()]
             self.assertEqual([finalized], records)
-            self.assertEqual(4, records[0]["schema_version"])
+            self.assertEqual(5, records[0]["schema_version"])
             self.assertEqual(
                 "authoritative campaign objective", records[0]["engine_config"]["objective"]
             )

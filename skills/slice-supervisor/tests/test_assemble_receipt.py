@@ -95,7 +95,7 @@ def preflight_result(engine_config: dict[str, object]) -> dict[str, object]:
 
 class ReceiptAssemblerTest(unittest.TestCase):
     def semantic_receipt(self) -> dict[str, object]:
-        receipt = APPEND_TESTS.base_record(4)
+        receipt = APPEND_TESTS.base_record(5)
         receipt["worker_metrics"].update(
             {
                 "builder_input_tokens": 999,

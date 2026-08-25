@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "idea_id": "work-engine.idea.state-complete-context-reset",
+  "assessment_id": "work-engine.intake.state-complete-context-reset",
+  "source": {
+    "repository_revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+    "blob_oid": "e8627e68f3b29af3e2d83f1993c04ab030bc2c83",
+    "path": "ideas/state-complete-context-reset-for-non-human-facing-agents.md",
+    "range": {
+      "line_start": 1,
+      "line_end": 1123,
+      "content_sha256": "7ba6df8b2c7617e4e61cc7e0716d61ea278fbb7d7277ce3cd65d3f30ea1839f0"
+    }
+  },
+  "assessment": {
+    "revision": 1,
+    "producer": {
+      "kind": "agent_role",
+      "id": "idea-intake"
+    },
+    "authority": {
+      "owner": "user",
+      "scope": "Assess the exact state-complete-context-reset idea revision, distinguish independently decidable candidates, persist intake state, and project surviving candidates to proposal formation without downstream authorization.",
+      "evidence_refs": [
+        "evidence.intake-authority"
+      ]
+    },
+    "purpose": "Reconcile implemented reset foundations and existing proposal ownership from the still-novel observability and outcome-evidence consequences.",
+    "evidence_cutoff": {
+      "repository_revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "description": "Exact raw source and intake evidence checkpoint plus live context-capability observations recorded during the authorized intake."
+    },
+    "published_state": "ready_for_handoff",
+    "reopening_conditions": [
+      "A formed proposal or accepted contract already owns the complete model-facing context-decision observation consequence.",
+      "Runtime evidence shows that invocation-effective context measurements or context-window identity cannot be exposed to the model-facing environment.",
+      "A role-specific continuation checkpoint cannot be referenced without duplicating or weakening its semantic owner.",
+      "Proposal formation determines that reset-outcome evidence is not independently decidable from live decision observability."
+    ]
+  },
+  "narrative": {
+    "path": "assessment.md"
+  },
+  "evidence": [
+    {
+      "evidence_id": "evidence.intake-authority",
+      "kind": "human_decision",
+      "owner": "user",
+      "reference": "ideas/intake/state-complete-context-reset/authority.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "The user selected idea-intake and explicitly instructed the primary agent to proceed after the immutable-source requirement was explained.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "94a03f8ef9f0e278f17847f61e636e8a5ca7a5576f5b8efe12a48ae20e7e1b64",
+        "freshness_rule": "Exact checkpointed authority record; later human correction supersedes this attribution."
+      }
+    },
+    {
+      "evidence_id": "evidence.repository-observations",
+      "kind": "repository_observation",
+      "owner": "primary idea-intake assessor",
+      "reference": "ideas/intake/state-complete-context-reset/repository-observations.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "Bounded local capability, proposal, implementation-search, and coverage observations made during intake.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "9197ac5856d35656726268a9392587e648fa7af66ef28f5987e0191ba13c86e2",
+        "freshness_rule": "Current only for the recorded Codex environment and repository evidence cutoff."
+      }
+    },
+    {
+      "evidence_id": "evidence.wind-walker-contract",
+      "kind": "contract",
+      "owner": "Wind Walker",
+      "reference": "skills/wind-walker/SKILL.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "Current continuation-independence contract at the intake cutoff.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+        "freshness_rule": "Reassess if the Wind Walker skill revision changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.role-state-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.role-owned-durable-operational-state",
+      "reference": "proposals/agent-state/role-owned-durable-operational-state/proposal.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "Neighboring formed candidate for role-owned recovery and transition semantics; not proof of semantic equivalence.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "1344d1d5c1c8914c5d369127db5ab51a99d91667ac2cc98ba9c2f43708bea7c6",
+        "freshness_rule": "Reassess relationship nominations if the proposal meaning or decision state changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.raw-execution-archive-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.raw-agent-execution-evidence-archive",
+      "reference": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/proposal.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "Neighboring formed forensic-evidence candidate that explicitly leaves compact operational measurements to metrics.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "976e31806b3867122090e06330a003b5a28b76cfd3a10639d02cf5270d1ccbf0",
+        "freshness_rule": "Reassess relationship nominations if the archive boundary changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.prior-reconciliation",
+      "kind": "prior_reconciliation",
+      "owner": "ideas reconciliation snapshot",
+      "reference": "ideas/README.md",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21",
+      "attribution": "File-level prior reconciliation that assigns context replacement and reconstruction consequences to durable operational state; not a claim-level disposition owner.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "0c641016486b92ade07929fa767157e9a44e62d91974672728cd7082cd56b05e",
+        "freshness_rule": "Historical reconciliation evidence; superseded by finer-grained authorized intake judgments where they differ."
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "relationship.safety-role-state",
+      "type": "apparently_represented_by_proposal",
+      "source_claim_id": "claim.continuation-safety",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.role-owned-durable-operational-state",
+        "reference": "proposals/agent-state/role-owned-durable-operational-state/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.wind-walker-contract",
+        "evidence.role-state-proposal",
+        "evidence.prior-reconciliation"
+      ],
+      "authority_ref": null,
+      "rationale": "Wind Walker owns the safety invariant and the proposal owns neighboring recovery consequences, but proposal equivalence remains outside intake authority."
+    },
+    {
+      "relationship_id": "relationship.observability-role-state",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-decision-observability",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.role-owned-durable-operational-state",
+        "reference": "proposals/agent-state/role-owned-durable-operational-state/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.role-state-proposal",
+        "evidence.repository-observations"
+      ],
+      "authority_ref": null,
+      "rationale": "The candidate may reference role-owned continuation state while adding decision observations that the current proposal does not own."
+    },
+    {
+      "relationship_id": "relationship.observability-wind-walker",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-decision-observability",
+      "target": {
+        "kind": "contract",
+        "id": "work-engine.contract.wind-walker",
+        "reference": "skills/wind-walker/SKILL.md"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.wind-walker-contract",
+        "evidence.repository-observations"
+      ],
+      "authority_ref": null,
+      "rationale": "Wind Walker is the likely consumer and decision contract, but formation must decide whether its projection or a host capability owns the observation surface."
+    },
+    {
+      "relationship_id": "relationship.observability-contains-outcome",
+      "type": "contains_independent_candidate",
+      "source_claim_id": "claim.context-decision-observability",
+      "target": {
+        "kind": "claim",
+        "id": "claim.context-reset-outcome-evidence",
+        "reference": "this intake assessment"
+      },
+      "status": "adjudicated",
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations"
+      ],
+      "authority_ref": "evidence.intake-authority",
+      "rationale": "The authorized intake distinguishes live decision support from research retention because their consumers, authority, sensitivity, and lifecycle are independently decidable."
+    },
+    {
+      "relationship_id": "relationship.outcome-raw-archive",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-reset-outcome-evidence",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.raw-agent-execution-evidence-archive",
+        "reference": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.raw-execution-archive-proposal",
+        "evidence.repository-observations"
+      ],
+      "authority_ref": null,
+      "rationale": "The archive may supply forensic inputs, but compact reset episodes, metrics, and later research judgments remain a distinct possible consequence."
+    },
+    {
+      "relationship_id": "relationship.capability-local-codex",
+      "type": "apparently_implemented_by",
+      "source_claim_id": "claim.context-replacement-capability",
+      "target": {
+        "kind": "implementation",
+        "id": "codex-cli.context-window-controls",
+        "reference": "effective local tool surface under codex-cli 0.149.1"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.repository-observations"
+      ],
+      "authority_ref": null,
+      "rationale": "The active environment exposes new_context and get_context_remaining, but this intake does not generalize that observation to every agent environment."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim.continuation-safety",
+      "revision": 1,
+      "source_range": {
+        "line_start": 125,
+        "line_end": 163,
+        "content_sha256": "6eb05764a714b3606e24188432b4f9d46dc71b98943c47b04e7d21e3556742da"
+      },
+      "statement": "Context replacement is valid only after every continuation-relevant consequence has a durable owner or reference.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "represented_by_proposal",
+        "status": "nominated",
+        "rationale": "The safety invariant is canonical in Wind Walker and neighboring recovery meaning is formed in the durable-operational-state proposal; equivalence still requires the owning proposal authority.",
+        "authority_ref": null
+      },
+      "uncertainty": [
+        "Role-specific continuation completeness is not implemented uniformly.",
+        "The durable-operational-state proposal may not represent every semantic checkpoint consequence in the source."
+      ],
+      "evidence_refs": [
+        "evidence.wind-walker-contract",
+        "evidence.role-state-proposal",
+        "evidence.prior-reconciliation"
+      ],
+      "relationship_refs": [
+        "relationship.safety-role-state"
+      ],
+      "candidate": null
+    },
+    {
+      "claim_id": "claim.context-decision-observability",
+      "revision": 1,
+      "source_range": {
+        "line_start": 572,
+        "line_end": 858,
+        "content_sha256": "37ffc3baf39873b51966873b391d63dd57d2536a5683b55a8876605cdefc5d0a"
+      },
+      "statement": "Expose continuation-completeness, active-context pressure, checkpoint growth, window age, and rehydration-cost evidence so Wind Walker can judge reset benefit without weakening reset safety.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "The authorized intake found an independently decidable missing consequence not owned by current Wind Walker, durable-state, telemetry, or archive machinery.",
+        "authority_ref": "evidence.intake-authority"
+      },
+      "uncertainty": [
+        "The host surface for invocation-effective capacity and window identity is not yet established.",
+        "The first role-specific continuation projection and permanent semantic owner remain unsettled.",
+        "Rehydration footprint may be estimated rather than observed in the first version."
+      ],
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations",
+        "evidence.wind-walker-contract",
+        "evidence.role-state-proposal",
+        "evidence.prior-reconciliation"
+      ],
+      "relationship_refs": [
+        "relationship.observability-role-state",
+        "relationship.observability-wind-walker",
+        "relationship.observability-contains-outcome"
+      ],
+      "candidate": {
+        "meaning": "Provide a provenance-bearing, model-facing context-decision observation packet that keeps continuation safety separate from evidence-guided replacement benefit.",
+        "boundary": "Runtime-effective context pressure, window identity and age, references to role-owned continuation checkpoints, post-checkpoint growth, smallest-sufficient rehydration footprint, and separate automatic-compaction state; excludes fixed thresholds, automatic completeness proof, role-state ownership, and raw-trace storage.",
+        "placement_hypotheses": [
+          "A host-provided context observability capability consumed by Wind Walker.",
+          "A role-scoped projection composed from runtime metrics and role-owned durable state.",
+          "A narrow active-slice-builder adapter used to test the general contract before cross-role placement."
+        ],
+        "evidence_still_needed": [
+          "Verify the installed host can project active context occupancy, invocation-effective hard limit, automatic-compaction state, and context-window identity together.",
+          "Bind one real role-specific continuation checkpoint and measure the smallest sufficient rehydration manifest.",
+          "Exercise retention and intentional replacement without losing an unresolved obligation or reconstructing already durable meaning."
+        ],
+        "unresolved_decisions": [
+          "Whether the first delivery should target only active slice builders.",
+          "Whether the observation packet is owned by the host adapter or by a reusable Work Engine projection contract."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.context-reset-outcome-evidence",
+      "revision": 1,
+      "source_range": {
+        "line_start": 859,
+        "line_end": 912,
+        "content_sha256": "a9d2a3b1492c1c9058d73da3189b026b242d055f92fcb43359ac63f597b9e0d2"
+      },
+      "statement": "Record attributed context-retention and replacement decisions with later resource, reorientation, correctness, and review outcomes so future policy can be evidence-calibrated.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "The authorized intake found a separate research-evidence consequence whose consumer and lifecycle differ from live decision support.",
+        "authority_ref": "evidence.intake-authority"
+      },
+      "uncertainty": [
+        "Formation must decide whether this candidate should follow rather than accompany live observability.",
+        "The join between reset episodes, raw traces, compact metrics, and later defects or review findings remains unformed.",
+        "No current evidence supports a deterministic reset threshold or causal policy."
+      ],
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations",
+        "evidence.raw-execution-archive-proposal"
+      ],
+      "relationship_refs": [
+        "relationship.observability-contains-outcome",
+        "relationship.outcome-raw-archive"
+      ],
+      "candidate": {
+        "meaning": "Preserve attributed context-lifetime decision episodes and later outcomes so authorized research can compare retention, intentional replacement, and worker replacement without converting observations into policy.",
+        "boundary": "Reset-event and window lineage, decision-evidence references, selected route, rehydration work, token and latency observations, correctness and review outcomes, and explicit unavailable measurements; excludes raw-trace ownership, operational authority, fixed thresholds, and causal conclusions inferred from persistence.",
+        "placement_hypotheses": [
+          "A compact metrics and episode profile neighboring the raw execution evidence archive.",
+          "An empirical-agent-research profile that references host context events and stronger outcome owners.",
+          "A deferred extension after live context-decision observability establishes stable identities."
+        ],
+        "evidence_still_needed": [
+          "Inventory current reset, compaction, context-window, token, and review-outcome identities available from a real slice.",
+          "Demonstrate one lossless join from a replacement decision to rehydration work and a later outcome without making the archive operational state.",
+          "Define sensitivity and retention consequences for model-visible context evidence."
+        ],
+        "unresolved_decisions": [
+          "Whether this should form now or remain a downstream candidate of live observability.",
+          "Which metrics owner retains compact reset episodes while the raw archive retains forensic bytes."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.context-replacement-capability",
+      "revision": 1,
+      "source_range": {
+        "line_start": 1004,
+        "line_end": 1123,
+        "content_sha256": "0c1de2a3dc3e80ef50897209f3a4fd099cd22a2af9120f10d0b1c6b0965405c6"
+      },
+      "statement": "Determine whether the effective Codex environment exposes same-lineage no-summary context replacement to model workers.",
+      "statement_kind": "open_question",
+      "disposition": {
+        "state": "apparently_implemented",
+        "status": "nominated",
+        "rationale": "The active environment exposes new_context and get_context_remaining, but the observation is not generalized or accepted as an implementation decision.",
+        "authority_ref": null
+      },
+      "uncertainty": [
+        "Availability may differ for other workers, subagents, models, configurations, or Codex revisions.",
+        "The live probe did not intentionally destroy this context merely to test lineage preservation."
+      ],
+      "evidence_refs": [
+        "evidence.repository-observations"
+      ],
+      "relationship_refs": [
+        "relationship.capability-local-codex"
+      ],
+      "candidate": null
+    }
+  ],
+  "proposal_refs": [
+    {
+      "proposal_id": "work-engine.role-owned-durable-operational-state",
+      "path": "../../../proposals/agent-state/role-owned-durable-operational-state/packet.json",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21"
+    },
+    {
+      "proposal_id": "work-engine.raw-agent-execution-evidence-archive",
+      "path": "../../../proposals/empirical-agent-research/raw-agent-execution-evidence-archive/packet.json",
+      "revision": "f6bbdcd7f1082ab542d116e4a867ad21dd645b21"
+    }
+  ],
+  "non_authorization": {
+    "cleanup_authorized": false,
+    "implementation_authorized": false,
+    "proposal_accepted": false,
+    "permanent_placement_settled": false,
+    "roadmap_priority_changed": false
+  }
+}

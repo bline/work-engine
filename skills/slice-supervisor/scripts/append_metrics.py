@@ -27,6 +27,10 @@ PROVIDER_RESOLVER = importlib.util.module_from_spec(RESOLVER_SPEC)
 RESOLVER_SPEC.loader.exec_module(PROVIDER_RESOLVER)
 
 
+CURRENT_SCHEMA_VERSION = 5
+SUPPORTED_SCHEMA_VERSIONS = frozenset(range(1, CURRENT_SCHEMA_VERSION + 1))
+REVIEW_SELECTION_MIN_SCHEMA_VERSION = 5
+
 REQUIRED_TYPES = {
     "schema_version": int,
     "run_id": str,
@@ -105,8 +109,9 @@ def validate(record: Any) -> dict[str, Any]:
             fail(f"{key} must be {expected.__name__}")
     if "stop_reason" not in record or not isinstance(record["stop_reason"], (str, type(None))):
         fail("stop_reason must be a string or null")
-    if record["schema_version"] not in {1, 2, 3, 4}:
-        fail("schema_version must be 1, 2, 3, or 4")
+    if record["schema_version"] not in SUPPORTED_SCHEMA_VERSIONS:
+        supported = ", ".join(str(version) for version in sorted(SUPPORTED_SCHEMA_VERSIONS))
+        fail(f"schema_version must be one of: {supported}")
     if record["slice_number"] < 1:
         fail("slice_number must be positive")
     if record["status"] not in {"accepted", "stopped", "failed"}:
@@ -490,6 +495,114 @@ def validate_builder_context(version: int, context: Any) -> None:
         fail(str(error))
 
 
+def validate_review_selection(value: Any, record: dict[str, Any]) -> None:
+    path = "worker_metrics.review_selection"
+    if not isinstance(value, dict):
+        fail(f"{path} must be an object")
+    require_exact_keys(
+        value,
+        {"selection_owner", "state", "state_reason", "subject", "specialists"},
+        path,
+    )
+    if value["selection_owner"] != "slice-supervisor":
+        fail(f"{path}.selection_owner must be slice-supervisor")
+
+    state = value["state"]
+    if state not in {"not_reached", "undecided", "decided"}:
+        fail(f"{path}.state must be decided, undecided, or not_reached")
+    if record["status"] == "accepted" and state != "decided":
+        fail(f"{path}.state must be decided for an accepted receipt")
+    if state != "decided":
+        if (
+            not isinstance(value["state_reason"], str)
+            or not value["state_reason"].strip()
+        ):
+            fail(f"{path}.state_reason must explain why selection was not decided")
+    elif value["state_reason"] is not None:
+        fail(f"{path}.state_reason must be null when selection was decided")
+
+    if state == "not_reached":
+        if value["subject"] is not None or value["specialists"] != []:
+            fail(f"{path} not_reached state cannot contain a subject or specialists")
+        return
+
+    subject = value["subject"]
+    if not isinstance(subject, dict):
+        fail(f"{path}.subject must be an object")
+    require_exact_keys(subject, {"revision", "references"}, f"{path}.subject")
+    if not isinstance(subject["revision"], str) or not subject["revision"].strip():
+        fail(f"{path}.subject.revision must be a nonempty string")
+    references = subject["references"]
+    if not isinstance(references, list) or not references or not all(
+        isinstance(reference, str) and reference.strip() for reference in references
+    ):
+        fail(f"{path}.subject.references must contain nonempty strings")
+
+    specialists = value["specialists"]
+    if state == "undecided":
+        if specialists != []:
+            fail(f"{path} undecided state cannot contain specialist dispositions")
+        return
+    if not isinstance(specialists, list) or not specialists:
+        fail(f"{path}.specialists must be a nonempty array")
+    entry_fields = {
+        "skill", "selection", "selection_reason", "execution", "applicability",
+        "result_ref", "finding_ids", "unresolved_finding_ids",
+    }
+    seen: set[str] = set()
+    for index, entry in enumerate(specialists):
+        entry_path = f"{path}.specialists[{index}]"
+        if not isinstance(entry, dict):
+            fail(f"{entry_path} must be an object")
+        require_exact_keys(entry, entry_fields, entry_path)
+        for field in ("skill", "selection_reason"):
+            if not isinstance(entry[field], str) or not entry[field].strip():
+                fail(f"{entry_path}.{field} must be a nonempty string")
+        if entry["skill"] in seen:
+            fail(f"{path}.specialists must contain unique skills")
+        seen.add(entry["skill"])
+        for field in ("finding_ids", "unresolved_finding_ids"):
+            identifiers = entry[field]
+            if not isinstance(identifiers, list) or not all(
+                isinstance(identifier, str) and identifier.strip()
+                for identifier in identifiers
+            ) or len(identifiers) != len(set(identifiers)):
+                fail(f"{entry_path}.{field} must contain unique nonempty strings")
+        if not set(entry["unresolved_finding_ids"]).issubset(entry["finding_ids"]):
+            fail(f"{entry_path}.unresolved_finding_ids must be a subset of finding_ids")
+
+        if entry["selection"] == "omitted":
+            if (
+                entry["execution"] != "not_run"
+                or entry["applicability"] is not None
+                or entry["result_ref"] is not None
+                or entry["finding_ids"]
+            ):
+                fail(f"{entry_path} omitted selection must not contain review execution")
+            continue
+        if entry["selection"] != "selected":
+            fail(f"{entry_path}.selection must be selected or omitted")
+        if entry["execution"] == "completed":
+            if entry["applicability"] not in {"applicable", "omitted"}:
+                fail(f"{entry_path}.applicability must be applicable or omitted")
+            if not isinstance(entry["result_ref"], str) or not entry["result_ref"].strip():
+                fail(f"{entry_path}.result_ref must bind the completed result")
+            if entry["applicability"] == "omitted" and entry["finding_ids"]:
+                fail(f"{entry_path} omitted applicability cannot contain findings")
+        elif entry["execution"] in {"failed", "unavailable"}:
+            if entry["applicability"] is not None or entry["finding_ids"]:
+                fail(f"{entry_path} incomplete execution cannot claim applicability or findings")
+            if entry["result_ref"] is not None and (
+                not isinstance(entry["result_ref"], str) or not entry["result_ref"].strip()
+            ):
+                fail(f"{entry_path}.result_ref must be a nonempty string or null")
+        else:
+            fail(f"{entry_path}.execution is invalid for a selected specialist")
+
+    if "agent-instruction-review" not in seen:
+        fail(f"{path} must disposition agent-instruction-review exactly once")
+
+
 def validate_evidence_provenance(record: dict[str, Any]) -> None:
     metrics = record["worker_metrics"]
     required = {
@@ -508,6 +621,16 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
     for key, expected in required.items():
         if key not in metrics or not isinstance(metrics[key], expected):
             fail(f"worker_metrics.{key} must be {expected.__name__}")
+    if (
+        record["schema_version"] >= REVIEW_SELECTION_MIN_SCHEMA_VERSION
+        and "review_selection" not in metrics
+    ):
+        fail(
+            f"schema version {REVIEW_SELECTION_MIN_SCHEMA_VERSION} requires "
+            "worker_metrics.review_selection"
+        )
+    if "review_selection" in metrics:
+        validate_review_selection(metrics["review_selection"], record)
 
     config_version = record.get("engine_config", {}).get("version")
     configured_roles = None
@@ -813,8 +936,8 @@ def load_record(args: argparse.Namespace) -> dict[str, Any]:
 
 def validate_current_write(record: dict[str, Any]) -> dict[str, Any]:
     validate(record)
-    if record["schema_version"] != 4:
-        fail("new durable receipts require schema_version 4")
+    if record["schema_version"] != CURRENT_SCHEMA_VERSION:
+        fail(f"new durable receipts require schema_version {CURRENT_SCHEMA_VERSION}")
     continuation = record.get("continuation_context")
     resumable = (
         record["status"] == "accepted"

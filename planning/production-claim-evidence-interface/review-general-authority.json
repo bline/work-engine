@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "profile": "independent-adversarial-review-episode-v1",
+  "grant_id": "claim-evidence-general-review-generation-1",
+  "identity": {
+    "run_id": "3876601b-c43d-44c6-94a4-e22646d64257",
+    "slice_number": 1,
+    "attempt_id": "attempt-3",
+    "plan_version": "planning-v1",
+    "review_obligation_id": "review-general-1",
+    "review_episode_id": "claim-evidence-general-46ba7c3af6fe94e4c8eaec5112b1ce65ce85e10d"
+  },
+  "source": {
+    "owner": "slice-supervisor",
+    "reference": "refs/work-engine/supervisor-receipts/5dec1d99e961630f52752cbe348448c4586b201c14ba85fe4b0ca1414dd3d35f",
+    "revision": "f30b3553000b2b4b467a44114cdf98d782753064",
+    "integrity_sha256": "040f4cf2a521232b015188d31427200daa8e39b6880a29e997051c2aac5ca507",
+    "freshness_rule": "exact_revision"
+  },
+  "writer": {
+    "logical_actor_id": "/root/claim_interface_s1/claim_evidence_general_review",
+    "provider": "codex",
+    "generation": 1,
+    "runtime_session_ref": {
+      "owner": "codex-collaboration",
+      "reference": "/root/claim_interface_s1/claim_evidence_general_review",
+      "revision": "generation-1",
+      "integrity_sha256": "8bbbf0d49889f027eb7db984a0236257132914bfa76e3845b05ae567d3a789b4",
+      "freshness_rule": "exact_runtime_target"
+    }
+  },
+  "readers": ["adversarial_reviewer", "coordinating_builder", "slice_supervisor"],
+  "initial_subject": [
+    {
+      "owner": "slice-checkpoint",
+      "reference": "refs/work-engine/checkpoints/3876601b-c43d-44c6-94a4-e22646d64257/slice-1/candidate-1",
+      "revision": "46ba7c3af6fe94e4c8eaec5112b1ce65ce85e10d",
+      "integrity_sha256": "69f56a843ed887574ac598374fe56e4ffc9299409f099841dd4573fa22433919",
+      "freshness_rule": "immutable_candidate"
+    }
+  ],
+  "expires_at": null,
+  "predecessor_revision": null
+}

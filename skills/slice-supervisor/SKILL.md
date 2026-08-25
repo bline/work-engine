@@ -5,9 +5,22 @@ description: Run a declaratively configured, evidence-driven work campaign throu
 
 # Slice Supervisor
 
-Supervise the work engine; do not perform campaign work. Keep the parent context limited to the effective campaign configuration, lifecycle state, concise receipts, limits, and continuation decisions. Delegate inspection, reasoning, mutation, and validation to one persistent configured builder per slice.
+Supervise the work engine; do not perform campaign work. Keep the parent context
+limited to the effective campaign configuration, lifecycle state, concise
+receipts, review-selection projections, limits, and continuation decisions.
+Delegate repository inspection, implementation reasoning, mutation, validation
+execution, and selected-review execution to one persistent configured builder
+per slice. The supervisor owns specialist selection and acceptance; it does not
+diagnose the review subject.
 
-Before starting, read [references/work-engine-config.md](references/work-engine-config.md) and [references/receipt-schema.md](references/receipt-schema.md) completely. Then read the configured builder skill, the decision policy it owns, and its receipt contract completely. The builder must satisfy the adapter contract in the configuration reference; stop on an unsupported capability instead of silently weakening the campaign.
+Before starting, read
+[references/work-engine-config.md](references/work-engine-config.md),
+[references/review-selection.md](references/review-selection.md), and
+[references/receipt-schema.md](references/receipt-schema.md) completely. Then
+read the configured builder skill, the decision policy it owns, and its receipt
+contract completely. The builder must satisfy the adapter contract in the
+configuration reference; stop on an unsupported capability instead of silently
+weakening the campaign.
 
 ## Preserve invariants; adapt the route
 
@@ -104,7 +117,46 @@ Otherwise keep planning when another bounded evidence step can resolve the issue
 
 Send the accepted slice and semantic-path certificate verbatim to the same builder. Require it to prove the smallest vertical semantic path before broad implementation, execute only the accepted boundary, perform inexpensive configured checks, and stop immediately before the final gate with a concise implementation receipt: outputs or changed files, baseline overlaps, vertical and targeted checks, unresolved concerns, and gate readiness. A missing owner or consumer invalidates the boundary and returns to planning with a route-revision record; it is not an ordinary implementation repair or an automatic terminal stop.
 
-Move to `awaiting_gate` only when execution is complete. Then authorize the builder's configured validation profile. For proportional profiles, require the builder to justify check breadth and review independence from consequence, reversibility, uncertainty, changed boundaries, and repository instructions. For full profiles, execute every configured gate. Require valid in-scope findings to be corrected and affected checks repeated; run a final broad gate only when configured or warranted by the resulting risk.
+Move to `awaiting_gate` only when execution is complete. Authorize the
+deterministic portion of the configured validation profile first. Require the
+builder to run its ordered deterministic manifest and repair failures before
+model review. When those checks are ready, require the builder's bounded
+review-selection projection: candidate-binding inputs, integrity-bound artifact
+references, task-owned artifact roles, changed contract consequences, the
+`present`/`absent`/`uncertain` agent-instruction surface assessment, and material
+uncertainty. If that projection is missing or insufficient, return it to the
+builder; do not inspect source or diffs in the supervisor.
+
+Create or identify the immutable review candidate, then select specialist
+perspectives under
+[the review-selection contract](references/review-selection.md). The supervisor
+owns this selection. The builder may expose consequences and uncertainty but
+must not add, omit, or replace specialists. Give `agent-instruction-review` one
+explicit disposition for every candidate: select it for a present or uncertain
+agent-instruction consequence, or record why an observed absence makes it
+inapplicable to selection. Selection does not declare the specialist itself
+applicable.
+
+Send the exact selection plan and subject binding to the same builder. The
+builder executes each selected specialist through the configured review
+provider, preserves separate provider and specialist provenance, and returns
+each attributed result. A selected `agent-instruction-review` instance follows
+its own finding contract and may return `applicable` or `omitted`. The builder
+evaluates findings and performs authorized remediation; it cannot disposition
+the supervisor's selection. Reconsider the panel only when a new immutable
+candidate changes the projected consequences or review premise.
+
+For proportional profiles, require the builder to justify deterministic check
+breadth while the supervisor selects review independence from consequence,
+reversibility, uncertainty, changed boundaries, and repository instructions.
+For full profiles, execute every configured deterministic gate before initial
+review and preserve its configured fresh-review requirement in the selection
+plan. Require valid in-scope findings to be corrected and affected checks
+repeated. A repair creates a new immutable candidate; return its exact delta to
+the same retained reviewer and reconsider selection only when the projected
+consequences or review premise changed. Run a final broad deterministic gate
+only when configured or warranted by the resulting risk, then bind the terminal
+gate consequence to the final candidate and review outcomes.
 
 When `approval.uninterrupted_after_plan` is true, execution and gate may share one follow-up. Explicit plan acceptance, phase accounting, configured validation, and both receipts remain mandatory.
 
@@ -166,7 +218,21 @@ pending obligation and applicable findings.
 
 ## Accept and record a slice
 
-Require the configured builder's `audit_receipt` plus its compact `handoff_receipt`. Accept only after every configured blocking gate passes, blocking findings are resolved, and unresolved issues are truthfully classified. Completed work with pending validation is not accepted. Retain the handoff only for relevant future builder context; never use it as the durable record.
+Require the configured builder's `audit_receipt` plus its compact
+`handoff_receipt`. Verify that `worker_metrics.review_selection` reproduces the
+supervisor's exact state. A stopped or failed slice that ended before candidate
+creation records selection as `not_reached` without inventing a subject or
+specialist disposition. If a candidate exists but terminalization occurs before
+selection is decided, record `undecided` with that subject and the reason, without
+inventing dispositions. A decided selection reproduces the exact subject and
+plan, gives `agent-instruction-review` exactly one selected-or-omitted
+disposition, and records every selected specialist's execution and applicability
+outcome. Accept only after every configured blocking gate passes, every selected
+required review completed, blocking findings are resolved, and unresolved
+issues are truthfully classified. Accepted work with selection other than
+`decided`, a missing selection disposition, pending selected review, or pending
+validation is invalid. Retain the handoff only for relevant future builder
+context; never use it as the durable record.
 
 When the campaign uses Git-backed slice checkpoints, request a candidate only
 after the deterministic gate is ready for review. Give the checkpoint adapter
@@ -221,7 +287,7 @@ production command so authoritative assembly cannot be omitted:
 ```bash
 python3 skills/slice-supervisor/scripts/finalize_receipt.py \
   --path <configured-metrics-path> \
-  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
   --campaign-preflight-json '<original-successful-preflight-result>' \
   --handoff-receipt-json '<compact-handoff-receipt>' \
@@ -235,7 +301,7 @@ campaign. Before a `created` completion-commit projection can enter that result,
 the finalizer requires the completion adapter to re-establish its Git claims
 read-only; otherwise fabricated adapter-shaped input could become durable
 history. The assembler remains the authoritative projection owner and append
-remains the schema-v4 write, terminal-identity, locking, and durability owner.
+remains the schema-v5 write, terminal-identity, locking, and durability owner.
 For an accepted slice with remaining work, the finalizer validates the handoff
 against the assembled receipt and derives its four nonduplicated semantic
 collections into `continuation_context`. It omits that projection for
@@ -250,12 +316,13 @@ python3 skills/slice-supervisor/scripts/append_metrics.py \
   --path <configured-metrics-path> --record-json '<audit-receipt>'
 ```
 
-The script compatibility-validates the receipt, requires schema version 4 for
+The script compatibility-validates historical receipts and requires schema
+version 5 for
 the new durable write, and atomically rejects an already-durable `run_id` and
 `slice_number` identity while holding the audit append lock. Historical schema
 versions remain readable by the compatibility validator but are not valid
 inputs to this production command. Record the effective engine configuration, placement proof,
-and evidence-routing provenance as required by schema version 4. Preserve
+and evidence-routing provenance as required by schema version 5. Preserve
 unavailable measurements as `null`, zero counts as zero, and flexible
 provider-native metrics inside their namespaced objects. Correct rejected audit
 receipts from actual evidence; never pad them with guesses. Never append the

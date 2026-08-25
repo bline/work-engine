@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.semantic-durability-context-lifetime",
+  "family_id": "work-engine.agent-state",
+  "title": "Semantic Durability and Context-Lifetime Judgment",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "idea",
+      "path": "../../../ideas/01-semantic-durability-and-context-lifetime-judgment.md"
+    },
+    {
+      "kind": "intake_record",
+      "path": "../../../ideas/intake/semantic-durability-context-lifetime/record.json"
+    },
+    {
+      "kind": "intake_assessment",
+      "path": "../../../ideas/intake/semantic-durability-context-lifetime/assessment.md"
+    },
+    {
+      "kind": "intake_projection",
+      "path": "../../../ideas/intake/semantic-durability-context-lifetime/projection.json"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "formation-evidence.md"
+    },
+    {
+      "kind": "contract",
+      "path": "../../../skills/wind-walker/SKILL.md"
+    },
+    {
+      "kind": "related_proposal",
+      "path": "../context-decision-observability/proposal.md"
+    },
+    {
+      "kind": "related_proposal",
+      "path": "../role-owned-durable-operational-state/proposal.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The general semantic-durability and context-lifetime consequence probably belongs in Work Engine governing design with a compact Wind Walker runtime projection. Role and domain owners retain mandatory continuation state, context-decision observability supplies evidence without owning judgment, and the exact canonical-versus-runtime text split remains provisional pending bounded use and instruction review."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Bounded use shows that the doctrine causes per-turn state inventory, defensive preservation, or reset anxiety instead of keeping durability management low-salience.",
+      "An exercised role cannot distinguish mandatory correctness, authority, obligation, or effect state from economically useful but reconstructable working meaning without weakening recovery safety.",
+      "The context-decision observation surface cannot expose enough truthful capacity, lifecycle, checkpoint, or rehydration evidence for situated judgment without manufacturing precision.",
+      "A human-facing interaction shows that unresolved human meaning cannot remain faithfully available or be externalized without changing authority, privacy, or interaction semantics.",
+      "Provider or host behavior materially changes the operational distinction among retained context, automatic compaction, intentional replacement, and worker replacement.",
+      "Agent-instruction review shows that the formed contract creates an exact route, threshold, cadence, or loading placement not causally required by the protected consequence."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.context-decision-observability",
+      "rationale": "The approved observation proposal supplies bounded pressure, lifecycle, checkpoint, and rehydration evidence for this judgment while explicitly not owning safety, benefit judgment, or replacement authority.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "Role-owned state protects consequences whose loss would invalidate continuation; this proposal governs economic treatment of remaining working meaning and requires the mandatory boundary not to expand into continuous preservation of everything costly to reconstruct.",
+      "causal": false
+    }
+  ]
+}

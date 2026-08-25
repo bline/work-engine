@@ -42,6 +42,10 @@ The capability would:
   context without contaminating initial judgments with other conclusions;
 - preserve continuation context when useful while labeling it as continuation
   rather than another fresh review;
+- treat a preferred external review provider as best effort unless the exact
+  provider or independent-review evidence is an explicit requirement, and use
+  a fresh Codex Sol same-model fallback when authorized provider unavailability
+  would otherwise strand an advisory review obligation;
 - ensure the authoritative review artifact accounts for every material finding
   and conflict produced by selected review episodes with an attributed,
   profile-defined disposition and reason, without voting or averaging them
@@ -84,6 +88,26 @@ same fresh-perspective claim.
 
 Required property: provenance states the actual subject, evidence, context
 isolation, inheritance, and limitations supplied to each review episode.
+
+### Provider fallback preserves the evidence distinction
+
+Reason: external-provider quota, infrastructure, or session availability should
+not stop otherwise valid development when the selected review is advisory and
+an authorized fresh same-model perspective can still reduce risk. But replacing
+an independent reviewer with the authoring model does not preserve independent
+evidence.
+
+Required property: when neither an exact provider nor independent-review
+evidence is a hard requirement, the coordinator may treat Claude execution as
+best effort and fall back after bounded recovery to a fresh Codex Sol reviewer.
+The coordinator selects reasoning effort from the subject's consequence,
+uncertainty, and review difficulty within configured limits. Provenance records
+the failed provider attempt, fallback reason, actual model and effort, fresh
+context boundary, and `accepted_same_model_review` evidence class. The result
+must not claim cross-provider, cross-model, statistically independent, or
+independent-reasoning evidence. When independent review or an exact provider is
+required, this fallback cannot satisfy the requirement; the obligation remains
+blocked or requires an authorized configuration amendment.
 
 ### Omission and failure remain truthful
 
@@ -184,6 +208,10 @@ judgment or authority.
   coordinator acquiring them.
 - Exercise implementation review later to test genuine coordination reuse
   rather than designing it from analogy.
+- Exercise Claude quota or infrastructure unavailability in both an advisory
+  review and an explicitly independent-review requirement. Verify that the
+  advisory case continues through fresh Codex Sol review with truthful
+  provenance, while the independent case remains unsatisfied.
 
 ## Authority
 
@@ -198,5 +226,6 @@ named owners.
 If later accepted and implemented, a fresh decision owner can see why a panel
 was selected, what actually happened in each review episode, what each
 perspective established, what was omitted or failed, where findings conflict,
-how synthesis used them, and what remains unresolved without treating review
-coordination as the decision itself.
+how synthesis used them, whether a provider fallback changed the evidence
+class, and what remains unresolved without treating review coordination as the
+decision itself.

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.context-decision-observability",
+  "family_id": "work-engine.agent-state",
+  "title": "Context-Decision Observability",
+  "lifecycle_state": "decided",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "idea",
+      "path": "../../../ideas/state-complete-context-reset-for-non-human-facing-agents.md"
+    },
+    {
+      "kind": "intake_record",
+      "path": "../../../ideas/intake/state-complete-context-reset/record.json"
+    },
+    {
+      "kind": "intake_assessment",
+      "path": "../../../ideas/intake/state-complete-context-reset/assessment.md"
+    },
+    {
+      "kind": "intake_projection",
+      "path": "../../../ideas/intake/state-complete-context-reset/projection.json"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "formation-evidence.md"
+    },
+    {
+      "kind": "contract",
+      "path": "../../../skills/wind-walker/SKILL.md"
+    },
+    {
+      "kind": "related_proposal",
+      "path": "../role-owned-durable-operational-state/proposal.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The approved candidate belongs provisionally in work-engine.agent-state as a distributed observation contract: authenticated runtime or host adapters own direct context facts, stronger role or domain owners retain checkpoint, attestation, manifest, decision, and transition meaning, and a consumer-scoped projection composes only authorized compatible observations. The physical composition seam remains conditional among host, shared Work Engine access-plane, and role-local adapters pending bounded evidence."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "The installed host cannot expose invocation-effective context occupancy, effective hard limit, automatic-compaction state, or stable context-window identity with truthful provenance.",
+      "A role-specific continuation checkpoint cannot be referenced without copying or weakening its stronger semantic owner.",
+      "Measured rehydration work cannot be bounded or estimated accurately enough to inform model judgment.",
+      "An exercised role shows that the proposed common packet hides material role-specific distinctions or has no reusable cross-role consequence.",
+      "Context-window or checkpoint visibility creates a security, privacy, or independent-review boundary that the proposed composition cannot preserve.",
+      "Host or provider evolution collapses or materially changes the distinction among hard context capacity, automatic compaction, intentional replacement, and worker replacement.",
+      "A real replacement episode shows that the packet encourages reset while continuation still depends on context-only meaning or omits evidence needed to judge replacement benefit.",
+      "A source, consumer, or rehydration reference cannot be authenticated and attenuated without exposing bearer-like identifiers or importing unauthorized instruction content.",
+      "No stronger workflow owner can retain the decision, grant, transition, manifest, measurement, and protected consequence join required by an authorized evaluation."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized architecture owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "related_to",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "The neighboring candidate is a likely owner for checkpoints and durable decision episodes, but this proposal requires only minimal stronger-owner interfaces and does not depend on accepting the neighboring proposal's broader role-state architecture.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.raw-agent-execution-evidence-archive",
+      "rationale": "A forensic archive may supply later episode evidence, while this candidate owns only compact live decision observations and must not make raw traces a continuation dependency.",
+      "causal": false
+    }
+  ]
+}

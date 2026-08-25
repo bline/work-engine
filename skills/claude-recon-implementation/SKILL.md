@@ -174,14 +174,28 @@ The builder owns ordinary test execution through its deterministic gate. Claude 
 If that gate fails and Codex needs diagnostic help, invoke a read-only Claude process with only the failing check identity and exit status, bounded error excerpt, isolation result, task-owned files, accepted placement certificate, and likely diagnostic ranges. Require the smallest likely root-failure set, environment-versus-product assessment, whether task-owned files are in the call path, and exact additional ranges. Do not request adversarial review while deterministic checks are failing.
 
 After required deterministic commands pass, launch one fresh read-only Claude
-reviewer when configured or warranted by medium/high risk, consequential
-behavior, cross-boundary state, persistence/security/ownership effects, or
-material uncertainty. This initial review entry must not inherit a retrieval,
-diagnosis, placement, or builder session. Pass the accepted slice and placement
+reviewer for each perspective selected by the role that owns review selection.
+In a slice-supervisor campaign, execute only the supervisor's exact selection
+plan; medium/high risk, consequential behavior, cross-boundary state,
+persistence/security/ownership effects, and material uncertainty are selection
+inputs, not permission for the builder or this adapter to add a reviewer. In
+standalone use, the caller retains selection judgment under its governing
+contract. This initial review entry must not inherit a retrieval, diagnosis,
+placement, or builder session. Pass the accepted slice and placement
 certificate, invariants, task-owned manifest and overlaps, concise completion
 notes, and compact deterministic result. Claude must not edit files, write
 patches, rerun tests, regenerate assets, update snapshots, or otherwise mutate
 repository state.
+
+For a supervisor-selected semantic specialist, also pass the exact selection,
+immutable subject binding, and complete repository-local specialist contract.
+Require the provider result to preserve that contract's applicability,
+findings, limitations, and advisory authority rather than collapsing it into
+this adapter's generic implementation verdict. A selected
+`agent-instruction-review` reads its `SKILL.md` and finding contract, returns a
+revision-bound `applicable` or `omitted` result, and remains read-only. Claude is
+the independent-review provider in that execution; the specialist still owns
+the diagnosis and finding shape.
 
 ### Retain the reviewer through remediation
 

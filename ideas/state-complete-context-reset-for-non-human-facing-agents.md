@@ -646,10 +646,31 @@ relevant to whether old working memory is more burdensome than useful.
 #### Context pressure
 
 - current context occupancy in tokens;
-- model context-window capacity where available;
+- effective hard context-window capacity for the actual agent invocation;
 - proportion of the window occupied;
 - context occupancy at the latest state-complete checkpoint; and
 - post-checkpoint context growth.
+
+Current Codex already computes the two primary observations needed for this
+pressure signal. Its `ContextWindowTokenStatus` carries
+`active_context_tokens` and `full_context_window_limit`, and treats the full
+window as a hard cap independently of the configured auto-compaction scope.
+It also tracks the auto-compaction scope, limit, and remaining budget
+separately. ([Codex context-window source][2])
+
+The hard limit needed by Wind Walker is the **effective limit for the actual
+agent invocation**, not necessarily the upstream model's advertised maximum.
+Codex resolves model metadata and applies an `effective_context_window_percent`
+when producing the model-visible limit. The default percentage is currently
+95, but runtime catalog metadata and configuration remain authoritative for the
+invocation. ([Codex effective-limit source][3])
+
+For example, one reported Codex configuration supplied a 372,000-token raw
+catalog window and a 95-percent effective factor, producing a 353,400-token
+effective runtime limit even though the public GPT-5.6 Sol API specification
+advertised a larger upstream window. That observation establishes the need to
+use runtime-effective values; it should not be generalized into a universal
+GPT-5.6 Sol limit. ([Codex issue #31860][4])
 
 #### Context age
 
@@ -693,6 +714,7 @@ same context window:
 
 ```text
 current_context_tokens: 118000
+effective_hard_context_limit_tokens: 353400
 checkpoint_context_tokens: 47000
 post_checkpoint_context_growth: 71000
 estimated_rehydration_tokens: 9000
@@ -708,6 +730,9 @@ The telemetry vocabulary should therefore distinguish at least:
 
 ```text
 current_context_tokens
+effective_hard_context_limit_tokens
+hard_context_tokens_remaining
+hard_context_percent_used
 context_tokens_at_checkpoint
 post_checkpoint_context_growth
 tokens_processed_since_checkpoint
@@ -741,7 +766,8 @@ phase complete does not make its context disposable.
 
 A minimal useful first version would expose four model-facing observations:
 
-1. current context occupancy;
+1. current active-context occupancy and the effective hard limit for this
+   invocation;
 2. tokens and turns since the last context replacement;
 3. the identity and context-token baseline of the latest state-complete
    checkpoint; and
@@ -753,13 +779,24 @@ A more precise packet might be:
 ```yaml
 context_window:
   id: window-7
-  current_tokens:
+  active_context_tokens:
     availability: observed
     value: 118000
-  context_limit_tokens:
+  effective_hard_limit_tokens:
     availability: observed
-    value: 1050000
+    value: 353400
+  hard_tokens_remaining: 235400
+  hard_percent_used: 33.4
   turns_in_window: 31
+
+automatic_context_management:
+  scope: total
+  scope_tokens:
+    availability: observed
+    value: 118000
+  scope_limit:
+    availability: observed
+    value: 334800
 
 continuation_checkpoint:
   id: continuation-checkpoint-42
@@ -775,8 +812,14 @@ rehydration:
   confidence: observed_inputs
 ```
 
-The agent can derive post-checkpoint growth and compare it with rehydration cost
-without the product prescribing a reset threshold.
+The primary runtime observations are `active_context_tokens` and
+`effective_hard_limit_tokens`. Hard remaining capacity and percentage used are
+derived from them. Auto-compaction state remains separate because it describes
+a runtime policy boundary rather than the model's absolute remaining capacity.
+
+The agent can derive hard pressure and post-checkpoint growth, then compare the
+burden of retained context with rehydration cost without the product
+prescribing a reset threshold.
 
 ### 19.7 Current Work Engine Placement and Feasibility
 
@@ -786,6 +829,8 @@ The present Work Engine implementation already has several useful foundations:
   replacement to model judgment;
 - Codex can expose a native new-context capability in the effective agent
   environment;
+- Codex already computes active context occupancy, the invocation's effective
+  hard context-window limit, and separate automatic-compaction state;
 - slice-supervisor telemetry already carries token, turn, and runtime
   measurements, although current-context occupancy may be unavailable;
 - durable live slice state already preserves role identity, phase, pending
@@ -797,8 +842,8 @@ The present Work Engine implementation already has several useful foundations:
 The missing work is primarily an observability and projection layer:
 
 1. bind runtime measurements and reset events to context-window identity;
-2. expose actual context occupancy rather than inferring it from cumulative
-   token usage;
+2. project Codex's active context occupancy and effective hard limit rather than
+   inferring either from cumulative token usage or a theoretical model maximum;
 3. derive a role-specific continuation-completeness projection from existing
    semantic owners;
 4. create an explicit smallest-sufficient rehydration manifest whose footprint
@@ -830,6 +875,20 @@ Reset decisions and outcomes can then be correlated with:
 
 Those observations may improve future judgment and environment design. They do
 not silently redefine the safety invariant or create an automatic reset policy.
+
+Automatic compaction is not the same transition as intentional Wind Walker
+replacement. The effective full window is a hard cap, automatic compaction is a
+runtime policy and recovery mechanism, and `new_context` is an intentional
+no-summary replacement capability. Wind Walker may act before automatic
+context management when continuation is complete and replacement is beneficial;
+reaching a state-complete checkpoint alone does not require reset.
+
+One current Codex report observes that, under the default `Total` scope with no
+explicit limit, deriving auto-compaction at 90 percent of a raw window while
+using 95 percent of that window as the effective hard limit causes compaction at
+approximately 94.7 percent of usable capacity. The source arithmetic supports
+that configuration, but the report is an open issue rather than a universal
+policy guarantee. ([Codex issue #40095][5])
 
 ---
 
@@ -1058,3 +1117,7 @@ So before we even think about submitting a PR, I would have Codex run this very 
 > Check whether installed codex-cli 0.149.0 contains and can enable `Feature::TokenBudget`, whether doing so exposes the direct-model `new_context` tool to normal workers and subagents, and whether a subagent invoking it receives a fresh model-visible context window while preserving the same agent/thread lineage. Do not modify Work Engine.
 
 [1]: https://github.com/openai/codex/pull/27488 "[codex] Add new context window tool by pakrym-oai · Pull Request #27488 · openai/codex · GitHub"
+[2]: https://github.com/openai/codex/blob/main/codex-rs/core/src/session/context_window.rs "Codex context-window token status"
+[3]: https://github.com/openai/codex/blob/main/codex-rs/core/src/session/turn_context.rs "Codex effective context-window calculation"
+[4]: https://github.com/openai/codex/issues/31860 "Observed Codex effective-window configuration"
+[5]: https://github.com/openai/codex/issues/40095 "Reported default auto-compaction threshold relative to usable context"

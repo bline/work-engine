@@ -17,6 +17,15 @@ obligation. Do not pass builder-session history. The reviewer must directly
 read the repository instructions, full `DESIGN.md`, and full `PHILOSOPHY.md`
 before evaluating the change.
 
+When the supervisor selects a semantic specialist, the caller also supplies
+that exact selection and repository-local skill. The fresh reviewer reads and
+follows the selected skill completely in addition to this provider adapter. Do
+not replace its finding contract with the generic verdict below, merge it with
+another specialist, or infer that provider identity owns the specialist's
+judgment. In particular, `agent-instruction-review` must return its own
+revision-bound applicability and evidence-bearing findings or omission; this
+adapter contributes only the configured same-model execution provenance.
+
 For a retained Work Engine review, authority-bound review state is the standard
 path rather than a Claude-only capability. Before spawning the reviewer, the
 caller prepares the exact immutable subject and an episode authority manifest

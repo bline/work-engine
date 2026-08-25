@@ -46,18 +46,22 @@ class ResolveProviderTest(unittest.TestCase):
         self.assertEqual(resolved["repository_evidence"]["provider"], "claude-filesystem")
         self.assertEqual(resolved["independent_review"]["provider"], "claude")
 
-    def test_v2_accepts_exact_same_model_adversarial_review(self) -> None:
-        review = {
-            "provider": "codex",
-            "skill": "codex-adversarial-review",
-            "model": "gpt-5.6-sol",
-            "reasoning_effort": "low",
-            "evidence_class": "accepted_same_model_review",
-            "isolation": "fresh_process",
-        }
-        resolved = RESOLVER.resolve_builder_context(2, {"adversarial_review": review})
-        self.assertEqual(resolved["adversarial_review"], review)
-        self.assertNotIn("independent_review", resolved)
+    def test_v2_accepts_model_selected_same_model_review_effort(self) -> None:
+        for reasoning_effort in ("low", "medium", "high"):
+            review = {
+                "provider": "codex",
+                "skill": "codex-adversarial-review",
+                "model": "gpt-5.6-sol",
+                "reasoning_effort": reasoning_effort,
+                "evidence_class": "accepted_same_model_review",
+                "isolation": "fresh_process",
+            }
+            with self.subTest(reasoning_effort=reasoning_effort):
+                resolved = RESOLVER.resolve_builder_context(
+                    2, {"adversarial_review": review}
+                )
+                self.assertEqual(resolved["adversarial_review"], review)
+                self.assertNotIn("independent_review", resolved)
 
     def test_v2_rejects_two_review_roles_or_false_same_model_provenance(self) -> None:
         valid = {
@@ -71,7 +75,11 @@ class ResolveProviderTest(unittest.TestCase):
         cases = (
             {"independent_review": {}, "adversarial_review": valid},
             {"adversarial_review": {**valid, "model": "another-model"}},
-            {"adversarial_review": {**valid, "reasoning_effort": "high"}},
+            {"adversarial_review": {**valid, "reasoning_effort": ""}},
+            {"adversarial_review": {**valid, "reasoning_effort": 3}},
+            {"adversarial_review": {
+                key: value for key, value in valid.items() if key != "reasoning_effort"
+            }},
             {"adversarial_review": {**valid, "evidence_class": "independent_review"}},
             {"adversarial_review": {**valid, "isolation": "shared_context"}},
         )

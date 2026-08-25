@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "subject": {"candidate": "6f194a19f8a55c66e37c1aa4ad6e9e0ba9083b13", "review_result_ref": "refs/work-engine/independent-review-state/6d098c7d31904886ea21b460f8af8cd0cf2bb60224b19c08e8183a035fd1b1cd", "review_result_revision": "9b6e0f0bb35aca5370030d4af68df799bbd1270d", "review_result_integrity_sha256": "8b2a2119f5ce23ddefb993ff7ad49eba57956e8b71d6e9828bcd2d155194f361"},
+  "dispositions": [
+    {"finding_id": "PCEI-GEN-001", "disposition": "accepted_fixed", "evidence": ["Full closed operation request and exact admitted grant now determine replay digest; authorization precedes replay."], "proof": ["test_idempotency_and_operation_collision"]},
+    {"finding_id": "PCEI-GEN-002", "disposition": "accepted_fixed", "evidence": ["The filesystem adapter serializes reload, validation, mutation, store commit, and projection rebuild with an exclusive lock; readers use a shared lock and canonical digest fence."], "proof": ["test_cli_serializes_concurrent_publications_without_lost_history", "test_projection_queries_preserve_provenance_and_detect_staleness"]},
+    {"finding_id": "PCEI-GEN-003", "disposition": "accepted_fixed", "evidence": ["Every lineage source and target resolves through its claim and must match the authorized request profile and decision scope."], "proof": ["test_cross_profile_lineage_is_rejected"]},
+    {"finding_id": "PCEI-GEN-004", "disposition": "accepted_fixed", "evidence": ["Projection includes admitted authorities and unresolved authority, subject-baseline, evidence, and sensitivity references; all query paths verify the canonical digest and return projection identity."], "proof": ["test_unavailable_is_visible_and_does_not_mean_empty", "test_projection_queries_preserve_provenance_and_detect_staleness"]},
+    {"finding_id": "PCEI-GEN-005", "disposition": "accepted_fixed", "evidence": ["Runtime validation now closes and validates versions, fields, types, enums, SHA-256 syntax, record authorities, and operation receipts; the closed operation schema was added."], "proof": ["test_closed_records_dangling_lineage_and_cycles_are_rejected", "test_scope_integrity_and_unsupported_versions_fail_closed"]},
+    {"finding_id": "PCEI-GEN-006", "disposition": "accepted_fixed", "evidence": ["Stable claim identity is now a versioned SHA-256 over canonical structured namespace, subject kind, and stable subject ID."], "proof": ["test_structured_claim_identity_is_collision_safe"]},
+    {"finding_id": "PCEI-GEN-007", "disposition": "accepted_fixed", "evidence": ["The CLI and core now expose claim/revision resolution, bounded evidence/content discovery, typed transitive lineage traversal, and direct revision or reverse consumer reliance queries."], "proof": ["test_projection_queries_preserve_provenance_and_detect_staleness", "test_plain_revision_predecessor_is_traversable_without_lineage_edge"]},
+    {"finding_id": "PCEI-GEN-008", "disposition": "accepted_fixed", "evidence": ["Canonical validation binds claim and revision actors to typed admitted grants, requires the recorded action permission, binds every operation receipt to a same-authority result of the action's owned type, and requires lineage resource scopes to equal the lineage authority decision scope."], "proof": ["test_only_typed_admitted_authority_can_satisfy_authority_reference", "test_claim_validation_binds_creator_and_create_permission_to_typed_authority", "test_revision_and_receipt_validation_bind_actor_permission_and_result_authority", "test_lineage_validation_binds_authority_decision_scope"]},
+    {"finding_id": "PCEI-GEN-009", "disposition": "accepted_fixed", "evidence": ["Traversal derives typed predecessor relationships from every immutable revision predecessor in both directions, without requiring a separately published lineage edge."], "proof": ["test_plain_revision_predecessor_is_traversable_without_lineage_edge"]},
+    {"finding_id": "PCEI-GEN-010", "disposition": "accepted_fixed", "evidence": ["Claim resolution now attaches the exact typed admitted authority envelope, matching revision resolution and the loaded contract."], "proof": ["test_projection_queries_preserve_provenance_and_detect_staleness"]}
+  ],
+  "rejected_findings": [],
+  "out_of_scope_findings": [],
+  "agent_instruction_review": {
+    "subject": "5cbc0b923990b88a4c8287c15d4e895478ec2d3c",
+    "result_ref": "refs/work-engine/independent-review-state/1c5b821b22a987e08a84696ec19e4749000c64faaad0b2432dc6b41594c00b40@6b8d6b03c4799fdf42a48dfab0cc014c0788c9b9",
+    "result_integrity_sha256": "bb816e42a0f98ab424dc39dbbb3ebe0e975cecb797121e3ab91629e81114fd8e",
+    "dispositions": [
+      {"finding_id": "AIR-C6-001", "disposition": "accepted_fixed", "evidence": ["Shared doctrine now requires trusted admission separate from publication while identifying init --authority as current filesystem-adapter behavior and limitation rather than a universal frozen-grant lifecycle."], "proof": ["skill-package-validation"]},
+      {"finding_id": "AIR-C6-002", "disposition": "accepted_fixed", "evidence": ["Reliance instructions now separate named-consumer decision ownership from the admitted producer's attributed mutation and explicitly deny that v1 proves direct attestation or delegation."], "proof": ["skill-package-validation"]}
+    ]
+  },
+  "deferred_scope_preserved": ["MCP transport integration", "impact nomination", "refresh orchestration", "selective reopening", "obligation delivery", "continuous monitoring"],
+  "focused_result": {"tests": 18, "passed": 18, "failed": 0},
+  "ordered_gate": {"gate_id": "production-claim-evidence-interface-slice-01-remediation-gate-v6", "configured": 8, "passed": 8, "failed": 0}
+}

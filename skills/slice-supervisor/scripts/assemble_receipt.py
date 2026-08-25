@@ -93,8 +93,11 @@ def assemble(
         APPEND_METRICS.validate(semantic_receipt)
     except ValueError as error:
         raise ReceiptAssemblyError(f"semantic receipt is invalid: {error}") from error
-    if semantic_receipt["schema_version"] != 4:
-        fail("semantic receipt schema_version must be 4")
+    if semantic_receipt["schema_version"] != APPEND_METRICS.CURRENT_SCHEMA_VERSION:
+        fail(
+            "semantic receipt schema_version must be "
+            f"{APPEND_METRICS.CURRENT_SCHEMA_VERSION}"
+        )
     ingress = validate_ingress(telemetry_ingress)
     preflight = validate_preflight(campaign_preflight)
     if ingress["run_id"] != semantic_receipt["run_id"]:

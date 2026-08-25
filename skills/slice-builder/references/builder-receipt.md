@@ -79,6 +79,14 @@ These configured values are not proof of what ran. Keep them beside the actual m
 
 ## Required evidence and review workflow metrics
 
+- `review_selection`: the supervisor-owned selection and execution projection
+  defined in
+  [`slice-supervisor/references/review-selection.md`](../../slice-supervisor/references/review-selection.md),
+  including `selection_owner` and the explicit `not_reached`, candidate-bound
+  `undecided`, or `decided` state. A decided selection includes the exact
+  immutable subject plus one selected-or-omitted entry for each dispositioned
+  specialist, reproduces the supervisor's plan rather than a builder-authored
+  reconstruction, and dispositions `agent-instruction-review` exactly once.
 - `repository_evidence_identity`: provider and skill actually used
 - `independent_review_identity`: provider and skill actually used, or
   `adversarial_review_identity`: configured identity plus observed
@@ -129,6 +137,13 @@ supplemental evidence-stage calls, and independent-review provider attempts must
 cover reported review-gate calls. A provider may make several attempts within
 one semantic stage, so the reverse equality is not required.
 
+Every selected specialist invocation contributes to `review_gate_calls` and to
+the configured review provider's role metrics. Specialist skill identity is
+recorded inside `review_selection`; it does not replace the configured provider
+adapter identity. A provider session that applies `agent-instruction-review`
+therefore remains a Claude independent-review or Codex accepted-same-model call
+as configured, while its diagnostic result remains owned by the specialist.
+
 For accepted same-model review, use the `adversarial_review` role and preserve
 configured and observed model, reasoning effort, fresh-process isolation,
 `builder_context_inherited: false`, `model_relationship: same_model`, and
@@ -139,7 +154,7 @@ provider change requires a recorded configuration amendment; direct-source or
 coverage fallback within a provider is represented by evidence modes and
 fallback events, not by rewriting provider identity.
 
-For schema version 4, provider call outcomes are mutually exclusive. Classify
+For schema versions 4 and 5, provider call outcomes are mutually exclusive. Classify
 every unsuccessful call under exactly one of `failed`, `timed_out`, or
 `infrastructure_failed`, and give it exactly one primary cause in
 `provider_failure_reasons`. A timeout therefore contributes to `timed_out` and

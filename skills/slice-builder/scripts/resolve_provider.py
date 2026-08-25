@@ -32,7 +32,6 @@ REVIEW_PROVIDER_ADAPTERS = {
 ADVERSARIAL_REVIEW_PROVIDER = "codex"
 ADVERSARIAL_REVIEW_SKILL = "codex-adversarial-review"
 ADVERSARIAL_REVIEW_MODEL = "gpt-5.6-sol"
-ADVERSARIAL_REVIEW_REASONING_EFFORT = "low"
 ADVERSARIAL_REVIEW_EVIDENCE_CLASS = "accepted_same_model_review"
 ADVERSARIAL_REVIEW_ISOLATION = "fresh_process"
 
@@ -161,7 +160,6 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
         "provider": ADVERSARIAL_REVIEW_PROVIDER,
         "skill": ADVERSARIAL_REVIEW_SKILL,
         "model": ADVERSARIAL_REVIEW_MODEL,
-        "reasoning_effort": ADVERSARIAL_REVIEW_REASONING_EFFORT,
         "evidence_class": ADVERSARIAL_REVIEW_EVIDENCE_CLASS,
         "isolation": ADVERSARIAL_REVIEW_ISOLATION,
     }
@@ -172,7 +170,15 @@ def _resolve_v2(context: dict[str, Any]) -> dict[str, Any]:
                 f"builder.context.adversarial_review.{field} must be "
                 f"'{expected_value}'"
             )
-    result["adversarial_review"] = expected
+    reasoning_effort = review.get("reasoning_effort")
+    if not isinstance(reasoning_effort, str) or not reasoning_effort.strip():
+        raise ProviderResolutionError(
+            "builder.context.adversarial_review.reasoning_effort must be a nonempty string"
+        )
+    result["adversarial_review"] = {
+        **expected,
+        "reasoning_effort": reasoning_effort,
+    }
     return result
 
 

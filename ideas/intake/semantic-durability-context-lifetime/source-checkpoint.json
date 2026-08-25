@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "checkpoint_id": "ff99831f4281e601be7f0ab631d82dcae8e2117c1129708d9862d95f32d8c527",
+  "checkpoint_kind": "candidate",
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "semantic-durability-intake-20260824",
+  "slice_number": 1,
+  "candidate_attempt": 1,
+  "baseline_commit_oid": "cdc9e3fa5d300e5edc737faf38edf85a336fbdcf",
+  "baseline_tree_oid": "32de1b26be5e4d22300ddc0972eaf8c98c6f05be",
+  "checkpoint_commit_oid": "3d5a7574f508fd5f3b5861dff348fcb5a6234846",
+  "checkpoint_tree_oid": "a334574e2720159383cf1bd825f86a143e8ba2a5",
+  "parent_checkpoint_commit_oid": "cdc9e3fa5d300e5edc737faf38edf85a336fbdcf",
+  "plan_version": "semantic-durability-intake-source-binding-v1",
+  "scope_revision": "exact-raw-idea-v1",
+  "gate_receipt_digest": "89ada622d5a8af6ede7ad6d13e56168c7cb08907517363131f58b0dfd9098c1d",
+  "task_patch_digest": "3ab093081cf24f03f61dc8971e248a8adbe5fbc7e01376352333037031b33cd9",
+  "paths": [
+    {
+      "path": "ideas/01-semantic-durability-and-context-lifetime-judgment.md",
+      "action": "include",
+      "attribution": "user_owned_baseline",
+      "content_digest": "3e4f205955948ad410fa600d77ce2338e9e9ea20ce402dde6b62369c30a9bdf2"
+    }
+  ],
+  "ref": "refs/work-engine/checkpoints/semantic-durability-intake-20260824/slice-1/candidate-1",
+  "manifest_digest": "b031645b3318858ff37d45471d819412a1da0bb941ac15fddfacc57766e29f56",
+  "created_at": "2026-08-24T21:53:19Z",
+  "limitations": []
+}

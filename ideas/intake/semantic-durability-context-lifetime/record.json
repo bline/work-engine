@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "idea_id": "work-engine.idea.semantic-durability-context-lifetime",
+  "assessment_id": "work-engine.intake.semantic-durability-context-lifetime",
+  "source": {
+    "repository_revision": "3d5a7574f508fd5f3b5861dff348fcb5a6234846",
+    "blob_oid": "2b16ccb8b6ef82dee3a33bcbb748ac3cb90e5800",
+    "path": "ideas/01-semantic-durability-and-context-lifetime-judgment.md",
+    "range": {
+      "line_start": 1,
+      "line_end": 887,
+      "content_sha256": "3e4f205955948ad410fa600d77ce2338e9e9ea20ce402dde6b62369c30a9bdf2"
+    }
+  },
+  "assessment": {
+    "revision": 1,
+    "producer": {
+      "kind": "agent_role",
+      "id": "idea-intake"
+    },
+    "authority": {
+      "owner": "user",
+      "scope": "Assess the exact semantic-durability and context-lifetime idea revision, reconcile its claims with current contracts and proposals, persist intake state, and project surviving candidates without changing planning or authorizing downstream effects.",
+      "evidence_refs": [
+        "evidence.intake-authority"
+      ]
+    },
+    "purpose": "Separate semantic context-lifetime judgment, bounded continuation-state overlap, and longer-lived empirical calibration before the approved context-decision-observability evidence vertical is designed.",
+    "evidence_cutoff": {
+      "repository_revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "description": "Exact raw source plus the bounded doctrine, proposal, prior-intake, implementation, authority, and repository observations in the immutable evidence checkpoint."
+    },
+    "published_state": "ready_for_handoff",
+    "reopening_conditions": [
+      "A revised Wind Walker or governing design contract already owns the complete conditional-durability and lifecycle-cost judgment consequence.",
+      "The context-decision-observability vertical shows that preservation and retirement judgment cannot share one truthful semantic contract.",
+      "Intake of bounded ad hoc continuation state finds a distinct memento consequence that this assessment currently treats as overlapping.",
+      "Stable context, checkpoint, manifest, decision, transition, resource-cost, or outcome identities remain unavailable after the first evidence vertical.",
+      "Human-facing use shows that interaction meaning cannot be externalized with sufficient fidelity or authority preservation for this candidate boundary."
+    ]
+  },
+  "narrative": {
+    "path": "assessment.md"
+  },
+  "evidence": [
+    {
+      "evidence_id": "evidence.intake-authority",
+      "kind": "human_decision",
+      "owner": "user",
+      "reference": "ideas/intake/semantic-durability-context-lifetime/authority.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "The user authorized exact-revision intake and explicitly withheld planning and downstream authority.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "21da93fac4d42637bb0b8b7f5bdf560804fe68a262f01b16492ba7468a8cb5c2",
+        "freshness_rule": "Exact checkpointed authority record; later direct human correction supersedes this attribution."
+      }
+    },
+    {
+      "evidence_id": "evidence.repository-observations",
+      "kind": "repository_observation",
+      "owner": "primary idea-intake assessor",
+      "reference": "ideas/intake/semantic-durability-context-lifetime/repository-observations.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Bounded doctrine, proposal, prior-intake, implementation, live-capability, and coverage observations made during intake.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "49175e831ab807b91d9d0065e2deafe44920289ce70f3bef3b907991771c5975",
+        "freshness_rule": "Current only for the recorded evidence checkpoint, graph generation, and active Codex capability observation."
+      }
+    },
+    {
+      "evidence_id": "evidence.wind-walker-contract",
+      "kind": "contract",
+      "owner": "Wind Walker",
+      "reference": "skills/wind-walker/SKILL.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Current continuation-independence and context-replacement judgment contract at the intake cutoff.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005",
+        "freshness_rule": "Reassess the relationship and candidate boundary when Wind Walker doctrine changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.context-observability-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.context-decision-observability",
+      "reference": "proposals/agent-state/context-decision-observability/proposal.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Approved candidate observation contract that separates benefit evidence from safety, judgment, effect authority, role state, and long-lived research.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "b627c8bd72c7497845037d6b28e602ed660ae29df3c51763ed9fd8f322a83179",
+        "freshness_rule": "Reassess if the proposal meaning, placement, or implementation authority changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.role-state-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.role-owned-durable-operational-state",
+      "reference": "proposals/agent-state/role-owned-durable-operational-state/proposal.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Neighboring proposal with stronger resume-critical publication and role-owned recovery consequences.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "1344d1d5c1c8914c5d369127db5ab51a99d91667ac2cc98ba9c2f43708bea7c6",
+        "freshness_rule": "Reassess if the role-state publication or recovery contract changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.bounded-memento-idea",
+      "kind": "repository_observation",
+      "owner": "raw bounded-ad-hoc-continuation-state idea",
+      "reference": "ideas/bounded-ad-hoc-continuation-state.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Separate raw idea with apparently overlapping bounded-memento semantics; not an accepted owner or adjudicated duplicate.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "37ac50954b767786a65a0ebbfec161f1386cb7883fe439db267a764d27b2b12c",
+        "freshness_rule": "Reassess after that idea receives intake, revision, formation, or human disposition."
+      }
+    },
+    {
+      "evidence_id": "evidence.prior-context-intake",
+      "kind": "prior_reconciliation",
+      "owner": "work-engine.intake.state-complete-context-reset",
+      "reference": "ideas/intake/state-complete-context-reset/record.json",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Earlier exact-source intake preserving a separate context-reset outcome-evidence candidate.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "9327dd4eed0c1320e203c5d178414638491991bf82877d62137757414822a67b",
+        "freshness_rule": "Reassess composition if the prior intake revision or its deferred candidate disposition changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.raw-archive-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.raw-agent-execution-evidence-archive",
+      "reference": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/proposal.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Neighboring forensic archive candidate that does not own operational memory or derived policy.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "976e31806b3867122090e06330a003b5a28b76cfd3a10639d02cf5270d1ccbf0",
+        "freshness_rule": "Reassess the research relationship if archive scope, sensitivity, retention, or consumer contracts change."
+      }
+    },
+    {
+      "evidence_id": "evidence.change-profile-proposal",
+      "kind": "proposal",
+      "owner": "work-engine.code-change-characterization-profile",
+      "reference": "proposals/empirical-agent-research/code-change-characterization-profile/proposal.md",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Neighboring exact-change characterization candidate that may supply task controls for empirical comparison.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "6704b647eb2f6e9aca48a5b92e8bbb9896aa5cad0315efccab5ea8c6d748c6a9",
+        "freshness_rule": "Reassess if the profile's subject, evidence, or later-outcome boundary changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.telemetry-implementation",
+      "kind": "implementation",
+      "owner": "slice-supervisor telemetry ingress",
+      "reference": "skills/slice-supervisor/scripts/harvest_codex_telemetry.py",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1",
+      "attribution": "Current implementation evidence for cumulative token and wall-clock measurements and unavailable peak context.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "9ca9afe58e71e4c0a7407bc667f2de6bf6a41abec0b27c6e278a353dc83f0c5c",
+        "freshness_rule": "Current only for the exact implementation checkpoint; re-read after telemetry ingress changes."
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "relationship.judgment-wind-walker",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.semantic-durability-judgment",
+      "target": {
+        "kind": "contract",
+        "id": "work-engine.contract.wind-walker",
+        "reference": "skills/wind-walker/SKILL.md"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.wind-walker-contract", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "Wind Walker owns replacement safety and situated context-lifetime judgment, while the source adds conditional-durability and preservation-economics semantics whose canonical placement remains unformed."
+    },
+    {
+      "relationship_id": "relationship.judgment-observability",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.semantic-durability-judgment",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.context-decision-observability",
+        "reference": "proposals/agent-state/context-decision-observability/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.context-observability-proposal", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "The approved proposal supplies evidence for this judgment but explicitly does not own the judgment, safety, effect, or long-lived calibration consequence."
+    },
+    {
+      "relationship_id": "relationship.judgment-role-state",
+      "type": "possibly_conflicts_with",
+      "source_claim_id": "claim.semantic-durability-judgment",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.role-owned-durable-operational-state",
+        "reference": "proposals/agent-state/role-owned-durable-operational-state/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.role-state-proposal", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "An economic preference to leave meaning transient would conflict if it relaxed the role-state proposal's stronger publication obligation for resume-critical or materially reconstructive consequences; formation must preserve the stronger boundary."
+    },
+    {
+      "relationship_id": "relationship.memento-bounded-idea",
+      "type": "possibly_duplicates",
+      "source_claim_id": "claim.bounded-continuation-memento",
+      "target": {
+        "kind": "idea",
+        "id": "work-engine.idea.bounded-ad-hoc-continuation-state",
+        "reference": "ideas/bounded-ad-hoc-continuation-state.md"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.bounded-memento-idea", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "Both sources describe bounded flexible continuation meaning inside a controlled role-owned envelope with safe rehydration and evidence-driven schema promotion; neither has authority-owned equivalence yet."
+    },
+    {
+      "relationship_id": "relationship.calibration-prior-intake",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-lifetime-calibration",
+      "target": {
+        "kind": "intake",
+        "id": "work-engine.intake.state-complete-context-reset",
+        "reference": "ideas/intake/state-complete-context-reset/record.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.prior-context-intake", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "The new source expands the prior deferred reset-outcome candidate with preservation cost, reconstructability, environmental behavior, and controlled-calibration variables."
+    },
+    {
+      "relationship_id": "relationship.calibration-observability",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-lifetime-calibration",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.context-decision-observability",
+        "reference": "proposals/agent-state/context-decision-observability/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.context-observability-proposal", "evidence.prior-context-intake"],
+      "authority_ref": null,
+      "rationale": "The approved proposal defers stable long-lived outcome evidence until its operational identities are exercised; calibration may consume those identities without joining the live packet's lifecycle."
+    },
+    {
+      "relationship_id": "relationship.calibration-raw-archive",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-lifetime-calibration",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.raw-agent-execution-evidence-archive",
+        "reference": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.raw-archive-proposal", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "The archive may supply forensic inputs, but the calibration candidate has a distinct derived comparison, retention, sensitivity, and policy-non-authority consequence."
+    },
+    {
+      "relationship_id": "relationship.calibration-change-profile",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.context-lifetime-calibration",
+      "target": {
+        "kind": "proposal",
+        "id": "work-engine.code-change-characterization-profile",
+        "reference": "proposals/empirical-agent-research/code-change-characterization-profile/packet.json"
+      },
+      "status": "nominated",
+      "evidence_refs": ["evidence.change-profile-proposal", "evidence.repository-observations"],
+      "authority_ref": null,
+      "rationale": "A frozen task/change profile may control heterogeneous engineering subjects without becoming the owner of context-policy outcomes."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim.semantic-durability-judgment",
+      "revision": 1,
+      "source_range": {
+        "line_start": 7,
+        "line_end": 584,
+        "content_sha256": "54ad15dd2b1e6d6721e3f1991170e56a40dcff79826a829f0baf77790dc8cc1a"
+      },
+      "statement": "Treat context as conditionally durable working memory, externalize continuation-relevant meaning when lifetime, loss consequence, reconstructability, fidelity, and lifecycle cost justify it, and retire context only when continuation is semantically safe and a fresh working set is economically preferable.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "The authorized intake found a distinct judgment consequence not owned by the approved observation projection or current Wind Walker text, provided formation preserves stronger role-state publication, semantic-safety, and effect-authority boundaries.",
+        "authority_ref": "evidence.intake-authority"
+      },
+      "uncertainty": [
+        "Canonical placement may be governing design with a Wind Walker projection rather than Wind Walker alone.",
+        "The source's hard-limit-as-safety-boundary phrase must be corrected so capacity cannot substitute for continuation safety.",
+        "Human-facing contexts may require a narrower profile because unresolved interaction meaning may not be faithfully externalizable.",
+        "Conceptual cost variables are uncalibrated and cannot become a score, threshold, schedule, or effect grant."
+      ],
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations",
+        "evidence.wind-walker-contract",
+        "evidence.context-observability-proposal",
+        "evidence.role-state-proposal"
+      ],
+      "relationship_refs": [
+        "relationship.judgment-wind-walker",
+        "relationship.judgment-observability",
+        "relationship.judgment-role-state"
+      ],
+      "candidate": {
+        "meaning": "Define an authority-preserving semantic-durability and context-lifetime judgment contract that uses context normally, externalizes meaning opportunistically, preserves stronger obligations, and allows safe context retirement when total lifecycle consequences favor a fresh working set.",
+        "boundary": "Continuation-relevant meaning, required lifetime, loss consequence, reconstructability, preservation and rehydration cost, semantic safety, expected keep-versus-reset consequences, and human-facing applicability; excludes telemetry implementation, storage schemas, bounded-memento ownership, fixed thresholds, automatic reset policy, effect authority, and statistical calibration.",
+        "placement_hypotheses": [
+          "Canonical context-lifetime doctrine in Work Engine design with a compact Wind Walker runtime projection.",
+          "A focused Wind Walker contract revision consumed by non-human-facing roles.",
+          "A shared semantic contract with role-specific judgment projections when human-facing and machine-managed contexts require materially different boundaries."
+        ],
+        "evidence_still_needed": [
+          "Exercise the judgment against a non-human-facing builder using the approved context-decision observation evidence without performing an effectful reset.",
+          "Demonstrate that opportunistic preservation does not weaken role-state publication required for correctness, authority, or material reconstruction.",
+          "Review the formed normative text for causal necessity, authority scope, audience, and loading placement.",
+          "Identify which cost inputs are directly observable, derived, estimated, denied, or unavailable in the first profile."
+        ],
+        "unresolved_decisions": [
+          "Whether canonical doctrine belongs in DESIGN.md, Wind Walker, or a shared owner with a role-scoped projection.",
+          "Whether the first formed boundary should explicitly exclude all human-facing contexts or define a cautious conditional profile.",
+          "How to state economic exhaustion without making an uncalibrated equation behaviorally prescriptive."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.bounded-continuation-memento",
+      "revision": 1,
+      "source_range": {
+        "line_start": 395,
+        "line_end": 425,
+        "content_sha256": "2284f3158119e11b06bc34118b429ce0fe80451dbbbe0bb565c3cdc78db4b170"
+      },
+      "statement": "When continuation-relevant meaning has no typed owner, preserve it in a bounded memento whose repeated shapes may nominate but cannot automatically create a canonical schema concept.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "unresolved",
+        "status": "adjudicated",
+        "rationale": "A separate raw bounded-ad-hoc-continuation-state idea appears to own the same consequence more fully, but neither source has received the authority-owned reconciliation needed to merge or select one formation handoff.",
+        "authority_ref": "evidence.intake-authority"
+      },
+      "uncertainty": [
+        "Later intake may find the memento is fully represented by the separate raw idea or is only one mechanism inside the semantic-durability candidate.",
+        "The source says durable-state controls the envelope, while the separate idea assigns semantic ownership to the role and only mechanics to storage; formation must preserve that distinction."
+      ],
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.bounded-memento-idea",
+        "evidence.role-state-proposal",
+        "evidence.repository-observations"
+      ],
+      "relationship_refs": [
+        "relationship.memento-bounded-idea"
+      ],
+      "candidate": null
+    },
+    {
+      "claim_id": "claim.context-lifetime-calibration",
+      "revision": 1,
+      "source_range": {
+        "line_start": 588,
+        "line_end": 837,
+        "content_sha256": "9f72a260bcb55d9a1e61753752b341fd4482888476dabf98a2cc9a81c6055aa9"
+      },
+      "statement": "Measure preservation, reconstruction, rehydration, context-retirement, resource, correctness, review, and reasoning-behavior outcomes so context-lifetime policy can be calibrated from comparable lifecycle evidence rather than intuition.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "The authorized intake found an independently decidable empirical consequence that refines a prior deferred candidate and has different consumers, sensitivity, retention, and causal limits from live observability.",
+        "authority_ref": "evidence.intake-authority"
+      },
+      "uncertainty": [
+        "Formation may defer this candidate until the live observability vertical establishes stable identities and truthful measurements.",
+        "Provider billing, cached input, active occupancy, latency, behavioral quality, and rehydration work require distinct source contracts and cannot be collapsed into token count.",
+        "No available evidence supports a deterministic threshold, universal optimum, or causal claim about context-retirement frequency.",
+        "Sensitivity, retention, and access boundaries for model-visible context and interaction evidence remain unsettled."
+      ],
+      "evidence_refs": [
+        "evidence.intake-authority",
+        "evidence.repository-observations",
+        "evidence.prior-context-intake",
+        "evidence.context-observability-proposal",
+        "evidence.raw-archive-proposal",
+        "evidence.change-profile-proposal",
+        "evidence.telemetry-implementation"
+      ],
+      "relationship_refs": [
+        "relationship.calibration-prior-intake",
+        "relationship.calibration-observability",
+        "relationship.calibration-raw-archive",
+        "relationship.calibration-change-profile"
+      ],
+      "candidate": {
+        "meaning": "Define an empirical context-lifetime calibration profile that joins exact preservation and retirement decisions to comparable resource, rehydration, correctness, review, and reasoning outcomes without turning correlation or persistence into policy authority.",
+        "boundary": "Exact context, checkpoint, manifest, decision and transition identities; preservation, reconstruction and rehydration observations; task/change controls; later outcomes; sensitivity, retention, provenance and causal limitations; excludes live operational judgment, raw archive ownership, automatic reset policy, fixed thresholds, and causal claims unsupported by prospective evidence.",
+        "placement_hypotheses": [
+          "A deferred empirical-agent-research profile that consumes operational context episodes, exact change profiles, and stronger outcome owners.",
+          "A compact metrics-and-outcome profile neighboring but separate from the raw execution archive.",
+          "A revision or merge of the prior state-complete-context-reset intake's deferred outcome-evidence candidate."
+        ],
+        "evidence_still_needed": [
+          "Exercise stable context, checkpoint, manifest, decision, transition, and rehydration identities in the approved observation vertical.",
+          "Establish truthful source contracts for active occupancy, effective limit, cached and billable input, rehydration work, latency, and later outcomes.",
+          "Define a comparison design that controls task/change profile and separates historical correlation from prospective or controlled validation.",
+          "Define access, sensitivity, retention, deletion, and reviewer-isolation consequences for context-lifecycle evidence."
+        ],
+        "unresolved_decisions": [
+          "Whether formation should occur now or remain deferred until the first operational vertical produces stable identities.",
+          "Whether to revise the prior deferred candidate or form a distinct preservation-and-retirement calibration proposal.",
+          "Which owner retains compact decision/outcome joins while raw bytes, role state, review outcomes, and change profiles remain with stronger owners."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    }
+  ],
+  "proposal_refs": [
+    {
+      "proposal_id": "work-engine.context-decision-observability",
+      "path": "../../../proposals/agent-state/context-decision-observability/packet.json",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1"
+    },
+    {
+      "proposal_id": "work-engine.role-owned-durable-operational-state",
+      "path": "../../../proposals/agent-state/role-owned-durable-operational-state/packet.json",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1"
+    },
+    {
+      "proposal_id": "work-engine.raw-agent-execution-evidence-archive",
+      "path": "../../../proposals/empirical-agent-research/raw-agent-execution-evidence-archive/packet.json",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1"
+    },
+    {
+      "proposal_id": "work-engine.code-change-characterization-profile",
+      "path": "../../../proposals/empirical-agent-research/code-change-characterization-profile/packet.json",
+      "revision": "21ececaee8b6d2ab97bfdbf70922239e9966c4c1"
+    }
+  ],
+  "non_authorization": {
+    "cleanup_authorized": false,
+    "implementation_authorized": false,
+    "proposal_accepted": false,
+    "permanent_placement_settled": false,
+    "roadmap_priority_changed": false
+  }
+}

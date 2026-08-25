@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "gate_id": "production-claim-evidence-interface-slice-01-remediation-gate-v6",
+  "runner": "skills/slice-builder/scripts/run_gate.py",
+  "manifest": "planning/production-claim-evidence-interface/slice-01-gate-manifest.json",
+  "status": "passed",
+  "failed_check": null,
+  "checks": [
+    {"requirement": "semantic_proof", "identity": "vertical-and-focused-claim-evidence-suite", "state": "passed", "exit_status": 0, "duration_seconds": 0.331},
+    {"requirement": "semantic_proof", "identity": "cli-projection-rebuild-and-freshness", "state": "passed", "exit_status": 0, "duration_seconds": 0.457},
+    {"requirement": "risk_proportional_checks", "identity": "schema-and-fixture-json-parse", "state": "passed", "exit_status": 0, "duration_seconds": 0.04},
+    {"requirement": "risk_proportional_checks", "identity": "python-source-compilation-without-bytecode", "state": "passed", "exit_status": 0, "duration_seconds": 0.058},
+    {"requirement": "risk_proportional_checks", "identity": "skill-package-validation", "state": "passed", "exit_status": 0, "duration_seconds": 0.064},
+    {"requirement": "workspace_integrity", "identity": "baseline-aware-task-manifest", "state": "passed", "exit_status": 0, "duration_seconds": 0.164},
+    {"requirement": "workspace_integrity", "identity": "task-owned-whitespace-integrity", "state": "passed", "exit_status": 0, "duration_seconds": 0.19},
+    {"requirement": "workspace_integrity", "identity": "supervisor-amendment-and-owned-boundary-preserved", "state": "passed", "exit_status": 0, "duration_seconds": 0.15}
+  ],
+  "totals": {"configured": 8, "executed": 8, "passed": 8, "failed": 0},
+  "duration_seconds": 1.454,
+  "broader_regressions": {"state": "omitted", "reason": "The remediated slice still imports or modifies neither dogfood, durable-state, nor MCP runtime contracts. Concurrency and persistence behavior are exercised directly through the production CLI."}
+}

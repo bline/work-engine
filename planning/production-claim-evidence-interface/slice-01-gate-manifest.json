@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "gate_id": "production-claim-evidence-interface-slice-01-remediation-gate-v6",
+  "subject": {
+    "accepted_plan_sha256": "58a74373c82b95adb1cb1cdef18915323d2266636a941e19a49b283e68574515",
+    "task_patch_sha256": "0a79fdf7a8ff1e665c4c5c032aa28f88905aec9083b668b7d5472263e219ec5b"
+  },
+  "checks": [
+    {
+      "requirement": "semantic_proof",
+      "identity": "vertical-and-focused-claim-evidence-suite",
+      "command": ["python3", "-B", "-m", "unittest", "skills/claim-evidence/tests/test_claim_evidence.py"],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "semantic_proof",
+      "identity": "cli-projection-rebuild-and-freshness",
+      "command": ["bash", "-lc", "gate_tmp=$(mktemp -d); python3 skills/claim-evidence/scripts/claim_evidence.py --root \"$gate_tmp\" init && python3 skills/claim-evidence/scripts/claim_evidence.py --root \"$gate_tmp\" rebuild && python3 skills/claim-evidence/scripts/claim_evidence.py --root \"$gate_tmp\" verify; code=$?; unlink \"$gate_tmp/generated/projection.json\"; unlink \"$gate_tmp/canonical/store.json\"; unlink \"$gate_tmp/canonical/store.lock\"; rmdir \"$gate_tmp/generated\" \"$gate_tmp/canonical\" \"$gate_tmp\"; exit $code"],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "risk_proportional_checks",
+      "identity": "schema-and-fixture-json-parse",
+      "command": ["python3", "-c", "import json,pathlib; [json.loads(p.read_text()) for p in pathlib.Path('skills/claim-evidence/schemas').glob('*.json')]; json.loads(pathlib.Path('skills/claim-evidence/tests/fixtures/representative-domain-records.json').read_text())"],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "risk_proportional_checks",
+      "identity": "python-source-compilation-without-bytecode",
+      "command": ["python3", "-c", "import pathlib; [compile(p.read_text(),str(p),'exec') for p in [pathlib.Path('skills/claim-evidence/scripts/claim_evidence.py'),pathlib.Path('skills/claim-evidence/tests/test_claim_evidence.py')]]"],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "risk_proportional_checks",
+      "identity": "skill-package-validation",
+      "command": ["python3", "/home/bline/.codex/skills/.system/skill-creator/scripts/quick_validate.py", "skills/claim-evidence"],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "workspace_integrity",
+      "identity": "baseline-aware-task-manifest",
+      "command": ["bash", "-lc", "actual=$(sha256sum planning/production-claim-evidence-interface/slice-01-accepted-plan.md skills/claim-evidence/SKILL.md skills/claim-evidence/agents/openai.yaml skills/claim-evidence/references/claim-evidence-contract.md skills/claim-evidence/schemas/authority-manifest-v1.schema.json skills/claim-evidence/schemas/claim-evidence-core-v1.schema.json skills/claim-evidence/schemas/operation-v1.schema.json skills/claim-evidence/schemas/proposal-research-v1.schema.json skills/claim-evidence/schemas/revision-bound-review-finding-v1.schema.json skills/claim-evidence/scripts/claim_evidence.py skills/claim-evidence/tests/fixtures/representative-domain-records.json skills/claim-evidence/tests/test_claim_evidence.py | sha256sum | cut -d' ' -f1); test \"$actual\" = 0a79fdf7a8ff1e665c4c5c032aa28f88905aec9083b668b7d5472263e219ec5b && test -z \"$(git ls-files -- skills/claim-evidence)\" && test -z \"$(git ls-files -- planning/production-claim-evidence-interface/slice-01-accepted-plan.md)\""],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "workspace_integrity",
+      "identity": "task-owned-whitespace-integrity",
+      "command": ["bash", "-lc", "status=0; for file in planning/production-claim-evidence-interface/slice-01-accepted-plan.md skills/claim-evidence/SKILL.md skills/claim-evidence/agents/openai.yaml skills/claim-evidence/references/claim-evidence-contract.md skills/claim-evidence/schemas/authority-manifest-v1.schema.json skills/claim-evidence/schemas/claim-evidence-core-v1.schema.json skills/claim-evidence/schemas/operation-v1.schema.json skills/claim-evidence/schemas/proposal-research-v1.schema.json skills/claim-evidence/schemas/revision-bound-review-finding-v1.schema.json skills/claim-evidence/scripts/claim_evidence.py skills/claim-evidence/tests/fixtures/representative-domain-records.json skills/claim-evidence/tests/test_claim_evidence.py; do git diff --no-index --check /dev/null \"$file\"; code=$?; if [ \"$code\" -gt 1 ]; then status=$code; fi; done; exit \"$status\""],
+      "timeout_seconds": 30
+    },
+    {
+      "requirement": "workspace_integrity",
+      "identity": "supervisor-amendment-and-owned-boundary-preserved",
+      "command": ["bash", "-lc", "test \"$(sha256sum planning/production-claim-evidence-interface/review-provider-amendment-01.md | cut -d' ' -f1)\" = 39f610d57b2f19fd016277b28687fc9d17332a3d65e1c05760b73067dec8656f && test ! -e skills/claim-evidence/scripts/__pycache__ && test ! -e skills/claim-evidence/tests/__pycache__"],
+      "timeout_seconds": 30
+    }
+  ]
+}

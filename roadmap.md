@@ -154,32 +154,47 @@ idea exposes a more immediate structural-integrity dependency. Agent-facing
 text affects every future skill, role, and workflow, while current review roles
 do not specialize in whether a normative instruction preserves a necessary
 distinction or is placed at the correct authority, scope, and loading layer.
-The user has prioritized intake of this capability before further expansion of
-agent-facing instruction surfaces. That priority does not accept the idea or
-make it a universal review gate.
+That capability has since passed intake, formation, specialized review,
+authority disposition, implementation, and bounded dogfood as the
+`agent-instruction-review` skill. It remains consequence-selected rather than a
+universal review gate.
+
+The user has now approved
+[`work-engine.context-decision-observability`](proposals/agent-state/context-decision-observability/proposal.md)
+and elevated the current context-cost defect above further architectural
+expansion. The user reports that token cost is ballooning under the current
+implementation. That report establishes urgency and priority, not a quantified
+runtime measurement. The immediate route is therefore a bounded evidence
+vertical that makes context pressure, rehydration cost, lifecycle identity, and
+placement constraints truthfully observable before Work Engine commits to a
+host, shared access-plane, or role-local implementation seam. Approval does not
+authorize an effectful context replacement or silently convert the observation
+contract into reset policy.
 
 The current priority order is:
 
-1. reconcile accepted campaign work and keep stopped, experimental, and
+1. establish the bounded context-decision-observability evidence vertical for
+   a non-human-facing builder profile, including truthful unavailable states,
+   exact lifecycle identity, role-owned checkpoint and manifest references,
+   current cost evidence, and placement discriminators;
+2. use that evidence to choose the next architecture boundary and request any
+   separate implementation or effect authority required to reduce context cost;
+   do not infer a reset threshold or authorize replacement from proposal
+   approval;
+3. reconcile accepted campaign work and keep stopped, experimental, and
    user-owned changes distinguishable;
-2. treat agent-instruction structure and placement review as a critical
-   structural-integrity interruption: carry the committed idea through intake,
-   formation, specialized review, and bounded dogfood before expanding skills,
-   roles, or workflow instruction surfaces;
-3. resume and complete the controlled proposal workflow from low-friction raw
-   idea intake through claim-addressable assessment, proposal formation,
-   revision-bound adaptive review, and an explicit authority-owned disposition;
-   the reviewed raw-intake proposal has crossed its authority-decision boundary
-   with approved meaning and probable placement, but remains separately
-   unauthorized for implementation;
-4. preserve the implemented packet, decision, claim-lineage, active-slice,
+4. finish exercising the controlled proposal workflow across materially
+   different outcomes now that the context-decision candidate has completed one
+   source-bound intake, formation, revision-bound review, and authority-owned
+   disposition path;
+5. preserve the implemented packet, decision, claim-lineage, active-slice,
    transition-history, and reviewer-state boundaries while the completed
    workflow exercises them as real consumers;
-5. establish an atomic, versioned install boundary with a neutral-directory
+6. establish an atomic, versioned install boundary with a neutral-directory
    smoke test before syncing the repository skill into Codex;
-6. audit contract ownership and imperative runtime instructions;
-7. complete standalone documentation, CI, versioning, and release surfaces;
-8. promote evidence-backed evaluation, portfolio selection, organizational
+7. audit contract ownership and imperative runtime instructions;
+8. complete standalone documentation, CI, versioning, and release surfaces;
+9. promote evidence-backed evaluation, portfolio selection, organizational
    planning, and closed-loop learning only after the proposal workflow can
    hand them durable, authority-bounded proposal state.
 
@@ -393,8 +408,30 @@ and later workspace mutation does not retroactively change what was reviewed.
 See [`ideas/persistent-agent-state-and-runtime-introspection.md`](ideas/persistent-agent-state-and-runtime-introspection.md)
 and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-review-queue-and-scope-coordination.md).
 
+The reviewed context-decision-observability candidate is now decided with
+approved meaning and probable distributed semantic placement. Runtime or host
+adapters own authenticated direct context facts; stronger role or domain owners
+retain checkpoint, safety, manifest, decision, and transition meaning; and a
+consumer-scoped projection composes only authorized compatible observations.
+The user has made the associated context-cost defect the top product priority.
+Permanent physical placement and implementation remain unsettled, and the
+reported cost growth is not yet backed by comparable runtime measurements.
+
 ## Remaining work
 
+- Exercise a bounded, non-effectful-first context-decision-observability
+  vertical against a non-human-facing builder profile. Establish truthful
+  current context pressure, invocation-effective limits when observable,
+  automatic-context-management identity, checkpoint comparability, and
+  estimated or measured rehydration cost without manufacturing unavailable
+  host facts.
+- Demonstrate role-owned checkpoint, safety-attestation, manifest, and decision
+  references; consumer-scoped builder and fresh-reviewer views; fail-closed
+  source and grant verification; safe typed rehydration loading; and an
+  external omission oracle or seeded obligation.
+- Compare host-adapter, shared access-plane, and role-local seams using the
+  exercised evidence. Treat one builder vertical as bounded feasibility, not
+  cross-role proof or permanent placement.
 - Preserve `null` for unavailable measurements and zero only for observed zero.
 - Extend durable live state only when a named consumer requires semantics beyond
   the accepted planning/review obligation lifecycle. Preserve stable logical
@@ -426,13 +463,17 @@ and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-revie
   model-copied authoritative telemetry.
 - An interrupted campaign resumes from durable state without replaying accepted
   work or losing unresolved decisions.
+- A builder evidence vertical can compare current context burden with a bounded
+  rehydration footprint while preserving safety, authority, lifecycle,
+  visibility, and unavailable-state distinctions; its evidence makes the next
+  placement decision defensible without claiming universal applicability.
 - Exactly one durable terminal audit record exists for each terminal slice.
 
 ---
 
 # Workstream 4 — Complete the controlled idea-to-proposal workflow
 
-**Status: active; packet, formation, decision, evidence-lineage, and reviewer-state foundations exist.**
+**Status: active; foundations and one end-to-end decided proposal path exist.**
 
 ## Invariant outcome
 
@@ -459,15 +500,16 @@ implementation remain separate consumers.
 
 - `proposal-packets` owns stable proposal identity, closed manifest and decision
   contracts, repository discovery, typed relationships, and deterministic
-  validation. Nine current proposal packets plus three fixtures validate
-  mechanically.
+  validation. Twenty current proposal packets, including three fixtures,
+  validate mechanically.
 - `proposal-former` supplies the initial adaptive formation contract and a
   transcript-free one-idea/one-proposal consumer proof. Split, merge,
   duplication, reopening, and human-scope-change scenarios remain to be
   exercised as one coherent capability.
 - Authority-controlled proposal decisions are implemented and have recorded
   real user dispositions without changing roadmap priority or authorizing
-  implementation.
+  implementation. A separate explicit user instruction was required to elevate
+  context-cost work after approving its proposal meaning.
 - The bootstrap proposal-review procedure has exercised fresh specialist entry,
   retained remediation context, multi-perspective synthesis, and truthful
   authority separation on several real proposal revisions.
@@ -486,10 +528,19 @@ implementation remain separate consumers.
   closed with no remaining finding, and the user approved its candidate meaning
   with probable placement through an authority-owned decision record. Final
   placement and implementation remain separately unsettled and unauthorized.
-- [`ideas/agent-instruction-structure-and-placement-review.md`](ideas/agent-instruction-structure-and-placement-review.md)
-  is the user-prioritized critical intake subject before further skill and
-  workflow instruction expansion. It is still an exploratory idea, not an
-  accepted reviewer contract.
+- `agent-instruction-review` is an implemented specialist contract. The
+  bootstrap proposal-review coordinator now selects it only for present
+  instruction consequences, while slice-supervisor owns implementation-review
+  selection from a bounded builder projection and the builder executes the
+  selected fresh reviewer through the configured provider. New builder receipts
+  distinguish selection, omission, applicability, execution, and finding
+  closure without making the builder its own review selector.
+- `work-engine.context-decision-observability` has exercised one complete
+  source-bound path through structured intake, adaptive formation,
+  revision-bound five-perspective review, retained remediation, and an
+  authority-owned approval. Its downstream priority was established by a
+  separate user instruction, while implementation and effect authority remain
+  separate.
 
 ## Remaining work
 

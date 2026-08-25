@@ -5,6 +5,36 @@ proposal-review product contract exists. It coordinates review work but does
 not accept proposals, establish the proposed artifact schema, or authorize
 implementation.
 
+## Selection input and ownership
+
+The proposal-review coordinator owns specialist selection. The proposal former
+publishes an immutable candidate subject and a bounded projection of its present
+claims, consequences, authority and loading effects, uncertainty, and evidence
+needs. The former may identify materially normative agent-facing content as an
+observed subject property, but it does not select or omit reviewers for text it
+authored.
+
+Select perspectives from the current subject's material consequences without
+reading speculative future implementation into the proposal. Record selected
+perspectives and materially plausible omissions with reasons. Availability is
+not applicability, an omission is not a pass, and synthesis does not acquire
+selection, finding, revision, or proposal-decision authority.
+
+Give `agent-instruction-review` one explicit disposition for every formed or
+revised proposal subject. Select it when current proposal content creates or
+changes materially normative agent-facing text, an instruction-loading or
+precedence contract, or an exact route claimed as mandatory. Omit it with the
+absent present-day instruction consequence when the proposal only anticipates a
+future instruction artifact. If that distinction is uncertain, select the
+specialist and let its own applicability review resolve or preserve the
+uncertainty.
+
+A selected instruction reviewer starts from the exact immutable subject and
+follows `skills/agent-instruction-review/SKILL.md` plus its finding contract. It
+returns `applicable` or `omitted` and owns only its advisory findings. The
+coordinator records the result, the proposal former decides whether and how to
+revise, and the named proposal authority retains disposition authority.
+
 ## Reviewer lifetime
 
 Each selected specialist begins in a fresh role-scoped context without builder,
@@ -86,6 +116,36 @@ obligation reaches a terminal consequence. Session persistence is a runtime
 optimization and provenance fact, not the durable owner of findings or
 authority.
 
+## Provider availability and fallback
+
+A selected specialist perspective and its provider execution are separate
+decisions. Provider unavailability does not let the executor omit the
+perspective, change its finding contract, or report it as passed.
+
+Treat Claude review execution as best effort when the governing configuration
+does not require that exact provider or independent-review evidence. When
+bounded recovery or retry for quota, infrastructure, or unavailable session
+state no longer has credible value, the coordinator may execute the same
+selected specialist in a fresh Codex Sol context through
+`codex-adversarial-review`. Select its reasoning effort from the subject's
+consequence, uncertainty, and review difficulty within configured limits rather
+than fixing one effort for every subject.
+
+The fallback starts without proposal-former, coordinator-synthesis, builder, or
+prior reviewer reasoning. It receives the same immutable subject, specialist
+contract, bounded evidence, and review obligation. Record the Claude attempt and
+failure, fallback transition and reason, Codex model and actual reasoning effort,
+fresh-context boundary, and `accepted_same_model_review` evidence class. Never
+describe the result as cross-provider, cross-model, statistically independent,
+or independent reasoning.
+
+An explicit independent-review or exact-provider requirement remains binding.
+Codex same-model review may provide additional advisory evidence but cannot
+satisfy that requirement; preserve the obligation as unavailable or blocked, or
+apply an authorized configuration amendment. Best effort keeps advisory review
+from unnecessarily stopping development; it does not weaken a configured
+acceptance condition.
+
 ## Reset and recovery
 
 Reset is a model judgment, not the default response to a fix. Reasons can
@@ -97,8 +157,9 @@ include:
 - a renewed need for genuinely fresh independent challenge.
 
 Record the reason, preserve still-applicable findings, and bind the replacement
-to the exact new subject. Provider failure alone first triggers continuation or
-recovery when possible.
+to the exact new subject. Provider failure alone first triggers bounded
+continuation or recovery when possible, followed by the authorized fallback
+above when the required evidence class permits it.
 
 If a reviewer session is lost, reconstruct from the immutable subject, that
 reviewer's durable findings, limitations, and the bounded remediation delta.
@@ -111,6 +172,13 @@ The coordinator may add a newly relevant specialist when changed consequences
 justify it. That specialist starts fresh and does not force existing specialists
 to restart. Panel synthesis occurs only after current specialist consequences
 are available and preserves conflicts rather than voting them away.
+
+For every new immutable proposal revision, reconsider the
+`agent-instruction-review` selection disposition from the revised present
+content. Continue the retained instruction reviewer when the ordinary
+remediation premise remains valid; select a fresh instance only when the skill's
+reset conditions warrant it. A prior omission, applicability result, or finding
+does not silently carry across a changed subject.
 
 The coordinator records, when observable:
 

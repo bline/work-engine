@@ -1,12 +1,12 @@
 # Work-engine receipt schema
 
-Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The durable identity is the pair of `run_id` and `slice_number`; while holding the append lock, the append CLI rejects any repeated identity without changing the destination, whether the receipt content is identical or conflicting. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 4 for new campaigns. Version 4 preserves semantic-path placement evidence from version 3 and adds required evidence-mode, provider-failure, and fallback provenance. The compatibility validator continues to accept historical version-1 through version-3 records for explicit read or migration use. The append CLI is the current artifact producer and rejects those historical versions before changing the durable destination.
+Append exactly one `audit_receipt` record when a slice reaches `accepted`, `stopped`, or `failed`. The durable identity is the pair of `run_id` and `slice_number`; while holding the append lock, the append CLI rejects any repeated identity without changing the destination, whether the receipt content is identical or conflicting. The builder's compact `handoff_receipt` is non-durable context and must never be appended here. Use schema version 5 for new campaigns. Version 4 preserves semantic-path placement evidence from version 3 and adds required evidence-mode, provider-failure, and fallback provenance. Version 5 adds the required supervisor-owned review-selection projection. The compatibility validator continues to accept historical version-1 through version-4 records for explicit read or migration use. The append CLI is the current artifact producer and rejects those historical versions before changing the durable destination.
 
 ## Required common fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema_version` | integer | Use `4` for new configured campaigns. |
+| `schema_version` | integer | Use `5` for new configured campaigns. |
 | `run_id` | string | Nonempty identifier shared by every slice in one campaign. |
 | `slice_number` | integer | Positive, sequential within the run. |
 | `timestamp` | string | ISO 8601 timestamp with timezone. |
@@ -65,7 +65,7 @@ cumulative values actually emitted rather than inferred per-turn allocations.
 Duplicate identifiers, unknown completions, and an incomplete or nonterminal
 latest turn remain invalid.
 
-The deterministic receipt assembler accepts one valid schema-version-4
+The deterministic receipt assembler accepts one valid schema-version-5
 semantic audit receipt, one matching telemetry-ingress artifact, and the
 original successful named-campaign preflight result. It requires the run and
 slice identities to agree, replaces supported builder-runtime measurements
@@ -83,7 +83,7 @@ does not change the harvester's identity rules. Use:
 
 ```bash
 python3 skills/slice-supervisor/scripts/assemble_receipt.py \
-  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
   --campaign-preflight-json '<successful-named-campaign-preflight-result>'
 ```
@@ -95,7 +95,7 @@ intermediate receipt is introduced:
 ```bash
 python3 skills/slice-supervisor/scripts/finalize_receipt.py \
   --path '<configured-metrics-path>' \
-  --semantic-receipt-json '<schema-v4-audit-receipt>' \
+  --semantic-receipt-json '<schema-v5-audit-receipt>' \
   --telemetry-ingress-json '<telemetry-ingress-v1>' \
   --campaign-preflight-json '<original-successful-preflight-result>'
 ```
@@ -175,6 +175,10 @@ Include when available, using `null` otherwise:
 - `changed_file_count`
 - `test_totals`
 - `review_findings` and `review_fix_iterations`
+- `review_selection`, containing the supervisor-owned selection state and,
+  when selection was reached, the immutable subject and selected-or-omitted
+  specialist dispositions defined by
+  [the review-selection contract](review-selection.md)
 - evidence/review provider call, failure, time, cost, token, and retrieval measurements
 - placement calls, candidate counts, conflicts, reconsiderations, targeted-reconnaissance calls, placement risk, vertical-proof status, and late semantic rejections
 - engineering input/output/context measurements
@@ -226,6 +230,22 @@ Actual role identities must match the normalized effective configuration. A
 different provider requires a recorded configuration amendment; evidence-mode
 fallback inside the configured role does not change provider identity.
 
+Schema-version-5 slice-builder receipts contain the required
+`worker_metrics.review_selection`. The compatibility validator permits
+historical version-4 receipts created before this field existed, while the
+production append and assembly boundaries accept only version 5. The projection
+names `slice-supervisor` as selection owner. A stopped or failed slice that
+terminates before candidate creation records `state: not_reached`, a reason,
+and no subject or specialist dispositions. If a candidate is bound but the
+supervisor cannot complete selection before terminalization, it records
+`state: undecided`, a reason, the subject, and no dispositions. Once selection
+is reached, the projection records `state: decided`, binds the immutable
+candidate, and contains exactly one `agent-instruction-review` entry whose
+selection, execution, applicability, result reference, and finding identities
+remain distinct. An accepted receipt requires `decided`. Selected specialist
+calls count under the configured review provider; specialist identity never
+replaces provider identity.
+
 An `accepted_same_model_review` identity requires fresh-process isolation,
 `builder_context_inherited: false`, `model_relationship: same_model`, and
 `independence_claimed: false`. It must not be represented as cross-provider,
@@ -239,7 +259,7 @@ event records `from_mode`, `to_mode`, `stage`, `reason`, and `failure_kind`.
 null. Counts must remain internally consistent. Use null for unavailable
 measurements; never use null when the observed count is zero.
 
-Version 4 treats successful, failed, timed-out, and infrastructure-failed
+Versions 4 and 5 treat successful, failed, timed-out, and infrastructure-failed
 provider-call counts as mutually exclusive outcomes. Every non-successful call
 has exactly one primary cause in `provider_failure_reasons`; the cause counts
 must equal the failed, timed-out, and infrastructure-failed call total.

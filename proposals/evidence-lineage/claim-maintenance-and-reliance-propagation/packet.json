@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-maintenance-and-reliance-propagation",
+  "family_id": "work-engine.evidence-lineage",
+  "title": "Claim Maintenance and Reliance Propagation",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "semantic_parent",
+      "path": "../claim-centered-evidence-lineage/proposal.md"
+    },
+    {
+      "kind": "parent_decision",
+      "path": "../claim-centered-evidence-lineage/decision.json"
+    },
+    {
+      "kind": "production_foundation",
+      "path": "../production-claim-evidence-interface/proposal.md"
+    },
+    {
+      "kind": "dogfood_evidence",
+      "path": "../_dogfood/claim-lineage-backbone-dogfood/evidence-report.md"
+    },
+    {
+      "kind": "semantic_review",
+      "path": "../../../reviews/proposals/claim-centered-evidence-lineage/cd50e79/synthesis.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions, while a general control-plane capability may own cross-owner delivery without acquiring claim meaning."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "The production foundation cannot preserve the stable identities, revisions, profiles, and authority envelopes required by this phase.",
+      "Concurrent or branching refresh requires a different canonical-support model than explicit attributed selection among immutable revisions.",
+      "A real domain consumer cannot distinguish candidate impact, investigation, unchanged refresh, changed support, applicability, and reopening without collapsing owners.",
+      "Cross-owner obligation delivery cannot be made lossless and idempotent without assigning semantic completion to transport acknowledgement.",
+      "Compaction, authority revocation, inactive recipients, or partial publication requires durable semantics outside the proposed claim, domain-workflow, and delivery ownership split."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "split_from",
+      "target_id": "work-engine.claim-centered-evidence-lineage",
+      "rationale": "This candidate preserves and independently forms the semantic parent's complete active-maintenance, reliance-propagation, obligation, and recovery consequence after the production substrate is separated.",
+      "causal": true
+    },
+    {
+      "type": "depends_on",
+      "target_id": "work-engine.production-claim-evidence-interface",
+      "rationale": "Active maintenance requires the production core's stable identities, exact revisions, authority-bound operations, domain profiles, reliance records, and truthful projections.",
+      "causal": true
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.role-owned-durable-operational-state",
+      "rationale": "A role may reference exact relied-upon revisions and pending obligations while claim history and semantic transition ownership remain outside role state.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.operational-state-transition-history",
+      "rationale": "Operational transition history may observe delivery and role-state consequences without becoming the owner of claim judgments, reliance, or refresh completion.",
+      "causal": false
+    }
+  ]
+}

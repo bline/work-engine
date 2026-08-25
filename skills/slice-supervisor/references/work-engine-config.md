@@ -65,8 +65,8 @@ capabilities:
   compatibility shape with its historical combined evidence/review meaning.
 - `objective`: Required nonempty statement. Preserve the user's wording.
 - `work_source`: Optional evidence/boundary source. `kind` is `file`, `inline`, or `repository_evidence`; `value` is required for `file` and `inline` and omitted for `repository_evidence`. A missing work source means the objective plus applicable repository evidence, not an inferred roadmap file.
-- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. In version 2, `context.repository_evidence` and `context.independent_review` each contain a `provider` and `skill` and resolve independently. A human-authorized campaign may configure `context.adversarial_review` instead, with provider, skill, model, reasoning effort, evidence class, and isolation. Exactly one review role is allowed; accepted same-model review cannot satisfy an explicit independent-review requirement. Do not mix version-1 and version-2 context fields.
-- `validation`: `profile` names a builder-supported evidence policy and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. `engineering-proportional` selects check breadth and review independence from the slice's actual risk; `engineering-full` requires focused checks, applicable freshness checks, the full suite, and fresh adversarial review. Explicit requirements remain binding under either profile. Do not reinterpret an unknown requirement.
+- `builder`: Optional only when all documented defaults apply. `skill` identifies an adapter satisfying the contract below. `model` and `reasoning_effort` are passed only if supported. `context` is a namespaced object owned by that builder; retain it verbatim in provenance but never place secrets in configuration. In version 2, `context.repository_evidence` and `context.independent_review` each contain a `provider` and `skill` and resolve independently. A human-authorized campaign may configure `context.adversarial_review` instead, with provider, skill, model, reasoning effort, evidence class, and isolation. Exactly one review-execution role is allowed; accepted same-model review cannot satisfy an explicit independent-review requirement. The role supplies provider/session mechanics for supervisor-selected specialists and does not give the builder review-selection authority. Do not mix version-1 and version-2 context fields.
+- `validation`: `profile` names a builder-supported evidence policy and `requirements` lists observable outcomes. The builder must confirm support before plan acceptance. Under `engineering-proportional`, the builder selects deterministic check breadth while the supervisor selects review perspectives and required independence from the slice's projected consequence and risk. `engineering-full` requires focused checks, applicable freshness checks, the full suite, and supervisor selection of fresh adversarial review. Explicit requirements remain binding under either profile. Do not reinterpret an unknown requirement.
 - `metrics.path`: Durable JSONL destination. An explicit `null` disables durable metrics only when the user says so; do not confuse it with a missing value.
 - `limits`: Hard limits explicitly supplied by the user, such as `slices`, `time_seconds`, `cost_usd`, `tokens`, or `repair_attempts`. An empty object means no configured hard limits. Never invent them.
 - `approval.plan`: `procedural_when_safe` or `human_required`. `approval.uninterrupted_after_plan` controls whether execution and gate may share a follow-up; it never removes plan acceptance.
@@ -111,10 +111,18 @@ A configured builder must declare before plan acceptance that it can:
 3. execute through controlled implementation and gate phases using one persistent identity;
 4. satisfy or truthfully reject each validation requirement;
 5. preserve baseline and unrelated work where the medium has mutable state;
-6. return a complete terminal `audit_receipt` with common fields and namespaced adapter metrics, plus a compact semantic `handoff_receipt` for the next builder; and
-7. distinguish objective completion, remaining work, stops, and failures.
+6. project the exact candidate-binding inputs, accept the supervisor's immutable
+   review subject and selection, execute the selected specialists without
+   changing that selection, and return their attributed outcomes;
+7. return a complete terminal `audit_receipt` with common fields and namespaced adapter metrics, plus a compact semantic `handoff_receipt` for the next builder; and
+8. distinguish objective completion, remaining work, stops, and failures.
 
-The supervisor must not emulate a missing capability. Builder-specific repository-evidence and independent-review roles belong in `builder.context`; the supervisor passes them through and records them but does not invoke them directly. Changing retrieval must not implicitly change or satisfy independent review.
+The supervisor must not emulate a missing capability. Builder-specific
+repository-evidence and review-execution roles belong in `builder.context`; the
+supervisor passes the selected review plan to the builder and records the
+outcomes but does not invoke the provider directly. The supervisor owns
+specialist selection, while the builder owns provider execution and remediation.
+Changing retrieval must not implicitly change or satisfy independent review.
 
 ## Provenance and amendments
 
