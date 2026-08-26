@@ -1,0 +1,94 @@
+{
+  "anonymous_licensed_style": [
+    {
+      "category": "contrast_patterns",
+      "feature_id": "F01",
+      "layer": "surface",
+      "licensed_instruction": "Present the brief's explicitly positive evaluation and evidence limit as two concerns in tension before resolving them with the bounded contrast.",
+      "salience_weight": 4
+    },
+    {
+      "category": "claim_posture",
+      "feature_id": "F02",
+      "layer": "surface",
+      "licensed_instruction": "State the recommendation in a direct first-person epistemic posture without changing its strength.",
+      "salience_weight": 3
+    },
+    {
+      "category": "paragraph_rhythm",
+      "feature_id": "F03",
+      "layer": "surface",
+      "licensed_instruction": "Use compact pointwise sequencing inside the single paragraph without headings, bullets, or new categories.",
+      "salience_weight": 3
+    },
+    {
+      "category": "qualification_patterns",
+      "feature_id": "F04",
+      "layer": "discourse",
+      "licensed_instruction": "Acknowledge the brief's positive evaluation before identifying the exact evidence boundary already stated in the brief.",
+      "salience_weight": 4
+    },
+    {
+      "category": "conclusion_patterns",
+      "feature_id": "F05",
+      "layer": "surface",
+      "licensed_instruction": "End by compressing the brief's bounded contrast into a short parallel restatement without adding a slogan or premise.",
+      "salience_weight": 3
+    }
+  ],
+  "artifact_type": "linguistic_register_semantic_licensed_render_job_v2c",
+  "authority": "final-byte blinded v2c render packet; no unblinding or downstream authority",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "plan_artifact_sha256": "1763aa2beb5173a91292159173f49901467435429e94e0729ccb86fab4a6051c",
+  "preregistration_checkpoint_commit_oid": "3838679c354bece60086df98ea14494abb0bfc4b",
+  "rendering_contract": {
+    "acceptance_words": [
+      90,
+      130
+    ],
+    "blindness": "One renderer receives one anonymous licensed style card and one brief, with no condition identity, source, hypothesis, other card, prior output, or answer key.",
+    "generation_target_words": [
+      110,
+      120
+    ],
+    "task": "Express each of the six meanings exactly once, preserve the speech act, and naturally realize only the anonymous licensed style instructions."
+  },
+  "sample_id": "X4A18B2190A21",
+  "schema_version": 4,
+  "semantic_brief": {
+    "brief_id": "alias-removal",
+    "context": "Produce a compact technical review decision using only the following exact meanings.",
+    "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+    "required_propositions": [
+      {
+        "id": "alias-change",
+        "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+      },
+      {
+        "id": "alias-evidence",
+        "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+      },
+      {
+        "id": "alias-positive-evaluation",
+        "meaning": "Migrating twelve known clients is substantial progress."
+      },
+      {
+        "id": "alias-limit",
+        "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+      },
+      {
+        "id": "alias-bounded-contrast",
+        "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+      },
+      {
+        "id": "alias-decision",
+        "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+      }
+    ],
+    "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+  },
+  "semantic_license": {
+    "invariant": "Every condition receives the same six meanings and speech act for a brief; a style feature may only order, connect, attribute, parallelize, question, qualify, or restate those meanings.",
+    "prohibited_additions": "Do not invent familiarity, consensus, opposing stakeholders, importance, risk magnitude, method adequacy beyond the named action, new evidence, new requirements, analogies with substantive implications, or any evaluation not explicitly supplied."
+  }
+}

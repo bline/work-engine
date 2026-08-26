@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2b",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "699aff6316d8e93e7845a5c5ff5ed1f3ac24f2e51ba91298f107d4a281826f5a",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "extracted_prose_sha256": "90ecc84c2f3ce22cb2458e7f5ea3321aca1367e8dc6c878fb8a921328485deed",
+  "normalization": "direct",
+  "packet_artifact_sha256": "91ce2f252115a3ec528f16e0fceda461381f2c30c41f1d3143723ae07180b5ce",
+  "raw_response_sha256": "efda8beaab74cbde50ae8173c9d6f5862ed43089e090dde62c84131710ec3dcb",
+  "sample_id": "S12",
+  "schema_version": 3,
+  "text": "The migration renamed three public fields while retaining compatibility aliases. At present, twelve of fourteen known clients have migrated, while the status of the other two clients is unknown. Completing migration for twelve known clients represents substantial progress. However, the available integration tests cover those twelve migrated clients and do not cover the two clients whose status remains unknown. As a result, the evidence supports continued migration work, but it does not support removing the compatibility aliases. The review decision is to keep the aliases in place until the owners of the two remaining clients confirm that their clients have migrated."
+}

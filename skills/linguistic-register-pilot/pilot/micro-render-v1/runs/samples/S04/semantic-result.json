@@ -1,0 +1,43 @@
+{
+  "added_meaning": [],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "4e20a7089ae83155cee3eade5a3ffe44f3ff3127194e7731954603fee0256007",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cextends the cache lifetime from five minutes to fifteen minutes\u201d",
+      "proposition_id": "cache-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cA twenty-four-hour benchmark observed eighteen percent fewer origin requests.\u201d",
+      "proposition_id": "cache-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cthe benchmark did not measure stale-read incidence\u201d",
+      "proposition_id": "cache-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cApprove only a canary deployment, and require stale-read telemetry before any broader rollout.\u201d",
+      "proposition_id": "cache-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:17:32Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S04",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:00Z"
+  },
+  "sample_id": "S04",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions are preserved. The rendering makes the bounded canary approval, evidence limitation, and telemetry prerequisite explicit without adding independent meaning.",
+  "verdict": "equivalent"
+}

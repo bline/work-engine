@@ -1,0 +1,82 @@
+artifact_type: linguistic_register_v2c_forensic_closure_plan
+schema_version: 1
+status: frozen
+closure_id: semantic-licensed-micro-render-v2c-forensic-closure-2026-08-25
+authority: Final bounded forensic closure before deciding whether v2c may support a behavioral battery; no rerendering, matching, semantic adjudication, production integration, or corpus selection.
+subject:
+  v2c_checkpoint_commit_oid: 62cc7f7039cfc6238de8cc7d16a030ebe1892bf2
+  v2c_checkpoint_tree_oid: 3b4a3eb525636dbe19eaafaffaece8bb4c6153bf
+  leakage_audit_checkpoint_commit_oid: c53960d6a2608ed3ffdbc9523508e6b8b4d078b8
+  leakage_audit_checkpoint_tree_oid: 7a8f2eae840f27a0869fac11a8e05e1b65b38518
+  expected_corpus_artifact_sha256:
+    gelman-model-criticism: 18e3db1829bdac0945622dc7999fbb74d076398643d51bec2f6042016b7b0dc3
+    leveson-system-safety: bf7bfd3b4f38387814a9d9ea920466b97e3f6bcd4e7f7e6421f2a94a5e708541
+    shaw-engineering-judgment: c2d35df5253001fbb4d0e95f4932b3b60bcf31e7d9efd70ba8dfd6f89aac9bd5
+source_recovery:
+  search_order:
+    - Exact checkpoint Git objects and repository paths referenced by retained artifacts.
+    - Existing workspace files and retained temporary/cache artifacts, searched by reference and SHA-256.
+    - Original source URLs recorded in recovered manifests or provenance.
+    - Fresh download only when an authoritative recorded URL exists; compare bytes and normalized-content digests with the recorded provenance.
+  exactness_rule: A recovered corpus artifact or source object is exact only when its SHA-256 equals its retained expected digest. A fresh download with a different digest is a distinct observation and cannot replace the original bytes.
+  rights_rule: Keep source bytes outside the repository unless their license clearly permits redistribution. Retain only content-addressed manifests, source identity, license metadata, byte lengths, hashes, offsets, match lengths, algorithms, and derived reports.
+  failure_rule: If original bytes cannot be recovered or a fresh download fails digest verification, mark exact quotation absence permanently unresolved for v2c; do not infer equivalence from URL or title.
+content_addressed_manifest:
+  required_fields: [candidate_id, corpus_artifact_sha256, source_id, source_url, retrieval_class, byte_length, sha256, media_type, license_or_rights_status, redistribution_allowed, retained_location_class]
+  source_bytes_policy: external_ephemeral_or_existing_cache_only
+quotation_analysis:
+  token_normalization: Unicode NFKC, case-fold, normalize curly apostrophes to ASCII, and tokenize alphanumeric words with internal apostrophes; punctuation and whitespace do not contribute tokens.
+  longest_exact_sequence: Compute the longest contiguous normalized-token sequence between every render and every recovered source, retaining render/source token offsets, sequence length, and sequence text digest.
+  exact_ngram_scan:
+    report_sizes: [5, 6, 7, 8, 9, 10, 11, 12]
+    material_threshold_tokens: 8
+    rule: Retain every exact match at or above five tokens; flag any match of eight or more contiguous tokens as material potential quotation survival.
+  near_verbatim_scan:
+    minimum_window_tokens: 12
+    similarity_threshold: 0.9
+    algorithm: For each render window of 12 through 30 tokens, compare equal-length source windows using normalized token equality ratio; retain maximal non-contained matches with at least 90 percent equal positions and at least 10 identical tokens.
+  profile_mediation:
+    rule: Apply the same exact-sequence analysis to source-to-profile text and profile-to-render text. Report a mediated path when a normalized sequence of at least five tokens occurs in source, retained profile or licensed style-card text, and render.
+    interpretation: Profile/style-card overlap is intended traceability unless the shared wording originates as a source quotation at or above the material threshold.
+  scope: Compare every one of 16 normalized renders against every source object in every recovered candidate corpus, not only its assigned candidate.
+quotation_gate:
+  no_material_overlap: No exact match of eight or more tokens, no qualifying near-verbatim match, and no source-mediated path of five or more tokens into a render.
+  material_overlap: Any exact match of eight or more tokens, qualifying near-verbatim match, or mediated source-profile-render path of five or more tokens.
+  unresolved: One or more exact source objects used for extraction cannot be recovered and verified.
+cue_concentration:
+  population_rule: Derive assignment denominators from all three sealed matching keys and results. Expected denominator is 12 assignments per condition: four samples across three passes. Do not inherit a prose count.
+  trivial_features: [word_count, sentence_count, paragraph_count, heading_count, list_marker_count, period_count, comma_count, semicolon_count, colon_count, question_mark_count, exclamation_count, dash_count, parenthesis_count]
+  one_feature_rules:
+    enumeration: For every feature and condition, enumerate equality-to-observed-value, greater-than-midpoint, and less-than-or-equal-midpoint one-versus-rest rules over all observed values.
+    full_sample_report: Report every rule with precision, recall, F1, support, and confusion counts; identify the best rule by F1, then recall, precision, feature order, operator order, and threshold.
+    cross_brief_report: Select the best rule on alias-removal samples and evaluate unchanged on cache-canary samples, then reverse train/test briefs. Report a rule as cross-brief perfect only when both directions have precision and recall 1.0.
+    limitation: These are descriptive sufficiency baselines on 16 observed samples, not causal models or out-of-sample behavioral estimates.
+  shaw_question_rule:
+    predictor: question_mark_count > 0 predicts shaw-engineering-judgment
+    metrics: [precision, recall, specificity, false_positives, false_negatives]
+  shaw_rationale_coding:
+    denominator: Derive mechanically; expected 12.
+    categories:
+      sole: Interrogative or guiding-question syntax is the only intended feature cited.
+      primary: Interrogative syntax is the first or explicitly organizing cue, with one or more additional intended features cited.
+      secondary: Interrogative syntax is cited after another feature that supplies the primary explanation.
+      absent: Interrogative syntax is not cited.
+    other_feature_count: Count distinct cited licensed feature families other than interrogative syntax in every Shaw rationale.
+    limitation: Rationales report stated cue use and cannot prove causal dependence; the punctuation baseline separately tests cue sufficiency in the observed samples.
+candidate_suitability:
+  downgrade_behavioral_candidate: A condition has a cross-brief-perfect one-feature trivial rule, or at least 6 of 12 rationales classify interrogative syntax as sole or primary with median other-feature count below 2.
+  retain_behavioral_candidate: No cross-brief-perfect trivial rule and median nontrivial intended features per rationale is at least 2.
+  otherwise: inconclusive
+  independence: Candidate suitability is downstream planning evidence and does not rewrite whether v2c passed profile traceability.
+interpretation_gate:
+  strong_retention: Exact corpora verified, no material quotation overlap, and no candidate is downgraded solely to a trivial cue.
+  traceability_with_candidate_downgrade: Exact corpora verified with no material overlap, but at least one candidate meets the downgrade rule.
+  affected_samples_qualified: Material source quotation reaches one or more renders directly or through profile text.
+  abstraction_unresolved: Exact source bytes cannot be recovered and verified.
+non_actions:
+  - Do not modify any v2c or prior leakage-audit artifact.
+  - Do not commit or redistribute copyrighted source bytes without confirmed permission.
+  - Do not use rationale reports as mechanistic proof.
+  - Do not start Family A/B or an ablation in this slice.
+  - Do not touch app-server.
+frozen_by: Human-approved final forensic checks transcribed by Codex before source discovery or Shaw-rationale recoding.

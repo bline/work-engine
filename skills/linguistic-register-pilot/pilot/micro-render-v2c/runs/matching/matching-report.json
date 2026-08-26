@@ -1,0 +1,78 @@
+{
+  "artifact_type": "linguistic_register_v2c_matching_report",
+  "authority": "upstream matching evidence only; no corpus selection or production authority",
+  "condition_results": [
+    {
+      "checks": {
+        "passes": true,
+        "total": true
+      },
+      "condition_id": "gelman-model-criticism",
+      "correct_assignments": 12,
+      "correct_by_pass": [
+        4,
+        4,
+        4
+      ],
+      "median_confidence_when_correct": 5.0,
+      "passed": true,
+      "passing_match_passes": 3,
+      "possible_assignments": 12
+    },
+    {
+      "checks": {
+        "passes": true,
+        "total": true
+      },
+      "condition_id": "leveson-system-safety",
+      "correct_assignments": 12,
+      "correct_by_pass": [
+        4,
+        4,
+        4
+      ],
+      "median_confidence_when_correct": 5.0,
+      "passed": true,
+      "passing_match_passes": 3,
+      "possible_assignments": 12
+    },
+    {
+      "checks": {
+        "passes": true,
+        "total": true
+      },
+      "condition_id": "neutral-editorial-defaults",
+      "correct_assignments": 12,
+      "correct_by_pass": [
+        4,
+        4,
+        4
+      ],
+      "median_confidence_when_correct": 5.0,
+      "passed": true,
+      "passing_match_passes": 3,
+      "possible_assignments": 12
+    },
+    {
+      "checks": {
+        "passes": true,
+        "total": true
+      },
+      "condition_id": "shaw-engineering-judgment",
+      "correct_assignments": 12,
+      "correct_by_pass": [
+        4,
+        4,
+        4
+      ],
+      "median_confidence_when_correct": 5.0,
+      "passed": true,
+      "passing_match_passes": 3,
+      "possible_assignments": 12
+    }
+  ],
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "gate_passed": true,
+  "launch_set_sha256": "3f5fe556463c65f5950382720adaff971a1495e49f445a6e2c6dd4e6c19a4a45",
+  "schema_version": 1
+}

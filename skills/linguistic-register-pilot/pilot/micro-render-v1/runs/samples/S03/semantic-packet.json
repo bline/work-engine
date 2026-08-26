@@ -1,0 +1,38 @@
+{
+  "artifact_type": "linguistic_register_semantic_review_job_v1",
+  "authority": "blinded semantic-equivalence review input; style identity withheld",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "render_artifact_sha256": "5965d8c7ddaef9332d51c05ec99079a5fe96ef67bfe9a23f723b96659679b970",
+  "rendered_text": "{\"text\":\"The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, while the status of two clients remains unknown. Integration tests cover the twelve migrated clients, but they do not cover the two clients of unknown status. Because the evidence is limited to the migrated clients, I recommend rejecting alias removal for now. In short, do not remove the aliases until the two remaining client owners confirm migration.\"}",
+  "sample_id": "S03",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "alias-removal",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "alias-change",
+        "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+      },
+      {
+        "id": "alias-evidence",
+        "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+      },
+      {
+        "id": "alias-limit",
+        "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+      },
+      {
+        "id": "alias-decision",
+        "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+      }
+    ],
+    "required_speech_act": "A bounded rejection recommendation with an explicit evidence limitation and prerequisite."
+  },
+  "semantic_review_contract": {
+    "blindness": "The reviewer receives one brief and one rendering, with no style card, condition label, hypothesis, other rendering, or intended outcome.",
+    "prohibitions": "Do not score writing quality or register; return equivalent only when every proposition and speech act is preserved and no meaning is added.",
+    "task": "Map every required proposition to the rendered text, detect omission or alteration, detect added meaning, and judge speech-act equivalence."
+  }
+}

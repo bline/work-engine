@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "artifact_type": "linguistic_register_v2c_review_qualification",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "created_at": "2026-08-25T21:59:13-06:00",
+  "review_subject": {
+    "checkpoint_commit_oid": "5661fc4d746707b1add76b66a82ff607f260cc1c",
+    "tree_oid": "bbcaf806823055147a199ae57afccfb125b0d754",
+    "task_patch_sha256": "b744dd673bf31cc4c7f4a02610217319cd6eb767c15664b3cbaad9da56fa9d7e",
+    "gate_receipt_sha256": "4c62132bacdca739fbcd0675b27a34bb6489485c98fc146e9871797d4d5fc82b"
+  },
+  "review": {
+    "artifact_path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/sol-adversarial-review.md",
+    "source_output_sha256": "733d66b873accc6ac2bf5a6b8c63fa27ec4ba0bb0f4061d3663db094e414fed8",
+    "provider": "OpenAI",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "fresh_process": true,
+    "no_inherited_builder_context": true,
+    "evidence_class": "accepted_same_model_review",
+    "independence_claimed": false,
+    "retained_review_state": "unavailable_non_retained",
+    "verdict": "ACCEPT",
+    "actionable_findings": 0,
+    "instruction_review_applicability": "applicable",
+    "instruction_review_outcome": "retain"
+  },
+  "attempt_accounting": {
+    "valid_review_attempts": 1,
+    "excluded_attempts": 1,
+    "excluded_attempt_reason": "An earlier launch began in the live repository rather than an exact checkpoint export and was interrupted immediately; it produced no retained review and is not counted as evidence."
+  },
+  "limitations": [
+    "This is an accepted same-model review, not an independent-family review.",
+    "The reviewer's graph calls were blocked, so it used direct full-source inspection, immutable Git-object verification, and deterministic artifact recomputation.",
+    "The review is revision-bound to the stated checkpoint and tree and grants no production or corpus-selection authority."
+  ]
+}

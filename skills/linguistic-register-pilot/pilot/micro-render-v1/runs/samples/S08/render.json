@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "f99b34470b878ad7dfb18cef0965df395bf38bbec99eb5086bb0feae5ab6afe8",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:15:07Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S08",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:14:26Z"
+  },
+  "sample_id": "S08",
+  "schema_version": 1,
+  "text": "The migration evidence is substantial but bounded. What changed? What is established? What remains uncertain? The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, and integration tests cover those twelve. By contrast, the status of the other two clients is unknown. Do not remove the aliases until the owners of those two clients confirm migration: the tests do not cover them, so the available evidence does not establish their migration."
+}

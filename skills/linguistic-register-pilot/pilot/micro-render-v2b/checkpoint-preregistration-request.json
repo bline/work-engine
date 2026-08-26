@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-pilot-v2b",
+  "slice_number": 6,
+  "candidate_attempt": 2,
+  "baseline_commit_oid": "dc93d89786ef6216daebe5941820f2db4f70a5b4",
+  "parent_checkpoint_commit_oid": "5c14960e676e698f944dd764838f687f8ecd8ed1",
+  "plan_version": "micro-render-v2b-preregistration-v2",
+  "scope_revision": "v2b-fresh-render-only",
+  "gate_receipt_digest": "1b540364b7afd500c1ea6dc403cd97b3f5b87e6dd570cc1eec4de7180d7440cb",
+  "created_at": "2026-08-25T17:47:00-06:00",
+  "paths": [
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2b/preregistration.yaml", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/scripts/sol_packet_job_v2b.py", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/scripts/micro_render_v2b_artifacts.py", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/tests/test_micro_render_v2b_artifacts.py", "action": "include", "attribution": "validation_dependency"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2/preregistration.yaml", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v1/review-qualification.json", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/scripts/micro_render_v2_artifacts.py", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/scripts/micro_render_artifacts.py", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/scripts/recognizability_artifacts.py", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/scripts/pilot_artifacts.py", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/references/micro-v2-render-output.schema.json", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/references/micro-v2-semantic-output.schema.json", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/references/micro-v2-matching-output.schema.json", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/profile.yaml", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/pilot/candidates/leveson/profile.yaml", "action": "include", "attribution": "generated_dependency"},
+    {"path": "skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/profile.yaml", "action": "include", "attribution": "generated_dependency"}
+  ]
+}

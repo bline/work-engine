@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-pilot-v2c",
+  "slice_number": 7,
+  "candidate_attempt": 5,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "a1efa3763e8ef10cfa1b4503b7d5231b2e8df659",
+  "plan_version": "micro-render-v2c-semantic-evidence-v1",
+  "scope_revision": "v2c-fresh-apparatus-correction",
+  "gate_receipt_digest": "51c00512facae9303048666e3ccf97d623103b5bec9218ccaf890cdc2c98c25c",
+  "created_at": "2026-08-25T20:01:59-06:00",
+  "paths": [
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/launch-manifest.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/attempt-marker.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/raw-result.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/events.jsonl", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/execution-receipt.json", "action": "include", "attribution": "task_owned"}
+  ]
+}

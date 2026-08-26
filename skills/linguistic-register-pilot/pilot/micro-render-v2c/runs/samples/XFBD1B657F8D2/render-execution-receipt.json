@@ -1,0 +1,33 @@
+{
+  "artifact_type": "linguistic_register_model_execution_receipt_v2c",
+  "completed_at_utc": "2026-08-26T01:55:12.478781Z",
+  "completion_status": "completed",
+  "ephemeral": true,
+  "events_output_sha256": "89d6a7b05c44c678e9fbb4f115d861e3457709dc64edfc03a383287c7faea47e",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "filesystem_visibility_claimed": false,
+  "fresh_process": true,
+  "isolated_temporary_directory": true,
+  "job_id": "XFBD1B657F8D2",
+  "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+  "launcher": "codex exec",
+  "launcher_version": "codex-cli 0.149.1",
+  "model": "gpt-5.6-sol",
+  "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+  "packet_artifact_sha256": "c2f5bc80abf064219fde653ef5a200368073fd46ab5b1d1dabd6f3b1eea0359e",
+  "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+  "provider": "OpenAI",
+  "raw_output_sha256": "ac3edd1ef55bce1e7c500911beb70b34fbefc6702760f0b6f0f2fd385ae8c13b",
+  "reasoning_effort": "high",
+  "request_digest": "376059077618bbd64240d3c5ae1674d7f68267ab873a0ece9df4c21314eca353",
+  "return_code": 0,
+  "sandbox": "read-only",
+  "schema_version": 1,
+  "stage": "render",
+  "staged_input_files": [
+    "packet.json",
+    "output.schema.json"
+  ],
+  "started_at_utc": "2026-08-26T01:54:01.097683Z",
+  "stderr_sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721"
+}

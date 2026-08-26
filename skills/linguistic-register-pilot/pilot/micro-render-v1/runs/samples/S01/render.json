@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "856bd958161ed82995f071f479b3c12c31fe079dd160ca185eb84d20e48448ac",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:14:13Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S01",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:13:41Z"
+  },
+  "sample_id": "S01",
+  "schema_version": 1,
+  "text": "The decision pits reduced origin demand against unmeasured stale-read behavior. The proposed update changes the cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark did observe eighteen percent fewer origin requests, so that evidence deserves weight; the narrower disagreement is that it cannot settle freshness, because the benchmark did not measure stale-read incidence\u2014the speedometer worked, the rear-view mirror did not. I therefore recommend a bounded course. In short: approve only a canary deployment, and require stale-read telemetry before any broader rollout."
+}

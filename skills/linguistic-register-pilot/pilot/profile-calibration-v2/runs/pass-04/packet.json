@@ -1,0 +1,286 @@
+{
+  "artifact_type": "linguistic_register_calibration_packet_v1",
+  "authority": "blinded profile-card calibration input; no corpus-selection or rendering authority",
+  "cards": [
+    {
+      "anonymous_card_id": "C01",
+      "feature_count": 6,
+      "features": [
+        {
+          "category": "paragraph_rhythm",
+          "description": "Answer a complex disagreement through numbered sections and compact pointwise responses.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "rhythm",
+          "description": "Interrupt formal analysis with a compact analogy, aside, or lightly humorous clarification.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "contrast_patterns",
+          "description": "Frame a disagreement as two opposing concerns before addressing either side.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "claim_posture",
+          "description": "State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "Compress a longer distinction into a short parallel summary after the detailed explanation.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Acknowledge the valid portion of an objection before identifying the narrower point of disagreement.",
+          "layer": "discourse",
+          "salience_weight": 4
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C02",
+      "feature_count": 6,
+      "features": [
+        {
+          "category": "syntax",
+          "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Use brief reader-facing transitions to flag a consequential distinction before explaining it.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Introduce an evaluation through a short parallel series of guiding questions.",
+          "layer": "surface",
+          "salience_weight": 4
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C03",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "contrast_patterns",
+          "description": "Frame a disagreement as two opposing concerns before addressing either side.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "claim_posture",
+          "description": "State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "syntax",
+          "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+          "layer": "surface",
+          "salience_weight": 2
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C04",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "syntax",
+          "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "State the practical consequence of a condition directly, then explain the evidence or mechanism behind it.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Introduce an evaluation through a short parallel series of guiding questions.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+          "layer": "discourse",
+          "salience_weight": 4
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C05",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "qualification_patterns",
+          "description": "Mark that a criticism concerns adequacy for the stated purpose rather than denying every use of the criticized approach.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Acknowledge the valid portion of an objection before identifying the narrower point of disagreement.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "claim_posture",
+          "description": "Use short, high-commitment declarative sentences for the central evaluation, followed by the limiting explanation.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications.",
+          "layer": "surface",
+          "salience_weight": 4
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C06",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "connective_patterns",
+          "description": "Use ordinary transition words when moving between related points.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "description": "Prefer direct sentences whose subjects and actions are easy to identify.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Add a brief qualification when a statement does not apply universally.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "End with a concise restatement of the main point.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Keep each paragraph focused on one main point.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "C07",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "claim_posture",
+          "description": "Use short, high-commitment declarative sentences for the central evaluation, followed by the limiting explanation.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark that a criticism concerns adequacy for the stated purpose rather than denying every use of the criticized approach.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Use brief reader-facing transitions to flag a consequential distinction before explaining it.",
+          "layer": "surface",
+          "salience_weight": 2
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    }
+  ],
+  "classifier_contract": {
+    "blindness": "Each fresh classifier receives one pass packet only, with randomized card IDs and feature order, no source or candidate identities, no answer key, no prior pass, and no repository access.",
+    "prohibited_inference": "Do not infer, name, or search for authors, disciplines, source works, candidate identities, authentic-card count, composite construction, or an intended winner.",
+    "required_outputs": [
+      "internal_coherence",
+      "non_neutral_distinctiveness",
+      "pairwise_separation",
+      "most_neutral_card"
+    ],
+    "score_scale": "Use integers 1 through 5. A coherence score of 5 requires mutually reinforcing features that imply one specific register; a 3 indicates a plausible but partly generic or mixed bundle; a 1 indicates conflicting or unrelated features. A separation score of 5 requires multiple independent distinguishing cues; a 3 requires a reliable but narrow distinction; a 1 means effectively indistinguishable.",
+    "task": "Score each anonymous card independently for internal coherence and non-neutral distinctiveness, score all twenty-one unordered card pairs for linguistic-profile separation, then identify the most neutral card. Some cards may be coherent profiles and some may be matched composites; do not assume how many of either exist."
+  },
+  "experiment_id": "profile-card-stability-calibration-2026-08-25",
+  "pass_number": 4,
+  "plan_artifact_sha256": "77d47981d2c865549cd13af09dbe5fcb02eaf330c2e98cac0aad03ad3f9f53eb",
+  "schema_version": 1
+}

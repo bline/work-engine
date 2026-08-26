@@ -1,0 +1,149 @@
+{
+  "artifact_type": "linguistic_register_v2c_immediate_batch_evidence",
+  "authority": "immediate checkpoint input; no semantic, matching, or condition-comparison authority",
+  "blinding": "Sample-level transport evidence contains no condition labels.",
+  "expected_jobs": 16,
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "launch_checkpoint_commit_oid": "9c3a8945a4a5464d9749f9708806b1954a3ff74b",
+  "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+  "outcomes": [
+    {
+      "extracted_prose_sha256": "ac685e05ea0e7c1ac21a4a814ebab76b8fb04177ebfb0b7a7a974c49058c7235",
+      "normalization": "direct",
+      "raw_response_sha256": "2eb9c24f8101dd97a32f53ef489cf26699122fa384ce2e76b085c020c5763182",
+      "reason": null,
+      "sample_id": "X1832FB59B14B",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "3431e9dee396173bd2c01e8daba0ad6d1ece1e709a2cce7d87f4eaabbdd4c1d6",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "36052b065e89ceaf9f8b86bf9ad1ad7df679757427dffa1f4d383cda0cb7d555",
+      "reason": null,
+      "sample_id": "X1841CFA4E948",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "275f5bf8238b447e955f32a091c931e0d8e2443e816d2fa0930e4adc33ff19f2",
+      "normalization": "direct",
+      "raw_response_sha256": "e700ea7c4f2fbcf1a77c7b4f10318fb37ec7fb120a9ac08fdd0c21b6a3b1807a",
+      "reason": null,
+      "sample_id": "X46404894D094",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "a553c1e735f294eb8493b2c0eb602aa1f64885731220685b88e6990ee4b079f8",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "7355ea4fa9c524ab518785fcf3c48a5bcc5b3c37180dbdf3f5b196c9d3245906",
+      "reason": null,
+      "sample_id": "X4A18B2190A21",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "82f8219e304eb875dac5c1e63dc9f5aaaa041a7c5c3fc5686f3555531d4a1e58",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "ae11362d877f9e04c308a319dbda85235d71eb881ddc2a8d3917f7dcefefc290",
+      "reason": null,
+      "sample_id": "X4CE2AFFE1AB5",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "b61ecd0ce24ef5e6a527ee52326ae197364060fadfe9b8785bff8982de6a767e",
+      "normalization": "direct",
+      "raw_response_sha256": "6cbaa25f5a7cf615878591311e05eb6b9fbbe2ba63280eccc91dc0a13595bd61",
+      "reason": null,
+      "sample_id": "X5057DAA6828A",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "ca65b3090757b104b2d19bcfe0cd3dc44c84d583222ba1b5869817695aa2b08d",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "b0e6b07161c9fb8e4d41c3946492a7b6c406d37728ce37c57d94cb820a86558a",
+      "reason": null,
+      "sample_id": "X54840A8F809C",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "6c17acd67cc2a0614b7ce5199b2441cabfb599b4a8b8bcaf6012c0c4466c5e6d",
+      "normalization": "direct",
+      "raw_response_sha256": "1b2831e519d005395f7019787bd2c9b0b73cdc69a1f27b7193c152a99155bc60",
+      "reason": null,
+      "sample_id": "X6459B135EE92",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "84e151efcaef2e6501ae8937b69413403e817e5dca87e10c8f148c470964dff4",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "48e7d4b23a9d48562920b26ffcd2ee3727a35563709bb4d68f031e11edabd4ea",
+      "reason": null,
+      "sample_id": "X6767D2C7B67B",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "d8128acfb8fc3aae71a90bffdf87fc79b23de7f120c53036ed26dfee19b3d70f",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "c5acdb958d6dd545709b11eb6305822208c66e10a634f59fb3046a6ccf36b4a2",
+      "reason": null,
+      "sample_id": "X696A5F522974",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "8b50c595e9acb3bd53ca594bfc7b260fe84b9d24638cd180c32943c4f41978ef",
+      "normalization": "direct",
+      "raw_response_sha256": "991f39951f007fa66da655fe22e179f1eb6b3203db740a86c47e13162864c1c8",
+      "reason": null,
+      "sample_id": "X9C9FA0A475B3",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "05067905f45f0a8bffd2d16a7913a4066e3cfa036a15fad5b44bba6fa0198c41",
+      "normalization": "direct",
+      "raw_response_sha256": "2e97b33751b31558ba341bbdc69669fab9c845232bed94e9583582e7062b2de1",
+      "reason": null,
+      "sample_id": "XAAD82931E318",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "98ce8bd70f6bdb150c50dbd99f07bb893327dcff9d4a70775ae0529894ddb204",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "b3e342bc23cc4b33fdc8d9326e4159d6088325b717f25bcfa3b2aba49f0b7060",
+      "reason": null,
+      "sample_id": "XF71FD5BCB7BF",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "6d37abeed7b6e2b8a0733eed0a241af87e42a53318b2cd5f303e20f89ce0a6c0",
+      "normalization": "direct",
+      "raw_response_sha256": "cb84161a27560c3af9e5fa56704983102f609fe155f773270270abe5b2a9a6c1",
+      "reason": null,
+      "sample_id": "XF7A6D8650BCB",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "8e12813008298eb9ae47fe2d25352737fe563cbb620a3501b162c7e298bcb198",
+      "normalization": "unwrapped_once",
+      "raw_response_sha256": "7354f62b1b050125bc2ffb697e66f40eb3ae05f6cb8acbfbeeff85640cf0cf56",
+      "reason": null,
+      "sample_id": "XF8DDF32F5CDE",
+      "state": "completed_receipt"
+    },
+    {
+      "extracted_prose_sha256": "28d693f8e1282c475d050f5bfb137f0c6b43fb02cf8fa8697f25cdf8fcff909c",
+      "normalization": "direct",
+      "raw_response_sha256": "ac3edd1ef55bce1e7c500911beb70b34fbefc6702760f0b6f0f2fd385ae8c13b",
+      "reason": null,
+      "sample_id": "XFBD1B657F8D2",
+      "state": "completed_receipt"
+    }
+  ],
+  "schema_version": 1,
+  "state_counts": {
+    "attempted_no_receipt": 0,
+    "completed_failed": 0,
+    "completed_receipt": 16,
+    "planned_not_attempted": 0
+  },
+  "transport_accepted": 16,
+  "transport_completeness_gate_passed": true,
+  "transport_rejected": 0
+}

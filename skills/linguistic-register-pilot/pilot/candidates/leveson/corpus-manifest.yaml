@@ -1,0 +1,30 @@
+artifact_type: linguistic_register_mini_corpus_v1
+schema_version: 1
+candidate_id: leveson-system-safety
+target_practice: system-safety review and causal-boundary analysis
+selection_basis: A solo-authored technical white paper is paired with solo Senate testimony to expose recurring realization across formal analysis and public evaluative argument.
+sources:
+  - id: safety-assurance-white-paper
+    title: White Paper on Limitations of Safety Assurance and Goal Structuring Notation
+    authors:
+      - Nancy Leveson
+    authorship_basis: The PDF identifies Professor Nancy Leveson as its sole author and is hosted by the MIT PSASS project.
+    genre: formal
+    public_url: https://psas.scripts.mit.edu/home/wp-content/uploads/2020/07/White-Paper-on-Safety-Assurance.pdf
+    access_basis: Complete PDF publicly readable from the MIT PSASS site.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9
+  - id: oil-gas-senate-testimony
+    title: Risk Management in the Oil and Gas Industry
+    authors:
+      - Nancy Leveson
+    authorship_basis: The MIT Energy Initiative page identifies the work as Professor Nancy Leveson's testimony before the United States Senate.
+    genre: responsive_or_informal
+    public_url: https://energy.mit.edu/news/risk-management-in-the-oil-and-gas-industry/
+    access_basis: Complete testimony publicly readable on an MIT institutional page.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: 4bfd351202f90b8b47de9ad3da1a82a37137cade78291798149c1b05395b9ee4
+limitations:
+  - The public pages do not state a reuse license, so source bytes are not committed to the pilot package.
+  - Both works strongly express substantive system-safety method, creating high semantic-contamination risk.
+

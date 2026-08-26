@@ -1,0 +1,45 @@
+{
+  "added_meaning": [
+    "The rendering characterizes the migration evidence as \u201csubstantial,\u201d an evaluative claim not supplied by the brief."
+  ],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "bed31bb458c26dc37d164b6a4c618977fa13579deeccc20d52af162dd128a355",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cThe migration renamed three public fields while retaining compatibility aliases.\u201d",
+      "proposition_id": "alias-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cTwelve of fourteen known clients have migrated\u201d and \u201cthe status of the other two clients is unknown.\u201d",
+      "proposition_id": "alias-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cIntegration tests cover those twelve\u201d and \u201cthe tests do not cover\u201d the other two clients.",
+      "proposition_id": "alias-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cDo not remove the aliases until the owners of those two clients confirm migration.\u201d",
+      "proposition_id": "alias-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:17:27Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S08",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:00Z"
+  },
+  "sample_id": "S08",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions and the bounded rejection recommendation are preserved, including the evidence limitation and prerequisite, but the unsupported characterization of the evidence as substantial adds meaning.",
+  "verdict": "not_equivalent"
+}

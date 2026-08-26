@@ -1,0 +1,62 @@
+artifact_type: linguistic_register_micro_render_plan_v1
+schema_version: 1
+status: frozen
+experiment_id: fixed-semantics-micro-render-2026-08-25
+repository: /home/bline/code/work-engine
+base_precheck_plan:
+  path: skills/linguistic-register-pilot/pilot/profile-recognizability-precheck/preregistration.yaml
+  sha256: 067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa
+briefs:
+  - brief_id: cache-canary
+    context: Produce a compact technical review decision from the following exact facts.
+    required_propositions:
+      - id: cache-change
+        meaning: The proposed update changes a cache lifetime from five minutes to fifteen minutes.
+      - id: cache-evidence
+        meaning: A twenty-four-hour benchmark observed eighteen percent fewer origin requests.
+      - id: cache-limit
+        meaning: The benchmark did not measure stale-read incidence.
+      - id: cache-decision
+        meaning: Approve only a canary deployment and require stale-read telemetry before broader rollout.
+    required_speech_act: A bounded approval recommendation with an explicit evidence limitation and prerequisite.
+    output_constraint: One self-contained paragraph of 70 to 110 words with no heading or bullet list.
+  - brief_id: alias-removal
+    context: Produce a compact technical review decision from the following exact facts.
+    required_propositions:
+      - id: alias-change
+        meaning: A migration renamed three public fields while retaining compatibility aliases.
+      - id: alias-evidence
+        meaning: Twelve of fourteen known clients have migrated; the status of two clients is unknown.
+      - id: alias-limit
+        meaning: Integration tests cover the twelve migrated clients but not the two clients of unknown status.
+      - id: alias-decision
+        meaning: Do not remove the aliases until the two remaining client owners confirm migration.
+    required_speech_act: A bounded rejection recommendation with an explicit evidence limitation and prerequisite.
+    output_constraint: One self-contained paragraph of 70 to 110 words with no heading or bullet list.
+replicas_per_brief_condition: 2
+rendering_seed: frozen-before-rendering::two-brief-four-condition-two-replica::2026-08-25
+rendering_contract:
+  task: Express every proposition and the required speech act exactly once while realizing the anonymous style features naturally.
+  blindness: The renderer receives one anonymous style card and one brief, with no candidate identity, source, hypothesis, other condition, or prior rendering.
+  prohibitions: Do not add facts, methods, requirements, permissions, examples, labels, quotations, headings, bullets, or domain claims beyond the brief; do not mention style instructions.
+semantic_review_contract:
+  task: Map every required proposition to the rendered text, detect omission or alteration, detect added meaning, and judge speech-act equivalence.
+  blindness: The reviewer receives one brief and one rendering, with no style card, condition label, hypothesis, other rendering, or intended outcome.
+  prohibitions: Do not score writing quality or register; return equivalent only when every proposition and speech act is preserved and no meaning is added.
+matching_contract:
+  task: For each anonymous rendered text, select the single anonymous reference card whose linguistic features it expresses most strongly.
+  blindness: The classifier receives accepted texts and anonymous reference cards with randomized labels, no semantic briefs, condition identities, answer key, prior pass, or intended winner.
+  prohibitions: Match linguistic realization only; ignore subject matter and do not infer authors, sources, disciplines, authentic-card status, or experimental conditions.
+  score_scale: Confidence 1 means a forced guess, 3 means a narrow but reliable match, and 5 means multiple independent surface or discourse cues support the match.
+  passes: 3
+thresholds:
+  require_all_semantically_equivalent: true
+  minimum_correct_assignments_per_condition: 9
+  minimum_passing_match_passes_per_condition: 2
+  minimum_correct_per_condition_in_passing_pass: 3
+preregistration_owner: Human-authorized micro-render slice executed by Codex before outcomes
+limitations:
+  - Sol renderers, semantic reviewers, and matching classifiers share a model family; repetition estimates execution stability, not independent reliability.
+  - These short passages are selection probes, not full C0/C1/C2 role artifacts or experimental tasks.
+  - Reference-card matching still depends on the provisional two-document extracted profiles.
+  - Passing does not select a corpus without human audit and acceptance.

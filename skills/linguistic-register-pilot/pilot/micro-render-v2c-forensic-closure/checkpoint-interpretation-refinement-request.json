@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-v2c-forensic-closure",
+  "slice_number": 1,
+  "candidate_attempt": 3,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "8f035c2ec6142dcf7dd13cbf6889842404be7766",
+  "plan_version": "v2c-forensic-closure-interpretation-refinement-v1",
+  "scope_revision": "shaw-discourse-cue-identification-qualification",
+  "gate_receipt_digest": "72360f9e9003b9fc6d9d5f6f6ff234009cf922d4a1f3d6922fe2a388b61a900c",
+  "created_at": "2026-08-26T00:02:57-06:00",
+  "paths": [
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/checkpoint-interpretation-refinement-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/closure-report.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/candidate-suitability.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/interpretation-addendum.md",
+      "action": "include",
+      "attribution": "task_owned"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-v2c-leakage-audit",
+  "slice_number": 1,
+  "candidate_attempt": 1,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "62cc7f7039cfc6238de8cc7d16a030ebe1892bf2",
+  "plan_version": "v2c-leakage-audit-preregistration-v1",
+  "scope_revision": "frozen-read-only-audit-boundary",
+  "gate_receipt_digest": "5b9ae5b21d590b39a3dc8b8c496e32f7b8e851379d4b379685d5baabad1bfb86",
+  "created_at": "2026-08-25T22:18:40-06:00",
+  "paths": [
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/checkpoint-preregistration-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/preregistration.yaml",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/subject-inventory.json",
+      "action": "include",
+      "attribution": "validation_dependency"
+    }
+  ]
+}

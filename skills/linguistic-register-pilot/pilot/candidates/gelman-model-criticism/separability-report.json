@@ -1,0 +1,42 @@
+{
+  "artifact_type": "linguistic_register_separability_report_v1",
+  "authority": "mechanical gate state only; human acceptance is required before rendering",
+  "bindings": {
+    "corpus_artifact_sha256": "18e3db1829bdac0945622dc7999fbb74d076398643d51bec2f6042016b7b0dc3",
+    "profile_artifact_sha256": "60b645cc5b04c7d7a32dd314406e374bb9c31959903756db0201f67414d98be8",
+    "role_artifact_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94"
+  },
+  "candidate_id": "gelman-model-criticism",
+  "checks": {
+    "cross_genre_retained_features": true,
+    "retained_feature_count": true,
+    "weighted_retention": true
+  },
+  "disposition": "candidate_viable",
+  "metrics": {
+    "counts_by_disposition": {
+      "realization_only": 6,
+      "semantic_addition": 3,
+      "semantic_duplicate": 0,
+      "uncertain": 0
+    },
+    "cross_genre_retained_feature_count": 6,
+    "extracted_feature_count": 9,
+    "retained_feature_count": 6,
+    "total_distinctiveness_weight": 34.0,
+    "weighted_retention": 0.5882352941,
+    "weights_by_disposition": {
+      "realization_only": 20.0,
+      "semantic_addition": 14.0,
+      "semantic_duplicate": 0.0,
+      "uncertain": 0.0
+    }
+  },
+  "role_id": "agent-instruction-review",
+  "schema_version": 1,
+  "thresholds": {
+    "minimum_cross_genre_retained_features": 3,
+    "minimum_retained_features": 4,
+    "minimum_weighted_retention": 0.35
+  }
+}

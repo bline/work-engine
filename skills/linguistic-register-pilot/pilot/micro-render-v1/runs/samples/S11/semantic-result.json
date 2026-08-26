@@ -1,0 +1,46 @@
+{
+  "added_meaning": [
+    "The rendering characterizes the migration progress as \u201cstrong,\u201d adding an evaluative judgment not specified in the brief.",
+    "The rendering characterizes the two uncovered clients as \u201ca small count,\u201d adding an evaluative judgment not specified in the brief."
+  ],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "c4f8aeff87e17a1a991be6c1234783e85f1023e82bd8457903049d517c6f885c",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cThe migration renamed three public fields while retaining compatibility aliases.\u201d",
+      "proposition_id": "alias-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cTwelve of fourteen known clients have migrated, but the other two clients\u2019 status is unknown.\u201d",
+      "proposition_id": "alias-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cIntegration tests cover the twelve migrated clients, not the two of unknown status.\u201d",
+      "proposition_id": "alias-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cDo not remove the aliases until both remaining client owners confirm migration.\u201d",
+      "proposition_id": "alias-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:18:30Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S11",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:53Z"
+  },
+  "sample_id": "S11",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions and the bounded rejection recommendation, evidence limitation, and prerequisite are preserved. However, the rendering adds evaluative claims about the strength of progress and the smallness of the uncovered-client count, so it does not satisfy the no-added-meaning condition.",
+  "verdict": "not_equivalent"
+}

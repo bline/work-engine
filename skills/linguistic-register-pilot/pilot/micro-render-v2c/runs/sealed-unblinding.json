@@ -1,0 +1,105 @@
+{
+  "artifact_type": "linguistic_register_v2c_sealed_unblinding",
+  "authority": "sealed condition mapping for post-checkpoint aggregation and matching only",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "neutral_condition_id": "neutral-editorial-defaults",
+  "samples": {
+    "X1832FB59B14B": {
+      "brief_id": "alias-removal",
+      "condition_id": "shaw-engineering-judgment",
+      "packet_artifact_sha256": "181b0cfb298737fe524506ebe5d1712c788c5b7379153c59845c9a26254b9ff5",
+      "replica": 2
+    },
+    "X1841CFA4E948": {
+      "brief_id": "alias-removal",
+      "condition_id": "neutral-editorial-defaults",
+      "packet_artifact_sha256": "06cd1cd7af35dc906a187303c7cb7ff46843b67c45b289ac54c984673478fb05",
+      "replica": 2
+    },
+    "X46404894D094": {
+      "brief_id": "cache-canary",
+      "condition_id": "neutral-editorial-defaults",
+      "packet_artifact_sha256": "592eba7952bf3a0ce35ba1072a5127298ff491d142a6a33aef5daafe3e24abd3",
+      "replica": 2
+    },
+    "X4A18B2190A21": {
+      "brief_id": "alias-removal",
+      "condition_id": "gelman-model-criticism",
+      "packet_artifact_sha256": "713c2c9be3f36a60967ea921f9440eb2fa690d06a254f5a4fbcb67ef65c059a3",
+      "replica": 1
+    },
+    "X4CE2AFFE1AB5": {
+      "brief_id": "alias-removal",
+      "condition_id": "leveson-system-safety",
+      "packet_artifact_sha256": "ecb5329a3d1dcc86c0b3bf122b4354555f8dd3f5b40733b2d94e18f8c06ba35d",
+      "replica": 2
+    },
+    "X5057DAA6828A": {
+      "brief_id": "alias-removal",
+      "condition_id": "gelman-model-criticism",
+      "packet_artifact_sha256": "32e8dbb6796b17504e25ff50048225912d3fcba3c90249fc5d47a71430301a3c",
+      "replica": 2
+    },
+    "X54840A8F809C": {
+      "brief_id": "cache-canary",
+      "condition_id": "leveson-system-safety",
+      "packet_artifact_sha256": "6faf345b226dceef196c3f54bfdaf16e3e38ce82213875c3e84abd118449d50b",
+      "replica": 2
+    },
+    "X6459B135EE92": {
+      "brief_id": "cache-canary",
+      "condition_id": "gelman-model-criticism",
+      "packet_artifact_sha256": "64afa4600b57254f5b8479348492a5fa7c31f53789c29fb8550fb730c1b4df43",
+      "replica": 1
+    },
+    "X6767D2C7B67B": {
+      "brief_id": "alias-removal",
+      "condition_id": "leveson-system-safety",
+      "packet_artifact_sha256": "0d294061acf0e8dbec9352fcf78c394a20a464d39f45452f42fb4308a49dde3e",
+      "replica": 1
+    },
+    "X696A5F522974": {
+      "brief_id": "alias-removal",
+      "condition_id": "shaw-engineering-judgment",
+      "packet_artifact_sha256": "951aa5b8e88747da5bc812912bdfa3e8daedfc79dc9e6e318f298f9d008df4b6",
+      "replica": 1
+    },
+    "X9C9FA0A475B3": {
+      "brief_id": "alias-removal",
+      "condition_id": "neutral-editorial-defaults",
+      "packet_artifact_sha256": "2bc2ee0e81ad4567839f3d7f3ab24d76f24360726877192b270496bbd98a2f4b",
+      "replica": 1
+    },
+    "XAAD82931E318": {
+      "brief_id": "cache-canary",
+      "condition_id": "gelman-model-criticism",
+      "packet_artifact_sha256": "4b3c60282f5714faed9acd8b11151c367bc8574884e3a69d065bf08fa9cb9a96",
+      "replica": 2
+    },
+    "XF71FD5BCB7BF": {
+      "brief_id": "cache-canary",
+      "condition_id": "leveson-system-safety",
+      "packet_artifact_sha256": "c995ab6bb81e06a94f3f9d5b349a65b805d4816123701a704f8a80d6b1989ace",
+      "replica": 1
+    },
+    "XF7A6D8650BCB": {
+      "brief_id": "cache-canary",
+      "condition_id": "shaw-engineering-judgment",
+      "packet_artifact_sha256": "2b1fd3d52c8df60138388847a70be2c5b7bf500accb7cd7d2cca1dbf6c2b0334",
+      "replica": 2
+    },
+    "XF8DDF32F5CDE": {
+      "brief_id": "cache-canary",
+      "condition_id": "neutral-editorial-defaults",
+      "packet_artifact_sha256": "8f6de2939ed0951754b1f2f66f7d07589ef4735a0f76cf722191f389e43a592a",
+      "replica": 1
+    },
+    "XFBD1B657F8D2": {
+      "brief_id": "cache-canary",
+      "condition_id": "shaw-engineering-judgment",
+      "packet_artifact_sha256": "c2f5bc80abf064219fde653ef5a200368073fd46ab5b1d1dabd6f3b1eea0359e",
+      "replica": 1
+    }
+  },
+  "schema_version": 1
+}

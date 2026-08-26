@@ -1,0 +1,42 @@
+artifact_type: linguistic_register_semantic_licensed_micro_render_plan_v2b
+schema_version: 3
+status: frozen
+experiment_id: semantic-licensed-micro-render-v2b-2026-08-25
+repository: /home/bline/code/work-engine
+base_plan:
+  path: skills/linguistic-register-pilot/pilot/micro-render-v2/preregistration.yaml
+  sha256: c6d47785a191630e42358f75121409580cd00e699e62058d300ce0dde8d71c3b
+freshness:
+  rendering_seed: frozen-before-outcomes::semantic-licensed-v2b::2026-08-25
+  prior_output_policy: No v1 or v2 output, receipt, adjudication, or matching artifact may be copied, substituted, retried, or salvaged into v2b.
+transport:
+  completeness_gate: All sixteen expected render jobs must have a retained attempt marker, successful receipt, and accepted normalized prose before semantic adjudication is permitted.
+  blinded_ingestion: Ingestion records sample ID and transport result only. Candidate and condition identities remain in the sealed render key until post-batch evidence is checkpointed.
+  direct_string: Accept the unchanged nonempty text field when it is prose and satisfies the frozen paragraph and word-count constraint.
+  approved_wrapper: Unwrap exactly once only when the text field is exact JSON for an object with the single key text and a nonempty string value; accept that value unchanged if it is not another serialized wrapper and satisfies the prose constraint.
+  rejection_rule: Reject extra keys, arrays, code fences, malformed JSON-looking text, non-string values, second nested wrappers, and prose outside the frozen paragraph or word-count constraint.
+  digest_rule: Preserve SHA-256 digests of the raw model response and extracted prose, plus direct, unwrapped_once, or rejected status, without treating transport metadata as recognizability evidence.
+launch:
+  manifest_rule: Before any model job, retain one immutable manifest binding all expected job IDs to packet, schema, prompt, model, reasoning effort, and canonical request digest.
+  attempt_rule: Write one immutable attempt marker containing experiment ID, job ID, canonical request digest, configuration, and timestamp before spawning each Sol process.
+  receipt_rule: Retain raw response, raw digest, provider metadata, completion status, and event digest for every attempted job, including failed jobs when the launcher returns.
+  batch_rule: After the batch and blinded ingestion, immediately checkpoint expected, attempted, completed, rejected, and explicitly missing jobs before semantic adjudication or aggregate interpretation.
+thresholds:
+  expected_render_jobs: 16
+  require_transport_complete: true
+downstream_authority:
+  semantic_adjudication: Authorized only if the transport-completeness gate passes in the immediate post-batch checkpoint.
+  matching: Authorized only if transport completeness and the base plan's all-sample semantic-equivalence gate both pass.
+execution:
+  runner:
+    path: skills/linguistic-register-pilot/scripts/sol_packet_job_v2b.py
+    sha256: 53bf14cf8ea69fb460da59b8cd3cefc2e5e78fa21cfa2ef2ccdae890a20b00c7
+  harness:
+    path: skills/linguistic-register-pilot/scripts/micro_render_v2b_artifacts.py
+    sha256: 410c2891052d780bdabd7b05efcc418f328ef6340794cd00e35307eacf45ebdc
+preregistration_owner: Human-authorized v2b slice executed by Codex under the explicit 2026-08-25 authorization.
+limitations:
+  - Preregistration revision 1 failed during local packet path construction before any attempt marker or model launch; revision 2 changes only path resolution and removes an unreachable local variable.
+  - Exact-once wrapper repair is transport normalization only and may not alter meaning.
+  - The same Sol model family limitations declared by the bound base plan remain in force.
+  - Passing is upstream experimental evidence only and does not authorize production integration or corpus selection.

@@ -1,0 +1,42 @@
+{
+  "artifact_type": "linguistic_register_separability_report_v1",
+  "authority": "mechanical gate state only; human acceptance is required before rendering",
+  "bindings": {
+    "corpus_artifact_sha256": "c2d35df5253001fbb4d0e95f4932b3b60bcf31e7d9efd70ba8dfd6f89aac9bd5",
+    "profile_artifact_sha256": "54b8cd476174e01acc50cdf19784d7a3cf70852bb3239311d85ef8e7abe7d4d4",
+    "role_artifact_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94"
+  },
+  "candidate_id": "shaw-engineering-judgment",
+  "checks": {
+    "cross_genre_retained_features": true,
+    "retained_feature_count": true,
+    "weighted_retention": true
+  },
+  "disposition": "candidate_viable",
+  "metrics": {
+    "counts_by_disposition": {
+      "realization_only": 5,
+      "semantic_addition": 4,
+      "semantic_duplicate": 0,
+      "uncertain": 0
+    },
+    "cross_genre_retained_feature_count": 5,
+    "extracted_feature_count": 9,
+    "retained_feature_count": 5,
+    "total_distinctiveness_weight": 35.0,
+    "weighted_retention": 0.4857142857,
+    "weights_by_disposition": {
+      "realization_only": 17.0,
+      "semantic_addition": 18.0,
+      "semantic_duplicate": 0.0,
+      "uncertain": 0.0
+    }
+  },
+  "role_id": "agent-instruction-review",
+  "schema_version": 1,
+  "thresholds": {
+    "minimum_cross_genre_retained_features": 3,
+    "minimum_retained_features": 4,
+    "minimum_weighted_retention": 0.35
+  }
+}

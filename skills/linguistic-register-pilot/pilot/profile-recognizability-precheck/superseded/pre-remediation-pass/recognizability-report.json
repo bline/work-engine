@@ -1,0 +1,65 @@
+{
+  "artifact_type": "linguistic_register_recognizability_report_v1",
+  "authority": "mechanical profile-recognizability pre-check only; human acceptance is required before corpus selection",
+  "bindings": {
+    "classifier_result_sha256": "53c1f1ca5d01f98b0b0b56f4ce8b6f50b8986a75a407b798bee16b20a02c3d30",
+    "packet_artifact_sha256": "3044f928abeb8d95d2b2b3933b72137b0066b38777c63c2f37d73eaf5477a6bc",
+    "plan_artifact_sha256": "067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa"
+  },
+  "candidate_results": [
+    {
+      "anonymous_card_id": "R01",
+      "candidate_id": "gelman-model-criticism",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 4,
+        "separation_from_neutral": 5
+      }
+    },
+    {
+      "anonymous_card_id": "R02",
+      "candidate_id": "leveson-system-safety",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 5,
+        "separation_from_neutral": 5
+      }
+    },
+    {
+      "anonymous_card_id": "R04",
+      "candidate_id": "shaw-engineering-judgment",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 4,
+        "separation_from_neutral": 5
+      }
+    }
+  ],
+  "disposition": "advance_to_human_selection",
+  "experiment_id": "three-candidate-recognizability-2026-08-25",
+  "gate_passed": true,
+  "neutral_check": {
+    "expected_anonymous_card_id": "R03",
+    "passed": true,
+    "selected_anonymous_card_id": "R03"
+  },
+  "schema_version": 1
+}

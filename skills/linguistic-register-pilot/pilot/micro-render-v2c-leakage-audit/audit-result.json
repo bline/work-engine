@@ -1,0 +1,3581 @@
+{
+  "artifact_type": "linguistic_register_v2c_read_only_leakage_audit",
+  "audit_id": "semantic-licensed-micro-render-v2c-leakage-audit-2026-08-25",
+  "authority": "Read-only audit interpretation only; no rerendering, recognizability, behavioral, corpus-selection, or production authority.",
+  "earned_statement": "Under a same-family Sol apparatus, semantically accepted outputs retained sufficient intended profile signal for perfect blinded profile traceability across the observed sample set.",
+  "earned_statement_status": "qualified_by_unresolved_quotation_coverage",
+  "global_skill_exposure": {
+    "all_invocations_saw_same_skill_content": false,
+    "classification": "unequal_condition-neutral exposure",
+    "condition_adjacent_content_found": false,
+    "exposure_by_condition": {
+      "neutral-editorial-defaults": 1,
+      "shaw-engineering-judgment": 1
+    },
+    "exposure_count": 2,
+    "exposures": [
+      {
+        "command": "/bin/bash -lc \"sed -n '1,240p' /home/bline/.codex/skills/codebase-memory/SKILL.md\"",
+        "condition_id": "shaw-engineering-judgment",
+        "content_recovered_from_event": true,
+        "diagnostic_prefix": "",
+        "epistemic_language_hits": [
+          "claim",
+          "confidence",
+          "evidence"
+        ],
+        "event_line": 5,
+        "event_path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render-events.jsonl",
+        "event_recovered_content": "---\nname: codebase-memory\ndescription: \"Use the codebase knowledge graph for structural code queries. Triggers on: explore the codebase, understand the architecture, what functions exist, show me the structure, who calls this function, what does X call, trace the call chain, find callers of, show dependencies, impact analysis, dead code, unused functions, high fan-out, refactor candidates, code quality audit, graph query syntax, Cypher query examples, edge types, how to use search_graph.\"\n---\n\n# Codebase Memory \u2014 Knowledge Graph Tools\n\nGraph tools return precise structural results in ~500 tokens vs ~80K for grep.\n\n## Quick Decision Matrix\n\n| Question | Tool call |\n|----------|----------|\n| Who calls X? | `trace_path(direction=\"inbound\")` |\n| What does X call? | `trace_path(direction=\"outbound\")` |\n| Full call context | `trace_path(direction=\"both\")` |\n| Find by name pattern | `search_graph(name_pattern=\"...\")` |\n| Dead code | `search_graph(max_degree=0, exclude_entry_points=true)` |\n| Cross-service edges | `query_graph` with Cypher |\n| Impact of local changes | `detect_changes()` |\n| Risk-classified trace | `trace_path(risk_labels=true)` |\n| Text search | `search_code` or Grep |\n\n## Exploration Workflow\n1. `list_projects` \u2014 check if project is indexed\n2. `get_graph_schema` \u2014 understand node/edge types\n3. `search_graph(label=\"Function\", name_pattern=\".*Pattern.*\")` \u2014 find code\n4. `get_code_snippet(qualified_name=\"project.path.FuncName\")` \u2014 read source\n\n## Tracing Workflow\n1. `search_graph(name_pattern=\".*FuncName.*\")` \u2014 discover exact name\n2. `trace_path(function_name=\"FuncName\", direction=\"both\", depth=3)` \u2014 trace\n3. `detect_changes()` \u2014 map git diff to affected symbols\n\n## Evidence Tiers\n- **Scout (Tier 1):** fast positive lookup with few graph calls and targeted source checks. Treat results as provisional; never make absence, exhaustive, dead-code, or complete-impact claims.\n- **Verify (Tier 2, default):** task-directed searches, relevant trace directions, exact snippets for material claims, and all relevant result pages.\n- **Auditor (Tier 3):** bounded-scope full verification with a current graph generation, complete relevant pagination, both call directions and broader relationships when material, plus explicit unresolved limitations.\n- **Every tier:** after candidate paths are known, call `check_index_coverage` once with every evidence path. For negative or exhaustive claims also include the relevant scopes. A clean result means no recorded gap, not proof of completeness. For partial, skipped, excluded, stale, pending, or unknown coverage, read/grep the reported ranges or scope before relying on the graph.\n\n## Sessions and Subagents\n- At session start or after compaction, call `list_projects`/`index_status` before structural exploration, then choose Scout, Verify, or Auditor for the task.\n- Before delegating, query the graph and coverage in the parent. Pass the tier, exact project, generation/freshness, bounded scope, queries and pagination state, qualified symbols, paths, call-chain findings, coverage ranges/reasons, source fallback already performed, and unresolved questions to the child.\n- Runtimes such as Hermes isolate child context: put those graph findings in the `context` argument to `delegate_task`; do not assume the child inherits MCP access or the parent's conversation.\n- A child without MCP tools must not call or claim MCP access. It should work from the supplied evidence and use read/grep on exact source, especially every reported missed-coverage range.\n\n## Quality Analysis\n- Dead code: `search_graph(max_degree=0, exclude_entry_points=true)`\n- High fan-out: `search_graph(min_degree=10, relationship=\"CALLS\", direction=\"outbound\")`\n- High fan-in: `search_graph(min_degree=10, relationship=\"CALLS\", direction=\"inbound\")`\n\n## 15 MCP Tools\n`index_repository`, `index_status`, `list_projects`, `delete_project`,\n`search_graph`, `search_code`, `trace_path`, `detect_changes`,\n`query_graph`, `get_graph_schema`, `get_code_snippet`, `get_architecture`,\n`check_index_coverage`, `manage_adr`, `ingest_traces`\n\n## Edge Types\nCALLS, HTTP_CALLS, ASYNC_CALLS, DATA_FLOWS, IMPORTS, DEFINES, DEFINES_METHOD,\nHANDLES, IMPLEMENTS, OVERRIDE, USAGE, CALL_REFERENCE, CONFIGURES, FILE_CHANGES_WITH,\nSIMILAR_TO, SEMANTICALLY_RELATED, CONTAINS_FILE, CONTAINS_FOLDER,\nCONTAINS_PACKAGE\n\n## Cypher Examples (for query_graph)\n```\nMATCH (a)-[r:HTTP_CALLS]->(b) RETURN a.name, b.name, r.url_path, r.confidence LIMIT 20\nMATCH (f:Function) WHERE f.name =~ '.*Handler.*' RETURN f.name, f.file_path\nMATCH (a)-[r:CALLS]->(b) WHERE a.name = 'main' RETURN b.name\n```\n\n## Gotchas\n1. `search_graph(relationship=\"HTTP_CALLS\")` filters nodes by degree \u2014 use `query_graph` with Cypher to see actual edges.\n2. `query_graph` has a 100k row ceiling \u2014 add a Cypher `LIMIT` for broad queries or use `search_graph` pagination.\n3. `trace_path` needs exact names \u2014 use `search_graph(name_pattern=...)` first.\n4. `direction=\"outbound\"` misses cross-service callers \u2014 use `direction=\"both\"`.\n5. `search_graph` results default to 50 per page \u2014 check `has_more` and use `offset`.\n",
+        "event_recovered_content_sha256": "8efe4aa10efa92b52148cce5840abac552b92e5dc3af567e5d167a5e33624db1",
+        "external_path": "/home/bline/.codex/skills/codebase-memory/SKILL.md",
+        "forbidden_literal_hits": [],
+        "formatting_language_hits": [
+          "syntax"
+        ],
+        "sample_id": "X1832FB59B14B",
+        "source_domain_term_hits": {},
+        "visibility_claim": "The retained invocation event records completed command output. The historical bytes returned in that event are established; mechanistic use or attention remains unresolved."
+      },
+      {
+        "command": "/bin/bash -lc \"sed -n '1,240p' /home/bline/.codex/skills/repo-search/SKILL.md\"",
+        "condition_id": "neutral-editorial-defaults",
+        "content_recovered_from_event": true,
+        "diagnostic_prefix": "Failed to create stream fd: Operation not permitted\nFailed to create stream fd: Operation not permitted\nFailed to create stream fd: Operation not permitted\n",
+        "epistemic_language_hits": [
+          "claim",
+          "evidence",
+          "inference"
+        ],
+        "event_line": 5,
+        "event_path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render-events.jsonl",
+        "event_recovered_content": "---\nname: repo-search\ndescription: Retrieve verifiable repository evidence across source, documentation, configuration, tests, skills, packages, and architecture. Use for repository orientation, implementation discovery, caller or dependency tracing, change-impact analysis, structural audits, and exhaustive or negative searches that require coverage and fallback provenance.\n---\n\n# Repository Search\n\nRetrieve evidence; leave architectural and product judgment to the caller. Keep\nobservations, relationships, coverage, inference, fallbacks, and limitations\ndistinguishable. Never turn a candidate match into proof.\n\n## Choose the evidence tier\n\n- **Scout:** Find a likely positive answer quickly. Mark it provisional. Do not\n  make absence, exhaustive, dead-code, or complete-impact claims.\n- **Verify:** Default. Confirm material claims with exact source or structural\n  relationships, exhaust relevant result pages, and check coverage for every\n  relied-on path.\n- **Auditor:** Verify a bounded scope against a recorded index generation. Cover\n  all relevant pages, both relationship directions when material, and every\n  reported gap with direct source. State unresolved limits explicitly.\n\n## Express repository intent\n\nSelect the durable operation before selecting a backend:\n\n- `orient`: identify packages, boundaries, entry points, languages, and likely\n  ownership areas.\n- `find`: locate definitions, implementations, literals, documents,\n  configuration, tests, skills, or packages.\n- `trace`: follow callers, callees, imports, dependencies, data flow, or other\n  explicit relationships.\n- `impact`: identify changed symbols and bounded downstream consumers, with the\n  direction and traversal depth visible.\n- `audit`: test a bounded structural, exhaustive, negative, unused-code, or\n  high-connectivity claim with coverage-aware verification.\n\nDo not expose one backend's command names as these operations. Read\n[backend-capabilities.md](references/backend-capabilities.md) when selecting or\ncombining current capabilities.\n\n## Route the claim\n\n1. Use exact-name or qualified-name lookup for a known symbol.\n2. Use lexical or BM25-style search for natural-language implementation\n   discovery.\n3. Use vector similarity only to discover candidates across vocabulary. Verify\n   every material candidate structurally or from source.\n4. Use relationship-aware retrieval for callers, callees, imports,\n   dependencies, data flow, and impact. Do not infer these from text matches.\n5. Use literal/direct-source search for prose, configuration, fixtures, skill\n   instructions, generated text, and content the structural index does not\n   represent reliably.\n6. For negative or exhaustive claims, bound the scope, consume every relevant\n   page, inspect coverage for both returned paths and the searched scope, and\n   read every reported missed range or excluded target directly.\n7. Fall back to targeted source when the index is unavailable, stale, partial,\n   ambiguous, or incapable of establishing the claim. Record why.\n\nPrefer the smallest set of capabilities that can establish the requested\nclaim. Additional retrieval without credible decision value is noise.\n\n## Return an evidence packet\n\nReport:\n\n- intent operation and evidence tier;\n- observed evidence, with repository-relative paths and exact symbols,\n  relationships, or source locations when available;\n- evidence mode for each material claim, such as indexed structure,\n  direct-source observation, or vector candidate discovery;\n- index/project identity, generation or freshness state, and query pagination;\n- coverage result for every relied-on path and relevant negative/exhaustive\n  scope;\n- fallback transitions and reasons;\n- limitations, unresolved ambiguity, and what would be required to strengthen\n  the result.\n\nKeep inference in a separately labeled section if the caller asks for it.\nNever claim that clean coverage proves completeness, that static structure\nproves runtime behavior, or that a similarity score proves correspondence.\n\n## Preserve role boundaries\n\nRepository retrieval does not select architecture, approve a placement\ncertificate, validate runtime behavior, or perform adversarial review. A fresh\nreviewer may consume the evidence packet, but review-provider identity and\nfreshness remain separate provenance from the retrieval provider.\n",
+        "event_recovered_content_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "external_path": "/home/bline/.codex/skills/repo-search/SKILL.md",
+        "forbidden_literal_hits": [],
+        "formatting_language_hits": [
+          "style"
+        ],
+        "sample_id": "X9C9FA0A475B3",
+        "source_domain_term_hits": {},
+        "visibility_claim": "The retained invocation event records completed command output. The historical bytes returned in that event are established; mechanistic use or attention remains unresolved."
+      }
+    ],
+    "invocations": [
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "external_skill_reads": [
+          {
+            "event_line": 5,
+            "external_path": "/home/bline/.codex/skills/codebase-memory/SKILL.md"
+          }
+        ],
+        "sample_id": "X1832FB59B14B"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "external_skill_reads": [],
+        "sample_id": "X1841CFA4E948"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "external_skill_reads": [],
+        "sample_id": "X46404894D094"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "external_skill_reads": [],
+        "sample_id": "X4A18B2190A21"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "external_skill_reads": [],
+        "sample_id": "X4CE2AFFE1AB5"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "external_skill_reads": [],
+        "sample_id": "X5057DAA6828A"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "external_skill_reads": [],
+        "sample_id": "X54840A8F809C"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "external_skill_reads": [],
+        "sample_id": "X6459B135EE92"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "external_skill_reads": [],
+        "sample_id": "X6767D2C7B67B"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "external_skill_reads": [],
+        "sample_id": "X696A5F522974"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "external_skill_reads": [
+          {
+            "event_line": 5,
+            "external_path": "/home/bline/.codex/skills/repo-search/SKILL.md"
+          }
+        ],
+        "sample_id": "X9C9FA0A475B3"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "external_skill_reads": [],
+        "sample_id": "XAAD82931E318"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "external_skill_reads": [],
+        "sample_id": "XF71FD5BCB7BF"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "external_skill_reads": [],
+        "sample_id": "XF7A6D8650BCB"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "external_skill_reads": [],
+        "sample_id": "XF8DDF32F5CDE"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "external_skill_reads": [],
+        "sample_id": "XFBD1B657F8D2"
+      }
+    ],
+    "render_invocations_audited": 16
+  },
+  "interpretation_gate": "unresolved_exact_corpus_quotation_coverage",
+  "matcher_packet_reconstruction": {
+    "all_packet_digests_bound": true,
+    "all_texts_reconstruct_exactly": true,
+    "direct_cue_hits": [],
+    "distinct_reference_permutations": 3,
+    "distinct_text_permutations": 3,
+    "interpretation": "Retained matcher packet bytes contain normalized prose and randomized anonymous IDs only; wrapper disposition is mechanically unavailable as a direct cue.",
+    "passes": [
+      {
+        "all_normalized_texts_reconstructed_exactly": true,
+        "digest_checks": {
+          "key": true,
+          "manifest": true,
+          "marker": true,
+          "receipt": true,
+          "result": true
+        },
+        "event_stream_key_or_condition_hits": [],
+        "field_shapes": {
+          "anonymous_reference_fields": [
+            [
+              "licensed_style_features",
+              "reference_id"
+            ]
+          ],
+          "anonymous_text_fields": [
+            [
+              "text",
+              "text_id"
+            ]
+          ]
+        },
+        "forbidden_literal_hits": [],
+        "opaque_source_sample_id_hits": [],
+        "packet_sha256": "fa6b9d9a71e848745852e9b3d5384fd850357e35a8e2bff18580bb2d5d4bb49a",
+        "pass_number": 1,
+        "reconstruction": [
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X5057DAA6828A",
+            "text_id": "T01"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6459B135EE92",
+            "text_id": "T02"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6767D2C7B67B",
+            "text_id": "T03"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF7A6D8650BCB",
+            "text_id": "T04"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X46404894D094",
+            "text_id": "T05"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF8DDF32F5CDE",
+            "text_id": "T06"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4CE2AFFE1AB5",
+            "text_id": "T07"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4A18B2190A21",
+            "text_id": "T08"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X696A5F522974",
+            "text_id": "T09"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XAAD82931E318",
+            "text_id": "T10"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XFBD1B657F8D2",
+            "text_id": "T11"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X9C9FA0A475B3",
+            "text_id": "T12"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1841CFA4E948",
+            "text_id": "T13"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X54840A8F809C",
+            "text_id": "T14"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1832FB59B14B",
+            "text_id": "T15"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF71FD5BCB7BF",
+            "text_id": "T16"
+          }
+        ],
+        "transport_or_ingestion_term_hits": []
+      },
+      {
+        "all_normalized_texts_reconstructed_exactly": true,
+        "digest_checks": {
+          "key": true,
+          "manifest": true,
+          "marker": true,
+          "receipt": true,
+          "result": true
+        },
+        "event_stream_key_or_condition_hits": [],
+        "field_shapes": {
+          "anonymous_reference_fields": [
+            [
+              "licensed_style_features",
+              "reference_id"
+            ]
+          ],
+          "anonymous_text_fields": [
+            [
+              "text",
+              "text_id"
+            ]
+          ]
+        },
+        "forbidden_literal_hits": [],
+        "opaque_source_sample_id_hits": [],
+        "packet_sha256": "e444ed3b8ab438a431507a15e2dd8618a0aacdd060d243f913af76cdb93064c1",
+        "pass_number": 2,
+        "reconstruction": [
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X696A5F522974",
+            "text_id": "T01"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X5057DAA6828A",
+            "text_id": "T02"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X46404894D094",
+            "text_id": "T03"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1832FB59B14B",
+            "text_id": "T04"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XFBD1B657F8D2",
+            "text_id": "T05"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X54840A8F809C",
+            "text_id": "T06"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6767D2C7B67B",
+            "text_id": "T07"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X9C9FA0A475B3",
+            "text_id": "T08"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XAAD82931E318",
+            "text_id": "T09"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1841CFA4E948",
+            "text_id": "T10"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF71FD5BCB7BF",
+            "text_id": "T11"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4CE2AFFE1AB5",
+            "text_id": "T12"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF8DDF32F5CDE",
+            "text_id": "T13"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6459B135EE92",
+            "text_id": "T14"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4A18B2190A21",
+            "text_id": "T15"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF7A6D8650BCB",
+            "text_id": "T16"
+          }
+        ],
+        "transport_or_ingestion_term_hits": []
+      },
+      {
+        "all_normalized_texts_reconstructed_exactly": true,
+        "digest_checks": {
+          "key": true,
+          "manifest": true,
+          "marker": true,
+          "receipt": true,
+          "result": true
+        },
+        "event_stream_key_or_condition_hits": [],
+        "field_shapes": {
+          "anonymous_reference_fields": [
+            [
+              "licensed_style_features",
+              "reference_id"
+            ]
+          ],
+          "anonymous_text_fields": [
+            [
+              "text",
+              "text_id"
+            ]
+          ]
+        },
+        "forbidden_literal_hits": [],
+        "opaque_source_sample_id_hits": [],
+        "packet_sha256": "1e7002cc51d5409d86662dd500a0192cbfd57c53e231f37632cc91d209ab7e3b",
+        "pass_number": 3,
+        "reconstruction": [
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X696A5F522974",
+            "text_id": "T01"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF71FD5BCB7BF",
+            "text_id": "T02"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X5057DAA6828A",
+            "text_id": "T03"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X9C9FA0A475B3",
+            "text_id": "T04"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X54840A8F809C",
+            "text_id": "T05"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4CE2AFFE1AB5",
+            "text_id": "T06"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X4A18B2190A21",
+            "text_id": "T07"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF7A6D8650BCB",
+            "text_id": "T08"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X46404894D094",
+            "text_id": "T09"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6767D2C7B67B",
+            "text_id": "T10"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XF8DDF32F5CDE",
+            "text_id": "T11"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1841CFA4E948",
+            "text_id": "T12"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XAAD82931E318",
+            "text_id": "T13"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X6459B135EE92",
+            "text_id": "T14"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "XFBD1B657F8D2",
+            "text_id": "T15"
+          },
+          {
+            "exact_text_match": true,
+            "source_sample_id": "X1832FB59B14B",
+            "text_id": "T16"
+          }
+        ],
+        "transport_or_ingestion_term_hits": []
+      }
+    ],
+    "wrapper_metadata_absent_from_retained_matcher_packets": true
+  },
+  "profile_and_quotation_audit": {
+    "corpus_artifact_paths_in_bound_subject": [],
+    "exact_corpus_quotation_coverage": "unresolved_source_corpora_absent_from_bound_subject",
+    "limitation": "Profile content-screening claims names, copied language, and domain terms were removed, but the bound checkpoint contains no source corpus bytes from which to independently recompute exact quotation absence.",
+    "profiles": {
+      "gelman-model-criticism": {
+        "content_screening": {
+          "copied_language_removed": true,
+          "domain_terms_removed": true,
+          "named_methods_removed": true,
+          "names_removed": true,
+          "rationale": "Retained descriptions contain only abstract posture, connective, cadence, and organization features; individual names, quotations, field terminology, and named techniques are excluded.",
+          "reviewer": "Codex profile-separability extraction, 2026-08-25"
+        },
+        "path": "skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/profile.yaml",
+        "retained_feature_ids": [
+          "symmetric-opposition",
+          "first-person-epistemic-positioning",
+          "numbered-response-structure",
+          "partial-agreement-before-boundary",
+          "informal-analogy-and-aside",
+          "compact-summary-after-elaboration"
+        ],
+        "retained_text": "symmetric-opposition contrast_patterns Frame a disagreement as two opposing concerns before addressing either side. first-person-epistemic-positioning claim_posture State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally. numbered-response-structure paragraph_rhythm Answer a complex disagreement through numbered sections and compact pointwise responses. partial-agreement-before-boundary qualification_patterns Acknowledge the valid portion of an objection before identifying the narrower point of disagreement. informal-analogy-and-aside rhythm Interrupt formal analysis with a compact analogy, aside, or lightly humorous clarification. compact-summary-after-elaboration conclusion_patterns Compress a longer distinction into a short parallel summary after the detailed explanation."
+      },
+      "leveson-system-safety": {
+        "content_screening": {
+          "copied_language_removed": true,
+          "domain_terms_removed": true,
+          "named_methods_removed": true,
+          "names_removed": true,
+          "rationale": "Retained descriptions were rewritten as abstract realization patterns; names, quotations, field-specific nouns, and named frameworks remain only in evidence locators or excluded semantic analysis.",
+          "reviewer": "Codex profile-separability extraction, 2026-08-25"
+        },
+        "path": "skills/linguistic-register-pilot/pilot/candidates/leveson/profile.yaml",
+        "retained_feature_ids": [
+          "contrastive-reframing",
+          "enumerated-consequence-ladders",
+          "direct-evaluative-declaratives",
+          "scoped-concession-boundaries",
+          "visible-reader-cues"
+        ],
+        "retained_text": "contrastive-reframing connective_patterns Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative. enumerated-consequence-ladders paragraph_rhythm Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications. direct-evaluative-declaratives claim_posture Use short, high-commitment declarative sentences for the central evaluation, followed by the limiting explanation. scoped-concession-boundaries qualification_patterns Mark that a criticism concerns adequacy for the stated purpose rather than denying every use of the criticized approach. visible-reader-cues connective_patterns Use brief reader-facing transitions to flag a consequential distinction before explaining it."
+      },
+      "shaw-engineering-judgment": {
+        "content_screening": {
+          "copied_language_removed": true,
+          "domain_terms_removed": true,
+          "named_methods_removed": true,
+          "names_removed": true,
+          "rationale": "Retained descriptions use abstract question, syntax, connective, consequence, and calibration forms; names, quotations, field-specific categories, and named maturation frameworks are excluded.",
+          "reviewer": "Codex profile-separability extraction, 2026-08-25"
+        },
+        "path": "skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/profile.yaml",
+        "retained_feature_ids": [
+          "parallel-guiding-questions",
+          "neutral-progression-connectives",
+          "compact-parallel-categories",
+          "consequence-first-conditionals",
+          "restrained-evaluative-calibration"
+        ],
+        "retained_text": "parallel-guiding-questions paragraph_rhythm Introduce an evaluation through a short parallel series of guiding questions. neutral-progression-connectives connective_patterns Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language. compact-parallel-categories syntax Present categories in compact parallel grammatical forms so their differences remain visually comparable. consequence-first-conditionals conclusion_patterns State the practical consequence of a condition directly, then explain the evidence or mechanism behind it. restrained-evaluative-calibration qualification_patterns Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results."
+      }
+    },
+    "render_matcher_style_card_ngram_overlap": [
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "X1832FB59B14B"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "overlap": [
+          "the supplied evidence"
+        ],
+        "sample_id": "X1841CFA4E948"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "overlap": [
+          "the supplied evidence"
+        ],
+        "sample_id": "X46404894D094"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X4A18B2190A21"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [
+          "and does not negate",
+          "and does not",
+          "does not negate"
+        ],
+        "sample_id": "X4CE2AFFE1AB5"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X5057DAA6828A"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [
+          "blocks only the broader action",
+          "blocks only the broader",
+          "broader pro action interpretation",
+          "only the broader action",
+          "blocks only the",
+          "broader pro action",
+          "exact positive evaluation",
+          "only the broader",
+          "pro action interpretation",
+          "the broader action"
+        ],
+        "sample_id": "X54840A8F809C"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X6459B135EE92"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [
+          "broader pro action interpretation",
+          "broader pro action",
+          "pro action interpretation",
+          "that the evidence",
+          "the bounded contrast",
+          "the evidence limit"
+        ],
+        "sample_id": "X6767D2C7B67B"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "X696A5F522974"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "overlap": [],
+        "sample_id": "X9C9FA0A475B3"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "XAAD82931E318"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [],
+        "sample_id": "XF71FD5BCB7BF"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "XF7A6D8650BCB"
+      },
+      {
+        "condition_id": "neutral-editorial-defaults",
+        "overlap": [
+          "the supplied evidence limitation",
+          "supplied evidence limitation",
+          "the supplied evidence"
+        ],
+        "sample_id": "XF8DDF32F5CDE"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "XFBD1B657F8D2"
+      }
+    ],
+    "render_profile_ngram_overlap": [
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "X1832FB59B14B"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X4A18B2190A21"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [],
+        "sample_id": "X4CE2AFFE1AB5"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X5057DAA6828A"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [],
+        "sample_id": "X54840A8F809C"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "X6459B135EE92"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [],
+        "sample_id": "X6767D2C7B67B"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "X696A5F522974"
+      },
+      {
+        "condition_id": "gelman-model-criticism",
+        "overlap": [],
+        "sample_id": "XAAD82931E318"
+      },
+      {
+        "condition_id": "leveson-system-safety",
+        "overlap": [],
+        "sample_id": "XF71FD5BCB7BF"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "XF7A6D8650BCB"
+      },
+      {
+        "condition_id": "shaw-engineering-judgment",
+        "overlap": [],
+        "sample_id": "XFBD1B657F8D2"
+      }
+    ]
+  },
+  "rationale_audit": {
+    "assignments_audited": 48,
+    "category_counts": {
+      "domain_or_author_clues": 0,
+      "explicit_lexical_overlap_with_profile_or_style_card": 33,
+      "intended_register_features": 48,
+      "length_or_formatting": 22,
+      "structural_artifacts": 0,
+      "unsupported_confidence": 0
+    },
+    "confidence_metric_status": "failed_secondary_metric_uncalibrated_and_without_variance",
+    "confidence_values": [
+      5
+    ],
+    "limitation": "Rationales are observable reports, not faithful mechanistic traces. Category absence cannot prove a cue was unused.",
+    "rows": [
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "first-person",
+            "parallel",
+            "recommendation",
+            "sequencing"
+          ],
+          "length_or_format_hits": [
+            "compact",
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "a direct first",
+            "a short parallel",
+            "direct first person"
+          ],
+          "render_text_sha256": "b61ecd0ce24ef5e6a527ee52326ae197364060fadfe9b8785bff8982de6a767e",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Uses an explicit positive-result/evidence-limit tension, a direct first-person recommendation, compact sequencing, and a short parallel closing contrast.",
+        "reference_id": "R01",
+        "source_sample_id": "X5057DAA6828A",
+        "text_id": "T01"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "contrast",
+            "first-person",
+            "posture",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "6c17acd67cc2a0614b7ce5199b2441cabfb599b4a8b8bcaf6012c0c4466c5e6d",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Juxtaposes the favorable evaluation with its evidence boundary, adopts a first-person recommendation posture, and ends with a compressed 'supports...but does not support' contrast.",
+        "reference_id": "R01",
+        "source_sample_id": "X6459B135EE92",
+        "text_id": "T02"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "contrast"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "broader pro action interpretation",
+            "broader pro action",
+            "pro action interpretation",
+            "reader facing cue",
+            "the bounded contrast"
+          ],
+          "render_text_sha256": "84e151efcaef2e6501ae8937b69413403e817e5dca87e10c8f148c470964dff4",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "States a broader pro-action interpretation and immediately replaces it with a narrower conclusion, then uses the reader-facing cue 'Here is the bounded contrast' and high-commitment directives.",
+        "reference_id": "R02",
+        "source_sample_id": "X6767D2C7B67B",
+        "text_id": "T03"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "limitation",
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "parallel series of questions",
+            "parallel series of",
+            "series of questions"
+          ],
+          "render_text_sha256": "6d37abeed7b6e2b8a0733eed0a241af87e42a53318b2cd5f303e20f89ce0a6c0",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Opens with the practical decision and develops it through a parallel series of questions covering the change, observation, evaluation, limitation, and bounded conclusion.",
+        "reference_id": "R04",
+        "source_sample_id": "XF7A6D8650BCB",
+        "text_id": "T04"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "declarative",
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "restatement of the"
+          ],
+          "render_text_sha256": "275f5bf8238b447e955f32a091c931e0d8e2443e816d2fa0930e4adc33ff19f2",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Uses direct declarative sentences, ordinary transitions, a single statement of the evidence limitation, and a concise final restatement of the review decision.",
+        "reference_id": "R03",
+        "source_sample_id": "X46404894D094",
+        "text_id": "T05"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "limitation",
+            "sequencing",
+            "syntax"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "8e12813008298eb9ae47fe2d25352737fe563cbb620a3501b162c7e298bcb198",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Maintains plain subject-action syntax and straightforward consequence sequencing, states the limitation once, and concludes by directly restating the bounded decision.",
+        "reference_id": "R03",
+        "source_sample_id": "XF8DDF32F5CDE",
+        "text_id": "T06"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion",
+            "declarative"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "82f8219e304eb875dac5c1e63dc9f5aaaa041a7c5c3fc5686f3555531d4a1e58",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Reframes an initially broad reading into a more precise bounded conclusion, announces 'The boundary is concrete,' and uses direct declarative language to isolate the limited effect of the evidence gap.",
+        "reference_id": "R02",
+        "source_sample_id": "X4CE2AFFE1AB5",
+        "text_id": "T07"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "evidence limit",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "compact"
+          ],
+          "reference_card_ngram_overlap": [
+            "and evidence limit"
+          ],
+          "render_text_sha256": "a553c1e735f294eb8493b2c0eb602aa1f64885731220685b88e6990ee4b079f8",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Places the positive result and evidence limit explicitly in tension, gives a first-person recommendation, and closes with a compact parallel contrast between supported and unsupported actions.",
+        "reference_id": "R01",
+        "source_sample_id": "X4A18B2190A21",
+        "text_id": "T08"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "parallel",
+            "question"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "a short parallel"
+          ],
+          "render_text_sha256": "d8128acfb8fc3aae71a90bffdf87fc79b23de7f120c53036ed26dfee19b3d70f",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "States the decision first and follows it with a short parallel question sequence that organizes observation, positive assessment, unknowns, testing limits, and the resulting contrast.",
+        "reference_id": "R04",
+        "source_sample_id": "X696A5F522974",
+        "text_id": "T09"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "epistemic",
+            "evidence limit",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "first person epistemic"
+          ],
+          "render_text_sha256": "05067905f45f0a8bffd2d16a7913a4066e3cfa036a15fad5b44bba6fa0198c41",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Uses first-person epistemic evaluation and recommendation, explicitly qualifies the positive assessment with the evidence limit, and finishes with a narrow parallel support/non-support formulation.",
+        "reference_id": "R01",
+        "source_sample_id": "XAAD82931E318",
+        "text_id": "T10"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "28d693f8e1282c475d050f5bfb137f0c6b43fb02cf8fa8697f25cdf8fcff909c",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Leads with the bounded practical decision and explains it through parallel questions whose answers supply the change, evidence, evaluation, unmeasured limit, and conclusion.",
+        "reference_id": "R04",
+        "source_sample_id": "XFBD1B657F8D2",
+        "text_id": "T11"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "connective",
+            "limitation"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "with a concise"
+          ],
+          "render_text_sha256": "8b50c595e9acb3bd53ca594bfc7b260fe84b9d24638cd180c32943c4f41978ef",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Relies on direct sentences and ordinary connective progression, states the testing limitation without extra framing, and ends with a concise decision restatement.",
+        "reference_id": "R03",
+        "source_sample_id": "X9C9FA0A475B3",
+        "text_id": "T12"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "transitions"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "the supplied decision"
+          ],
+          "render_text_sha256": "3431e9dee396173bd2c01e8daba0ad6d1ece1e709a2cce7d87f4eaabbdd4c1d6",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Uses straightforward declaratives with ordinary transitions such as 'At the same time,' 'Taken together,' and 'Therefore,' then concludes with the supplied decision.",
+        "reference_id": "R03",
+        "source_sample_id": "X1841CFA4E948",
+        "text_id": "T13"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "broader pro action interpretation",
+            "in short high commitment",
+            "broader pro action",
+            "in short high",
+            "pro action interpretation",
+            "short high commitment"
+          ],
+          "render_text_sha256": "ca65b3090757b104b2d19bcfe0cd3dc44c84d583222ba1b5869817695aa2b08d",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Introduces a broader pro-action interpretation, replaces it with the narrower supported conclusion, uses the reader-facing boundary cue, and ends in short high-commitment directives.",
+        "reference_id": "R02",
+        "source_sample_id": "X54840A8F809C",
+        "text_id": "T14"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "compact"
+          ],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "ac685e05ea0e7c1ac21a4a814ebab76b8fb04177ebfb0b7a7a974c49058c7235",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Introduces the review through parallel questions, then states the practical recommendation before explaining it with compact parallel forms for progress, unknown status, and test coverage.",
+        "reference_id": "R04",
+        "source_sample_id": "X1832FB59B14B",
+        "text_id": "T15"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion",
+            "declarative"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "positive evaluation and"
+          ],
+          "render_text_sha256": "98ce8bd70f6bdb150c50dbd99f07bb893327dcff9d4a70775ae0529894ddb204",
+          "structural_hits": []
+        },
+        "pass_number": 1,
+        "rationale": "Contrasts a broad reading with a narrower supported conclusion, announces 'Here is the boundary,' preserves the positive evaluation, and delivers the resulting decision in direct declarative form.",
+        "reference_id": "R02",
+        "source_sample_id": "XF71FD5BCB7BF",
+        "text_id": "T16"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "limitation",
+            "parallel"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "parallel series of"
+          ],
+          "render_text_sha256": "d8128acfb8fc3aae71a90bffdf87fc79b23de7f120c53036ed26dfee19b3d70f",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Leads with the practical decision, then uses a parallel series of short questions to organize observation, evaluation, limitation, and bounded conclusion.",
+        "reference_id": "R02",
+        "source_sample_id": "X696A5F522974",
+        "text_id": "T01"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "contrast",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "compact"
+          ],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "a direct first",
+            "direct first person"
+          ],
+          "render_text_sha256": "b61ecd0ce24ef5e6a527ee52326ae197364060fadfe9b8785bff8982de6a767e",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Places the positive evaluation in explicit tension with the evidence boundary, adopts a direct first-person recommendation, and ends with a compact parallel contrast.",
+        "reference_id": "R01",
+        "source_sample_id": "X5057DAA6828A",
+        "text_id": "T02"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "declarative",
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "275f5bf8238b447e955f32a091c931e0d8e2443e816d2fa0930e4adc33ff19f2",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Uses direct declarative sentences, ordinary transitions, a single plainly stated evidence limitation, and a concise closing decision.",
+        "reference_id": "R03",
+        "source_sample_id": "X46404894D094",
+        "text_id": "T03"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "parallel",
+            "posture",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "ac685e05ea0e7c1ac21a4a814ebab76b8fb04177ebfb0b7a7a974c49058c7235",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Introduces the review through parallel questions, states the recommendation before its explanation, and preserves the promising-but-insufficient evidential posture.",
+        "reference_id": "R02",
+        "source_sample_id": "X1832FB59B14B",
+        "text_id": "T04"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "parallel",
+            "question"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "28d693f8e1282c475d050f5bfb137f0c6b43fb02cf8fa8697f25cdf8fcff909c",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Begins with the bounded decision and develops it through a parallel question-and-answer sequence covering the change, observation, evaluation, and unknown.",
+        "reference_id": "R02",
+        "source_sample_id": "XFBD1B657F8D2",
+        "text_id": "T05"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "broader pro action interpretation",
+            "in short high commitment",
+            "broader pro action",
+            "in short high",
+            "pro action interpretation",
+            "reader facing cue",
+            "short high commitment"
+          ],
+          "render_text_sha256": "ca65b3090757b104b2d19bcfe0cd3dc44c84d583222ba1b5869817695aa2b08d",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "States a broader pro-action interpretation and immediately replaces it with a narrower conclusion, announces the boundary with a reader-facing cue, and closes in short high-commitment directives.",
+        "reference_id": "R04",
+        "source_sample_id": "X54840A8F809C",
+        "text_id": "T06"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion",
+            "limitation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "84e151efcaef2e6501ae8937b69413403e817e5dca87e10c8f148c470964dff4",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Contrasts the broader interpretation with a more precise bounded conclusion, uses an explicit boundary cue, and clarifies that the limitation blocks only alias removal.",
+        "reference_id": "R04",
+        "source_sample_id": "X6767D2C7B67B",
+        "text_id": "T07"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "restatement of the",
+            "subjects and actions"
+          ],
+          "render_text_sha256": "8b50c595e9acb3bd53ca594bfc7b260fe84b9d24638cd180c32943c4f41978ef",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Relies on straightforward subjects and actions, ordinary consequential transitions, one evidence limitation, and a concise final restatement of the decision.",
+        "reference_id": "R03",
+        "source_sample_id": "X9C9FA0A475B3",
+        "text_id": "T08"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "epistemic",
+            "evidence limit",
+            "first-person",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "with the bounded contrast",
+            "first person epistemic",
+            "the bounded contrast",
+            "the exact evidence",
+            "with the bounded"
+          ],
+          "render_text_sha256": "05067905f45f0a8bffd2d16a7913a4066e3cfa036a15fad5b44bba6fa0198c41",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Acknowledges the positive result before qualifying it with the exact evidence limit, uses first-person epistemic and recommendation language, and ends with the bounded contrast.",
+        "reference_id": "R01",
+        "source_sample_id": "XAAD82931E318",
+        "text_id": "T09"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "with a concise"
+          ],
+          "render_text_sha256": "3431e9dee396173bd2c01e8daba0ad6d1ece1e709a2cce7d87f4eaabbdd4c1d6",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Uses plain direct sentences and familiar transitions, states the testing limitation once, and concludes with a concise action-focused decision.",
+        "reference_id": "R03",
+        "source_sample_id": "X1841CFA4E948",
+        "text_id": "T10"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "reader facing cue"
+          ],
+          "render_text_sha256": "98ce8bd70f6bdb150c50dbd99f07bb893327dcff9d4a70775ae0529894ddb204",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Replaces a broad reading with the narrower supported conclusion, marks the boundary through a reader-facing cue, and explains that the omission limits scale without negating the positive evaluation.",
+        "reference_id": "R04",
+        "source_sample_id": "XF71FD5BCB7BF",
+        "text_id": "T11"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "broader pro action",
+            "the broader action"
+          ],
+          "render_text_sha256": "82f8219e304eb875dac5c1e63dc9f5aaaa041a7c5c3fc5686f3555531d4a1e58",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Immediately corrects a broader pro-action reading with a more precise conclusion, identifies a concrete boundary, and states that the limit applies only to the broader action.",
+        "reference_id": "R04",
+        "source_sample_id": "X4CE2AFFE1AB5",
+        "text_id": "T12"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "declarative",
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "8e12813008298eb9ae47fe2d25352737fe563cbb620a3501b162c7e298bcb198",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Presents the propositions in direct declarative prose with ordinary transitions, states the measurement limitation once, and ends with the review decision.",
+        "reference_id": "R03",
+        "source_sample_id": "XF8DDF32F5CDE",
+        "text_id": "T13"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "evidence limit",
+            "first-person",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "a direct first",
+            "and evidence limit",
+            "direct first person"
+          ],
+          "render_text_sha256": "6c17acd67cc2a0614b7ce5199b2441cabfb599b4a8b8bcaf6012c0c4466c5e6d",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Explicitly places the favorable result and evidence limit in tension, resolves them through a direct first-person recommendation, and closes with a short bounded contrast.",
+        "reference_id": "R01",
+        "source_sample_id": "X6459B135EE92",
+        "text_id": "T14"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "a direct first",
+            "direct first person"
+          ],
+          "render_text_sha256": "a553c1e735f294eb8493b2c0eb602aa1f64885731220685b88e6990ee4b079f8",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "Acknowledges substantial progress before weighing it against the exact coverage boundary, gives a direct first-person recommendation, and ends with a compressed parallel restatement.",
+        "reference_id": "R01",
+        "source_sample_id": "X4A18B2190A21",
+        "text_id": "T15"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "parallel series of questions",
+            "parallel series of",
+            "practical decision first",
+            "series of questions"
+          ],
+          "render_text_sha256": "6d37abeed7b6e2b8a0733eed0a241af87e42a53318b2cd5f303e20f89ce0a6c0",
+          "structural_hits": []
+        },
+        "pass_number": 2,
+        "rationale": "States the practical decision first and follows it with a tightly parallel series of questions about the change, observation, evaluation, unmeasured point, and permissible scope.",
+        "reference_id": "R02",
+        "source_sample_id": "XF7A6D8650BCB",
+        "text_id": "T16"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "parallel"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "parallel series of"
+          ],
+          "render_text_sha256": "d8128acfb8fc3aae71a90bffdf87fc79b23de7f120c53036ed26dfee19b3d70f",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Opens with the practical decision, then uses a parallel series of short questions to move through observation, positive assessment, unknown status, testing limit, and bounded conclusion.",
+        "reference_id": "R02",
+        "source_sample_id": "X696A5F522974",
+        "text_id": "T01"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion",
+            "contrast"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "reader facing cue",
+            "the bounded contrast"
+          ],
+          "render_text_sha256": "98ce8bd70f6bdb150c50dbd99f07bb893327dcff9d4a70775ae0529894ddb204",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "States a broad pro-action reading and immediately replaces it with a narrower conclusion, then uses the reader-facing cue \u201cHere is the boundary\u201d to explain the bounded contrast.",
+        "reference_id": "R04",
+        "source_sample_id": "XF71FD5BCB7BF",
+        "text_id": "T02"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "contrast",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "compact"
+          ],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "a direct first",
+            "direct first person",
+            "positive evaluation and"
+          ],
+          "render_text_sha256": "b61ecd0ce24ef5e6a527ee52326ae197364060fadfe9b8785bff8982de6a767e",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Places the positive evaluation and precise evidence boundary in explicit tension, adopts a direct first-person recommendation, and ends with a compact parallel contrast.",
+        "reference_id": "R03",
+        "source_sample_id": "X5057DAA6828A",
+        "text_id": "T03"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "limitation",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "restatement of the"
+          ],
+          "render_text_sha256": "8b50c595e9acb3bd53ca594bfc7b260fe84b9d24638cd180c32943c4f41978ef",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Uses direct subject-action sentences, ordinary transitions, a single statement of the evidence limitation, and a concise final restatement of the decision.",
+        "reference_id": "R01",
+        "source_sample_id": "X9C9FA0A475B3",
+        "text_id": "T04"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "decision in short",
+            "reader facing cue"
+          ],
+          "render_text_sha256": "ca65b3090757b104b2d19bcfe0cd3dc44c84d583222ba1b5869817695aa2b08d",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Explicitly replaces the broader interpretation with a more precise limited conclusion, announces the boundary with a reader-facing cue, and states the practical decision in short declaratives.",
+        "reference_id": "R04",
+        "source_sample_id": "X54840A8F809C",
+        "text_id": "T05"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "more precisely bounded conclusion",
+            "more precisely bounded",
+            "precisely bounded conclusion",
+            "the broader action"
+          ],
+          "render_text_sha256": "82f8219e304eb875dac5c1e63dc9f5aaaa041a7c5c3fc5686f3555531d4a1e58",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Moves from an initially broad reading to a more precisely bounded conclusion, explains that the limit applies only to the broader action, and proceeds compactly to the decision.",
+        "reference_id": "R04",
+        "source_sample_id": "X4CE2AFFE1AB5",
+        "text_id": "T06"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "evidence limit",
+            "first-person",
+            "parallel",
+            "recommendation"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "a direct first person",
+            "and evidence limit as",
+            "a direct first",
+            "and evidence limit",
+            "direct first person",
+            "evidence limit as"
+          ],
+          "render_text_sha256": "a553c1e735f294eb8493b2c0eb602aa1f64885731220685b88e6990ee4b079f8",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Frames the positive result and evidence limit as concerns to be weighed together, gives a direct first-person recommendation, and closes with a compressed parallel contrast.",
+        "reference_id": "R03",
+        "source_sample_id": "X4A18B2190A21",
+        "text_id": "T07"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "limitation",
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "6d37abeed7b6e2b8a0733eed0a241af87e42a53318b2cd5f303e20f89ce0a6c0",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "States the bounded decision first and develops the explanation through a sustained parallel sequence of questions covering change, observation, evaluation, limitation, and permissible scope.",
+        "reference_id": "R02",
+        "source_sample_id": "XF7A6D8650BCB",
+        "text_id": "T08"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "275f5bf8238b447e955f32a091c931e0d8e2443e816d2fa0930e4adc33ff19f2",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Maintains a single focused progression through direct sentences and ordinary connectives, states the unmeasured boundary once, and ends with the bounded review decision.",
+        "reference_id": "R01",
+        "source_sample_id": "X46404894D094",
+        "text_id": "T09"
+      },
+      {
+        "assigned_condition": "leveson-system-safety",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "broader pro action interpretation",
+            "broader pro action",
+            "pro action interpretation",
+            "reader facing cue",
+            "the bounded contrast"
+          ],
+          "render_text_sha256": "84e151efcaef2e6501ae8937b69413403e817e5dca87e10c8f148c470964dff4",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Names a broader pro-action interpretation, replaces it with the narrower supported contrast, uses \u201cHere is the bounded contrast\u201d as a reader-facing cue, and preserves the positive evaluation.",
+        "reference_id": "R04",
+        "source_sample_id": "X6767D2C7B67B",
+        "text_id": "T10"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "exposition",
+            "limitation",
+            "restates",
+            "sentence",
+            "transitions"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "8e12813008298eb9ae47fe2d25352737fe563cbb620a3501b162c7e298bcb198",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Uses clear direct exposition, conventional transitions, one explicit evidence limitation, and a concise concluding sentence that restates the review decision.",
+        "reference_id": "R01",
+        "source_sample_id": "XF8DDF32F5CDE",
+        "text_id": "T11"
+      },
+      {
+        "assigned_condition": "neutral-editorial-defaults",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "connective"
+          ],
+          "length_or_format_hits": [
+            "concise"
+          ],
+          "reference_card_ngram_overlap": [
+            "direct sentences with",
+            "with a concise"
+          ],
+          "render_text_sha256": "3431e9dee396173bd2c01e8daba0ad6d1ece1e709a2cce7d87f4eaabbdd4c1d6",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Presents the propositions in direct sentences with ordinary connective movement, states the testing boundary without elaboration, and finishes with a concise decision restatement.",
+        "reference_id": "R01",
+        "source_sample_id": "X1841CFA4E948",
+        "text_id": "T12"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "conclusion",
+            "first-person",
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [
+            "the exact evidence boundary",
+            "exact evidence boundary",
+            "the exact evidence"
+          ],
+          "render_text_sha256": "05067905f45f0a8bffd2d16a7913a4066e3cfa036a15fad5b44bba6fa0198c41",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Uses first-person evaluative and recommendatory language, acknowledges the positive result before qualifying it with the exact evidence boundary, and closes with a narrow parallel conclusion.",
+        "reference_id": "R03",
+        "source_sample_id": "XAAD82931E318",
+        "text_id": "T13"
+      },
+      {
+        "assigned_condition": "gelman-model-criticism",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "contrast",
+            "first-person",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "compact"
+          ],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "6c17acd67cc2a0614b7ce5199b2441cabfb599b4a8b8bcaf6012c0c4466c5e6d",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Explicitly places the favorable result and unmeasured limit in tension, resolves them through a first-person bounded recommendation, and ends with a compact evidence contrast.",
+        "reference_id": "R03",
+        "source_sample_id": "X6459B135EE92",
+        "text_id": "T14"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": false,
+          "intended_register_features": true,
+          "length_or_formatting": false,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "conclusion",
+            "parallel"
+          ],
+          "length_or_format_hits": [],
+          "reference_card_ngram_overlap": [],
+          "render_text_sha256": "28d693f8e1282c475d050f5bfb137f0c6b43fb02cf8fa8697f25cdf8fcff909c",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Leads with the practical decision and follows it with parallel questions whose answers supply the change, observation, positive evaluation, unmeasured limit, and bounded conclusion.",
+        "reference_id": "R02",
+        "source_sample_id": "XFBD1B657F8D2",
+        "text_id": "T15"
+      },
+      {
+        "assigned_condition": "shaw-engineering-judgment",
+        "categories": {
+          "domain_or_author_clues": false,
+          "explicit_lexical_overlap_with_profile_or_style_card": true,
+          "intended_register_features": true,
+          "length_or_formatting": true,
+          "structural_artifacts": false,
+          "unsupported_confidence": false
+        },
+        "confidence": 5,
+        "evidence": {
+          "domain_or_author_hits": [],
+          "intended_terms": [
+            "boundary",
+            "contrast",
+            "parallel",
+            "question",
+            "recommendation"
+          ],
+          "length_or_format_hits": [
+            "short"
+          ],
+          "reference_card_ngram_overlap": [
+            "through a short parallel",
+            "a short parallel",
+            "through a short"
+          ],
+          "render_text_sha256": "ac685e05ea0e7c1ac21a4a814ebab76b8fb04177ebfb0b7a7a974c49058c7235",
+          "structural_hits": []
+        },
+        "pass_number": 3,
+        "rationale": "Introduces the review through a short parallel question series, then gives the recommendation before explaining the observed progress, unknown status, testing boundary, and resulting contrast.",
+        "reference_id": "R02",
+        "source_sample_id": "X1832FB59B14B",
+        "text_id": "T16"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "subject": {
+    "blob_oid_mismatches": [],
+    "checkpoint_commit_oid": "62cc7f7039cfc6238de8cc7d16a030ebe1892bf2",
+    "checkpoint_tree_oid": "3b4a3eb525636dbe19eaafaffaece8bb4c6153bf",
+    "expected_entries": 893,
+    "extra": [],
+    "missing": [],
+    "observed_files": 893,
+    "verified": true
+  },
+  "wrapper_and_incidental_features": {
+    "all_raw_shapes_match_disposition": false,
+    "forbidden_literal_hits_in_renders": [],
+    "matches_retained_transport_report": true,
+    "metric_limitation": "Observed feature distributions are descriptive. Punctuation and sentence structure can be licensed intended manipulation signals; no univariate difference is treated as mechanistic proof.",
+    "metric_summary": {
+      "by_metric_and_condition": {
+        "heading_count": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "list_marker_count": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "paragraph_count": {
+          "gelman-model-criticism": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "punctuation_!": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "punctuation_(": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "punctuation_)": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "punctuation_,": {
+          "gelman-model-criticism": {
+            "max": 8,
+            "mean": 5.25,
+            "min": 3,
+            "values": [
+              3,
+              6,
+              8,
+              4
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 4,
+            "mean": 3.75,
+            "min": 3,
+            "values": [
+              4,
+              4,
+              3,
+              4
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 8,
+            "mean": 5.75,
+            "min": 4,
+            "values": [
+              8,
+              5,
+              6,
+              4
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 9,
+            "mean": 7.5,
+            "min": 6,
+            "values": [
+              7,
+              6,
+              8,
+              9
+            ]
+          }
+        },
+        "punctuation_-": {
+          "gelman-model-criticism": {
+            "max": 4,
+            "mean": 2.25,
+            "min": 0,
+            "values": [
+              0,
+              1,
+              4,
+              4
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 4,
+            "mean": 2.25,
+            "min": 0,
+            "values": [
+              0,
+              4,
+              1,
+              4
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 5,
+            "mean": 2.0,
+            "min": 0,
+            "values": [
+              0,
+              5,
+              0,
+              3
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 4,
+            "mean": 2.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              4,
+              4
+            ]
+          }
+        },
+        "punctuation_.": {
+          "gelman-model-criticism": {
+            "max": 6,
+            "mean": 6.0,
+            "min": 6,
+            "values": [
+              6,
+              6,
+              6,
+              6
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 9,
+            "mean": 7.75,
+            "min": 7,
+            "values": [
+              7,
+              9,
+              7,
+              8
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 7,
+            "mean": 6.25,
+            "min": 6,
+            "values": [
+              6,
+              6,
+              6,
+              7
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 6,
+            "mean": 5.75,
+            "min": 5,
+            "values": [
+              5,
+              6,
+              6,
+              6
+            ]
+          }
+        },
+        "punctuation_:": {
+          "gelman-model-criticism": {
+            "max": 2,
+            "mean": 1.5,
+            "min": 1,
+            "values": [
+              2,
+              2,
+              1,
+              1
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 2,
+            "mean": 1.25,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              2
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 1,
+            "mean": 0.25,
+            "min": 0,
+            "values": [
+              0,
+              1,
+              0,
+              0
+            ]
+          }
+        },
+        "punctuation_;": {
+          "gelman-model-criticism": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 1,
+            "mean": 1.0,
+            "min": 1,
+            "values": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 3,
+            "mean": 1.0,
+            "min": 0,
+            "values": [
+              3,
+              1,
+              0,
+              0
+            ]
+          }
+        },
+        "punctuation_?": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 5,
+            "mean": 3.75,
+            "min": 3,
+            "values": [
+              3,
+              3,
+              5,
+              4
+            ]
+          }
+        },
+        "punctuation_\u2014": {
+          "gelman-model-criticism": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 0,
+            "mean": 0.0,
+            "min": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "sentence_count": {
+          "gelman-model-criticism": {
+            "max": 6,
+            "mean": 6.0,
+            "min": 6,
+            "values": [
+              6,
+              6,
+              6,
+              6
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 9,
+            "mean": 7.75,
+            "min": 7,
+            "values": [
+              7,
+              9,
+              7,
+              8
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 7,
+            "mean": 6.25,
+            "min": 6,
+            "values": [
+              6,
+              6,
+              6,
+              7
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 11,
+            "mean": 9.5,
+            "min": 8,
+            "values": [
+              8,
+              9,
+              11,
+              10
+            ]
+          }
+        },
+        "word_count": {
+          "gelman-model-criticism": {
+            "max": 124,
+            "mean": 115.5,
+            "min": 111,
+            "values": [
+              111,
+              112,
+              124,
+              115
+            ]
+          },
+          "leveson-system-safety": {
+            "max": 116,
+            "mean": 113.75,
+            "min": 111,
+            "values": [
+              111,
+              116,
+              113,
+              115
+            ]
+          },
+          "neutral-editorial-defaults": {
+            "max": 122,
+            "mean": 117.5,
+            "min": 114,
+            "values": [
+              114,
+              115,
+              122,
+              119
+            ]
+          },
+          "shaw-engineering-judgment": {
+            "max": 118,
+            "mean": 114.75,
+            "min": 111,
+            "values": [
+              114,
+              111,
+              118,
+              116
+            ]
+          }
+        }
+      },
+      "condition_disjoint_from_all_others": {
+        "heading_count": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "list_marker_count": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "paragraph_count": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_!": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_(": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_)": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_,": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_-": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_.": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_:": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_;": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "punctuation_?": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": true
+        },
+        "punctuation_\u2014": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "sentence_count": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        },
+        "word_count": {
+          "gelman-model-criticism": false,
+          "leveson-system-safety": false,
+          "neutral-editorial-defaults": false,
+          "shaw-engineering-judgment": false
+        }
+      },
+      "pairwise_disjoint_for_all_conditions": {
+        "heading_count": false,
+        "list_marker_count": false,
+        "paragraph_count": false,
+        "punctuation_!": false,
+        "punctuation_(": false,
+        "punctuation_)": false,
+        "punctuation_,": false,
+        "punctuation_-": false,
+        "punctuation_.": false,
+        "punctuation_:": false,
+        "punctuation_;": false,
+        "punctuation_?": false,
+        "punctuation_\u2014": false,
+        "sentence_count": false,
+        "word_count": false
+      }
+    },
+    "samples": [
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "shaw-engineering-judgment",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 7,
+            "-": 0,
+            ".": 5,
+            ":": 0,
+            ";": 3,
+            "?": 3,
+            "\u2014": 0
+          },
+          "sentence_count": 8,
+          "word_count": 114
+        },
+        "normalization": "direct",
+        "sample_id": "X1832FB59B14B"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "neutral-editorial-defaults",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 8,
+            "-": 0,
+            ".": 6,
+            ":": 0,
+            ";": 0,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 114
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X1841CFA4E948"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "neutral-editorial-defaults",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 5,
+            "-": 5,
+            ".": 6,
+            ":": 0,
+            ";": 0,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 115
+        },
+        "normalization": "direct",
+        "sample_id": "X46404894D094"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "gelman-model-criticism",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 3,
+            "-": 0,
+            ".": 6,
+            ":": 2,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 111
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X4A18B2190A21"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "leveson-system-safety",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 4,
+            "-": 0,
+            ".": 7,
+            ":": 1,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 7,
+          "word_count": 111
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X4CE2AFFE1AB5"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "gelman-model-criticism",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 6,
+            "-": 1,
+            ".": 6,
+            ":": 2,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 112
+        },
+        "normalization": "direct",
+        "sample_id": "X5057DAA6828A"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "leveson-system-safety",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 4,
+            "-": 4,
+            ".": 9,
+            ":": 1,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 9,
+          "word_count": 116
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X54840A8F809C"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "gelman-model-criticism",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 8,
+            "-": 4,
+            ".": 6,
+            ":": 1,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 124
+        },
+        "normalization": "direct",
+        "sample_id": "X6459B135EE92"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "leveson-system-safety",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 3,
+            "-": 1,
+            ".": 7,
+            ":": 1,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 7,
+          "word_count": 113
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X6767D2C7B67B"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "shaw-engineering-judgment",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 6,
+            "-": 0,
+            ".": 6,
+            ":": 1,
+            ";": 1,
+            "?": 3,
+            "\u2014": 0
+          },
+          "sentence_count": 9,
+          "word_count": 111
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "X696A5F522974"
+      },
+      {
+        "brief_id": "alias-removal",
+        "condition_id": "neutral-editorial-defaults",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 6,
+            "-": 0,
+            ".": 6,
+            ":": 0,
+            ";": 0,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 122
+        },
+        "normalization": "direct",
+        "sample_id": "X9C9FA0A475B3"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "gelman-model-criticism",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 4,
+            "-": 4,
+            ".": 6,
+            ":": 1,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 6,
+          "word_count": 115
+        },
+        "normalization": "direct",
+        "sample_id": "XAAD82931E318"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "leveson-system-safety",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 4,
+            "-": 4,
+            ".": 8,
+            ":": 2,
+            ";": 1,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 8,
+          "word_count": 115
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "XF71FD5BCB7BF"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "shaw-engineering-judgment",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 8,
+            "-": 4,
+            ".": 6,
+            ":": 0,
+            ";": 0,
+            "?": 5,
+            "\u2014": 0
+          },
+          "sentence_count": 11,
+          "word_count": 118
+        },
+        "normalization": "direct",
+        "sample_id": "XF7A6D8650BCB"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "neutral-editorial-defaults",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 4,
+            "-": 3,
+            ".": 7,
+            ":": 0,
+            ";": 0,
+            "?": 0,
+            "\u2014": 0
+          },
+          "sentence_count": 7,
+          "word_count": 119
+        },
+        "normalization": "unwrapped_once",
+        "sample_id": "XF8DDF32F5CDE"
+      },
+      {
+        "brief_id": "cache-canary",
+        "condition_id": "shaw-engineering-judgment",
+        "exact_wrapper_shape_valid": false,
+        "metrics": {
+          "heading_count": 0,
+          "list_marker_count": 0,
+          "paragraph_count": 1,
+          "punctuation_counts": {
+            "!": 0,
+            "(": 0,
+            ")": 0,
+            ",": 9,
+            "-": 4,
+            ".": 6,
+            ":": 0,
+            ";": 0,
+            "?": 4,
+            "\u2014": 0
+          },
+          "sentence_count": 10,
+          "word_count": 116
+        },
+        "normalization": "direct",
+        "sample_id": "XFBD1B657F8D2"
+      }
+    ],
+    "source_domain_term_hits_in_renders": [],
+    "wrapper_distribution_by_condition": {
+      "gelman-model-criticism": {
+        "direct": 3,
+        "rejected": 0,
+        "unwrapped_once": 1
+      },
+      "leveson-system-safety": {
+        "direct": 0,
+        "rejected": 0,
+        "unwrapped_once": 4
+      },
+      "neutral-editorial-defaults": {
+        "direct": 2,
+        "rejected": 0,
+        "unwrapped_once": 2
+      },
+      "shaw-engineering-judgment": {
+        "direct": 3,
+        "rejected": 0,
+        "unwrapped_once": 1
+      }
+    }
+  }
+}

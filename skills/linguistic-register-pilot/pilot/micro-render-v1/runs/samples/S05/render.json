@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "2fdf49a99b1eeafaffc2f1db9b1e771ad6aac784258090600a5cf453460e8833",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:14:51Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S05",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:14:26Z"
+  },
+  "sample_id": "S05",
+  "schema_version": 1,
+  "text": "This is not evidence that the compatibility aliases are ready for removal; it is evidence that removal remains premature. The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, while the status of the other two is unknown. Crucially, the integration tests cover the twelve migrated clients, not the two clients whose status is unknown. That does not make the tests useless; it makes them inadequate for this decision. Do not remove the aliases until the owners of the two remaining clients confirm migration."
+}

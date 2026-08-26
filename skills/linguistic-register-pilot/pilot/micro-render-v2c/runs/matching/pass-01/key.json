@@ -1,0 +1,50 @@
+{
+  "artifact_type": "linguistic_register_v2c_matching_key",
+  "authority": "sealed matching scoring key only",
+  "condition_by_sample": {
+    "X1832FB59B14B": "shaw-engineering-judgment",
+    "X1841CFA4E948": "neutral-editorial-defaults",
+    "X46404894D094": "neutral-editorial-defaults",
+    "X4A18B2190A21": "gelman-model-criticism",
+    "X4CE2AFFE1AB5": "leveson-system-safety",
+    "X5057DAA6828A": "gelman-model-criticism",
+    "X54840A8F809C": "leveson-system-safety",
+    "X6459B135EE92": "gelman-model-criticism",
+    "X6767D2C7B67B": "leveson-system-safety",
+    "X696A5F522974": "shaw-engineering-judgment",
+    "X9C9FA0A475B3": "neutral-editorial-defaults",
+    "XAAD82931E318": "gelman-model-criticism",
+    "XF71FD5BCB7BF": "leveson-system-safety",
+    "XF7A6D8650BCB": "shaw-engineering-judgment",
+    "XF8DDF32F5CDE": "neutral-editorial-defaults",
+    "XFBD1B657F8D2": "shaw-engineering-judgment"
+  },
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "packet_artifact_sha256": "fa6b9d9a71e848745852e9b3d5384fd850357e35a8e2bff18580bb2d5d4bb49a",
+  "pass_number": 1,
+  "reference_mapping": {
+    "R01": "gelman-model-criticism",
+    "R02": "leveson-system-safety",
+    "R03": "neutral-editorial-defaults",
+    "R04": "shaw-engineering-judgment"
+  },
+  "schema_version": 1,
+  "text_mapping": {
+    "T01": "X5057DAA6828A",
+    "T02": "X6459B135EE92",
+    "T03": "X6767D2C7B67B",
+    "T04": "XF7A6D8650BCB",
+    "T05": "X46404894D094",
+    "T06": "XF8DDF32F5CDE",
+    "T07": "X4CE2AFFE1AB5",
+    "T08": "X4A18B2190A21",
+    "T09": "X696A5F522974",
+    "T10": "XAAD82931E318",
+    "T11": "XFBD1B657F8D2",
+    "T12": "X9C9FA0A475B3",
+    "T13": "X1841CFA4E948",
+    "T14": "X54840A8F809C",
+    "T15": "X1832FB59B14B",
+    "T16": "XF71FD5BCB7BF"
+  }
+}

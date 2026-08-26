@@ -1,0 +1,59 @@
+artifact_type: linguistic_register_profile_calibration_plan_v1
+schema_version: 1
+status: frozen
+experiment_id: profile-card-stability-calibration-2026-08-25
+repository: /home/bline/code/work-engine
+base_precheck_plan:
+  path: skills/linguistic-register-pilot/pilot/profile-recognizability-precheck/preregistration.yaml
+  sha256: 067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa
+replications: 5
+randomization_seed: frozen-before-calibration::matched-composites::2026-08-25
+composite_decoys:
+  construction: >-
+    Construct one composite for each authentic profile by filling every target feature slot from
+    another candidate's retained features while preserving the target slot's layer and salience weight.
+  preserved_fields:
+    - feature_count
+    - layer_multiset
+    - salience_weight_multiset
+  donor_rule: >-
+    Select unique layer-matched donor features deterministically by the frozen seed; exclude the
+    target candidate as a donor and preserve copied category and abstract description verbatim.
+  purpose: >-
+    Test whether the authentic feature relationship appears more coherent than a count-, layer-,
+    and weight-matched cross-profile composite rather than merely more marked than generic prose.
+classifier_contract:
+  task: >-
+    Score each anonymous card independently for internal coherence and non-neutral distinctiveness,
+    score all twenty-one unordered card pairs for linguistic-profile separation, then identify the
+    most neutral card. Some cards may be coherent profiles and some may be matched composites;
+    do not assume how many of either exist.
+  blindness: >-
+    Each fresh classifier receives one pass packet only, with randomized card IDs and feature order,
+    no source or candidate identities, no answer key, no prior pass, and no repository access.
+  score_scale: >-
+    Use integers 1 through 5. A coherence score of 5 requires mutually reinforcing features that
+    imply one specific register; a 3 indicates a plausible but partly generic or mixed bundle; a 1
+    indicates conflicting or unrelated features. A separation score of 5 requires multiple
+    independent distinguishing cues; a 3 requires a reliable but narrow distinction; a 1 means
+    effectively indistinguishable.
+  required_outputs:
+    - internal_coherence
+    - non_neutral_distinctiveness
+    - pairwise_separation
+    - most_neutral_card
+  prohibited_inference: >-
+    Do not infer, name, or search for authors, disciplines, source works, candidate identities,
+    authentic-card count, composite construction, or an intended winner.
+thresholds:
+  minimum_correct_neutral_passes: 4
+  minimum_authentic_coherence_wins: 4
+  minimum_median_non_neutral_distinctiveness: 4
+  maximum_distinctiveness_range: 1
+  minimum_median_real_pair_separation: 3
+preregistration_owner: Human-authorized calibration slice executed by Codex before outcomes
+limitations:
+  - Repeated Sol runs estimate execution stability, not independent-judge reliability.
+  - Composite decoys are synthetic and may be accidentally coherent or unnaturally mixed.
+  - Abstract feature-card calibration does not replace evaluation of rendered prose.
+  - Passing does not rank candidates or authorize corpus selection or rendering.

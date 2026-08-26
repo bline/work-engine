@@ -1,0 +1,123 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_key_v2b",
+  "authority": "sealed until immediate post-batch checkpoint; then unblinding and downstream scoring only",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "neutral_condition_id": "neutral-editorial-defaults",
+  "plan_artifact_sha256": "1b540364b7afd500c1ea6dc403cd97b3f5b87e6dd570cc1eec4de7180d7440cb",
+  "preoutcome_checkpoint_commit_oid": "558af5ff2f089b30511a4c1c5fb18028b5fe3b52",
+  "samples": {
+    "S01": {
+      "brief_id": "cache-canary",
+      "condition_id": "shaw-engineering-judgment",
+      "identity": "cache-canary::shaw-engineering-judgment::replica-1",
+      "packet_artifact_sha256": "a1aca39b0e78086c401624ef21695c023d7a5930c1c73c003e526fa0da1212b4",
+      "replica": 1
+    },
+    "S02": {
+      "brief_id": "alias-removal",
+      "condition_id": "leveson-system-safety",
+      "identity": "alias-removal::leveson-system-safety::replica-1",
+      "packet_artifact_sha256": "b3e725073fca499ae3fb35388516a7d74cc9a04530c4f981b5c5e94192cb681e",
+      "replica": 1
+    },
+    "S03": {
+      "brief_id": "alias-removal",
+      "condition_id": "leveson-system-safety",
+      "identity": "alias-removal::leveson-system-safety::replica-2",
+      "packet_artifact_sha256": "e8bb2e8884bf40c23c447706627277e2a9af5de3f195b4bef781b4ae4765a34b",
+      "replica": 2
+    },
+    "S04": {
+      "brief_id": "cache-canary",
+      "condition_id": "gelman-model-criticism",
+      "identity": "cache-canary::gelman-model-criticism::replica-1",
+      "packet_artifact_sha256": "8f7bb29a6d7ac67dfebd739889e120be10da914fe3d4bf9a1fc60119be6b9bf9",
+      "replica": 1
+    },
+    "S05": {
+      "brief_id": "alias-removal",
+      "condition_id": "gelman-model-criticism",
+      "identity": "alias-removal::gelman-model-criticism::replica-2",
+      "packet_artifact_sha256": "f8e59a5483fd658ad7ed90bb381918eb9370b2a35f9f28ffa31824e493c15284",
+      "replica": 2
+    },
+    "S06": {
+      "brief_id": "alias-removal",
+      "condition_id": "neutral-editorial-defaults",
+      "identity": "alias-removal::neutral-editorial-defaults::replica-2",
+      "packet_artifact_sha256": "7711714e5534436a790f5cdc9044582ffb28fa29c9bcf7e82bcf154a262572e1",
+      "replica": 2
+    },
+    "S07": {
+      "brief_id": "cache-canary",
+      "condition_id": "neutral-editorial-defaults",
+      "identity": "cache-canary::neutral-editorial-defaults::replica-1",
+      "packet_artifact_sha256": "69d816c7b1d994e1db5b6915d2b1b37c8cfaded9cd5b3ff9d247205fcec09ff3",
+      "replica": 1
+    },
+    "S08": {
+      "brief_id": "cache-canary",
+      "condition_id": "leveson-system-safety",
+      "identity": "cache-canary::leveson-system-safety::replica-1",
+      "packet_artifact_sha256": "330a980b1d86826a182bbd9b0ecafa4b1ab955dc5531c7a578a5556893cb9d03",
+      "replica": 1
+    },
+    "S09": {
+      "brief_id": "cache-canary",
+      "condition_id": "shaw-engineering-judgment",
+      "identity": "cache-canary::shaw-engineering-judgment::replica-2",
+      "packet_artifact_sha256": "5147b11eae0386673829ac9a4836bbcae3c07040acbd71273d7df6845f4360fc",
+      "replica": 2
+    },
+    "S10": {
+      "brief_id": "alias-removal",
+      "condition_id": "shaw-engineering-judgment",
+      "identity": "alias-removal::shaw-engineering-judgment::replica-2",
+      "packet_artifact_sha256": "816e9b0d1c5568014f73ae07e78db01bde5dc6937230c640467ee15441410d31",
+      "replica": 2
+    },
+    "S11": {
+      "brief_id": "cache-canary",
+      "condition_id": "leveson-system-safety",
+      "identity": "cache-canary::leveson-system-safety::replica-2",
+      "packet_artifact_sha256": "2ba05af7608b85af62bd466d84f0ec922f8cef89e768025dfe22900c49c9e977",
+      "replica": 2
+    },
+    "S12": {
+      "brief_id": "alias-removal",
+      "condition_id": "neutral-editorial-defaults",
+      "identity": "alias-removal::neutral-editorial-defaults::replica-1",
+      "packet_artifact_sha256": "bf1573f1018710e4325133489b96c6bef4dbabbe34ef212c582aee5c8bd7212b",
+      "replica": 1
+    },
+    "S13": {
+      "brief_id": "cache-canary",
+      "condition_id": "neutral-editorial-defaults",
+      "identity": "cache-canary::neutral-editorial-defaults::replica-2",
+      "packet_artifact_sha256": "dee014e67f3cedefd0f1b28750e4bd265126888d22618b6f3f6fe2d4e509a565",
+      "replica": 2
+    },
+    "S14": {
+      "brief_id": "alias-removal",
+      "condition_id": "shaw-engineering-judgment",
+      "identity": "alias-removal::shaw-engineering-judgment::replica-1",
+      "packet_artifact_sha256": "701d8f6243b04e324f54c478039420f82096d5b9c2a9c70d21e877a14821b8b6",
+      "replica": 1
+    },
+    "S15": {
+      "brief_id": "alias-removal",
+      "condition_id": "gelman-model-criticism",
+      "identity": "alias-removal::gelman-model-criticism::replica-1",
+      "packet_artifact_sha256": "329005f876faa8e591d2c0f7b532bcd2c25182e39120b0ba81409ed737b4d43f",
+      "replica": 1
+    },
+    "S16": {
+      "brief_id": "cache-canary",
+      "condition_id": "gelman-model-criticism",
+      "identity": "cache-canary::gelman-model-criticism::replica-2",
+      "packet_artifact_sha256": "c62d2302c0cb8cd7da6bfed522516ac41daa1ee907e3207be52a2fcde5030fea",
+      "replica": 2
+    }
+  },
+  "schema_version": 3
+}

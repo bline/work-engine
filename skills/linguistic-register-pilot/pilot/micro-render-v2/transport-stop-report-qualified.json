@@ -1,0 +1,125 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_transport_stop_report_v2",
+  "authority": "stopped transport evidence only; no semantic, recognizability, ranking, or selection authority",
+  "disposition": "micro_render_v2_transport_contract_failed",
+  "execution_bindings": [
+    {
+      "events_output_sha256": "eaca570788fe1318ff5f0e97ce5bf91984d6dd99a685d695d6346eb23c9299e9",
+      "execution_receipt_sha256": "097cd1ccb408460a85ab18a439c4929e7da1c66ae36232274320996021776ec2",
+      "packet_artifact_sha256": "9c0d0d676003b1b9b25d1197a2f4afa6a12366cd4ba9a767c141b4255040699a",
+      "raw_output_sha256": "82361e18cfd85f57a95f35dea998a2c1485692044174bd8022a17c08c661f2ae",
+      "sample_id": "S01"
+    },
+    {
+      "events_output_sha256": "072fc50437774cff06e4a0d531b025415fac760b8d3132fe27191ebade7e4175",
+      "execution_receipt_sha256": "0c2de73cc031eae57e2de25ea1dbfd85bf160d24f01294b08894ae71794ae771",
+      "packet_artifact_sha256": "3f9065d99c0ced82c3231ac0278e3fc9314bb3c7a4c3e808f74c4b95394106f5",
+      "raw_output_sha256": "4b01403c0c1196b89b0d7c1371927d0b4ed1b4da81c680f2461f16285871efdb",
+      "sample_id": "S02"
+    },
+    {
+      "events_output_sha256": "c9350661fc893d537ed754ebe3925578af85c126fe1ba1350143e6932d162934",
+      "execution_receipt_sha256": "9ff7723429f8b3e2c3c9d3d16fd18ad05dacecf6df4a279573e4a6ac63d47715",
+      "packet_artifact_sha256": "ba3f9a39cdde6bb8b2b69734537b6aff23fc94369de1fb8045112d6ff2880dce",
+      "raw_output_sha256": "43f0b48aa6aa8fcb6712325be947399f01fbdc3f3b1948485e76f9b50a3df036",
+      "render_artifact_sha256": "277de3b7d4222972a2a13a445a8c548dbca2ad59703aa72572cfebbe4d41fc2f",
+      "sample_id": "S03"
+    },
+    {
+      "events_output_sha256": "43caa0f5b318e139a4e815bdf0dc7d7d94ed3ac61053e742b9c4692731d1ab3c",
+      "execution_receipt_sha256": "4559ff8fefb83ef2c0d164ca9c1dc953d36a702acb37e0d70923ede4a20f0989",
+      "packet_artifact_sha256": "438a91831099bf1786caf7fc71affcdbd9a0495e8cbc70c756609a33d90a67fc",
+      "raw_output_sha256": "c08e0dc3b0aeec3071f7eef14fe1be30d4d09d5aa6146ecfc1d3b10d3ecdf3c5",
+      "render_artifact_sha256": "3c8d6513f6fe2aac9ef7658c8cb215122029f997074943d9d5e43323ae4dbfb8",
+      "sample_id": "S04"
+    },
+    {
+      "events_output_sha256": "b734545074d7861672c150ee8775c89f661fa7dd2e1300929496142835e25f7f",
+      "execution_receipt_sha256": "36756c796f237ef4bd027006cb11d9ce85324f8bc34ea02898ca400fb854ae14",
+      "packet_artifact_sha256": "95c601e00feee1afe9b09c8655a7f9081d1527059fa654409e7479b2f5944c10",
+      "raw_output_sha256": "82d6830781878e03c84bc1df0608cd839a5048faf5e5cd82e6d3facf48a63629",
+      "sample_id": "S05"
+    },
+    {
+      "events_output_sha256": "2b4080119cef9c5ce89e2416e04f34344dc8656d19866deb988602128b7a835e",
+      "execution_receipt_sha256": "61814b698e4f129eec6846c27c92b87cb30d143550e17e29de3daabef8d180ed",
+      "packet_artifact_sha256": "2b8da76a1f914079895e6b8add58afa7167c700be7938f725d3775a59c964512",
+      "raw_output_sha256": "39a90d2ac41a360f36dd5189575248c4d66c09e3916c20607020856d5155d44a",
+      "sample_id": "S06"
+    },
+    {
+      "events_output_sha256": "bc81cb65450c7431d4ff9fbea5b369659e7da742217d9ff3504ffeca927a8a93",
+      "execution_receipt_sha256": "8e2215a7ebb726fd8b8648875ca3e8911dd5ea566b2011868b88f9d54e4c723d",
+      "packet_artifact_sha256": "b2e3c948b118ffd73e9618d3bc94bd691ff346aec5b105bd88019035b46a9d7b",
+      "raw_output_sha256": "ee1fb6a915e3acf02abe3a360c34429fa7045d46302c074044333d74f77f9489",
+      "sample_id": "S07"
+    },
+    {
+      "events_output_sha256": "4c46ba4f5c854ad6c563db20719b01d444f0f22ae8fbc968b36bbdaa1be76409",
+      "execution_receipt_sha256": "1265156fcba0faeac57c0bffc1c23afc8421c9d7c775fcb52e367af863e9a871",
+      "packet_artifact_sha256": "97c9dcfae849fe7a5620afa88061f9ed8ca8c6ee3d32c972ff0e09f0612a86e8",
+      "raw_output_sha256": "20608ba1e45511439859e526a1f1d04e33a34bf0d331a3e29b44943c182cd9d5",
+      "render_artifact_sha256": "4f7ef1d799f5f364023c7b1697dd277b27079017f67687179bec9a06bd42aa6a",
+      "sample_id": "S08"
+    }
+  ],
+  "experiment_id": "semantic-licensed-micro-render-v2-2026-08-25",
+  "gate_passed": false,
+  "launched_samples": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08"
+  ],
+  "matching_status": "not_run_transport_gate_failed",
+  "plan_artifact_sha256": "c6d47785a191630e42358f75121409580cd00e699e62058d300ce0dde8d71c3b",
+  "planned_samples": 16,
+  "preoutcome_checkpoint_commit_oid": "d823f680ff55891ac2b11a927f93f80e0b39cbed",
+  "reporting_limitations": [
+    "Absence of retained execution evidence does not prove that no unretained or aborted invocation occurred.",
+    "Execution receipts were first immutably checkpointed with reporting artifacts, so Git proves final binding consistency but not pre-report receipt immutability."
+  ],
+  "samples_without_execution_evidence": [
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "schema_version": 2,
+  "semantic_status": "not_run_transport_gate_failed",
+  "transport_invalid_samples": [
+    {
+      "reason": "render text is serialized structured output",
+      "sample_id": "S01"
+    },
+    {
+      "reason": "render text is serialized structured output",
+      "sample_id": "S02"
+    },
+    {
+      "reason": "render text is serialized structured output",
+      "sample_id": "S05"
+    },
+    {
+      "reason": "render text is serialized structured output",
+      "sample_id": "S06"
+    },
+    {
+      "reason": "render text is serialized structured output",
+      "sample_id": "S07"
+    }
+  ],
+  "transport_valid_samples": [
+    "S03",
+    "S04",
+    "S08"
+  ]
+}

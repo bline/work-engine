@@ -1,0 +1,8 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","additionalProperties":false,
+  "required":["assignments","method_limitations"],
+  "properties":{
+    "assignments":{"type":"array","minItems":16,"maxItems":16,"items":{"type":"object","additionalProperties":false,"required":["text_id","reference_id","confidence","rationale"],"properties":{"text_id":{"type":"string","enum":["T01","T02","T03","T04","T05","T06","T07","T08","T09","T10","T11","T12","T13","T14","T15","T16"]},"reference_id":{"type":"string","enum":["R01","R02","R03","R04"]},"confidence":{"type":"integer","minimum":1,"maximum":5},"rationale":{"type":"string","minLength":1}}}},
+    "method_limitations":{"type":"array","items":{"type":"string","minLength":1}}
+  }
+}

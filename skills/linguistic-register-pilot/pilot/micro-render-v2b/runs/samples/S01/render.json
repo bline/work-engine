@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2b",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "1fb904417a285ffa42aaef7c7c0132bd4b69415ef36d67cae652e0dc11472573",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "extracted_prose_sha256": "03084ac9e9486428c97ac3843ecff3106c695d17edc880a69af19ee284ed5e47",
+  "normalization": "unwrapped_once",
+  "packet_artifact_sha256": "ec49cf88ccb30840e2948e5ddafda0f320dfd4cdf9bcbb6c22edda7bb7a69ee2",
+  "raw_response_sha256": "90d680f4ca878f4123deebefc2825c5cc46b64f521b317bf196f7df43f5fbba0",
+  "sample_id": "S01",
+  "schema_version": 3,
+  "text": "For this technical review, what should be approved at this stage? Only a canary deployment, with stale-read telemetry required before any broader rollout. What does the proposed update change? It extends the cache lifetime from five minutes to fifteen minutes. What did the benchmark observe? Over a twenty-four-hour period, it found eighteen percent fewer origin requests. How should that result be evaluated? The reduction is operationally promising. What did the benchmark leave unmeasured? It did not measure stale-read incidence. Therefore, what does the evidence support? It supports a limited experiment, but it does not support broad rollout."
+}

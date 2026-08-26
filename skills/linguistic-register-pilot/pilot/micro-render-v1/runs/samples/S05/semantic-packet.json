@@ -1,0 +1,38 @@
+{
+  "artifact_type": "linguistic_register_semantic_review_job_v1",
+  "authority": "blinded semantic-equivalence review input; style identity withheld",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "render_artifact_sha256": "dbf4a744e0f2712a4e63eb0f3519d2f46669aada697c841a9868d54198bc3750",
+  "rendered_text": "This is not evidence that the compatibility aliases are ready for removal; it is evidence that removal remains premature. The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, while the status of the other two is unknown. Crucially, the integration tests cover the twelve migrated clients, not the two clients whose status is unknown. That does not make the tests useless; it makes them inadequate for this decision. Do not remove the aliases until the owners of the two remaining clients confirm migration.",
+  "sample_id": "S05",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "alias-removal",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "alias-change",
+        "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+      },
+      {
+        "id": "alias-evidence",
+        "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+      },
+      {
+        "id": "alias-limit",
+        "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+      },
+      {
+        "id": "alias-decision",
+        "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+      }
+    ],
+    "required_speech_act": "A bounded rejection recommendation with an explicit evidence limitation and prerequisite."
+  },
+  "semantic_review_contract": {
+    "blindness": "The reviewer receives one brief and one rendering, with no style card, condition label, hypothesis, other rendering, or intended outcome.",
+    "prohibitions": "Do not score writing quality or register; return equivalent only when every proposition and speech act is preserved and no meaning is added.",
+    "task": "Map every required proposition to the rendered text, detect omission or alteration, detect added meaning, and judge speech-act equivalence."
+  }
+}

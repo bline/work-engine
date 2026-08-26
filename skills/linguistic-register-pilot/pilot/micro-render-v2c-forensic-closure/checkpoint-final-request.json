@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-v2c-forensic-closure",
+  "slice_number": 1,
+  "candidate_attempt": 2,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "bb2e662643ad51f5d62d07e9754fe954ceba3921",
+  "plan_version": "v2c-forensic-closure-result-v1",
+  "scope_revision": "terminal-v2c-forensic-closure",
+  "gate_receipt_digest": "100fd0c8a035971ebee53a311ed0a4ea3a4e7e262b09da7bfb7cb06d07fe8b99",
+  "created_at": "2026-08-25T23:56:39-06:00",
+  "paths": [
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/checkpoint-preregistration-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/checkpoint-final-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/preregistration.yaml",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/content-addressed-corpus-manifest.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/source-recovery-report.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/closure-result.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/closure-report.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/candidate-suitability.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/interpretation-addendum.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2c_forensic_closure.py",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/tests/test_micro_render_v2c_forensic_closure.py",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2c_leakage_audit.py",
+      "action": "include",
+      "attribution": "generated_dependency"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/corpus-manifest.yaml",
+      "action": "include",
+      "attribution": "generated_dependency"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/candidates/leveson/corpus-manifest.yaml",
+      "action": "include",
+      "attribution": "generated_dependency"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/corpus-manifest.yaml",
+      "action": "include",
+      "attribution": "generated_dependency"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "accepted_samples": 16,
+  "artifact_type": "linguistic_register_v2c_semantic_gate_report",
+  "authority": "semantic-equivalence gate only; no recognizability or selection authority",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "gate_passed": true,
+  "launch_set_sha256": "aa3e2e8bb28b40d98911bd07e52a3eff4954e04b0279a7a16f1fdc3c475be2a1",
+  "matching_status": "authorized_not_run",
+  "required_samples": 16,
+  "schema_version": 1
+}

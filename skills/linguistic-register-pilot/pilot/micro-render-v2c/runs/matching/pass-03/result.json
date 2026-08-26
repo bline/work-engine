@@ -1,0 +1,109 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_matching_result_v2c",
+  "assignments": [
+    {
+      "confidence": 5,
+      "rationale": "Opens with the practical decision, then uses a parallel series of short questions to move through observation, positive assessment, unknown status, testing limit, and bounded conclusion.",
+      "reference_id": "R02",
+      "text_id": "T01"
+    },
+    {
+      "confidence": 5,
+      "rationale": "States a broad pro-action reading and immediately replaces it with a narrower conclusion, then uses the reader-facing cue \u201cHere is the boundary\u201d to explain the bounded contrast.",
+      "reference_id": "R04",
+      "text_id": "T02"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Places the positive evaluation and precise evidence boundary in explicit tension, adopts a direct first-person recommendation, and ends with a compact parallel contrast.",
+      "reference_id": "R03",
+      "text_id": "T03"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Uses direct subject-action sentences, ordinary transitions, a single statement of the evidence limitation, and a concise final restatement of the decision.",
+      "reference_id": "R01",
+      "text_id": "T04"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Explicitly replaces the broader interpretation with a more precise limited conclusion, announces the boundary with a reader-facing cue, and states the practical decision in short declaratives.",
+      "reference_id": "R04",
+      "text_id": "T05"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Moves from an initially broad reading to a more precisely bounded conclusion, explains that the limit applies only to the broader action, and proceeds compactly to the decision.",
+      "reference_id": "R04",
+      "text_id": "T06"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Frames the positive result and evidence limit as concerns to be weighed together, gives a direct first-person recommendation, and closes with a compressed parallel contrast.",
+      "reference_id": "R03",
+      "text_id": "T07"
+    },
+    {
+      "confidence": 5,
+      "rationale": "States the bounded decision first and develops the explanation through a sustained parallel sequence of questions covering change, observation, evaluation, limitation, and permissible scope.",
+      "reference_id": "R02",
+      "text_id": "T08"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Maintains a single focused progression through direct sentences and ordinary connectives, states the unmeasured boundary once, and ends with the bounded review decision.",
+      "reference_id": "R01",
+      "text_id": "T09"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Names a broader pro-action interpretation, replaces it with the narrower supported contrast, uses \u201cHere is the bounded contrast\u201d as a reader-facing cue, and preserves the positive evaluation.",
+      "reference_id": "R04",
+      "text_id": "T10"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Uses clear direct exposition, conventional transitions, one explicit evidence limitation, and a concise concluding sentence that restates the review decision.",
+      "reference_id": "R01",
+      "text_id": "T11"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Presents the propositions in direct sentences with ordinary connective movement, states the testing boundary without elaboration, and finishes with a concise decision restatement.",
+      "reference_id": "R01",
+      "text_id": "T12"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Uses first-person evaluative and recommendatory language, acknowledges the positive result before qualifying it with the exact evidence boundary, and closes with a narrow parallel conclusion.",
+      "reference_id": "R03",
+      "text_id": "T13"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Explicitly places the favorable result and unmeasured limit in tension, resolves them through a first-person bounded recommendation, and ends with a compact evidence contrast.",
+      "reference_id": "R03",
+      "text_id": "T14"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Leads with the practical decision and follows it with parallel questions whose answers supply the change, observation, positive evaluation, unmeasured limit, and bounded conclusion.",
+      "reference_id": "R02",
+      "text_id": "T15"
+    },
+    {
+      "confidence": 5,
+      "rationale": "Introduces the review through a short parallel question series, then gives the recommendation before explaining the observed progress, unknown status, testing boundary, and resulting contrast.",
+      "reference_id": "R02",
+      "text_id": "T16"
+    }
+  ],
+  "execution_receipt_sha256": "baaeda7e96622082144542bc02e4e36bbb373b1e9ceaa0a9875a372eec5b227f",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "method_limitations": [
+    "Matches are based only on observable linguistic realization of the licensed features; overlapping features such as bounded conclusions and evidence qualifications occur across multiple reference cards."
+  ],
+  "packet_artifact_sha256": "1e7002cc51d5409d86662dd500a0192cbfd57c53e231f37632cc91d209ab7e3b",
+  "pass_number": 3,
+  "schema_version": 4
+}

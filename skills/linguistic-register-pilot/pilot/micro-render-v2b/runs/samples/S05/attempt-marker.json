@@ -1,0 +1,15 @@
+{
+  "artifact_type": "linguistic_register_v2b_attempt_marker",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "job_id": "S05",
+  "marked_at_utc": "2026-08-25T23:40:58.254156Z",
+  "model": "gpt-5.6-sol",
+  "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+  "packet_artifact_sha256": "608b90fe2d0461222838b2118355257973b416760839c21cafaecbb555f87e1d",
+  "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+  "reasoning_effort": "high",
+  "request_digest": "f9feb88fb6465a2d01c918cd4f856afc72e2d779176779cd980863169fabcc46",
+  "schema_version": 1,
+  "stage": "render",
+  "state": "model_launch_imminent"
+}

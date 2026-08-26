@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2b",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "2f06efdc871256680d48fc4380863c3e41836003132e4f2e9b5a6837f7f19c9f",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "extracted_prose_sha256": "e2ee2ed9e818a8deb618c93bcd2bd29b70bfd48466f3d8fa9abf050f36dab5ff",
+  "normalization": "unwrapped_once",
+  "packet_artifact_sha256": "f75a3a3b479215e1fad5f2d96f747e36fa0a3fbc825d57924ddf72f7b698ae49",
+  "raw_response_sha256": "f80cd85554c01f06fcdfde51857b66ae189a3ab4e6a2361854c2fbf1ccfa413c",
+  "sample_id": "S08",
+  "schema_version": 3,
+  "text": "The proposed update extends the cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark observed eighteen percent fewer origin requests. That reduction is operationally promising. The result might therefore seem, on this evidence alone, to support broad rollout; more precisely, the evidence supports only a limited experiment, not broad rollout. Here is the boundary: the benchmark did not measure stale-read incidence. That specific evidence limit blocks the broader action without negating the positive operational evaluation. Approve only a canary deployment, and require stale-read telemetry before any broader rollout."
+}

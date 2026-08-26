@@ -1,0 +1,38 @@
+{
+  "artifact_type": "linguistic_register_semantic_review_job_v1",
+  "authority": "blinded semantic-equivalence review input; style identity withheld",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "render_artifact_sha256": "fde50e2293caf63ae3d20d2495b3c59a7e42484be7a39b1be67033fbbfc6d037",
+  "rendered_text": "{\"text\":\"The proposed update changes the cache lifetime from five minutes to fifteen minutes. A benchmark conducted over twenty-four hours observed eighteen percent fewer origin requests. However, the benchmark did not measure stale-read incidence, so its result is not complete evidence for every aspect of a broader rollout. Given that explicit limitation, the appropriately bounded recommendation is to approve only a canary deployment and require stale-read telemetry before any broader rollout.\"}",
+  "sample_id": "S12",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation with an explicit evidence limitation and prerequisite."
+  },
+  "semantic_review_contract": {
+    "blindness": "The reviewer receives one brief and one rendering, with no style card, condition label, hypothesis, other rendering, or intended outcome.",
+    "prohibitions": "Do not score writing quality or register; return equivalent only when every proposition and speech act is preserved and no meaning is added.",
+    "task": "Map every required proposition to the rendered text, detect omission or alteration, detect added meaning, and judge speech-act equivalence."
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "anonymous_style": {
+    "features": [
+      {
+        "category": "qualification_patterns",
+        "description": "Add a brief qualification when a statement does not apply universally.",
+        "layer": "discourse",
+        "salience_weight": 3
+      },
+      {
+        "category": "conclusion_patterns",
+        "description": "End with a concise restatement of the main point.",
+        "layer": "surface",
+        "salience_weight": 3
+      },
+      {
+        "category": "paragraph_rhythm",
+        "description": "Keep each paragraph focused on one main point.",
+        "layer": "surface",
+        "salience_weight": 3
+      },
+      {
+        "category": "connective_patterns",
+        "description": "Use ordinary transition words when moving between related points.",
+        "layer": "surface",
+        "salience_weight": 3
+      },
+      {
+        "category": "syntax",
+        "description": "Prefer direct sentences whose subjects and actions are easy to identify.",
+        "layer": "surface",
+        "salience_weight": 3
+      }
+    ]
+  },
+  "artifact_type": "linguistic_register_micro_render_job_v1",
+  "authority": "fixed-semantics micro-render input; no candidate-selection authority",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "rendering_contract": {
+    "blindness": "The renderer receives one anonymous style card and one brief, with no candidate identity, source, hypothesis, other condition, or prior rendering.",
+    "prohibitions": "Do not add facts, methods, requirements, permissions, examples, labels, quotations, headings, bullets, or domain claims beyond the brief; do not mention style instructions.",
+    "task": "Express every proposition and the required speech act exactly once while realizing the anonymous style features naturally."
+  },
+  "sample_id": "S14",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation with an explicit evidence limitation and prerequisite."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "16b3fd19cb6cd005bdb493488d081f9f8802111a06c4dce683d247a0e9eb3add",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:16:11Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S16",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:15:25Z"
+  },
+  "sample_id": "S16",
+  "schema_version": 1,
+  "text": "What changes? What was observed? What was not measured? What follows? The proposed update extends the cache lifetime from five minutes to fifteen minutes. Approve only a canary deployment, and require stale-read telemetry as a prerequisite before any broader rollout. A twenty-four-hour benchmark observed a reduction of eighteen percent in origin requests; however, it did not measure stale-read incidence. The reduction is therefore an observed result, not an established overall result."
+}

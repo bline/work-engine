@@ -1,0 +1,10 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2",
+  "execution_receipt_sha256": "1265156fcba0faeac57c0bffc1c23afc8421c9d7c775fcb52e367af863e9a871",
+  "experiment_id": "semantic-licensed-micro-render-v2-2026-08-25",
+  "model": "gpt-5.6-sol",
+  "packet_artifact_sha256": "97c9dcfae849fe7a5620afa88061f9ed8ca8c6ee3d32c972ff0e09f0612a86e8",
+  "sample_id": "S08",
+  "schema_version": 2,
+  "text": "The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated; the status of two clients is unknown. Migrating twelve known clients is substantial progress. The broader pro-action interpretation is that the evidence supports continued migration work; more precisely, it does not support removing the aliases. Note the bounded contrast: integration tests cover the twelve migrated clients but not the two clients of unknown status, a limit on the broader action rather than on the positive evaluation. Do not remove the aliases until the two remaining client owners confirm migration."
+}

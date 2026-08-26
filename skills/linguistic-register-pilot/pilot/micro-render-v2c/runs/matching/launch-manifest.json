@@ -1,0 +1,82 @@
+{
+  "artifact_type": "linguistic_register_v2c_launch_manifest",
+  "authority": "pre-launch content commitment; no outcome or unblinding authority",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "launch_set": {
+    "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+    "jobs": [
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "matching-pass-01",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+        "packet_artifact_sha256": "fa6b9d9a71e848745852e9b3d5384fd850357e35a8e2bff18580bb2d5d4bb49a",
+        "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+        "reasoning_effort": "high",
+        "stage": "matching"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "matching-pass-02",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+        "packet_artifact_sha256": "e444ed3b8ab438a431507a15e2dd8618a0aacdd060d243f913af76cdb93064c1",
+        "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+        "reasoning_effort": "high",
+        "stage": "matching"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "matching-pass-03",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+        "packet_artifact_sha256": "1e7002cc51d5409d86662dd500a0192cbfd57c53e231f37632cc91d209ab7e3b",
+        "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+        "reasoning_effort": "high",
+        "stage": "matching"
+      }
+    ],
+    "stage": "matching"
+  },
+  "launch_set_sha256": "3f5fe556463c65f5950382720adaff971a1495e49f445a6e2c6dd4e6c19a4a45",
+  "requests": [
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "matching-pass-01",
+      "launch_set_sha256": "3f5fe556463c65f5950382720adaff971a1495e49f445a6e2c6dd4e6c19a4a45",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+      "packet_artifact_sha256": "fa6b9d9a71e848745852e9b3d5384fd850357e35a8e2bff18580bb2d5d4bb49a",
+      "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+      "reasoning_effort": "high",
+      "request_digest": "c06904d3b72b67bc8b217621fa8791c25660dd0d02bb14b13aab5c2830e1d59c",
+      "stage": "matching"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "matching-pass-02",
+      "launch_set_sha256": "3f5fe556463c65f5950382720adaff971a1495e49f445a6e2c6dd4e6c19a4a45",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+      "packet_artifact_sha256": "e444ed3b8ab438a431507a15e2dd8618a0aacdd060d243f913af76cdb93064c1",
+      "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+      "reasoning_effort": "high",
+      "request_digest": "6c4d79bee27930290aa49cc85bb9c3d64a61a4a32ce7f859d7d8c6029a68cee2",
+      "stage": "matching"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "matching-pass-03",
+      "launch_set_sha256": "3f5fe556463c65f5950382720adaff971a1495e49f445a6e2c6dd4e6c19a4a45",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba",
+      "packet_artifact_sha256": "1e7002cc51d5409d86662dd500a0192cbfd57c53e231f37632cc91d209ab7e3b",
+      "prompt_sha256": "f2dee1f9eb448e0f38c91a9fed9e736f91ac372c8cd022c354de8a1ee5676cef",
+      "reasoning_effort": "high",
+      "request_digest": "15b5cbb5456ed76df20172bbf46b56466deab0e81bfe8bd427128da05625b206",
+      "stage": "matching"
+    }
+  ],
+  "schema_version": 1,
+  "stage": "matching"
+}

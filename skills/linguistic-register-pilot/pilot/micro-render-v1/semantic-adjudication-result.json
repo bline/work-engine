@@ -1,0 +1,535 @@
+{
+  "adjudicator_provenance": {
+    "completed_at_utc": "2026-08-25T21:46:28Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; uniformly calibrated all-sample adjudication",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "xhigh",
+    "started_at_utc": "2026-08-25T21:41:45Z"
+  },
+  "artifact_type": "linguistic_register_semantic_adjudication_result_v1",
+  "authority": "post-review adjudication evidence only; original semantic gate remains frozen",
+  "decisions": [
+    {
+      "added_meaning": [
+        "The benchmark evidence deserves argumentative weight.",
+        "The issue constitutes a narrower disagreement."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that the cache lifetime changes from five minutes to fifteen minutes.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that a twenty-four-hour benchmark observed eighteen percent fewer origin requests.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that the benchmark did not measure stale-read incidence.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Recommends only a canary deployment and requires stale-read telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "All required propositions and the bounded approval act are preserved, but the evaluative claims about evidentiary weight and disagreement are not entailed by the brief.",
+      "sample_id": "S01",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "A familiar framing supports broader rollout.",
+        "The contrary conclusion is more precise.",
+        "The distinction is consequential."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states the five-to-fifteen-minute cache-lifetime change.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose reports eighteen percent fewer origin requests in a twenty-four-hour benchmark.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose approves only a canary and requires telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The required content and speech act survive inside the wrapper, but unentailed familiarity, precision, and consequentiality judgments add meaning. The rendered text is a serialized JSON object.",
+      "sample_id": "S02",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states that three public fields were renamed while compatibility aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that twelve of fourteen clients migrated and two clients have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that tests cover the twelve migrated clients but not the two unknown-status clients.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose says not to remove aliases until the two remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The inner prose preserves every proposition and the bounded rejection without adding meaning. Independently, its serialized JSON-object wrapper is transport-invalid.",
+      "sample_id": "S03",
+      "semantic_verdict": "equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [
+        "The evidence limitation is consequential.",
+        "The benchmark remains useful and informative within a narrower decision boundary."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that the cache lifetime extends from five minutes to fifteen minutes.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Reports eighteen percent fewer origin requests in a twenty-four-hour benchmark.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Explicitly states that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Approves only a canary and requires stale-read telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The required decision is intact, but the consequentiality and usefulness assessments assign unentailed evaluative and argumentative status.",
+      "sample_id": "S04",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "The test-coverage limitation is crucial.",
+        "The tests are not useless in a broader sense."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that three fields were renamed while compatibility aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve of fourteen clients migrated and the other two have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that tests cover the migrated twelve but not the two unknown-status clients.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Directs that aliases remain until both remaining client owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "All required content and the bounded rejection are present, but the degree-of-relevance and broader-utility judgments are not entailed.",
+      "sample_id": "S05",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "Client migration is nearly complete and that framing is familiar.",
+        "The rendered conclusion is more precise.",
+        "The tests are not broadly inadequate.",
+        "The progress-versus-confirmation distinction is consequential and simple."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that the migration renamed three fields while retaining aliases.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve of fourteen clients migrated and two remain of unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that integration coverage includes the twelve migrated clients but excludes the two unknown-status clients.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Says not to remove aliases until both remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The four propositions and rejection act are preserved, but several unentailed evaluations of degree, familiarity, precision, adequacy, and consequentiality add meaning.",
+      "sample_id": "S06",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "The benchmark has affirmative argumentative relevance for updating.",
+        "The facts form opposing arguments for updating and restraint."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states the change from a five-minute to a fifteen-minute cache lifetime.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose reports eighteen percent fewer origin requests over twenty-four hours.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose recommends only a canary and requires telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The inner content preserves the required propositions and speech act, but adds argumentative-status claims not established by the brief. The JSON-object wrapper is independently invalid.",
+      "sample_id": "S07",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [
+        "The migration evidence is substantial."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that three public fields were renamed while aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve clients migrated and the other two have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that tests cover the twelve migrated clients but not the other two.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Says not to remove aliases until the two remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The required content and rejection are preserved, but substantial assigns an unentailed degree to the evidence.",
+      "sample_id": "S08",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "Completing alias removal is a valid concern.",
+        "The available client map is nearly complete."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that three public fields were renamed while compatibility aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve of fourteen clients migrated and two have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that tests cover the migrated twelve but not the other two.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Recommends retaining aliases until both remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "Every proposition and the bounded rejection are present, but validity and near-completeness are additional evaluative judgments.",
+      "sample_id": "S09",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [],
+      "proposition_checks": [
+        {
+          "evidence": "States that three public fields were renamed while compatibility aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve of fourteen clients migrated and two remain of unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that tests cover the migrated twelve but provide no coverage for the two unknown-status clients.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Says aliases should not be removed until the two remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The questions organize the paragraph without changing meaning; all propositions and the bounded rejection are preserved with no added evaluation.",
+      "sample_id": "S10",
+      "semantic_verdict": "equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "Two clients constitute a small but real blind spot.",
+        "The migration progress is strong."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "States that three fields were renamed while compatibility aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that twelve of fourteen clients migrated and two have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that tests cover the migrated twelve but not the unknown-status two.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Recommends rejecting removal until both remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The required propositions and rejection remain intact, but the smallness, reality, and strength assessments add unentailed degrees.",
+      "sample_id": "S11",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    },
+    {
+      "added_meaning": [
+        "The bounded recommendation is appropriate."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states the five-to-fifteen-minute cache-lifetime change.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose reports eighteen percent fewer origin requests over twenty-four hours.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose approves only a canary and requires telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The inner prose preserves the required content and act, but appropriately adds an unentailed judgment of appropriateness. The serialized JSON-object wrapper is invalid.",
+      "sample_id": "S12",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [
+        "The practical consequence is appropriately narrow."
+      ],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states that the cache lifetime changes from five minutes to fifteen minutes.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose reports eighteen percent fewer origin requests in the benchmark.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that the benchmark did not measure stale-read incidence.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose approves only a canary and requires telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "All required propositions and the bounded approval survive, but the appropriateness judgment adds meaning. The serialized JSON-object wrapper is transport-invalid.",
+      "sample_id": "S13",
+      "semantic_verdict": "not_equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states the change from five to fifteen minutes.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose reports eighteen percent fewer origin requests over twenty-four hours.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose explicitly states that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose approves only a canary and requires stale-read telemetry before broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The limitation and its relevance to rollout are entailed by the required telemetry prerequisite, so the inner prose adds no independent meaning. The JSON-object wrapper is nevertheless transport-invalid.",
+      "sample_id": "S14",
+      "semantic_verdict": "equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [],
+      "proposition_checks": [
+        {
+          "evidence": "The inner prose states that three public fields were renamed while aliases were retained.",
+          "proposition_id": "alias-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that twelve of fourteen clients migrated and two have unknown status.",
+          "proposition_id": "alias-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose states that tests cover the migrated twelve but not the two unknown-status clients.",
+          "proposition_id": "alias-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "The inner prose recommends keeping aliases until both remaining owners confirm migration.",
+          "proposition_id": "alias-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The inner prose preserves every proposition and the bounded rejection without added meaning. Its serialized JSON-object wrapper is independently transport-invalid.",
+      "sample_id": "S15",
+      "semantic_verdict": "equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": false
+    },
+    {
+      "added_meaning": [],
+      "proposition_checks": [
+        {
+          "evidence": "States that the cache lifetime extends from five minutes to fifteen minutes.",
+          "proposition_id": "cache-change",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that a twenty-four-hour benchmark observed eighteen percent fewer origin requests.",
+          "proposition_id": "cache-evidence",
+          "status": "preserved"
+        },
+        {
+          "evidence": "States that stale-read incidence was not measured.",
+          "proposition_id": "cache-limit",
+          "status": "preserved"
+        },
+        {
+          "evidence": "Approves only a canary and makes stale-read telemetry a prerequisite to broader rollout.",
+          "proposition_id": "cache-decision",
+          "status": "preserved"
+        }
+      ],
+      "rationale": "The rhetorical questions only organize the material; every proposition and the bounded approval act are preserved without added meaning.",
+      "sample_id": "S16",
+      "semantic_verdict": "equivalent",
+      "speech_act_equivalent": true,
+      "transport_valid": true
+    }
+  ],
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "method_limitations": [
+    "Only packet.json was considered; withheld style, candidate, intended-outcome, and prior-review information was not inferred."
+  ],
+  "packet_artifact_sha256": "525d99966f5a7565067f833f5f3687026825301c9f435632cac7d262bf136c4d",
+  "schema_version": 1
+}

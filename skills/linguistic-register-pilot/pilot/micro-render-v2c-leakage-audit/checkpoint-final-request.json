@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-v2c-leakage-audit",
+  "slice_number": 1,
+  "candidate_attempt": 2,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "7fcbcfc501d2647771cbc295538bcb219b945ecc",
+  "plan_version": "v2c-leakage-audit-result-v1",
+  "scope_revision": "checkpoint-bound-read-only-audit-complete",
+  "gate_receipt_digest": "ce263cfc7e44d44e68d431e5db8b1c3f869f3b6ed94b82978a708c38940fa9d0",
+  "created_at": "2026-08-25T22:44:40-06:00",
+  "paths": [
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/audit-report.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/audit-result.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/checkpoint-final-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/checkpoint-preregistration-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/external-review.md",
+      "action": "include",
+      "attribution": "user_owned_baseline"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/interpretation-addendum.md",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/preregistration.yaml",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/subject-inventory.json",
+      "action": "include",
+      "attribution": "validation_dependency"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2c_leakage_audit.py",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/tests/test_micro_render_v2c_leakage_audit.py",
+      "action": "include",
+      "attribution": "validation_dependency"
+    }
+  ]
+}

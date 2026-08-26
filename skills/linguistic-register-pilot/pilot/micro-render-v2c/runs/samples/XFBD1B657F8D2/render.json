@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2c",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "b757df6400116cd651079b25dc4bc08933adf2255840f130c6aeb6ece291231a",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "extracted_prose_sha256": "28d693f8e1282c475d050f5bfb137f0c6b43fb02cf8fa8697f25cdf8fcff909c",
+  "normalization": "direct",
+  "packet_artifact_sha256": "c2f5bc80abf064219fde653ef5a200368073fd46ab5b1d1dabd6f3b1eea0359e",
+  "raw_response_sha256": "ac3edd1ef55bce1e7c500911beb70b34fbefc6702760f0b6f0f2fd385ae8c13b",
+  "sample_id": "XFBD1B657F8D2",
+  "schema_version": 4,
+  "text": "Approve, on the evidence provided and as a deliberately bounded next step, only a canary deployment, and require stale-read telemetry before considering any broader rollout. What, specifically, would this approval permit the proposed update to change? It would extend the cache lifetime from five minutes to fifteen minutes. What evidence, from the stated benchmark, accompanies that narrowly framed change? A twenty-four-hour benchmark observed eighteen percent fewer origin requests. How should that observed result be evaluated? The reduction in origin requests is operationally promising. What point remains outside the evidence as presented? The benchmark did not measure stale-read incidence. Therefore, the available evidence supports a limited experiment, but does not support broad rollout."
+}

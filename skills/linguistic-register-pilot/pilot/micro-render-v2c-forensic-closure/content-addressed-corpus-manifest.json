@@ -1,0 +1,146 @@
+{
+  "artifact_type": "linguistic_register_content_addressed_source_manifest",
+  "candidates": [
+    {
+      "candidate_id": "gelman-model-criticism",
+      "corpus_artifact_sha256": "18e3db1829bdac0945622dc7999fbb74d076398643d51bec2f6042016b7b0dc3",
+      "sources": [
+        {
+          "byte_length": 101561,
+          "extraction": {
+            "arguments": [
+              "-enc",
+              "UTF-8"
+            ],
+            "extracted_utf8_sha256": "16d6ed88ab5997222eed3a20a7722a14f87274149a95c451d0630a2abeb28e47",
+            "extractor": "pdftotext",
+            "normalized_token_count": 2131
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "application/pdf",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "f16c517ec29dc218db6f2c823b35a164a4baa3415e8d58e35fc309293f3c6287",
+          "source_id": "objections-to-bayesian-statistics",
+          "source_url": "https://sites.stat.columbia.edu/gelman/research/published/badbayesmain.pdf"
+        },
+        {
+          "byte_length": 162593,
+          "extraction": {
+            "arguments": [
+              "-enc",
+              "UTF-8"
+            ],
+            "extracted_utf8_sha256": "ba4e7b420cc65373037900bff0aa6cc6f372522fe932cc29363b38518a81bfd2",
+            "extractor": "pdftotext",
+            "normalized_token_count": 5333
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "application/pdf",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "383df3791a7289213fb178d07cde7b275c860131a9c84deb68be9c88d4bfeadd",
+          "source_id": "objections-rejoinder",
+          "source_url": "https://sites.stat.columbia.edu/gelman/research/published/badbayesresponsemain.pdf"
+        }
+      ]
+    },
+    {
+      "candidate_id": "leveson-system-safety",
+      "corpus_artifact_sha256": "bf7bfd3b4f38387814a9d9ea920466b97e3f6bcd4e7f7e6421f2a94a5e708541",
+      "sources": [
+        {
+          "byte_length": 1615388,
+          "extraction": {
+            "arguments": [
+              "-enc",
+              "UTF-8"
+            ],
+            "extracted_utf8_sha256": "d149b7ee5d152f17730735a1dbe6ca9b89fcc6fba834837263a5bd6fd580d081",
+            "extractor": "pdftotext",
+            "normalized_token_count": 7366
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "application/pdf",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9",
+          "source_id": "safety-assurance-white-paper",
+          "source_url": "https://psas.scripts.mit.edu/home/wp-content/uploads/2020/07/White-Paper-on-Safety-Assurance.pdf"
+        },
+        {
+          "byte_length": 118121,
+          "extraction": {
+            "extracted_utf8_sha256": "e041db0ce7e4c4b071cffa4398cbea4736990213c140b9f7c18a1425193a020d",
+            "extractor": "python.html.parser.HTMLParser",
+            "hidden_elements": [
+              "script",
+              "style",
+              "noscript",
+              "svg"
+            ],
+            "normalized_token_count": 4681
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "text/html",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "4bfd351202f90b8b47de9ad3da1a82a37137cade78291798149c1b05395b9ee4",
+          "source_id": "oil-gas-senate-testimony",
+          "source_url": "https://energy.mit.edu/news/risk-management-in-the-oil-and-gas-industry/"
+        }
+      ]
+    },
+    {
+      "candidate_id": "shaw-engineering-judgment",
+      "corpus_artifact_sha256": "c2d35df5253001fbb4d0e95f4932b3b60bcf31e7d9efd70ba8dfd6f89aac9bd5",
+      "sources": [
+        {
+          "byte_length": 349905,
+          "extraction": {
+            "arguments": [
+              "-enc",
+              "UTF-8"
+            ],
+            "extracted_utf8_sha256": "f75fc5caf249bb81a167aeefbcb9cb721a7ea2937a1d8b3187b785cc50135001",
+            "extractor": "pdftotext",
+            "normalized_token_count": 3948
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "application/pdf",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "28f782115f3bc96097bfcb07fa324345425fc721cdac2f4df2044c08fb490570",
+          "source_id": "good-software-engineering-research",
+          "source_url": "https://www.cs.cmu.edu/~Compose/ftp/shaw-fin-etaps.pdf"
+        },
+        {
+          "byte_length": 114882,
+          "extraction": {
+            "arguments": [
+              "-enc",
+              "UTF-8"
+            ],
+            "extracted_utf8_sha256": "aa0444da82af13844338585ec12d0b604207d28529b4fb5e08255667f0674fb2",
+            "extractor": "pdftotext",
+            "normalized_token_count": 3952
+          },
+          "license_or_rights_status": "public_readable_reuse_unconfirmed",
+          "media_type": "application/pdf",
+          "redistribution_allowed": false,
+          "retained_location_class": "external_cache_not_committed",
+          "retrieval_class": "recovered_existing_temporary_cache_exact_digest_match",
+          "sha256": "6e9186d33db91a1083f0f0524ae414f7867a92737d792f67aaecba765177b078",
+          "source_id": "writing-research-papers-tutorial",
+          "source_url": "https://www.cs.cmu.edu/~Compose/resch-writing-tut-3.pdf"
+        }
+      ]
+    }
+  ],
+  "schema_version": 1
+}

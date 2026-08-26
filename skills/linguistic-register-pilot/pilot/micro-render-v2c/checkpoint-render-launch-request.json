@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-pilot-v2c",
+  "slice_number": 7,
+  "candidate_attempt": 2,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "3838679c354bece60086df98ea14494abb0bfc4b",
+  "plan_version": "micro-render-v2c-render-launch-v1",
+  "scope_revision": "v2c-fresh-apparatus-correction",
+  "gate_receipt_digest": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+  "created_at": "2026-08-25T19:50:45-06:00",
+  "paths": [
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/render-launch-manifest.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/sealed-unblinding.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/render-packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/render-packet.json", "action": "include", "attribution": "task_owned"}
+  ]
+}

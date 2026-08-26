@@ -1,0 +1,162 @@
+{
+  "artifact_type": "linguistic_register_micro_render_report_v1",
+  "authority": "micro-render selection evidence only; no full role-artifact or behavioral-trial authority",
+  "condition_results": [],
+  "disposition": "micro_render_not_established",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "gate_passed": false,
+  "matching_runs": [],
+  "matching_status": "not_run_semantic_gate_failed",
+  "plan_artifact_sha256": "772f64fed356646cef336ecbe9b4ddcedeb168f08119fa02c83ab6fe851b63bb",
+  "schema_version": 1,
+  "semantic_equivalence": {
+    "accepted_samples": 10,
+    "bindings": [
+      {
+        "render_artifact_sha256": "a7e79121d4e08d21cec56ec26c99a4877f2679489da9e4180e4dc1edf8640aa7",
+        "sample_id": "S01",
+        "semantic_result_sha256": "df27078c90603a521bf5370cb3959a79d4bf2e47123bd3c79d388aab159aef52",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "ffb39db7bb91aa9931f7b3be4f70571cabc5c44ffdbbd854c0c8659dbf8e935d",
+        "sample_id": "S02",
+        "semantic_result_sha256": "c9ad5c571f1cf726212a46c78c4fe173d749ec76fc272ec6aa400067da042ccf",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "5965d8c7ddaef9332d51c05ec99079a5fe96ef67bfe9a23f723b96659679b970",
+        "sample_id": "S03",
+        "semantic_result_sha256": "2c38fc10fbfeec9c561dd51a50b95736c8af08966c093354ef148db75a6427dc",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "6def18ddda12393c0b0448df67e5e80f09bff6d1105a911dccd98c7b56869dfd",
+        "sample_id": "S04",
+        "semantic_result_sha256": "9989a84bf863c44ccb06d459084476d4bb99f68d8add2d93f8328ba16f473586",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "dbf4a744e0f2712a4e63eb0f3519d2f46669aada697c841a9868d54198bc3750",
+        "sample_id": "S05",
+        "semantic_result_sha256": "5da6ef0cb1275ed837f8c1369bf55906b24be25924ea4a3830295182e097f53d",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "5e30e6f953f0c90893fae9868d191848849370bc6f9ae58d2b52479ca48d3dcf",
+        "sample_id": "S06",
+        "semantic_result_sha256": "e9d9168306db077247a219b69fda2881621cc0f03bdc74ce4be0d95273b5a1f8",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "65fd4daa96b0d1c2088112eea69704e35edeb74f4b5b54b150cd39475f97c691",
+        "sample_id": "S07",
+        "semantic_result_sha256": "43058ba8247ad345259c70bc321df5a0796499d9572130e9c63cec6982fe1816",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "97a3c2cc981773fabdf0768935679aab70bc976ca3ffcfea1c5e93d3bb994db5",
+        "sample_id": "S08",
+        "semantic_result_sha256": "68fd6d2999ecbc2414e6dc21a34be7f17713eb9cc8a8c58ec7423491a2df9d87",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "26456c36d1f389d1d163ee1118d70231ac20f734b6ca0a7e573240725703671d",
+        "sample_id": "S09",
+        "semantic_result_sha256": "6d533b9e9e69463a4b47cfd415f54907cf08724fb4d3bb3d7d9119e952bb1fda",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "fcf1837651bd9aabdd79cf2f9b23aaad9d4b492403423e8114d9834193565255",
+        "sample_id": "S10",
+        "semantic_result_sha256": "dd0f7081a62bbfcadefcb3840434c2907d9cbd026e6327aa270121eb26ed9976",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "c1f053ba0516621f8fb31c9446c1c6b2cb25d786625ee710875a717a35c49de8",
+        "sample_id": "S11",
+        "semantic_result_sha256": "a3b9618a40e8b83b77cbff6ca9c6682251e91b962e4b7d26dcf27e0a1c009436",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "fde50e2293caf63ae3d20d2495b3c59a7e42484be7a39b1be67033fbbfc6d037",
+        "sample_id": "S12",
+        "semantic_result_sha256": "74ae422b75329db41deb396295af3cca587d408fdb9777576de258e35e742d5f",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "92a2d971cc30c0a8d906361e81f43b7b0ee2a42bd83c0efc719f0ab953e3f4b2",
+        "sample_id": "S13",
+        "semantic_result_sha256": "f7fa821f93f71b7d057b54ba35d390da710a6b05cca0db5dc306bd260a636f3f",
+        "verdict": "not_equivalent"
+      },
+      {
+        "render_artifact_sha256": "2e18b2b72bb8fb2ad9d7c0d9607539a9bcaeedea233c4f57b84ce52dc8270aad",
+        "sample_id": "S14",
+        "semantic_result_sha256": "78fda98945e0b9f19720df0bc40b37d2c2da1c5ff652dd87f3e1910a1ca27116",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "b0d3f2e5ab1f6458b93c9c523f5150e8eec62ebb8f34baa49b33ba7d79e1b13a",
+        "sample_id": "S15",
+        "semantic_result_sha256": "1e6247a169d6a48f36b094491b293acd6a011813de05da39584ad54aec421361",
+        "verdict": "equivalent"
+      },
+      {
+        "render_artifact_sha256": "e8faf956a0c22bbec5e35c816c35121d3d61afadb9fe3dffc9f8ef19938e31ce",
+        "sample_id": "S16",
+        "semantic_result_sha256": "f48e5486f6b405218213cc545e0fee78c9209078da620a1e831195e9d3354465",
+        "verdict": "equivalent"
+      }
+    ],
+    "passed": false,
+    "rejected_samples": [
+      {
+        "added_meaning": [
+          "The rendering asserts that there is a \u201cfamiliar framing\u201d interpreting the benchmark as support for broader rollout; the brief does not supply that framing or attribution."
+        ],
+        "sample_id": "S02",
+        "verdict": "not_equivalent"
+      },
+      {
+        "added_meaning": [
+          "The rendering asserts that the tests are \u201cnot broadly inadequate,\u201d a broader judgment about test adequacy not established by the brief.",
+          "The rendering characterizes client migration as \u201cnearly complete,\u201d an evaluative framing beyond the exact migration counts."
+        ],
+        "sample_id": "S06",
+        "verdict": "not_equivalent"
+      },
+      {
+        "added_meaning": [
+          "The rendering asserts that there are opposing arguments for updating and restraint.",
+          "The rendering characterizes the benchmark result as relevant evidence."
+        ],
+        "sample_id": "S07",
+        "verdict": "not_equivalent"
+      },
+      {
+        "added_meaning": [
+          "The rendering characterizes the migration evidence as \u201csubstantial,\u201d an evaluative claim not supplied by the brief."
+        ],
+        "sample_id": "S08",
+        "verdict": "not_equivalent"
+      },
+      {
+        "added_meaning": [
+          "The rendering characterizes the migration progress as \u201cstrong,\u201d adding an evaluative judgment not specified in the brief.",
+          "The rendering characterizes the two uncovered clients as \u201ca small count,\u201d adding an evaluative judgment not specified in the brief."
+        ],
+        "sample_id": "S11",
+        "verdict": "not_equivalent"
+      },
+      {
+        "added_meaning": [
+          "The rendering adds the evaluative claim that its framing makes the practical consequence \u201cappropriately narrow.\u201d"
+        ],
+        "sample_id": "S13",
+        "verdict": "not_equivalent"
+      }
+    ],
+    "required_samples": 16
+  }
+}

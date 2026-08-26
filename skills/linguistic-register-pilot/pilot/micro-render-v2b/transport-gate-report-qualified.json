@@ -1,0 +1,32 @@
+{
+  "artifact_type": "linguistic_register_v2b_qualified_transport_gate_report",
+  "schema_version": 1,
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "original_transport_report_sha256": "9424524e936d5d3c65330ac704b26de7557fe6474931f0aaf282c48e41c9cec3",
+  "review_qualification_sha256": "92716b5e1b999f117bc9e7de1d77c8cf863a555dbf5b0f100d72e2f6e45b41ce",
+  "immediate_batch_evidence_sha256": "143c7ec6f10975864cc46137f263a9f88fcf9c41c3b558b93d8f3c0bbcaf49e5",
+  "expected_jobs": 16,
+  "completed_receipts": 16,
+  "accepted_jobs": 15,
+  "rejected_jobs": 1,
+  "normalization_totals": {
+    "direct": 7,
+    "unwrapped_once": 8,
+    "rejected": 1
+  },
+  "rejected_samples": [
+    {
+      "sample_id": "S04",
+      "reason": "render text must contain 90 through 130 words",
+      "extracted_word_count": 88
+    }
+  ],
+  "gate_passed": false,
+  "semantic_status": "not_run_transport_gate_failed",
+  "matching_status": "not_run_transport_gate_failed",
+  "condition_aggregation_status": "withdrawn_sealed_key_packet_digest_mismatch",
+  "launch_manifest_prelaunch_immutability": "not_established_checkpoint_timestamps_postdate_earliest_attempt",
+  "renderer_visibility": "staged_inputs_bound_but_exhaustive_filesystem_visibility_not_established",
+  "disposition": "qualified_transport_stop",
+  "authority": "Sample-level stopped transport evidence only; no semantic, recognizability, condition-comparison, ranking, selection, retry, or downstream execution authority."
+}

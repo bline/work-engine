@@ -1,0 +1,38 @@
+{
+  "artifact_type": "linguistic_register_semantic_review_job_v1",
+  "authority": "blinded semantic-equivalence review input; style identity withheld",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "render_artifact_sha256": "ffb39db7bb91aa9931f7b3be4f70571cabc5c44ffdbbd854c0c8659dbf8e935d",
+  "rendered_text": "{\"text\":\"The proposed update changes the cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark observed eighteen percent fewer origin requests. The familiar framing is that this supports broader rollout; the more precise conclusion is that the evidence is inadequate for that purpose, because the benchmark did not measure stale-read incidence. Note the consequential distinction: this is not a rejection of every deployment, but a bounded approval. Approve only a canary deployment, and require stale-read telemetry before broader rollout.\"}",
+  "sample_id": "S02",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation with an explicit evidence limitation and prerequisite."
+  },
+  "semantic_review_contract": {
+    "blindness": "The reviewer receives one brief and one rendering, with no style card, condition label, hypothesis, other rendering, or intended outcome.",
+    "prohibitions": "Do not score writing quality or register; return equivalent only when every proposition and speech act is preserved and no meaning is added.",
+    "task": "Map every required proposition to the rendered text, detect omission or alteration, detect added meaning, and judge speech-act equivalence."
+  }
+}

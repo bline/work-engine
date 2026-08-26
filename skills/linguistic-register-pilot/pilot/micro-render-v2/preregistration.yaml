@@ -1,0 +1,220 @@
+artifact_type: linguistic_register_semantic_licensed_micro_render_plan_v2
+schema_version: 2
+status: frozen
+experiment_id: semantic-licensed-micro-render-v2-2026-08-25
+repository: /home/bline/code/work-engine
+prior_run_qualification:
+  path: skills/linguistic-register-pilot/pilot/micro-render-v1/review-qualification.json
+  sha256: 5267442c601aa3a2c7e0da77ee168b71e3a75a80429894fe5170a160fa3ba814
+briefs:
+  - brief_id: cache-canary
+    context: Produce a compact technical review decision using only the following exact meanings.
+    required_propositions:
+      - id: cache-change
+        meaning: The proposed update changes a cache lifetime from five minutes to fifteen minutes.
+      - id: cache-evidence
+        meaning: A twenty-four-hour benchmark observed eighteen percent fewer origin requests.
+      - id: cache-positive-evaluation
+        meaning: The reduction in origin requests is operationally promising.
+      - id: cache-limit
+        meaning: The benchmark did not measure stale-read incidence.
+      - id: cache-bounded-contrast
+        meaning: The evidence supports a limited experiment but does not support broad rollout.
+      - id: cache-decision
+        meaning: Approve only a canary deployment and require stale-read telemetry before broader rollout.
+    required_speech_act: A bounded approval recommendation that preserves both the promising result and the explicit evidence limit.
+    output_constraint: One self-contained paragraph of 90 to 130 words with no heading, bullet list, or serialized wrapper.
+  - brief_id: alias-removal
+    context: Produce a compact technical review decision using only the following exact meanings.
+    required_propositions:
+      - id: alias-change
+        meaning: A migration renamed three public fields while retaining compatibility aliases.
+      - id: alias-evidence
+        meaning: Twelve of fourteen known clients have migrated; the status of two clients is unknown.
+      - id: alias-positive-evaluation
+        meaning: Migrating twelve known clients is substantial progress.
+      - id: alias-limit
+        meaning: Integration tests cover the twelve migrated clients but not the two clients of unknown status.
+      - id: alias-bounded-contrast
+        meaning: The evidence supports continued migration work but does not support removing the aliases.
+      - id: alias-decision
+        meaning: Do not remove the aliases until the two remaining client owners confirm migration.
+    required_speech_act: A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit.
+    output_constraint: One self-contained paragraph of 90 to 130 words with no heading, bullet list, or serialized wrapper.
+candidate_styles:
+  - condition_id: gelman-model-criticism
+    profile:
+      path: skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/profile.yaml
+      sha256: 60b645cc5b04c7d7a32dd314406e374bb9c31959903756db0201f67414d98be8
+    features:
+      - source_feature_id: symmetric-opposition
+        layer: surface
+        category: contrast_patterns
+        salience_weight: 4
+        licensed_instruction: Present the brief's explicitly positive evaluation and evidence limit as two concerns in tension before resolving them with the bounded contrast.
+      - source_feature_id: first-person-epistemic-positioning
+        layer: surface
+        category: claim_posture
+        salience_weight: 3
+        licensed_instruction: State the recommendation in a direct first-person epistemic posture without changing its strength.
+      - source_feature_id: numbered-response-structure
+        layer: surface
+        category: paragraph_rhythm
+        salience_weight: 3
+        licensed_instruction: Use compact pointwise sequencing inside the single paragraph without headings, bullets, or new categories.
+      - source_feature_id: partial-agreement-before-boundary
+        layer: discourse
+        category: qualification_patterns
+        salience_weight: 4
+        licensed_instruction: Acknowledge the brief's positive evaluation before identifying the exact evidence boundary already stated in the brief.
+      - source_feature_id: compact-summary-after-elaboration
+        layer: surface
+        category: conclusion_patterns
+        salience_weight: 3
+        licensed_instruction: End by compressing the brief's bounded contrast into a short parallel restatement without adding a slogan or premise.
+  - condition_id: leveson-system-safety
+    profile:
+      path: skills/linguistic-register-pilot/pilot/candidates/leveson/profile.yaml
+      sha256: 86b31811b89e1d9bfd97aac43778ba5a1db8e8c0a9717002da1f5019e69b7a71
+    features:
+      - source_feature_id: contrastive-reframing
+        layer: surface
+        category: connective_patterns
+        salience_weight: 4
+        licensed_instruction: State the brief's broader pro-action interpretation, then replace it immediately with the more precisely bounded conclusion; do not call either framing familiar, conventional, or widely held.
+      - source_feature_id: enumerated-consequence-ladders
+        layer: surface
+        category: paragraph_rhythm
+        salience_weight: 3
+        licensed_instruction: Move in a compact consequence sequence from evidence, to stated limitation, to the already specified practical decision without headings or bullets.
+      - source_feature_id: direct-evaluative-declaratives
+        layer: surface
+        category: claim_posture
+        salience_weight: 4
+        licensed_instruction: State the brief's exact positive evaluation and central decision in short high-commitment declarative sentences, then give the stated limit.
+      - source_feature_id: scoped-concession-boundaries
+        layer: discourse
+        category: qualification_patterns
+        salience_weight: 3
+        licensed_instruction: Make clear that the evidence limit blocks only the broader action named in the brief and does not negate the exact positive evaluation.
+      - source_feature_id: visible-reader-cues
+        layer: surface
+        category: connective_patterns
+        salience_weight: 2
+        licensed_instruction: Use a brief reader-facing cue to announce the bounded contrast before explaining it, without asserting importance beyond the brief.
+  - condition_id: shaw-engineering-judgment
+    profile:
+      path: skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/profile.yaml
+      sha256: 54b8cd476174e01acc50cdf19784d7a3cf70852bb3239311d85ef8e7abe7d4d4
+    features:
+      - source_feature_id: parallel-guiding-questions
+        layer: surface
+        category: paragraph_rhythm
+        salience_weight: 4
+        licensed_instruction: Introduce the decision through a short parallel series of questions answerable only by the brief's six propositions.
+      - source_feature_id: neutral-progression-connectives
+        layer: surface
+        category: connective_patterns
+        salience_weight: 3
+        licensed_instruction: Progress with restrained connectives from observation, to the brief's bounded contrast, to its resulting decision.
+      - source_feature_id: compact-parallel-categories
+        layer: surface
+        category: syntax
+        salience_weight: 3
+        licensed_instruction: Place the brief's observed result, positive evaluation, and unmeasured or unknown limit in compact parallel grammatical forms without inventing a taxonomy.
+      - source_feature_id: consequence-first-conditionals
+        layer: discourse
+        category: conclusion_patterns
+        salience_weight: 3
+        licensed_instruction: State the brief's practical decision first, then explain it using only the supplied evidence, evaluation, and limit.
+      - source_feature_id: restrained-evaluative-calibration
+        layer: discourse
+        category: qualification_patterns
+        salience_weight: 4
+        licensed_instruction: "Preserve the exact evidential maturity encoded by the brief: promising or substantial progress, but insufficient support for the broader action."
+neutral_style:
+  condition_id: neutral-editorial-defaults
+  construction_basis: Five generic professional-prose conventions with no candidate-specific stance or reasoning operation.
+  features:
+    - source_feature_id: neutral-focused-paragraph
+      layer: surface
+      category: paragraph_rhythm
+      salience_weight: 3
+      licensed_instruction: Keep the paragraph focused on the single review decision.
+    - source_feature_id: neutral-ordinary-transitions
+      layer: surface
+      category: connective_patterns
+      salience_weight: 3
+      licensed_instruction: Use ordinary transition words between the supplied propositions.
+    - source_feature_id: neutral-direct-syntax
+      layer: surface
+      category: syntax
+      salience_weight: 3
+      licensed_instruction: Prefer direct sentences with clear subjects and actions.
+    - source_feature_id: neutral-brief-qualification
+      layer: discourse
+      category: qualification_patterns
+      salience_weight: 3
+      licensed_instruction: State the supplied evidence limitation once without additional evaluation.
+    - source_feature_id: neutral-concise-conclusion
+      layer: surface
+      category: conclusion_patterns
+      salience_weight: 3
+      licensed_instruction: End with a concise restatement of the supplied decision.
+semantic_license:
+  invariant: Every condition receives the same six meanings and speech act for a brief; a style feature may only order, connect, attribute, parallelize, question, qualify, or restate those meanings.
+  prohibited_additions: Do not invent familiarity, consensus, opposing stakeholders, importance, risk magnitude, method adequacy beyond the named action, new evidence, new requirements, analogies with substantive implications, or any evaluation not explicitly supplied.
+rendering:
+  replicas_per_brief_condition: 2
+  seed: frozen-before-outcomes::semantic-licensed-v2::2026-08-25
+  task: Express each of the six meanings exactly once, preserve the speech act, and naturally realize only the anonymous licensed style instructions.
+  blindness: One renderer receives one anonymous licensed style card and one brief, with no condition identity, source, hypothesis, other card, prior output, or answer key.
+semantic_adjudication:
+  task: Apply one decision standard across all sixteen brief/text pairs; map every proposition, detect alteration or added meaning, and judge speech-act equivalence.
+  blindness: The adjudicator receives all brief/text pairs for calibration but no style cards, conditions, source identities, original renderer labels, hypothesis, or answer key.
+  equivalence_rule: Equivalent requires all six propositions preserved, the speech act preserved, and no added meaning. Apply identical treatment to identical evaluative or connective language across samples.
+matching:
+  task: Match each accepted text to the anonymous licensed style card whose linguistic realization it expresses most strongly.
+  blindness: Each matcher receives four randomized anonymous reference cards and sixteen randomized accepted texts, with no briefs, conditions, source identities, answer key, prior pass, or intended winner.
+  score_scale: Confidence 1 is a forced guess, 3 is a narrow reliable match, and 5 requires multiple independent realization cues.
+  passes: 3
+thresholds:
+  require_all_semantically_equivalent: true
+  minimum_correct_assignments_per_condition: 9
+  minimum_passing_match_passes_per_condition: 2
+  minimum_correct_per_condition_in_passing_pass: 3
+execution:
+  runner:
+    path: skills/linguistic-register-pilot/scripts/sol_packet_job.py
+    sha256: 246720cc79c8d0a4429493ff4c5dbabd356ad791bec9846a1f1f5fdd06f87eb8
+  render:
+    provider: OpenAI
+    model: gpt-5.6-sol
+    reasoning_effort: high
+    prompt: Read packet.json and return exactly one JSON object matching output.schema.json. Follow the packet contract; output prose only inside the text field and never serialize another JSON object into that field.
+    schema:
+      path: skills/linguistic-register-pilot/references/micro-v2-render-output.schema.json
+      sha256: 5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798
+  semantic_adjudication:
+    provider: OpenAI
+    model: gpt-5.6-sol
+    reasoning_effort: xhigh
+    prompt: Read packet.json and return exactly one JSON object matching output.schema.json. Apply one semantic standard uniformly to all sixteen items; do not infer style or intended outcomes.
+    schema:
+      path: skills/linguistic-register-pilot/references/micro-v2-semantic-output.schema.json
+      sha256: 2c3520b9e5d42e8a9b3f68d5170554d0d7acf78daab52b39dda3b1f54a33a33e
+  matching:
+    provider: OpenAI
+    model: gpt-5.6-sol
+    reasoning_effort: high
+    prompt: Read packet.json and return exactly one JSON object matching output.schema.json. Match linguistic realization only, assign every text exactly once, and do not infer identities or intended outcomes.
+    schema:
+      path: skills/linguistic-register-pilot/references/micro-v2-matching-output.schema.json
+      sha256: f191c99b2d9b5084cede6bf2dfe02c7df4c8b04c026ce704521fc9b2152b4dba
+preregistration_owner: Human-authorized v2 slice executed by Codex; immutable checkpoint required before any model job.
+limitations:
+  - The same Sol model family renders, adjudicates, and matches; repetitions estimate execution stability, not independent reliability.
+  - Licensed cards are experimental refinements of provisional two-document profiles and may reduce or alter authentic-register recognizability.
+  - All-sample adjudication improves calibration but is one same-family judgment, not independent semantic certification.
+  - This is an upstream selection probe, not the C0/C1/C2 manipulation check or behavioral trial.
+  - Passing does not select a corpus or authorize production integration without human acceptance.

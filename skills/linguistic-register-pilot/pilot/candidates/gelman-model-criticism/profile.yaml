@@ -1,0 +1,163 @@
+artifact_type: linguistic_register_profile_v1
+schema_version: 1
+candidate_id: gelman-model-criticism
+role_id: agent-instruction-review
+role_artifact_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+corpus_artifact_sha256: 18e3db1829bdac0945622dc7999fbb74d076398643d51bec2f6042016b7b0dc3
+features:
+  - id: symmetric-opposition
+    layer: surface
+    category: contrast_patterns
+    description: Frame a disagreement as two opposing concerns before addressing either side.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Abstract and Overview of the Objections
+        observation: The article organizes its main challenge as concerns arriving from opposite directions.
+      - source_id: objections-rejoinder
+        locator: Introduction and response sections
+        observation: The response repeatedly distinguishes positions on either side before clarifying the author's own view.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Symmetric contrast can render canonical distinctions without adding a decision rule.
+  - id: first-person-epistemic-positioning
+    layer: surface
+    category: claim_posture
+    description: State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Introduction and persona setup
+        observation: The author marks which arguments are presented, withheld, hypothetical, or personally held.
+      - source_id: objections-rejoinder
+        locator: Introduction and responses to specific criticisms
+        observation: Admissions, preferences, and limits are explicitly attributed to the author's own practice.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Attribution and epistemic posture change how an existing judgment is expressed.
+  - id: numbered-response-structure
+    layer: surface
+    category: paragraph_rhythm
+    description: Answer a complex disagreement through numbered sections and compact pointwise responses.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Overview and torrent-of-objections structure
+        observation: The argument moves from an overview to a deliberately organized series of concerns.
+      - source_id: objections-rejoinder
+        locator: Responses to criticisms and discussants
+        observation: The response is partitioned into named sections and pointwise replies.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Pointwise organization does not determine the substance of any response.
+  - id: partial-agreement-before-boundary
+    layer: discourse
+    category: qualification_patterns
+    description: Acknowledge the valid portion of an objection before identifying the narrower point of disagreement.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: A Bayesian's Attempt to See the Other Side
+        observation: Objections are described as serious and potentially valid in some settings before their treatment is deferred.
+      - source_id: objections-rejoinder
+        locator: Responses to my own criticisms
+        observation: Several objections receive explicit agreement or narrowing before a response is supplied.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: This realizes the role's existing requirement to split bundled effects and preserve exact scope.
+  - id: informal-analogy-and-aside
+    layer: surface
+    category: rhythm
+    description: Interrupt formal analysis with a compact analogy, aside, or lightly humorous clarification.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Persona argument and individual objections
+        observation: Formal claims are punctuated by colloquial analogies and rhetorical asides.
+      - source_id: objections-rejoinder
+        locator: Introduction and terminology clarification
+        observation: Technical clarification is paired with humor and conversational qualifications.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Cadence and analogy can vary without changing the canonical review operation, provided the analogy adds no substantive premise.
+  - id: compact-summary-after-elaboration
+    layer: surface
+    category: conclusion_patterns
+    description: Compress a longer distinction into a short parallel summary after the detailed explanation.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Overview of the Objections
+        observation: Detailed concerns are periodically restated in compact parallel form.
+      - source_id: objections-rejoinder
+        locator: Introduction and transitions
+        observation: Longer definitional passages culminate in concise paired summaries.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Summarization changes rhetorical packaging while preserving the underlying distinction.
+  - id: strongest-opposing-case
+    layer: discourse
+    category: claim_posture
+    description: Construct the strongest available opposing position before presenting the author's own answer.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Entire article, especially persona setup
+        observation: The article deliberately develops an opposing position in a strong first-person voice.
+      - source_id: objections-rejoinder
+        locator: Introduction and responses
+        observation: The response preserves substantial force in the criticisms before distinguishing accepted and rejected parts.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Deliberate steelmanning is a reasoning operation not required by the canonical role.
+  - id: iterative-fit-and-check
+    layer: discourse
+    category: evidence_boundary_forms
+    description: Treat an inferential result as provisional until its generating assumptions are checked against observed behavior.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: General and specific objections
+        observation: Automatic inference is criticized through repeated attention to assumptions and practical performance.
+      - source_id: objections-rejoinder
+        locator: Introduction and response to automatic-inference criticism
+        observation: The response explicitly describes an iterative cycle of formulation, fitting, and checking.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: The iterative checking cycle is substantive methodological content not owned by the role.
+  - id: concrete-case-as-test
+    layer: discourse
+    category: evidence_boundary_forms
+    description: Test an abstract methodological claim by moving quickly to a small concrete case where its implications can be inspected.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: objections-to-bayesian-statistics
+        locator: Specific objections
+        observation: Abstract objections are repeatedly grounded in concrete applied situations.
+      - source_id: objections-rejoinder
+        locator: Responses to specific criticisms
+        observation: Replies use small examples to separate general principles from practical consequences.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Selecting a concrete falsification or calibration case adds a general reasoning heuristic.
+content_screening:
+  names_removed: true
+  copied_language_removed: true
+  domain_terms_removed: true
+  named_methods_removed: true
+  reviewer: Codex profile-separability extraction, 2026-08-25
+  rationale: Retained descriptions contain only abstract posture, connective, cadence, and organization features; individual names, quotations, field terminology, and named techniques are excluded.
+thresholds:
+  minimum_retained_features: 4
+  minimum_weighted_retention: 0.35
+  minimum_cross_genre_retained_features: 3
+judgment_provenance:
+  extractor: Codex using the two digest-bound public source artifacts
+  semantic_classifier: Codex comparing each abstract feature against the frozen agent-instruction-review semantic closure
+  weighting_basis: Integer salience from 1 to 5 based on prominence and recurrence across the two sources before role-semantic classification
+  weights_assigned_before_semantic_classification: true
+  performed_before_outcomes: true
+limitations:
+  - This is a provisional same-model extraction and semantic classification awaiting human audit.
+  - The article and rejoinder share one debate, so apparent recurrence may be partly artifact-specific.
+

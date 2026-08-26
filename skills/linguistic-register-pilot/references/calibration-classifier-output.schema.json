@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card_scores", "pairwise_separation", "most_neutral_card_id", "method_limitations"],
+  "properties": {
+    "card_scores": {
+      "type": "array", "minItems": 7, "maxItems": 7,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["anonymous_card_id", "internal_coherence", "non_neutral_distinctiveness", "rationale"],
+        "properties": {
+          "anonymous_card_id": {"type": "string", "enum": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]},
+          "internal_coherence": {"type": "integer", "minimum": 1, "maximum": 5},
+          "non_neutral_distinctiveness": {"type": "integer", "minimum": 1, "maximum": 5},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "pairwise_separation": {
+      "type": "array", "minItems": 21, "maxItems": 21,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["card_ids", "score", "rationale"],
+        "properties": {
+          "card_ids": {"type": "array", "minItems": 2, "maxItems": 2,
+            "items": {"type": "string", "enum": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]}},
+          "score": {"type": "integer", "minimum": 1, "maximum": 5},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "most_neutral_card_id": {"type": "string", "enum": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]},
+    "method_limitations": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

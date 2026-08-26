@@ -1,0 +1,171 @@
+{
+  "artifact_type": "linguistic_register_blinded_packet_v1",
+  "authority": "blinded manipulation-check input; no candidate selection authority",
+  "cards": [
+    {
+      "anonymous_card_id": "R01",
+      "feature_count": 6,
+      "features": [
+        {
+          "category": "contrast_patterns",
+          "description": "Frame a disagreement as two opposing concerns before addressing either side.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "claim_posture",
+          "description": "State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Answer a complex disagreement through numbered sections and compact pointwise responses.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Acknowledge the valid portion of an objection before identifying the narrower point of disagreement.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "rhythm",
+          "description": "Interrupt formal analysis with a compact analogy, aside, or lightly humorous clarification.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "Compress a longer distinction into a short parallel summary after the detailed explanation.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R02",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "connective_patterns",
+          "description": "Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "paragraph_rhythm",
+          "description": "Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "claim_posture",
+          "description": "Use short, high-commitment declarative sentences for the central evaluation, followed by the limiting explanation.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark that a criticism concerns adequacy for the stated purpose rather than denying every use of the criticized approach.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Use brief reader-facing transitions to flag a consequential distinction before explaining it.",
+          "layer": "surface",
+          "salience_weight": 2
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R03",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "paragraph_rhythm",
+          "description": "Keep each paragraph focused on one main point.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Use ordinary transition words when moving between related points.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "description": "Prefer direct sentences whose subjects and actions are easy to identify.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Add a brief qualification when a statement does not apply universally.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "End with a concise restatement of the main point.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R04",
+      "feature_count": 5,
+      "features": [
+        {
+          "category": "paragraph_rhythm",
+          "description": "Introduce an evaluation through a short parallel series of guiding questions.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "State the practical consequence of a condition directly, then explain the evidence or mechanism behind it.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+          "layer": "discourse",
+          "salience_weight": 4
+        }
+      ]
+    }
+  ],
+  "classifier_contract": {
+    "blindness": "The classifier receives only the generated packet: anonymous card identifiers, abstract retained feature descriptions, salience weights, this contract, and no repository access or prior conversation.",
+    "prohibited_inference": "Do not infer, name, or search for authors, disciplines, source works, candidate identities, or the intended winner; evaluate only the linguistic information in the packet.",
+    "required_outputs": [
+      "internal_coherence",
+      "non_neutral_distinctiveness",
+      "pairwise_separation",
+      "most_neutral_card"
+    ],
+    "score_scale": "Use integer scores from 1 (absent or indistinguishable) through 5 (strongly present or readily distinguishable); score the cards independently before selecting the most neutral card.",
+    "task": "Judge whether each anonymous feature card describes an internally coherent and non-neutral linguistic register, and judge how readily each pair of cards can be distinguished using only the listed features."
+  },
+  "experiment_id": "three-candidate-recognizability-2026-08-25",
+  "plan_artifact_sha256": "067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa",
+  "schema_version": 1
+}

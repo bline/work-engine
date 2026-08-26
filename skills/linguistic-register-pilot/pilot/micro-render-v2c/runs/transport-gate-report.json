@@ -1,0 +1,38 @@
+{
+  "accepted_jobs": 16,
+  "artifact_type": "linguistic_register_v2c_transport_gate_report",
+  "authority": "transport gate and compliance metadata only; not recognizability or candidate quality",
+  "expected_jobs": 16,
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "gate_passed": true,
+  "immediate_batch_evidence_sha256": "5d66ac61f39586dab8b76c297382d187a9482012876dbcb1cedf4c7f1d122994",
+  "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+  "matching_status": "not_run_pending_semantic_gate",
+  "normalization_by_condition": {
+    "gelman-model-criticism": {
+      "direct": 3,
+      "rejected": 0,
+      "unwrapped_once": 1
+    },
+    "leveson-system-safety": {
+      "direct": 0,
+      "rejected": 0,
+      "unwrapped_once": 4
+    },
+    "neutral-editorial-defaults": {
+      "direct": 2,
+      "rejected": 0,
+      "unwrapped_once": 2
+    },
+    "shaw-engineering-judgment": {
+      "direct": 3,
+      "rejected": 0,
+      "unwrapped_once": 1
+    }
+  },
+  "normalization_is_evidence_for": "transport compliance only",
+  "postbatch_checkpoint_commit_oid": "22100b0c2788acee733f3a6db4cc0a3fca84d817",
+  "rejected_jobs": 0,
+  "schema_version": 1,
+  "semantic_status": "authorized_not_run"
+}

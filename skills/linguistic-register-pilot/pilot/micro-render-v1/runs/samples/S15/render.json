@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "fbce5df2fcd5d020422688d569255a0b8a7a7b95e4f1d32fd63a295156159ff5",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:15:53Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S15",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:15:25Z"
+  },
+  "sample_id": "S15",
+  "schema_version": 1,
+  "text": "{\"text\":\"The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, but the status of the other two is unknown. Integration tests cover the twelve migrated clients; however, they do not cover the two clients whose status remains unknown. This evidence therefore does not resolve compatibility for those two clients. For now, I recommend rejecting alias removal: keep the aliases until the owners of both remaining clients confirm that their clients have migrated.\"}"
+}

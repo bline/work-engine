@@ -1,0 +1,236 @@
+{
+  "artifact_type": "linguistic_register_calibration_result_v1",
+  "card_scores": [
+    {
+      "anonymous_card_id": "C01",
+      "internal_coherence": 4,
+      "non_neutral_distinctiveness": 1,
+      "rationale": "Direct syntax, ordinary transitions, focused paragraphs, brief qualifications, and concise restatement consistently support a plain expository register, but the cues are highly generic."
+    },
+    {
+      "anonymous_card_id": "C02",
+      "internal_coherence": 4,
+      "non_neutral_distinctiveness": 4,
+      "rationale": "Opposing-concern framing, explicit personal limitations, evidential grading, parallel categories, and restrained progression form a coherent cautious analytical register."
+    },
+    {
+      "anonymous_card_id": "C03",
+      "internal_coherence": 5,
+      "non_neutral_distinctiveness": 5,
+      "rationale": "High-commitment theses, bounded concessions, purpose-specific criticism, corrective reframing, and numbered consequences strongly reinforce a precise critical-rebuttal register."
+    },
+    {
+      "anonymous_card_id": "C04",
+      "internal_coherence": 4,
+      "non_neutral_distinctiveness": 4,
+      "rationale": "Guiding questions, parallel categories, evidential grading, consequence-first explanation, and observation-to-implication progression support a structured evaluative register."
+    },
+    {
+      "anonymous_card_id": "C05",
+      "internal_coherence": 4,
+      "non_neutral_distinctiveness": 5,
+      "rationale": "Opposing concerns, personal limitations, concessions, pointwise responses, compact summaries, and humorous asides create a recognizable dialogic disagreement register."
+    },
+    {
+      "anonymous_card_id": "C06",
+      "internal_coherence": 5,
+      "non_neutral_distinctiveness": 5,
+      "rationale": "Forceful evaluations, immediate corrective reframing, purpose-bounded criticism, reader-facing distinctions, and numbered consequences form a tightly unified critical register."
+    },
+    {
+      "anonymous_card_id": "C07",
+      "internal_coherence": 3,
+      "non_neutral_distinctiveness": 4,
+      "rationale": "Guiding questions, parallel categories, evidential grading, corrective reframing, reader-facing transitions, and numbered consequences are individually salient but imply a somewhat mixed evaluative rhythm."
+    }
+  ],
+  "classifier_provenance": {
+    "completed_at_utc": "2026-08-25T20:47:25Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; stability replication 02",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T20:45:56Z"
+  },
+  "experiment_id": "profile-card-stability-calibration-2026-08-25",
+  "method_limitations": [
+    "Scores use only the listed feature descriptions, layers, and salience weights; no prose samples were available.",
+    "Feature counts differ slightly across cards, and the integer scale requires judgment about how overlapping cues combine."
+  ],
+  "most_neutral_card_id": "C01",
+  "packet_artifact_sha256": "fad92657d7e510b978dc97289d116b468b3b2348b26d0e5dd04f1c7d83ddb277",
+  "pairwise_separation": [
+    {
+      "card_ids": [
+        "C01",
+        "C02"
+      ],
+      "rationale": "C01's generic plain exposition contrasts with C02's opposing concerns, personal stance, parallel categorization, and evidential grading.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C01",
+        "C03"
+      ],
+      "rationale": "C03's forceful thesis, corrective reframing, bounded criticism, and numbered consequences sharply differ from C01's neutral clarity conventions.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C01",
+        "C04"
+      ],
+      "rationale": "Guiding questions, parallel comparison, evidential maturity, and consequence-first explanation clearly distinguish C04 from C01's generic exposition.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C01",
+        "C05"
+      ],
+      "rationale": "C05's personal, pointwise disagreement with concessions and humorous asides supplies several cues absent from C01.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C01",
+        "C06"
+      ],
+      "rationale": "C06's high-commitment correction, reader-facing distinctions, bounded criticism, and numbered implications strongly separate it from C01.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C01",
+        "C07"
+      ],
+      "rationale": "C07's guiding questions, parallel categories, corrective reframing, evidential grading, and numbered consequences contrast broadly with C01.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C02",
+        "C03"
+      ],
+      "rationale": "C02 emphasizes cautious personal and evidential positioning, while C03 emphasizes forceful correction, concession, bounded criticism, and consequences.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C02",
+        "C04"
+      ],
+      "rationale": "They share parallel categories, evidential grading, and observation-to-implication movement; personal opposing-concern framing versus guiding questions provides a reliable distinction.",
+      "score": 3
+    },
+    {
+      "card_ids": [
+        "C02",
+        "C05"
+      ],
+      "rationale": "Both use opposing concerns and personal stance, but C05 adds concessions, humor, summaries, and pointwise responses while C02 stresses evidential progression.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "C02",
+        "C06"
+      ],
+      "rationale": "C02's cautious personal and evidence-calibrated framing contrasts with C06's forceful corrective thesis, purpose limitation, and numbered consequences.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C02",
+        "C07"
+      ],
+      "rationale": "They share parallel categorization and evidential grading, but C02 uses personal opposing concerns while C07 uses guiding questions, reframing, and numbered consequences.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "C03",
+        "C04"
+      ],
+      "rationale": "C03's forceful rebuttal and bounded concession contrast with C04's question-led, evidence-graded comparative evaluation.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C03",
+        "C05"
+      ],
+      "rationale": "Despite shared concession, C03 uses corrective high-commitment criticism while C05 uses personal dual-concern framing, humor, summaries, and pointwise replies.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C03",
+        "C06"
+      ],
+      "rationale": "Both share high-commitment evaluation, corrective reframing, purpose-bounded criticism, and numbered consequences; concession versus reader-facing transition is narrow.",
+      "score": 2
+    },
+    {
+      "card_ids": [
+        "C03",
+        "C07"
+      ],
+      "rationale": "Both use reframing and numbered consequences, but C03 adds forceful bounded rebuttal while C07 adds guiding questions, parallel categories, and evidential grading.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "C04",
+        "C05"
+      ],
+      "rationale": "C04's question-led evidence framework differs across several cues from C05's personal, concessive, humorous, pointwise disagreement.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C04",
+        "C06"
+      ],
+      "rationale": "C04 favors exploratory questions, category comparison, and evidence grading; C06 favors forceful correction, reader flags, bounded criticism, and consequences.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C04",
+        "C07"
+      ],
+      "rationale": "They share guiding questions, parallel categories, and evidential grading; C04's explanatory progression differs from C07's corrective reframing and numbered consequences.",
+      "score": 3
+    },
+    {
+      "card_ids": [
+        "C05",
+        "C06"
+      ],
+      "rationale": "C05's personal dual-concern dialogue, concession, humor, and pointwise replies contrast with C06's compact forceful correction and bounded implications.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C05",
+        "C07"
+      ],
+      "rationale": "C05 centers personal, concessive, lightly humorous disagreement; C07 centers guiding questions, comparative categories, evidence grading, and corrective progression.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "C06",
+        "C07"
+      ],
+      "rationale": "They share reframing, reader-facing transitions, and numbered consequences, but forceful purpose-bounded criticism differs from questions, categories, and evidential grading.",
+      "score": 4
+    }
+  ],
+  "pass_number": 2,
+  "schema_version": 1
+}

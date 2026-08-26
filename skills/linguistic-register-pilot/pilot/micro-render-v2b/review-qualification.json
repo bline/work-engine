@@ -1,0 +1,55 @@
+{
+  "artifact_type": "linguistic_register_v2b_review_qualification",
+  "schema_version": 1,
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "status": "qualified_stopped_record",
+  "original_transport_report": {
+    "path": "skills/linguistic-register-pilot/pilot/micro-render-v2b/transport-gate-report.json",
+    "sha256": "9424524e936d5d3c65330ac704b26de7557fe6474931f0aaf282c48e41c9cec3"
+  },
+  "review_subject_checkpoint": "54f952843947df2790d9428629a2a458b48a54d3",
+  "findings": [
+    {
+      "finding_id": "V2B-HIGH-001",
+      "severity": "high",
+      "finding": "The preregistration and launch-checkpoint author timestamps postdate the earliest retained attempt marker, so Git timing does not establish that the complete launch manifest was immutable before the first model launch.",
+      "consequence": "Withdraw the claimed pre-launch immutability of the complete sixteen-job manifest. Per-job attempt markers still bind each request before its own retained model execution.",
+      "status": "bounded_in_qualification"
+    },
+    {
+      "finding_id": "V2B-HIGH-002",
+      "severity": "high",
+      "finding": "All sixteen packet_artifact_sha256 values in sealed-render-key.json were computed before the packets were relabeled from v2 to v2b and do not match the launched packet bytes.",
+      "consequence": "Withdraw condition-level normalization aggregation from the evidentiary report. The sample-level 15/16 transport stop does not depend on the sealed key.",
+      "status": "bounded_in_qualification"
+    },
+    {
+      "finding_id": "V2B-MED-003",
+      "severity": "medium",
+      "finding": "Runner receipts call packet.json and output.schema.json the visible input files, but retained events show S06, S07, and S15 reading a global codebase-memory skill file.",
+      "consequence": "Treat those fields as staged inputs, not an exhaustive visibility boundary. No retained event shows a v1/v2 output read, but filesystem invisibility was not established.",
+      "status": "bounded_in_qualification"
+    }
+  ],
+  "retained_claims": [
+    "Sixteen distinct v2b requests have retained attempt markers, completed receipts, raw outputs, and event streams with matching per-job request and artifact digests.",
+    "Blinded sample-level ingestion accepted fifteen outputs and rejected S04 because the exactly-once extracted prose contained 88 words.",
+    "The preregistered all-sixteen transport gate failed, and no semantic-adjudication or matching artifacts exist in the retained run.",
+    "Seven samples were accepted directly and eight were accepted after one exact approved unwrap; these totals are transport metadata only."
+  ],
+  "withdrawn_or_unestablished_claims": [
+    "The complete sixteen-job launch manifest was immutably checkpointed before the first model launch.",
+    "The sealed render key cryptographically binds the launched v2b packet bytes.",
+    "Condition-level wrapper rates in the original report are evidence-backed by the sealed key.",
+    "The renderer could see only packet.json and output.schema.json."
+  ],
+  "review_provenance": {
+    "provider": "OpenAI",
+    "model": "gpt-5.6-sol",
+    "same_model_review": true,
+    "independence_claimed": false,
+    "terminal_review_verdict_available": false,
+    "limitation": "Three fresh read-only Sol review attempts failed to return a terminal artifact. The second emitted the material integrity observations that were then mechanically confirmed. The third reported that focused verification passed but was interrupted before its AIR classification and verdict; its ephemeral thread could not be resumed. No review acceptance is claimed."
+  },
+  "authority": "Qualification of a stopped transport record only; no semantic, recognizability, ranking, selection, retry, or downstream execution authority."
+}

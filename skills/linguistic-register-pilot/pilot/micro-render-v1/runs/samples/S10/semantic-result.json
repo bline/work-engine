@@ -1,0 +1,43 @@
+{
+  "added_meaning": [],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "5c9497a97c0aebfc96c3e5a8cf63835036f5dbae7241dd529d0e3c6fe6212b04",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cThe migration renamed three public fields while retaining compatibility aliases.\u201d",
+      "proposition_id": "alias-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cTwelve of fourteen known clients have migrated, while the status of two is unknown.\u201d",
+      "proposition_id": "alias-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cIntegration tests establish coverage for the twelve migrated clients, but provide no coverage for the two clients whose status remains unknown.\u201d",
+      "proposition_id": "alias-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cThey should not be removed until the owners of the two remaining clients confirm migration.\u201d",
+      "proposition_id": "alias-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:18:19Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S10",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:53Z"
+  },
+  "sample_id": "S10",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions are preserved. The rendering makes the bounded rejection recommendation, states the evidence limitation, and gives the required prerequisite without adding meaning.",
+  "verdict": "equivalent"
+}

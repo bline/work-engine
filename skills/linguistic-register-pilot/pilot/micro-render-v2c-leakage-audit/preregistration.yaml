@@ -1,0 +1,97 @@
+artifact_type: linguistic_register_v2c_leakage_audit_plan
+schema_version: 1
+status: frozen
+audit_id: semantic-licensed-micro-render-v2c-leakage-audit-2026-08-25
+authority: Human-approved read-only leakage audit; no rerendering, semantic re-adjudication, matching, corpus selection, or production authority.
+subject:
+  checkpoint_commit_oid: 62cc7f7039cfc6238de8cc7d16a030ebe1892bf2
+  checkpoint_tree_oid: 3b4a3eb525636dbe19eaafaffaece8bb4c6153bf
+  parent_checkpoint_commit_oid: 80da45d8bf5af6ebcdc3339ad219238812313f4d
+  checkpoint_created_at: 2026-08-25T22:07:00-06:00
+  full_tree_entry_count: 893
+  full_tree_ls_tree_z_sha256: 2b28eeb69635756175e1b34207ea6efd96941a86e469197eaefa5ec3025bc622
+  skill_subtree_entry_count: 162
+  skill_subtree_ls_tree_z_sha256: 30750ca7fe3e868d0465d23aca39e837cc6f1f9d31c7db83b08c951f10b5746e
+  inventory_path: skills/linguistic-register-pilot/pilot/micro-render-v2c-leakage-audit/subject-inventory.json
+  evidence_rule: Read evidence only from an exact export or Git object reads of the bound checkpoint tree. Do not use live-working-tree v2c files as audit evidence.
+historical_provenance:
+  - original v2c result
+  - original Sol adversarial review
+  - separately attributed external review supplied by the human
+  - this read-only leakage audit
+  - a later interpretation addendum derived from this audit
+classification_boundary:
+  intended_manipulation_signals:
+    definition: Vocabulary, syntax, rhythm, claim posture, qualification patterns, and other retained profile features.
+    interpretation: Permitted evidence of profile traceability; punctuation, sentence structure, and paragraph rhythm belong here when licensed by a profile feature.
+  forbidden_leakage:
+    definition: Author names, profile labels, source-specific domain facts, condition identifiers, transport metadata, or exact corpus quotations.
+    interpretation: A direct cue that can invalidate or qualify affected traceability evidence.
+  incidental_apparatus_signals:
+    definition: Wrapper residue, headings not licensed by the profile, sample ordering, IDs, length bands, or formatting introduced by the renderer pipeline.
+    interpretation: Not intended evidence; report association and matcher availability separately before considering explanatory relevance.
+  condition_neutral_exposure:
+    definition: Common instructions or skill content seen equally by every condition.
+    interpretation: Narrows external validity but does not explain candidate discrimination unless condition-adjacent content or unequal exposure is established.
+frozen_audits:
+  matcher_packet_reconstruction:
+    - Reconstruct the exact retained packet bytes staged for each of three matching passes.
+    - Verify packet digests against keys, requests, attempt markers, receipts, launch manifests, and retained event evidence.
+    - Search packet bytes and parsed values for wrapper disposition, ingestion metadata, condition identifiers, opaque source sample IDs, answer mappings, ordering provenance, and transport fields.
+    - Byte-level absence of wrapper metadata mechanically falsifies wrapper disposition as a direct matcher cue; it does not prove absence from unretained model state.
+  wrapper_distribution:
+    - Recompute direct and unwrapped-once counts by condition only after reading the sealed unblinding artifact.
+    - Treat the result as transport-compliance metadata unless matcher packet reconstruction shows the information survived into matcher-visible bytes.
+  incidental_feature_comparison:
+    metrics: [word_count, sentence_count, paragraph_count, heading_count, punctuation_counts, list_marker_count]
+    rule: Compute every metric for every normalized render, summarize by condition, and report deterministic separability without treating licensed syntax, rhythm, or punctuation as leakage.
+  lexical_leakage_search:
+    forbidden_literals: [Andrew Gelman, Gelman, Nancy Leveson, Leveson, Mary Shaw, Shaw, gelman-model-criticism, leveson-system-safety, shaw-engineering-judgment, neutral-editorial-defaults]
+    profile_overlap_rule: Report case-folded exact token, bigram, and phrase overlap between rendered prose and retained profile/style-card text. Classify overlap by field ownership rather than calling all overlap leakage.
+    quotation_rule: Search for normalized exact sequences of at least five words from any bound corpus quotation or evidence excerpt available in the subject. If source text is absent, record corpus-quotation coverage as unresolved rather than inferring a clean result.
+    domain_rule: Report domain-bearing nouns or phrases found in the profile/evidence material and renders; an auditor must distinguish source-specific facts from abstract intended epistemic vocabulary.
+  global_skill_exposure:
+    - Inspect all sixteen retained render event streams, not a sample.
+    - Record every external skill or instruction path read, command, returned content, invocation set, condition distribution after unblinding, and content digest recoverable from the retained event.
+    - Compare recovered event content with the current external file only as separately timestamped context; the event-recovered bytes own claims about historical contents.
+    - Claim model-visible content only when the retained event or invocation record directly establishes it; otherwise mark model-visible effect unresolved.
+    - Classify content for author, profile, formatting, domain, and epistemic language, and determine whether exposure was equal across conditions.
+  rationale_audit:
+    population: All 48 assignments across all three matching passes.
+    multi_label_categories:
+      - intended_register_features
+      - explicit_lexical_overlap_with_profile_or_style_card
+      - domain_or_author_clues
+      - length_or_formatting
+      - structural_artifacts
+      - unsupported_confidence
+    coding_rules:
+      intended_register_features: Rationale cites vocabulary, syntax, rhythm, claim posture, qualification, or another licensed profile feature observable in the prose.
+      explicit_lexical_overlap_with_profile_or_style_card: Rationale quotes or closely repeats a distinctive word or phrase present in the supplied reference card; this is reportable profile traceability, not automatically forbidden leakage.
+      domain_or_author_clues: Rationale relies on an author identity, profile/condition label, or source-specific domain fact rather than abstract claim posture.
+      length_or_formatting: Rationale relies on length, headings, paragraphing, bullets, or formatting; punctuation and sentence structure remain intended when explicitly licensed by the profile.
+      structural_artifacts: Rationale relies on IDs, ordering, wrapper/transport state, metadata, mapping position, or other pipeline structure.
+      unsupported_confidence: Confidence is maximal while the rationale provides no specific observable textual evidence for the assignment.
+    limitation: Rationales can reveal explicit cue use but are not faithful mechanistic traces; a clean rationale does not prove an incidental cue was unused.
+confidence_policy:
+  status: failed_secondary_metric
+  reason: Uniform 5.0 scores are saturated and uncalibrated; they supply no meaningful variance and are not evidence of leakage by themselves.
+interpretation_gate:
+  clean:
+    criteria: No matcher-visible forbidden or structural cue; no condition-adjacent external exposure; no forbidden cue in renders; and rationale/incidental analyses do not establish an alternative direct cue.
+    earned_statement: Under a same-family Sol apparatus, semantically accepted outputs retained sufficient intended profile signal for perfect blinded profile traceability across the observed sample set.
+  contaminated:
+    criteria: A forbidden cue was matcher-visible or present in rendered prose and could identify the affected condition, or condition-adjacent external content was directly exposed unequally.
+    action: Qualify or invalidate affected evidence and recommend a fresh experiment; do not repair the historical outputs.
+  condition_neutral_or_incidental:
+    criteria: External or apparatus exposure is condition-neutral, not matcher-visible, or not condition-adjacent.
+    action: Retain the narrow result while recording the external-validity or apparatus limitation.
+  unresolved:
+    criteria: Required historical visibility, corpus quotation coverage, or cue provenance cannot be established from retained evidence.
+    action: State the unresolved boundary without converting absence of evidence into a clean claim.
+non_actions:
+  - Do not modify any file in pilot/micro-render-v2c.
+  - Do not rerender, retry, normalize, semantically adjudicate, or match any sample.
+  - Do not treat confidence, rationale cleanliness, or univariate feature differences as mechanistic proof.
+  - Do not touch app-server.
+frozen_by: Human-approved boundary transcribed by Codex before opening the checkpoint evidence for this audit.

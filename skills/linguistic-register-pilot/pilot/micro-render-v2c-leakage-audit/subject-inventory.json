@@ -1,0 +1,5369 @@
+{
+  "schema_version": 1,
+  "artifact_type": "linguistic_register_v2c_audit_subject_inventory",
+  "checkpoint_commit_oid": "62cc7f7039cfc6238de8cc7d16a030ebe1892bf2",
+  "checkpoint_tree_oid": "3b4a3eb525636dbe19eaafaffaece8bb4c6153bf",
+  "inventory_algorithm": "git ls-tree -r of the exact checkpoint commit; ordered as emitted by Git",
+  "raw_ls_tree_z_sha256": "2b28eeb69635756175e1b34207ea6efd96941a86e469197eaefa5ec3025bc622",
+  "entry_count": 893,
+  "entries": [
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "834e95e48f32999ffe5e9a1f18a15661fc38fbab",
+      "path": ".gitignore"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4db340c75347c9c4df5cbaa42edf4916c519cf0c",
+      "path": ".mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ac4887a1a5099b1dc083e0e27109cd630b238e16",
+      "path": "AGENTS.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a24305a4c1fe5b85ba6ff452191c88ce86ce2796",
+      "path": "ARCHITECTURE.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "519b5af7c6b5385f60d7db4726aa6ca5308b3600",
+      "path": "BEHAVIORAL_ENVIRONMENTS_RESEARCH_FOUNDATIONS.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "46a9f1ffa1282d71ef5d99cdb37edea9592696ce",
+      "path": "DESIGN.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "660a792a2ff891ecc2e36f01609e69a39d8c08ba",
+      "path": "LICENSE"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0778d6762ecab9905bfb2db1393aa905e9d52755",
+      "path": "PHILOSOPHY.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aaff1ab02ce392ae4d4157146fb9a5798e3b0310",
+      "path": "STRUCTURE_OVER_PROCEDURE_RESEARCH_FOUNDATIONS.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ddfc0b45a7f5b799614eac4197cfec2ac737a5ea",
+      "path": "app-server/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "55fb085389f6addbd06e31a89eed714c6ff14c6c",
+      "path": "app-server/docs/codex-agents.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e8f066ba4cde6b2dca44c76e1ba3364eab2286e",
+      "path": "app-server/docs/linguistic-register-transfer-pilot.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e2b1156fdf9b36da17c8170301012108bb6ca9e6",
+      "path": "app-server/docs/role-compiler-proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d8dd2991c7465e47678c488b3c69b94e1447078a",
+      "path": "app-server/docs/semantic-context-lifecycle-manager.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dc1cde12410964b5b8aa67b02fd44c9175fb648b",
+      "path": "app-server/generated/codex-cli-0.149.1/AbsolutePathBuf.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6e55ce69e20072067711af431808c8f441665f97",
+      "path": "app-server/generated/codex-cli-0.149.1/AgentPath.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "33339b6b20f2c9cd0af662b838aeebcc07f5b5c8",
+      "path": "app-server/generated/codex-cli-0.149.1/ClientInfo.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ce2839108adb377e87f60f4ea80419537c16fb6",
+      "path": "app-server/generated/codex-cli-0.149.1/ClientNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a48f07c08823750d74f3d6734a4dd2847b4d312d",
+      "path": "app-server/generated/codex-cli-0.149.1/ImageDetail.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "00cd17db2d999789d3282e1e7eae03222e1404f1",
+      "path": "app-server/generated/codex-cli-0.149.1/ImageGenerationFailure.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "645d275e419078829c93301a3f1a8f52fcdf76b3",
+      "path": "app-server/generated/codex-cli-0.149.1/ImageGenerationItem.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6b4afd166b9fcb7997c27fb9edcbe682b6fa8208",
+      "path": "app-server/generated/codex-cli-0.149.1/InitializeCapabilities.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e48c5ee7b52c7dc346e8f851b28a26c299e1ac6c",
+      "path": "app-server/generated/codex-cli-0.149.1/InitializeParams.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f1f79d173c77778057e223f5cac0e7ef2b113135",
+      "path": "app-server/generated/codex-cli-0.149.1/InitializeResponse.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5c0a1b1e446796eb4ec51474ce9bcc4c9777c9ed",
+      "path": "app-server/generated/codex-cli-0.149.1/LegacyAppPathString.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e16021b5462ba3ce346467550b4796e175178e3",
+      "path": "app-server/generated/codex-cli-0.149.1/MessagePhase.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45165f4e33d66d6a159537a687c242d5a2928c7a",
+      "path": "app-server/generated/codex-cli-0.149.1/Personality.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d40f5bd6578e63f45f9fd0bee8d8979026561de7",
+      "path": "app-server/generated/codex-cli-0.149.1/ReasoningEffort.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d246ac12ec74407707a5d71dce85db83e57f2f01",
+      "path": "app-server/generated/codex-cli-0.149.1/ReasoningSummary.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b399551c8b498b95187c74bc3ea54fc907bcd099",
+      "path": "app-server/generated/codex-cli-0.149.1/SleepItem.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "669e5802b1316d5ee17af8810c7a6163101a66d8",
+      "path": "app-server/generated/codex-cli-0.149.1/SubAgentSource.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "801ffb35e4ed92934e5a794497b5a685fc55e5e1",
+      "path": "app-server/generated/codex-cli-0.149.1/ThreadId.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ce72a2f742fd72397a19bdb9b1b4fb7e717321b",
+      "path": "app-server/generated/codex-cli-0.149.1/WebSearchItem.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "42b9f079acc2a5cde01a74318dee442055e5173e",
+      "path": "app-server/generated/codex-cli-0.149.1/index.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75cf7389adc3d24f549803be2ad098884d07f94c",
+      "path": "app-server/generated/codex-cli-0.149.1/serde_json/JsonValue.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc6547e0a94f83c48e52095cce424091eac8554b",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/AgentMessageDelivery.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1d932946cc5923ca110b6bf0392a9a189401da39",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ApprovalsReviewer.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1d605501b2a3164d9effca75a6940d67ae833abb",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/AskForApproval.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6cb81b87c0b0310c5bc896c7173c2d45c3e8e4c9",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ByteRange.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "142048048fd9d5bd7cc235db450269ba8e4246c8",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CodexErrorInfo.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "785dbf1fe0f8fc467cbc1b5f6dbda0f0411c5504",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CollabAgentState.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "66d3119ba6886d3611fe633b08a3d7db8fd5fe6e",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CollabAgentStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3637853a389ec1f8f0be9f1d3ed1a5a4521b5d3d",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CollabAgentTool.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f21f7bd5d5f36943d6b3d210e81989381d7c5959",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CollabAgentToolCallStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "91c92c9cbf8b2a42a6a5a3da756655a43c93ad82",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CommandAction.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9432841fb7cb689ea3061b96df7622fb8e9a7040",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CommandExecutionSource.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c58b3cc7faa49b824e7468ccd9b287c462aef9a4",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/CommandExecutionStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6927609de7e9d8e2b9bbd599a0eafceffb164df9",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ContextCompactedNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9be1a80996d3eff5a9b09a5c5b1ffae40ad96d7e",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolCallOutputContentItem.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0823ac66cd0d2f9c74662dea5812d27754683df1",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolCallParams.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "788e6242dc67aaf13688a26db1169dc4ff14358e",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolCallResponse.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "04f44ec0a8b0a002356a6985388bb3b90182651c",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolCallStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "50bcd4271b752242a3719a0b147c17f38796d351",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolFunctionSpec.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fca1a29aba58f3fc053a0781293752f88cfd2d87",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolNamespaceSpec.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da2fdf24225d80d642775c8c3846882233d1d01b",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolNamespaceTool.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8f60e4eece6d864c5de1a83955c402171f4fce78",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/DynamicToolSpec.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c724db2b10e152c42a05d563bdbbcf2065572c1a",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/FileUpdateChange.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9559272a0f9dcca152dc5ff5b501bbcff2c5f709",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/GitInfo.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2c6b18acba2ac041f7f0d0d7332af4cc82e9a581",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/HookPromptFragment.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "25ced4a0750fab2ee13ad98dbdaeb7e4400aad5c",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ItemCompletedNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ec8af09e9f331430354961173654ac648e13c83",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ItemStartedNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "28c2845327a41804596a06edd36ffe241f566170",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/McpToolCallAppContext.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e4ae8391b9f1562d0412497f6dea4546f612290",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/McpToolCallError.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "916a5f5bb3fb4c01ee3fb6aaa96774b9c87bb4ec",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/McpToolCallResult.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f46bca07e8408721157b8f9d750fe95dc6a2906a",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/McpToolCallStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7657e29f8bfe59c0add7226284a19ce4e85babf8",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/MemoryCitation.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9b9ce17267fa16920de1ebbec674f74ffa6134f2",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/MemoryCitationEntry.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7b697b231491c5acfc765d55007d9df3f3f5a9c8",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/NetworkAccess.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2624df2ba0d89215d33ba904dc9099aaf875e1d3",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/NonSteerableTurnKind.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "620be789e4989280dbb0f77395e9ea8ad6bef15f",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/PatchApplyStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "23dda6cb12173974bc0ea74a5069232d1cde6af5",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/PatchChangeKind.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b8cf4326b984c48a713eabb128b62aa53006f59c",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/SandboxMode.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5575701ff2d7924e431df7b86d57947d650f2989",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/SandboxPolicy.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "852e6ded9717c426004536e68366b19799bfe2a6",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/SessionSource.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e3ce81e01e71a45044b539837390b26e83764d7",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/SubAgentActivityKind.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "535e0a1dde80b297a5b5e32d79bb503f8a5ad359",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TextElement.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5f23dd47574c3e5f6d53eda1b1a23185fe1cf6df",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/Thread.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "73c875a00d8583e190a54f9f9caee7a8b688506f",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadActiveFlag.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2ff6fbd4dcad6c75428d55b568341b7c85378062",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadItem.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ec895343575a035164a39bd1b64a71a39aa6068",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadResumeParams.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e1f7d642be044f77df4712b497f40f9567977472",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadResumeResponse.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "17cde81af13c36111519670c4bb1ea10cf4c07cf",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadSection.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c6eab7343f9c5174d288bc2d9220ab2273ce4696",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadSectionAppearance.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f27154ab6e8d64cae4d0677c5d5d1daa92f20851",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadSource.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "30509ef6cb31216d0bbd319ae52e39139e0e8776",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadStartParams.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "992ab5dba7d06a9dd262aa558786d7943ccd9c81",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadStartResponse.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ea1b839c6bafa3d55f0624c19186d5a5deb375e2",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadStartSource.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7cc6c8a6aadfac75a8aece0b17e28ccf9dcd7f8c",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b452c408e2c30dab64b6bd2b21b559d29cba3b3a",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadTokenUsage.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1be282500cbe88d2c38cd08d4869c7aeadbba864",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/ThreadTokenUsageUpdatedNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dbb1b1fbf16480ad57e744140318cc3ea1380d55",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TokenUsageBreakdown.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b8680256d1c5043cb551f32244fee3377e1fca1c",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/Turn.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e1b151bfa7157b8549899c0fed12f358fcdf837b",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnCompletedNotification.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "765a8e050bd5c5eb697fe694be91d5a24940214a",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnError.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9056923065df97f4801d7a9ba7757b8def48d14f",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnItemsView.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "afe1ac6d94889cdbf32610a0a847678801ac8227",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnStartParams.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cc2ee3772a55a41427d7f48f0de8b5971a93bdc6",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnStartResponse.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "476922edc203cb00e94119507bd7036de5baef7a",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/TurnStatus.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c268cb4f8d8535b4616ac7a73ffecb4781640c1e",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/UserInput.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "309bff4544807e0f8c4092448673073da0d14f41",
+      "path": "app-server/generated/codex-cli-0.149.1/v2/WebSearchAction.ts"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "500559c930eacaf196972bcff1fe90a34939158f",
+      "path": "app-server/protocol-bindings.lock.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e03ee572bc8fea2d8756780883604b7935277dde",
+      "path": "app-server/roles/strategic-planner.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2e9478564aa3a063ba510ae4a61bb58cd7895e3b",
+      "path": "app-server/roles/strategic-planning-handoff.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9a5929db507fed1eff5879a724f80ab35018f07f",
+      "path": "app-server/runtime-manifest.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc260dc426319407bf3fab26fa05a1cd6cd97632",
+      "path": "app-server/scripts/generate-protocol-bindings.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f0231a828fef2d658fb06cac285800f420a72dce",
+      "path": "app-server/src/capabilities.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b085aa6ea37e0ee50001d597084e23396fba56bd",
+      "path": "app-server/src/codex-app-server-adapter.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07b8a4ae90cedcf2936f62cee0f3975f02b00f1d",
+      "path": "app-server/src/codex-lifecycle-notification-source.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5efc1767ffa40b454ad74c8e93f371d69bdf0017",
+      "path": "app-server/src/context-checkpoint-publication.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d2222faef7f2986d440fb1db211fdc84de468279",
+      "path": "app-server/src/context-lifecycle-episode.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "be4b1025fcaded610025569c0fb1aa91610f491d",
+      "path": "app-server/src/context-lifecycle-evidence.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "adeea6e9469e2df6b9a2417d9f870c5285e60f97",
+      "path": "app-server/src/context-lifecycle-ledger.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "622d305d7da2e31295a240915452c7f22db201ff",
+      "path": "app-server/src/context-pressure-controller.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "efd0802e05af297ae084a89b14262f78b1abff5f",
+      "path": "app-server/src/context-pressure-recovery.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0a45a7ed910d5e4ea6635da0990fdc0bb6757e39",
+      "path": "app-server/src/context-transition-lease.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0d50584f54afe4d6cd20e5bb61b24afcb176f2e2",
+      "path": "app-server/src/continuation-state.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0b18300e91c5b443815264571f864aafcb133ca9",
+      "path": "app-server/src/dynamic-tool-bridge.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "df9df04d70058e036ddd880880e53415d7884cdc",
+      "path": "app-server/src/human-interaction-evaluation.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2d6e556693ddbcfea71651334caeafade6c5a9fa",
+      "path": "app-server/src/index.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ba24154c5a34fe62a79369c66d19025c594c1221",
+      "path": "app-server/src/manifest-role-observed-context.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "78daa6425b58a901e75e6d236ed87ca3b397fcfa",
+      "path": "app-server/src/observed-context-projection.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3e50a08524c0e89b81951af4f6f437305cfa484f",
+      "path": "app-server/src/request-context-input.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "887a7a5da916019c697da7ecbb96e2d52bfa62a9",
+      "path": "app-server/src/retained-role-shadow-host.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "743854778ffc15a51d73d936bf1629fbd9cdc738",
+      "path": "app-server/src/retained-role-shadow-lifecycle.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "74378e8df161f42d006b563620ecffb9cbfec339",
+      "path": "app-server/src/role-binding-registry.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "27f0de7bc7a43c482f0091d9383e13be7988cc52",
+      "path": "app-server/src/runtime-manifest.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5cc27bba2b4b816cc0a9645fc14c191463a1aa19",
+      "path": "app-server/src/semantic-context-inference.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "167649533f86d70382bc6ef71915f8e524b225ec",
+      "path": "app-server/src/shadow-context-lifecycle-coordinator.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8b0dcea03f53e32fd56cf9549ba0b0e7929f8655",
+      "path": "app-server/src/skill-resolver.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ac364c1e241aec21189474dedaf49db954014e6e",
+      "path": "app-server/src/sqlite-app-server-state.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "70d95d498a94c0192521b6d8758769554b2daa9e",
+      "path": "app-server/src/stdio-json-rpc-transport.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d0403d4a280ba713a0b5e55e822179e14416446f",
+      "path": "app-server/src/token-usage-pressure-projection.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9233518a2a5a24d57555e0bdae18f5397aaf538d",
+      "path": "app-server/tests/context-checkpoint-publication.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "85e06da844394560728e1fa1545d54f45cf53bf6",
+      "path": "app-server/tests/context-lifecycle-evidence.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6deee8dc956ed369e6bce211a6c45f4c3a0fe8ab",
+      "path": "app-server/tests/context-pressure-controller.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "73e51891b2e848c02386965047b4dad7aaed1ef4",
+      "path": "app-server/tests/context-pressure-recovery.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "be996a851604b905b5c073876a13dc8228a9110b",
+      "path": "app-server/tests/context-transition-lease.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0c841980b1a1d37ac1d085f40e28a9e39cf57b5d",
+      "path": "app-server/tests/continuation-state-ledger.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6a12c9fe70c48da4e0f71a2334399a7c74966528",
+      "path": "app-server/tests/fixtures/semantic-context/compiler-valid.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b615289c497fa9537927c1929d929b273524f2aa",
+      "path": "app-server/tests/fixtures/semantic-context/verifier-accepted.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6ff8367586450144ffbcdbcecf22c66d8ad4151d",
+      "path": "app-server/tests/fixtures/semantic-context/verifier-unresolved.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "877461552cac59914ac32855f36badbbd3c55c75",
+      "path": "app-server/tests/foundation.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ff7019e8eaa0b5eff6d4fb500d799c40be49d43",
+      "path": "app-server/tests/integration.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7114bf6062237a692f58bbe503a9eb315fefbcff",
+      "path": "app-server/tests/manifest-role-observed-context.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c00a204044c94da104d0813afd966ef780dbfc50",
+      "path": "app-server/tests/observed-context-projection.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4de93a51e1ea67d67409c36abb57ea8f8cd74369",
+      "path": "app-server/tests/retained-role-shadow-lifecycle.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0704bd4300795b3cd6df7aa4a61cd48a01f82113",
+      "path": "app-server/tests/runtime-manifest.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "60563c6eefa92c98402dfd98d3f68e1c644e870c",
+      "path": "app-server/tests/semantic-context-inference.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "50b5492ed3d945fc9662fd9bb6b0ef07155d0e17",
+      "path": "app-server/tests/shadow-context-lifecycle-coordinator.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e5a57083e1d1ea4fd6cff8618fceb3ce848be0fd",
+      "path": "app-server/tests/sqlite-app-server-state.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9feb6e29a3d495d94170f0c9d8b104008676c660",
+      "path": "app-server/tests/strategic-planner.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "841dac4db2d6865ea8d7e3c9861c632cffd68764",
+      "path": "campaigns/agent-instruction-review.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "410674dca08ea04d91c7fc050523a45dd6440659",
+      "path": "campaigns/code-change-characterization-baseline.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "815ab869ace67236618b72815efc5f65decd38fb",
+      "path": "campaigns/comparative-repository-analysis.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "780c01b21e885ba4db1b104f77fabf207f737d48",
+      "path": "campaigns/git-backed-slice-checkpoints.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "454fa6f6fb83caca9effa5fb101390100218789d",
+      "path": "campaigns/persistent-runtime-state-route-open.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "68f521625b6698b4f891e045812a52d794d01b5e",
+      "path": "campaigns/persistent-runtime-state.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5ea7095bcd8212a10ddc6961e37a6dafeed030f0",
+      "path": "campaigns/raw-idea-intake.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d8342dc95592ed6dd8278b9bf47177317e4a0f41",
+      "path": "campaigns/review-remediation.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "995d6b057c414ef8eb3d209e73c8a69fc45c50f5",
+      "path": "campaigns/roadmap.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "88f5fec7575a61dcdea4d4980702b9b6c0d3e2bc",
+      "path": "comparative-repository-analysis-workflow-design.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "41b97f419ccc73226b3cdfaad44baf115dd600c4",
+      "path": "config/chrome-vision.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "464f1ed05aa7004679f3b2ea0fdbf464091f6067",
+      "path": "docs/agent-environment-graphs.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "82e9408b0fadbb4448a6c08771ea65ec911072f9",
+      "path": "docs/agent-environment-views/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "909c7261d3a66d08ff4623a616e130f85fe9f93a",
+      "path": "docs/agent-environment-views/independent-reviewer.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bd99564c9be8371a0c3a68f20d61be95e986c0db",
+      "path": "docs/agent-environment-views/independent-reviewer.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "14fb2b72f7eb9839ded930a721140c0013f0704f",
+      "path": "docs/agent-environment-views/slice-builder.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "28ddbcfebe449cd2f9da0f46f03934552b3bd9f1",
+      "path": "docs/agent-environment-views/slice-builder.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6126c2536f539dfccbe5ba66f574a3a5c129dcd2",
+      "path": "docs/agent-environment-views/slice-supervisor.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "defc3bd1db6dc3f8ac1a496780f4b1d09f4a4648",
+      "path": "docs/agent-environment-views/slice-supervisor.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "11b09e16fef9d31399353f0fa019095cae19bf4a",
+      "path": "docs/agent-environments.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7aa47903f8421742c8aa3c32f8a4e5ed817b47f1",
+      "path": "docs/ai-workflow-metrics.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f70a00ffe1e9d7cd9c16200f15aec02f049fe918",
+      "path": "docs/causal-continuity-case-study.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a5799dd822532974c65a75437cf0ee9021b40611",
+      "path": "docs/workflow-invariants.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1c924a6aaf7af70f2d62176ca47a9655df94b169",
+      "path": "ideas/01-semantic-context-manager-proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2b16ccb8b6ef82dee3a33bcbb748ac3cb90e5800",
+      "path": "ideas/01-semantic-durability-and-context-lifetime-judgment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1677ce471a057b15c4998e990180daf915af446a",
+      "path": "ideas/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "930908c83e5b798566e1fe1351885bbc086b3b47",
+      "path": "ideas/agent-instruction-structure-and-placement-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "63ebfe38c8947ba213229fe9233c2b4ef60442b9",
+      "path": "ideas/architectural-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d3c12e5119c96964caa9116604f87de7456bb192",
+      "path": "ideas/bounded-ad-hoc-continuation-state.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "407febcb2472cc0d1459ed50782decc846651b67",
+      "path": "ideas/closed-loop-engineering-learning.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da396e25781d82a6983dfc8936d81b594526594d",
+      "path": "ideas/code-change-characterization-framework.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6bd92be77fc56e9099d1aa250595adc2444da6a8",
+      "path": "ideas/codex-app-server-scaffold-and-role-port.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "62de799e0a04dd1adf8054743dbbd77693ea4825",
+      "path": "ideas/control-plane-and-client-protocol.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4520a0f19b256ab692889e23476c9ab84ad6aa18",
+      "path": "ideas/cross-cutting-seam-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "76ac66c9149a6d3697cd691e8901cb6587868827",
+      "path": "ideas/environment-adapter-and-host-provided-runtime-services.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "22625b306149f403f2a3dd074743c87e558316af",
+      "path": "ideas/evidence-backed-proposal-evaluation.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5b8011616345bf1fe57d0ee0350b208970ed5230",
+      "path": "ideas/first-class-proposal-artifact-format.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fd751ac758fb4b7500ada3b17f602ae585e71a21",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/adaptive-specialized-review-panels.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8638cca5bc32fd90a90c6619c5100fbf8e747e4e",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/architectural-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3281f49e9510e9239d0726a43dbe8546227170ca",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/closed-loop-engineering-learning.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a6ac2a693456872c8f54a97e61a2294b1f1292a5",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/context-compaction-as-role-resume-event.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c960708dcca8ed786d8ab0d7e1024414729bdd14",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/context-derived-role-execution-envelopes.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "15794c90a3b4cfd8e36b3355916a4ab546fdcaf1",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/durable-review-queue-and-scope-coordination.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7fd6d4e4082e80880527402ef77ff75f10705581",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/environment-adapter-and-host-provided-runtime-services.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c504a22618bd4f751875f5f9595e8a957dafa3af",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/evidence-backed-proposal-evaluation.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7ad65409b5643c787873830c5b8b7deb449f72e1",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/git-backed-slice-checkpoints.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ad89733150a2f4a7fcdb5b827e4f67824da1553",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/interactive-idea-to-proposal-workflow.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da2c73f18d9c54756cf923bfc05a30f48216bc41",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state-and-runtime-introspection.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d5fb5eadaf59846f5378c688187271318512187",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e64e74f74e31d3d27c9d5287e42fa6068d1f18b1",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/persistent-strategic-planner.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b7a962812c7ef78bbc98e6385a8ebd99dc763e07",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/proposal-packet-impl.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5557b33e397f8573275d9b9864324817ad01049d",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/proposal-packet-workflow.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "180f46198c82b952863fc7c9fb491e40d876b1be",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/proposal-packet.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a6693a19cacc31e3f9d25c673d6fff09daca7bfd",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/research-maturity-evidence-snapshots-and-staleness.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cf297049c14a903f98b65757d74d2363447ccb7a",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/role-aware-agent-scheduler.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d456cf5b8003c376538c4728360e7801aeb07ee",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/role-decision-trace-and-work-dossier-v2.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "119dcd24854c8bb9d99f8fdde14814d346d9b33f",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/seams-principles-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "af6e7c37425935ea9b9f4bd8e2780d547d230dc6",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/slice-completion-commit-prompt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "11236211a87846ac5119b265153c5ca434ed376c",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/ui-design-principles-structure.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d60f0ecf91efd81769115fe3f38c6400ebe65ac9",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/ui-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c242319b82a556cd7806f2422def1f79fdec651e",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/work-engine-codex-runtime-adapter-boundary-analysis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c8e4daf45e165e7c863f9d33591d1dc853c9dec6",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/work-engine-control-protocol-and-environment-affordances.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ccea30a3b9b4bdc7dffdbfe25aebbac1df58197b",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/work-engine-studio-design-control-forensics.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9c0919b3458740bfd3e0bece92b82cf8e6960a01",
+      "path": "ideas/history/2026-08-22-pre-reconciliation/workflow.diff"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "23dfc51d8b4e8b0d0e048ded67d4514fd240de65",
+      "path": "ideas/intake/semantic-context-manager/app-server-runtime-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0e42e974379ef1d071edc42d8ae2d142202c53df",
+      "path": "ideas/intake/semantic-context-manager/assessment-revision-02.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "61ab6892e69cca4b2ec2afad7c42d6395b0cc1f7",
+      "path": "ideas/intake/semantic-context-manager/assessment-revision-03.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1eed227a97028fb740dda78a539909a40c30ebb0",
+      "path": "ideas/intake/semantic-context-manager/assessment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "44cbf90a84fde9b82cd6a6317c73f66405897d8b",
+      "path": "ideas/intake/semantic-context-manager/authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a9315624b4d74832dc87b8c20428feb7e05c199a",
+      "path": "ideas/intake/semantic-context-manager/projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b7d1b0cd02b74fcbf07288f2a26fd174daa94047",
+      "path": "ideas/intake/semantic-context-manager/record.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "50a1ff062dcfa33821b05801efe6fadd8a2c695b",
+      "path": "ideas/intake/semantic-context-manager/repository-observations.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0fbfde6cede8232222a07a40bbd70501e0a52ef3",
+      "path": "ideas/intake/semantic-durability-context-lifetime/assessment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "22ba88b8650d97ab844b13e466d0c9042b4a01fd",
+      "path": "ideas/intake/semantic-durability-context-lifetime/authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e461b8cce5b0570ab01e53821b2398881e4b3969",
+      "path": "ideas/intake/semantic-durability-context-lifetime/projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b764b1fd43dd2f99d0dc1f8922aeec706ce5e576",
+      "path": "ideas/intake/semantic-durability-context-lifetime/record.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5de4d3d57c4f4e0a713caa80b617a891bd0ed30c",
+      "path": "ideas/intake/semantic-durability-context-lifetime/repository-observations.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c834d2d21abc117d6e00df64f444086d2877191a",
+      "path": "ideas/intake/semantic-durability-context-lifetime/source-checkpoint.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3abeb8c104f34de7cb55950a6578f7d01cd4cb18",
+      "path": "ideas/intake/state-complete-context-reset/assessment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "52648444cc2435c5ef305644835c67b6bb3619dc",
+      "path": "ideas/intake/state-complete-context-reset/authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ecb50adb8d86578eb99e7cc3d91b2818fbd436a6",
+      "path": "ideas/intake/state-complete-context-reset/projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "165d68433b32b31c60a0e1505830916950d8a68f",
+      "path": "ideas/intake/state-complete-context-reset/record.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3aba489d043cf7be06d6ee5f5cc1134b38ac6a5a",
+      "path": "ideas/intake/state-complete-context-reset/repository-observations.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc1702943b8ac1631625c4641ca82a25c29aeee0",
+      "path": "ideas/organizational-execution-envelopes.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fde85d8818c1c6e4aa700506f976de833ac5e3fd",
+      "path": "ideas/priority-one-new-runtime-direction.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "007ec06db026b7eae6a59e56f15281c3d1fbde13",
+      "path": "ideas/proposal-backed-portfolio-selection.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b64c544a6faabee4d7e213b07e66640f5d95fd80",
+      "path": "ideas/proposal-research-maturity-and-freshness.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0f5313639531b214804de93cf44d3eb1e42ccf16",
+      "path": "ideas/raw-idea-intake-and-claim-assessment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d5ef5328355bb524d338966943108fe0eb5a5efb",
+      "path": "ideas/reconciliation-map.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d2e8f366acd4e26ceecbb27c62a31fd7c00ae22f",
+      "path": "ideas/review-scope-coordination.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7569a1051373d7f3a8e6982cefe09f9621135e17",
+      "path": "ideas/role-decision-trace.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "00227543251bee1961ea21af2668ad9ee02587bc",
+      "path": "ideas/runtime-adapter.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "15f7cccb9711c3ddeb49e344d7db35d6f5ad8432",
+      "path": "ideas/slice-bounded-builder-context.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e8627e68f3b29af3e2d83f1993c04ab030bc2c83",
+      "path": "ideas/state-complete-context-reset-for-non-human-facing-agents.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d54f747b12b2c8f410bf01c3964f7078b163c94c",
+      "path": "ideas/ui-experience-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "24d88eba8fa9c77cf2a78b2a470a43c35aeca1c2",
+      "path": "ideas/ui-review-capability.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3d99bf8ae7a0224d8fb129dbc21e70e847276288",
+      "path": "ideas/work-engine-studio.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1d21973a6c3d2c086fa2303f2b42dda71af47a5a",
+      "path": "metrics/agent-instruction-review.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5bd9ef36d86bbc55e54c5a962d793d888508164e",
+      "path": "metrics/review-remediation.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b5446af1cf6abb4f8ff1df6ae0ca92a15b070a57",
+      "path": "metrics/roadmap.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "90649960323c218ef2e68f5ca20d6d90bbbe5e2d",
+      "path": "metrics/work-engine-persistent-runtime-state-route-open.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d5e309623255d67479e926c15be86b61516085c3",
+      "path": "metrics/work-engine-roadmap.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "63bc236a906f6b8194189b5e875399495d9ef3fd",
+      "path": "notes/app-server-skill-control.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84e307ab77a16fe532597fe5bbf708047d87e2ed",
+      "path": "notes/cross-workflow-state-observation-affordances.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0e68f8343a789d936629f11cabde8e1d587e1b55",
+      "path": "notes/multi-slice-lessions.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb22c50bad9484202fd6f1955ec6199622f84743",
+      "path": "notes/work-engine-roadmap-input-capability-config.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ffd2e0208aab5cc8e8d4b0f9b056a9904f0a2bf3",
+      "path": "package-lock.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "28b42ebe549a2364daa848201d2894c1f4bf21f9",
+      "path": "package.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0b9a8e362eb1edff91a58fd79dc039c50b586231",
+      "path": "planning/2026-08-20-persistent-runtime-state.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "728e76e54053c1675384735e8387735b8d784ae8",
+      "path": "planning/2026-08-21-proposal-workflow-direction.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "85eecba325461c521835780c4ef4b968dbfb5a16",
+      "path": "planning/2026-08-23-raw-idea-intake-decision.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1f16f0cf3e2e7f3e8c55e75e435578603b3c2cbd",
+      "path": "planning/agent-instruction-review/slice-01-accepted-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "027b2524c139bc7f2e0a0876dc8096156ffe6740",
+      "path": "planning/code-change-characterization-baseline/slice-01-accepted-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "789d8897132b4be3de13b454ddc01b1853983d10",
+      "path": "planning/production-claim-evidence-interface/review-general-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "370f4243361b2ff2344ba25b24a57e36e189cbf2",
+      "path": "planning/production-claim-evidence-interface/review-provider-amendment-01.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "16beb62dd3b335d37723aba2170f75b5385a10f8",
+      "path": "planning/production-claim-evidence-interface/slice-01-accepted-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8b2e32497feecbe52c61117ceeee8dee16b01010",
+      "path": "planning/production-claim-evidence-interface/slice-01-gate-manifest.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f1d2341435a50aeccc8159805582d706ab955636",
+      "path": "planning/production-claim-evidence-interface/slice-01-gate-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "61c0542392e857ffaa9f403775dcc6a72babdf07",
+      "path": "planning/production-claim-evidence-interface/slice-01-remediation-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "69f4578c2b7a1a5b016c0deb2f6d2fc1fb59c504",
+      "path": "planning/raw-idea-intake/slice-01-accepted-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1f4b006a9283be0c9e0304aa79781bcd50cc2b75",
+      "path": "planning/raw-idea-intake/slice-02-accepted-plan-v3.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "44e12b4b1aea950413ed5379cb8dc41d29993f3b",
+      "path": "planning/raw-idea-intake/slice-02-accepted-plan-v4.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6e3802ab2fcef64f977299cab62e925791da85b1",
+      "path": "planning/raw-idea-intake/slice-02-plan-approval.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2925f8c796ed09c961a6176ac38a2e697aae4362",
+      "path": "planning/raw-idea-intake/slice-02-proposed-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ad8bf9fb85fd13e3c0f89daaa0d82eb8d59ae63",
+      "path": "planning/review-remediation/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e187a90fc27a97dffd0564fbe8a2871163dd2d42",
+      "path": "planning/review-remediation/slice-01-authorized-git-delta.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0d89a2a55cdb5947df6938bcd927db13ad2a52ef",
+      "path": "planning/review-remediation/slice-02-authoritative-completion-receipt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "55ba1c19c1628f1e8b219438850481cf6470d974",
+      "path": "planning/review-remediation/slice-03-pending-completion-lifecycle.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5f053cf2e7bbbec52ac786c6d06b3348a94f4486",
+      "path": "planning/review-remediation/slice-04-proposal-origin-openness.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7134fb0aa3e199fe9e9cc5520658ed4200607fc8",
+      "path": "planning/review-remediation/slice-05-review-coordination-consequences.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e34f10e81b8296e134daf067d10666bc4ffe5139",
+      "path": "planning/review-remediation/slice-06-persistent-state-route-openness.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fba5919492ec3f321a65dcbb024c5eff6515beb9",
+      "path": "planning/review-remediation/slice-07-roadmap-and-artifact-truth.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ff87a34345936a31b3ee1f37e8b4bf87dd0aec2b",
+      "path": "proposals/adaptive-specialized-review/adaptive-review-panel-coordination/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ba02dca556acf7c5ee3de9955fc9ad9e524fde3",
+      "path": "proposals/adaptive-specialized-review/adaptive-review-panel-coordination/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d44417eca1def4024813442aa80273a71d0879f4",
+      "path": "proposals/adaptive-specialized-review/adaptive-review-panel-coordination/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b7272d3df1e19fa7355e9819523602d7ee07cde",
+      "path": "proposals/adaptive-specialized-review/adaptive-review-panel-coordination/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "011553e9f327024d0808e560b6cfcd396b14a157",
+      "path": "proposals/adaptive-specialized-review/adaptive-review-panel-coordination/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cd7572ccfde1a87241f7f8b85eccc770806c024d",
+      "path": "proposals/adaptive-specialized-review/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45fa8472685d558369190f0e9f4bbd044e030aee",
+      "path": "proposals/adaptive-specialized-review/revision-bound-review-artifacts/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "af28fecfaa853a257ab965265d12fc85b4fa8d7d",
+      "path": "proposals/adaptive-specialized-review/revision-bound-review-artifacts/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2613a1ac2a77a4460e457591fced20ad6d659b18",
+      "path": "proposals/adaptive-specialized-review/revision-bound-review-artifacts/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "beab872c526a06baae07fc7addd80b6309247199",
+      "path": "proposals/adaptive-specialized-review/revision-bound-review-artifacts/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3f144615db7001cff96741a19baa05cb7cc4cfa9",
+      "path": "proposals/adaptive-specialized-review/revision-bound-review-artifacts/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ef9d05f50a02eb4e29a24a62927180ac47000a49",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "33a8bc6ec8ea4e59ff4b0def800112743641d5f4",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/implementation-authorization.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ae87d723a139b73df6fa55bc4bd74238f080ffd2",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e19b9dbf0aee6a147fb2b9c444bd6c424674ba30",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6274e4d9ace6cf5dd606466f0690a54543757f8a",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "88a35dff533e242bbd1c6314f93c026731be8f6d",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "14a77c33c4bc8f8a31eede4210cbab31ddc70f92",
+      "path": "proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "969709ee784bc2e892b5f7ee2621ceeadff01764",
+      "path": "proposals/agent-instruction-integrity/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ead2725f238a0740c7b0fed1f8e516e15a881145",
+      "path": "proposals/agent-state/context-decision-observability/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ed8bc9652ce9c698194a5a69099aea3bcf045343",
+      "path": "proposals/agent-state/context-decision-observability/formation-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da8ea0d9b310d544a7554bfcaef5c5976dfd3a14",
+      "path": "proposals/agent-state/context-decision-observability/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b93ac46334bed8fb52f6ef220f3a58b80878e122",
+      "path": "proposals/agent-state/context-decision-observability/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fa6be33c598b79977f5df7c2284fc9de87f2096e",
+      "path": "proposals/agent-state/operational-state-transition-history/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bcaec5551760d557fedd62dd88f9d5662307536b",
+      "path": "proposals/agent-state/operational-state-transition-history/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "08d5dcda4cde3df050d5cbc82f8b91087f41ce25",
+      "path": "proposals/agent-state/role-owned-durable-operational-state/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9abca77bc0fa94e2bd1aa3b08d982697a2f401cb",
+      "path": "proposals/agent-state/role-owned-durable-operational-state/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "209596672a2aa8811657a245aba242c0bf94d978",
+      "path": "proposals/agent-state/semantic-durability-context-lifetime/formation-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a957eec0e5a003de09b0cf0167e1c30485062a31",
+      "path": "proposals/agent-state/semantic-durability-context-lifetime/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9c5910af0896c81de821a361159fbe30ec65b210",
+      "path": "proposals/agent-state/semantic-durability-context-lifetime/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4b52ff1961091c38ac09ccfa41a063fafd4986e7",
+      "path": "proposals/empirical-agent-research/code-change-characterization-profile/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cc77556eb6e22d75e07fa56479951033211c6d51",
+      "path": "proposals/empirical-agent-research/code-change-characterization-profile/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dc2a28b026e225c0f372dc3ededae3e76f6ce693",
+      "path": "proposals/empirical-agent-research/code-change-characterization-profile/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "19b98d3acde5e69b6ed3b81f5950867d0fc1015d",
+      "path": "proposals/empirical-agent-research/code-change-characterization-profile/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0f35e80ffc1b4ce98bb1984fb6c408210e556c6e",
+      "path": "proposals/empirical-agent-research/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "270e765c404fa317ff96d80c8b1117312b63a893",
+      "path": "proposals/empirical-agent-research/formation-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84c4df4f1881f5abadec6ade965309fc8cf6672e",
+      "path": "proposals/empirical-agent-research/future-question-inventory.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "113630ce1d33691fd9a0390251569076f0f09a56",
+      "path": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "305da2dfe769a615fe723791983d65631b4d7ae5",
+      "path": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "08e345ea483baa54f15bd0dc712933bdb283c492",
+      "path": "proposals/empirical-agent-research/raw-agent-execution-evidence-archive/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2deb45eb033fdb47dd120d5ad0d5c550c016300f",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b4ecb41f412dd94e5dc2ad5f254c1591e4dbc726",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/evidence-report.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "32dd7c0f8869a9a3379c58d99bedc215474d6241",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/generated/projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "724b3aabd05a216d408fafa4f2af9b6cf10c06fb",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/records/claim-lineage-records.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "533874d7e1461df9a0af49d1dbaedac67bdfbe71",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/schema/claim-lineage-dogfood-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "15b8ee8b1a907704860da6fa48a6cb4579765a43",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/scripts/claim_lineage_dogfood.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "749fc27b2e292bbb65e913531071fa3b2ddd6601",
+      "path": "proposals/evidence-lineage/_dogfood/claim-lineage-backbone-dogfood/tests/test_claim_lineage_dogfood.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "273a73b08513732f69dbe82c089796e36260a51f",
+      "path": "proposals/evidence-lineage/claim-centered-evidence-lineage/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0c915c8c71fc1687607ad819970495f5d51f48e8",
+      "path": "proposals/evidence-lineage/claim-centered-evidence-lineage/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "572f89d27a45ca5482dac2ff301271ff1b49e7ec",
+      "path": "proposals/evidence-lineage/claim-centered-evidence-lineage/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b61418459700c57c216370fb4ae377c4785d61e",
+      "path": "proposals/evidence-lineage/claim-centered-evidence-lineage/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d4060e7598ab1442c9e5e64d42c5c80d70d39cff",
+      "path": "proposals/evidence-lineage/claim-centered-evidence-lineage/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ec0738afb5578fca61e33d73bc004dec6181d9c2",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3719f82bfd68fd99595b541fb7cef826884bb23e",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/fixture-selection-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a303d62b14db5d9f563092fd3a2e9d78931e5bf3",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4431aafbbe7b461fdb3ab10191c9b4369d186802",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c9232fb9346ada2c67a591a2e8d207f293bcaff8",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75618013333fbd231334e0fbab92f537e4bcc24f",
+      "path": "proposals/evidence-lineage/claim-lineage-backbone-dogfood/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0018cd0dc4dd5841391f062a8dedb8e554de9d00",
+      "path": "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d5827814f2c52407e6165513d1c4332e7264c78c",
+      "path": "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "30c01e241e3a9a812d40bd9ab4b4480727066216",
+      "path": "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7e334ad0a560337b008bf00ef78ccb3360a5df78",
+      "path": "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "395efae02931ede529140102c3be74df2cfafe4c",
+      "path": "proposals/evidence-lineage/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "370a00840847561c90c7544faea4bb3b3a0a371f",
+      "path": "proposals/evidence-lineage/production-claim-evidence-interface/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "78413d317b9fb2a95e61614e930f0c5cf6295140",
+      "path": "proposals/evidence-lineage/production-claim-evidence-interface/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc749ff98ea1272b157eb47463fa7bc07ed95336",
+      "path": "proposals/evidence-lineage/production-claim-evidence-interface/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7df1b7fcdcb72bea88f36567bd4d0adba3f6e16b",
+      "path": "proposals/evidence-lineage/production-claim-evidence-interface/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a957a87ef233083c8e2e6a7e616aa7a330356e1",
+      "path": "proposals/idea-to-proposal-system/durable-proposal-packets/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "51cfa8dc3e41d744a2db0c905786b59671f932b0",
+      "path": "proposals/idea-to-proposal-system/durable-proposal-packets/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "44cd386fdf7a0b839cf9b3d66ac1fe56bd6a863d",
+      "path": "proposals/idea-to-proposal-system/durable-proposal-packets/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6ca9bedab08a3b5f1a0cce40b4a752ad49b4c336",
+      "path": "proposals/idea-to-proposal-system/durable-proposal-packets/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8f82142280c1307f9a96182e433ed2db23752273",
+      "path": "proposals/idea-to-proposal-system/durable-proposal-packets/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ffedbd5e20070bfb827185135de97fc24b72bdb",
+      "path": "proposals/idea-to-proposal-system/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "791f290f065897242d24bff6ebb5625ff0c68084",
+      "path": "proposals/idea-to-proposal-system/interactive-proposal-formation/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07131d99c73650098744ddfd1e37b0562e2c9c65",
+      "path": "proposals/idea-to-proposal-system/interactive-proposal-formation/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "92dd1d86af50b92cfb4f63cdf98be30a61624b16",
+      "path": "proposals/idea-to-proposal-system/interactive-proposal-formation/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "addf8115cf676b63d35e992c32e3ac7845e07d17",
+      "path": "proposals/idea-to-proposal-system/interactive-proposal-formation/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a598dc888d01076c1e296a70cc92fbca980eaf93",
+      "path": "proposals/idea-to-proposal-system/interactive-proposal-formation/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "58f21b3b5547b645939f53538ed976fa2f801d13",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07b5a537d66ba43171d65c27d8268b243899e7dd",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/implementation-authorization.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ea4779d16a30ceea52e4283d53116f41589b3532",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/implementation-plan.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ad8634d0792d9bcd9f89797cfe9883864f27de5",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b7990781cc96c11135f50297294d4c7ff7f201ca",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a82b35d8c31aeb76cf8db3703e7223b8efa35007",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "44b545a7ff47c35840ffd5280dbea1c13c9f5097",
+      "path": "proposals/idea-to-proposal-system/raw-idea-intake/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "25b778c841fbc76e4b740b7a654871556acfc618",
+      "path": "proposals/ui-experience-evidence/family.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a29484472cba38e094c3ae4360f0e56943318669",
+      "path": "proposals/ui-experience-evidence/formation-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "42fa3d486e5bc85865ad983400a9b83415c8a0db",
+      "path": "proposals/ui-experience-evidence/ui-experience-evidence-interface/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ba32e88e65dad3c3aa78bd36bfdab7fdf075a260",
+      "path": "proposals/ui-experience-evidence/ui-experience-evidence-interface/placement.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a4152d645500a543d8d1aff6909d3e89098b8705",
+      "path": "proposals/ui-experience-evidence/ui-experience-evidence-interface/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "411ac738badcbd9210962beee29dac35d0dea6af",
+      "path": "proposals/ui-experience-evidence/ui-experience-evidence-interface/relationships.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cc03cdd311e3af97982542a6337cd7b999d6a11f",
+      "path": "review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7f70886f51f7be423bf4e2f88b019fe208356f55",
+      "path": "reviews/implementations/agent-instruction-review/2387a32/accepted-same-model-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "78a147fbe469d6738c0c719a972e1b17e99e59fa",
+      "path": "reviews/implementations/agent-instruction-review/2387a32/gate.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a9791e6f9003d70a0de7e686d4f2e3984b9a5525",
+      "path": "reviews/implementations/agent-instruction-review/2387a32/independent-review-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8412f97b4e089f90b60a631b895d20e01e989d68",
+      "path": "reviews/implementations/agent-instruction-review/2387a32/remediation-01.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3795dab7e6ef0031628038825d21c7d2e652522b",
+      "path": "reviews/implementations/agent-instruction-review/2387a32/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "29f5a92b48dd744c8c77a2901cb57b64829e604e",
+      "path": "reviews/implementations/raw-idea-intake/cf1412f/claude-review-mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "21a3b4330fd62ea66e7b2d8b3d77e4a51997e109",
+      "path": "reviews/implementations/raw-idea-intake/cf1412f/independent-review-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "090591dac63e75bb10ff309252cb2e315a6c3e6b",
+      "path": "reviews/proposals/adaptive-specialized-review/5367d9a/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "817154621a40627841521e488a7bb4d1a0e5a173",
+      "path": "reviews/proposals/adaptive-specialized-review/5367d9a/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e66488c1b50e500c5e7c2d383cc759e76c7384fc",
+      "path": "reviews/proposals/adaptive-specialized-review/5367d9a/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "974a74c52152cd6d4b57153b9e98e9d7c6b2dfe1",
+      "path": "reviews/proposals/adaptive-specialized-review/5367d9a/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d0833d40499fb055cd0b1a533719afebf9941d43",
+      "path": "reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "65d39a8355cd43b730d8a6a41bf43fcbf495354a",
+      "path": "reviews/proposals/adaptive-specialized-review/8da156b/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "25c80c5b181cf844599d9b66f5613ac9deccdd64",
+      "path": "reviews/proposals/adaptive-specialized-review/8da156b/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "54677e9e82818e84ee42ea82c8752e3df233c115",
+      "path": "reviews/proposals/adaptive-specialized-review/8da156b/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "451731036ffc511fc1aad4700ae57f548e821718",
+      "path": "reviews/proposals/adaptive-specialized-review/8da156b/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b2f465e763a2caa6247fce2033d9d376cb1d0769",
+      "path": "reviews/proposals/adaptive-specialized-review/e61f6ce/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a96e46ddeb35be9b5e698a2ab5ebe548320a7cb5",
+      "path": "reviews/proposals/adaptive-specialized-review/e61f6ce/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bd67e229339988e55e29c265486b11d8eefe2d3e",
+      "path": "reviews/proposals/adaptive-specialized-review/e61f6ce/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c55b58613f1ffe177e2596a2fa2be3b90df62250",
+      "path": "reviews/proposals/adaptive-specialized-review/e61f6ce/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2216b3693c97a2a1a3c3a2560a2e97be64323425",
+      "path": "reviews/proposals/adaptive-specialized-review/fca5cbe/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "14e21a31a1a611e77bd924166d1ca4f982b5135d",
+      "path": "reviews/proposals/adaptive-specialized-review/fca5cbe/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "302eb19897830635e91598bbb1d1be317820376d",
+      "path": "reviews/proposals/adaptive-specialized-review/fca5cbe/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2f09c45b12175e9754bed192b16aa4d39f0337d9",
+      "path": "reviews/proposals/adaptive-specialized-review/fca5cbe/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5c58926e4023b689d39661899924589cb3d68e50",
+      "path": "reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e514df382acfe6058318d072b695e2f9d27a9937",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/architecture-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ee46b7a37b5de530f20e0d524425d88e79314a12",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/architecture-mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aaed3db90aec51fb1594ef7aa5e9caff699a97a4",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c063817ddd0e7ab951633159127c05a2856a0424",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/coordinator-remediation.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "994282780b96b709bebf2c3bf9a87478ecc93e5f",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/doctrine-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c10b61d313fc806ee5fa64708e8d30b66dcbe339",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d489de4361218571017a4450f326e3dbc5469abb",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/doctrine-mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "befb5add50e16450d1aac3d714ccb14378a5a39b",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/lifecycle-applicability-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "110c03e96f793c2ebdea7352365e62b44c93025d",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/lifecycle-applicability-mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "be94c76aa8fb66f297559ed19380fd69e94063ac",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/lifecycle-applicability.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d3e712b1e195d6d061aed44e290a620aeabdac8",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4893288b30b205064a5c62b8165a66663f9f9a07",
+      "path": "reviews/proposals/agent-instruction-structure-placement-review/2b03e6a/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9d3c1c5b89a932419cf889a30031628cc1d8df61",
+      "path": "reviews/proposals/bootstrap-review-procedure.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "184e6d1f8873bd3c74e3bdf0705b7f63b7ca37dc",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/3d24303/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "22451707c119db6af839f151bdc10d674024b3f4",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/3d24303/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f920261f4eadcbe2d8742406a8ca920e59048d82",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/3d24303/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "adb0ccd608da37102f17c13a51294200635e6b03",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/3d24303/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "019b7e521ad633f8b4beac59245a80f2862ba8b0",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/3d24303/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "91cbc6043770a63a90aabf7f61184c9363115441",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/9871853/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da5ce7b61219d2c8a5add987aadf023e923c2aa6",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/9871853/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "af52d06dba890b5091c170e6b716946c0fc93d5f",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/9871853/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e4f993869a17ed6347bf3574d58b1b95a7bc51ac",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/9871853/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d9cc4f1c8e7cb21b236dbdd69f5ed11dad83b78e",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/9871853/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f18e1be4b59de66d256988bb32676f8527297bdf",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/administrative-confirmation-ebb7487.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07d5cff2471373b2254650eadc1440ced46fb00f",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e683d62d7bb4bcae0372e713ab3660e6952c58a0",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "98922ec3268e1f44fefcad90b296783795cc5015",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ccb91867582fc096866d2d3532d6ac82dd179add",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "303c945cf3fabe2fec39163216a709fb37ebaf16",
+      "path": "reviews/proposals/claim-centered-evidence-lineage/cd50e79/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "48266dbf745da6e96565770082a564cfecff9fa5",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/1c6e0f1/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "97cf4cc674ff8679c5e1fd647cec833f47a9f503",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/1c6e0f1/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ea412bb89c840baeb9a802f753667a8c1186f20",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/1c6e0f1/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e359ee32614da4c79e1d6e5c2fa8b3c24eabb5fa",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/1c6e0f1/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f4106e5bec34b39e67e57ac9ffd1c8046452e22b",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/1c6e0f1/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "31d7587d3a36a72f96a88e9e2c9aed3ed18f71ca",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/57f5dff/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ff928c77d5e66f00cd4227a13b2863cfa028e978",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/57f5dff/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "537b83a7714ee02582168e4da56ac7947ec68270",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/57f5dff/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d1a37de387d6fad4f5ae5485bcbb7d587bb03e0",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/57f5dff/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "537072c3d7d693e10e61ccd7d3521705f2a5ec09",
+      "path": "reviews/proposals/claim-lineage-backbone-dogfood/57f5dff/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "06b28008f995c72741a29b7619953807f4dbfede",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/agent-instruction.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a88da16ec1bbb589452387efecdb8b2779d8dd75",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c2bd50777972b25e13250788b0036b34f57e9541",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority-doctrine.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "777e14d679e6ed1365d370765920367107e034f1",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority/architecture.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a319b0fb93c57a0bd9b10016f88a3714638cec4b",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority/authority-doctrine.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8f72b430484c27feb4350820b61dee2d630a6fb4",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority/instruction.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e04f5a9627337a032ebc4b7f709afa8b19723b6c",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority/lifecycle.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "29d67b8ef2d2632b01ed252a94c447b86195c26d",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/authority/security.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4ec9f16145ea7d439bed8cd59b6386870a0150c7",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cecec99925aef3e143ad30b5b2048eb6d71db023",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/provider-provenance.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a346649334766a88d33dcc2127e08fc24f696ff1",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/remediation-checkpoint.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2dcff251f6639a18881b06f20315833ed1ce1f47",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/remediation-results.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c6f98d864711205ab11656d58c2f0602a7e0d35b",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/remediation-validation.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1e1dd9059f1df2c5817086b90548a989f740ed0c",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/security-visibility.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "990ad1de5b9367898842ff74735106351f8e3b45",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/selection.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4b10a659fdf2c23e9506e6d8f83aba37acfe67da",
+      "path": "reviews/proposals/context-decision-observability/6eebd58/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d03daeecd2343d62ceae985af4e2f23b11c69d2f",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "411b53bc4d9970ce5ad9330803fc284a72d7a6ef",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "538dd77bce3c1fe3194a44ece1cf5121d05c2984",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/formation-revision.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9b3ff7f6c0404d69b6b4b26137db4907deff44e0",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/lifecycle-evidence-authority.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0395001c7f5e18682e86e202dbbaab3d05bf766d",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/lifecycle-evidence-mcp.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4f63b08e1bc4d42400b88463daa2c855aae56639",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9facc34f3e5399424ba86e15f9ae9a4a4861625c",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "018507dbb92645ec338fc6ce75f852cac1676016",
+      "path": "reviews/proposals/raw-idea-intake/30fa429/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "39a9e36bc7d219aca1248befc11c20f5b3b0a281",
+      "path": "reviews/proposals/raw-idea-intake/89a3a38/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b827d7fd4d8877717f690201dd282e0fc0d75ddc",
+      "path": "reviews/proposals/raw-idea-intake/89a3a38/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "46873e2c6eef6bbe34233ee09a607c418dbc2ac8",
+      "path": "reviews/proposals/raw-idea-intake/89a3a38/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2e54edde37141cceff26f43a68f2b74f4282024d",
+      "path": "reviews/proposals/raw-idea-intake/89a3a38/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eaedc9844b6c46a327857407755dd10c0991f1ba",
+      "path": "reviews/proposals/raw-idea-intake/89a3a38/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "de7a9278779d470965f6533aca30458ae2fb7a6a",
+      "path": "reviews/proposals/role-owned-durable-operational-state/65f168d/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fe924cc220a02bb504282dddf8db1fdf8c9f58bd",
+      "path": "reviews/proposals/role-owned-durable-operational-state/65f168d/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bcc847dba9e32a3b361c7313c2c02cef3a5be32a",
+      "path": "reviews/proposals/role-owned-durable-operational-state/65f168d/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eeb3453bc71ed75cd768852a687ba3e20f17db63",
+      "path": "reviews/proposals/role-owned-durable-operational-state/65f168d/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8af8170a1c5992460fa762eb338ef1d3054b97f7",
+      "path": "reviews/proposals/role-owned-durable-operational-state/65f168d/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8759518e31346288338f9ef11aa8d7ac1d17f3df",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/administrative-confirmation-4494e19.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "277099058d7e93a8687860368efb7dbf99a43c35",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7851ffa888c2d79d35952c4f00a844aab139cfe7",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d2dbeb3b3de86ce6e18e961dbbf9968f5787b080",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2947dd3c431d2aedc0dbef45b5566877ca0005ff",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "185e21205dcb8ac8429557e7b9a75c5369e79d9b",
+      "path": "reviews/proposals/role-owned-durable-operational-state/6d451a9/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b4fc01c1e916e2cd6fdffea69f5ce08f55b02bc",
+      "path": "reviews/proposals/role-owned-durable-operational-state/c5b41ab/architecture.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb37bcecf15f9f65a2ab1876760905295320a5e4",
+      "path": "reviews/proposals/role-owned-durable-operational-state/c5b41ab/doctrine-authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "60e5c50c92ff6496adeeb68c1000a43a60598475",
+      "path": "reviews/proposals/role-owned-durable-operational-state/c5b41ab/lifecycle-evidence.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "97e02f7085bb5d819073a4a1dcd9e61dafa76702",
+      "path": "reviews/proposals/role-owned-durable-operational-state/c5b41ab/subject.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b2f9b6aef8a1462df7e25aee0370973239c699cb",
+      "path": "reviews/proposals/role-owned-durable-operational-state/c5b41ab/synthesis.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "48421a5567345b895e73220ee507292c6b733d25",
+      "path": "reviews/work-engine-run-review-2026-08-19.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "761c240e7b1eb350afec60eb6ed667c80088db68",
+      "path": "roadmap.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a0b176d9037155712a47d0e0b3b40acb6a705516",
+      "path": "skills/agent-environment-graph/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fb6a3d010aed43e9229d3949bfd62de7c6aae7c8",
+      "path": "skills/agent-environment-graph/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4e457ea3cfbb69f0524fd73e805ecc1f6c6207df",
+      "path": "skills/agent-environment-graph/references/semantic-judgment.md"
+    },
+    {
+      "mode": "100755",
+      "type": "blob",
+      "oid": "4947aff7a438b94fa19095d12018d74f239fe027",
+      "path": "skills/agent-environment-graph/scripts/agent_environment_graph.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "12f4b99ee182bc6630edd56680d4f8ff18a19bbf",
+      "path": "skills/agent-environment-graph/tests/fixtures/agent-environments.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "638bd2dea59be672de5f545166e0c55bf5db043b",
+      "path": "skills/agent-environment-graph/tests/fixtures/workflow-invariants.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f55b3e58da30818061ce89d3e8ce583735638768",
+      "path": "skills/agent-environment-graph/tests/test_agent_environment_graph.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "245616f440ea52ee93f8ac3c3c9dcf80f4984646",
+      "path": "skills/agent-instruction-review/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "26d9863df495bd34bf55fd508cc69496575e803f",
+      "path": "skills/agent-instruction-review/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e517ac1464fa7bcd9d4044b8a59deedc381c70fc",
+      "path": "skills/agent-instruction-review/references/finding-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8fb6b133c78df3c090403930927cd6748f2c6c30",
+      "path": "skills/chrome-vision/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d2d47328b0a2c19d65dcb9f625abe1c2635c2988",
+      "path": "skills/chrome-vision/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "355e0b36b76dd8089c3592884e3ba495e71e438f",
+      "path": "skills/chrome-vision/package.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6b748392c6fbde7591c4514815fb21002bc6a038",
+      "path": "skills/chrome-vision/schemas/config-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ff98dc83d32abb0e54819493c9047933b558c717",
+      "path": "skills/chrome-vision/schemas/observation-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "77c9ff7be5eee69921318ab2f28fe328807955c3",
+      "path": "skills/chrome-vision/scripts/chrome-vision.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "83cd4f4d6d4bc718a4a72df934d099a88681c1fe",
+      "path": "skills/chrome-vision/src/artifact-store.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d4a163d4b445eb1ce036ed7582787540104989f",
+      "path": "skills/chrome-vision/src/broker.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3f1eacb9f9b0504c5dfa1c6e2efed2cc68339fad",
+      "path": "skills/chrome-vision/src/cdp-session.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ba8b58d8c90c85981cde620e85773dcbc2fe8e6",
+      "path": "skills/chrome-vision/src/chrome-endpoint.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4209455419381e49582454a9907919e2d0686b36",
+      "path": "skills/chrome-vision/src/config.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "57c52d589b36b2f0d7e866c8292e4b9499771bb0",
+      "path": "skills/chrome-vision/src/operations.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2e6500d33a4ec8819c42fbf8a5c4fdfd1e4e28de",
+      "path": "skills/chrome-vision/src/schema-validation.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4f4d80699640884ae6d9f206c8654e975eb3a4aa",
+      "path": "skills/chrome-vision/tests/broker.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fdbf0a41d64060bdc2669f55d0ac760eab4b048a",
+      "path": "skills/chrome-vision/tests/config.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4d322f533a4a5a402d113010ce3eb50f4660425f",
+      "path": "skills/chrome-vision/tests/fixtures/fake-chrome.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9d3c973a973910431be0206cf1a4b91a8ba34f12",
+      "path": "skills/chrome-vision/tests/lifecycle.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c8e6cc930651a7f76eef89c6100a70f028f30968",
+      "path": "skills/claim-evidence/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1df136b069038603915cbc6cffbe4a5d5e1ac7b6",
+      "path": "skills/claim-evidence/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2843e1ed9233b944dbd293348bc40c02caccd926",
+      "path": "skills/claim-evidence/references/claim-evidence-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da5f9a236b22ddd62f34533ad59f47954807394a",
+      "path": "skills/claim-evidence/schemas/authority-manifest-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da9197f99e9b56785c53820eb3e355aeb0ea0e0d",
+      "path": "skills/claim-evidence/schemas/claim-evidence-core-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3dbd579d93092482b455cb8cbe90e3873e0f28d3",
+      "path": "skills/claim-evidence/schemas/operation-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b84a3b0116c3d8853999c27d798f3dae47a587ea",
+      "path": "skills/claim-evidence/schemas/proposal-research-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ffd3bcac6f88dd29b2943c597d30caabb4f4b9f1",
+      "path": "skills/claim-evidence/schemas/revision-bound-review-finding-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a1340a3606294fc4c7f496c2a45763ccef10d63",
+      "path": "skills/claim-evidence/scripts/claim_evidence.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a861a1c869e6be4ba0226fe4395ed8d0de11852b",
+      "path": "skills/claim-evidence/tests/fixtures/representative-domain-records.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a3ec37df7b5a12829c967d9e654572747c92572c",
+      "path": "skills/claim-evidence/tests/test_claim_evidence.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c6f57592694f2dcb42c2bf1d72f199bd01ef1549",
+      "path": "skills/claude-recon-implementation/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da834748225d404cb2538938b9356a5587d66f65",
+      "path": "skills/code-change-profile/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b7fe9fe1b33713c638648ecda16b765b3be56a03",
+      "path": "skills/code-change-profile/references/profile-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f678e98650391e67ceae90418e123d31f1a69564",
+      "path": "skills/code-change-profile/schemas/change-profile-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "382af81ba9c6dd497fc59ef99eb530f2ea8d96ad",
+      "path": "skills/code-change-profile/schemas/change-subject-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "249ff64365e3e67bdfb8fa7b8b4dccd1e4538c41",
+      "path": "skills/code-change-profile/scripts/code_change_profile.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "23c96979a315cb1e18770d3d078a143071c8444b",
+      "path": "skills/code-change-profile/tests/fixtures/proposal-packets-accepted.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7ed3e9028acae8ff3a2ac8e29417b16384300f19",
+      "path": "skills/code-change-profile/tests/test_code_change_profile.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ec927e3a0457e9ddcc4f918922d680a63947d4b3",
+      "path": "skills/codex-adversarial-review/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b03126cee6bd244344238a2696d753ce3a4e6f7a",
+      "path": "skills/codex-adversarial-review/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4258f7da2035319738320e359162ceb0f25d01bc",
+      "path": "skills/comparative-repository-analysis/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2edcbc6672579518ac68f3fc0bedaaeac4600bc6",
+      "path": "skills/comparative-repository-analysis/references/index-preparation-prompt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "58346696653923ce072b79e611cfdd30dab8552e",
+      "path": "skills/comparative-repository-analysis/schemas/comparison-contract-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2169a47788d38e4c651f585fd68d3697cf638b84",
+      "path": "skills/comparative-repository-analysis/schemas/decision-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9b8268f44523691a5c338e0cb5c338e23b70820a",
+      "path": "skills/comparative-repository-analysis/schemas/dimension-pass-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1a22bf0f3904e520e6e1bd2d2bd79ecce21438aa",
+      "path": "skills/comparative-repository-analysis/schemas/index-fallback-decision-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1e47c673dadb46b9ceb7f962b28b32e217577b31",
+      "path": "skills/comparative-repository-analysis/schemas/index-preparation-receipt-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "544a012bd88fcacc983eab1dede82871e7aa0299",
+      "path": "skills/comparative-repository-analysis/schemas/ontology-gap-proposal-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e8654bfd9ed4137eb4b4928239e786e781675c4b",
+      "path": "skills/comparative-repository-analysis/schemas/repository-profile-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f06db3889d911873ad61bfe4219a3fa467d644d0",
+      "path": "skills/comparative-repository-analysis/scripts/comparison_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b42fcae80a1f50fcc3e9ff3023e8622af03b52c",
+      "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/contract.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d8f79dc1102077c0b3805e061ebfb4eed9759f8b",
+      "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/decision.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "329c4fff401c732b9202c4f533114c478ab61e31",
+      "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/gap.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ac855e0b4e03d789d399db1a211a2167c9ca359a",
+      "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/pass-control.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "728d71640940c932dd907ac76019e369e9278071",
+      "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/pass-review.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3971f551893df30cca5e7675b8e212e0c3785dca",
+      "path": "skills/comparative-repository-analysis/tests/test_comparison_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ad9893aa681157e8c40793a101fd0fd17bae2a1f",
+      "path": "skills/durable-state/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c35946c0d5f3b7cc85da4696934604e5f1ef861c",
+      "path": "skills/durable-state/scripts/durable_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c943c93c317a2384f8bb740d67b1a105c056939d",
+      "path": "skills/durable-state/tests/test_durable_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dd3ef2d86766f9ed445e5e2a8760b55cc04fb331",
+      "path": "skills/idea-intake/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a3f287d4670ae97f51ca3266a932aded47e15f71",
+      "path": "skills/idea-intake/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "38471d66cde6d377c7b9b8b2558d1d1cb9d6ac34",
+      "path": "skills/idea-intake/references/intake-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fc931a541f44bf5ead50d69613d91f0777865139",
+      "path": "skills/idea-intake/schemas/intake-record-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "305776acca16cc841f818c90349c7fce00f007f1",
+      "path": "skills/idea-intake/scripts/idea_intake.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "10a273ac77b5655c447084efe370f27dd72695ce",
+      "path": "skills/idea-intake/tests/fixtures/representative/assessment.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ffa7be7ea03313e15d78a10f9ebd3ff76ada4ca5",
+      "path": "skills/idea-intake/tests/fixtures/representative/authority.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f73b73fceff0987c277c3d182c8f3bc95b80ff0d",
+      "path": "skills/idea-intake/tests/fixtures/representative/expected-projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b4f163268d54755ddab40a23f29dd460718e0d98",
+      "path": "skills/idea-intake/tests/fixtures/representative/observation.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb8bef0060787b71b59891d64f3c33417ba81063",
+      "path": "skills/idea-intake/tests/fixtures/representative/prior-reconciliation.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c0256a10d70cf993bd7539c082ef04bce6f35b40",
+      "path": "skills/idea-intake/tests/fixtures/representative/raw-idea.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6ab5b75e0d7dda93033e72946a4472a3d3493f79",
+      "path": "skills/idea-intake/tests/test_idea_intake.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f765e7e6b71e529e2266db2eee12d055412c3f3c",
+      "path": "skills/independent-review-state/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "55f1854fc1beea4c90550c9c31dde8333d7907b7",
+      "path": "skills/independent-review-state/scripts/independent_review_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d87f54e37051ef38398dffb6e3c7f8df67ad8de3",
+      "path": "skills/independent-review-state/tests/test_independent_review_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7fdbf5280d898be004528a63cefbe09753618097",
+      "path": "skills/linguistic-register-pilot/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45d527679c1bac53d64f8dc5d6bcfef608c6b6e3",
+      "path": "skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/profile.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c7b05e202be71ccfeb608377de106ba2daefd7e7",
+      "path": "skills/linguistic-register-pilot/pilot/candidates/leveson/profile.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "76230427746b4390cc21efd6cd6af6f666bfcffd",
+      "path": "skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/profile.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e579823d9f20e5641731a2f24e93920ea20698bb",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v1/review-qualification.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5c7d9d06f1e656f4ab91da4e69908453c2e94308",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2/preregistration.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e49fb6e9905ec3f61ade20c6135ab5ae9e0b739",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-final-completion-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a146c1ffbbd08d747baea596ae529ece9cd950f5",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-matching-evidence-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "efd0419c218e9711177ce0350f1c9a1092d21345",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-matching-launch-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4c935308459f0c2f5d47fc757e23b84e855bbcb2",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-postbatch-combined-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "94995f49893d8400bd67e790e31e47b8ddf225ad",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-preregistration-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ed70ff35688cbc7ad31dd86421c1346ae937bae4",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-render-launch-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "338cf5da6f403d07acb6d285ae1f6f7dc16a472c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-review-subject-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "963ac9a4c98ae831a524a18b7de1b103c02abb90",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-semantic-evidence-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ece6f7154fce0f677a944b81b43135426ab4cd58",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/checkpoint-semantic-launch-request.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bf9a2d3e0828cdac1b75145df2e7a7620faf9b00",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/preregistration.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "93cea4b3eeb5ff7dea324d764f93ef47edd56457",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/review-qualification.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ce2d7a4e84700ba22298d400e0155e519df3b5c1",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/immediate-batch-evidence.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dd304e08f49bf9d1f40468aaa2f7e6335cfc4108",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/launch-manifest.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "488ec4b2b4035c860b88f0e632bb1a534c8a5a8f",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/matching-report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f7232471e7a9fff9ab2d4359697867b46fa553ff",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1ea8bdb0dd8a670bbffff48bd5c66b230f418dd1",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b546fa0985dc1b2509cae254258a242350b8849",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "23e56433ca7c47ad2249b8553640fd5108d6959f",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/key.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7e3a57a128b43fad627c702f7d6c193d121d1631",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "73a5f86ea88d6a9ac64463f1babed6e601360973",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/raw-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "21d852ec53e5cc5568b28466987de61621a81e71",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-01/result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9035d7ce79208511e37a007cc8847a210abb14ab",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "15930a1f872ac0dff11c4f0e9750551cce4761a1",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0dc0efdf2d4edda39b6b1dcec78ea1e0c1d74276",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4f62c468fe1c668fb050ef54e709ce85c2e56bce",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/key.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "349ee38357880cea364e8158fbc5ba093519ddf7",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c0ab5dde6e2825c2d1aa045c9618c7ea663648f5",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/raw-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7589fc48c56b97424ef6988271a9d6772eef68dd",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-02/result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8f6fee15b668a15f19318cb38e6293b16e81dc38",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "323a39df51bb3be9e6ecf002099456d542de25d0",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4b83a9f36685b6c49d09f83fc0222897cca37818",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d171635574d6c42ff531130ca029c1f6a00b14eb",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/key.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "96bfaf1ed03439ba5072fd522033c34b89f69100",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dfbb806c81b6035a3dd6c2804bbabfdc03ef279d",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/raw-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ecc2972add616b913c250f96cdb1283c6829a949",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/matching/pass-03/result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a2acafc900de1742c1628dee945cdccf17498685",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/render-launch-manifest.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "09df618ac7079ade38f900de0c694b0417031679",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c0b1faee20d9245fe7a0487f522611ff58465288",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e77c4237113d0986615512f5d6af5052bd0ae00a",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "25bab80f6290b10bd8e6c59d59033146505c5c53",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "97bd051176dabd0fda56c70e56ab2640a933b9f9",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ccccd60979cf5dcddce08010383f402f74dd00ae",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1832FB59B14B/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d90448a0631880ec7988a7ae7511f2bc6d17db38",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "71f83efc2cbec71e5a5596c0d6a4b664a9d3922b",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "299a225f1545914384cae05544c21170cdcf5aaf",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "61107b83ff96ce67d70194a156089fb4250caaaa",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b2976d75ee1610bffe9a6f0ee61e00882854cff9",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c01c675a974dfdfedfc88ee45e2a649150e65de5",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X1841CFA4E948/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "917f32b64e4e2e448df6d5d9daa245c410f1a063",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c5b09c1c244e2f2b3c34cfcfd224f782e976add5",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a9627466820a08856e8aac4ddec6c29205583b29",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8f39bf3309e11694f14bf039d016bb4eb1230504",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aaca41fea6e74851a448971a0633987907e77a56",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ddcf8dd2c376ca331bd20d8c26f20aad3117ddc2",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X46404894D094/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d59f43b311f44401b72c92adfe7426e07f1ecfa3",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5bf1b340407b718d4bb8968c811da0899a9e9184",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "72c01749aa915a96609d271cb7c70761fb9a1e26",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1e81e4f85a73b83e71e5db7b80a957283e00949a",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "be94f314ec01af3936222956445d904ce655b1df",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "22a782ae0ce9cecf430be805adf309209c608719",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4A18B2190A21/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5393e2ff5811cafe9ae1967e6fad1dec1d9c19db",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cb6163d758a7afc9960045d85ed875a412d82f94",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5be7d9d91866f217e26308973aea1fe92335b121",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "24ebccf97b9956c552c8167d4488c7a8b397feb9",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45e07d6c3261772cb08a51c7278a65d5a8942d7c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3d91598f3c5d049fa5f7f1edbfc91920c537643c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X4CE2AFFE1AB5/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e2de30394cf50986fb1f75a803bf8ffdfa63590",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2711697430bbb48fbeee01230a67fe7bf3c804fa",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6c380476dd9e9f0d697bde8d2e391deb72e39330",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5bca1c86e7a1fd338ff083650ff16590cab2f934",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b7fb8e2449696921f28bd5941d1c78ab5e6085c7",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "40a4fecf13cd33d02ea02a4c9869eac1eb601d1e",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X5057DAA6828A/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "89595e4600f91001a5069e4916701e9e8da6f43e",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ba5d22abe8dace5499cb5842212295d804cc83a2",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "51f43120eebac1c75d59c5f8e897e1aea259c176",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6493c033ee33f75417f9e4058455ed62cb707cd4",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "340751320a8ef3ac612f21f77f4fa84378ac7253",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0dca1e9bc91cba3f3f4f025497c730bb0cff1c03",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X54840A8F809C/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4993579a85dfde5f452f0c50109c2899ec7cf9f1",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c4d06a8b3902742f55bed1f11a077b0d6efef362",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3aea09dc38dc61f8401589889c58356d59c29547",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3292ae5a43504652f6fdd4794a5273c337463650",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "60b1e01fe22b848ea2cc816d155b1494b638a7d3",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "269dd369ba3ed5d89880f883d4fc5a9d0a621cc0",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6459B135EE92/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6d35eed07a1eb239f7f8828cf1f71d6ee74adddb",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ef5a92f7c943405f48775d4809180c108a385eae",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1fbada0540da221af4d82f8979f24f81c31cced4",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4296112d2b3435457ab28e3df408e6431f9c2ad3",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc1179c2f259c5034c700f4afced3bc93d3c4038",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1c4ca713e3737720d261c709bd5b34910e50d798",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X6767D2C7B67B/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ee14f91e772db692caa16c0a3499bf64517abddf",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "618f33868800ea86a7e8b913f340cf79ea926c76",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e9c0f27ddd19dce7f25ba68dc35105cedacd8a79",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "529fcea9a9f6407b99d9285c9596e658c97765c7",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f2fee2501e1b43045aec9118440e2a38d32dd9ca",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b42e7044d1d33ce0762d288ac9698278ae0ece88",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X696A5F522974/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "12b1fc3a4cb069e78f5f69f41496d0d48365fb52",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5c74ddf3f25410a8129bf05bd0d82b84e9805105",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e031166b7f0660185f3ce30b15c2eae0b8e31e71",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "72107f33ffff0d27c9a6cfcd4f64aac38ca66edf",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "99c1c2d6f595d3cc7887f017aae9ff127260dea0",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "70d004d9df4a089d2dac1781bd86dec45e5cf1d1",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/X9C9FA0A475B3/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6e3cc4208b1f3e7b0a59cb9ef6aa965230726eb6",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "14369630225bec49767a3e4658b4e6740d1ecbe6",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "42d674070bf5f44727eea0510c01c8055aa9c5d3",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a1120fcf7c6b67a928c11c1aa47f519d65b94555",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aab41801727833bd4da6a20307bc623e8c5c568f",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e2685e99d98264aab567eb08e1c249bf73790621",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XAAD82931E318/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "920c74735cd2b1447958cb4e9b97b0f56c7b1c78",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7870e5d9e34bc01722d0dd35b3d95a0c37c4dbe0",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "82b275edda471937b5fc0979c7fea5426eff9664",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6b776c1b447bde9dc2dc3b5f461879a6cd291512",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "442bae34616b7b806f7455f36db37ae267efade2",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8a304421793d43a81ba6f4c88c8b9a6aaace1087",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF71FD5BCB7BF/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "717c256f74d0567e3c95c280b170596b98f1b33a",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "600134ff17ea26312579a5dd58e80fd478798e0f",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6fbdd3601e13d7b6ac5ad7990fe25df7e189baf7",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a942905243461b7e904662258d4d335cc38663aa",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "754050da3599904329b46fa154597e46ccb9834f",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c45adeecde4b96ea4326888cd569d642a39947c2",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF7A6D8650BCB/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bfd3a09825c588c8066a6dc3cd08069558896ee9",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "94418ae60abe62635b92a798f49ab09c217c6fd4",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1c7d44937e0c7b6e02321f832ea46d8190be5941",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "225195402579e84a37efb600d7726663d56a613e",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b7f92d053da0745c5172afe2771c5a760a8c28c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7a78fb52b5b1bda32b8ba4d29c9ee7cee8bfe0e6",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XF8DDF32F5CDE/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0f50675a15ac9b6b645d48f7ae5fa63d8a46f4dd",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c930233b1c47ee861f520f2e40e0fa6b0b09934b",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/raw-render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e112d8040d9a6e1af68f51f3409a9373211f13a8",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/render-events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0966171c86b0c50b65f5a218e1f56e41a34ec598",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/render-execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eaf3a1ec4e275aec54388d77f0b79cde2a71e07c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/render-packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "344f5ee48f21a7992dcc9e488722ab636ab8c4d7",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/samples/XFBD1B657F8D2/render.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "47667c23ddd8f27b20231ffdbb21cff273027a1d",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/sealed-unblinding.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f798eb821217736ac33620ca4ba650f4f334f194",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/attempt-marker.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b4b5a7622bbb415c478ef38ec3365c0c70dcb030",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/events.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "80fe1bcc7163985f266f6379ff78f29fee62ca8c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/execution-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d22ecc72f370d0461b9918781a13d8d93468f820",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/launch-manifest.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eead182c9113eee44ebabe5d03b7524292659c4d",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d1afac45bcf59afc447964ed33d688753b81dbea",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/raw-result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d36718e04e09f7f41a591c5e0b271097ee8227a3",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/result.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "72502dbb01af67eee1eb7af811896c73533be30c",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/semantic-gate-report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f3dbc34604d5808ed0d7a7189d676e2c4a815dc5",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/transport-gate-report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ad91f1d7fb70ac50dd10c78175bbd13995554320",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/sol-adversarial-review.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84228e3e2d82fff1e7e6e49b7261ddeb6d5e75b0",
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/summary.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc38246e6c445afd5e6a2d1b441c50d791834c1d",
+      "path": "skills/linguistic-register-pilot/references/artifact-contracts.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "17026bafb324b0871fb5251ce926e357c6c4281b",
+      "path": "skills/linguistic-register-pilot/references/micro-v2-matching-output.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4be990cd230027f29484efd32f5dbef988d61fb4",
+      "path": "skills/linguistic-register-pilot/references/micro-v2-render-output.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "55eb0a47829cb38b5b7dff8dad3d80dd1976139b",
+      "path": "skills/linguistic-register-pilot/references/micro-v2-semantic-output.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d06aa5b118e560d19200e20f61a42ecc04b58c07",
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2c33c43411cb08f3fbe74470000f8c88ab2a079e",
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "028c534976e5f0bd2591085873eab9b902ff412d",
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2b_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fe1dcd5b0ff0b14acd3fa9b345d4ed63ed8a0b02",
+      "path": "skills/linguistic-register-pilot/scripts/micro_render_v2c_artifacts.py"
+    },
+    {
+      "mode": "100755",
+      "type": "blob",
+      "oid": "bb89a9d4872384ac54c146bd4e0d7a6c74b383e7",
+      "path": "skills/linguistic-register-pilot/scripts/pilot_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4e195804da8deaf1d58a46c7fa960d695f54b4ff",
+      "path": "skills/linguistic-register-pilot/scripts/recognizability_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b54076be84431b78e49600325367cc2a19acbf5c",
+      "path": "skills/linguistic-register-pilot/scripts/sol_packet_job_v2c.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "077c09662fe1acc8c477b84560d1d3780c00edf4",
+      "path": "skills/linguistic-register-pilot/tests/test_micro_render_v2c_artifacts.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5acceea826d9ce48d2001ee7f16510f321f66af5",
+      "path": "skills/planning/2026-08-20-persistent-runtime-state.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e14598e40e21ae06784dcc02e93035f5235862b6",
+      "path": "skills/proposal-former/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "29a8c13909b43f68fa749faf7de3837c8e820b93",
+      "path": "skills/proposal-former/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "106fa93adba2c29fb1b5a76366036a2e529f5bd0",
+      "path": "skills/proposal-former/references/formation-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6fc0ffac7404f0bfe783c1a4a4933f9ba59527b1",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/multiple/packets/cache-invalidation/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b73228fba481c6c18694fc39c287f5c50cb8de7",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/multiple/packets/cache-invalidation/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "51b20ddc0e740335b02b54c42fdc6aecbe23b5da",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/multiple/packets/cache-observability/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3c55ddf954d578bfb2ac50f61aafdc120627d8d4",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/multiple/packets/cache-observability/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a1184b027d1dd1142fe41bf87e7127bf039c73e2",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/one/packets/cache-invalidation/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "008d2b51cda8a6f5b2089df498640296a709d53c",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/one/packets/cache-invalidation/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a5daab04521a89a5491b759c7da7217ac11e8d3",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/projection.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1c913b5ef53c9fc54bf4c2db48b123273c32f9e4",
+      "path": "skills/proposal-former/tests/fixtures/intake-formation/zero/disposition.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e75e9db3894536955ac76d7f0e3f78c5a04a4d32",
+      "path": "skills/proposal-former/tests/fixtures/one-proposal/idea.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "28c12a025a549572f19bd84fbb10cbd41d501f2f",
+      "path": "skills/proposal-former/tests/fixtures/one-proposal/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45aa9eaab6b46d2601b3b84b46169078b8690b7d",
+      "path": "skills/proposal-former/tests/fixtures/one-proposal/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8c62312c614c8dd4ebc12b60766fd1dc82ea9be3",
+      "path": "skills/proposal-former/tests/test_proposal_former.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ded516a5f7933f2dc9afc2dd6b15596631407af",
+      "path": "skills/proposal-packets/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0e097c274a2e5d3733e2dbdd84803c90ac5f8767",
+      "path": "skills/proposal-packets/references/packet-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "606484a2a6d8c66019a4aef91db5af2167aa0f91",
+      "path": "skills/proposal-packets/schemas/proposal-decision-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2540d0375e81500042a7b087a939a5a8408d470b",
+      "path": "skills/proposal-packets/schemas/proposal-packet-v1.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "214e6312a5d01d7fe3e48d4f08bbc7a28512cea9",
+      "path": "skills/proposal-packets/scripts/proposal_packets.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7a2beb53dedd54791ac2ad9cc5e170e347b76898",
+      "path": "skills/proposal-packets/tests/fixtures/formed-alpha/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cb2e71f0c60135c9d71bb1eaedf9c2dc44f8f529",
+      "path": "skills/proposal-packets/tests/fixtures/formed-alpha/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0e2ff42ee988ffb4af87a440ae91d51243c499ae",
+      "path": "skills/proposal-packets/tests/fixtures/formed-beta/packet.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f7e86715b506d4e6b7a94431f727bbf002a803ed",
+      "path": "skills/proposal-packets/tests/fixtures/formed-beta/proposal.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6d13568de73b23a2e4cfe0e09c84258ff708066b",
+      "path": "skills/proposal-packets/tests/test_proposal_packets.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "097a43ac485ccfc09942ab5d0797987e9db462bb",
+      "path": "skills/repo-search/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d977b4f97fb86a7dc227f8823a5ba715d38721cd",
+      "path": "skills/repo-search/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5f5952478df339081d9a43e6c32c67dcb734eba2",
+      "path": "skills/repo-search/references/backend-capabilities.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07bc22f9bd6c0ff0b7990d8165d8a1d9b86a2b67",
+      "path": "skills/review-bench/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "454d1806b2b8230dcc7b1b534c03db919507e837",
+      "path": "skills/review-bench/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fbc854dcd8669ae1fea8d8084f8142f822cdf11f",
+      "path": "skills/review-bench/pilot-candidates.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bae3190b54c47e006f2d4d3d6383bb635b72a10d",
+      "path": "skills/review-bench/pilot-v1.1/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "67f98c2e27d2ebffb6683cc92635141e506fce64",
+      "path": "skills/review-bench/pilot-v1.1/report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0885a2d68720b4090aeb44f1f86ad2b1bcf396a1",
+      "path": "skills/review-bench/pilot-v1.1/results/claude-cli-medium-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9df61df1412210037cc32e261397b29eab2d4069",
+      "path": "skills/review-bench/pilot-v1.1/results/sol-codex-high-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "098569c37dc73be7c57571756b3f637533b630f8",
+      "path": "skills/review-bench/pilot-v1.1/results/sol-codex-low-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a353af2e8db42899c6ee8aed06e6457a0cb78c8",
+      "path": "skills/review-bench/pilot-v1.1/scoring/claude-cli-medium-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d7ab93d28fc78bdc2b05eb015800586ce4663e46",
+      "path": "skills/review-bench/pilot-v1.1/scoring/sol-codex-high-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ca30768261b8cf1095356816ae381505d8874a84",
+      "path": "skills/review-bench/pilot-v1.1/scoring/sol-codex-low-c6-slice9-clean-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a5668abf19abe0f3e05fcdd81bcb2f47e7b3d38c",
+      "path": "skills/review-bench/pilot-v1.1/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "35b9a331d5cae99fb7c4d84ec6d59a29410c9792",
+      "path": "skills/review-bench/pilot-v1.2-role-state/README.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "586b0383c8791ab5904e402a2dea18dce0a31379",
+      "path": "skills/review-bench/pilot-v1.2-role-state/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8448877e2e686cfee2d435ceca23efd69593eacb",
+      "path": "skills/review-bench/pilot-v1.2-role-state/provenance.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b63695292fac18d177f61c548c9b0a357011e7d9",
+      "path": "skills/review-bench/pilot-v1.2-role-state/report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5bd9f69d53b23d3e75b57fd64e4a351c295f44ce",
+      "path": "skills/review-bench/pilot-v1.2-role-state/results/sol-codex-high-role-state-c1-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b189b52a5bd825e9945f242cafa166e738b23b99",
+      "path": "skills/review-bench/pilot-v1.2-role-state/results/sol-codex-high-role-state-c2-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7eb467216bc344474f4b6c014cf0e2c9ab005ce5",
+      "path": "skills/review-bench/pilot-v1.2-role-state/results/sol-codex-low-role-state-c1-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d1f1b4c185e2c5813e03f5f128f91157b5fa6718",
+      "path": "skills/review-bench/pilot-v1.2-role-state/results/sol-codex-low-role-state-c2-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4aae684099bedda2b3e858e5a7c64c4a3cd606db",
+      "path": "skills/review-bench/pilot-v1.2-role-state/scoring/sol-codex-high-role-state-c1-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "57eed91fc029b75c9ffe9024141493a33fad7b69",
+      "path": "skills/review-bench/pilot-v1.2-role-state/scoring/sol-codex-high-role-state-c2-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e7ed25e8f38141b4db7a5573f9310233c1c3e806",
+      "path": "skills/review-bench/pilot-v1.2-role-state/scoring/sol-codex-low-role-state-c1-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6cf612f766fbbb4726a2d99f881bec8c415e1bde",
+      "path": "skills/review-bench/pilot-v1.2-role-state/scoring/sol-codex-low-role-state-c2-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "59036a7a3fc08837bf0f830d78c35fee896b08be",
+      "path": "skills/review-bench/pilot-v1.2-role-state/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "62c306a44ac7f035c264e19e713298f86cf5ce82",
+      "path": "skills/review-bench/pilot-v1.2-role-state/truth.v1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "49c31c3369922d427379346a0e7b1eb6985dead9",
+      "path": "skills/review-bench/pilot-v1.2-slice14/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c9029667d1a8e60add75e4f34f410872b8c8d833",
+      "path": "skills/review-bench/pilot-v1.2-slice14/provenance.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a7eb0262f9411fe673370936c1017646f5249408",
+      "path": "skills/review-bench/pilot-v1.2-slice14/report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b6bd0ab1efe6a3f0d878cf6c39c02faba851bcca",
+      "path": "skills/review-bench/pilot-v1.2-slice14/results/claude-cli-medium-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a6d5743cce52c98a732b6a12e4f949f8e973dadd",
+      "path": "skills/review-bench/pilot-v1.2-slice14/results/sol-codex-high-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8883848df5067073cd2507514df805ac54a1dcd6",
+      "path": "skills/review-bench/pilot-v1.2-slice14/results/sol-codex-low-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "790fbeaa11f883ecb3f8d722ca8bd661cdf2da12",
+      "path": "skills/review-bench/pilot-v1.2-slice14/scoring/claude-cli-medium-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b13c509504c249c92cb66e11e92a4dfd658b696",
+      "path": "skills/review-bench/pilot-v1.2-slice14/scoring/sol-codex-high-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eef8e61aed2c450903c189d3ecbe5e07b8c226c2",
+      "path": "skills/review-bench/pilot-v1.2-slice14/scoring/sol-codex-low-slice14-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "416cb7b179a10b60654954b683a2fa5490df4d17",
+      "path": "skills/review-bench/pilot-v1.2-slice14/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3e0a17acdeace98f2a4950366337c33e1277a915",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b6224572feb422c1726f621a40929aa105fd34d3",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/packet/case.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cebe7c447f1d033160d32376220fc5472959ac48",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/packet/export-receipt.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db073d7aea46345f875741d16a67ad279f2fb712",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/packet/review-prompt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a3f84c0a051ec2500f481c56548046ae40c38acc",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/packet/snapshot.tar.gz"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c6439a1c39e5a7f33c99ae09a43c422431a85e76",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/provenance.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ccdf691f3c2193882a0ef2b641b53cef4f0c362",
+      "path": "skills/review-bench/pilot-v1.2-visual-observation/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "183284b5a144a8fc49b8d2dd60c18aab6a436101",
+      "path": "skills/review-bench/pilot/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "87490a8a8f7a652a083e7837fd145dae5ce00a63",
+      "path": "skills/review-bench/pilot/report.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e2f72cb90b8e295bcd7762b5f53c09004ddb2b34",
+      "path": "skills/review-bench/pilot/results/claude-cli-medium-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "328774824e64d359af804af5d7897c2ddc338a5d",
+      "path": "skills/review-bench/pilot/results/sol-codex-high-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "207aff810a44fe7c105a9fe3d1635cbaf35ee825",
+      "path": "skills/review-bench/pilot/results/sol-codex-low-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "81f91eb5b0afa01a23f177f2b63f63f5fabf9d88",
+      "path": "skills/review-bench/pilot/scoring/claude-cli-medium-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b6b9c063a8ac720626f743a73d2a5fd0bd10600e",
+      "path": "skills/review-bench/pilot/scoring/sol-codex-high-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "726f929b013b33640501d6aedb889a2aeab0425f",
+      "path": "skills/review-bench/pilot/scoring/sol-codex-low-c6-slice9-run1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45b5a2e694abb7205ab6bfeb408da256c71950d4",
+      "path": "skills/review-bench/pilot/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "942ca2bf3f407fa664cb3cc35693e1f91f97a985",
+      "path": "skills/review-bench/pilot/truth.v1.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "50e4977d413e5f8547a1d03f069d7952106b2431",
+      "path": "skills/review-bench/references/artifact-contracts.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "09dc14e15c59b78d1e83a81510eb032ba1119d68",
+      "path": "skills/review-bench/references/claims-aware-evaluation-roadmap.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a7ba367c96c33d38dce319678898ddcfa419f2f",
+      "path": "skills/review-bench/references/experiment-contract-v1.1.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7eacc8a7cfbc54cdee8f6c8f72bf0817395669d1",
+      "path": "skills/review-bench/references/experiment-contract-v1.2.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ee1df468e5da0c05a881958ded581d4e6bcf58b8",
+      "path": "skills/review-bench/references/experiment-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a18dccea2e4c441ed2d4fb615904bb456c2f3347",
+      "path": "skills/review-bench/scripts/review_bench.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "18e0631596d89c1d762b2ab90f8ee57b118200ec",
+      "path": "skills/review-bench/tests/fixtures/corpus.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a27daf13046a7a20c0d4cf7ade4680cb4654331",
+      "path": "skills/review-bench/tests/fixtures/results/claude-clean.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a17909713a818f39711b017c7761a37d0e877cbf",
+      "path": "skills/review-bench/tests/fixtures/results/claude-defect.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bb2f48f24f44009ad7903d6237a03303a7723a76",
+      "path": "skills/review-bench/tests/fixtures/results/web-sol-clean.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "623a112f5f2dfe1c56b86e3befd22c1d00ad2d66",
+      "path": "skills/review-bench/tests/fixtures/results/web-sol-defect.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "da911bf41b3e11c9f6b089cb44885fdf7ef4029d",
+      "path": "skills/review-bench/tests/fixtures/scoring/claude-clean.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0045bfcb0da7f91adb8597836023f6bbdbe6351d",
+      "path": "skills/review-bench/tests/fixtures/scoring/claude-defect.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7b3c1545b27e450e1692373321d8427e960dd630",
+      "path": "skills/review-bench/tests/fixtures/scoring/web-sol-clean.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7fd6ce55894072f4c5d39556bba8e6064c8fac71",
+      "path": "skills/review-bench/tests/fixtures/scoring/web-sol-defect.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "25f70a2682feeafc71f297604ea9e3507d0093cc",
+      "path": "skills/review-bench/tests/fixtures/truth.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f8841f62244960be440a933f05a4bb905682689d",
+      "path": "skills/review-bench/tests/test_review_bench.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e686cf38d06181e410c494dcde35adf303e0998f",
+      "path": "skills/role-scheduler/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0b0b592831363d9be4ed8d6a5d59d44615401e0b",
+      "path": "skills/role-scheduler/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "27e9f31d36ccc2d1310b8e3daa2a3fadd9a9d6f9",
+      "path": "skills/role-scheduler/references/scheduler-contract.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e3c71048349e00e47ca1aa5f4f10535cc050418e",
+      "path": "skills/role-scheduler/scripts/role_scheduler.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a36422908658a6a55a4485c108792a56f8036ad",
+      "path": "skills/role-scheduler/tests/test_role_scheduler.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bebc4b61288e21fae31854967b567a10973f052a",
+      "path": "skills/slice-builder/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "867217710c4cec0474172a247dbb7cd63f4b1426",
+      "path": "skills/slice-builder/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a2937b86a72ebf1c2c43bb4f4380835ca17f2c92",
+      "path": "skills/slice-builder/references/builder-receipt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "57a2cd6db0377b4d6ca100548306d01cafdead37",
+      "path": "skills/slice-builder/references/decision-policy.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e1d35a27b5364ba4c860afd49728c9903a4150b3",
+      "path": "skills/slice-builder/references/handoff-receipt.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "62d040bf5dcd973a1ffa368003a724f23103db02",
+      "path": "skills/slice-builder/scripts/resolve_provider.py"
+    },
+    {
+      "mode": "100755",
+      "type": "blob",
+      "oid": "76ecb54a81bc8352058a39618a66436a2581efc0",
+      "path": "skills/slice-builder/scripts/run_gate.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d393547949253d0d87672dcad284b2a80e5d7c2e",
+      "path": "skills/slice-builder/tests/test_resolve_provider.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3992ce7f70b5b32d704f416d8fa9c1ab16a6f6c1",
+      "path": "skills/slice-builder/tests/test_run_gate.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1df64e31c40a3c416e4c3a0331062545551d00fb",
+      "path": "skills/slice-checkpoint/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a7abb77c7bac8d666bc803959fdaeef7cf0b9c20",
+      "path": "skills/slice-checkpoint/references/checkpoint-schema.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4d18174e4521e0d3bec4f627c3c7f5b870cee7f9",
+      "path": "skills/slice-checkpoint/scripts/checkpoint.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0774e988514d1416633e010f52b64df8a190092a",
+      "path": "skills/slice-checkpoint/tests/test_checkpoint.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9795ebf7a07bdf57340d9d76928931ad11aa784f",
+      "path": "skills/slice-completion-commit/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3a5e5c2c22fe4da1c5282e6f71598c685fb38e96",
+      "path": "skills/slice-completion-commit/references/receipt-schema.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "866cc70c6e21674e7a4055eee2d821ec39d57fe3",
+      "path": "skills/slice-completion-commit/scripts/completion_commit.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b425d11dc03de52c73149c3168b4855a2ef53c3e",
+      "path": "skills/slice-completion-commit/tests/test_completion_commit.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bcea6ce1fc9bffc68dc8fe2312a20cbefe5809ff",
+      "path": "skills/slice-supervisor/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d77b182dde28ffa7ee6b33041dd1f05dc3476cc0",
+      "path": "skills/slice-supervisor/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1c532efe29fac6d4ec3b09632e180b093d9d5fe8",
+      "path": "skills/slice-supervisor/references/completion-offer-schema.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b98362195ec76c8263ad3314b3e738eacc02b4ae",
+      "path": "skills/slice-supervisor/references/receipt-schema.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "35efb3d4a4609d6ebe6849983a24093ca530d264",
+      "path": "skills/slice-supervisor/references/review-selection.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "53d9678fc01e0b1f311e01946102754a58c9012b",
+      "path": "skills/slice-supervisor/references/telemetry-ingress.schema.json"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e200796376d1c050e6ee5dc31a33d408fecbc5fa",
+      "path": "skills/slice-supervisor/references/work-engine-config.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "450a4d5c2e38c00c2624b610138d40f90d61bde2",
+      "path": "skills/slice-supervisor/scripts/append_metrics.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0c7d9b74b8c8cb7b127a34dfa0cd054db10829ab",
+      "path": "skills/slice-supervisor/scripts/assemble_receipt.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e235754e863f5356288569a27681cbf362f106ed",
+      "path": "skills/slice-supervisor/scripts/campaign-preflight.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ed7fc1341aad4870e0da70e665d0dac56ce92bf0",
+      "path": "skills/slice-supervisor/scripts/checkpoint_lifecycle.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2108360a390c09dea9737a4982bec6767437191c",
+      "path": "skills/slice-supervisor/scripts/completion_offer_lifecycle.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0b81b5183f2879df3886faf173db478131b2587c",
+      "path": "skills/slice-supervisor/scripts/finalize_receipt.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8a4637d8c595e046217715b7dd6beca20acb6f4a",
+      "path": "skills/slice-supervisor/scripts/harvest_codex_telemetry.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b01a92d29445a7b2a96a60ea0bece47980a762df",
+      "path": "skills/slice-supervisor/scripts/live_slice_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "140f7aba5dd9c97e904933e6ed2ec91a41837a4d",
+      "path": "skills/slice-supervisor/scripts/manage_active_slice.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a51f1a73842b460c9fabb3e8ed0800eb3093ae0",
+      "path": "skills/slice-supervisor/scripts/resume_active_slice.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "472610f9a2aa7f90ae57e39361f56374e80ea299",
+      "path": "skills/slice-supervisor/scripts/resume_campaign.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db5ee52862e754b66e4759cd003a93ff4e7f041a",
+      "path": "skills/slice-supervisor/tests/campaign-preflight.test.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "70f371b825ee4647b80ab7a92585fdd34ed8952f",
+      "path": "skills/slice-supervisor/tests/fixtures/codex-rollout-child-complete.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6ee010f33acdd724d7bf9c60e7753e4ea188699a",
+      "path": "skills/slice-supervisor/tests/fixtures/codex-rollout-child-incomplete.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d15a74b8ff934e03e58c37b99b7e268a61183ac",
+      "path": "skills/slice-supervisor/tests/fixtures/codex-rollout-parent.jsonl"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb174a253681314d38ac328f2d13ce9e9fd0e765",
+      "path": "skills/slice-supervisor/tests/test_active_slice_workflow.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bd4db7de387c7a6b5febe6029be5a5f31deb1d01",
+      "path": "skills/slice-supervisor/tests/test_append_metrics.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8da8fdd06c29eedeabfabfe9e5d9ce6c7e9b9a0f",
+      "path": "skills/slice-supervisor/tests/test_assemble_receipt.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2295500b0643436ff1c50fcfdacb78cf623a484a",
+      "path": "skills/slice-supervisor/tests/test_checkpoint_lifecycle.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d22d0c067479d64d096fd85a0655b58c0c15a098",
+      "path": "skills/slice-supervisor/tests/test_completion_offer_lifecycle.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a466dee03e4eee605faa475b86f7c2f6ccafbd7",
+      "path": "skills/slice-supervisor/tests/test_finalize_receipt.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "17b28f77c4a7e766117a74fd746b2efe42fc7dc1",
+      "path": "skills/slice-supervisor/tests/test_harvest_codex_telemetry.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6ec37776f8924d199561c961750bdabc2a457bf7",
+      "path": "skills/slice-supervisor/tests/test_live_slice_state.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f2a55927d33898c6e67153bddd29afa87d2fc8d5",
+      "path": "skills/slice-supervisor/tests/test_reference_campaign.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b9ceeb3d2bea57963b8dc0fda1427963a8c95f36",
+      "path": "skills/slice-supervisor/tests/test_resume_campaign.py"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "47eb200e6c33a35542c9d0247ff7f095b4ceea80",
+      "path": "skills/strategic-planner/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ab3fb0e707141d0d5d124f7817ac5f0442ef201c",
+      "path": "skills/strategic-planner/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "742481b5f279bdd25ff4a064cc422e4754add1d2",
+      "path": "skills/strategic-planner/references/planning-handoff.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "849bd95231098514fbdecb015790b16ea1abb46f",
+      "path": "skills/ui-design-principles/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4fad4584a1dc2644610229e067d3b7382699045f",
+      "path": "skills/ui-design-principles/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "63e3ce3f3fdca8abf622d603c7bbe985ce059816",
+      "path": "skills/wind-walker/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fe4178a7c876c77387abd66ed8203ff5d49caf48",
+      "path": "skills/wind-walker/agents/openai.yaml"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "99a4ae173125491d099fc27f9b165897eeca2334",
+      "path": "skills/work-engine-mcp/SKILL.md"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "29e6a815e7107e5b9d9a0700167f327b01821c32",
+      "path": "skills/work-engine-mcp/scripts/server.mjs"
+    },
+    {
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ae702543fb47e6820a0928420e0c708bbd59f249",
+      "path": "skills/work-engine-mcp/tests/server.test.mjs"
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+artifact_type: linguistic_register_profile_v1
+schema_version: 1
+candidate_id: leveson-system-safety
+role_id: agent-instruction-review
+role_artifact_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+corpus_artifact_sha256: bf7bfd3b4f38387814a9d9ea920466b97e3f6bcd4e7f7e6421f2a94a5e708541
+features:
+  - id: contrastive-reframing
+    layer: surface
+    category: connective_patterns
+    description: Repeatedly state a familiar framing and immediately replace it with a more precisely bounded alternative.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Abstract and The Basic Problem
+        observation: Major claims repeatedly contrast an inadequate late-stage framing with an earlier construction-oriented framing.
+      - source_id: oil-gas-senate-testimony
+        locator: Common Factors in Major Accidents and Safety as a Control Problem
+        observation: Public testimony repeatedly contrasts familiar labels or indicators with a more bounded interpretation.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Contrast can express distinctions already owned by the role without introducing which substantive alternative should be chosen.
+  - id: enumerated-consequence-ladders
+    layer: surface
+    category: paragraph_rhythm
+    description: Follow a compact thesis with numbered or bulleted consequences that move from failure conditions to practical implications.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Abstract and opening alternatives
+        observation: The opening claim is expanded through numbered limitations and lettered consequences.
+      - source_id: oil-gas-senate-testimony
+        locator: Common Factors and recommendations sections
+        observation: The testimony organizes diagnosis and recommendations as parallel lists with explanatory expansion.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Enumeration and consequence ordering alter presentation rather than the role's required operations.
+  - id: direct-evaluative-declaratives
+    layer: surface
+    category: claim_posture
+    description: Use short, high-commitment declarative sentences for the central evaluation, followed by the limiting explanation.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Abstract and section openings
+        observation: Sections open with direct evaluations before supplying technical reasons and qualifications.
+      - source_id: oil-gas-senate-testimony
+        locator: Opening and transitions between major sections
+        observation: Central conclusions are stated directly and then supported with comparisons, examples, and limits.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: The profile controls rhetorical realization of a judgment whose substance remains canonical.
+  - id: scoped-concession-boundaries
+    layer: discourse
+    category: qualification_patterns
+    description: Mark that a criticism concerns adequacy for the stated purpose rather than denying every use of the criticized approach.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Testing and Simulation
+        observation: Criticism is narrowed by distinguishing usefulness for some goals from adequacy for the target claim.
+      - source_id: oil-gas-senate-testimony
+        locator: Safety-case recommendation discussion
+        observation: Reservations are tied to a particular use and evidentiary weakness rather than expressed as an unlimited rejection.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Scoped qualification realizes the review role's existing obligation to preserve exact applicability and consequence.
+  - id: visible-reader-cues
+    layer: surface
+    category: connective_patterns
+    description: Use brief reader-facing transitions to flag a consequential distinction before explaining it.
+    distinctiveness_weight: 2
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Transitions throughout The Basic Problem
+        observation: Brief cues repeatedly announce a reframing or implication before the supporting paragraph.
+      - source_id: oil-gas-senate-testimony
+        locator: Comparisons in Common Factors and recommendations
+        observation: Short cues direct attention to contrasts that could otherwise be missed in longer analysis.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Reader orientation changes salience and cadence without adding a review operation.
+  - id: counterexample-driven-challenge
+    layer: discourse
+    category: evidence_boundary_forms
+    description: Challenge a general claim by selecting a concrete case designed to expose its boundary conditions.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: The Basic Problem and confirmation-bias discussion
+        observation: Concrete systems and hypothetical cases are used to undermine broad assurance claims.
+      - source_id: oil-gas-senate-testimony
+        locator: Cross-industry comparisons and accident examples
+        observation: Industry examples are selected to rebut claims that dangerous outcomes are inevitable.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Selecting adversarial counterexamples is a reasoning heuristic not required by the canonical role.
+  - id: unit-of-analysis-expansion
+    layer: discourse
+    category: claim_posture
+    description: Reframe a local explanation by widening the unit of analysis to interacting technical and organizational elements.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: The Basic Problem
+        observation: Component-level claims are repeatedly replaced by whole-system interaction analysis.
+      - source_id: oil-gas-senate-testimony
+        locator: Common Factors and Safety as a Control Problem
+        observation: Individual failures are repeatedly situated within organizational and operational relationships.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Expanding the analytic boundary is a substantive review operation not generally required by this role.
+  - id: symptom-to-structure-causal-chain
+    layer: discourse
+    category: conclusion_patterns
+    description: Treat an observed local failure as a symptom and trace it to the surrounding structure that made it possible.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Confirmation bias and assurance-method sections
+        observation: Visible argument failures are traced to development timing, incentives, assumptions, and representation limits.
+      - source_id: oil-gas-senate-testimony
+        locator: Accident-investigation and learning discussion
+        observation: Operator and component failures are treated as symptoms of broader process and management conditions.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: The causal tracing policy adds a general diagnostic method beyond canonical role meaning.
+  - id: categorical-method-distinction
+    layer: discourse
+    category: contrast_patterns
+    description: Divide superficially similar practices into distinct categories and reason from the category boundary.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: safety-assurance-white-paper
+        locator: Assurance-method taxonomy
+        observation: Several assurance forms are separated and evaluated under different limitations.
+      - source_id: oil-gas-senate-testimony
+        locator: Common Factors in Major Accidents
+        observation: Similar safety concepts and metrics are separated into categories with different consequences.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Inventing and applying a substantive category system is not merely linguistic realization.
+content_screening:
+  names_removed: true
+  copied_language_removed: true
+  domain_terms_removed: true
+  named_methods_removed: true
+  reviewer: Codex profile-separability extraction, 2026-08-25
+  rationale: Retained descriptions were rewritten as abstract realization patterns; names, quotations, field-specific nouns, and named frameworks remain only in evidence locators or excluded semantic analysis.
+thresholds:
+  minimum_retained_features: 4
+  minimum_weighted_retention: 0.35
+  minimum_cross_genre_retained_features: 3
+judgment_provenance:
+  extractor: Codex using the two digest-bound public source artifacts
+  semantic_classifier: Codex comparing each abstract feature against the frozen agent-instruction-review semantic closure
+  weighting_basis: Integer salience from 1 to 5 based on prominence and recurrence across the two sources before role-semantic classification
+  weights_assigned_before_semantic_classification: true
+  performed_before_outcomes: true
+limitations:
+  - This is a provisional same-model extraction and semantic classification awaiting human audit.
+  - The mini-corpus is intentionally too small to establish a stable community-wide register.
+

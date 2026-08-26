@@ -1,0 +1,70 @@
+{
+  "anonymous_style": {
+    "features": [
+      {
+        "category": "connective_patterns",
+        "description": "Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.",
+        "layer": "surface",
+        "salience_weight": 3
+      },
+      {
+        "category": "paragraph_rhythm",
+        "description": "Introduce an evaluation through a short parallel series of guiding questions.",
+        "layer": "surface",
+        "salience_weight": 4
+      },
+      {
+        "category": "conclusion_patterns",
+        "description": "State the practical consequence of a condition directly, then explain the evidence or mechanism behind it.",
+        "layer": "discourse",
+        "salience_weight": 3
+      },
+      {
+        "category": "syntax",
+        "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+        "layer": "surface",
+        "salience_weight": 3
+      },
+      {
+        "category": "qualification_patterns",
+        "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+        "layer": "discourse",
+        "salience_weight": 4
+      }
+    ]
+  },
+  "artifact_type": "linguistic_register_micro_render_job_v1",
+  "authority": "fixed-semantics micro-render input; no candidate-selection authority",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "rendering_contract": {
+    "blindness": "The renderer receives one anonymous style card and one brief, with no candidate identity, source, hypothesis, other condition, or prior rendering.",
+    "prohibitions": "Do not add facts, methods, requirements, permissions, examples, labels, quotations, headings, bullets, or domain claims beyond the brief; do not mention style instructions.",
+    "task": "Express every proposition and the required speech act exactly once while realizing the anonymous style features naturally."
+  },
+  "sample_id": "S16",
+  "schema_version": 1,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision from the following exact facts.",
+    "output_constraint": "One self-contained paragraph of 70 to 110 words with no heading or bullet list.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation with an explicit evidence limitation and prerequisite."
+  }
+}

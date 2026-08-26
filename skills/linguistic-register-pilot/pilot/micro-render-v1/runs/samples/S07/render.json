@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "7999619b93f871e234ba612db4cf60f7bc30631bf8f973b19828152b93f5c9db",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:15:13Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S07",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:14:26Z"
+  },
+  "sample_id": "S07",
+  "schema_version": 1,
+  "text": "{\"text\":\"Two concerns pull in opposite directions: the argument for updating and the argument for restraint. 1) The proposed update changes the cache lifetime from five minutes to fifteen minutes. 2) A twenty-four-hour benchmark observed eighteen percent fewer origin requests; that is relevant evidence, but the narrower problem is that it did not measure stale-read incidence\u2014one dial remains dark. 3) My current recommendation is bounded: approve only a canary deployment; require stale-read telemetry before broader rollout.\"}"
+}

@@ -1,0 +1,74 @@
+artifact_type: linguistic_register_recognizability_plan_v1
+schema_version: 1
+status: frozen
+experiment_id: three-candidate-recognizability-2026-08-25
+repository: /home/bline/code/work-engine
+role_artifact:
+  path: skills/linguistic-register-pilot/pilot/role/candidate-manifest.yaml
+  sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+profiles:
+  - candidate_id: gelman-model-criticism
+    path: skills/linguistic-register-pilot/pilot/candidates/gelman-model-criticism/profile.yaml
+    sha256: 60b645cc5b04c7d7a32dd314406e374bb9c31959903756db0201f67414d98be8
+  - candidate_id: leveson-system-safety
+    path: skills/linguistic-register-pilot/pilot/candidates/leveson/profile.yaml
+    sha256: 86b31811b89e1d9bfd97aac43778ba5a1db8e8c0a9717002da1f5019e69b7a71
+  - candidate_id: shaw-engineering-judgment
+    path: skills/linguistic-register-pilot/pilot/candidates/shaw-engineering-judgment/profile.yaml
+    sha256: 54b8cd476174e01acc50cdf19784d7a3cf70852bb3239311d85ef8e7abe7d4d4
+neutral_decoy:
+  decoy_id: neutral-editorial-defaults
+  construction_basis: >-
+    Five generic professional-prose conventions were chosen to match the retained cards' feature count
+    without expressing a coherent expert-specific register or a substantive review method.
+  features:
+    - layer: surface
+      category: paragraph_rhythm
+      description: Keep each paragraph focused on one main point.
+      salience_weight: 3
+    - layer: surface
+      category: connective_patterns
+      description: Use ordinary transition words when moving between related points.
+      salience_weight: 3
+    - layer: surface
+      category: syntax
+      description: Prefer direct sentences whose subjects and actions are easy to identify.
+      salience_weight: 3
+    - layer: discourse
+      category: qualification_patterns
+      description: Add a brief qualification when a statement does not apply universally.
+      salience_weight: 3
+    - layer: surface
+      category: conclusion_patterns
+      description: End with a concise restatement of the main point.
+      salience_weight: 3
+randomization_seed: frozen-before-classification::three-candidate-recognizability::2026-08-25
+classifier_contract:
+  task: >-
+    Judge whether each anonymous feature card describes an internally coherent and non-neutral linguistic
+    register, and judge how readily each pair of cards can be distinguished using only the listed features.
+  blindness: >-
+    The classifier receives only the generated packet: anonymous card identifiers, abstract retained
+    feature descriptions, salience weights, this contract, and no repository access or prior conversation.
+  score_scale: >-
+    Use integer scores from 1 (absent or indistinguishable) through 5 (strongly present or readily
+    distinguishable); score the cards independently before selecting the most neutral card.
+  required_outputs:
+    - internal_coherence
+    - non_neutral_distinctiveness
+    - pairwise_separation
+    - most_neutral_card
+  prohibited_inference: >-
+    Do not infer, name, or search for authors, disciplines, source works, candidate identities, or the
+    intended winner; evaluate only the linguistic information in the packet.
+thresholds:
+  minimum_internal_coherence: 3
+  minimum_non_neutral_distinctiveness: 3
+  minimum_separation_from_neutral: 3
+  require_correct_neutral_identification: true
+preregistration_owner: Human-authorized pilot executed by Codex before classifier outcomes
+limitations:
+  - This is a retained-profile pre-check, not the section 9.5 manipulation check on rendered C0/C1/C2 artifacts.
+  - One classifier pass is a pre-check, not a reliability estimate.
+  - The neutral decoy is constructed rather than sampled from a preregistered neutral corpus.
+  - Profile extraction, semantic filtering, and this check use the same broad model family.

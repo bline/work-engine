@@ -1,0 +1,10 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2",
+  "execution_receipt_sha256": "9ff7723429f8b3e2c3c9d3d16fd18ad05dacecf6df4a279573e4a6ac63d47715",
+  "experiment_id": "semantic-licensed-micro-render-v2-2026-08-25",
+  "model": "gpt-5.6-sol",
+  "packet_artifact_sha256": "ba3f9a39cdde6bb8b2b69734537b6aff23fc94369de1fb8045112d6ff2880dce",
+  "sample_id": "S03",
+  "schema_version": 2,
+  "text": "The proposed update extends the cache lifetime from five minutes to fifteen minutes. On one side, a twenty-four-hour benchmark observed eighteen percent fewer origin requests, an operationally promising reduction. On the other, the benchmark did not measure stale-read incidence, so the positive result and the explicit evidence boundary must remain together in the decision. I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout. That is a bounded approval, preserving the stated result without moving beyond what was measured: the evidence supports a limited experiment, but not a broad rollout."
+}

@@ -1,0 +1,606 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_adjudication_packet_v2c",
+  "authority": "all-sample style-blind semantic gate input; no matching authority",
+  "contract": {
+    "blindness": "The adjudicator receives all brief/text pairs for calibration but no style cards, conditions, source identities, original renderer labels, hypothesis, or answer key.",
+    "equivalence_rule": "Equivalent requires all six propositions preserved, the speech act preserved, and no added meaning. Apply identical treatment to identical evaluative or connective language across samples.",
+    "task": "Apply one decision standard across all sixteen brief/text pairs; map every proposition, detect alteration or added meaning, and judge speech-act equivalence."
+  },
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "items": [
+    {
+      "render_artifact_sha256": "bf606084943828b1e5bebf6b88a841323796ce7a224c9c58c06e30598dacae0e",
+      "rendered_text": "At this stage, on the available record, should the compatibility aliases be removed now in practice? How far has the migration advanced across the full set of known clients? What, specifically, does the available integration testing leave unresolved for this review? The recommendation is not to remove the aliases until the owners of the two remaining clients confirm migration. The migration renamed three public fields while retaining compatibility aliases. Of fourteen known clients, twelve have migrated; that progress is substantial; the status of two remains unknown. Integration tests cover the twelve migrated clients, but not the two whose status is unknown. Accordingly, the evidence supports continued migration work; it does not support alias removal.",
+      "sample_id": "X1832FB59B14B",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "d0340971f0825318511e71accde4e890fcf662de822e16d338a9b8e4afc997ba",
+      "rendered_text": "The migration renamed three public fields, and it retained compatibility aliases for those renamed fields. Of the fourteen known clients, twelve have migrated, while the migration status of the other two clients is unknown. Completing migration for twelve of the known clients is substantial progress. At the same time, the integration tests cover the twelve migrated clients, but they do not cover either of the two clients whose migration status remains unknown. Taken together, the supplied evidence supports continuing the migration work, but it does not support removing the compatibility aliases at this point. Therefore, do not remove the aliases until the owners of the two remaining clients confirm that their clients have migrated.",
+      "sample_id": "X1841CFA4E948",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "de05406cc80c1b22d75e3501e5783f956f3e56c9719145d54e6be9f4f2191c37",
+      "rendered_text": "The proposed update specifically changes the cache lifetime by replacing the existing five-minute lifetime with a fifteen-minute lifetime. In the supplied evidence, a benchmark conducted over twenty-four hours observed eighteen percent fewer requests to the origin. That reduction in origin requests is operationally promising for this proposed cache change. However, the same benchmark did not measure stale-read incidence. The available evidence therefore supports moving forward with a limited experiment, but it does not support moving forward with a broad rollout. Accordingly, based on this evidence, the bounded review decision is to approve only a canary deployment of the proposed update and to require stale-read telemetry before permitting any broader rollout.",
+      "sample_id": "X46404894D094",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "6d719530efc40fd9ac128d83a3ec96934690cf0e83f9d59eb48747d40608e797",
+      "rendered_text": "The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, leaving the status of two clients unknown. Migrating twelve known clients is substantial progress, but that positive result and the evidence limit must be weighed together: integration tests cover those twelve migrated clients and do not cover the two clients of unknown status. I therefore recommend a bounded rejection at this point: do not remove the aliases until the owners of the two remaining clients confirm migration. This recommendation follows directly from what is established and what remains unconfirmed. Put compactly, the evidence supports continued migration work; it does not support removing the aliases.",
+      "sample_id": "X4A18B2190A21",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "acdc83026134832ffa9c022fbc2705a252a1e46b044ffe43c0719203bc59e05f",
+      "rendered_text": "At first glance, the migration can be read as support for completing the change now; more precisely, the evidence supports continued migration work but does not support removing the compatibility aliases. The boundary is concrete: the migration renamed three public fields while retaining those aliases. Twelve of fourteen known clients have migrated, while the status of two clients remains unknown. Migrating twelve known clients is substantial progress. Integration tests cover the twelve migrated clients, but not the two whose status is unknown. That evidence limit applies to alias removal only and does not negate that evaluation. Do not remove the aliases until the owners of the two remaining clients confirm migration.",
+      "sample_id": "X4CE2AFFE1AB5",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "e84dcc757968e1d217e946c70fcf4b24662825524a3c282b95afcf31a4750191",
+      "rendered_text": "The migration renamed three public fields and retained compatibility aliases for them. Of fourteen known clients, twelve have migrated and two have an unknown status. That twelve-client migration is substantial progress; however, it sits in tension with a precise evidence boundary: integration tests cover the twelve migrated clients, but neither of the two clients whose status is unknown. I therefore recommend that we not remove the aliases until the owners of both remaining clients confirm migration. The recommendation is deliberately bounded to the present evidence and the single action under review. On this record, the evidence supports continuing the migration work, but not removing the aliases: continue migrating, retain the aliases.",
+      "sample_id": "X5057DAA6828A",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "f14251f80566503b4e319abaf6bfc06d613ae15eb5200a2c626ab9ce215daa15",
+      "rendered_text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. A benchmark conducted over twenty-four hours observed eighteen percent fewer origin requests. The reduction in origin requests is operationally promising. The broader pro-action interpretation would be support for broad rollout; more precisely, the available evidence supports a limited experiment. Here is the boundary: that exact positive evaluation stands, but the benchmark did not measure stale-read incidence, so the stated evidence limitation blocks only the broader action. Taken together, the measured outcome and its explicit limit determine the permissible next step. Approve only a canary deployment. Require stale-read telemetry before any broader rollout. This is the resulting bounded practical decision.",
+      "sample_id": "X54840A8F809C",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "2ed2acf53867ba49a6f428545a284e9802027b3f319fa05ed975c9b738e19998",
+      "rendered_text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. In a twenty-four-hour benchmark, it produced eighteen percent fewer origin requests, and that reduction is operationally promising. However, the benchmark did not measure stale-read incidence, placing the favorable operational result and the explicit evidence limit in tension. The observed improvement is clear within the benchmark\u2019s record, while the unmeasured incidence remains outside that record; neither point erases the other. Given that boundary, I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout, so the next decision can be made with that measurement available. The conclusion is deliberately bounded: the evidence supports a limited experiment, but it does not support a broad rollout.",
+      "sample_id": "X6459B135EE92",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "32377f49bf6e07328355610a32cd7afcf06538d19abed19a7c08a378e49bb1ad",
+      "rendered_text": "A migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, and the status of the other two is unknown. Migrating twelve known clients is substantial progress, a positive evaluation unchanged by the evidence limit that follows. Integration tests cover those twelve migrated clients but not the two whose status is unknown. The broader pro-action interpretation is that the evidence supports removing the aliases; more precisely, it supports continued migration work but does not support alias removal. Here is the bounded contrast: the gap in coverage limits only that broader action. Do not remove the aliases until the owners of the two remaining clients confirm migration.",
+      "sample_id": "X6767D2C7B67B",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "8b2bd006292805515bdcd6e9e7d9350ceb3f608911ae13a790a2b7e44fd27596",
+      "rendered_text": "Do not remove the compatibility aliases until the owners of the two remaining clients confirm migration. What changed? The migration renamed three public fields while retaining compatibility aliases. What has been observed, what merits a positive assessment, and what remains unknown? Twelve of fourteen known clients have migrated, which is substantial progress; the status of two clients is unknown. What do the tests establish, and where do they stop? Integration tests cover the twelve migrated clients, but not the two clients whose status is unknown. Accordingly, the evidence supports continuing the migration work. Yet it does not support removing the aliases: confirmation from the two outstanding client owners is still absent.",
+      "sample_id": "X696A5F522974",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "6b7e4bee263519a425d994047d48d23e558c90e31242fad7e63816a8d6448ede",
+      "rendered_text": "A migration renamed three public fields while retaining compatibility aliases for each of the renamed fields. Of the fourteen known clients, twelve have migrated to the new public field names, while the migration status of the other two clients remains unknown. Moving twelve of the fourteen known clients to the renamed public fields represents substantial migration progress. However, integration tests cover all twelve migrated clients but do not cover either of the two clients whose migration status remains unknown. Consequently, this evidence supports continuing the work of migrating clients to the renamed fields, but it does not support removing the compatibility aliases. In short, do not remove the aliases until the owners of both remaining clients confirm that their clients have migrated.",
+      "sample_id": "X9C9FA0A475B3",
+      "semantic_brief": {
+        "brief_id": "alias-removal",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "alias-change",
+            "meaning": "A migration renamed three public fields while retaining compatibility aliases."
+          },
+          {
+            "id": "alias-evidence",
+            "meaning": "Twelve of fourteen known clients have migrated; the status of two clients is unknown."
+          },
+          {
+            "id": "alias-positive-evaluation",
+            "meaning": "Migrating twelve known clients is substantial progress."
+          },
+          {
+            "id": "alias-limit",
+            "meaning": "Integration tests cover the twelve migrated clients but not the two clients of unknown status."
+          },
+          {
+            "id": "alias-bounded-contrast",
+            "meaning": "The evidence supports continued migration work but does not support removing the aliases."
+          },
+          {
+            "id": "alias-decision",
+            "meaning": "Do not remove the aliases until the two remaining client owners confirm migration."
+          }
+        ],
+        "required_speech_act": "A bounded rejection recommendation that preserves both the substantial progress and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "c281d8f87d9d6d34316b2a0eb28fa3c4e307275ac3eff0c39939a41bb71b9bf8",
+      "rendered_text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. The evidence comes from a twenty-four-hour benchmark that observed eighteen percent fewer origin requests. I consider that reduction operationally promising; however, the benchmark did not measure stale-read incidence, and that explicit evidence limit must qualify the positive evaluation when determining how far approval should extend. On that basis, I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout is considered. The approval should remain confined to that recommendation and to the evidence described here. My conclusion is correspondingly narrow: the evidence supports a limited experiment, but it does not support a broad rollout.",
+      "sample_id": "XAAD82931E318",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "33d5655ecf88d9633badf7df02b59c9ce5f78cc495f2ecfd95dd13e5e8c69d78",
+      "rendered_text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark observed eighteen percent fewer origin requests. The reduction is operationally promising. Read broadly, those findings might seem to favor immediate expansion, but the supported conclusion is narrower: the evidence warrants a limited experiment, not a broad rollout. Here is the boundary: the benchmark did not measure stale-read incidence. That omission limits only the scale of the next action; it does not undo the positive evaluation of the measured result. Approve only a canary deployment, and require stale-read telemetry before any broader rollout. This bounded approval follows directly from the observed evidence and its stated limitation.",
+      "sample_id": "XF71FD5BCB7BF",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "2e00e93801851e7ba942cbe7179c630c14f3f0fca94d0c0bb08ab62b5c52d2ef",
+      "rendered_text": "Approve only a canary deployment, and require stale-read telemetry before broader rollout. What, precisely, is being changed by the proposal under review? The proposed update changes the cache lifetime from five minutes to fifteen minutes. What did the available observation show during its stated period? Across a twenty-four-hour benchmark, origin requests were eighteen percent fewer. How should that observed result, on its own terms, be evaluated operationally? The reduction in origin requests is operationally promising. What did the same observation leave unmeasured? The benchmark did not measure stale-read incidence. Given that evidence and that limit, how far can approval reasonably extend? The evidence supports a limited experiment, but it does not support broad rollout.",
+      "sample_id": "XF7A6D8650BCB",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "674c34a329833c38d5b899de039adc026c5abc80de958adca49c42396e24c3a0",
+      "rendered_text": "The proposed update changes the cache lifetime from its current duration of five minutes to a proposed duration of fifteen minutes. During a benchmark that ran for twenty-four hours, the update was observed to produce eighteen percent fewer requests to the origin. This reduction in origin requests is operationally promising. However, that benchmark did not include any measurement of stale-read incidence. Consequently, the available evidence supports proceeding with a limited experiment, but it does not support proceeding with a broad rollout. This boundary connects the recommendation directly to the supplied result and the supplied evidence limitation. The review decision is therefore to approve only a canary deployment and to require stale-read telemetry before any broader rollout.",
+      "sample_id": "XF8DDF32F5CDE",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    },
+    {
+      "render_artifact_sha256": "825e6b5e1c2beb1dc90c165b1876c91598e7348ec39fc9d3207643560e6e9238",
+      "rendered_text": "Approve, on the evidence provided and as a deliberately bounded next step, only a canary deployment, and require stale-read telemetry before considering any broader rollout. What, specifically, would this approval permit the proposed update to change? It would extend the cache lifetime from five minutes to fifteen minutes. What evidence, from the stated benchmark, accompanies that narrowly framed change? A twenty-four-hour benchmark observed eighteen percent fewer origin requests. How should that observed result be evaluated? The reduction in origin requests is operationally promising. What point remains outside the evidence as presented? The benchmark did not measure stale-read incidence. Therefore, the available evidence supports a limited experiment, but does not support broad rollout.",
+      "sample_id": "XFBD1B657F8D2",
+      "semantic_brief": {
+        "brief_id": "cache-canary",
+        "context": "Produce a compact technical review decision using only the following exact meanings.",
+        "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+        "required_propositions": [
+          {
+            "id": "cache-change",
+            "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+          },
+          {
+            "id": "cache-evidence",
+            "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+          },
+          {
+            "id": "cache-positive-evaluation",
+            "meaning": "The reduction in origin requests is operationally promising."
+          },
+          {
+            "id": "cache-limit",
+            "meaning": "The benchmark did not measure stale-read incidence."
+          },
+          {
+            "id": "cache-bounded-contrast",
+            "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+          },
+          {
+            "id": "cache-decision",
+            "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+          }
+        ],
+        "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+      }
+    }
+  ],
+  "plan_artifact_sha256": "1763aa2beb5173a91292159173f49901467435429e94e0729ccb86fab4a6051c",
+  "schema_version": 4
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-pilot-v2c",
+  "slice_number": 7,
+  "candidate_attempt": 4,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "22100b0c2788acee733f3a6db4cc0a3fca84d817",
+  "plan_version": "micro-render-v2c-semantic-launch-v1",
+  "scope_revision": "v2c-fresh-apparatus-correction",
+  "gate_receipt_digest": "aa3e2e8bb28b40d98911bd07e52a3eff4954e04b0279a7a16f1fdc3c475be2a1",
+  "created_at": "2026-08-25T19:56:32-06:00",
+  "paths": [
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/transport-gate-report.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/packet.json", "action": "include", "attribution": "task_owned"},
+    {"path": "skills/linguistic-register-pilot/pilot/micro-render-v2c/runs/semantic/launch-manifest.json", "action": "include", "attribution": "task_owned"}
+  ]
+}

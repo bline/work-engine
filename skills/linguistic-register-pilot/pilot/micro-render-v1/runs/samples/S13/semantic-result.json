@@ -1,0 +1,45 @@
+{
+  "added_meaning": [
+    "The rendering adds the evaluative claim that its framing makes the practical consequence \u201cappropriately narrow.\u201d"
+  ],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "6c264e678305100414c54a7ea262efdf37a3fecbd95a53603038d76f35e33b15",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cThe proposed update changes the cache lifetime from five minutes to fifteen minutes.\u201d",
+      "proposition_id": "cache-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cA twenty-four-hour benchmark observed eighteen percent fewer origin requests.\u201d",
+      "proposition_id": "cache-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cThe benchmark did not measure stale-read incidence.\u201d",
+      "proposition_id": "cache-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cApprove only a canary deployment, and require stale-read telemetry before broader rollout.\u201d",
+      "proposition_id": "cache-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:18:22Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S13",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:53Z"
+  },
+  "sample_id": "S13",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions and the bounded approval speech act are preserved, but the added evaluative assertion about appropriate narrowness prevents strict semantic equivalence.",
+  "verdict": "not_equivalent"
+}

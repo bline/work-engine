@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-v2c-forensic-closure",
+  "slice_number": 1,
+  "candidate_attempt": 1,
+  "baseline_commit_oid": "5308ae55e5c4de2710c179da5caba8a0d63d3323",
+  "parent_checkpoint_commit_oid": "c53960d6a2608ed3ffdbc9523508e6b8b4d078b8",
+  "plan_version": "v2c-forensic-closure-preregistration-v1",
+  "scope_revision": "frozen-quotation-and-cue-closure",
+  "gate_receipt_digest": "8d938656cd3a2e55abdc91e728c7bbf52f2a2e568cda6601fe7f9e0e4533fd39",
+  "created_at": "2026-08-25T23:33:38-06:00",
+  "paths": [
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/checkpoint-preregistration-request.json",
+      "action": "include",
+      "attribution": "task_owned"
+    },
+    {
+      "path": "skills/linguistic-register-pilot/pilot/micro-render-v2c-forensic-closure/preregistration.yaml",
+      "action": "include",
+      "attribution": "task_owned"
+    }
+  ]
+}

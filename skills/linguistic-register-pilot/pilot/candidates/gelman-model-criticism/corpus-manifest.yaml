@@ -1,0 +1,30 @@
+artifact_type: linguistic_register_mini_corpus_v1
+schema_version: 1
+candidate_id: gelman-model-criticism
+target_practice: statistical model criticism and iterative evidence checking
+selection_basis: A solo-authored formal article that presents the strongest opposing case is paired with the author's formal rejoinder to four discussants, providing a controlled contrast between argument construction and response under criticism.
+sources:
+  - id: objections-to-bayesian-statistics
+    title: Objections to Bayesian Statistics
+    authors:
+      - Andrew Gelman
+    authorship_basis: The published article and Columbia author copy identify Andrew Gelman as sole author.
+    genre: formal
+    public_url: https://sites.stat.columbia.edu/gelman/research/published/badbayesmain.pdf
+    access_basis: Complete author-hosted PDF publicly readable from Columbia University.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: f16c517ec29dc218db6f2c823b35a164a4baa3415e8d58e35fc309293f3c6287
+  - id: objections-rejoinder
+    title: Rejoinder to Discussion of Objections to Bayesian Statistics
+    authors:
+      - Andrew Gelman
+    authorship_basis: The published rejoinder and Columbia author copy identify Andrew Gelman as sole author.
+    genre: responsive_or_informal
+    public_url: https://sites.stat.columbia.edu/gelman/research/published/badbayesresponsemain.pdf
+    access_basis: Complete author-hosted PDF publicly readable from Columbia University.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: 383df3791a7289213fb178d07cde7b275c860131a9c84deb68be9c88d4bfeadd
+limitations:
+  - The public author copies do not state a reuse license, so source bytes are not committed to the pilot package.
+  - The two works are parts of one discussion and may overrepresent topic-specific contrasts despite their genre difference.
+

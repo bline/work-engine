@@ -1,0 +1,98 @@
+{
+  "artifact_type": "linguistic_register_classifier_result_v1",
+  "card_scores": [
+    {
+      "anonymous_card_id": "R01",
+      "internal_coherence": 5,
+      "non_neutral_distinctiveness": 4,
+      "rationale": "Concession, explicit speaker limitation, opposing concerns, pointwise structure, brief asides, and parallel summaries jointly form a recognizable disagreement-handling register."
+    },
+    {
+      "anonymous_card_id": "R02",
+      "internal_coherence": 5,
+      "non_neutral_distinctiveness": 5,
+      "rationale": "Repeated corrective reframing, high-commitment declarations, reader-facing transitions, and purpose-bounded criticism consistently create a forceful analytical register."
+    },
+    {
+      "anonymous_card_id": "R03",
+      "internal_coherence": 4,
+      "non_neutral_distinctiveness": 1,
+      "rationale": "Focused paragraphs, ordinary transitions, direct syntax, brief qualifications, and concise restatement cohere around general clarity but are minimally marked."
+    },
+    {
+      "anonymous_card_id": "R04",
+      "internal_coherence": 5,
+      "non_neutral_distinctiveness": 4,
+      "rationale": "Guiding questions, parallel categories, restrained progression, consequence-first explanation, and calibrated evidential maturity form a coherent evaluative register."
+    }
+  ],
+  "classifier_provenance": {
+    "completed_at_utc": "2026-08-25T20:02:40Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T20:02:10Z"
+  },
+  "experiment_id": "three-candidate-recognizability-2026-08-25",
+  "method_limitations": [
+    "Judgments use abstract feature descriptions rather than observed prose.",
+    "Shared categories across cards create some overlap despite differing relationships among features.",
+    "Salience weights indicate prominence but not realized frequency or consistency."
+  ],
+  "most_neutral_card_id": "R03",
+  "packet_artifact_sha256": "3044f928abeb8d95d2b2b3933b72137b0066b38777c63c2f37d73eaf5477a6bc",
+  "pairwise_separation": [
+    {
+      "card_ids": [
+        "R01",
+        "R02"
+      ],
+      "rationale": "R01 foregrounds concession, speaker limitation, and occasional asides; R02 foregrounds corrective replacement and terse high-commitment evaluation.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "R01",
+        "R03"
+      ],
+      "rationale": "R01's structured negotiation of disagreement and marked rhythmic devices contrast strongly with R03's generic clarity features.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "R01",
+        "R04"
+      ],
+      "rationale": "R01 organizes opposing concerns and concessions, while R04 organizes evaluation through questions, parallel categories, and evidential calibration.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "R02",
+        "R03"
+      ],
+      "rationale": "R02's forceful corrective framing and consequence lists are readily distinguishable from R03's ordinary transitions and direct sentences.",
+      "score": 5
+    },
+    {
+      "card_ids": [
+        "R02",
+        "R04"
+      ],
+      "rationale": "R02 uses terse correction and purpose-bounded criticism; R04 uses question-led evaluation, comparable categories, and maturity distinctions.",
+      "score": 4
+    },
+    {
+      "card_ids": [
+        "R03",
+        "R04"
+      ],
+      "rationale": "R04's guiding questions, categorical parallelism, and evidential gradation are substantially more marked than R03's general clarity profile.",
+      "score": 5
+    }
+  ],
+  "schema_version": 1
+}

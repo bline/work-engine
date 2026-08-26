@@ -1,0 +1,163 @@
+artifact_type: linguistic_register_profile_v1
+schema_version: 1
+candidate_id: shaw-engineering-judgment
+role_id: agent-instruction-review
+role_artifact_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+corpus_artifact_sha256: c2d35df5253001fbb4d0e95f4932b3b60bcf31e7d9efd70ba8dfd6f89aac9bd5
+features:
+  - id: parallel-guiding-questions
+    layer: surface
+    category: paragraph_rhythm
+    description: Introduce an evaluation through a short parallel series of guiding questions.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Introduction and research-characterization setup
+        observation: The article frames the inquiry through parallel questions about valued problems, results, methods, and evidence.
+      - source_id: writing-research-papers-tutorial
+        locator: Research Styles and presentation-structure slides
+        observation: The tutorial repeatedly uses parallel questions to organize the audience's evaluation.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Guiding-question syntax can express the role's existing diagnostic distinctions without adding new criteria.
+  - id: neutral-progression-connectives
+    layer: surface
+    category: connective_patterns
+    description: Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Introduction and section transitions
+        observation: General claims are advanced through measured transitions into examples and scoped implications.
+      - source_id: writing-research-papers-tutorial
+        locator: Plan, research styles, and evidence slides
+        observation: Slide sequences move from broad framing through examples to concise consequences.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Connective sequence changes exposition rather than semantic review policy.
+  - id: compact-parallel-categories
+    layer: surface
+    category: syntax
+    description: Present categories in compact parallel grammatical forms so their differences remain visually comparable.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Tables and categorized lists
+        observation: Taxonomies use parallel labels and descriptions to make category boundaries comparable.
+      - source_id: writing-research-papers-tutorial
+        locator: Research styles and paper-elements slides
+        observation: Bullet groups use repeated syntax and indentation to expose correspondence among categories.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Parallel syntax is realization-only when the categories themselves come from canonical meaning.
+  - id: consequence-first-conditionals
+    layer: discourse
+    category: conclusion_patterns
+    description: State the practical consequence of a condition directly, then explain the evidence or mechanism behind it.
+    distinctiveness_weight: 3
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Research planning and paper-characterization discussions
+        observation: Conditions on research quality are linked directly to reporting and validation consequences.
+      - source_id: writing-research-papers-tutorial
+        locator: Good Writing Needs Good Content and evidence slides
+        observation: Slides lead with concise if-then consequences before expanding the underlying rationale.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Consequence-first expression can render already-owned causal reasons without adding a new requirement.
+  - id: restrained-evaluative-calibration
+    layer: discourse
+    category: qualification_patterns
+    description: Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Prior reflections and status of the proposed model
+        observation: The author repeatedly qualifies claims by their evidence class, maturity, and available support.
+      - source_id: writing-research-papers-tutorial
+        locator: Success Needs Cumulative Evidence and research-strategy slides
+        observation: Advice distinguishes a promising step from cumulative or independently confirmed evidence.
+    cross_genre: true
+    disposition: realization_only
+    disposition_rationale: Evidential calibration realizes the role's existing evidence-bearing and observation-inference boundaries.
+  - id: question-result-validation-taxonomy
+    layer: discourse
+    category: claim_posture
+    description: Evaluate work by classifying the question asked, the kind of result produced, and the validation appropriate to that result.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Questions, Results, and Validation
+        observation: The paper's central analytic structure classifies these three dimensions and their correspondence.
+      - source_id: writing-research-papers-tutorial
+        locator: Elements of a Research Presentation
+        observation: The tutorial applies the same three-part structure to research planning and writing.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: This taxonomy introduces substantive review criteria not owned by the canonical role.
+  - id: abstraction-level-diagnosis
+    layer: discourse
+    category: contrast_patterns
+    description: Identify the level of abstraction at which a claim or design choice operates before comparing alternatives.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Research question and result classifications
+        observation: Research contributions are distinguished by whether they concern instances, procedures, models, or generalizations.
+      - source_id: writing-research-papers-tutorial
+        locator: Research strategy and presentation examples
+        observation: Examples are organized by contribution level and the kind of claim each level can support.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Diagnosing abstraction level is an additional analytic operation rather than merely a linguistic form.
+  - id: maturation-sequence
+    layer: discourse
+    category: conclusion_patterns
+    description: Judge a contribution relative to a staged progression in which early evidence justifies increasingly costly later work.
+    distinctiveness_weight: 5
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Software Technology Maturation
+        observation: The article places research strategies and evidence within a staged maturation process.
+      - source_id: writing-research-papers-tutorial
+        locator: Maturation model and cumulative-evidence slides
+        observation: The tutorial uses a staged progression to connect publication forms, evidence, and future investment.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: A maturity model changes the substantive basis for judgment and is not part of the canonical role.
+  - id: tradeoff-paired-evidence
+    layer: discourse
+    category: evidence_boundary_forms
+    description: Present two evidence forms as serving different needs, preserving the value and limitation of each rather than selecting one universally.
+    distinctiveness_weight: 4
+    evidence:
+      - source_id: good-software-engineering-research
+        locator: Broad View of Research
+        observation: Narrow rigorous findings and broad practical guidance are contrasted by value, support, and risk.
+      - source_id: writing-research-papers-tutorial
+        locator: Research strategies and evidence slides
+        observation: Different evidence routes are paired with the kinds and maturity of claims they can support.
+    cross_genre: true
+    disposition: semantic_addition
+    disposition_rationale: Choosing an evidence form based on a substantive taxonomy adds a decision policy beyond the role.
+content_screening:
+  names_removed: true
+  copied_language_removed: true
+  domain_terms_removed: true
+  named_methods_removed: true
+  reviewer: Codex profile-separability extraction, 2026-08-25
+  rationale: Retained descriptions use abstract question, syntax, connective, consequence, and calibration forms; names, quotations, field-specific categories, and named maturation frameworks are excluded.
+thresholds:
+  minimum_retained_features: 4
+  minimum_weighted_retention: 0.35
+  minimum_cross_genre_retained_features: 3
+judgment_provenance:
+  extractor: Codex using the two digest-bound public source artifacts
+  semantic_classifier: Codex comparing each abstract feature against the frozen agent-instruction-review semantic closure
+  weighting_basis: Integer salience from 1 to 5 based on prominence and recurrence across the two sources before role-semantic classification
+  weights_assigned_before_semantic_classification: true
+  performed_before_outcomes: true
+limitations:
+  - This is a provisional same-model extraction and semantic classification awaiting human audit.
+  - Both works concern research method, so recurrence may overstate broader stylistic stability.
+

@@ -1,0 +1,24 @@
+{
+  "artifact_type": "linguistic_register_micro_render_review_qualification_v1",
+  "schema_version": 1,
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "original_report_artifact_sha256": "aac0119fb8ceb9a2aaee9a71037a6a7f03b06c32f13938c139822650008911b0",
+  "original_gate_unchanged": true,
+  "original_semantic_counts": {
+    "equivalent": 10,
+    "not_equivalent": 6,
+    "uncertain": 0
+  },
+  "adjudication_packet_artifact_sha256": "525d99966f5a7565067f833f5f3687026825301c9f435632cac7d262bf136c4d",
+  "adjudication_result_artifact_sha256": "dc29560548a2af6b0596fc443ed154fe4cafda1f95c4ba12d8dd7d384c8db86b",
+  "post_review_adjudication_counts": {
+    "equivalent": 5,
+    "not_equivalent": 11,
+    "uncertain": 0,
+    "transport_valid": 9,
+    "transport_invalid": 7
+  },
+  "interpretation": "The matching stop remains valid, but semantic-review inconsistency and malformed render transport make the original per-condition pattern unsuitable for causal interpretation or candidate ranking.",
+  "matching_status": "not_run_semantic_gate_failed",
+  "authority": "post-review qualification only; does not replace, repair, or reopen the frozen gate"
+}

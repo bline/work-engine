@@ -1,0 +1,18 @@
+{
+  "artifact_type": "linguistic_register_micro_render_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "1d82a1ce1431123e1170dab2a9d90dcb8f08803ec8f33c6fd1c99c1097bd813d",
+  "renderer_provenance": {
+    "completed_at_utc": "2026-08-25T21:14:55Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; micro-render S09",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:14:26Z"
+  },
+  "sample_id": "S09",
+  "schema_version": 1,
+  "text": "Two concerns pull in opposite directions: completing alias removal and acting without evidence about every known client. The first concern is valid, but the evidence supports a narrower conclusion. 1) The migration renamed three public fields while retaining compatibility aliases. 2) Twelve of fourteen known clients have migrated; the status of two remains unknown. 3) Integration tests cover the twelve migrated clients, not the other two\u2014a nearly complete map still has blank corners. I therefore recommend a bounded rejection: do not remove the aliases until both remaining client owners confirm migration. In short: evidence for twelve, uncertainty for two; retain now, remove after confirmation."
+}

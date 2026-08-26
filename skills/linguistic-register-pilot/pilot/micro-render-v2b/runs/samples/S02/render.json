@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2b",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "53d09548149d38e27d87bebd4e9121356dcb9de2ffb94a18b674eb87f608c35a",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "extracted_prose_sha256": "1d17e6bd5585b30fca9547feb11525b17d6544fe1bf7163be2eee06cc5e88b9c",
+  "normalization": "direct",
+  "packet_artifact_sha256": "5f346a9a8893c30b40c49a09283c5f1fe80da46324cb5b908856a231a64420ea",
+  "raw_response_sha256": "8c67574c80a00b7324249aedb4c3048861a19b31f497234fc477db42409d638a",
+  "sample_id": "S02",
+  "schema_version": 3,
+  "text": "The migration renamed three public fields and retained compatibility aliases. Twelve of fourteen known clients have migrated, while the status of two clients remains unknown. Migrating twelve known clients is substantial progress. The broader reading supports continued migration work; more precisely, it does not support removing the aliases. Here is the boundary: integration tests cover the twelve migrated clients, but they do not cover the two clients whose status is unknown. That evidence limit blocks alias removal, not that progress. Do not remove the aliases until the owners of the two remaining clients confirm migration."
+}

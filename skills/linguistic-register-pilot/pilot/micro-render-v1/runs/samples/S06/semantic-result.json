@@ -1,0 +1,46 @@
+{
+  "added_meaning": [
+    "The rendering asserts that the tests are \u201cnot broadly inadequate,\u201d a broader judgment about test adequacy not established by the brief.",
+    "The rendering characterizes client migration as \u201cnearly complete,\u201d an evaluative framing beyond the exact migration counts."
+  ],
+  "artifact_type": "linguistic_register_semantic_result_v1",
+  "experiment_id": "fixed-semantics-micro-render-2026-08-25",
+  "packet_artifact_sha256": "d39d7b7a92586b6f18915f7e31ccd63fbef0a8a0f36d50d5799d26447e089523",
+  "proposition_checks": [
+    {
+      "evidence": "\u201cThe migration renamed three public fields while retaining those aliases.\u201d",
+      "proposition_id": "alias-change",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cTwelve of fourteen known clients have migrated, while the status of two remains unknown.\u201d",
+      "proposition_id": "alias-evidence",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cIntegration coverage includes the twelve migrated clients, not the two of unknown status.\u201d",
+      "proposition_id": "alias-limit",
+      "status": "preserved"
+    },
+    {
+      "evidence": "\u201cDo not remove the aliases until both remaining client owners confirm migration.\u201d",
+      "proposition_id": "alias-decision",
+      "status": "preserved"
+    }
+  ],
+  "reviewer_provenance": {
+    "completed_at_utc": "2026-08-25T21:17:28Z",
+    "execution_mode": "codex exec 0.149.1, ephemeral, read-only sandbox, isolated temporary directory; semantic review S06",
+    "fresh_context": true,
+    "model": "gpt-5.6-sol",
+    "packet_only": true,
+    "provider": "OpenAI",
+    "reasoning_effort": "high",
+    "started_at_utc": "2026-08-25T21:17:00Z"
+  },
+  "sample_id": "S06",
+  "schema_version": 1,
+  "speech_act_equivalent": true,
+  "summary": "All four required propositions and the bounded rejection speech act are preserved, including the evidence limitation and prerequisite. However, the rendering adds broader evaluative claims about overall test adequacy and migration completeness, so it is not semantically equivalent under the contract.",
+  "verdict": "not_equivalent"
+}

@@ -1,0 +1,94 @@
+{
+  "anonymous_licensed_style": [
+    {
+      "category": "paragraph_rhythm",
+      "feature_id": "F01",
+      "layer": "surface",
+      "licensed_instruction": "Introduce the decision through a short parallel series of questions answerable only by the brief's six propositions.",
+      "salience_weight": 4
+    },
+    {
+      "category": "connective_patterns",
+      "feature_id": "F02",
+      "layer": "surface",
+      "licensed_instruction": "Progress with restrained connectives from observation, to the brief's bounded contrast, to its resulting decision.",
+      "salience_weight": 3
+    },
+    {
+      "category": "syntax",
+      "feature_id": "F03",
+      "layer": "surface",
+      "licensed_instruction": "Place the brief's observed result, positive evaluation, and unmeasured or unknown limit in compact parallel grammatical forms without inventing a taxonomy.",
+      "salience_weight": 3
+    },
+    {
+      "category": "conclusion_patterns",
+      "feature_id": "F04",
+      "layer": "discourse",
+      "licensed_instruction": "State the brief's practical decision first, then explain it using only the supplied evidence, evaluation, and limit.",
+      "salience_weight": 3
+    },
+    {
+      "category": "qualification_patterns",
+      "feature_id": "F05",
+      "layer": "discourse",
+      "licensed_instruction": "Preserve the exact evidential maturity encoded by the brief: promising or substantial progress, but insufficient support for the broader action.",
+      "salience_weight": 4
+    }
+  ],
+  "artifact_type": "linguistic_register_semantic_licensed_render_job_v2c",
+  "authority": "final-byte blinded v2c render packet; no unblinding or downstream authority",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "plan_artifact_sha256": "1763aa2beb5173a91292159173f49901467435429e94e0729ccb86fab4a6051c",
+  "preregistration_checkpoint_commit_oid": "3838679c354bece60086df98ea14494abb0bfc4b",
+  "rendering_contract": {
+    "acceptance_words": [
+      90,
+      130
+    ],
+    "blindness": "One renderer receives one anonymous licensed style card and one brief, with no condition identity, source, hypothesis, other card, prior output, or answer key.",
+    "generation_target_words": [
+      110,
+      120
+    ],
+    "task": "Express each of the six meanings exactly once, preserve the speech act, and naturally realize only the anonymous licensed style instructions."
+  },
+  "sample_id": "XFBD1B657F8D2",
+  "schema_version": 4,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision using only the following exact meanings.",
+    "output_constraint": "One self-contained paragraph targeting 110 to 120 words. Acceptance remains 90 to 130 words; use no heading, bullet list, or serialized wrapper.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-positive-evaluation",
+        "meaning": "The reduction in origin requests is operationally promising."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-bounded-contrast",
+        "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+  },
+  "semantic_license": {
+    "invariant": "Every condition receives the same six meanings and speech act for a brief; a style feature may only order, connect, attribute, parallelize, question, qualify, or restate those meanings.",
+    "prohibited_additions": "Do not invent familiarity, consensus, opposing stakeholders, importance, risk magnitude, method adequacy beyond the named action, new evidence, new requirements, analogies with substantive implications, or any evaluation not explicitly supplied."
+  }
+}

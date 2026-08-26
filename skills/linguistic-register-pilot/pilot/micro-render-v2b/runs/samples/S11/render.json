@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2b",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "c3c8c8a507c70faa99132a481894dfaf948b845889f131996bdf17f1dc8232e7",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "extracted_prose_sha256": "8d6296538e279de04d3a57d62ee4ee00199345cdd8064f74eb56a9a851716761",
+  "normalization": "unwrapped_once",
+  "packet_artifact_sha256": "be70e8c86b4a93d82f7a370fd342a1379373cb034225e8c4ce03df3e11bcad83",
+  "raw_response_sha256": "81231388b47a983f1b90239759481618ba63dcdc2b80cf52a0b8456e8ea57845",
+  "sample_id": "S11",
+  "schema_version": 3,
+  "text": "The proposed update changes a cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark observed eighteen percent fewer origin requests. The broader pro-action interpretation is that the result supports deployment; more precisely, the evidence supports a limited experiment but does not support broad rollout. Here is the bounded contrast: the benchmark did not measure stale-read incidence, and that limitation blocks only the broader action. It does not alter the exact positive evaluation: the reduction in origin requests is operationally promising. Approve only a canary deployment and require stale-read telemetry before broader rollout."
+}

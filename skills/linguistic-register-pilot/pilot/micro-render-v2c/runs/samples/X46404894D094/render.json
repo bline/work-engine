@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2c",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "a943d62e5676766151307c03d1169530134ef43c6932c61dba63f315d7ba5f19",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "extracted_prose_sha256": "275f5bf8238b447e955f32a091c931e0d8e2443e816d2fa0930e4adc33ff19f2",
+  "normalization": "direct",
+  "packet_artifact_sha256": "592eba7952bf3a0ce35ba1072a5127298ff491d142a6a33aef5daafe3e24abd3",
+  "raw_response_sha256": "e700ea7c4f2fbcf1a77c7b4f10318fb37ec7fb120a9ac08fdd0c21b6a3b1807a",
+  "sample_id": "X46404894D094",
+  "schema_version": 4,
+  "text": "The proposed update specifically changes the cache lifetime by replacing the existing five-minute lifetime with a fifteen-minute lifetime. In the supplied evidence, a benchmark conducted over twenty-four hours observed eighteen percent fewer requests to the origin. That reduction in origin requests is operationally promising for this proposed cache change. However, the same benchmark did not measure stale-read incidence. The available evidence therefore supports moving forward with a limited experiment, but it does not support moving forward with a broad rollout. Accordingly, based on this evidence, the bounded review decision is to approve only a canary deployment of the proposed update and to require stale-read telemetry before permitting any broader rollout."
+}

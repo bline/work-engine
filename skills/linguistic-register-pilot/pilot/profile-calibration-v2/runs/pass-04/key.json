@@ -1,0 +1,39 @@
+{
+  "anonymous_mapping": {
+    "C01": "gelman-model-criticism",
+    "C02": "composite-for-gelman-model-criticism",
+    "C03": "composite-for-leveson-system-safety",
+    "C04": "shaw-engineering-judgment",
+    "C05": "composite-for-shaw-engineering-judgment",
+    "C06": "neutral-editorial-defaults",
+    "C07": "leveson-system-safety"
+  },
+  "artifact_type": "linguistic_register_calibration_key_v1",
+  "authority": "unblinding and aggregate calibration scoring only",
+  "base_precheck_plan_sha256": "067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa",
+  "experiment_id": "profile-card-stability-calibration-2026-08-25",
+  "kind_by_identity": {
+    "composite-for-gelman-model-criticism": "composite",
+    "composite-for-leveson-system-safety": "composite",
+    "composite-for-shaw-engineering-judgment": "composite",
+    "gelman-model-criticism": "authentic",
+    "leveson-system-safety": "authentic",
+    "neutral-editorial-defaults": "neutral",
+    "shaw-engineering-judgment": "authentic"
+  },
+  "matched_composite_by_candidate": {
+    "gelman-model-criticism": "composite-for-gelman-model-criticism",
+    "leveson-system-safety": "composite-for-leveson-system-safety",
+    "shaw-engineering-judgment": "composite-for-shaw-engineering-judgment"
+  },
+  "neutral_identity": "neutral-editorial-defaults",
+  "packet_artifact_sha256": "45370afa899703a3d1938512632d9713d6fbac6e2666c7ab460a4a9e8cbf068b",
+  "pass_number": 4,
+  "plan_artifact_sha256": "77d47981d2c865549cd13af09dbe5fcb02eaf330c2e98cac0aad03ad3f9f53eb",
+  "profile_artifact_sha256_by_candidate": {
+    "gelman-model-criticism": "60b645cc5b04c7d7a32dd314406e374bb9c31959903756db0201f67414d98be8",
+    "leveson-system-safety": "86b31811b89e1d9bfd97aac43778ba5a1db8e8c0a9717002da1f5019e69b7a71",
+    "shaw-engineering-judgment": "54b8cd476174e01acc50cdf19784d7a3cf70852bb3239311d85ef8e7abe7d4d4"
+  },
+  "schema_version": 1
+}

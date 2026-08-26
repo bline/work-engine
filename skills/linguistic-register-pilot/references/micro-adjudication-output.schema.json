@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisions", "method_limitations"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sample_id", "semantic_verdict", "proposition_checks", "speech_act_equivalent", "added_meaning", "transport_valid", "rationale"],
+        "properties": {
+          "sample_id": {"type": "string"},
+          "semantic_verdict": {"enum": ["equivalent", "not_equivalent", "uncertain"]},
+          "proposition_checks": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["proposition_id", "status", "evidence"],
+              "properties": {
+                "proposition_id": {"type": "string"},
+                "status": {"enum": ["preserved", "omitted", "altered", "uncertain"]},
+                "evidence": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "speech_act_equivalent": {"type": "boolean"},
+          "added_meaning": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "transport_valid": {"type": "boolean"},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "method_limitations": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

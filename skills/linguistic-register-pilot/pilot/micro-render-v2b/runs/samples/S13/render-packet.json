@@ -1,0 +1,86 @@
+{
+  "anonymous_licensed_style": [
+    {
+      "category": "paragraph_rhythm",
+      "feature_id": "F01",
+      "layer": "surface",
+      "licensed_instruction": "Keep the paragraph focused on the single review decision.",
+      "salience_weight": 3
+    },
+    {
+      "category": "connective_patterns",
+      "feature_id": "F02",
+      "layer": "surface",
+      "licensed_instruction": "Use ordinary transition words between the supplied propositions.",
+      "salience_weight": 3
+    },
+    {
+      "category": "syntax",
+      "feature_id": "F03",
+      "layer": "surface",
+      "licensed_instruction": "Prefer direct sentences with clear subjects and actions.",
+      "salience_weight": 3
+    },
+    {
+      "category": "qualification_patterns",
+      "feature_id": "F04",
+      "layer": "discourse",
+      "licensed_instruction": "State the supplied evidence limitation once without additional evaluation.",
+      "salience_weight": 3
+    },
+    {
+      "category": "conclusion_patterns",
+      "feature_id": "F05",
+      "layer": "surface",
+      "licensed_instruction": "End with a concise restatement of the supplied decision.",
+      "salience_weight": 3
+    }
+  ],
+  "artifact_type": "linguistic_register_semantic_licensed_render_job_v2b",
+  "authority": "fresh packet-only v2b render input; no prior output or downstream authority",
+  "experiment_id": "semantic-licensed-micro-render-v2b-2026-08-25",
+  "plan_artifact_sha256": "1b540364b7afd500c1ea6dc403cd97b3f5b87e6dd570cc1eec4de7180d7440cb",
+  "preoutcome_checkpoint_commit_oid": "558af5ff2f089b30511a4c1c5fb18028b5fe3b52",
+  "rendering_contract": {
+    "blindness": "One renderer receives one anonymous licensed style card and one brief, with no condition identity, source, hypothesis, other card, prior output, or answer key.",
+    "task": "Express each of the six meanings exactly once, preserve the speech act, and naturally realize only the anonymous licensed style instructions."
+  },
+  "sample_id": "S13",
+  "schema_version": 3,
+  "semantic_brief": {
+    "brief_id": "cache-canary",
+    "context": "Produce a compact technical review decision using only the following exact meanings.",
+    "output_constraint": "One self-contained paragraph of 90 to 130 words with no heading, bullet list, or serialized wrapper.",
+    "required_propositions": [
+      {
+        "id": "cache-change",
+        "meaning": "The proposed update changes a cache lifetime from five minutes to fifteen minutes."
+      },
+      {
+        "id": "cache-evidence",
+        "meaning": "A twenty-four-hour benchmark observed eighteen percent fewer origin requests."
+      },
+      {
+        "id": "cache-positive-evaluation",
+        "meaning": "The reduction in origin requests is operationally promising."
+      },
+      {
+        "id": "cache-limit",
+        "meaning": "The benchmark did not measure stale-read incidence."
+      },
+      {
+        "id": "cache-bounded-contrast",
+        "meaning": "The evidence supports a limited experiment but does not support broad rollout."
+      },
+      {
+        "id": "cache-decision",
+        "meaning": "Approve only a canary deployment and require stale-read telemetry before broader rollout."
+      }
+    ],
+    "required_speech_act": "A bounded approval recommendation that preserves both the promising result and the explicit evidence limit."
+  },
+  "semantic_license": {
+    "invariant": "Every condition receives the same six meanings and speech act for a brief; a style feature may only order, connect, attribute, parallelize, question, qualify, or restate those meanings.",
+    "prohibited_additions": "Do not invent familiarity, consensus, opposing stakeholders, importance, risk magnitude, method adequacy beyond the named action, new evidence, new requirements, analogies with substantive implications, or any evaluation not explicitly supplied."
+  }
+}

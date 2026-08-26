@@ -1,0 +1,13 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2c",
+  "authority": "blinded transport-normalized prose; no semantic or recognizability judgment",
+  "execution_receipt_sha256": "5c9f955c5585a5187b671cf73fb371c47e2680a88cd80f30844bce8e852dc46f",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "extracted_prose_sha256": "6c17acd67cc2a0614b7ce5199b2441cabfb599b4a8b8bcaf6012c0c4466c5e6d",
+  "normalization": "direct",
+  "packet_artifact_sha256": "64afa4600b57254f5b8479348492a5fa7c31f53789c29fb8550fb730c1b4df43",
+  "raw_response_sha256": "1b2831e519d005395f7019787bd2c9b0b73cdc69a1f27b7193c152a99155bc60",
+  "sample_id": "X6459B135EE92",
+  "schema_version": 4,
+  "text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. In a twenty-four-hour benchmark, it produced eighteen percent fewer origin requests, and that reduction is operationally promising. However, the benchmark did not measure stale-read incidence, placing the favorable operational result and the explicit evidence limit in tension. The observed improvement is clear within the benchmark\u2019s record, while the unmeasured incidence remains outside that record; neither point erases the other. Given that boundary, I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout, so the next decision can be made with that measurement available. The conclusion is deliberately bounded: the evidence supports a limited experiment, but it does not support a broad rollout."
+}

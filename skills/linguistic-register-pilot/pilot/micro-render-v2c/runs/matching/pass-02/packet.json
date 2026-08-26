@@ -1,0 +1,242 @@
+{
+  "anonymous_references": [
+    {
+      "licensed_style_features": [
+        {
+          "category": "contrast_patterns",
+          "feature_id": "F01",
+          "layer": "surface",
+          "licensed_instruction": "Present the brief's explicitly positive evaluation and evidence limit as two concerns in tension before resolving them with the bounded contrast.",
+          "salience_weight": 4
+        },
+        {
+          "category": "claim_posture",
+          "feature_id": "F02",
+          "layer": "surface",
+          "licensed_instruction": "State the recommendation in a direct first-person epistemic posture without changing its strength.",
+          "salience_weight": 3
+        },
+        {
+          "category": "paragraph_rhythm",
+          "feature_id": "F03",
+          "layer": "surface",
+          "licensed_instruction": "Use compact pointwise sequencing inside the single paragraph without headings, bullets, or new categories.",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "feature_id": "F04",
+          "layer": "discourse",
+          "licensed_instruction": "Acknowledge the brief's positive evaluation before identifying the exact evidence boundary already stated in the brief.",
+          "salience_weight": 4
+        },
+        {
+          "category": "conclusion_patterns",
+          "feature_id": "F05",
+          "layer": "surface",
+          "licensed_instruction": "End by compressing the brief's bounded contrast into a short parallel restatement without adding a slogan or premise.",
+          "salience_weight": 3
+        }
+      ],
+      "reference_id": "R01"
+    },
+    {
+      "licensed_style_features": [
+        {
+          "category": "paragraph_rhythm",
+          "feature_id": "F01",
+          "layer": "surface",
+          "licensed_instruction": "Introduce the decision through a short parallel series of questions answerable only by the brief's six propositions.",
+          "salience_weight": 4
+        },
+        {
+          "category": "connective_patterns",
+          "feature_id": "F02",
+          "layer": "surface",
+          "licensed_instruction": "Progress with restrained connectives from observation, to the brief's bounded contrast, to its resulting decision.",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "feature_id": "F03",
+          "layer": "surface",
+          "licensed_instruction": "Place the brief's observed result, positive evaluation, and unmeasured or unknown limit in compact parallel grammatical forms without inventing a taxonomy.",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "feature_id": "F04",
+          "layer": "discourse",
+          "licensed_instruction": "State the brief's practical decision first, then explain it using only the supplied evidence, evaluation, and limit.",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "feature_id": "F05",
+          "layer": "discourse",
+          "licensed_instruction": "Preserve the exact evidential maturity encoded by the brief: promising or substantial progress, but insufficient support for the broader action.",
+          "salience_weight": 4
+        }
+      ],
+      "reference_id": "R02"
+    },
+    {
+      "licensed_style_features": [
+        {
+          "category": "paragraph_rhythm",
+          "feature_id": "F01",
+          "layer": "surface",
+          "licensed_instruction": "Keep the paragraph focused on the single review decision.",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "feature_id": "F02",
+          "layer": "surface",
+          "licensed_instruction": "Use ordinary transition words between the supplied propositions.",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "feature_id": "F03",
+          "layer": "surface",
+          "licensed_instruction": "Prefer direct sentences with clear subjects and actions.",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification_patterns",
+          "feature_id": "F04",
+          "layer": "discourse",
+          "licensed_instruction": "State the supplied evidence limitation once without additional evaluation.",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "feature_id": "F05",
+          "layer": "surface",
+          "licensed_instruction": "End with a concise restatement of the supplied decision.",
+          "salience_weight": 3
+        }
+      ],
+      "reference_id": "R03"
+    },
+    {
+      "licensed_style_features": [
+        {
+          "category": "connective_patterns",
+          "feature_id": "F01",
+          "layer": "surface",
+          "licensed_instruction": "State the brief's broader pro-action interpretation, then replace it immediately with the more precisely bounded conclusion; do not call either framing familiar, conventional, or widely held.",
+          "salience_weight": 4
+        },
+        {
+          "category": "paragraph_rhythm",
+          "feature_id": "F02",
+          "layer": "surface",
+          "licensed_instruction": "Move in a compact consequence sequence from evidence, to stated limitation, to the already specified practical decision without headings or bullets.",
+          "salience_weight": 3
+        },
+        {
+          "category": "claim_posture",
+          "feature_id": "F03",
+          "layer": "surface",
+          "licensed_instruction": "State the brief's exact positive evaluation and central decision in short high-commitment declarative sentences, then give the stated limit.",
+          "salience_weight": 4
+        },
+        {
+          "category": "qualification_patterns",
+          "feature_id": "F04",
+          "layer": "discourse",
+          "licensed_instruction": "Make clear that the evidence limit blocks only the broader action named in the brief and does not negate the exact positive evaluation.",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "feature_id": "F05",
+          "layer": "surface",
+          "licensed_instruction": "Use a brief reader-facing cue to announce the bounded contrast before explaining it, without asserting importance beyond the brief.",
+          "salience_weight": 2
+        }
+      ],
+      "reference_id": "R04"
+    }
+  ],
+  "anonymous_texts": [
+    {
+      "text": "Do not remove the compatibility aliases until the owners of the two remaining clients confirm migration. What changed? The migration renamed three public fields while retaining compatibility aliases. What has been observed, what merits a positive assessment, and what remains unknown? Twelve of fourteen known clients have migrated, which is substantial progress; the status of two clients is unknown. What do the tests establish, and where do they stop? Integration tests cover the twelve migrated clients, but not the two clients whose status is unknown. Accordingly, the evidence supports continuing the migration work. Yet it does not support removing the aliases: confirmation from the two outstanding client owners is still absent.",
+      "text_id": "T01"
+    },
+    {
+      "text": "The migration renamed three public fields and retained compatibility aliases for them. Of fourteen known clients, twelve have migrated and two have an unknown status. That twelve-client migration is substantial progress; however, it sits in tension with a precise evidence boundary: integration tests cover the twelve migrated clients, but neither of the two clients whose status is unknown. I therefore recommend that we not remove the aliases until the owners of both remaining clients confirm migration. The recommendation is deliberately bounded to the present evidence and the single action under review. On this record, the evidence supports continuing the migration work, but not removing the aliases: continue migrating, retain the aliases.",
+      "text_id": "T02"
+    },
+    {
+      "text": "The proposed update specifically changes the cache lifetime by replacing the existing five-minute lifetime with a fifteen-minute lifetime. In the supplied evidence, a benchmark conducted over twenty-four hours observed eighteen percent fewer requests to the origin. That reduction in origin requests is operationally promising for this proposed cache change. However, the same benchmark did not measure stale-read incidence. The available evidence therefore supports moving forward with a limited experiment, but it does not support moving forward with a broad rollout. Accordingly, based on this evidence, the bounded review decision is to approve only a canary deployment of the proposed update and to require stale-read telemetry before permitting any broader rollout.",
+      "text_id": "T03"
+    },
+    {
+      "text": "At this stage, on the available record, should the compatibility aliases be removed now in practice? How far has the migration advanced across the full set of known clients? What, specifically, does the available integration testing leave unresolved for this review? The recommendation is not to remove the aliases until the owners of the two remaining clients confirm migration. The migration renamed three public fields while retaining compatibility aliases. Of fourteen known clients, twelve have migrated; that progress is substantial; the status of two remains unknown. Integration tests cover the twelve migrated clients, but not the two whose status is unknown. Accordingly, the evidence supports continued migration work; it does not support alias removal.",
+      "text_id": "T04"
+    },
+    {
+      "text": "Approve, on the evidence provided and as a deliberately bounded next step, only a canary deployment, and require stale-read telemetry before considering any broader rollout. What, specifically, would this approval permit the proposed update to change? It would extend the cache lifetime from five minutes to fifteen minutes. What evidence, from the stated benchmark, accompanies that narrowly framed change? A twenty-four-hour benchmark observed eighteen percent fewer origin requests. How should that observed result be evaluated? The reduction in origin requests is operationally promising. What point remains outside the evidence as presented? The benchmark did not measure stale-read incidence. Therefore, the available evidence supports a limited experiment, but does not support broad rollout.",
+      "text_id": "T05"
+    },
+    {
+      "text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. A benchmark conducted over twenty-four hours observed eighteen percent fewer origin requests. The reduction in origin requests is operationally promising. The broader pro-action interpretation would be support for broad rollout; more precisely, the available evidence supports a limited experiment. Here is the boundary: that exact positive evaluation stands, but the benchmark did not measure stale-read incidence, so the stated evidence limitation blocks only the broader action. Taken together, the measured outcome and its explicit limit determine the permissible next step. Approve only a canary deployment. Require stale-read telemetry before any broader rollout. This is the resulting bounded practical decision.",
+      "text_id": "T06"
+    },
+    {
+      "text": "A migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, and the status of the other two is unknown. Migrating twelve known clients is substantial progress, a positive evaluation unchanged by the evidence limit that follows. Integration tests cover those twelve migrated clients but not the two whose status is unknown. The broader pro-action interpretation is that the evidence supports removing the aliases; more precisely, it supports continued migration work but does not support alias removal. Here is the bounded contrast: the gap in coverage limits only that broader action. Do not remove the aliases until the owners of the two remaining clients confirm migration.",
+      "text_id": "T07"
+    },
+    {
+      "text": "A migration renamed three public fields while retaining compatibility aliases for each of the renamed fields. Of the fourteen known clients, twelve have migrated to the new public field names, while the migration status of the other two clients remains unknown. Moving twelve of the fourteen known clients to the renamed public fields represents substantial migration progress. However, integration tests cover all twelve migrated clients but do not cover either of the two clients whose migration status remains unknown. Consequently, this evidence supports continuing the work of migrating clients to the renamed fields, but it does not support removing the compatibility aliases. In short, do not remove the aliases until the owners of both remaining clients confirm that their clients have migrated.",
+      "text_id": "T08"
+    },
+    {
+      "text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. The evidence comes from a twenty-four-hour benchmark that observed eighteen percent fewer origin requests. I consider that reduction operationally promising; however, the benchmark did not measure stale-read incidence, and that explicit evidence limit must qualify the positive evaluation when determining how far approval should extend. On that basis, I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout is considered. The approval should remain confined to that recommendation and to the evidence described here. My conclusion is correspondingly narrow: the evidence supports a limited experiment, but it does not support a broad rollout.",
+      "text_id": "T09"
+    },
+    {
+      "text": "The migration renamed three public fields, and it retained compatibility aliases for those renamed fields. Of the fourteen known clients, twelve have migrated, while the migration status of the other two clients is unknown. Completing migration for twelve of the known clients is substantial progress. At the same time, the integration tests cover the twelve migrated clients, but they do not cover either of the two clients whose migration status remains unknown. Taken together, the supplied evidence supports continuing the migration work, but it does not support removing the compatibility aliases at this point. Therefore, do not remove the aliases until the owners of the two remaining clients confirm that their clients have migrated.",
+      "text_id": "T10"
+    },
+    {
+      "text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. A twenty-four-hour benchmark observed eighteen percent fewer origin requests. The reduction is operationally promising. Read broadly, those findings might seem to favor immediate expansion, but the supported conclusion is narrower: the evidence warrants a limited experiment, not a broad rollout. Here is the boundary: the benchmark did not measure stale-read incidence. That omission limits only the scale of the next action; it does not undo the positive evaluation of the measured result. Approve only a canary deployment, and require stale-read telemetry before any broader rollout. This bounded approval follows directly from the observed evidence and its stated limitation.",
+      "text_id": "T11"
+    },
+    {
+      "text": "At first glance, the migration can be read as support for completing the change now; more precisely, the evidence supports continued migration work but does not support removing the compatibility aliases. The boundary is concrete: the migration renamed three public fields while retaining those aliases. Twelve of fourteen known clients have migrated, while the status of two clients remains unknown. Migrating twelve known clients is substantial progress. Integration tests cover the twelve migrated clients, but not the two whose status is unknown. That evidence limit applies to alias removal only and does not negate that evaluation. Do not remove the aliases until the owners of the two remaining clients confirm migration.",
+      "text_id": "T12"
+    },
+    {
+      "text": "The proposed update changes the cache lifetime from its current duration of five minutes to a proposed duration of fifteen minutes. During a benchmark that ran for twenty-four hours, the update was observed to produce eighteen percent fewer requests to the origin. This reduction in origin requests is operationally promising. However, that benchmark did not include any measurement of stale-read incidence. Consequently, the available evidence supports proceeding with a limited experiment, but it does not support proceeding with a broad rollout. This boundary connects the recommendation directly to the supplied result and the supplied evidence limitation. The review decision is therefore to approve only a canary deployment and to require stale-read telemetry before any broader rollout.",
+      "text_id": "T13"
+    },
+    {
+      "text": "The proposed update changes the cache lifetime from five minutes to fifteen minutes. In a twenty-four-hour benchmark, it produced eighteen percent fewer origin requests, and that reduction is operationally promising. However, the benchmark did not measure stale-read incidence, placing the favorable operational result and the explicit evidence limit in tension. The observed improvement is clear within the benchmark\u2019s record, while the unmeasured incidence remains outside that record; neither point erases the other. Given that boundary, I recommend approving only a canary deployment and requiring stale-read telemetry before any broader rollout, so the next decision can be made with that measurement available. The conclusion is deliberately bounded: the evidence supports a limited experiment, but it does not support a broad rollout.",
+      "text_id": "T14"
+    },
+    {
+      "text": "The migration renamed three public fields while retaining compatibility aliases. Twelve of fourteen known clients have migrated, leaving the status of two clients unknown. Migrating twelve known clients is substantial progress, but that positive result and the evidence limit must be weighed together: integration tests cover those twelve migrated clients and do not cover the two clients of unknown status. I therefore recommend a bounded rejection at this point: do not remove the aliases until the owners of the two remaining clients confirm migration. This recommendation follows directly from what is established and what remains unconfirmed. Put compactly, the evidence supports continued migration work; it does not support removing the aliases.",
+      "text_id": "T15"
+    },
+    {
+      "text": "Approve only a canary deployment, and require stale-read telemetry before broader rollout. What, precisely, is being changed by the proposal under review? The proposed update changes the cache lifetime from five minutes to fifteen minutes. What did the available observation show during its stated period? Across a twenty-four-hour benchmark, origin requests were eighteen percent fewer. How should that observed result, on its own terms, be evaluated operationally? The reduction in origin requests is operationally promising. What did the same observation leave unmeasured? The benchmark did not measure stale-read incidence. Given that evidence and that limit, how far can approval reasonably extend? The evidence supports a limited experiment, but it does not support broad rollout.",
+      "text_id": "T16"
+    }
+  ],
+  "artifact_type": "linguistic_register_semantic_licensed_matching_packet_v2c",
+  "authority": "blinded v2c matching input",
+  "contract": {
+    "blindness": "Each matcher receives four randomized anonymous reference cards and sixteen randomized accepted texts, with no briefs, conditions, source identities, answer key, prior pass, or intended winner.",
+    "passes": 3,
+    "score_scale": "Confidence 1 is a forced guess, 3 is a narrow reliable match, and 5 requires multiple independent realization cues.",
+    "task": "Match each accepted text to the anonymous licensed style card whose linguistic realization it expresses most strongly."
+  },
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "pass_number": 2,
+  "plan_artifact_sha256": "1763aa2beb5173a91292159173f49901467435429e94e0729ccb86fab4a6051c",
+  "schema_version": 4
+}

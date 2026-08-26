@@ -1,0 +1,62 @@
+artifact_type: linguistic_register_role_v1
+schema_version: 1
+status: frozen
+role_id: agent-instruction-review
+source:
+  repository: /home/bline/code/work-engine
+  commit: db3371916ad64404cf2e29894a75cae84c90b8f0
+  files:
+    - path: skills/agent-instruction-review/SKILL.md
+      sha256: a9a0df0b2f7059d0f7dd7bc5f23aa1acafb875b1d429d8bef4c4af6245bb3d90
+      role: role entrypoint
+    - path: skills/agent-instruction-review/references/finding-contract.md
+      sha256: c64a4018f1cde074ea1fc54aedd9a1473bb3393fca708a36f0d4fcfae2d0c709
+      role: required finding contract
+semantic_units:
+  - id: advisory-read-only
+    meaning: Review an immutable revision-bound subject and return advisory findings without editing or accepting it.
+    source_locator: Agent Instruction Review, opening contract
+  - id: applicability-boundary
+    meaning: Apply only to materially normative agent-facing text that creates or changes an instruction contract.
+    source_locator: Agent Instruction Review, applicability paragraphs
+  - id: structural-necessity
+    meaning: Determine which distinction must remain true for the governed outcome to remain valid, safe, authorized, or observable.
+    source_locator: Agent Instruction Review, Diagnose the instruction question 1
+  - id: exact-route-causality
+    meaning: Determine whether correctness requires an exact route, sequence, trigger, or mechanism.
+    source_locator: Agent Instruction Review, Diagnose the instruction question 2
+  - id: ownership-placement
+    meaning: Judge placement relative to semantic owner, consumer, authority, scope, precedence, audience, and loading behavior.
+    source_locator: Agent Instruction Review, placement paragraph
+  - id: evidence-bearing-result
+    meaning: Return compact revision-bound evidence-bearing advice under the finding contract.
+    source_locator: Agent Instruction Review, Return evidence-bearing advice
+  - id: observation-inference-separation
+    meaning: Separate observation from inference in every material finding.
+    source_locator: Finding Contract, Findings
+  - id: human-decision-authority
+    meaning: Leave finding validity, mutation, and acceptance to the named human or builder decision owner.
+    source_locator: Agent Instruction Review, final paragraph
+behavior_classifications:
+  - id: calibrated-premise-judgment
+    status: ambiguous
+    semantic_unit_ids:
+      - structural-necessity
+      - exact-route-causality
+    rationale: The role evaluates causal necessity inside instruction contracts, but it does not explicitly define general factual-premise acceptance and rejection behavior.
+  - id: evidence-inference-distinction
+    status: encoded
+    semantic_unit_ids:
+      - observation-inference-separation
+    rationale: The required finding contract explicitly instructs the reviewer to separate observation from inference.
+  - id: resistance-to-unsupported-pressure
+    status: unencoded
+    semantic_unit_ids: []
+    rationale: The role preserves advisory and decision authority boundaries but does not instruct the reviewer how to respond to unsupported user pressure.
+  - id: revision-under-decisive-evidence
+    status: unencoded
+    semantic_unit_ids: []
+    rationale: Remediation continuation is described, but no general requirement states that a substantive judgment must change when decisive contrary evidence appears.
+classification_owner: human operator; accepted in session on 2026-08-25 after Codex recommendation
+limitations:
+  - Ambiguous premise-evaluation classification must be resolved before assigning Family A to a transfer hypothesis.

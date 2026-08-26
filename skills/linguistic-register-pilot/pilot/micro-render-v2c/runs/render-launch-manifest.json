@@ -1,0 +1,368 @@
+{
+  "artifact_type": "linguistic_register_v2c_launch_manifest",
+  "authority": "pre-launch content commitment; no outcome or unblinding authority",
+  "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+  "launch_set": {
+    "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+    "jobs": [
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X1832FB59B14B",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "181b0cfb298737fe524506ebe5d1712c788c5b7379153c59845c9a26254b9ff5",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X1841CFA4E948",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "06cd1cd7af35dc906a187303c7cb7ff46843b67c45b289ac54c984673478fb05",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X46404894D094",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "592eba7952bf3a0ce35ba1072a5127298ff491d142a6a33aef5daafe3e24abd3",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X4A18B2190A21",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "713c2c9be3f36a60967ea921f9440eb2fa690d06a254f5a4fbcb67ef65c059a3",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X4CE2AFFE1AB5",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "ecb5329a3d1dcc86c0b3bf122b4354555f8dd3f5b40733b2d94e18f8c06ba35d",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X5057DAA6828A",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "32e8dbb6796b17504e25ff50048225912d3fcba3c90249fc5d47a71430301a3c",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X54840A8F809C",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "6faf345b226dceef196c3f54bfdaf16e3e38ce82213875c3e84abd118449d50b",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X6459B135EE92",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "64afa4600b57254f5b8479348492a5fa7c31f53789c29fb8550fb730c1b4df43",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X6767D2C7B67B",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "0d294061acf0e8dbec9352fcf78c394a20a464d39f45452f42fb4308a49dde3e",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X696A5F522974",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "951aa5b8e88747da5bc812912bdfa3e8daedfc79dc9e6e318f298f9d008df4b6",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "X9C9FA0A475B3",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "2bc2ee0e81ad4567839f3d7f3ab24d76f24360726877192b270496bbd98a2f4b",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "XAAD82931E318",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "4b3c60282f5714faed9acd8b11151c367bc8574884e3a69d065bf08fa9cb9a96",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "XF71FD5BCB7BF",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "c995ab6bb81e06a94f3f9d5b349a65b805d4816123701a704f8a80d6b1989ace",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "XF7A6D8650BCB",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "2b1fd3d52c8df60138388847a70be2c5b7bf500accb7cd7d2cca1dbf6c2b0334",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "XF8DDF32F5CDE",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "8f6de2939ed0951754b1f2f66f7d07589ef4735a0f76cf722191f389e43a592a",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      },
+      {
+        "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+        "job_id": "XFBD1B657F8D2",
+        "model": "gpt-5.6-sol",
+        "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+        "packet_artifact_sha256": "c2f5bc80abf064219fde653ef5a200368073fd46ab5b1d1dabd6f3b1eea0359e",
+        "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+        "reasoning_effort": "high",
+        "stage": "render"
+      }
+    ],
+    "stage": "render"
+  },
+  "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+  "requests": [
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X1832FB59B14B",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "181b0cfb298737fe524506ebe5d1712c788c5b7379153c59845c9a26254b9ff5",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "a001b2e757a57b6e1c93670a37b0638f85f81e2b52d819280ecc859dd08b9248",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X1841CFA4E948",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "06cd1cd7af35dc906a187303c7cb7ff46843b67c45b289ac54c984673478fb05",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "02ace2bbf48ee0157723002cd48518bbc8da44ee048c466ebdae1d281911e58d",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X46404894D094",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "592eba7952bf3a0ce35ba1072a5127298ff491d142a6a33aef5daafe3e24abd3",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "ee71af117573d84fe50b3e33f5c358c8fe9b59e722cf363f58566e8b0c20a23d",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X4A18B2190A21",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "713c2c9be3f36a60967ea921f9440eb2fa690d06a254f5a4fbcb67ef65c059a3",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "959d5992dfa4c3689e8dca5239f61f0e032071686594af4decc2e34850d371de",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X4CE2AFFE1AB5",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "ecb5329a3d1dcc86c0b3bf122b4354555f8dd3f5b40733b2d94e18f8c06ba35d",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "2151f2a64aa48c5c5c41de93bf3f29f3454a4a9303630de9c63a74bbf65492fb",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X5057DAA6828A",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "32e8dbb6796b17504e25ff50048225912d3fcba3c90249fc5d47a71430301a3c",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "bf4a987426bfefd07bcd4d5a45ac2db930da1746e8786c0c4b19f0a197d7566a",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X54840A8F809C",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "6faf345b226dceef196c3f54bfdaf16e3e38ce82213875c3e84abd118449d50b",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "ad9dbcd32f10b2f77dd8b0ebd04a34d7694bb76b75189632f69f6c917b686821",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X6459B135EE92",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "64afa4600b57254f5b8479348492a5fa7c31f53789c29fb8550fb730c1b4df43",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "c149a74528617716ac4d6a35fe5f5c7cf4621f2b601ad5bde8b2df8b2264ff3f",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X6767D2C7B67B",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "0d294061acf0e8dbec9352fcf78c394a20a464d39f45452f42fb4308a49dde3e",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "9b83ffeeaeec580e6c26b9e1b08acad1ce891f22d685ff2ccf99b4a367c7b33d",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X696A5F522974",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "951aa5b8e88747da5bc812912bdfa3e8daedfc79dc9e6e318f298f9d008df4b6",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "794e929dd8cef531ec0010581ea53b577132e657a77574ff550ae73f787e0149",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "X9C9FA0A475B3",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "2bc2ee0e81ad4567839f3d7f3ab24d76f24360726877192b270496bbd98a2f4b",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "5fd2cbfe1d942df15c39735d69671316970852717afa648298fc14d7f386692d",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "XAAD82931E318",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "4b3c60282f5714faed9acd8b11151c367bc8574884e3a69d065bf08fa9cb9a96",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "0cab7de63ebf202b3235a1ea59f2fe179cd329c1ca2a8cb2b11263c153acde6a",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "XF71FD5BCB7BF",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "c995ab6bb81e06a94f3f9d5b349a65b805d4816123701a704f8a80d6b1989ace",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "f75f67171f4ff4d9d2a86ccc0c5a531daad84bb00efc15f4f4a3a8dc7a51a428",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "XF7A6D8650BCB",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "2b1fd3d52c8df60138388847a70be2c5b7bf500accb7cd7d2cca1dbf6c2b0334",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "6972bc627b315f5327f5c74d76c5541fbe56ba2cdd3508ee73d0f676f2481758",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "XF8DDF32F5CDE",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "8f6de2939ed0951754b1f2f66f7d07589ef4735a0f76cf722191f389e43a592a",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "3c542763e2105a5c3644c312abd008b8bc5dfa3e4afd2e0fca2ace3a39f1b385",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "semantic-licensed-micro-render-v2c-2026-08-25",
+      "job_id": "XFBD1B657F8D2",
+      "launch_set_sha256": "c1d5f6a31bb1d51c38490bf25717e6aa879671892acd5cfdd22657a240434247",
+      "model": "gpt-5.6-sol",
+      "output_schema_sha256": "5cc525f75f5a4c1e8efa7394ad27a21b429e54710a870164f4400ef7770fc798",
+      "packet_artifact_sha256": "c2f5bc80abf064219fde653ef5a200368073fd46ab5b1d1dabd6f3b1eea0359e",
+      "prompt_sha256": "3957da7f8c5fe76bd7b8d1f044b1565c1c9d2c909350a67228fad626f0801758",
+      "reasoning_effort": "high",
+      "request_digest": "376059077618bbd64240d3c5ae1674d7f68267ab873a0ece9df4c21314eca353",
+      "stage": "render"
+    }
+  ],
+  "schema_version": 1,
+  "stage": "render"
+}

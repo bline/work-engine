@@ -1,0 +1,66 @@
+{
+  "artifact_type": "linguistic_register_recognizability_report_v1",
+  "authority": "mechanical profile-recognizability pre-check only; human acceptance is required before corpus selection",
+  "bindings": {
+    "blinding_key_artifact_sha256": "900d5cb06e6c20058a3ae336261f97b9e4a9a82c63e40e8edbcaa7a268e2242a",
+    "classifier_result_sha256": "7dc7b6599cb6fb8fbcdce7a5d849580cb0c41c830bda34ce1d30e6a969babd25",
+    "packet_artifact_sha256": "9929d9abc4ad2882eadbc09bc0236bf2ac6c0aeeb48bdd43b3a62ae1c66c768b",
+    "plan_artifact_sha256": "067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa"
+  },
+  "candidate_results": [
+    {
+      "anonymous_card_id": "R01",
+      "candidate_id": "gelman-model-criticism",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 5,
+        "separation_from_neutral": 5
+      }
+    },
+    {
+      "anonymous_card_id": "R02",
+      "candidate_id": "leveson-system-safety",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 5,
+        "separation_from_neutral": 5
+      }
+    },
+    {
+      "anonymous_card_id": "R04",
+      "candidate_id": "shaw-engineering-judgment",
+      "checks": {
+        "internal_coherence": true,
+        "non_neutral_distinctiveness": true,
+        "separation_from_neutral": true
+      },
+      "disposition": "recognizable",
+      "scores": {
+        "internal_coherence": 5,
+        "non_neutral_distinctiveness": 5,
+        "separation_from_neutral": 5
+      }
+    }
+  ],
+  "disposition": "advance_to_human_selection",
+  "experiment_id": "three-candidate-recognizability-2026-08-25",
+  "gate_passed": true,
+  "neutral_check": {
+    "expected_anonymous_card_id": "R03",
+    "passed": true,
+    "selected_anonymous_card_id": "R03"
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,48 @@
+artifact_type: linguistic_register_semantic_licensed_micro_render_plan_v2c
+schema_version: 4
+status: frozen
+experiment_id: semantic-licensed-micro-render-v2c-2026-08-25
+repository: /home/bline/code/work-engine
+base_plan:
+  path: skills/linguistic-register-pilot/pilot/micro-render-v2/preregistration.yaml
+  sha256: c6d47785a191630e42358f75121409580cd00e699e62058d300ce0dde8d71c3b
+freshness:
+  rendering_seed: frozen-before-outcomes::semantic-licensed-v2c::2026-08-25
+  prior_output_policy: No v1, v2, or v2b output, receipt, packet, adjudication, matching artifact, or answer may be copied, substituted, retried, or salvaged into v2c.
+sample_identity:
+  opaque_id_seed: frozen-opaque-identity::semantic-licensed-v2c::2026-08-25
+  assignment_seed: frozen-cell-assignment::semantic-licensed-v2c::2026-08-25
+  rule: Generate all sixteen opaque sample IDs from the opaque-ID seed and ordinal slots before independently assigning randomized brief-condition-replica cells from the assignment seed; IDs contain no condition, brief, or replica label.
+transport:
+  normalization: Accept a direct nonempty prose string unchanged, or unwrap exactly once an exact object containing only one nonempty string field named text; reject extra keys, arrays, scalars, code fences, malformed JSON-looking text, non-string values, second wrappers, and prose outside the frozen 90-through-130-word boundary.
+  blinded_ingestion: Before the immediate post-batch checkpoint, sample-level ingestion records opaque sample ID, execution state, digests, and transport disposition only; it does not read or emit condition labels.
+  digest_rule: Preserve raw-response and extracted-prose SHA-256 digests, record direct, unwrapped_once, or rejected disposition, and treat normalization frequency as transport-compliance metadata only.
+launch_commitment:
+  definition: The immutable launch set is the canonical experiment ID, stage, and complete ordered job-descriptor collection binding every expected job to packet bytes, output-schema bytes, model, reasoning effort, and prompt digest.
+  binding_rule: Bind the canonical launch-set SHA-256 digest and each canonical request digest into every pre-launch attempt marker and model-execution receipt.
+  checkpoint_rule: Retain each complete launch set, final packet bytes, and any separate sealed key in an immutable Git checkpoint before its first model attempt; require attempt and receipt timestamps not to predate that checkpoint, then retain immediate batch evidence before semantic interpretation.
+word_policy:
+  generation_target_min: 110
+  generation_target_max: 120
+  acceptance_min: 90
+  acceptance_max: 130
+thresholds:
+  expected_render_jobs: 16
+  require_transport_complete: true
+downstream_authority:
+  semantic_adjudication: Authorized only if all sixteen fresh v2c render jobs have a retained successful execution chain and accepted transport-normalized prose in the immutable immediate post-batch checkpoint.
+  matching: Authorized only if the transport-completeness gate and the base plan's all-sample semantic-equivalence gate both pass.
+execution:
+  runner:
+    path: skills/linguistic-register-pilot/scripts/sol_packet_job_v2c.py
+    sha256: 35070176c5a7058d41d516b0a24a229b75da9331177f12c5f89c03df9d676007
+  harness:
+    path: skills/linguistic-register-pilot/scripts/micro_render_v2c_artifacts.py
+    sha256: d7df1f7006f33f54795b6c4ead4a3016c1de4c33b287ab84a880403dbdbd6b01
+preregistration_owner: Human-authorized v2c slice executed by Codex under the explicit 2026-08-25 authorization.
+limitations:
+  - Renderer receipts establish the exact staged packet and schema inputs but make no exhaustive claim about every filesystem path the launcher or model process could observe.
+  - The launch-set digest is a reproducible content commitment bound through the evidence chain, not cryptographic proof against a malicious experimenter.
+  - Exact-once wrapper repair is transport normalization only and may not alter meaning.
+  - The same Sol model family limitations declared by the bound base plan remain in force.
+  - Passing is upstream experimental evidence only and does not authorize production integration or corpus selection.

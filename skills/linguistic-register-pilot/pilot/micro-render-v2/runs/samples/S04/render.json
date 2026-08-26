@@ -1,0 +1,10 @@
+{
+  "artifact_type": "linguistic_register_semantic_licensed_render_v2",
+  "execution_receipt_sha256": "4559ff8fefb83ef2c0d164ca9c1dc953d36a702acb37e0d70923ede4a20f0989",
+  "experiment_id": "semantic-licensed-micro-render-v2-2026-08-25",
+  "model": "gpt-5.6-sol",
+  "packet_artifact_sha256": "438a91831099bf1786caf7fc71affcdbd9a0495e8cbc70c756609a33d90a67fc",
+  "sample_id": "S04",
+  "schema_version": 2,
+  "text": "The proposed update would change the cache lifetime from its current setting of five minutes to a proposed setting of fifteen minutes. In the twenty-four-hour benchmark, the change was associated with eighteen percent fewer requests reaching the origin, a reduction that is operationally promising. That positive result must be weighed against an exact evidence boundary: the benchmark did not measure stale-read incidence. I therefore recommend approving only a canary deployment and requiring stale-read telemetry before considering any broader rollout. The evidence supports a limited experiment, but it does not support broad rollout."
+}

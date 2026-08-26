@@ -1,0 +1,194 @@
+{
+  "artifact_type": "linguistic_register_profile_calibration_report_v1",
+  "authority": "stability calibration only; no candidate ranking, corpus selection, or rendering authority",
+  "candidate_results": [
+    {
+      "authentic_coherence_scores": [
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "authentic_coherence_wins": 4,
+      "candidate_id": "gelman-model-criticism",
+      "checks": {
+        "authentic_coherence_wins": true,
+        "distinctiveness_stability": true,
+        "median_non_neutral_distinctiveness": true
+      },
+      "distinctiveness_range": 0,
+      "matched_composite_coherence_scores": [
+        4,
+        3,
+        4,
+        5,
+        4
+      ],
+      "median_non_neutral_distinctiveness": 5,
+      "non_neutral_distinctiveness_scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "passed": true
+    },
+    {
+      "authentic_coherence_scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "authentic_coherence_wins": 4,
+      "candidate_id": "leveson-system-safety",
+      "checks": {
+        "authentic_coherence_wins": true,
+        "distinctiveness_stability": true,
+        "median_non_neutral_distinctiveness": true
+      },
+      "distinctiveness_range": 0,
+      "matched_composite_coherence_scores": [
+        4,
+        4,
+        4,
+        4,
+        5
+      ],
+      "median_non_neutral_distinctiveness": 5,
+      "non_neutral_distinctiveness_scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "passed": true
+    },
+    {
+      "authentic_coherence_scores": [
+        5,
+        4,
+        4,
+        5,
+        5
+      ],
+      "authentic_coherence_wins": 0,
+      "candidate_id": "shaw-engineering-judgment",
+      "checks": {
+        "authentic_coherence_wins": false,
+        "distinctiveness_stability": true,
+        "median_non_neutral_distinctiveness": true
+      },
+      "distinctiveness_range": 0,
+      "matched_composite_coherence_scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "median_non_neutral_distinctiveness": 4,
+      "non_neutral_distinctiveness_scores": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "passed": false
+    }
+  ],
+  "disposition": "instrument_not_calibrated",
+  "experiment_id": "profile-card-stability-calibration-2026-08-25",
+  "gate_passed": false,
+  "neutral_identification": {
+    "correct_passes": 5,
+    "passed": true,
+    "required": 4
+  },
+  "plan_artifact_sha256": "77d47981d2c865549cd13af09dbe5fcb02eaf330c2e98cac0aad03ad3f9f53eb",
+  "real_pair_separation": [
+    {
+      "candidate_ids": [
+        "gelman-model-criticism",
+        "leveson-system-safety"
+      ],
+      "median": 5,
+      "passed": true,
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    {
+      "candidate_ids": [
+        "gelman-model-criticism",
+        "shaw-engineering-judgment"
+      ],
+      "median": 5,
+      "passed": true,
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    {
+      "candidate_ids": [
+        "leveson-system-safety",
+        "shaw-engineering-judgment"
+      ],
+      "median": 5,
+      "passed": true,
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    }
+  ],
+  "run_bindings": [
+    {
+      "classifier_result_sha256": "20db01de9b6533b64dbf15f6e9e761ba06f9a7a10a5a753aefed35bf60944487",
+      "key_artifact_sha256": "091e79369512bc4dbbb65171ca8d300f133396a4ef036c9b8dfc08a770b96f4c",
+      "packet_artifact_sha256": "28dd450337cc3805735578f2c0fa46811527791fb6944de67cbda8ebace95e81",
+      "pass_number": 1
+    },
+    {
+      "classifier_result_sha256": "9ce8c89a36b280b0312158bb76d023dd8fcfffc606abe0e172ba85c573424754",
+      "key_artifact_sha256": "7c905a1cedc6697cbbcf707b4f7b32bfdda25cf2f30a5e5ed2a4d8431ce723bf",
+      "packet_artifact_sha256": "fad92657d7e510b978dc97289d116b468b3b2348b26d0e5dd04f1c7d83ddb277",
+      "pass_number": 2
+    },
+    {
+      "classifier_result_sha256": "865ddd21b472cf4707a8cf6216a0047ef0d08b52048ffd276f4989af634c250c",
+      "key_artifact_sha256": "3afe5f5021e92d0d7bf8ece2923f1e6e7747b047f0e41fc21a3bde2f8800f59d",
+      "packet_artifact_sha256": "ea48fc07e7cd1d26050da387e09734ce738d8a3e4d63c8d87b3c02925b615516",
+      "pass_number": 3
+    },
+    {
+      "classifier_result_sha256": "c064ffeae63a05fd0f3125d4925312b6062cb9bcd9b35f2a0921d3e9dd6d36c3",
+      "key_artifact_sha256": "04d580b62062ac443f2a7e705edd27cc66c422cf03edd0cbf96eac94cc4bb463",
+      "packet_artifact_sha256": "45370afa899703a3d1938512632d9713d6fbac6e2666c7ab460a4a9e8cbf068b",
+      "pass_number": 4
+    },
+    {
+      "classifier_result_sha256": "4f880afd850bd95047887db3a62d13069a5a64fb79d7ac48e79038fe7cfe1544",
+      "key_artifact_sha256": "5b5fd08579e8c4e3aa249b335feb038115fd0182874c9d42caac72d2bb2b645b",
+      "packet_artifact_sha256": "a1a14cf39ba6f35645965dad0718159723f29bc956129286cecb33ece6113308",
+      "pass_number": 5
+    }
+  ],
+  "schema_version": 1
+}

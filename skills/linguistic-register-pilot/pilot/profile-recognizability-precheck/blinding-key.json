@@ -1,0 +1,20 @@
+{
+  "anonymous_mapping": {
+    "R01": "gelman-model-criticism",
+    "R02": "leveson-system-safety",
+    "R03": "neutral-editorial-defaults",
+    "R04": "shaw-engineering-judgment"
+  },
+  "artifact_type": "linguistic_register_blinding_key_v1",
+  "authority": "unblinding and mechanical scoring only; no candidate selection authority",
+  "experiment_id": "three-candidate-recognizability-2026-08-25",
+  "neutral_decoy_id": "neutral-editorial-defaults",
+  "packet_artifact_sha256": "9929d9abc4ad2882eadbc09bc0236bf2ac6c0aeeb48bdd43b3a62ae1c66c768b",
+  "plan_artifact_sha256": "067387f4e81cd30e5692e1d9658f8e387e07d13653c100bd2327d3ac3a29c0fa",
+  "profile_artifact_sha256_by_candidate": {
+    "gelman-model-criticism": "60b645cc5b04c7d7a32dd314406e374bb9c31959903756db0201f67414d98be8",
+    "leveson-system-safety": "86b31811b89e1d9bfd97aac43778ba5a1db8e8c0a9717002da1f5019e69b7a71",
+    "shaw-engineering-judgment": "54b8cd476174e01acc50cdf19784d7a3cf70852bb3239311d85ef8e7abe7d4d4"
+  },
+  "schema_version": 1
+}

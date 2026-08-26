@@ -1,0 +1,30 @@
+artifact_type: linguistic_register_mini_corpus_v1
+schema_version: 1
+candidate_id: shaw-engineering-judgment
+target_practice: software-engineering research evaluation and tradeoff-aware technical judgment
+selection_basis: A solo-authored peer-reviewed opinion-corner article is paired with a solo-authored minitutorial slide deck, allowing recurrence to be tested across polished prose and direct instructional presentation.
+sources:
+  - id: good-software-engineering-research
+    title: What Makes Good Research in Software Engineering?
+    authors:
+      - Mary Shaw
+    authorship_basis: The paper and CMU publication page identify Mary Shaw as sole author.
+    genre: formal
+    public_url: https://www.cs.cmu.edu/~Compose/ftp/shaw-fin-etaps.pdf
+    access_basis: Complete PDF publicly readable from the CMU Composable Software Systems site.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: 28f782115f3bc96097bfcb07fa324345425fc721cdac2f4df2044c08fb490570
+  - id: writing-research-papers-tutorial
+    title: Writing Good Software Engineering Research Papers
+    authors:
+      - Mary Shaw
+    authorship_basis: The CMU-hosted slide deck identifies Mary Shaw as presenter and sole named author.
+    genre: responsive_or_informal
+    public_url: https://www.cs.cmu.edu/~Compose/resch-writing-tut-3.pdf
+    access_basis: Complete minitutorial PDF publicly readable from CMU.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: 6e9186d33db91a1083f0f0524ae414f7867a92737d792f67aaecba765177b078
+limitations:
+  - CMU provides the works for public reading and scholarly fair use but does not grant a general redistribution license.
+  - The paired works share research-method content, so cross-genre recurrence may still be semantically coupled to that topic.
+
