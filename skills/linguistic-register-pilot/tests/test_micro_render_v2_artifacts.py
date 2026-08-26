@@ -93,11 +93,32 @@ class MicroRenderV2ArtifactsTest(unittest.TestCase):
                 V2.normalize_matching(raw, packet, receipt)
 
     def test_preoutcome_checkpoint_must_retain_exact_plan(self) -> None:
-        head = __import__("subprocess").run(
-            ["git", "-C", str(self.repository), "rev-parse", "HEAD"], check=True,
-            stdout=__import__("subprocess").PIPE).stdout.decode().strip()
-        with self.assertRaisesRegex(V2.V2Error, "does not contain the plan"):
-            V2.verify_preoutcome_checkpoint(self.repository, PLAN_PATH, head)
+        subprocess = __import__("subprocess")
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            subprocess.run(["git", "-C", str(repository), "config", "user.name", "Test User"], check=True)
+            subprocess.run(
+                ["git", "-C", str(repository), "config", "user.email", "test@example.com"],
+                check=True,
+            )
+            sentinel = repository / "sentinel.txt"
+            sentinel.write_text("checkpoint without plan\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(repository), "add", "sentinel.txt"], check=True)
+            subprocess.run(
+                ["git", "-C", str(repository), "commit", "-q", "-m", "fixture checkpoint"],
+                check=True,
+            )
+            head = subprocess.run(
+                ["git", "-C", str(repository), "rev-parse", "HEAD"],
+                check=True,
+                stdout=subprocess.PIPE,
+            ).stdout.decode().strip()
+            plan_path = repository / "pilot" / "micro-render-v2" / "preregistration.yaml"
+            plan_path.parent.mkdir(parents=True)
+            shutil.copyfile(PLAN_PATH, plan_path)
+            with self.assertRaisesRegex(V2.V2Error, "does not contain the plan"):
+                V2.verify_preoutcome_checkpoint(repository, plan_path, head)
 
     def test_transport_stop_requires_an_observed_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
