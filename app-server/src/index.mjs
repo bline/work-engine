@@ -11,6 +11,7 @@ export * from "./sqlite-app-server-state.mjs";
 export * from "./token-usage-pressure-projection.mjs";
 export * from "./retained-role-shadow-lifecycle.mjs";
 export * from "./retained-role-shadow-host.mjs";
+export * from "./manifest-role-observed-context.mjs";
 export * from "./context-checkpoint-publication.mjs";
 export * from "./context-transition-lease.mjs";
 export * from "./continuation-state.mjs";

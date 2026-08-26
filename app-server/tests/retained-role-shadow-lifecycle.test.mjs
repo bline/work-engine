@@ -1,17 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash, generateKeyPairSync } from "node:crypto";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
 import {
   CodexAppServerAdapter,
+  ContextCheckpointPublisher,
   ExactSkillResolver,
   FileRoleBindingRegistry,
   RetainedRoleShadowLifecycleRuntime,
+  SemanticContextInferenceRuntime,
   TokenUsagePressureProjector,
   createRetainedRoleShadowHost,
   openSqliteAppServerStateStore,
+  projectManifestRoleObservedContext,
   projectRuntimeManifest,
   validateTokenUsagePressureProfile,
 } from "../src/index.mjs";
@@ -108,8 +112,17 @@ test("retained role never applies stale token usage to a completed turn", async 
 });
 
 class LifecycleTransport {
-  constructor() {
+  constructor({
+    threadId = "durable-thread-1",
+    turnId = "durable-turn-1",
+    inputTokens = 10_000,
+    totalTokens = 12_000,
+  } = {}) {
     this.notificationHandlers = new Set();
+    this.threadId = threadId;
+    this.turnId = turnId;
+    this.inputTokens = inputTokens;
+    this.totalTokens = totalTokens;
   }
 
   onServerRequest() {}
@@ -133,17 +146,17 @@ class LifecycleTransport {
         platformOs: "linux",
       };
     }
-    if (method === "thread/start") return { thread: { id: "durable-thread-1" } };
+    if (method === "thread/start") return { thread: { id: this.threadId } };
     if (method === "turn/start") {
       queueMicrotask(() => {
         this.emit({
           method: "thread/tokenUsage/updated",
           params: {
             threadId: params.threadId,
-            turnId: "durable-turn-1",
+            turnId: this.turnId,
             tokenUsage: {
-              last: { inputTokens: 10_000, cachedInputTokens: 1_000, cacheWriteInputTokens: 0, outputTokens: 1_000, reasoningOutputTokens: 0, totalTokens: 12_000 },
-              total: { inputTokens: 10_000, cachedInputTokens: 1_000, cacheWriteInputTokens: 0, outputTokens: 1_000, reasoningOutputTokens: 0, totalTokens: 12_000 },
+              last: { inputTokens: this.inputTokens, cachedInputTokens: 1_000, cacheWriteInputTokens: 0, outputTokens: this.totalTokens - this.inputTokens, reasoningOutputTokens: 0, totalTokens: this.totalTokens },
+              total: { inputTokens: this.inputTokens, cachedInputTokens: 1_000, cacheWriteInputTokens: 0, outputTokens: this.totalTokens - this.inputTokens, reasoningOutputTokens: 0, totalTokens: this.totalTokens },
               modelContextWindow: 100_000,
             },
           },
@@ -153,14 +166,14 @@ class LifecycleTransport {
           params: {
             threadId: params.threadId,
             turn: {
-              id: "durable-turn-1",
+              id: this.turnId,
               status: "completed",
               items: [{ type: "agentMessage", phase: "final_answer", text: "complete" }],
             },
           },
         });
       });
-      return { turn: { id: "durable-turn-1" } };
+      return { turn: { id: this.turnId } };
     }
     throw new Error(`unexpected request ${method}`);
   }
@@ -266,4 +279,171 @@ test("manifest delivery persists a real comfortable shadow episode across SQLite
   assert.equal(restartedHost.sequenceFloor, 1);
   assert.equal(restartedHost.recoveryForRole("probe:dev").status, "restored");
   assert.equal(restartedHost.recoveryForRole("probe:dev").minimumSequence, 1);
+});
+
+test("replacement-candidate turn signs, verifies, and durably publishes in shadow mode", async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "replacement-candidate-shadow-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const skillDirectory = path.join(directory, "skills", "strategic-planner");
+  await mkdir(skillDirectory, { recursive: true });
+  const skillPath = path.join(skillDirectory, "SKILL.md");
+  const content = {
+    human: "The user authorized the next bounded App Server slice.",
+    evidence: "The observed-context projection and continuation schema tests pass.",
+    skill: "The strategic planner is advisory and preserves canonical authority.",
+    next: "Build the hidden semantic compiler and independent verifier against fixtures.",
+  };
+  await writeFile(skillPath, content.skill, "utf8");
+  const sha = Object.fromEntries(Object.entries(content).map(([key, value]) => [
+    key,
+    createHash("sha256").update(value, "utf8").digest("hex"),
+  ]));
+  const renderFixture = async (name, replacements = {}) => {
+    let value = await readFile(new URL(`./fixtures/semantic-context/${name}`, import.meta.url), "utf8");
+    for (const [token, replacement] of Object.entries({
+      HUMAN_SHA: sha.human,
+      EVIDENCE_SHA: sha.evidence,
+      SKILL_SHA: sha.skill,
+      NEXT_SHA: sha.next,
+      ...replacements,
+    })) value = value.replaceAll(`__${token}__`, replacement);
+    return value.replaceAll("skills/strategic-planner/SKILL.md", skillPath);
+  };
+  const manifest = projectRuntimeManifest({
+    schema_version: 1,
+    manifest_id: "replacement.shadow",
+    roles: {
+      "strategic-planner": {
+        contract: "skills/strategic-planner/SKILL.md",
+        developer_instructions: "Run the bounded fixture.",
+        thread_options: { cwd: ".", approval_policy: "never", sandbox: "read-only" },
+        skills: [{ name: "strategic-planner", path: "skills/strategic-planner/SKILL.md" }],
+      },
+    },
+  }, { baseDirectory: directory });
+  const transport = new LifecycleTransport({ inputTokens: 70_000, totalTokens: 75_000 });
+  const adapter = new CodexAppServerAdapter({
+    transport,
+    registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
+    skillResolver: await ExactSkillResolver.create([path.join(directory, "skills")]),
+  });
+  await adapter.initialize();
+  const store = await openSqliteAppServerStateStore({
+    filePath: path.join(directory, "state", "app-server.sqlite3"),
+  });
+  t.after(() => store.close());
+  const keys = generateKeyPairSync("ed25519");
+  const inferenceTimes = ["2026-08-25T13:00:00Z", "2026-08-25T13:00:01Z"];
+  const compiler = {
+    infer: async () => ({
+      outputText: await renderFixture("compiler-valid.yaml"),
+      provenance: { producer: "recorded-compiler", model: "fixture", version: "1", inferenceId: "compiler-1" },
+    }),
+  };
+  const verifier = {
+    infer: async (request) => ({
+      outputText: await renderFixture("verifier-accepted.yaml", {
+        SOURCE_SHA: request.input.sourceRevision.slice(7),
+        CANDIDATE_SHA: request.input.candidate.candidateRevision.slice(7),
+      }),
+      provenance: { producer: "recorded-verifier", model: "fixture", version: "1", inferenceId: "verifier-1" },
+    }),
+  };
+  const inferenceRuntime = new SemanticContextInferenceRuntime({
+    compiler,
+    verifier,
+    resolvePublicKey: (keyId) => keyId === "shadow-key-1" ? keys.publicKey : null,
+    now: () => inferenceTimes.shift(),
+  });
+  const authorityRevision = `sha256:${"e".repeat(64)}`;
+  const authorityEvidence = `sha256:${"f".repeat(64)}`;
+  const checkpointPublisher = new ContextCheckpointPublisher({
+    store,
+    resolvePublicKey: (keyId) => keyId === "shadow-key-1" ? keys.publicKey : null,
+    revalidateAuthority: async ({ references }) => ({
+      status: "current",
+      authorityRevision,
+      checkedReferences: references,
+      evidenceRefs: [authorityEvidence],
+    }),
+    now: () => "2026-08-25T13:00:02Z",
+  });
+  const host = createRetainedRoleShadowHost({
+    adapter,
+    manifest,
+    episodeStore: store,
+    pressureProfile: profile(),
+    pressurePolicyForRole: async () => ({
+      schemaVersion: 1,
+      unit: "basis_points",
+      approaching: { enter: 5_000, exit: 4_500 },
+      replacementCandidate: { enter: 7_000, exit: 6_500 },
+      critical: { enter: 9_000, exit: 8_500 },
+    }),
+    scheduleForRole: async () => ({
+      schemaVersion: 1,
+      inspectAt: ["replacement_candidate", "critical"],
+      publishAcceptedCheckpoint: true,
+    }),
+    inferenceRuntimeForRole: async () => inferenceRuntime,
+    checkpointPublisherForRole: async () => checkpointPublisher,
+    projectionForTurn: async ({ delivery, lifecycleSnapshot }) => {
+      const assembled = await projectManifestRoleObservedContext({
+        delivery,
+        lifecycleSnapshot,
+        visibleMaterials: [{
+          identity: "user-message:proceed",
+          origin: "human",
+          trustClass: "human_authority_input",
+          instructionApplicability: "contract_defined",
+          contentRef: { kind: "thread-item", reference: "user-message:proceed" },
+          content: content.human,
+        }, {
+          identity: "evidence:observed-context",
+          origin: "tool",
+          trustClass: "attributed_evidence",
+          instructionApplicability: "none",
+          producer: "app-server-test-gate",
+          contentRef: { kind: "evidence", reference: "evidence:observed-context" },
+          content: content.evidence,
+        }],
+        expectedNextWork: { reference: "expected-next-work:semantic-inference", content: content.next },
+        sourceInventoryCompleteness: "partial",
+        omissions: [{ scope: "provider-effective-prompt", reason: "provider does not expose exact effective input" }],
+        signing: {
+          componentId: "replacement-shadow-test",
+          buildRevision: "test-1",
+          keyId: "shadow-key-1",
+          privateKey: keys.privateKey,
+        },
+      });
+      store.initializeCheckpointFence({
+        logicalRoleInstanceId: delivery.logicalRoleInstanceId,
+        threadId: delivery.threadId,
+        bindingRevision: delivery.binding.bindingRevision,
+        sourceRevision: assembled.projection.sourceRevision,
+        authorityRevision,
+        publicationRevision: null,
+        ledgerRevision: null,
+      });
+      return assembled;
+    },
+    now: () => "2026-08-25T13:00:03Z",
+  });
+  t.after(host.close);
+
+  const outcome = await host.runtime.deliverTurn({
+    roleId: "strategic-planner",
+    instanceId: "main",
+    clientUserMessageId: "candidate-message-1",
+    text: content.human,
+  });
+  assert.equal(outcome.shadow.status, "recorded");
+  assert.equal(outcome.shadow.episode.pressure.disposition, "replacement_candidate");
+  assert.equal(outcome.shadow.episode.inference.status, "accepted");
+  assert.equal(outcome.shadow.episode.checkpoint.status, "published");
+  assert.deepEqual(outcome.shadow.episode.transition, { status: "not_requested", retirementAttempted: false });
+  const durable = store.snapshot("strategic-planner:main");
+  assert.equal(durable.publication.checkpointRevision, outcome.shadow.episode.checkpoint.checkpointRevision);
+  assert.equal(durable.ledgerEntry.entryRevision, outcome.shadow.episode.checkpoint.ledgerRevision);
 });

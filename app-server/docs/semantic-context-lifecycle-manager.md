@@ -830,6 +830,14 @@ are constructed lazily from the configured policy and the latest compatible
 durable disposition. The host owns notification detachment, while the caller
 continues to own adapter and database lifetimes.
 
+At a semantic-inspection threshold, manifest-role projection assembly consumes
+explicitly classified visible materials rather than inferring trust from
+content. It reads the exact activated skill bytes and derives every digest,
+binds the completed turn and runtime role projection, and emits the signed
+observed-context projection together with the exact source-material closure.
+The caller still owns completeness and omission declarations; the assembler
+rejects caller-supplied digests and undeclared material fields.
+
 ### Critical preservation failure and human recovery
 
 With the configured `token_budget` behavior, mandatory provider compaction may

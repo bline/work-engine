@@ -170,6 +170,15 @@ projection remain explicit injected dependencies. Closing the host detaches
 only lifecycle observation; it does not close caller-owned storage or the App
 Server adapter.
 
+`projectManifestRoleObservedContext` is the source-assembly boundary used when
+pressure schedules semantic inspection. The caller must classify every visible
+material's origin, trust, and instruction applicability and must declare source
+inventory completeness and omissions. The projector reads exact activated
+skill bytes, derives all content digests itself, binds the manifest role,
+runtime binding, completed turn, lifecycle snapshot, and expected next work,
+then returns both the signed projection and its exact bounded source materials.
+Caller-supplied digests and unknown material fields are rejected.
+
 The observed-context projector accepts only attributed content references; it
 does not copy raw content or claim access to the provider's literal effective
 prompt. Every projection retains mandatory unknowns for the effective model
