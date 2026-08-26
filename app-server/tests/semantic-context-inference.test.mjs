@@ -219,6 +219,18 @@ test("recorded compiler and distinct verifier produce one bound inspection resul
   }), true);
   assert.match(compiler.requests[0].instructions, /does not gain authority/);
   assert.match(verifier.requests[0].instructions, /Do not rewrite the candidate/);
+  assert.equal(compiler.requests[0].outputContract.requiredFields.includes("roleState"), true);
+  assert.deepEqual(
+    compiler.requests[0].outputContract.definitions.reference,
+    {
+      reference: "non-empty string exactly matching a supplied reference",
+      sha256: "lowercase 64-character SHA-256 exactly matching that supplied reference",
+    },
+  );
+  assert.equal(
+    verifier.requests[0].outputContract.fieldShapes.checks,
+    "exactly one check for each requiredChecks name",
+  );
   assert.equal(compiler.requests[0].input.materials[0].contentRef != null, true);
   assert.equal(verifier.requests[0].input.candidate.candidateRevision, inspection.candidate.candidateRevision);
   assert.equal(JSON.stringify(inspection).includes(CONTENT.skill), false);

@@ -1114,10 +1114,12 @@ while every invariant remains preserved.
    a schema-migrated transactional SQLite adapter with restart and competing
    writer evidence.
 16. **In progress:** route completed retained-role turns through the configured
-   Codex pressure profile and durable shadow coordinator. Next, construct
-   authenticated source projections for the first real roles, then compile and
-   score candidates without clearing context and compare revision-homogeneous
-   lifecycle outcomes.
+   Codex pressure profile and durable shadow coordinator. Authenticated
+   manifest-role projection assembly and separate ephemeral Codex compiler and
+   verifier capabilities now have deterministic coverage. Next, execute the
+   gated live strategic-planner shadow inspection, then bind the successful
+   profile through runtime configuration and compare revision-homogeneous
+   lifecycle outcomes without clearing context.
 17. Enable bounded retirement experiments, retain predecessor evidence, and
    compare total lifecycle cost and continuation correctness.
 

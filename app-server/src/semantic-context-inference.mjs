@@ -597,6 +597,53 @@ const COMPILER_OUTPUT_CONTRACT = deepFreeze({
   schemaVersion: 1,
   format: "yaml",
   fields: [...COMPILER_FIELDS],
+  requiredFields: [...COMPILER_FIELDS],
+  definitions: {
+    reference: {
+      reference: "non-empty string exactly matching a supplied reference",
+      sha256: "lowercase 64-character SHA-256 exactly matching that supplied reference",
+    },
+    semanticRecord: {
+      id: "unique non-empty string within its field",
+      statement: "non-empty string",
+      sourceRefs: "array of one or more reference objects",
+    },
+    humanInteraction: {
+      id: "unique non-empty string",
+      kind: "non-empty string",
+      status: ["open", "resolved", "closed_but_active", "superseded", "historical", "ambiguous"],
+      authorityEffect: "non-empty string or null",
+      durableConsequenceRef: "reference object or null",
+      sourceRef: "reference object",
+      nextContextDisposition: ["compiled_consequence", "escalate", "exact", "omit_from_working_context", "reference_only"],
+    },
+  },
+  fieldShapes: {
+    objective: { statement: "non-empty string", authorityRef: "reference" },
+    workPosition: { phase: "non-empty string", currentUnit: "non-empty string" },
+    completedConsequences: "array of semanticRecord",
+    activeCommitments: "array of semanticRecord",
+    decisions: "array of semanticRecord",
+    humanInteractions: "array of humanInteraction; use [] when none are present",
+    authorityDependencies: {
+      canonicalRecords: "array of reference",
+      revalidationRequired: "array of non-empty strings",
+    },
+    unresolved: "array of semanticRecord",
+    governingEnvironment: {
+      roleContract: "reference",
+      instructionsToReload: "array of reference",
+      activatedSkills: "array of reference",
+    },
+    canonicalReferences: "array of reference",
+    authorizedNextAction: {
+      kind: "non-empty string",
+      objective: "non-empty string",
+      authorityRef: "reference",
+    },
+    roleState: { schema: "non-empty string", value: "JSON-compatible value" },
+    uncertainty: "array of semanticRecord",
+  },
   hostOwnedFields: [
     "schemaVersion", "type", "subject", "compiledAt", "compiler", "candidateRevision",
   ],
@@ -610,6 +657,39 @@ const VERIFIER_OUTPUT_CONTRACT = deepFreeze({
   checkStatuses: [...CHECK_STATUSES],
   interactionClosureAssessments: [...HUMAN_INTERACTION_CLOSURE_ASSESSMENTS],
   interactionLoadingAssessments: [...HUMAN_INTERACTION_LOADING_ASSESSMENTS],
+  definitions: {
+    reference: {
+      reference: "non-empty string matching a supplied material, observed-context, or candidate reference",
+      sha256: "lowercase 64-character SHA-256 exactly matching that reference",
+    },
+    check: {
+      name: [...CHECK_NAMES],
+      status: [...CHECK_STATUSES],
+      rationale: "non-empty string",
+      sourceRefs: "array of one or more reference objects",
+    },
+    interactionEvaluation: {
+      interactionId: "exact candidate human-interaction id",
+      sourceRef: "exact candidate human-interaction sourceRef",
+      status: "exact candidate human-interaction status",
+      nextContextDisposition: "exact candidate human-interaction nextContextDisposition",
+      closure: [...HUMAN_INTERACTION_CLOSURE_ASSESSMENTS],
+      loading: [...HUMAN_INTERACTION_LOADING_ASSESSMENTS],
+      rationale: "non-empty string",
+      sourceRefs: "array of one or more reference objects",
+    },
+    finding: {
+      id: "unique non-empty string within its field",
+      statement: "non-empty string",
+      sourceRefs: "array of one or more reference objects",
+    },
+  },
+  fieldShapes: {
+    checks: "exactly one check for each requiredChecks name",
+    interactionEvaluations: "exactly one interactionEvaluation for every candidate human interaction; use [] when none exist",
+    blockers: "array of finding",
+    uncertainty: "array of finding",
+  },
   hostDerivesDisposition: true,
 });
 

@@ -8,6 +8,8 @@
     "test": "npm run test:supervisor && npm run test:work-engine-mcp && npm run test:chrome-vision && npm run test:app-server",
     "test:app-server": "node --test app-server/tests/*.test.mjs",
     "test:app-server:integration": "WORK_ENGINE_APP_SERVER_INTEGRATION=1 node --test app-server/tests/integration.test.mjs",
+    "app-server:proxy": "node app-server/scripts/app-server-proxy.mjs",
+    "app-server:switchboard": "node app-server/scripts/operator-switchboard.mjs",
     "generate:app-server-protocol": "node app-server/scripts/generate-protocol-bindings.mjs",
     "test:supervisor": "node --test skills/slice-supervisor/tests/campaign-preflight.test.mjs",
     "test:work-engine-mcp": "node --test skills/work-engine-mcp/tests/*.test.mjs",
@@ -15,6 +17,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "ws": "^8.21.3",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },

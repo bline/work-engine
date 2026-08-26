@@ -22,6 +22,16 @@ export class StdioJsonRpcTransport extends EventEmitter {
     this.pending = new Map();
     this.serverRequestHandler = null;
     this.closed = false;
+    this.spawnReady = new Promise((resolve, reject) => {
+      child.once("spawn", resolve);
+      child.once("error", reject);
+      child.once("exit", (code, signal) => {
+        reject(new AppServerTransportError(
+          `App Server exited before spawn readiness (${code ?? signal})`,
+        ));
+      });
+    });
+    this.spawnReady.catch(() => {});
 
     readline.createInterface({ input: child.stdout }).on("line", (line) => {
       this.#receive(line).catch((error) => this.emit("protocolError", error));
@@ -45,6 +55,10 @@ export class StdioJsonRpcTransport extends EventEmitter {
   onClosed(handler) {
     this.on("closed", handler);
     return () => this.off("closed", handler);
+  }
+
+  ready() {
+    return this.spawnReady;
   }
 
   #send(message) {

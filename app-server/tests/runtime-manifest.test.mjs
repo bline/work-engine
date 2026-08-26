@@ -10,6 +10,8 @@ import {
   FileRoleBindingRegistry,
   ManifestRoleRuntime,
   loadRuntimeManifest,
+  loadRuntimeManifestDocument,
+  projectRuntimeManifest,
 } from "../src/index.mjs";
 
 class ManifestTransport {
@@ -96,6 +98,24 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   assert.match(first.manifest.sha256, /^[a-f0-9]{64}$/);
   assert.equal(first.manifest.path, manifestPath);
   assert.equal(Object.isFrozen(first), true);
+});
+
+test("snapshot delivery paths do not change canonical role environment identity", async (t) => {
+  const { directory, manifestPath } = await fixture(t);
+  const loaded = await loadRuntimeManifestDocument(manifestPath);
+  const first = projectRuntimeManifest(loaded.document, {
+    baseDirectory: path.join(directory, "generation-one"),
+    identityBaseDirectory: directory,
+    sourceSha256: loaded.sourceSha256,
+  }).projectRole("alpha", "main");
+  const second = projectRuntimeManifest(loaded.document, {
+    baseDirectory: path.join(directory, "generation-two"),
+    identityBaseDirectory: directory,
+    sourceSha256: loaded.sourceSha256,
+  }).projectRole("alpha", "main");
+
+  assert.equal(first.role.runtimeEnvironmentRevision, second.role.runtimeEnvironmentRevision);
+  assert.notEqual(first.skills[0].path, second.skills[0].path);
 });
 
 test("manifest role runtime delivers projected roles through the shared adapter", async (t) => {

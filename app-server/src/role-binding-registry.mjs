@@ -97,6 +97,13 @@ export class FileRoleBindingRegistry {
     return state.bindings[logicalRoleInstanceId] ?? null;
   }
 
+  async listBindings() {
+    const state = await this.#readState();
+    return Object.freeze(Object.keys(state.bindings).sort().map((logicalRoleInstanceId) =>
+      Object.freeze({ ...state.bindings[logicalRoleInstanceId] })
+    ));
+  }
+
   bind(input, { transitionAdmissionPermit = null } = {}) {
     if (!this.transitionGate) return this.#bind(input);
     return this.transitionGate.runBindingAdmission({

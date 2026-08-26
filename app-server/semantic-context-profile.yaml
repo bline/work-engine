@@ -1,0 +1,20 @@
+schema_version: 1
+profile_id: work-engine.local-shadow
+
+pressure_profile:
+  usage_field: last.totalTokens
+  window_field: modelContextWindow
+  rounding: floor
+  saturation: clamp_10000
+
+pressure_policy:
+  unit: basis_points
+  approaching: {enter: 6500, exit: 6000}
+  replacement_candidate: {enter: 7500, exit: 7000}
+  critical: {enter: 9000, exit: 8500}
+
+shadow_schedule:
+  inspect_at:
+    - replacement_candidate
+    - critical
+  publish_accepted_checkpoint: false

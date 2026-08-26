@@ -166,7 +166,9 @@ export class CodexAppServerAdapter {
       return this.negotiated;
     }
     const appServer = negotiateCapabilities(requiredCapabilities, this.protocol);
-    const provider = negotiateProviderCapabilities({
+    // Reject impossible provider requirements before crossing the transport
+    // boundary, even though the accepted response is adopted below.
+    negotiateProviderCapabilities({
       required: requiredProviderCapabilities,
       configuredFeatures: this.configuredProviderFeatures,
       profile: this.providerRuntimeProfile,
@@ -176,8 +178,31 @@ export class CodexAppServerAdapter {
       clientInfo,
       capabilities: appServer.initializeCapabilities,
     });
-    assertCompatibleServer(response, this.protocol);
+    const negotiated = this.adoptInitialization(response, {
+      requiredCapabilities,
+      requiredProviderCapabilities,
+    });
     this.transport.notify("initialized");
+    return negotiated;
+  }
+
+  adoptInitialization(response, {
+    requiredCapabilities = FOUNDATION_CAPABILITIES,
+    requiredProviderCapabilities = [],
+  } = {}) {
+    if (this.negotiated) {
+      for (const name of requiredCapabilities) this.#requireCapability(name);
+      for (const name of requiredProviderCapabilities) this.requireProviderCapability(name);
+      return this.negotiated;
+    }
+    const appServer = negotiateCapabilities(requiredCapabilities, this.protocol);
+    const provider = negotiateProviderCapabilities({
+      required: requiredProviderCapabilities,
+      configuredFeatures: this.configuredProviderFeatures,
+      profile: this.providerRuntimeProfile,
+      protocol: this.protocol,
+    });
+    assertCompatibleServer(response, this.protocol);
     this.negotiated = Object.freeze({ ...appServer, provider });
     return this.negotiated;
   }
@@ -271,6 +296,55 @@ export class CodexAppServerAdapter {
       this.turnCompletionWaiters.set(key, waiters);
       signal?.addEventListener("abort", onAbort, { once: true });
     });
+  }
+
+  async runEphemeralTurn({
+    developerInstructions,
+    text,
+    clientUserMessageId,
+    threadOptions = {},
+    signal,
+  }) {
+    if (!this.negotiated) throw new Error("App Server adapter is not initialized");
+    requireText(developerInstructions, "ephemeral turn developer instructions");
+    requireText(text, "ephemeral turn text");
+    requireText(clientUserMessageId, "ephemeral turn client user message id");
+    this.#requireCapability("thread_start");
+    this.#requireCapability("turn_start");
+    this.#requireCapability("client_message_id");
+    const options = checkedThreadOptions({ threadOptions });
+    const tokenUsageByTurn = new Map();
+    let threadId = null;
+    const detach = this.onNotification((notification) => {
+      if (notification?.method !== "thread/tokenUsage/updated"
+          || notification.params?.threadId !== threadId
+          || typeof notification.params?.turnId !== "string") return;
+      tokenUsageByTurn.set(notification.params.turnId, notification.params.tokenUsage ?? null);
+    });
+    try {
+      const threadResponse = await this.transport.request("thread/start", {
+        ...options,
+        developerInstructions,
+        ephemeral: true,
+      });
+      threadId = threadIdFrom(threadResponse, "ephemeral thread/start");
+      const turnResponse = await this.transport.request("turn/start", {
+        threadId,
+        clientUserMessageId,
+        input: [{ type: "text", text, text_elements: [] }],
+      });
+      const turnId = turnResponse?.turn?.id;
+      requireText(turnId, "ephemeral turn/start response turn id");
+      const completion = await this.waitForTurnCompletion({ threadId, turnId, signal });
+      return Object.freeze({
+        threadId,
+        turnId,
+        completion,
+        tokenUsage: tokenUsageByTurn.get(turnId) ?? null,
+      });
+    } finally {
+      detach();
+    }
   }
 
   #requireCapability(name) {

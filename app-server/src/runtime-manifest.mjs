@@ -2,8 +2,6 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { parseDocument } from "yaml";
-
 const TOP_LEVEL_FIELDS = new Set(["schema_version", "manifest_id", "roles"]);
 const ROLE_FIELDS = new Set(["contract", "developer_instructions", "thread_options", "skills"]);
 const SKILL_FIELDS = new Set(["name", "path"]);
@@ -139,6 +137,7 @@ export class RuntimeManifest {
 
 export function projectRuntimeManifest(document, {
   baseDirectory = process.cwd(),
+  identityBaseDirectory = baseDirectory,
   sourcePath = null,
   sourceSha256 = null,
 } = {}) {
@@ -154,6 +153,7 @@ export function projectRuntimeManifest(document, {
   }
 
   const resolvedBase = path.resolve(baseDirectory);
+  const resolvedIdentityBase = path.resolve(identityBaseDirectory);
   const roles = {};
   for (const roleId of Object.keys(document.roles).sort()) {
     requireIdentifierSegment(roleId, "runtime role id");
@@ -162,21 +162,26 @@ export function projectRuntimeManifest(document, {
     rejectUnknownFields(role, ROLE_FIELDS, `role ${roleId}`);
     requireText(role.contract, `role ${roleId} contract`);
     requireText(role.developer_instructions, `role ${roleId} developer_instructions`);
-    const contractPath = path.resolve(resolvedBase, role.contract);
+    const contractPath = path.resolve(resolvedIdentityBase, role.contract);
+    const identitySkills = normalizeSkills(role.skills, resolvedIdentityBase, roleId);
     const skills = normalizeSkills(role.skills, resolvedBase, roleId);
-    if (!skills.some((skill) => skill.path === contractPath)) {
+    if (!identitySkills.some((skill) => skill.path === contractPath)) {
       throw new TypeError(`role ${roleId} contract must be present in its exact skill inputs`);
     }
     const roleTemplate = {
       roleContract: { path: contractPath },
       developerInstructions: role.developer_instructions,
-      threadOptions: normalizeThreadOptions(role.thread_options, resolvedBase, roleId),
+      threadOptions: normalizeThreadOptions(
+        role.thread_options,
+        resolvedIdentityBase,
+        roleId,
+      ),
       skills,
     };
     roles[roleId] = {
       ...roleTemplate,
       runtimeEnvironmentRevision: createHash("sha256")
-        .update(canonicalJson(roleTemplate))
+        .update(canonicalJson({ ...roleTemplate, skills: identitySkills }))
         .digest("hex"),
     };
   }
@@ -196,18 +201,29 @@ export function projectRuntimeManifest(document, {
   });
 }
 
-export async function loadRuntimeManifest(manifestPath) {
+export async function loadRuntimeManifestDocument(manifestPath) {
   const resolvedPath = path.resolve(manifestPath);
   const source = await readFile(resolvedPath, "utf8");
+  const { parseDocument } = await import("yaml");
   const parsed = parseDocument(source, { uniqueKeys: true });
   if (parsed.errors.length > 0) {
     throw new TypeError(`invalid runtime manifest YAML: ${parsed.errors[0].message}`);
   }
   const document = parsed.toJS({ maxAliasCount: 0 });
-  return projectRuntimeManifest(document, {
-    baseDirectory: path.dirname(resolvedPath),
+  return Object.freeze({
+    document,
+    source,
     sourcePath: resolvedPath,
     sourceSha256: createHash("sha256").update(source).digest("hex"),
+  });
+}
+
+export async function loadRuntimeManifest(manifestPath) {
+  const loaded = await loadRuntimeManifestDocument(manifestPath);
+  return projectRuntimeManifest(loaded.document, {
+    baseDirectory: path.dirname(loaded.sourcePath),
+    sourcePath: loaded.sourcePath,
+    sourceSha256: loaded.sourceSha256,
   });
 }
 

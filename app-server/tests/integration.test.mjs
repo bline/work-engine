@@ -14,17 +14,35 @@ import {
   FileRoleBindingRegistry,
   ManifestRoleRuntime,
   MODEL_CONTEXT_REPLACEMENT_CAPABILITY,
+  ObservableAppServerTransport,
   PINNED_PROTOCOL,
   StdioJsonRpcTransport,
   StrategicPlannerRuntime,
   assertCompatibleServer,
   attachCodexLifecycleEvidence,
+  createLocalSemanticShadowHost,
+  formatAppServerProtocolEvent,
   loadRuntimeManifest,
+  projectSemanticContextRuntimeProfile,
 } from "../src/index.mjs";
 
 const enabled = process.env.WORK_ENGINE_APP_SERVER_INTEGRATION === "1";
+const traceEnabled = process.env.WORK_ENGINE_APP_SERVER_TRACE === "1";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
+
+function spawnAppServer(options = {}, testContext = null) {
+  const transport = StdioJsonRpcTransport.spawn(options);
+  if (!traceEnabled) return transport;
+  return new ObservableAppServerTransport({
+    transport,
+    onEvent: (event) => {
+      const line = `[app-server] ${formatAppServerProtocolEvent(event)}`;
+      if (testContext) testContext.diagnostic(line);
+      else console.error(line);
+    },
+  });
+}
 
 async function sha256(filePath) {
   return createHash("sha256").update(await readFile(filePath)).digest("hex");
@@ -46,7 +64,7 @@ function parseContextLifecycleProbe(outputText, expectedPhase) {
 }
 
 test("pinned Codex App Server completes the initialize handshake", { skip: !enabled }, async (t) => {
-  const transport = StdioJsonRpcTransport.spawn();
+  const transport = spawnAppServer({}, t);
   t.after(() => transport.close());
   const response = await transport.request("initialize", {
     clientInfo: {
@@ -58,6 +76,12 @@ test("pinned Codex App Server completes the initialize handshake", { skip: !enab
   });
   assert.equal(assertCompatibleServer(response), PINNED_PROTOCOL.codexCliVersion);
   transport.notify("initialized");
+  if (traceEnabled) {
+    assert.equal(transport instanceof ObservableAppServerTransport, true);
+    const trace = transport.snapshot();
+    assert.equal(trace.events.length >= 4, true);
+    assert.deepEqual(trace.observationErrors, []);
+  }
   assert.equal(response.platformFamily.length > 0, true);
 });
 
@@ -98,7 +122,7 @@ roles:
       - {name: context-echo, path: skills/context-echo/SKILL.md}
 `, "utf8");
 
-  const transport = StdioJsonRpcTransport.spawn({ cwd: ROOT });
+  const transport = spawnAppServer({ cwd: ROOT }, t);
   t.after(() => transport.close());
   const adapter = new CodexAppServerAdapter({
     transport,
@@ -183,10 +207,10 @@ roles:
       - {name: context-lifecycle-probe, path: skills/context-lifecycle-probe/SKILL.md}
 `, "utf8");
 
-  const transport = StdioJsonRpcTransport.spawn({
+  const transport = spawnAppServer({
     cwd: ROOT,
     args: ["app-server", "--stdio", "--enable", "token_budget"],
-  });
+  }, t);
   t.after(() => transport.close());
   const adapter = new CodexAppServerAdapter({
     transport,
@@ -286,7 +310,7 @@ test("live strategic planner returns an exact request-bound handoff", {
 }, async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-live-planner."));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const transport = StdioJsonRpcTransport.spawn({ cwd: ROOT });
+  const transport = spawnAppServer({ cwd: ROOT }, t);
   t.after(() => transport.close());
   const adapter = new CodexAppServerAdapter({
     transport,
@@ -337,4 +361,94 @@ test("live strategic planner returns an exact request-bound handoff", {
     result.handoff.evidence_cutoff.repository_revision,
     `git:${repositoryRevision}`,
   );
+});
+
+test("live strategic planner completes one non-clearing semantic shadow inspection", {
+  skip: !enabled,
+  timeout: 600_000,
+}, async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-live-shadow."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const transport = spawnAppServer({ cwd: ROOT }, t);
+  t.after(() => transport.close());
+  const adapter = new CodexAppServerAdapter({
+    transport,
+    registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
+    skillResolver: await ExactSkillResolver.create([path.join(ROOT, "skills")]),
+  });
+  await adapter.initialize();
+  const profile = projectSemanticContextRuntimeProfile({
+    schema_version: 1,
+    profile_id: "live-shadow.integration",
+    pressure_profile: {
+      usage_field: "last.totalTokens",
+      window_field: "modelContextWindow",
+      rounding: "floor",
+      saturation: "clamp_10000",
+    },
+    pressure_policy: {
+      unit: "basis_points",
+      approaching: { enter: 1, exit: 0 },
+      replacement_candidate: { enter: 2, exit: 1 },
+      critical: { enter: 10_000, exit: 9_999 },
+    },
+    shadow_schedule: {
+      inspect_at: ["replacement_candidate"],
+      publish_accepted_checkpoint: false,
+    },
+  }, { sha256: "c".repeat(64) });
+  const userText = "Assess the current App Server foundation and identify the next bounded step without changing repository state.";
+  const host = await createLocalSemanticShadowHost({
+    adapter,
+    manifest: await loadRuntimeManifest(path.join(ROOT, "app-server/runtime-manifest.yaml")),
+    stateFilePath: path.join(directory, "app-server.sqlite3"),
+    profile,
+    inferenceThreadOptions: {
+      cwd: directory,
+      approvalPolicy: "never",
+      sandbox: "read-only",
+    },
+  });
+  t.after(host.close);
+
+  const result = await host.runtime.deliverTurn({
+    roleId: "strategic-planner",
+    instanceId: `live-shadow-${randomUUID()}`,
+    clientUserMessageId: `live-shadow-turn-${randomUUID()}`,
+    text: userText,
+    requestContext: {
+      "work-engine.shadow-objective": { kind: "application", value: userText },
+      "work-engine.shadow-mode": { kind: "application", value: "observe_only" },
+    },
+    signal: AbortSignal.timeout(570_000),
+  });
+
+  assert.equal(result.shadow.episode.pressure.disposition, "replacement_candidate");
+  if (result.shadow.status === "failed") {
+    t.diagnostic(`semantic shadow inference failed closed: ${JSON.stringify(
+      result.shadow.episode.failure,
+    )}`);
+    assert.equal(result.shadow.episode.failure.stage, "inference");
+    assert.equal(result.shadow.episode.inference.status, "failed");
+    assert.equal(result.shadow.episode.checkpoint.reason, "inference_failed");
+  } else {
+    assert.equal(result.shadow.status, "recorded");
+    assert.equal(["accepted", "rejected", "unresolved"].includes(
+      result.shadow.episode.inference.status,
+    ), true);
+    assert.notEqual(result.shadow.episode.inference.compiler.inferenceId,
+      result.shadow.episode.inference.verifier.inferenceId);
+    assert.deepEqual(result.shadow.episode.checkpoint, {
+      status: "not_attempted",
+      checkpointRevision: null,
+      ledgerRevision: null,
+      reason: result.shadow.episode.inference.status === "accepted"
+        ? "shadow_publication_disabled"
+        : "verification_not_accepted",
+    });
+  }
+  assert.deepEqual(result.shadow.episode.transition, {
+    status: "not_requested",
+    retirementAttempted: false,
+  });
 });

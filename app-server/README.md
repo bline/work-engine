@@ -19,6 +19,9 @@ The first vertical provides:
 - idempotent turn delivery through client message IDs;
 - bounded consumption of stable `turn/completed` notifications, including
   terminal failure propagation and final agent-output extraction;
+- a protocol-compatible observable transport wrapper that emits bounded,
+  content-free request, notification, server-request, token, and close events
+  without changing downstream App Server behavior;
 - a bounded provider-neutral lifecycle evidence collector fed by a
   version-pinned Codex notification normalizer for token usage and context
   transition signals;
@@ -73,6 +76,194 @@ live adapter retains a bounded result cache so fast notifications cannot race
 their consumer. A replay whose completion is no longer retained fails with an
 explicit reconciliation requirement instead of waiting for an event that has
 already occurred.
+
+Live integration tests can expose the observable transport in real time:
+
+```bash
+WORK_ENGINE_APP_SERVER_INTEGRATION=1 \
+WORK_ENGINE_APP_SERVER_TRACE=1 \
+node --test app-server/tests/integration.test.mjs
+```
+
+Trace events retain method, operation correlation, thread/turn/item identity,
+duration, failure type, and bounded token counts. They intentionally exclude
+prompts, model output, developer instructions, request context, tool arguments,
+and error messages. Observer failures are retained separately and cannot alter
+protocol delivery. This is the observability foundation used by the local
+`:we command` switchboard, not a workflow or authority surface.
+
+The first local operator switchboard is available with:
+
+```bash
+npm run app-server:switchboard -- --trace
+```
+
+It starts the pinned App Server, loads `runtime-manifest.yaml`, and preserves
+logical role bindings under the user's local state directory by default. Use
+`--bindings PATH` to select an isolated registry for a test. The optional
+`--enable-token-budget` flag starts App Server with `token_budget` and records
+that provider capability in retained environment bindings.
+
+To run manifest roles through the retained semantic lifecycle harness, use:
+
+```bash
+npm run app-server:switchboard -- \
+  --semantic-shadow \
+  --trace \
+  --enable-token-budget
+```
+
+[`semantic-context-profile.yaml`](semantic-context-profile.yaml) owns the local
+pressure bands, hysteresis exits, inspection schedule, and non-publication
+setting. `--semantic-profile PATH` selects an alternate closed profile, and
+`--semantic-state PATH` selects an isolated SQLite episode store. This makes it
+possible to lower thresholds for a bounded live compiler/verifier experiment
+without changing the default profile.
+
+Semantic-shadow mode records each completed role turn against matching token
+usage, persists the resulting episode, and invokes separate ephemeral compiler
+and verifier turns only at configured pressure dispositions. The model response
+is followed by a compact lifecycle line, while `:we status` retains the complete
+most recent shadow result for inspection.
+
+This mode deliberately cannot publish checkpoints or request context
+replacement. Its projection signer is run-scoped, so persisted shadow episodes
+are diagnostic evidence rather than reusable checkpoint authority. Enabling
+`token_budget` negotiates the future target-model capability but does not make
+the shadow harness call `new_context`.
+
+The administrative command surface is deliberately thin:
+
+```text
+:we agents
+:we attach strategic-planner:main
+:we detach
+:we status
+:we threads
+```
+
+Attaching selects where subsequent ordinary lines are delivered; it does not
+start a thread or grant workflow authority. The first ordinary line creates or
+resumes the manifest-bound role thread and waits for its final model output.
+Every line beginning with `:we` is intercepted locally, including unknown
+commands, and is never sent to the model. Handoff meaning, packet validation,
+acceptance, receipts, and workflow transitions remain owned by roles, skills,
+and their deterministic boundaries rather than the switchboard.
+
+Codex TUI reserves the leading `::` form for its own prompt expansion before
+`turn/start`, so the switchboard uses the non-reserved `:we` namespace. This
+keeps administrative input visible to the proxy instead of consuming it in the
+client composer.
+
+The protocol-facing proxy provides a Unix-socket App Server endpoint compatible
+with the pinned Codex TUI:
+
+```bash
+npm run app-server:proxy -- --socket /tmp/work-engine-app-server.sock --trace
+codex --remote unix:///tmp/work-engine-app-server.sock
+```
+
+It relays the complete bidirectional App Server JSON-RPC protocol between one
+remote client and a private observable stdio App Server. The socket is created
+with owner-only permissions, an existing path fails closed, and `/rpc` is the
+only accepted WebSocket route. `--enable-token-budget` passes that provider
+feature to the private App Server. The proxy also starts one validated
+executable-generation worker from an immutable source snapshot. Use
+`--generation-state PATH` to isolate its snapshots and durable generation
+receipt during testing; otherwise state is scoped by the socket identity under
+the user's local state directory.
+
+The proxy uses the connected Codex thread as a UI shell. It intercepts
+single-text `turn/start` requests inside the active executable generation:
+administrative `:we command` lines are handled locally by the switchboard, while
+ordinary lines are delivered to the attached manifest role and returned through
+a synthetic shell-turn lifecycle. Commands never enter a role thread. The initial command
+surface is `:we agents`, `:we attach role:instance`, `:we detach`, `:we status`, and
+`:we threads`; attachments persist outside replaceable generations so a
+compatible reload does not silently detach the operator.
+
+The current shell projection is intentionally narrow. A switchboard turn must
+contain exactly one text input. The proxy acknowledges an accepted role turn
+with a synthetic in-progress shell turn, then forwards the matching completion
+when the role turn terminates so the TUI can display progress and keep its
+composer lifecycle accurate. Provider role-thread notifications and tool
+requests re-enter the generation that admitted the parent dispatch; they are
+consumed there and are not forwarded to the UI shell. Rich input, incremental
+role-item streaming, and synthetic shell-history reconciliation remain later
+presentation work.
+
+The executable-generation foundation now provides the lifecycle kernel needed
+for bounded development-time reloads. A reload request made by an admitted turn
+establishes an admission fence synchronously, drains all generation-bound work,
+captures a closed file inventory into a content-addressed immutable snapshot,
+builds and validates an injected candidate, and compares its environment and
+bootstrap fingerprints before activation. Active work is always tagged with
+the generation that admitted it. The durable file-backed store records the
+state sequence, active-generation compare-and-swap, startup reconciliation,
+first successor turn, effects, and predecessor retirement; it never treats
+activation as proof that the successor has exercised real work successfully.
+
+Candidate classification is closed: unchanged semantic and bootstrap
+fingerprints are `implementation_compatible`; a changed role, authority,
+capability, skill, or tool environment is `environment_migration_required`; a
+changed stable transport/bootstrap boundary is `bootstrap_restart_required`;
+and snapshot, build, validation, or activation failure is `candidate_invalid`.
+A shared replaceable-substrate arbiter prevents an executable-generation
+transition from overlapping a model-context transition when both hosts use the
+same arbiter.
+
+The protocol proxy now runs through this stable/reloadable boundary. Its Unix
+socket, remote-client correlation, private App Server transport, and server
+request correlation remain in the stable process. Client requests and
+notifications are admitted against one executable generation, dispatched to
+that generation's child worker, and forwarded to App Server by the stable host.
+On restart, the host captures the current executable workspace before opening
+the proxy socket. An unchanged snapshot resumes the durable active generation.
+A changed snapshot is built and validated as a startup candidate. When its
+environment fingerprint still matches, one atomic startup reconciliation
+receipt advances the durable active pointer to the current workspace
+generation. A changed bootstrap fingerprint is recorded as
+`bootstrap_restart_completed`, because process startup is the required stable
+host restart rather than an in-process generation swap. Capture, build,
+validation, or environment-compatibility failure leaves the predecessor record
+unchanged and refuses startup instead of silently serving stale code. Startup
+reports the resolved state directory, workspace generation, selected
+generation, outcome, and reconciliation identity when one was written.
+
+New and resumed proxy threads receive the experimental dynamic-tool namespace
+`environment`. `environment.status` reads the active generation, reload fence,
+and admitted work without exposing internal admission tokens.
+`environment.reload` captures the configured executable inventory, validates a
+candidate child, and stages compatible activation. The provider turn remains
+admitted until its exact `turn/completed` notification; the proxy delays that
+notification while the successor settles, so a later turn cannot race the
+swap. Invalid or environment-incompatible candidates remain inactive.
+
+Editing files still creates no activation event. The current worker may
+forward App Server protocol operations, apply the thin administrative
+switchboard, deliver ordinary input through an already projected manifest
+role, or request the two closed lifecycle controls. It cannot grant workflow
+authority or reinterpret handoffs. Dynamic tools use the pinned App Server experimental API,
+so the worker upgrades the private `initialize` request to opt into that API
+and injects the namespace on `thread/start` or `thread/resume`.
+
+Each manifest-bound generation contains the raw runtime manifest, exact skill
+bytes, required role-runtime modules, and a generated projection whose bytes
+participate in the content-addressed snapshot. Manifest and skill digests also
+participate in the environment fingerprint. Snapshot-local delivery paths do
+not change canonical role-environment identity, while a semantic manifest,
+skill, or tool-surface change is classified as an environment migration rather
+than implementation-compatible reload.
+
+Reloadable dispatch code also has one bounded route back to the stable host. It
+may request the same App Server effect owned by its currently admitted dispatch,
+for example issuing a role-thread request while handling an intercepted client
+request. Each effect is correlated to the parent worker request, inherits that
+request's generation and admission fence, and becomes unavailable as soon as
+the dispatch settles. An effect request without a live parent dispatch closes
+the worker as a protocol violation. This is the prerequisite for moving
+switchboard routing into the replaceable generation without giving the child a
+second permanent transport or independent effect authority.
 
 Lifecycle evidence follows the same ownership boundary. The Codex notification
 source validates supported provider payloads and projects them into immutable
@@ -178,6 +369,17 @@ skill bytes, derives all content digests itself, binds the manifest role,
 runtime binding, completed turn, lifecycle snapshot, and expected next work,
 then returns both the signed projection and its exact bounded source materials.
 Caller-supplied digests and unknown material fields are rejected.
+
+`CodexAppServerInferenceCapability` realizes the compiler or verifier inference
+interface through one fresh ephemeral App Server thread per invocation. It
+places the reviewed semantic instructions at developer precedence, serializes
+only the bounded input and structural output contract into the user turn,
+requests no dynamic tools, captures matching turn token usage when the provider
+reports it, and returns host-labeled provenance. Separate capability instances
+therefore produce separate thread and turn identities without creating durable
+role bindings. A gated integration test composes two such invocations with a
+real strategic-planner shadow turn; normal test runs do not claim that live
+evidence.
 
 The observed-context projector accepts only attributed content references; it
 does not copy raw content or claim access to the provider's literal effective
