@@ -1,0 +1,103 @@
+{
+  "artifact_type": "linguistic_register_behavioral_pilot_deferral_v2",
+  "schema_version": 2,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "recorded_at_utc": "2026-08-26T13:30:58Z",
+  "state": "paused_post_render_pre_trial_pre_outcome",
+  "reason": {
+    "code": "inference_budget_scheduling",
+    "experimental_failure": false,
+    "methodological_stop": false,
+    "statement": "Execution is deferred for inference-budget scheduling. The pause does not report an experimental failure or a methodological stop."
+  },
+  "immutable_upstream_bindings": {
+    "group2_preregistration_sha256": "bb7340b544a26161f50bea3e9932a66f108e4b1c08932dc635edb9e67c1f328b",
+    "group2_contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699"
+  },
+  "unexpected_advancement": {
+    "observed": true,
+    "classification": "completed_group3_rendering_and_preoutcome_review_activity_before_original_deferral",
+    "statement": "A separate Codex invocation advanced group 3 unexpectedly from the perspective of the deferring session. Provenance identifies that invocation and shows it reached task_complete before the original deferral request; no writer remained active at this revised deferral.",
+    "creator_session_id": "01a03db0-e18e-7723-8ae2-cf68d2b97c32",
+    "creator_invocation_at_utc": "2026-08-26T10:50:09.361Z",
+    "creator_completed_at_utc": "2026-08-26T11:45:27.335Z",
+    "original_deferral_request_at_utc": "2026-08-26T13:18:55.250Z"
+  },
+  "group3_bindings": {
+    "binding_method": "Every authoritative, retained-execution, transient-staging, and creator-session artifact observed by the audit is enumerated by path, timestamp, size, and SHA-256 in the bound inventory.",
+    "artifact_inventory_path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/artifact-inventory.json",
+    "artifact_inventory_sha256": "fcc67b47caef46409f955382853ab6efbabad9be207709e00dddd82f7faf1690",
+    "artifact_inventory_entry_count": 152,
+    "provenance_audit_path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/provenance-audit.json",
+    "provenance_audit_sha256": "b1afca289325792ececd619970133ea6c3344f5a82f90cf750f2e844586ecbd1",
+    "root_group3_preoutcome_gate_sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634"
+  },
+  "execution_boundary_at_deferral": {
+    "six_treatment_renderings_exist": true,
+    "preoutcome_reviews_exist": true,
+    "behavioral_subject_execution_exists": false,
+    "trial_receipts_exist": false,
+    "scores_exist": false,
+    "behavioral_outcomes_exist": false,
+    "behavioral_analysis_exists": false,
+    "active_group3_writer_exists": false,
+    "launch_refusal_preserved": true,
+    "launch_refusal": "launch refused: one or more preoutcome gates did not pass",
+    "t001_authorized": false
+  },
+  "authorization_boundary": {
+    "further_group3_work_requires_explicit_user_authorization": true,
+    "t001_requires_explicit_user_authorization": true,
+    "time_alone_grants_execution_authority": false,
+    "prohibited_while_deferred": [
+      "modify, regenerate, remove, replace, or evaluate existing group-3 artifacts",
+      "perform further group-3 construction, review, or gate remediation",
+      "launch T001 or any later behavioral trial",
+      "score, inspect, or analyze behavioral outcomes"
+    ]
+  },
+  "intended_resume_window": {
+    "description": "after the weekly allowance resets on September 1, 2026",
+    "not_before_date": "2026-09-01",
+    "authority_effect": "none"
+  },
+  "resumption_checklist": [
+    {
+      "order": 1,
+      "requirement": "Verify the actual subject model, reasoning level, service tier, CLI version, and available backend identifiers. Record unavailable fields through prelaunch verification without making a false snapshot claim."
+    },
+    {
+      "order": 2,
+      "requirement": "Before outcomes, clarify the apparatus-bounded estimand if it is not already explicit."
+    },
+    {
+      "order": 3,
+      "requirement": "Apply the Family B semantic-purity rule to the retained profile features and final rendered artifacts, distinguishing semantic encoding from an unanticipated behavioral effect."
+    },
+    {
+      "order": 4,
+      "requirement": "Verify construction and binding of all six treatment artifacts. Existing bytes may not be changed or replaced without explicit user authorization; any newly authorized rendering must use fresh, bound artifacts."
+    },
+    {
+      "order": 5,
+      "requirement": "Satisfy and bind semantic-equivalence, salience, manipulation, shallow-cue, quotation, and subject-configuration gates."
+    },
+    {
+      "order": 6,
+      "requirement": "Obtain explicit user authorization before T001."
+    },
+    {
+      "order": 7,
+      "requirement": "Complete T001 through T008 as one budget-calibration block before making any budget decision."
+    },
+    {
+      "order": 8,
+      "requirement": "Make no effect-based continuation decision and inspect no calibration outcomes before the budget gate."
+    }
+  ],
+  "amendment_rule": {
+    "required_before_any_new_or_replacement_rendering": "A preregistration amendment is required if the configured subject or any material contract term has changed.",
+    "existing_renderings": "The revised deferral binds existing rendering bytes without retrospectively amending or approving them."
+  },
+  "history_boundary": "This is a new deferral record. It does not alter the sealed group-2 artifacts, existing group-3 artifacts, app-server, or prior experimental history."
+}

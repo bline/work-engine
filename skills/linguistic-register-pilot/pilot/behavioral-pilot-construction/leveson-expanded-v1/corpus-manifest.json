@@ -1,0 +1,392 @@
+{
+  "all_solo_authored": true,
+  "artifact_type": "linguistic_register_expanded_corpus_manifest_v1",
+  "candidate_id": "leveson-system-safety-expanded-v1",
+  "construction_plan_sha256": "2981ddf6e725bccdaf10299f23176515b98f890904d354f57151ab8783d405ca",
+  "extraction_packet_sha256": "a80269b65e75020c38800e80d14d5e6c3c99ae59aee776190b24b15b07848536",
+  "genre_class_counts": {
+    "journal_article": 2,
+    "practitioner_presentation": 1,
+    "public_testimony": 1,
+    "responsive_presentation": 1,
+    "teaching_notes": 1,
+    "technical_white_paper": 2
+  },
+  "genre_family_counts": {
+    "formal_analysis": 4,
+    "practitioner_public": 4
+  },
+  "normalized_token_total": 73794,
+  "rights_limitation": "Public readability and institutional hosting do not establish redistribution permission; exact bytes remain outside the repository.",
+  "schema_version": 1,
+  "source_count": 8,
+  "source_selection_sha256": "bb3c20c62ab3a50be70f717644f10cc4e36751c9a8eea740ffbadc85966e6fdf",
+  "sources": [
+    {
+      "authority_basis": "MIT OpenCourseWare copy of the author manuscript.",
+      "authors": [
+        "Nancy G. Leveson"
+      ],
+      "authorship_basis": "Author line on the first page of the exact PDF.",
+      "byte_length": 334399,
+      "content_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 2000,
+          "source_token_start": 0,
+          "text_sha256": "daef7ff2394faf14aef6e577812698c03fda162f4f37f74ae2a673d027f8b3e7"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 9558,
+          "source_token_start": 7558,
+          "text_sha256": "7289eb68ea180bdab7839929a7be34c05242801ec20716fe593760c8ecd0111e"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 17116,
+          "source_token_start": 15116,
+          "text_sha256": "0ea2c8091e0ec907f02f5795d093e7c98db6fec1bfb79e396fab2828c16bd83e"
+        }
+      ],
+      "extracted_utf8_sha256": "be5962bd50c7025d918efbd7c298fbf4ac3f13aff20b7c73b24cdd497da5aac4",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "journal_article",
+      "genre_family": "formal_analysis",
+      "media_type": "application/pdf",
+      "normalized_token_count": 17116,
+      "public_url": "https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/afc60de2c951a9c44ef67ca8d37390c8_tdsc_final.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "systems-theoretic-software-intensive",
+      "title": "A Systems-Theoretic Approach to Safety in Software-Intensive Systems"
+    },
+    {
+      "authority_basis": "MIT OpenCourseWare copy of the accepted author manuscript.",
+      "authors": [
+        "Nancy G. Leveson"
+      ],
+      "authorship_basis": "Author line on the first page of the exact PDF.",
+      "byte_length": 247033,
+      "content_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 2000,
+          "source_token_start": 0,
+          "text_sha256": "0ffebf3af1ab67ec2ff8704f7e0421d174731abe236cb871a4684e2e52c8e85b"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 8737,
+          "source_token_start": 6737,
+          "text_sha256": "14d00f8f91aff4b5fcdfcda69eed3515facd49595526aec0b433b22833b47c4f"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 15475,
+          "source_token_start": 13475,
+          "text_sha256": "5dc0bba356bb610963e7036de389b83f2687a971b25fe48cbee8cb5c4db775a0"
+        }
+      ],
+      "extracted_utf8_sha256": "1b555727294ab0d2690db37c4707c523da81b8eeb23ba83b8800b232cb6120be",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "journal_article",
+      "genre_family": "formal_analysis",
+      "media_type": "application/pdf",
+      "normalized_token_count": 15475,
+      "public_url": "https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/364e4d0c757e93e44abbc89758f2e69c_jsr.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "spacecraft-accidents",
+      "title": "The Role of Software in Spacecraft Accidents"
+    },
+    {
+      "authority_basis": "MIT PSASS-hosted author white paper.",
+      "authors": [
+        "Nancy Leveson"
+      ],
+      "authorship_basis": "Author line on the first page of the exact PDF.",
+      "byte_length": 1615388,
+      "content_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 2000,
+          "source_token_start": 0,
+          "text_sha256": "c64350c2a61dc27664336c27f6b9919eadda930bea5be0fa5def2aeb42f07a68"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 4683,
+          "source_token_start": 2683,
+          "text_sha256": "af3279562e9372fe88f1ef260a847bbc3accf423f62fc7675c251fc0a9cc0448"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 7366,
+          "source_token_start": 5366,
+          "text_sha256": "ecd3398485a400562093922213878b1db829df764828a00f51e47f8552b50078"
+        }
+      ],
+      "extracted_utf8_sha256": "d149b7ee5d152f17730735a1dbe6ca9b89fcc6fba834837263a5bd6fd580d081",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "technical_white_paper",
+      "genre_family": "formal_analysis",
+      "media_type": "application/pdf",
+      "normalized_token_count": 7366,
+      "public_url": "https://psas.scripts.mit.edu/home/wp-content/uploads/2020/07/White-Paper-on-Safety-Assurance.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "safety-assurance",
+      "title": "White Paper on Limitations of Safety Assurance and Goal Structuring Notation"
+    },
+    {
+      "authority_basis": "MIT PSASS-hosted author white paper.",
+      "authors": [
+        "Nancy Leveson"
+      ],
+      "authorship_basis": "Author line on the first page of the exact PDF.",
+      "byte_length": 521978,
+      "content_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 2000,
+          "source_token_start": 0,
+          "text_sha256": "cc4397c1439ad14455fdecb043dfd5206dd2597e01694c83a5e74ea3f34b8bce"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 8915,
+          "source_token_start": 6915,
+          "text_sha256": "f7fa420fa8b5d4b256252ca10b4174287e3ccded1011ec3d4d0e19aa86dcbbd4"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 15831,
+          "source_token_start": 13831,
+          "text_sha256": "c3d981e0397740cf18f560fdc884e0b5b3d109d09a19371dcd7873b7f2518b4b"
+        }
+      ],
+      "extracted_utf8_sha256": "28ec1cc8ca8ef98dcf94c1c8f8f0c76f3842e8a49040911a6c01603edbfb3c64",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "technical_white_paper",
+      "genre_family": "formal_analysis",
+      "media_type": "application/pdf",
+      "normalized_token_count": 15831,
+      "public_url": "https://psas.scripts.mit.edu/home/papers/2026_Safety-III_A_Systems_Approach_to_Safety_.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "safety-iii-healthcare",
+      "title": "Safety-III: A Systems Approach to Safety and Resilience in Healthcare and Other Complex, Adaptive Systems"
+    },
+    {
+      "authority_basis": "MIT PSASS-hosted workshop presentation.",
+      "authors": [
+        "Nancy Leveson"
+      ],
+      "authorship_basis": "Presenter line on the first slide of the exact PDF.",
+      "byte_length": 1578280,
+      "content_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 651,
+          "source_token_start": 0,
+          "text_sha256": "d0b2f123cfd7cbce65282acfe845d3324d92de24dad66653686319982a384938"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 1302,
+          "source_token_start": 651,
+          "text_sha256": "921d0ce8c16fe70555231cc1895217a8e838ffb85fb790604d9983f1e3f47bdf"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 1953,
+          "source_token_start": 1302,
+          "text_sha256": "515f2ad2a2fcebfca49178d6c35bc011d96e094ac3b726fbb835db5153de3378"
+        }
+      ],
+      "extracted_utf8_sha256": "b204b7500b8e5188cd53c660ceea6100351b6ed35cf45bec038c4e27315a0f1a",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "practitioner_presentation",
+      "genre_family": "practitioner_public",
+      "media_type": "application/pdf",
+      "normalized_token_count": 1953,
+      "public_url": "https://psas.scripts.mit.edu/home/wp-content/uploads/2019/04/WedMorning_Leveson_Improving-the-Risk-Matrix.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "improving-risk-matrix",
+      "title": "Improving the Risk Matrix"
+    },
+    {
+      "authority_basis": "MIT PSASS-hosted workshop response presentation.",
+      "authors": [
+        "Nancy Leveson"
+      ],
+      "authorship_basis": "Presenter line on the first slide of the exact PDF.",
+      "byte_length": 346197,
+      "content_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 324,
+          "source_token_start": 0,
+          "text_sha256": "9d0d0da229320cd9e3b9ecd865dd33bb7aeea7ae22f2d8b565965fc9ff0130c2"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 648,
+          "source_token_start": 324,
+          "text_sha256": "e5a9d664d1ce4d0509f303a97255836d063dca93bbfa103cb581b1b8cb63b900"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 971,
+          "source_token_start": 648,
+          "text_sha256": "f416b953bfaf6cdcf8c645c456ded5e0c321905a9ef410a917ab1206ecd5de9e"
+        }
+      ],
+      "extracted_utf8_sha256": "8621b67e50a33a68884b7d2794a331bbd5645250e7c7c04797da1413c88ef946",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "responsive_presentation",
+      "genre_family": "practitioner_public",
+      "media_type": "application/pdf",
+      "normalized_token_count": 971,
+      "public_url": "https://psas.scripts.mit.edu/home/wp-content/uploads/2024/2024-06-05-1540__FAQ_Nancy.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "workshop-faq",
+      "title": "Discussion of Some FAQ Submitted by Workshop Attendees"
+    },
+    {
+      "authority_basis": "Complete testimony on an MIT institutional page.",
+      "authors": [
+        "Nancy Leveson"
+      ],
+      "authorship_basis": "MIT institutional page identifies the text as Leveson's United States Senate testimony.",
+      "byte_length": 118121,
+      "content_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 1506,
+          "source_token_start": 0,
+          "text_sha256": "ccae380a795b9d8e7a3bd848e4f0f25ab7b5b606b1affa7d818470a257e8970b"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 3012,
+          "source_token_start": 1506,
+          "text_sha256": "4e93ac1860d01e5873679d47d0bd21003b4b991cc07b9a6b0d78f9612046d8be"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 4516,
+          "source_token_start": 3012,
+          "text_sha256": "f15a2ed66220eb52069f2bb0a621cf3f8d9f383f0ea04f3f6a37a9ea65e61fc3"
+        }
+      ],
+      "extracted_utf8_sha256": "2065cb81e1329c970bcf857ff9f2f005d6550bdfc194802d294778fe618b57b5",
+      "extractor": {
+        "matched_elements": 1,
+        "selector_contract": "div.panel.panel--main.panel--small",
+        "tool": "python.html.parser.HTMLParser"
+      },
+      "genre_class": "public_testimony",
+      "genre_family": "practitioner_public",
+      "media_type": "text/html",
+      "normalized_token_count": 4516,
+      "public_url": "https://energy.mit.edu/news/risk-management-in-the-oil-and-gas-industry/",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "oil-gas-testimony",
+      "title": "Risk Management in the Oil and Gas Industry"
+    },
+    {
+      "authority_basis": "MIT OpenCourseWare instructor-authored lecture notes.",
+      "authors": [
+        "Nancy G. Leveson"
+      ],
+      "authorship_basis": "Author line on the title slide of the exact PDF.",
+      "byte_length": 834343,
+      "content_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352",
+      "excerpt_ranges": [
+        {
+          "segment": "beginning",
+          "source_token_end_exclusive": 2000,
+          "source_token_start": 0,
+          "text_sha256": "913200fb8c3f9bbd374384cf80a3cece827196799e759f8e96d643a6c178779a"
+        },
+        {
+          "segment": "middle",
+          "source_token_end_exclusive": 6283,
+          "source_token_start": 4283,
+          "text_sha256": "f730039222083d3b60e2ead001e1c14c1abbabe6636ac4c347d746a7f7039dee"
+        },
+        {
+          "segment": "end",
+          "source_token_end_exclusive": 10566,
+          "source_token_start": 8566,
+          "text_sha256": "00f639bbfc0e69f10c9e4d5270cc98401b9839b8f8440bd88f0032088142b088"
+        }
+      ],
+      "extracted_utf8_sha256": "07194729ebd4b84d08b1163d8ce80c3d66b36e47d66e958586f53b516fd65d5a",
+      "extractor": {
+        "arguments": [
+          "-enc",
+          "UTF-8"
+        ],
+        "tool": "pdftotext"
+      },
+      "genre_class": "teaching_notes",
+      "genre_family": "practitioner_public",
+      "media_type": "application/pdf",
+      "normalized_token_count": 10566,
+      "public_url": "https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/ccea41d41a1473d2341559dce5b01e4e_cnotes11.pdf",
+      "retention": "external_source_bytes_and_extracted_text_not_committed",
+      "rights_status": "public_readable_reuse_unconfirmed",
+      "source_id": "software-system-safety-notes",
+      "title": "Software System Safety"
+    }
+  ]
+}

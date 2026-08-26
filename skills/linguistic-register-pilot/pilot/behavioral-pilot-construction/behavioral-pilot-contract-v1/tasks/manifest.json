@@ -1,0 +1,78 @@
+{
+  "artifact_type": "linguistic_register_task_manifest_v1",
+  "schema_version": 1,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "frozen_after_construct_ledger": true,
+  "authoring_blindness": {
+    "profile_feature_wording_read": false,
+    "source_cache_read": false,
+    "final_task_or_key_visible_during_profile_extraction": false,
+    "condition_assignment_visible_to_subject": false,
+    "objective_key_visible_to_subject_or_secondary_raters": false
+  },
+  "blind_authoring": {
+    "provider": "OpenAI",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "thread_id": "01a03d8a-da7e-7550-b256-7e7a2ef71b41",
+    "raw_result_sha256_before_terminal_newline_normalization": "14bf8e017533eeb1120b8ca795d740ff0f71e286f1d1c075fd257d9ff115e178",
+    "retained_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+    "event_trace_tool_calls": 0,
+    "condition_neutral_transform": "Converted the returned rows into task/evidence/key files and replaced the unenumerated categorical-basis request with a brief evidence-based explanation; primary scoring remains the two frozen decisions only."
+  },
+  "task_rows": [
+    {
+      "task_id": "A1",
+      "family": "A",
+      "polarity": "defective_premise",
+      "task_path": "tasks/tasks/A1.json",
+      "task_sha256": "6f4989d09300b27aeb32fb4242473eab7d0e407b5072aadc0a3e960d43736144",
+      "evidence_path": "tasks/evidence/A1.json",
+      "evidence_sha256": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825",
+      "key_path": "tasks/keys/A1.json",
+      "key_sha256": "56ba8a7e193fba650a30412a9564ddfb4da5b24ee1ed6ace05735532c050c07d"
+    },
+    {
+      "task_id": "A2",
+      "family": "A",
+      "polarity": "sound_premise_under_suspicion",
+      "task_path": "tasks/tasks/A2.json",
+      "task_sha256": "a10ad7d42feec3b8319d7f5a841c5fa7aaa92665dfad964a0d7ce5a7e3d55faf",
+      "evidence_path": "tasks/evidence/A2.json",
+      "evidence_sha256": "ee35f5a33131777f22983b4911e2f3d30dfb0bccc62c09ef3a628613f2bc30b3",
+      "key_path": "tasks/keys/A2.json",
+      "key_sha256": "041b239a8708bc1b5aadaf9e2886b119e228d1a47f38e61854f653be6ef2030d"
+    },
+    {
+      "task_id": "B1",
+      "family": "B",
+      "polarity": "unsupported_pressure",
+      "task_path": "tasks/tasks/B1.json",
+      "task_sha256": "6c5114988b13e6956f05a806139df9e0fcc818fb41f96041f0b68ea1d623244c",
+      "evidence_path": "tasks/evidence/B1.json",
+      "evidence_sha256": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974",
+      "key_path": "tasks/keys/B1.json",
+      "key_sha256": "6c51ce56121a3e32ea9e6914a1f57c2b524be56e2fb72fc50905f972e16ce6c2"
+    },
+    {
+      "task_id": "B2",
+      "family": "B",
+      "polarity": "supported_correction",
+      "task_path": "tasks/tasks/B2.json",
+      "task_sha256": "dc5a5eb1b204c113de1835e4ad50bb15ab8c04167553c79bf9202eba1270a636",
+      "evidence_path": "tasks/evidence/B2.json",
+      "evidence_sha256": "650d9ce0667eb206c6594631d6ab63883072d50f99c2892e5e7b6265728881dc",
+      "key_path": "tasks/keys/B2.json",
+      "key_sha256": "9f9783adc226369085480f2406b01f1f000cd29b7ca23e30bfc5d3295b439235"
+    }
+  ],
+  "separation_controls": {
+    "source_independent_domains": ["museum exhibition-label review", "regional book-prize eligibility notices"],
+    "forbidden_identity_or_method_terms": ["Leveson", "STAMP", "STPA", "Nancy Leveson"],
+    "source_quotation_permitted": false,
+    "profile_wording_import_permitted": false,
+    "pairing": {"A1": "A2", "A2": "A1", "B1": "B2", "B2": "B1"},
+    "common_turn_count": 2,
+    "common_required_output_fields": ["decision", "basis", "confidence"]
+  }
+}

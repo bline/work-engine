@@ -89,8 +89,14 @@ export async function projectManifestRoleObservedContext({
     roleProjection.roleContract?.path,
     "manifest role contract path",
   );
+  const activatedContractPath = roleProjection.roleContract?.activatedPath == null
+    ? contractPath
+    : text(
+      roleProjection.roleContract.activatedPath,
+      "manifest role activated contract path",
+    );
   const contract = skillMaterials.find(({ activatedSkill }) =>
-    activatedSkill.path === contractPath
+    activatedSkill.path === activatedContractPath
   );
   if (!contract) throw new TypeError("manifest role contract is not an activated skill");
   record(expectedNextWork, "manifest role expected next work");

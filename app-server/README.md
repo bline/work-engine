@@ -173,6 +173,18 @@ executable-generation worker from an immutable source snapshot. Use
 receipt during testing; otherwise state is scoped by the socket identity under
 the user's local state directory.
 
+Hosted manifest-role turns pass through the semantic lifecycle in shadow mode
+by default. The proxy loads `semantic-context-profile.yaml`; use
+`--semantic-profile PATH` to select another closed profile. Completed role
+turns are joined only to token telemetry carrying the same turn ID, and their
+episodes are stored at `semantic-context.sqlite3` under the proxy's stable
+state directory. The SQLite path therefore survives executable-generation
+replacement and host restart, while the profile and lifecycle implementation
+remain part of the immutable generation and its environment fingerprint.
+Comfortable turns persist without semantic inference. Configured inspection
+bands may run the ephemeral compiler and verifier, but this host assembly
+cannot publish a checkpoint or invoke `new_context`.
+
 The proxy uses the connected Codex thread as a UI shell. It intercepts
 single-text `turn/start` requests inside the active executable generation:
 administrative `:we command` lines are handled locally by the switchboard, while
@@ -247,13 +259,15 @@ authority or reinterpret handoffs. Dynamic tools use the pinned App Server exper
 so the worker upgrades the private `initialize` request to opt into that API
 and injects the namespace on `thread/start` or `thread/resume`.
 
-Each manifest-bound generation contains the raw runtime manifest, exact skill
-bytes, required role-runtime modules, and a generated projection whose bytes
-participate in the content-addressed snapshot. Manifest and skill digests also
-participate in the environment fingerprint. Snapshot-local delivery paths do
-not change canonical role-environment identity, while a semantic manifest,
-skill, or tool-surface change is classified as an environment migration rather
-than implementation-compatible reload.
+Each manifest-bound generation contains the raw runtime manifest, semantic
+context profile, exact skill bytes, required role/lifecycle runtime modules,
+and closed runtime package dependencies, plus a generated projection whose
+bytes participate in the content-addressed snapshot. Manifest, skill, and
+semantic-profile digests also participate in the environment fingerprint.
+Snapshot-local delivery paths do not change canonical role-environment
+identity, while a semantic manifest, skill, profile, or tool-surface change is
+classified as an environment migration rather than implementation-compatible
+reload.
 
 Reloadable dispatch code also has one bounded route back to the stable host. It
 may request the same App Server effect owned by its currently admitted dispatch,

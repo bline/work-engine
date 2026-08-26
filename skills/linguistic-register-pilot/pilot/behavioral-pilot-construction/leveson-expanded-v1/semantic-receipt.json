@@ -1,0 +1,27 @@
+{
+  "artifact_type": "linguistic_register_expanded_model_receipt_v1",
+  "completed_at_utc": "2026-08-26T08:00:28.677747Z",
+  "ephemeral": true,
+  "events_output_sha256": "7164b6f23d9d2983b35dd4a2eba71c2db15b9ebf52f1dfcc41b8c20cba808f1b",
+  "fresh_process": true,
+  "isolated_temporary_directory": true,
+  "launcher": "codex exec",
+  "launcher_version": "codex-cli 0.149.1",
+  "model": "gpt-5.6-sol",
+  "packet_sha256": "b5fe85d12f3b15cbdc210945a7c93b6c23808037e0b0494b3957fd8f9285031d",
+  "prompt_sha256": "df481a1c9641c05eac96672fc3368f003ebf3a81e4a5bb52d7f5f10a4877e4e2",
+  "provider": "OpenAI",
+  "raw_output_sha256": "e497a9b58861ef89b7769677d6ba4cf54eceb930eebe099d97aeb0ac0621743e",
+  "reasoning_effort": "high",
+  "return_code": 0,
+  "sandbox": "read-only",
+  "schema_sha256": "44d7974b2717f08ee6a5a5e5943ac8ff861405df3ea4dfa372a4631e233ccc3e",
+  "schema_version": 1,
+  "stage": "semantic-classification",
+  "started_at_utc": "2026-08-26T07:58:18.476688Z",
+  "stderr_sha256": "79d7b030476f32cfda099cc34514a9c56907da52f3e873563982c284bfcf702a",
+  "visible_input_files": [
+    "packet.json",
+    "output.schema.json"
+  ]
+}

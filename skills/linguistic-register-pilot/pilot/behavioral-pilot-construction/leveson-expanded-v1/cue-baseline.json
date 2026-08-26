@@ -1,0 +1,206 @@
+{
+  "artifact_type": "linguistic_register_expanded_cue_baseline_v1",
+  "cross_replica_perfect_leveson_rules": [
+    {
+      "metric": "word_count",
+      "operator": "eq",
+      "threshold": 86
+    },
+    {
+      "metric": "word_count",
+      "operator": "gt",
+      "threshold": 72
+    },
+    {
+      "metric": "word_count",
+      "operator": "gt",
+      "threshold": 79.0
+    }
+  ],
+  "flag": true,
+  "limitation": "Feature-order replicas test shallow card statistics, not rendered prose or semantic cue sufficiency.",
+  "packet_sha256": "fa668f5b36bc4645639ce177e11ee6fd5d496ff5972a47f028f6a8bd27974dab",
+  "replicas": [
+    {
+      "candidate_id": "shaw-engineering-judgment",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 72
+      },
+      "replica": 1
+    },
+    {
+      "candidate_id": "shaw-engineering-judgment",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 72
+      },
+      "replica": 2
+    },
+    {
+      "candidate_id": "shaw-engineering-judgment",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 72
+      },
+      "replica": 3
+    },
+    {
+      "candidate_id": "neutral-editorial-defaults",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 41
+      },
+      "replica": 1
+    },
+    {
+      "candidate_id": "neutral-editorial-defaults",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 41
+      },
+      "replica": 2
+    },
+    {
+      "candidate_id": "neutral-editorial-defaults",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 41
+      },
+      "replica": 3
+    },
+    {
+      "candidate_id": "leveson-system-safety-expanded-v1",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 86
+      },
+      "replica": 1
+    },
+    {
+      "candidate_id": "leveson-system-safety-expanded-v1",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 86
+      },
+      "replica": 2
+    },
+    {
+      "candidate_id": "leveson-system-safety-expanded-v1",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 2,
+        "layer_count_surface": 3,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 86
+      },
+      "replica": 3
+    },
+    {
+      "candidate_id": "gelman-model-criticism",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 65
+      },
+      "replica": 1
+    },
+    {
+      "candidate_id": "gelman-model-criticism",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 65
+      },
+      "replica": 2
+    },
+    {
+      "candidate_id": "gelman-model-criticism",
+      "metrics": {
+        "colon_count": 0,
+        "dash_count": 0,
+        "layer_count_discourse": 1,
+        "layer_count_surface": 4,
+        "parenthesis_count": 0,
+        "question_mark_count": 0,
+        "semicolon_count": 0,
+        "sentence_count": 5,
+        "word_count": 65
+      },
+      "replica": 3
+    }
+  ],
+  "schema_version": 1
+}

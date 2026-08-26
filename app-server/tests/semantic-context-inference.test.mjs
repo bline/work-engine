@@ -5,6 +5,8 @@ import test from "node:test";
 import { parse, stringify } from "yaml";
 
 import {
+  SEMANTIC_CONTEXT_COMPILER_INSTRUCTIONS,
+  SEMANTIC_CONTEXT_VERIFIER_INSTRUCTIONS,
   SemanticContextInferenceRuntime,
   projectObservedContext,
   verifySemanticContextVerification,
@@ -12,6 +14,38 @@ import {
 
 const FIXTURES = new URL("./fixtures/semantic-context/", import.meta.url);
 const digest = (value) => createHash("sha256").update(value, "utf8").digest("hex");
+
+test("semantic inference instructions prohibit YAML reference mechanisms", () => {
+  for (const instructions of [
+    SEMANTIC_CONTEXT_COMPILER_INSTRUCTIONS,
+    SEMANTIC_CONTEXT_VERIFIER_INSTRUCTIONS,
+  ]) {
+    assert.match(instructions, /Do not use YAML anchors, aliases, or merge keys/);
+    assert.match(instructions, /repeat values explicitly/);
+  }
+});
+
+test("semantic verifier judges readiness before transition actuation", () => {
+  assert.match(
+    SEMANTIC_CONTEXT_VERIFIER_INSTRUCTIONS,
+    /verification occurs before checkpoint publication and retirement actuation/,
+  );
+  assert.match(
+    SEMANTIC_CONTEXT_VERIFIER_INSTRUCTIONS,
+    /Do not treat the expected absence of those later effects as uncertainty or a blocker/,
+  );
+});
+
+test("semantic compiler cannot substitute future work for an interaction consequence", () => {
+  assert.match(
+    SEMANTIC_CONTEXT_COMPILER_INSTRUCTIONS,
+    /durable consequence reference must identify supplied material that itself preserves the interaction-specific consequence/,
+  );
+  assert.match(
+    SEMANTIC_CONTEXT_COMPILER_INSTRUCTIONS,
+    /future-work record is not a substitute for a completed interaction consequence/,
+  );
+});
 
 const CONTENT = Object.freeze({
   human: "The user authorized the next bounded App Server slice.",
@@ -209,6 +243,14 @@ test("recorded compiler and distinct verifier produce one bound inspection resul
   assert.equal(inspection.verification.disposition, "accepted");
   assert.equal(inspection.verification.interactionEvaluations.length, 1);
   assert.equal(inspection.verification.interactionEvaluations[0].closure, "supported");
+  assert.deepEqual(compiler.requests[0].outputContract.definitions.humanInteraction.constraints, [
+    "sourceRef must exactly match an observed human-authored source",
+    "compiled_consequence requires a non-null durableConsequenceRef",
+    "compiled_consequence durableConsequenceRef must identify supplied material that itself preserves the interaction-specific consequence",
+    "ambiguous status requires exact or escalate",
+    "open status cannot use omit_from_working_context",
+    "closed_but_active status cannot use omit_from_working_context or reference_only",
+  ]);
   assert.equal(Object.hasOwn(inspection, "checkpointRevision"), false);
   assert.equal(Object.hasOwn(inspection.verification, "retirementReady"), false);
   assert.equal(Object.isFrozen(inspection.verification.checks), true);

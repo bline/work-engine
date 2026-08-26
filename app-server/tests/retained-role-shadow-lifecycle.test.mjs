@@ -95,6 +95,39 @@ test("retained manifest role records one shadow observation after turn completio
   assert.equal(calls[0].contextTelemetry.reportedContextWindowTokens, 100_000);
 });
 
+test("retained manifest role starts delivery before shadow completion", async () => {
+  let resolveCompletion;
+  const completion = new Promise((resolve) => { resolveCompletion = resolve; });
+  const runtime = new RetainedRoleShadowLifecycleRuntime({
+    roleRuntime: {
+      deliverTurn: async () => ({
+        logicalRoleInstanceId: "role:one",
+        threadId: "thread-1",
+        turnId: "turn-1",
+        replayedDelivery: false,
+        binding: { bindingRevision: 1 },
+      }),
+      adapter: { waitForTurnCompletion: async () => completion },
+    },
+    lifecycleEvidence: { snapshot: () => snapshot() },
+    pressureProjector: new TokenUsagePressureProjector({ profile: profile() }),
+    coordinatorForRole: async () => ({
+      observe: async () => ({ status: "recorded" }),
+    }),
+  });
+
+  const started = await runtime.startTurn({});
+  assert.equal(started.delivery.turnId, "turn-1");
+  let settled = false;
+  started.completion.finally(() => { settled = true; });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(settled, false);
+  resolveCompletion({ status: "completed", outputText: "done" });
+  const outcome = await started.completion;
+  assert.equal(outcome.completion.outputText, "done");
+  assert.equal(outcome.shadow.status, "recorded");
+});
+
 test("retained role never applies stale token usage to a completed turn", async () => {
   let observed = false;
   const runtime = new RetainedRoleShadowLifecycleRuntime({

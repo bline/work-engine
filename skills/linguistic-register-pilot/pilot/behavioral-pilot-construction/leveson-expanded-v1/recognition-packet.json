@@ -1,0 +1,153 @@
+{
+  "artifact_type": "linguistic_register_expanded_recognizability_packet_v1",
+  "candidate_practices": [
+    "Bayesian model criticism",
+    "system-safety review and causal-boundary analysis",
+    "software-engineering judgment",
+    "neutral professional editing"
+  ],
+  "cards": [
+    {
+      "anonymous_card_id": "R01",
+      "features": [
+        {
+          "category": "paragraph_rhythm",
+          "description": "Introduce an evaluation through a short parallel series of guiding questions.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "qualification_patterns",
+          "description": "Mark the evidential maturity of a generalization and distinguish observations, tendencies, and established results.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "syntax",
+          "description": "Present categories in compact parallel grammatical forms so their differences remain visually comparable.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "State the practical consequence of a condition directly, then explain the evidence or mechanism behind it.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective_patterns",
+          "description": "Move from a general observation to examples, a bounded contrast, and a resulting implication through restrained connective language.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R02",
+      "features": [
+        {
+          "category": "paragraph-rhythm",
+          "description": "Keep the response focused on the single review decision.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "connective-patterns",
+          "description": "Use ordinary transitions between supplied propositions.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "syntax",
+          "description": "Prefer direct sentences with clear subjects and actions.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "qualification-patterns",
+          "description": "State a supplied evidence limitation once without additional evaluation.",
+          "layer": "discourse",
+          "salience_weight": 3
+        },
+        {
+          "category": "conclusion-patterns",
+          "description": "End with a concise restatement of the supplied decision.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R03",
+      "features": [
+        {
+          "category": "syntax",
+          "description": "Uses numbered taxonomies, paired alternatives, and repeated grammatical frames to present distinctions as ordered sets.",
+          "layer": "surface",
+          "salience_weight": 5
+        },
+        {
+          "category": "connective",
+          "description": "Uses dense causal connectives to make reasoning explicit, repeatedly linking condition, mechanism, consequence, and response.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "rhythm",
+          "description": "Alternates dense explanatory runs with short labels, compact lists, and parallel fragments, producing emphatic bursts of compression.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "syntax",
+          "description": "Builds extended sentences through stacked complement, relative, conditional, and causal clauses, allowing a claim, rationale, exception, and consequence to occupy one syntactic unit.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "connective",
+          "description": "Develops claims additively through examples, restatements, and further considerations, favoring cumulative elaboration over abrupt topic changes.",
+          "layer": "discourse",
+          "salience_weight": 3
+        }
+      ]
+    },
+    {
+      "anonymous_card_id": "R04",
+      "features": [
+        {
+          "category": "qualification_patterns",
+          "description": "Acknowledge the valid portion of an objection before identifying the narrower point of disagreement.",
+          "layer": "discourse",
+          "salience_weight": 4
+        },
+        {
+          "category": "contrast_patterns",
+          "description": "Frame a disagreement as two opposing concerns before addressing either side.",
+          "layer": "surface",
+          "salience_weight": 4
+        },
+        {
+          "category": "conclusion_patterns",
+          "description": "Compress a longer distinction into a short parallel summary after the detailed explanation.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "claim_posture",
+          "description": "State the speaker's current practice, uncertainty, or limitation directly instead of presenting every conclusion impersonally.",
+          "layer": "surface",
+          "salience_weight": 3
+        },
+        {
+          "category": "rhythm",
+          "description": "Interrupt formal analysis with a compact analogy, aside, or lightly humorous clarification.",
+          "layer": "surface",
+          "salience_weight": 3
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "task": "Assign each anonymous card to exactly one candidate practice and explain the profile cues used."
+}

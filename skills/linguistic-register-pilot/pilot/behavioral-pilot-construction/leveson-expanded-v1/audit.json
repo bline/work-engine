@@ -1,0 +1,129 @@
+{
+  "artifact_type": "linguistic_register_expanded_profile_audit_v1",
+  "audited_profile_fields": [
+    "features[].description",
+    "features[].evidence[].observation",
+    "features[].disposition_rationale"
+  ],
+  "bindings": {
+    "corpus_manifest_sha256": "c947def160d1f1c0a890ed7850fa3910efa0081e37b2b7ef1183200de9014e32",
+    "profile_sha256": "082a365471414cbdfa342a278c8b1e5149c520ca84db7bdb8942b1f9cd033dd8"
+  },
+  "corpus_normalized_token_total": 73794,
+  "gates": {
+    "cross_family_retained_features": true,
+    "evidence_documents_per_retained_feature": false,
+    "quotation_survival": true,
+    "retained_feature_count": true,
+    "weighted_retention": true
+  },
+  "limitations": [
+    "Deterministic quotation checks cannot prove absence of every possible paraphrase or memorized influence."
+  ],
+  "metrics": {
+    "counts_by_disposition": {
+      "realization_only": 8,
+      "semantic_addition": 7,
+      "semantic_duplicate": 0,
+      "uncertain": 1
+    },
+    "cross_family_retained_features": 7,
+    "feature_count": 16,
+    "material_exact_source_matches": 0,
+    "minimum_retained_evidence_document_count": 2,
+    "near_verbatim_source_matches": 0,
+    "weighted_retention": 0.4406779661
+  },
+  "overall_gate": false,
+  "quotation_comparisons": [
+    {
+      "longest_exact": {
+        "length_tokens": 3,
+        "profile_token_offset": 114,
+        "sequence_sha256": "1eeb8f70f219c7a0530fa0aa934fad9dc5340ea134296dfa5e4377f684e7d521",
+        "source_token_offset": 14519
+      },
+      "near_verbatim_matches": [],
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 3,
+        "profile_token_offset": 772,
+        "sequence_sha256": "2b7c714bdbb0449f2697c7d53dd2a2394d0e60ec4fe619e57958a0fc74198238",
+        "source_token_offset": 9583
+      },
+      "near_verbatim_matches": [],
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 3,
+        "profile_token_offset": 114,
+        "sequence_sha256": "1eeb8f70f219c7a0530fa0aa934fad9dc5340ea134296dfa5e4377f684e7d521",
+        "source_token_offset": 1800
+      },
+      "near_verbatim_matches": [],
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 4,
+        "profile_token_offset": 114,
+        "sequence_sha256": "1dffc41e75c8eaba55c3d8ab336e2a5807c308211173c346b3a8f16e5b32306e",
+        "source_token_offset": 1137
+      },
+      "near_verbatim_matches": [],
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 2,
+        "profile_token_offset": 26,
+        "sequence_sha256": "73b74bf2cc6f7cb1852db41072b012568d07609366da02533ca9229129ca67da",
+        "source_token_offset": 1846
+      },
+      "near_verbatim_matches": [],
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 2,
+        "profile_token_offset": 26,
+        "sequence_sha256": "73b74bf2cc6f7cb1852db41072b012568d07609366da02533ca9229129ca67da",
+        "source_token_offset": 251
+      },
+      "near_verbatim_matches": [],
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 3,
+        "profile_token_offset": 772,
+        "sequence_sha256": "2b7c714bdbb0449f2697c7d53dd2a2394d0e60ec4fe619e57958a0fc74198238",
+        "source_token_offset": 2559
+      },
+      "near_verbatim_matches": [],
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "longest_exact": {
+        "length_tokens": 2,
+        "profile_token_offset": 3,
+        "sequence_sha256": "c4105984d9b5a2dddc90905624152ff325aeb05ad487675005c0ec3862cd7d24",
+        "source_token_offset": 6442
+      },
+      "near_verbatim_matches": [],
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    }
+  ],
+  "schema_version": 1
+}

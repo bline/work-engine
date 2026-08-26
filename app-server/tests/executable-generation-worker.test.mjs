@@ -16,6 +16,7 @@ import {
   GenerationBoundAppServerTransport,
   InMemoryReplaceableSubstrateArbiter,
   createExecutableGenerationBootstrap,
+  openSqliteAppServerStateStore,
 } from "../src/index.mjs";
 
 const ENTRY = path.resolve(
@@ -612,6 +613,7 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
       requests.push({ method, params });
       if (method === "initialize") return { userAgent: "codex-cli/0.149.1" };
       if (method === "thread/start") {
+        if (params.ephemeral === true) return { thread: { id: "thread-inference" } };
         const role = typeof params.developerInstructions === "string";
         const threadId = role ? "thread-role" : "thread-shell";
         if (role) this.notificationHandler({
@@ -621,6 +623,27 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
         return { thread: { id: threadId } };
       }
       if (method === "turn/start") {
+        if (params.threadId === "thread-inference") {
+          setImmediate(() => this.notificationHandler({
+            method: "turn/completed",
+            params: {
+              threadId: "thread-inference",
+              turn: {
+                id: "turn-inference",
+                status: "completed",
+                items: [{
+                  type: "agentMessage",
+                  id: "agent-inference",
+                  text: "invalid bounded compiler output",
+                  phase: "final_answer",
+                  memoryCitation: null,
+                  delivery: null,
+                }],
+              },
+            },
+          }));
+          return { turn: { id: "turn-inference" } };
+        }
         assert.equal(params.threadId, "thread-role");
         setImmediate(async () => {
           await roleTurnRelease.promise;
@@ -640,6 +663,32 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
           } catch (error) {
             roleStatus.resolve({ error });
           }
+          this.notificationHandler({
+            method: "thread/tokenUsage/updated",
+            params: {
+              threadId: "thread-role",
+              turnId: "turn-role",
+              tokenUsage: {
+                last: {
+                  inputTokens: 10_000,
+                  cachedInputTokens: 1_000,
+                  cacheWriteInputTokens: 0,
+                  outputTokens: 2_000,
+                  reasoningOutputTokens: 0,
+                  totalTokens: 12_000,
+                },
+                total: {
+                  inputTokens: 10_000,
+                  cachedInputTokens: 1_000,
+                  cacheWriteInputTokens: 0,
+                  outputTokens: 2_000,
+                  reasoningOutputTokens: 0,
+                  totalTokens: 12_000,
+                },
+                modelContextWindow: 100_000,
+              },
+            },
+          });
           this.notificationHandler({
             method: "turn/completed",
             params: {
@@ -685,6 +734,10 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     stateRoot: path.join(root, "state"),
     transport: delegate,
     runtimeManifestPath: path.resolve("app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.resolve(
+      "app-server/tests/fixtures/semantic-context-host-inspection-profile.yaml",
+    ),
+    semanticContextStatePath: path.join(root, "semantic-context.sqlite3"),
     roleBindingsPath: path.join(root, "bindings.json"),
     workerRequestTimeoutMs: 2_000,
     workerDispatchTimeoutMs: 2_000,
@@ -770,17 +823,25 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   const deliveredCompletion = await waitForSyntheticCompletion();
   assert.equal(Number.isInteger(deliveredCompletion.params.turn.startedAt), true);
   assert.equal(Number.isInteger(deliveredCompletion.params.turn.completedAt), true);
+  assert.equal(
+    deliveredCompletion.params.turn.status,
+    "completed",
+    JSON.stringify(deliveredCompletion.params.turn.error),
+  );
   assert.deepEqual(forwardedNotifications.map((item) => item.method), [
     "turn/started",
     "turn/completed",
   ]);
-  assert.equal(forwardedNotifications.at(-1).params.turn.items[0].text,
-    "role-owned response");
+  const deliveredText = forwardedNotifications.at(-1).params.turn.items[0].text;
   const status = await roleStatus.promise;
   assert.equal(status.success, true, status.error?.stack);
   assert.equal(JSON.parse(status.contentItems[0].text).activeGeneration.generationId,
     bootstrap.manager.snapshot().activeGeneration.generationId);
-  assert.equal(requests.filter((request) => request.method === "turn/start").length, 1);
+  const roleTurnRequests = requests.filter((request) => request.method === "turn/start");
+  assert.equal(roleTurnRequests.length, 2);
+  assert.equal(requests.some((request) =>
+    request.method === "thread/start" && request.params.ephemeral === true
+  ), true);
   const roleThreadStart = requests.filter((request) => request.method === "thread/start")[1];
   assert.deepEqual(roleThreadStart.params.dynamicTools.map((tool) => tool.name), [
     "environment",
@@ -788,4 +849,46 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   assert.equal(requests.find((request) => request.method === "turn/start").params.threadId,
     "thread-role");
   assert.deepEqual(bootstrap.manager.snapshot().admissions, []);
+  const lifecycleStore = await openSqliteAppServerStateStore({
+    filePath: path.join(root, "semantic-context.sqlite3"),
+  });
+  t.after(() => lifecycleStore.close());
+  const receipts = lifecycleStore.receipts({ logicalRoleInstanceId: "strategic-planner:main" });
+  assert.equal(receipts.length, 1);
+  assert.equal(receipts[0].pressure.disposition, "replacement_candidate");
+  assert.equal(receipts[0].inference.status, "failed");
+  assert.match(deliveredText, /^role-owned response\n\[lifecycle\]/);
+  assert.deepEqual(receipts[0].transition, {
+    status: "not_requested",
+    retirementAttempted: false,
+  });
+  for (const [method, params] of [
+    ["turn/start", {
+      threadId: "thread-role",
+      clientUserMessageId: "bypass-turn",
+      input: [{ type: "text", text: "bypass", text_elements: [] }],
+    }],
+    ["turn/steer", {
+      threadId: "thread-role",
+      expectedTurnId: "turn-role",
+      input: [{ type: "text", text: "bypass", text_elements: [] }],
+    }],
+    ["thread/inject_items", { threadId: "thread-role", items: [] }],
+    ["thread/compact/start", { threadId: "thread-role" }],
+    ["thread/realtime/appendText", { threadId: "thread-role", text: "bypass" }],
+  ]) {
+    const forwardedBefore = requests.filter((request) => request.method === method).length;
+    await assert.rejects(
+      bootstrap.transport.request(method, params),
+      /generation worker generation\.dispatch failed/,
+    );
+    assert.equal(
+      requests.filter((request) => request.method === method).length,
+      forwardedBefore,
+    );
+  }
+  assert.equal(requests.some((request) => [
+    "turn/steer", "thread/inject_items", "thread/compact/start",
+    "thread/realtime/appendText",
+  ].includes(request.method)), false);
 });

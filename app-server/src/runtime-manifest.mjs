@@ -165,11 +165,16 @@ export function projectRuntimeManifest(document, {
     const contractPath = path.resolve(resolvedIdentityBase, role.contract);
     const identitySkills = normalizeSkills(role.skills, resolvedIdentityBase, roleId);
     const skills = normalizeSkills(role.skills, resolvedBase, roleId);
-    if (!identitySkills.some((skill) => skill.path === contractPath)) {
+    const contractSkillIndex = identitySkills.findIndex((skill) => skill.path === contractPath);
+    if (contractSkillIndex === -1) {
       throw new TypeError(`role ${roleId} contract must be present in its exact skill inputs`);
     }
+    const identityRoleContract = { path: contractPath };
     const roleTemplate = {
-      roleContract: { path: contractPath },
+      roleContract: {
+        ...identityRoleContract,
+        activatedPath: skills[contractSkillIndex].path,
+      },
       developerInstructions: role.developer_instructions,
       threadOptions: normalizeThreadOptions(
         role.thread_options,
@@ -181,7 +186,11 @@ export function projectRuntimeManifest(document, {
     roles[roleId] = {
       ...roleTemplate,
       runtimeEnvironmentRevision: createHash("sha256")
-        .update(canonicalJson({ ...roleTemplate, skills: identitySkills }))
+        .update(canonicalJson({
+          ...roleTemplate,
+          roleContract: identityRoleContract,
+          skills: identitySkills,
+        }))
         .digest("hex"),
     };
   }

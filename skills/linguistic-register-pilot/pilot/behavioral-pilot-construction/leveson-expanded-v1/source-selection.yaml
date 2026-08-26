@@ -1,0 +1,97 @@
+artifact_type: linguistic_register_expanded_source_selection_v1
+schema_version: 1
+candidate_id: leveson-system-safety-expanded-v1
+selected_before_profile_extraction: true
+sources:
+  - id: systems-theoretic-software-intensive
+    filename: 01-tdsc.pdf
+    title: A Systems-Theoretic Approach to Safety in Software-Intensive Systems
+    authors: [Nancy G. Leveson]
+    authorship_basis: Author line on the first page of the exact PDF.
+    genre_class: journal_article
+    genre_family: formal_analysis
+    public_url: https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/afc60de2c951a9c44ef67ca8d37390c8_tdsc_final.pdf
+    authority_basis: MIT OpenCourseWare copy of the author manuscript.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6
+  - id: spacecraft-accidents
+    filename: 02-spacecraft.pdf
+    title: The Role of Software in Spacecraft Accidents
+    authors: [Nancy G. Leveson]
+    authorship_basis: Author line on the first page of the exact PDF.
+    genre_class: journal_article
+    genre_family: formal_analysis
+    public_url: https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/364e4d0c757e93e44abbc89758f2e69c_jsr.pdf
+    authority_basis: MIT OpenCourseWare copy of the accepted author manuscript.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51
+  - id: safety-assurance
+    filename: 03-safety-assurance.pdf
+    title: White Paper on Limitations of Safety Assurance and Goal Structuring Notation
+    authors: [Nancy Leveson]
+    authorship_basis: Author line on the first page of the exact PDF.
+    genre_class: technical_white_paper
+    genre_family: formal_analysis
+    public_url: https://psas.scripts.mit.edu/home/wp-content/uploads/2020/07/White-Paper-on-Safety-Assurance.pdf
+    authority_basis: MIT PSASS-hosted author white paper.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9
+  - id: safety-iii-healthcare
+    filename: 04-safety-iii-2026.pdf
+    title: "Safety-III: A Systems Approach to Safety and Resilience in Healthcare and Other Complex, Adaptive Systems"
+    authors: [Nancy Leveson]
+    authorship_basis: Author line on the first page of the exact PDF.
+    genre_class: technical_white_paper
+    genre_family: formal_analysis
+    public_url: https://psas.scripts.mit.edu/home/papers/2026_Safety-III_A_Systems_Approach_to_Safety_.pdf
+    authority_basis: MIT PSASS-hosted author white paper.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94
+  - id: improving-risk-matrix
+    filename: 05-risk-matrix-slides.pdf
+    title: Improving the Risk Matrix
+    authors: [Nancy Leveson]
+    authorship_basis: Presenter line on the first slide of the exact PDF.
+    genre_class: practitioner_presentation
+    genre_family: practitioner_public
+    public_url: https://psas.scripts.mit.edu/home/wp-content/uploads/2019/04/WedMorning_Leveson_Improving-the-Risk-Matrix.pdf
+    authority_basis: MIT PSASS-hosted workshop presentation.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d
+  - id: workshop-faq
+    filename: 06-faq-slides.pdf
+    title: Discussion of Some FAQ Submitted by Workshop Attendees
+    authors: [Nancy Leveson]
+    authorship_basis: Presenter line on the first slide of the exact PDF.
+    genre_class: responsive_presentation
+    genre_family: practitioner_public
+    public_url: https://psas.scripts.mit.edu/home/wp-content/uploads/2024/2024-06-05-1540__FAQ_Nancy.pdf
+    authority_basis: MIT PSASS-hosted workshop response presentation.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01
+  - id: oil-gas-testimony
+    filename: 07-testimony.html
+    title: Risk Management in the Oil and Gas Industry
+    authors: [Nancy Leveson]
+    authorship_basis: MIT institutional page identifies the text as Leveson's United States Senate testimony.
+    genre_class: public_testimony
+    genre_family: practitioner_public
+    public_url: https://energy.mit.edu/news/risk-management-in-the-oil-and-gas-industry/
+    authority_basis: Complete testimony on an MIT institutional page.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8
+  - id: software-system-safety-notes
+    filename: 08-lecture-notes.pdf
+    title: Software System Safety
+    authors: [Nancy G. Leveson]
+    authorship_basis: Author line on the title slide of the exact PDF.
+    genre_class: teaching_notes
+    genre_family: practitioner_public
+    public_url: https://ocw.mit.edu/courses/16-355j-software-engineering-concepts-fall-2005/ccea41d41a1473d2341559dce5b01e4e_cnotes11.pdf
+    authority_basis: MIT OpenCourseWare instructor-authored lecture notes.
+    rights_status: public_readable_reuse_unconfirmed
+    content_sha256: 679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352
+selection_notes:
+  - All eight exact artifacts identify Nancy Leveson as sole author or presenter; no coauthored text enters extraction.
+  - Three legacy sunnyday.mit.edu white-paper endpoints timed out during bounded recovery and were not included or represented as observed.
+  - Public readability and institutional hosting do not establish redistribution rights, so no source bytes or extracted passages are committed.

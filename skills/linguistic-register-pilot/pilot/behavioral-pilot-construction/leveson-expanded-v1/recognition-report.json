@@ -1,0 +1,52 @@
+{
+  "artifact_type": "linguistic_register_expanded_recognizability_report_v1",
+  "assignments": [
+    {
+      "anonymous_card_id": "R01",
+      "confidence": 1,
+      "correct": false,
+      "expected_candidate_id": "shaw-engineering-judgment",
+      "predicted_candidate_id": "gelman-model-criticism",
+      "rationale": "Guiding evaluative questions, calibrated evidential maturity, comparable categories, and condition-to-consequence reasoning fit model criticism's emphasis on diagnostics and qualified inference."
+    },
+    {
+      "anonymous_card_id": "R02",
+      "confidence": 1,
+      "correct": true,
+      "expected_candidate_id": "neutral-editorial-defaults",
+      "predicted_candidate_id": "neutral-editorial-defaults",
+      "rationale": "Single-decision focus, ordinary transitions, direct sentences, faithful treatment of supplied limitations, and concise restatement describe neutral editing rather than domain-specific judgment."
+    },
+    {
+      "anonymous_card_id": "R03",
+      "confidence": 1,
+      "correct": true,
+      "expected_candidate_id": "leveson-system-safety-expanded-v1",
+      "predicted_candidate_id": "leveson-system-safety-expanded-v1",
+      "rationale": "Ordered taxonomies, dense condition-mechanism-consequence-response chains, cumulative causal elaboration, and clause-stacked treatment of exceptions and consequences strongly fit system-safety analysis."
+    },
+    {
+      "anonymous_card_id": "R04",
+      "confidence": 1,
+      "correct": false,
+      "expected_candidate_id": "gelman-model-criticism",
+      "predicted_candidate_id": "shaw-engineering-judgment",
+      "rationale": "Tradeoff framing, partial agreement before narrow disagreement, explicit personal practice and uncertainty, compressed takeaways, and occasional informal analogy fit pragmatic engineering judgment."
+    }
+  ],
+  "bindings": {
+    "key_sha256": "2dc39428c469d8258c6e8aeff29b689f254b436b9365900c3410ce4c67a1d96b",
+    "packet_sha256": "fa668f5b36bc4645639ce177e11ee6fd5d496ff5972a47f028f6a8bd27974dab",
+    "result_sha256": "29fe48a6b4fdef378697c7d77a839a24bbf5903b80fb6cbb8a10fb07dfac1ad7"
+  },
+  "expanded_leveson_assignment_correct": true,
+  "gate": true,
+  "interpretation": "same-family equal-feature-count profile-card traceability only",
+  "limitations": [
+    "The cards contain abstract register features rather than direct domain terminology, so the assignments are inferential and partially overlapping.",
+    "The packet defines no confidence scale; confidence uses 1 to mean a positive assignment rather than a calibrated probability.",
+    "The shallow baseline independently found card length sufficient to identify expanded Leveson."
+  ],
+  "schema_version": 1,
+  "total_correct": 2
+}

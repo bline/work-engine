@@ -11,6 +11,40 @@ apparatus-corrected v2c experiment.
 Those scripts own their field names, closed vocabularies, referential integrity,
 compatibility, and gate arithmetic; none owns semantic truth.
 
+## Expanded pre-outcome treatment
+
+The expanded Leveson family binds 6--12 exact authoritative source artifacts
+while retaining source bytes and source-bearing event streams outside the
+repository unless reuse permission is clear. Its corpus manifest retains URLs,
+authorship and genre records, byte and extraction digests, token counts, and
+balanced-excerpt offsets without retaining source passages.
+
+Profile extraction receives only digest-bound beginning, middle, and end
+segments from each source. It assigns abstract features and weights without
+the canonical role, behavioral tasks, scoring keys, or outcomes. A fresh
+semantic-classification process receives only that frozen ledger and the
+frozen role manifest. Only `realization_only` features count toward retention;
+all dispositions remain visible.
+
+Quotation audit compares every abstract profile description against every
+exact source using normalized longest-exact and near-verbatim checks while
+retaining only digests, offsets, and match lengths. The equal-feature-count
+recognizability check is same-family profile-card evidence only. Its shallow
+cue baseline enumerates single-scalar rules across deterministic card-order
+replicas; a sufficient length, punctuation, layer-count, or formatting rule
+must remain a qualification even when the intended card is correctly matched.
+No result in this family authorizes role rendering or behavioral outcomes.
+
+The v1b recovery is a fresh treatment-validation attempt, not a rewrite of the
+v1 result. Its evidence-recovery packet may inspect only the four frozen
+under-supported feature definitions and the same digest-bound source excerpts.
+Each retained feature still requires three distinct documents. Its profile
+cards have five features and equal normalized length, preserve the available
+surface/discourse composition of each source profile, and use a common
+card-local salience-rank multiset without changing profile weights. The cue
+baseline must enumerate every preregistered scalar across all feature-order
+replicas; correct Leveson assignment cannot cure a perfect shallow rule.
+
 Post-review semantic adjudication is a separate diagnostic artifact. It may
 qualify interpretation of a frozen run but cannot replace original judgments,
 reopen a failed gate, or authorize matching. Its packet withholds style and

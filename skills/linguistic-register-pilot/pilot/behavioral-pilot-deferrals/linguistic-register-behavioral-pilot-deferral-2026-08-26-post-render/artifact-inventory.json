@@ -1,0 +1,1557 @@
+{
+  "artifact_type": "linguistic_register_behavioral_pilot_group3_provenance_inventory_v1",
+  "counts": {
+    "authoritative_repository": 44,
+    "creator_session_provenance": 1,
+    "retained_execution_evidence": 56,
+    "transient_staging": 51
+  },
+  "entries": [
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787743623786622195,
+      "mtime_utc": "2026-08-26T11:27:03.786622Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/1d504763-88bc-462e-aa4e-9d9581d5591e.md",
+      "scope": "authoritative_repository",
+      "sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "size_bytes": 5485
+    },
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787743624351540608,
+      "mtime_utc": "2026-08-26T11:27:04.351541Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/41767db4-ea13-4f3c-90db-9d0b472d2551.md",
+      "scope": "authoritative_repository",
+      "sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "size_bytes": 5451
+    },
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787743624617501999,
+      "mtime_utc": "2026-08-26T11:27:04.617502Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/5522b147-d5ac-4d37-9805-e1a0578cbcf5.md",
+      "scope": "authoritative_repository",
+      "sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "size_bytes": 5737
+    },
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787743605856868617,
+      "mtime_utc": "2026-08-26T11:26:45.856869Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/caac9200-86b3-4614-bbe0-1b6865e951ab.md",
+      "scope": "authoritative_repository",
+      "sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "size_bytes": 5710
+    },
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787743624070581394,
+      "mtime_utc": "2026-08-26T11:27:04.070581Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/d2eb55ed-1f46-42f8-9698-6670c71309ca.md",
+      "scope": "authoritative_repository",
+      "sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "size_bytes": 5399
+    },
+    {
+      "classification": "complete_treatment_rendering",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742575288861794,
+      "mtime_utc": "2026-08-26T11:09:35.288862Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.md",
+      "scope": "authoritative_repository",
+      "sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "size_bytes": 5434
+    },
+    {
+      "classification": "binding_manifest",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949838680632,
+      "mtime_utc": "2026-08-26T10:59:09.838681Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/condition-key.json",
+      "scope": "authoritative_repository",
+      "sha256": "b9476149d9e5c339a7ddb944621015e4dcb76a3528aeb06c9bbe61107c09d724",
+      "size_bytes": 1538
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744496359378063,
+      "mtime_utc": "2026-08-26T11:41:36.359378Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/cue-concentration-v1.json",
+      "scope": "authoritative_repository",
+      "sha256": "8eda0944ad994a161cf940aa5ea099f0d16bd38a73f6d88cf7e1b7cfc1d02936",
+      "size_bytes": 4344
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787744514509192053,
+      "mtime_utc": "2026-08-26T11:41:54.509192Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/cue-concentration.json",
+      "scope": "authoritative_repository",
+      "sha256": "dfb078ad722f1e2342c41ae1d544ad597db9fb1347e3aa0cb2adb7087e8d0a0d",
+      "size_bytes": 4752
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744683697674079,
+      "mtime_utc": "2026-08-26T11:44:43.697674Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/evidence-summary.json",
+      "scope": "authoritative_repository",
+      "sha256": "ad6da7958e7fd9a67c447170b4832afaf69b8da887fba37fb759f6d84073c010",
+      "size_bytes": 23636
+    },
+    {
+      "classification": "launch_gate_scaffolding_or_result",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744496637210566,
+      "mtime_utc": "2026-08-26T11:41:36.637211Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-preoutcome-gate-v1.json",
+      "scope": "authoritative_repository",
+      "sha256": "8a7834ec824fa959919ac58a0722923ffc451776c4cd32b3559c72fada56201e",
+      "size_bytes": 1506
+    },
+    {
+      "classification": "launch_gate_scaffolding_or_result",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744514784862789,
+      "mtime_utc": "2026-08-26T11:41:54.784863Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-preoutcome-gate.json",
+      "scope": "authoritative_repository",
+      "sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634",
+      "size_bytes": 1754
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787744683695673318,
+      "mtime_utc": "2026-08-26T11:44:43.695673Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-report.md",
+      "scope": "authoritative_repository",
+      "sha256": "3c033b1d7941ffb034146b937bcd795bea448d7920d059b9585564e2dc58879a",
+      "size_bytes": 4988
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787744398120801032,
+      "mtime_utc": "2026-08-26T11:39:58.120801Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/instruction-review.md",
+      "scope": "authoritative_repository",
+      "sha256": "c7625c4101a2ce9d30bd9dee38e6fc2736b4e320e62452a2f798d9f7cfe4591f",
+      "size_bytes": 1209
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744340791732659,
+      "mtime_utc": "2026-08-26T11:39:00.791733Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/manipulation-report.json",
+      "scope": "authoritative_repository",
+      "sha256": "fa08dbee991b3606471ab3aa396a397e6aadae165bd5ff7e9d80374731dfeeb1",
+      "size_bytes": 1420
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742676289923212,
+      "mtime_utc": "2026-08-26T11:11:16.289923Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/manipulation.json",
+      "scope": "authoritative_repository",
+      "sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "size_bytes": 70534
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/1d504763-88bc-462e-aa4e-9d9581d5591e.json",
+      "scope": "authoritative_repository",
+      "sha256": "a486cecb284f23be66a1e9d2466ed84e8efdf607ae6f08a1f63d42800f9a115a",
+      "size_bytes": 9214
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/41767db4-ea13-4f3c-90db-9d0b472d2551.json",
+      "scope": "authoritative_repository",
+      "sha256": "5b9a6bda1c524608b12ff526492e7ee01b7487385b35c1c8e672ffb7e3588b40",
+      "size_bytes": 8658
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5.json",
+      "scope": "authoritative_repository",
+      "sha256": "f3a04692af091caa0cbd43c9c4fcad8a4822f4cc3bc318398cb5052829dc2d60",
+      "size_bytes": 8658
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/caac9200-86b3-4614-bbe0-1b6865e951ab.json",
+      "scope": "authoritative_repository",
+      "sha256": "cdfc2958f2e1f8d31f2bc2e8521929ceb5c5a86693e1e1a8c82a70bbbe88c04b",
+      "size_bytes": 9214
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/d2eb55ed-1f46-42f8-9698-6670c71309ca.json",
+      "scope": "authoritative_repository",
+      "sha256": "8b04540178d988248f7015ca61f635bdd53c065aaa737a75efd4bc8d2331c808",
+      "size_bytes": 7117
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949840681632,
+      "mtime_utc": "2026-08-26T10:59:09.840682Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.json",
+      "scope": "authoritative_repository",
+      "sha256": "3a5df6cb52756553247a0058f163bbfe1ea912785233df8f9b4a5a92be5acf5e",
+      "size_bytes": 7117
+    },
+    {
+      "classification": "sealed_or_staged_packet",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742676290922712,
+      "mtime_utc": "2026-08-26T11:11:16.290923Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/semantic-review.json",
+      "scope": "authoritative_repository",
+      "sha256": "8e08a864de59adcca3a45feeea0c0c6d7e2b5ab9b26cb2ae3842a092e151c808",
+      "size_bytes": 76676
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743682463266910,
+      "mtime_utc": "2026-08-26T11:28:02.463267Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets-v4/manipulation.json",
+      "scope": "authoritative_repository",
+      "sha256": "e049b1592e3b80791551528a83019db7f2c63b1338a6523ccd22d93a141ebff6",
+      "size_bytes": 35185
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743689439589344,
+      "mtime_utc": "2026-08-26T11:28:09.439589Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets-v4/semantic-review.json",
+      "scope": "authoritative_repository",
+      "sha256": "9613c9109078f497ca1631a83b30d40a770835423180bfc071b75b9ad3681c03",
+      "size_bytes": 41327
+    },
+    {
+      "classification": "group3_preregistration",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787741927497516959,
+      "mtime_utc": "2026-08-26T10:58:47.497517Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/preregistration.yaml",
+      "scope": "authoritative_repository",
+      "sha256": "7a0611480a4de58c2694274ad50de240a5bce6ed7811013a17d7bcd78e36bd30",
+      "size_bytes": 5823
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744340044720001,
+      "mtime_utc": "2026-08-26T11:39:00.044720Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/quotation-audit.json",
+      "scope": "authoritative_repository",
+      "sha256": "4267e23e7d63328d804c619bd55bcafc7036b6fc32f456923581b37b6432ba7e",
+      "size_bytes": 31141
+    },
+    {
+      "classification": "binding_manifest",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949839681131,
+      "mtime_utc": "2026-08-26T10:59:09.839681Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/render-launch-manifest.json",
+      "scope": "authoritative_repository",
+      "sha256": "e4f702f611953fa04a71b7d7d98ea5e09602a02e8fda39d5749516624d4ca7a0",
+      "size_bytes": 4759
+    },
+    {
+      "classification": "binding_manifest",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743642782553552,
+      "mtime_utc": "2026-08-26T11:27:22.782553Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/rendering-manifest-v2.json",
+      "scope": "authoritative_repository",
+      "sha256": "091596f8318cdc620c4f5426f75b4f26c93f8b28ad8276f2ccb47f9b0b63bc84",
+      "size_bytes": 4627
+    },
+    {
+      "classification": "binding_manifest",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742493118132418,
+      "mtime_utc": "2026-08-26T11:08:13.118132Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/rendering-manifest.json",
+      "scope": "authoritative_repository",
+      "sha256": "a2188964ac793552245bbe6a1bf6ef14b388d8a3969930c54778f63f8adfee61",
+      "size_bytes": 3861
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742740117992828,
+      "mtime_utc": "2026-08-26T11:12:20.117993Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v2.json",
+      "scope": "authoritative_repository",
+      "sha256": "5a939d2503b064df0544ed7ff5e2da0d1181b1d27e50ba7e595646aaa2becc79",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742812974545887,
+      "mtime_utc": "2026-08-26T11:13:32.974546Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v3.json",
+      "scope": "authoritative_repository",
+      "sha256": "560b25628d53c6e734a61a98c6e14906bd8c328ac2ca1d97e7d752651324dd49",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743676724601762,
+      "mtime_utc": "2026-08-26T11:27:56.724602Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v4.json",
+      "scope": "authoritative_repository",
+      "sha256": "69d09620abafdbf48fb808c250a400de7e49cfe010c75d417a7f0e3b85e9a952",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742676288923712,
+      "mtime_utc": "2026-08-26T11:11:16.288924Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest.json",
+      "scope": "authoritative_repository",
+      "sha256": "3690e1c8788bbf8a7fbe8e316653545c17786c5bad6ecb5f5a3640d9bec97d32",
+      "size_bytes": 2773
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744366921861993,
+      "mtime_utc": "2026-08-26T11:39:26.921862Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/manipulation-claude.json",
+      "scope": "authoritative_repository",
+      "sha256": "22f0bc2c6f9efae1fc90beed9a4489f2979f4c45e0eacf8a4a732ab7572ff293",
+      "size_bytes": 11738
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744366644863369,
+      "mtime_utc": "2026-08-26T11:39:26.644863Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/manipulation-sol.json",
+      "scope": "authoritative_repository",
+      "sha256": "711c5d265208dc4b9b17b703ae78cbb683259468ea18a977843ce56bcc34aaf6",
+      "size_bytes": 5713
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744341875750137,
+      "mtime_utc": "2026-08-26T11:39:01.875750Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/semantic-claude.json",
+      "scope": "authoritative_repository",
+      "sha256": "9497c5abb77832ecda3e1fe7ce7d908553a26cffebf6ca0800e2c10a8731267c",
+      "size_bytes": 9592
+    },
+    {
+      "classification": "validation_schema",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742740117992828,
+      "mtime_utc": "2026-08-26T11:12:20.117993Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/manipulation-v2.schema.json",
+      "scope": "authoritative_repository",
+      "sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "size_bytes": 1511
+    },
+    {
+      "classification": "validation_schema",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742676290922712,
+      "mtime_utc": "2026-08-26T11:11:16.290923Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/manipulation.schema.json",
+      "scope": "authoritative_repository",
+      "sha256": "ade48fbbaff422c52de077d27f27fc68938d904a800a148c38f249d1c42547d2",
+      "size_bytes": 1516
+    },
+    {
+      "classification": "validation_schema",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741949839681131,
+      "mtime_utc": "2026-08-26T10:59:09.839681Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/render-output.schema.json",
+      "scope": "authoritative_repository",
+      "sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "size_bytes": 215
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742740117992828,
+      "mtime_utc": "2026-08-26T11:12:20.117993Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/semantic-review-v2.schema.json",
+      "scope": "authoritative_repository",
+      "sha256": "e3e8c3f69e2ef0d4dca834b41413ab625ca2434f6229810fe7b8c7eb450dada8",
+      "size_bytes": 1355
+    },
+    {
+      "classification": "preoutcome_review_or_report",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742676291922212,
+      "mtime_utc": "2026-08-26T11:11:16.291922Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/semantic-review.schema.json",
+      "scope": "authoritative_repository",
+      "sha256": "d59bb35a48d8a28dd934225f613f31677ba0f2bc600feecc3c9259ed66a3e8f6",
+      "size_bytes": 1360
+    },
+    {
+      "classification": "preoutcome_supporting_artifact",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744340539728389,
+      "mtime_utc": "2026-08-26T11:39:00.539728Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/subject-verification.json",
+      "scope": "authoritative_repository",
+      "sha256": "c5ac263ab2d684245fde418b1b389c418e81ded6cd47df81299b62ff8196d6f8",
+      "size_bytes": 644
+    },
+    {
+      "classification": "launch_gate_scaffolding_or_result",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744515039392022,
+      "mtime_utc": "2026-08-26T11:41:55.039392Z",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3-preoutcome-gate.json",
+      "scope": "authoritative_repository",
+      "sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634",
+      "size_bytes": 1754
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741967698183675,
+      "mtime_utc": "2026-08-26T10:59:27.698184Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/1d504763-88bc-462e-aa4e-9d9581d5591e/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "96ea72b22e99a017b0eda22dcf82b7cb3fe390475c13a06f98557e8b80fd2132",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742056319086421,
+      "mtime_utc": "2026-08-26T11:00:56.319086Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/1d504763-88bc-462e-aa4e-9d9581d5591e/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "559168778c6eaca185b135078745023a61271be1bff32d614f5e6c3a7ffd93e9",
+      "size_bytes": 5972
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742056318893819,
+      "mtime_utc": "2026-08-26T11:00:56.318894Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/1d504763-88bc-462e-aa4e-9d9581d5591e/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "c679a227557239da8c15f0019c2fa191f179d86d081efe6fff7af665ad58f094",
+      "size_bytes": 5559
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742056365903459,
+      "mtime_utc": "2026-08-26T11:00:56.365903Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/1d504763-88bc-462e-aa4e-9d9581d5591e/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "d3045c6d23df1912f5031d765b6902e2f5f106c47d3988fad7313def10f3806a",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742231939758573,
+      "mtime_utc": "2026-08-26T11:03:51.939759Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/41767db4-ea13-4f3c-90db-9d0b472d2551/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ce806bc066fab2bee28535d702e4e9dc280dc1ad71b621536d31c84efdded8fd",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742292568845533,
+      "mtime_utc": "2026-08-26T11:04:52.568846Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/41767db4-ea13-4f3c-90db-9d0b472d2551/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "fc89723e9dc85adf0b5436ebc39062fb3816ff62625e806f05b4d63bf4afb38a",
+      "size_bytes": 5944
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742292568809286,
+      "mtime_utc": "2026-08-26T11:04:52.568809Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/41767db4-ea13-4f3c-90db-9d0b472d2551/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "b6ee74a89502a0712ddbad2a608821542871f961908e27c5bef9134a3077b438",
+      "size_bytes": 5528
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742292599428343,
+      "mtime_utc": "2026-08-26T11:04:52.599428Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/41767db4-ea13-4f3c-90db-9d0b472d2551/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "7dab4ca6af5d2bf494254e5233e6a032edbd122dde87166522292b7e62afa11c",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742292645927198,
+      "mtime_utc": "2026-08-26T11:04:52.645927Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "65ff2940885115bc63bd096167ac9363dd2f37d6d1ed0008c61d5432376a414b",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742383239524232,
+      "mtime_utc": "2026-08-26T11:06:23.239524Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "55f6faf4d3a15bccbbd6643a9c2c665e4dbf2844436c88accd1b5e2f29515c68",
+      "size_bytes": 6230
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742383239440872,
+      "mtime_utc": "2026-08-26T11:06:23.239441Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "532b95ac6bc597d9f55bcd07c617c2541784d426fd6a63d5ebd590f22cb34cb0",
+      "size_bytes": 5814
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742383278392231,
+      "mtime_utc": "2026-08-26T11:06:23.278392Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "1a52825de245c4a7644828476700a0a308ff217fa083115721634acf9138dc9d",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742166030496897,
+      "mtime_utc": "2026-08-26T11:02:46.030497Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/caac9200-86b3-4614-bbe0-1b6865e951ab/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "6d3a763715e757ac6dca7325f8babddb8300880634c6f82e423a7c428772eee2",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742231861113599,
+      "mtime_utc": "2026-08-26T11:03:51.861114Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/caac9200-86b3-4614-bbe0-1b6865e951ab/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "d3114efc24d277597ab49ca3452569a6a63f13147b02247b5b6f6e3634c851ef",
+      "size_bytes": 6189
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742231861030006,
+      "mtime_utc": "2026-08-26T11:03:51.861030Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/caac9200-86b3-4614-bbe0-1b6865e951ab/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "5af010d904e9b6890c52100735fde41f5aae55d446d2401c88c42443b0372e1a",
+      "size_bytes": 5781
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742231895396412,
+      "mtime_utc": "2026-08-26T11:03:51.895396Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/caac9200-86b3-4614-bbe0-1b6865e951ab/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "5acffc717236b66c2782f5b5b38e1a8845ef6c756d2c9e634977ea9ce7bf21b6",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742096876636297,
+      "mtime_utc": "2026-08-26T11:01:36.876636Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/d2eb55ed-1f46-42f8-9698-6670c71309ca/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "d63847860090abce9ec79161d19a3d2abf3485b9885952bc3e0d71558707f5f6",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742165948057933,
+      "mtime_utc": "2026-08-26T11:02:45.948058Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/d2eb55ed-1f46-42f8-9698-6670c71309ca/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "a207ab7d6a60a0352582ff7f111844c79fe77b47a774624565a9bc815a170ece",
+      "size_bytes": 5874
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742165947874784,
+      "mtime_utc": "2026-08-26T11:02:45.947875Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/d2eb55ed-1f46-42f8-9698-6670c71309ca/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "93d4f5c5357dd01cc46dc9ac62079605a16d17d432fff0f9669cb823b7f7b1db",
+      "size_bytes": 5467
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742165985715430,
+      "mtime_utc": "2026-08-26T11:02:45.985715Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/d2eb55ed-1f46-42f8-9698-6670c71309ca/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "4dcf28fe447c6f6157c6e610643682056c363b09812253798c3832c473593498",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742383320531740,
+      "mtime_utc": "2026-08-26T11:06:23.320532Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "083e5b1907085bdce1232a9792dc30fb79c82bc35fbb4ab408dab82716e106d6",
+      "size_bytes": 895
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742473727984805,
+      "mtime_utc": "2026-08-26T11:07:53.727985Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425/events.jsonl",
+      "scope": "retained_execution_evidence",
+      "sha256": "1bea6d2fca0b2d1ee545ea14b1f9fa52c906afb15b591aa49b42afc44431b84b",
+      "size_bytes": 5912
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742473727851526,
+      "mtime_utc": "2026-08-26T11:07:53.727852Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e2716228bfb9150f08d9caf8e1f930910e342cb05f6028e30d5a2b901a816e81",
+      "size_bytes": 5505
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742473763479648,
+      "mtime_utc": "2026-08-26T11:07:53.763480Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "382a3c5ce1f787f13a8ee47782fa06432d0b27a9f28103f18b5e9e7b8457f033",
+      "size_bytes": 1440
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742699033074365,
+      "mtime_utc": "2026-08-26T11:11:39.033074Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "86a879938aaaa10aa16b054359dc9c8afa8b331ac5436ec4471bc466f75324f0",
+      "size_bytes": 878
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787742699902111070,
+      "mtime_utc": "2026-08-26T11:11:39.902111Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787742699902111070,
+      "mtime_utc": "2026-08-26T11:11:39.902111Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742699983981302,
+      "mtime_utc": "2026-08-26T11:11:39.983981Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "d477a6d6a67b0b3554ff3eb5253d21a7ecf723dbdc3ba40a13aa094407be2102",
+      "size_bytes": 1424
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742759228809161,
+      "mtime_utc": "2026-08-26T11:12:39.228809Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v2/semantic-claude-v2/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "8499d4a1284bee1341dbb39c498a17ed7d861a3a4adfd7f471c6f2556b3c5c2d",
+      "size_bytes": 881
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742760201345500,
+      "mtime_utc": "2026-08-26T11:12:40.201345Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v2/semantic-claude-v2/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ec8306b29a13a6e2e06f3b98e19d4ec5c21e4c7c4c523ce7b8c26da6e5c4162a",
+      "size_bytes": 843
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787742760200946208,
+      "mtime_utc": "2026-08-26T11:12:40.200946Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v2/semantic-claude-v2/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742760286479149,
+      "mtime_utc": "2026-08-26T11:12:40.286479Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v2/semantic-claude-v2/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ef3675a7c778cc48e7a5536493692d9ed57fbd0767e3ea5a4c2a3ff43e866f5c",
+      "size_bytes": 1427
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743186979631781,
+      "mtime_utc": "2026-08-26T11:19:46.979632Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-claude-v3/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "9b5f6c0558600573af221b8e550734469ac08ac3a9a10229f7629928aa79f360",
+      "size_bytes": 882
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743496341143415,
+      "mtime_utc": "2026-08-26T11:24:56.341143Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-claude-v3/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "f2e391b3662f610890eb9e89c62f4645a62420a3edbf99f068e689d654066eac",
+      "size_bytes": 21061
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743496341001222,
+      "mtime_utc": "2026-08-26T11:24:56.341001Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-claude-v3/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "093af41afc83c053641f7d4510e525c709604fe86699608c77c933db4aa1769d",
+      "size_bytes": 10401
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743496506655863,
+      "mtime_utc": "2026-08-26T11:24:56.506656Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-claude-v3/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "879f72ac95c663070f21dfa8bfd5ac5b569aa11e8389432cd46a94d716d39ab3",
+      "size_bytes": 1431
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743186964800254,
+      "mtime_utc": "2026-08-26T11:19:46.964800Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-sol-v3/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "7449f4058e1d25c95fb7afa2610cb3d65ab15ae549730c87e0dc3bf11f73575a",
+      "size_bytes": 884
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787743301322674392,
+      "mtime_utc": "2026-08-26T11:21:41.322674Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-sol-v3/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e246c960e99eb19915f8bb5b3bd44a4f9fad97954ddfc5af26912176aeaf909a",
+      "size_bytes": 7031
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743301322570947,
+      "mtime_utc": "2026-08-26T11:21:41.322571Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-sol-v3/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "c7189cf90b5c17d0967f44bd166e5348755e53589b007a4182b05440fc481c79",
+      "size_bytes": 6449
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743301393230598,
+      "mtime_utc": "2026-08-26T11:21:41.393231Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-sol-v3/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "eb9e814e46d5c093b499e9f1033278ea1da86cdb6267685cd20b00e5a6e03e13",
+      "size_bytes": 1429
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742824530753776,
+      "mtime_utc": "2026-08-26T11:13:44.530754Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/semantic-claude-v3/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ca1e3bc93b5e4cf4ac16e3ee8913b4a2c17d7cf27e805de27fa318c111e4ed73",
+      "size_bytes": 881
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743061439303370,
+      "mtime_utc": "2026-08-26T11:17:41.439303Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/semantic-claude-v3/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "3a028ebc5d19c159c0e6b94b3872463b93ad1c17b947f8ed5311d57b74592341",
+      "size_bytes": 23976
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743061439253295,
+      "mtime_utc": "2026-08-26T11:17:41.439253Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/semantic-claude-v3/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "9ec8159c53b760b7417b25c65af89a28798158bbbbd505d4fef2461cc9996d2e",
+      "size_bytes": 11853
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743061517498932,
+      "mtime_utc": "2026-08-26T11:17:41.517499Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/semantic-claude-v3/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "10078e951fdd808690cedc12149bee46e2d7b8d2b6f3e7a005dc5f9589adce71",
+      "size_bytes": 1430
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743710329277221,
+      "mtime_utc": "2026-08-26T11:28:30.329277Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-claude-v4/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "81d53945c00c0448f8ed42be05691538c7b69f6d21cddda6db9bb82a73510d6c",
+      "size_bytes": 882
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743857455179598,
+      "mtime_utc": "2026-08-26T11:30:57.455180Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-claude-v4/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "196047b758bf2256dd4b9158eec294ce144c09d2ba6dafb6578f7f7ee0932701",
+      "size_bytes": 23717
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743857455055709,
+      "mtime_utc": "2026-08-26T11:30:57.455056Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-claude-v4/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "22f0bc2c6f9efae1fc90beed9a4489f2979f4c45e0eacf8a4a732ab7572ff293",
+      "size_bytes": 11738
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743857626894612,
+      "mtime_utc": "2026-08-26T11:30:57.626895Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-claude-v4/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "16de28346c70cfabf01209c58d3a3c81fbda9ec9120c86825290175b933a73b6",
+      "size_bytes": 1431
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743710234662534,
+      "mtime_utc": "2026-08-26T11:28:30.234663Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-sol-v4/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "c9c374b69b7323ca5f2eb09f7e362c617c893c89491a212b748b41e378b95b2d",
+      "size_bytes": 884
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787743821128488910,
+      "mtime_utc": "2026-08-26T11:30:21.128489Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-sol-v4/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "e40a3de43af6c99c181b9e852b36a0d1f8888b75adb02c6607b717a7f3f739b4",
+      "size_bytes": 5424
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743821128263981,
+      "mtime_utc": "2026-08-26T11:30:21.128264Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-sol-v4/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "68a00a6aaef3a739b331278b320d7a89410c5dca3d2dda7de5eb78432ac37942",
+      "size_bytes": 4878
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743821214561433,
+      "mtime_utc": "2026-08-26T11:30:21.214561Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-sol-v4/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ff79b757f5a0e8a567c4f925d4a91b22bd007a37d38f1d4e47316c73a2e6767a",
+      "size_bytes": 1429
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743710179558743,
+      "mtime_utc": "2026-08-26T11:28:30.179559Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/semantic-claude-v4/attempt-marker.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "5e3f3ada1a5627670334da834553bee16e5698636b49c9f7eacfbbec5fbca23a",
+      "size_bytes": 881
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744081553214541,
+      "mtime_utc": "2026-08-26T11:34:41.553215Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/semantic-claude-v4/events.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "ebbdda5585a68333aeada6537d37e54f5ea38206f476f207ec70ce518737e2f5",
+      "size_bytes": 19764
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744081553025471,
+      "mtime_utc": "2026-08-26T11:34:41.553025Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/semantic-claude-v4/raw-output.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "9497c5abb77832ecda3e1fe7ce7d908553a26cffebf6ca0800e2c10a8731267c",
+      "size_bytes": 9592
+    },
+    {
+      "classification": "preoutcome_model_execution_evidence",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744081734986535,
+      "mtime_utc": "2026-08-26T11:34:41.734987Z",
+      "path": "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/semantic-claude-v4/receipt.json",
+      "scope": "retained_execution_evidence",
+      "sha256": "21e7ea09779b332629c4cd474890801d1e668dddfb66b2fa4e92bad60eec8caf",
+      "size_bytes": 1430
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744597912660472,
+      "mtime_utc": "2026-08-26T11:43:17.912660Z",
+      "path": "/tmp/group3-contract-validation.json",
+      "scope": "transient_staging",
+      "sha256": "6e3aae6b35ddaf41ee8e3df60ecaf5a6c4d2a191964f43c0b38ee1004b0fa071",
+      "size_bytes": 1034
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "invalid",
+      "mtime_ns": 1787744476024495549,
+      "mtime_utc": "2026-08-26T11:41:16.024496Z",
+      "path": "/tmp/group3-cue-v2.json",
+      "scope": "transient_staging",
+      "sha256": "dfb078ad722f1e2342c41ae1d544ad597db9fb1347e3aa0cb2adb7087e8d0a0d",
+      "size_bytes": 4752
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744319296109495,
+      "mtime_utc": "2026-08-26T11:38:39.296109Z",
+      "path": "/tmp/group3-evidence-summary.json",
+      "scope": "transient_staging",
+      "sha256": "2d62ee324666afecd7baaba62a3a622f69d1fc48db6cb40a96800c466469ea1f",
+      "size_bytes": 23341
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744485006465929,
+      "mtime_utc": "2026-08-26T11:41:25.006466Z",
+      "path": "/tmp/group3-gate-v2.json",
+      "scope": "transient_staging",
+      "sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634",
+      "size_bytes": 1754
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787744598304693851,
+      "mtime_utc": "2026-08-26T11:43:18.304694Z",
+      "path": "/tmp/group3-launch.err",
+      "scope": "transient_staging",
+      "sha256": "fb4db37feb78e11f3db7436e3970d8d5d009dfa28013372c2ef7e9e60f7cae87",
+      "size_bytes": 58
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787744598217686245,
+      "mtime_utc": "2026-08-26T11:43:18.217686Z",
+      "path": "/tmp/group3-launch.out",
+      "scope": "transient_staging",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744358970881449,
+      "mtime_utc": "2026-08-26T11:39:18.970881Z",
+      "path": "/tmp/group3-manipulation-claude-normalized.json",
+      "scope": "transient_staging",
+      "sha256": "22f0bc2c6f9efae1fc90beed9a4489f2979f4c45e0eacf8a4a732ab7572ff293",
+      "size_bytes": 11738
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744358962881443,
+      "mtime_utc": "2026-08-26T11:39:18.962881Z",
+      "path": "/tmp/group3-manipulation-sol-normalized.json",
+      "scope": "transient_staging",
+      "sha256": "711c5d265208dc4b9b17b703ae78cbb683259468ea18a977843ce56bcc34aaf6",
+      "size_bytes": 5713
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743637557462507,
+      "mtime_utc": "2026-08-26T11:27:17.557462Z",
+      "path": "/tmp/group3-rendering-manifest-v2.json",
+      "scope": "transient_staging",
+      "sha256": "091596f8318cdc620c4f5426f75b4f26c93f8b28ad8276f2ccb47f9b0b63bc84",
+      "size_bytes": 4627
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744285073166646,
+      "mtime_utc": "2026-08-26T11:38:05.073167Z",
+      "path": "/tmp/linguistic-register-group3-final.XxFuw4/cue-concentration.json",
+      "scope": "transient_staging",
+      "sha256": "8eda0944ad994a161cf940aa5ea099f0d16bd38a73f6d88cf7e1b7cfc1d02936",
+      "size_bytes": 4344
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744285073753011,
+      "mtime_utc": "2026-08-26T11:38:05.073753Z",
+      "path": "/tmp/linguistic-register-group3-final.XxFuw4/group-3-preoutcome-gate.json",
+      "scope": "transient_staging",
+      "sha256": "8a7834ec824fa959919ac58a0722923ffc451776c4cd32b3559c72fada56201e",
+      "size_bytes": 1506
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744285073433879,
+      "mtime_utc": "2026-08-26T11:38:05.073434Z",
+      "path": "/tmp/linguistic-register-group3-final.XxFuw4/manipulation-report.json",
+      "scope": "transient_staging",
+      "sha256": "fa08dbee991b3606471ab3aa396a397e6aadae165bd5ff7e9d80374731dfeeb1",
+      "size_bytes": 1420
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744285072921394,
+      "mtime_utc": "2026-08-26T11:38:05.072921Z",
+      "path": "/tmp/linguistic-register-group3-final.XxFuw4/quotation-audit.json",
+      "scope": "transient_staging",
+      "sha256": "4267e23e7d63328d804c619bd55bcafc7036b6fc32f456923581b37b6432ba7e",
+      "size_bytes": 31141
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744285073254364,
+      "mtime_utc": "2026-08-26T11:38:05.073254Z",
+      "path": "/tmp/linguistic-register-group3-final.XxFuw4/subject-verification.json",
+      "scope": "transient_staging",
+      "sha256": "c5ac263ab2d684245fde418b1b389c418e81ded6cd47df81299b62ff8196d6f8",
+      "size_bytes": 644
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483838490853,
+      "mtime_utc": "2026-08-26T11:08:03.838491Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/1d504763-88bc-462e-aa4e-9d9581d5591e.md",
+      "scope": "transient_staging",
+      "sha256": "42a663b994580876964d766baffb850358353186b163d68047fd711bb4a6cc4f",
+      "size_bytes": 5483
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483839564118,
+      "mtime_utc": "2026-08-26T11:08:03.839564Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/41767db4-ea13-4f3c-90db-9d0b472d2551.md",
+      "scope": "transient_staging",
+      "sha256": "aa1f1570e10c80f0d0180d59701a4f8751c631b846ddf9a2415037b69ecd383d",
+      "size_bytes": 5449
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483839970434,
+      "mtime_utc": "2026-08-26T11:08:03.839970Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/5522b147-d5ac-4d37-9805-e1a0578cbcf5.md",
+      "scope": "transient_staging",
+      "sha256": "c2769e421619ef53a11620b31c2a6a571205119d8001bbe8e111da51afc432b4",
+      "size_bytes": 5735
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483839234926,
+      "mtime_utc": "2026-08-26T11:08:03.839235Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/caac9200-86b3-4614-bbe0-1b6865e951ab.md",
+      "scope": "transient_staging",
+      "sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "size_bytes": 5710
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483838896364,
+      "mtime_utc": "2026-08-26T11:08:03.838896Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/d2eb55ed-1f46-42f8-9698-6670c71309ca.md",
+      "scope": "transient_staging",
+      "sha256": "7171aa07fce42ff44fa273efe8755769624b6d3b738fc2112524d4f4b8a4a24f",
+      "size_bytes": 5397
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742483840390207,
+      "mtime_utc": "2026-08-26T11:08:03.840390Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/artifacts/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.md",
+      "scope": "transient_staging",
+      "sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "size_bytes": 5434
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742483840645752,
+      "mtime_utc": "2026-08-26T11:08:03.840646Z",
+      "path": "/tmp/linguistic-register-group3-ingest.klnao1/rendering-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "a2188964ac793552245bbe6a1bf6ef14b388d8a3969930c54778f63f8adfee61",
+      "size_bytes": 3861
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "not_json",
+      "mtime_ns": 1787742065301355659,
+      "mtime_utc": "2026-08-26T11:01:05.301356Z",
+      "path": "/tmp/linguistic-register-group3-ingest.le8brP/artifacts/1d504763-88bc-462e-aa4e-9d9581d5591e.md",
+      "scope": "transient_staging",
+      "sha256": "42a663b994580876964d766baffb850358353186b163d68047fd711bb4a6cc4f",
+      "size_bytes": 5483
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630688613,
+      "mtime_utc": "2026-08-26T10:58:55.630689Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/condition-key.json",
+      "scope": "transient_staging",
+      "sha256": "b9476149d9e5c339a7ddb944621015e4dcb76a3528aeb06c9bbe61107c09d724",
+      "size_bytes": 1538
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935629722467,
+      "mtime_utc": "2026-08-26T10:58:55.629722Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/1d504763-88bc-462e-aa4e-9d9581d5591e.json",
+      "scope": "transient_staging",
+      "sha256": "a486cecb284f23be66a1e9d2466ed84e8efdf607ae6f08a1f63d42800f9a115a",
+      "size_bytes": 9214
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630247183,
+      "mtime_utc": "2026-08-26T10:58:55.630247Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/41767db4-ea13-4f3c-90db-9d0b472d2551.json",
+      "scope": "transient_staging",
+      "sha256": "5b9a6bda1c524608b12ff526492e7ee01b7487385b35c1c8e672ffb7e3588b40",
+      "size_bytes": 8658
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630394575,
+      "mtime_utc": "2026-08-26T10:58:55.630394Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5.json",
+      "scope": "transient_staging",
+      "sha256": "f3a04692af091caa0cbd43c9c4fcad8a4822f4cc3bc318398cb5052829dc2d60",
+      "size_bytes": 8658
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630077347,
+      "mtime_utc": "2026-08-26T10:58:55.630077Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/caac9200-86b3-4614-bbe0-1b6865e951ab.json",
+      "scope": "transient_staging",
+      "sha256": "cdfc2958f2e1f8d31f2bc2e8521929ceb5c5a86693e1e1a8c82a70bbbe88c04b",
+      "size_bytes": 9214
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935629913732,
+      "mtime_utc": "2026-08-26T10:58:55.629914Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/d2eb55ed-1f46-42f8-9698-6670c71309ca.json",
+      "scope": "transient_staging",
+      "sha256": "8b04540178d988248f7015ca61f635bdd53c065aaa737a75efd4bc8d2331c808",
+      "size_bytes": 7117
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630531369,
+      "mtime_utc": "2026-08-26T10:58:55.630531Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/packets/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.json",
+      "scope": "transient_staging",
+      "sha256": "3a5df6cb52756553247a0058f163bbfe1ea912785233df8f9b4a5a92be5acf5e",
+      "size_bytes": 7117
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630861784,
+      "mtime_utc": "2026-08-26T10:58:55.630862Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/render-launch-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "e4f702f611953fa04a71b7d7d98ea5e09602a02e8fda39d5749516624d4ca7a0",
+      "size_bytes": 4759
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787741935630617155,
+      "mtime_utc": "2026-08-26T10:58:55.630617Z",
+      "path": "/tmp/linguistic-register-group3-prepare.m7TwiZ/schemas/render-output.schema.json",
+      "scope": "transient_staging",
+      "sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "size_bytes": 215
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742732858330106,
+      "mtime_utc": "2026-08-26T11:12:12.858330Z",
+      "path": "/tmp/linguistic-register-group3-review-v2.K8ZXIH/packets/manipulation.json",
+      "scope": "transient_staging",
+      "sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "size_bytes": 70534
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742732857657180,
+      "mtime_utc": "2026-08-26T11:12:12.857657Z",
+      "path": "/tmp/linguistic-register-group3-review-v2.K8ZXIH/packets/semantic-review.json",
+      "scope": "transient_staging",
+      "sha256": "8e08a864de59adcca3a45feeea0c0c6d7e2b5ab9b26cb2ae3842a092e151c808",
+      "size_bytes": 76676
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742732860032845,
+      "mtime_utc": "2026-08-26T11:12:12.860033Z",
+      "path": "/tmp/linguistic-register-group3-review-v2.K8ZXIH/review-launch-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "5a939d2503b064df0544ed7ff5e2da0d1181b1d27e50ba7e595646aaa2becc79",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742732858556298,
+      "mtime_utc": "2026-08-26T11:12:12.858556Z",
+      "path": "/tmp/linguistic-register-group3-review-v2.K8ZXIH/schemas/manipulation.schema.json",
+      "scope": "transient_staging",
+      "sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "size_bytes": 1511
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742732858458346,
+      "mtime_utc": "2026-08-26T11:12:12.858458Z",
+      "path": "/tmp/linguistic-register-group3-review-v2.K8ZXIH/schemas/semantic-review.schema.json",
+      "scope": "transient_staging",
+      "sha256": "e3e8c3f69e2ef0d4dca834b41413ab625ca2434f6229810fe7b8c7eb450dada8",
+      "size_bytes": 1355
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742806366592242,
+      "mtime_utc": "2026-08-26T11:13:26.366592Z",
+      "path": "/tmp/linguistic-register-group3-review-v3.nmKXlW/packets/manipulation.json",
+      "scope": "transient_staging",
+      "sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "size_bytes": 70534
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742806365936604,
+      "mtime_utc": "2026-08-26T11:13:26.365937Z",
+      "path": "/tmp/linguistic-register-group3-review-v3.nmKXlW/packets/semantic-review.json",
+      "scope": "transient_staging",
+      "sha256": "8e08a864de59adcca3a45feeea0c0c6d7e2b5ab9b26cb2ae3842a092e151c808",
+      "size_bytes": 76676
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742806368261543,
+      "mtime_utc": "2026-08-26T11:13:26.368262Z",
+      "path": "/tmp/linguistic-register-group3-review-v3.nmKXlW/review-launch-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "560b25628d53c6e734a61a98c6e14906bd8c328ac2ca1d97e7d752651324dd49",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742806366788849,
+      "mtime_utc": "2026-08-26T11:13:26.366789Z",
+      "path": "/tmp/linguistic-register-group3-review-v3.nmKXlW/schemas/manipulation.schema.json",
+      "scope": "transient_staging",
+      "sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "size_bytes": 1511
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742806366709960,
+      "mtime_utc": "2026-08-26T11:13:26.366710Z",
+      "path": "/tmp/linguistic-register-group3-review-v3.nmKXlW/schemas/semantic-review.schema.json",
+      "scope": "transient_staging",
+      "sha256": "e3e8c3f69e2ef0d4dca834b41413ab625ca2434f6229810fe7b8c7eb450dada8",
+      "size_bytes": 1355
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743667695264491,
+      "mtime_utc": "2026-08-26T11:27:47.695265Z",
+      "path": "/tmp/linguistic-register-group3-review-v4.cF72uu/packets/manipulation.json",
+      "scope": "transient_staging",
+      "sha256": "e049b1592e3b80791551528a83019db7f2c63b1338a6523ccd22d93a141ebff6",
+      "size_bytes": 35185
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743667694450023,
+      "mtime_utc": "2026-08-26T11:27:47.694450Z",
+      "path": "/tmp/linguistic-register-group3-review-v4.cF72uu/packets/semantic-review.json",
+      "scope": "transient_staging",
+      "sha256": "9613c9109078f497ca1631a83b30d40a770835423180bfc071b75b9ad3681c03",
+      "size_bytes": 41327
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743667697829643,
+      "mtime_utc": "2026-08-26T11:27:47.697830Z",
+      "path": "/tmp/linguistic-register-group3-review-v4.cF72uu/review-launch-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "69d09620abafdbf48fb808c250a400de7e49cfe010c75d417a7f0e3b85e9a952",
+      "size_bytes": 2782
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743667695658152,
+      "mtime_utc": "2026-08-26T11:27:47.695658Z",
+      "path": "/tmp/linguistic-register-group3-review-v4.cF72uu/schemas/manipulation.schema.json",
+      "scope": "transient_staging",
+      "sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "size_bytes": 1511
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787743667695480108,
+      "mtime_utc": "2026-08-26T11:27:47.695480Z",
+      "path": "/tmp/linguistic-register-group3-review-v4.cF72uu/schemas/semantic-review.schema.json",
+      "scope": "transient_staging",
+      "sha256": "e3e8c3f69e2ef0d4dca834b41413ab625ca2434f6229810fe7b8c7eb450dada8",
+      "size_bytes": 1355
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742633550217147,
+      "mtime_utc": "2026-08-26T11:10:33.550217Z",
+      "path": "/tmp/linguistic-register-group3-review.1TTbUo/packets/manipulation.json",
+      "scope": "transient_staging",
+      "sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "size_bytes": 70534
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742633549589763,
+      "mtime_utc": "2026-08-26T11:10:33.549590Z",
+      "path": "/tmp/linguistic-register-group3-review.1TTbUo/packets/semantic-review.json",
+      "scope": "transient_staging",
+      "sha256": "8e08a864de59adcca3a45feeea0c0c6d7e2b5ab9b26cb2ae3842a092e151c808",
+      "size_bytes": 76676
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742633551840939,
+      "mtime_utc": "2026-08-26T11:10:33.551841Z",
+      "path": "/tmp/linguistic-register-group3-review.1TTbUo/review-launch-manifest.json",
+      "scope": "transient_staging",
+      "sha256": "3690e1c8788bbf8a7fbe8e316653545c17786c5bad6ecb5f5a3640d9bec97d32",
+      "size_bytes": 2773
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742633550403859,
+      "mtime_utc": "2026-08-26T11:10:33.550404Z",
+      "path": "/tmp/linguistic-register-group3-review.1TTbUo/schemas/manipulation.schema.json",
+      "scope": "transient_staging",
+      "sha256": "ade48fbbaff422c52de077d27f27fc68938d904a800a148c38f249d1c42547d2",
+      "size_bytes": 1516
+    },
+    {
+      "classification": "transient_preoutcome_staging",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787742633550326092,
+      "mtime_utc": "2026-08-26T11:10:33.550326Z",
+      "path": "/tmp/linguistic-register-group3-review.1TTbUo/schemas/semantic-review.schema.json",
+      "scope": "transient_staging",
+      "sha256": "d59bb35a48d8a28dd934225f613f31677ba0f2bc600feecc3c9259ed66a3e8f6",
+      "size_bytes": 1360
+    },
+    {
+      "classification": "invocation_session_log",
+      "json_parse_status": "valid",
+      "mtime_ns": 1787744727334423024,
+      "mtime_utc": "2026-08-26T11:45:27.334423Z",
+      "path": "/home/bline/.codex/sessions/2026/08/26/rollout-2026-08-26T04-49-57-01a03db0-e18e-7723-8ae2-cf68d2b97c32.jsonl",
+      "scope": "creator_session_provenance",
+      "sha256": "4632e136225b6bff9192f4e41fb8a5bec17f786be6813d9da3f00d6dc6d23d7b",
+      "size_bytes": 4863855
+    }
+  ],
+  "entry_count": 152,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "generated_at_utc": "2026-08-26T13:29:15.733780Z",
+  "inventory_scope": {
+    "authoritative_repository": [
+      "/home/bline/code/work-engine/skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3",
+      "/home/bline/code/work-engine/skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3-preoutcome-gate.json"
+    ],
+    "creator_session_provenance": [
+      "/home/bline/.codex/sessions/2026/08/26/rollout-2026-08-26T04-49-57-01a03db0-e18e-7723-8ae2-cf68d2b97c32.jsonl"
+    ],
+    "retained_execution_evidence": [
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1"
+    ],
+    "transient_staging_patterns": [
+      "/tmp/linguistic-register-group3-*",
+      "/tmp/group3-*"
+    ]
+  },
+  "limitations": [
+    "This is a point-in-time byte inventory. Transient staging paths may later disappear.",
+    "Classification is based on path and container metadata; treatment quality and behavioral results were not evaluated."
+  ],
+  "schema_version": 1
+}
+
+

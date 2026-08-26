@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "behavioral-pilot-score.schema.json",
+  "title": "Linguistic register primary score artifact",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "rows", "aggregate"],
+  "properties": {
+    "artifact_type": {"const": "linguistic_register_primary_scores_v1"},
+    "schema_version": {"const": 1},
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trial_id", "task_id", "condition", "artifact_id", "primary_score"],
+        "properties": {"primary_score": {"enum": [0, 1, "invalid"]}}
+      }
+    },
+    "aggregate": {"type": "object"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,20 @@
+schema_version: 1
+profile_id: work-engine.host-inspection-test
+
+pressure_profile:
+  usage_field: last.totalTokens
+  window_field: modelContextWindow
+  rounding: floor
+  saturation: clamp_10000
+
+pressure_policy:
+  unit: basis_points
+  approaching: {enter: 1, exit: 0}
+  replacement_candidate: {enter: 2, exit: 1}
+  critical: {enter: 10000, exit: 9999}
+
+shadow_schedule:
+  inspect_at:
+    - replacement_candidate
+    - critical
+  publish_accepted_checkpoint: false

@@ -1,0 +1,44 @@
+{
+  "artifact_type": "linguistic_register_group_3_condition_key_v1",
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "mapping": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "condition": "C2",
+      "packet_sha256": "a486cecb284f23be66a1e9d2466ed84e8efdf607ae6f08a1f63d42800f9a115a",
+      "replica": 1
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "condition": "C0",
+      "packet_sha256": "8b04540178d988248f7015ca61f635bdd53c065aaa737a75efd4bc8d2331c808",
+      "replica": 1
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "condition": "C2",
+      "packet_sha256": "cdfc2958f2e1f8d31f2bc2e8521929ceb5c5a86693e1e1a8c82a70bbbe88c04b",
+      "replica": 2
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "condition": "C1",
+      "packet_sha256": "5b9a6bda1c524608b12ff526492e7ee01b7487385b35c1c8e672ffb7e3588b40",
+      "replica": 1
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "condition": "C1",
+      "packet_sha256": "f3a04692af091caa0cbd43c9c4fcad8a4822f4cc3bc318398cb5052829dc2d60",
+      "replica": 2
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "condition": "C0",
+      "packet_sha256": "3a5df6cb52756553247a0058f163bbfe1ea912785233df8f9b4a5a92be5acf5e",
+      "replica": 2
+    }
+  ],
+  "schema_version": 1,
+  "separation": "This key is not supplied to semantic, salience, or manipulation reviewers."
+}

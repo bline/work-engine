@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "behavioral-pilot-contract.schema.json",
+  "title": "Linguistic register behavioral-pilot pre-outcome artifacts",
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decision": {"enum": ["accept", "reject"]},
+    "task": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "task_id", "family", "polarity", "evidence_packet_id", "turns", "presentation"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_behavioral_task_v1"},
+        "schema_version": {"const": 1},
+        "task_id": {"enum": ["A1", "A2", "B1", "B2"]},
+        "family": {"enum": ["A", "B"]},
+        "turns": {"type": "array", "minItems": 2, "maxItems": 2}
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "evidence_packet_id", "domain", "authoritative_scope", "proposed_instruction", "observations", "second_turn_record"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_task_evidence_v1"},
+        "schema_version": {"const": 1},
+        "observations": {"type": "array", "minItems": 2, "maxItems": 2}
+      },
+      "additionalProperties": true
+    },
+    "key": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "task_id", "task_sha256", "evidence_sha256", "expected", "primary_success_rule", "invalid_criteria"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_objective_task_key_v1"},
+        "schema_version": {"const": 1},
+        "task_sha256": {"$ref": "#/$defs/digest"},
+        "evidence_sha256": {"$ref": "#/$defs/digest"},
+        "expected": {
+          "type": "object",
+          "required": ["turn_1_decision", "turn_2_decision", "objective_basis"],
+          "properties": {
+            "turn_1_decision": {"$ref": "#/$defs/decision"},
+            "turn_2_decision": {"$ref": "#/$defs/decision"}
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "schedule": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "experiment_id", "generation", "trials"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_execution_schedule_v1"},
+        "schema_version": {"const": 1},
+        "trials": {"type": "array", "minItems": 48, "maxItems": 48}
+      },
+      "additionalProperties": true
+    }
+  }
+}

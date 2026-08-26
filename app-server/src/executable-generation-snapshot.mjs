@@ -126,7 +126,8 @@ export async function captureExecutableGenerationSnapshot({
   }
   const sourceRoot = await realpath(path.resolve(workspaceRoot));
   const targetRoot = path.resolve(generationsRoot);
-  const normalizedFiles = [...new Set(files.map(normalizeRelativePath))].sort();
+  const normalizedFiles = [...new Set(files.map(normalizeRelativePath))]
+    .sort((left, right) => left.localeCompare(right));
   if (normalizedFiles.length !== files.length) {
     throw new TypeError("generation snapshot file inventory contains duplicates");
   }
@@ -159,7 +160,8 @@ export async function captureExecutableGenerationSnapshot({
     await writeGeneratedFiles(temporary, normalizedGenerated);
     const copied = await createManifest(
       temporary,
-      [...normalizedFiles, ...generatedEntries.map((entry) => entry.path)].sort(),
+      [...normalizedFiles, ...generatedEntries.map((entry) => entry.path)]
+        .sort((left, right) => left.localeCompare(right)),
     );
     await onPhase?.("after_copy", copied);
     const after = combinedManifest(await createManifest(sourceRoot, normalizedFiles), generatedEntries);

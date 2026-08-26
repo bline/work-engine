@@ -1,0 +1,103 @@
+artifact_type: linguistic_register_expanded_treatment_recovery_preregistration_v1
+schema_version: 1
+experiment_id: leveson-expanded-v1b-treatment-validation-2026-08-26
+attempt_id: v1b
+status: frozen_before_new_model_outcomes
+frozen_at_utc: 2026-08-26T08:54:27Z
+authority: authorized bounded recovery implementation group inside the pre-outcome behavioral-pilot construction slice
+repository_head_at_freeze: 8e039d0519cda1925681c558924fb73dcc2a8be2
+prior_attempt:
+  experiment_id: leveson-expanded-preoutcome-2026-08-26
+  disposition: immutable_failed_treatment_validation_attempt
+  salvage_or_rewrite_forbidden: true
+  bindings:
+    construction_plan_sha256: 2981ddf6e725bccdaf10299f23176515b98f890904d354f57151ab8783d405ca
+    source_selection_sha256: bb3c20c62ab3a50be70f717644f10cc4e36751c9a8eea740ffbadc85966e6fdf
+    corpus_manifest_sha256: c947def160d1f1c0a890ed7850fa3910efa0081e37b2b7ef1183200de9014e32
+    profile_sha256: 082a365471414cbdfa342a278c8b1e5149c520ca84db7bdb8942b1f9cd033dd8
+    audit_sha256: c65b50480fa25e099fdddf3df2252d030b1a98b6a47cc1680a3bdb260e593972
+bound_inputs:
+  corpus: exact_same_eight_document_corpus_as_v1
+  source_bytes: exact_digest_verified_bytes_retained_outside_git
+  role_manifest_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+feature_evidence_recovery:
+  target_feature_ids:
+    - lexicon-abstract-relational
+    - lexicon-diagnostic-deficit
+    - syntax-stacked-subordination
+    - rhythm-telegraphic-prompt-response
+  evidence_scope: already_bound_eight_document_corpus_only
+  reviewer_input_allowlist:
+    - frozen_feature_id_description_layer_category_and_weight
+    - source_id_genre_class_and_genre_family
+    - digest_bound_balanced_source_excerpts
+  forbidden_inputs:
+    - behavioral_tasks
+    - behavioral_scoring_keys
+    - behavioral_outcomes
+    - recognition_results
+  disposition_rule: retain only with concrete support from at least three distinct source documents; otherwise drop from retained treatment or reclassify honestly
+  threshold_change_forbidden: true
+profile_card_contract:
+  source_profiles: frozen_v1b_disposition_plus_bound_legacy_comparator_profiles
+  feature_count_per_card: 5
+  layer_counts_per_card:
+    leveson-system-safety-expanded-v1: {surface: 3, discourse: 2}
+    shaw-engineering-judgment: {surface: 3, discourse: 2}
+    gelman-model-criticism: {surface: 4, discourse: 1}
+    neutral-editorial-defaults: {surface: 4, discourse: 1}
+  layer_rule: preserve layer-appropriate retained-feature availability; layer counts remain exposed to the shallow baseline
+  salience_weight_multiset_per_card: [4, 4, 3, 3, 3]
+  salience_weight_rule: card-local normalized ranks preserve each profile's frozen feature ordering without mutating profile weights
+  normalized_word_count:
+    minimum: 68
+    maximum: 72
+  semantic_rule: descriptions may be compressed or expanded only to preserve the already recorded feature meaning; no new feature or outcome-task knowledge may be introduced
+  card_identity: opaque_and_separately_mapped
+recognizability:
+  model: gpt-5.6-sol
+  reasoning_effort: high
+  fresh_ephemeral_read_only_process: true
+  required_assignment: expanded_leveson_card_correctly_assigned
+  interpretation: same_family_length_layer_weight_matched_profile_card_traceability_only
+shallow_cue_baseline:
+  exhaustive_metrics:
+    - normalized_word_count
+    - sentence_count
+    - question_mark_count
+    - colon_count
+    - semicolon_count
+    - dash_count
+    - parenthesis_count
+    - feature_count
+    - surface_layer_count
+    - discourse_layer_count
+    - salience_weight_sum
+    - salience_weight_minimum
+    - salience_weight_maximum
+  operators: [equal, greater_than, less_than_or_equal]
+  thresholds: all_observed_values_and_adjacent_midpoints
+  replicas: three_deterministic_feature_order_rotations
+  gate: zero_cross_replica_perfect_single_scalar_leveson_rules
+unchanged_gates:
+  authorship: all_eight_sources_sole_authored_or_presented_by_nancy_leveson
+  genre: at_least_six_documents_four_genre_classes_and_two_documents_per_genre_family
+  recurrence: every_retained_feature_supported_by_at_least_three_documents
+  retention:
+    minimum_retained_features: 5
+    minimum_weighted_retention: 0.35
+    minimum_cross_family_retained_features: 4
+  quotation:
+    maximum_material_exact_matches: 0
+    maximum_near_verbatim_matches: 0
+    material_exact_minimum_tokens: 8
+    near_verbatim_minimum_tokens: 12
+    near_verbatim_maximum_tokens: 30
+    near_verbatim_minimum_positional_identity: 0.9
+    near_verbatim_minimum_identical_positions: 10
+overall_gate: all_authorship_genre_recurrence_retention_quotation_recognizability_and_shallow_cue_gates_must_pass
+stop_boundary:
+  - do_not_author_or_read_behavioral_tasks_or_scoring_keys
+  - do_not_generate_C0_C1_C2_role_artifacts
+  - do_not_generate_behavioral_outcomes
+  - stop_and_report_if_any_gate_fails

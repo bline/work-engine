@@ -1,0 +1,72 @@
+{
+  "artifact_type": "linguistic_register_group_3_rendering_manifest_v2",
+  "artifacts": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "attempt_marker_sha256": "96ea72b22e99a017b0eda22dcf82b7cb3fe390475c13a06f98557e8b80fd2132",
+      "normalized_word_count": 743,
+      "raw_response_sha256": "c679a227557239da8c15f0019c2fa191f179d86d081efe6fff7af665ad58f094",
+      "receipt_sha256": "d3045c6d23df1912f5031d765b6902e2f5f106c47d3988fad7313def10f3806a",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "42a663b994580876964d766baffb850358353186b163d68047fd711bb4a6cc4f"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "attempt_marker_sha256": "d63847860090abce9ec79161d19a3d2abf3485b9885952bc3e0d71558707f5f6",
+      "normalized_word_count": 749,
+      "raw_response_sha256": "93d4f5c5357dd01cc46dc9ac62079605a16d17d432fff0f9669cb823b7f7b1db",
+      "receipt_sha256": "4dcf28fe447c6f6157c6e610643682056c363b09812253798c3832c473593498",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "7171aa07fce42ff44fa273efe8755769624b6d3b738fc2112524d4f4b8a4a24f"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "attempt_marker_sha256": "6d3a763715e757ac6dca7325f8babddb8300880634c6f82e423a7c428772eee2",
+      "normalized_word_count": 764,
+      "raw_response_sha256": "5af010d904e9b6890c52100735fde41f5aae55d446d2401c88c42443b0372e1a",
+      "receipt_sha256": "5acffc717236b66c2782f5b5b38e1a8845ef6c756d2c9e634977ea9ce7bf21b6",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "attempt_marker_sha256": "ce806bc066fab2bee28535d702e4e9dc280dc1ad71b621536d31c84efdded8fd",
+      "normalized_word_count": 738,
+      "raw_response_sha256": "b6ee74a89502a0712ddbad2a608821542871f961908e27c5bef9134a3077b438",
+      "receipt_sha256": "7dab4ca6af5d2bf494254e5233e6a032edbd122dde87166522292b7e62afa11c",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "aa1f1570e10c80f0d0180d59701a4f8751c631b846ddf9a2415037b69ecd383d"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "attempt_marker_sha256": "65ff2940885115bc63bd096167ac9363dd2f37d6d1ed0008c61d5432376a414b",
+      "normalized_word_count": 780,
+      "raw_response_sha256": "532b95ac6bc597d9f55bcd07c617c2541784d426fd6a63d5ebd590f22cb34cb0",
+      "receipt_sha256": "1a52825de245c4a7644828476700a0a308ff217fa083115721634acf9138dc9d",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "c2769e421619ef53a11620b31c2a6a571205119d8001bbe8e111da51afc432b4"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "attempt_marker_sha256": "083e5b1907085bdce1232a9792dc30fb79c82bc35fbb4ab408dab82716e106d6",
+      "normalized_word_count": 753,
+      "raw_response_sha256": "e2716228bfb9150f08d9caf8e1f930910e342cb05f6028e30d5a2b901a816e81",
+      "receipt_sha256": "382a3c5ce1f787f13a8ee47782fa06432d0b27a9f28103f18b5e9e7b8457f033",
+      "transport_normalization": "exact_single_key_text_wrapper",
+      "extracted_prose_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72"
+    }
+  ],
+  "condition_key_sha256": "b9476149d9e5c339a7ddb944621015e4dcb76a3528aeb06c9bbe61107c09d724",
+  "condition_labels_present": false,
+  "contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "render_launch_manifest_sha256": "e4f702f611953fa04a71b7d7d98ea5e09602a02e8fda39d5749516624d4ca7a0",
+  "schema_version": 2,
+  "publication_normalization": "Repository markdown publication adds one terminal LF when absent; extracted_prose_sha256 remains the unchanged model string digest."
+}

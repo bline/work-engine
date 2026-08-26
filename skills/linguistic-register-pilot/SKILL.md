@@ -107,3 +107,42 @@ not independent recognizability, candidate ranking, corpus selection, or
 production authority. Do not reuse or retry v2c outputs; any confirmatory
 different-family or human check requires a separately authorized fresh
 experiment contract.
+
+The expanded Leveson treatment is a separate pre-outcome construction family,
+not a revision of the two-document candidate package. Use
+`scripts/expanded_leveson_artifacts.py` to bind exact externally retained
+source bytes, prepare balanced source-only extraction input, assemble the
+separately classified profile, audit quotation survival, prepare the
+equal-feature-count profile-card check, and enumerate shallow single-scalar cue
+rules. Use `scripts/expanded_leveson_model_job.py` only for its isolated
+packet-only judgments. Read the construction report before downstream use: a
+recognizability pass cannot cure a failed retention gate or a sufficient
+incidental cue. Do not expose extraction to behavioral tasks or keys, and do
+not generate role renderings or behavioral outcomes through this artifact
+family.
+
+For the fresh `leveson-expanded-v1b` recovery, read its preregistration before
+using any result. The recovery keeps the original eight-source corpus and
+three-document recurrence threshold, binds newly found support without
+rewriting v1, and length-matches the profile cards before a fresh same-family
+recognizability check. Treat card salience weights as card-local normalized
+ranks; the profile's source weights remain unchanged. Downstream construction
+is available only when the consolidated v1b gate report passes every retained
+authorship, genre, recurrence, retention, quotation, target-recognizability,
+and shallow-cue gate.
+
+After a human authorizes behavioral-contract construction, read
+[references/behavioral-pilot-contracts.md](references/behavioral-pilot-contracts.md).
+The behavioral contract freezes construct classification before tasks, keeps
+task authors blind to profile wording, and binds the complete balanced schedule
+and scoring rules. Its launch check must refuse behavioral outcomes until a
+separate group-3 artifact-rendering and prelaunch gate passes; a sealed contract
+alone is not execution authority.
+
+The retained group-3 preoutcome attempt is terminal and failed its frozen gate.
+Read its group report before proposing behavioral execution or a rendering
+successor. The six artifacts preserve canonical coverage and advisory speech
+act, but semantic/salience, incremental C2 manipulation, shallow-cue, and
+profile-mediated quotation gates failed. Do not launch T001, repair these
+artifacts in place, or reuse their outputs. A successor requires fresh human
+authorization and a new preregistration.

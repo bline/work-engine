@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          },
+          "assigned_level": {
+            "enum": [
+              "C0",
+              "C1",
+              "C2"
+            ]
+          },
+          "discourse_uptake": {
+            "maximum": 5,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "intended_features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "shallow_or_forbidden_cues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "surface_uptake": {
+            "maximum": 5,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "assigned_level",
+          "surface_uptake",
+          "discourse_uptake",
+          "intended_features",
+          "shallow_or_forbidden_cues",
+          "rationale"
+        ],
+        "type": "object"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "type": "array"
+    },
+    "limitations": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifacts",
+    "limitations"
+  ],
+  "type": "object"
+}

@@ -523,16 +523,21 @@ The host declaration is configuration evidence, not a capability handshake or
 proof that the tool appeared in the model context. The exact live probe binds
 the declaration to an App Server process launched with `--enable token_budget`,
 while lifecycle observations and successor reconciliation remain necessary to
-classify any requested transition. No production retirement directive or
-actuator turn is implemented by this gate.
+classify any requested transition. The transition runtime now supplies the
+separate preparation, retirement, and reconciliation control turns; capability
+negotiation alone still proves none of their outcomes.
 
 The current mechanism hypothesis is:
 
 ```text
-observe and bind revision C
+begin a revision-bound preparation fence
+→ ask the target model to attest its exact context-window identity
+→ capture complete raw thread snapshot S and semantic projection C
 → compile and verify C
 → atomically publish checkpoint H
-→ verify C still governs the domain state
+→ reread raw thread snapshot S'
+→ if S' differs, retain the delta and recompile; repeat until stable
+→ promote preparation to the final transition lease
 → start a semantically sterile retirement control turn
 → target model calls new_context as its only action
 → host observes and classifies the transition
@@ -540,7 +545,10 @@ observe and bind revision C
 → successor reconciles against H and canonical references
 ```
 
-The target model needs one small model-facing contract:
+The target model receives two small, sterile model-facing contracts. The first
+attests the exact runtime context-window identity before the host snapshots the
+thread. It performs no domain work and invokes no tools. The second is the
+retirement actuator contract:
 
 > When the runtime supplies a `context_retirement_ready` directive and no later
 > human input is present, perform no domain work and invoke `new_context` as the
@@ -572,7 +580,23 @@ the actuator turn.
 > occur under one revision-bound transition lease. Any competing input, effect,
 > or runtime-binding change revokes the lease before actuation.
 
-The implemented transition-lease foundation consumes the complete checkpoint,
+The implemented transition-lease foundation first opens a preparation fence
+and delivers one exact identity-attestation turn to the target model. The host
+uses `thread/read` to resolve the rollout path, reads one bounded immutable
+JSONL snapshot, and applies the pinned Codex compaction-aware replay-selection
+rules to reconstruct the effective context. The raw effective-context revision
+is bound separately from the smaller attributed `thread/turns/list` projection
+used as semantic compiler material. Telemetry-only rollout additions therefore
+change source evidence without falsely changing effective-context identity.
+
+After accepted compilation, verification, and publication, the host rereads
+the complete raw snapshot immediately before actuator delivery. A changed
+revision invalidates readiness, preserves the newly observed snapshot, and
+returns the preparation to recompilation without admitting the delta to the
+retiring context. This fixed-point loop prevents meaning that arrived after the
+first fence from being discarded or silently bypassing compilation.
+
+The promoted transition lease consumes the complete checkpoint,
 its publication-ledger entry, and the exact post-publication source, binding,
 authority, checkpoint, and ledger fence. It independently verifies their digest,
 linkage, and subject continuity before appending an accepted readiness entry and
@@ -591,11 +615,29 @@ and records `actuation_requested` as `attempted` before sending `turn/start`.
 Delivery failure records a failed ledger entry rather than success evidence.
 
 This reference gate is in-memory and provides only one-process serialization.
-It does not provide a protected durable lease, fence provider-native input or
-tool-effect paths outside the adapter, prove model compliance, observe a
-`new_context` tool call, or classify a transition. The target model is therefore
-asked to clear its own context, but this slice neither invokes `new_context` nor
-claims that clearing occurred.
+It does not provide a protected durable lease or yet route every provider-native
+input path through the controller. The pinned live test does prove one
+model-invoked `new_context` transition and successor reconciliation, but that
+does not authenticate arbitrary provider signals or make unmediated ingress
+safe.
+
+The implemented controller boundary closes durable admission for the logical
+role inside preparation admission, before the preparation becomes visible.
+Later switchboard messages are stored in arrival order with exact attribution,
+binding, transition, content, and client-message identity. Accepted
+reconciliation releases them sequentially through the ordinary idempotent role
+delivery path, records each delivery receipt, and reopens admission only after
+no unreceipted item remains. Failure or restart leaves admission closed and
+resumes at the first unreceipted identity; unresolved reconciliation releases
+nothing. Pinned Codex CLI 0.149.1 exposes
+durable thread-queue requests (`thread/queue/add`, `list`, `update`, `delete`,
+`reorder`, and `start`) but no client request that pauses a thread. The Work
+Engine controller therefore owns the pause semantics. The operator switchboard
+path is mediated, and the executable boundary rejects known direct provider
+turn, steer, injected-item, queue, compact, and realtime mutation routes for
+role-owned threads. A future provider protocol revision can still introduce a
+new ingress method, so the pinned method inventory and the read-only
+`canAcceptDirectInput` field are not universal pause proofs.
 
 `thread/compact/start` must not be treated as equivalent to `new_context`
 without version-pinned live evidence of its actual semantics. Likewise, an item
@@ -643,12 +685,16 @@ the exact immutable predecessor ID, a distinct non-empty current window ID,
 the exact challenge bindings, all required continuation claims established, and
 no reported uncertainty. Malformed, mismatched, false, or uncertain receipts
 remain `unreconciled`; only an accepted receipt releases domain turns, tool
-effects, and binding changes.
+effects, and binding changes. When durable input custody is configured,
+acceptance also starts ordered release through the same immutable role
+environment and stable client-message identities; a release failure preserves
+the remaining queue and keeps admission closed.
 
 This receipt is a model assertion checked against host-owned bindings, not an
-authenticated provider context-window attestation. The required live probe must
-still establish that the pinned runtime exposes truthful window lineage to the
-successor and that the strategic planner can reconcile a real checkpoint.
+authenticated provider context-window attestation. A gated live test now proves
+that pinned Codex CLI 0.149.1 exposes the required predecessor/successor lineage
+for one strategic-planner transition and that the successor reconciles the
+published checkpoint before the gate reopens.
 
 Until the provider supports a concurrently testable successor or a reversible
 context transition, this is a recoverable semantic handoff rather than atomic
@@ -806,13 +852,15 @@ pressure evidence. This is an intentionally replaceable scheduling proxy, not
 an assertion that `last.totalTokens` is exact active-context occupancy. A
 missing context-window value produces unavailable pressure evidence.
 
-The retained-role shadow wrapper waits for turn completion, then joins only a
-token-usage observation carrying that exact turn ID with the durable role
-binding and role-scoped coordinator. Stale usage is not applied to the new
-turn. Comfortable observations can be persisted without an observed-context
-projection; when the schedule requires semantic inspection, the host must
-supply the authenticated projection and exact bounded source materials rather
-than asking the wrapper to infer a source inventory.
+The retained-role shadow wrapper returns the admitted delivery immediately,
+then its completion path joins only a token-usage observation carrying that
+exact turn ID with the durable role binding and role-scoped coordinator. This
+keeps the operator's UI turn live while lifecycle work follows provider turn
+completion. Stale usage is not applied to the new turn. Comfortable
+observations can be persisted without invoking semantic inference; when the
+schedule requires semantic inspection, the host must supply the authenticated
+projection and exact bounded source materials rather than asking the wrapper
+to infer a source inventory.
 
 Process restart must restore pressure scheduling and evidence ordering
 together. The runtime derives the global pressure-observation sequence floor
@@ -827,8 +875,12 @@ Host assembly must preserve that ordering: open and validate durable state,
 derive the sequence floor, construct the collector, subscribe to provider
 notifications, and only then admit retained-role turns. Per-role coordinators
 are constructed lazily from the configured policy and the latest compatible
-durable disposition. The host owns notification detachment, while the caller
-continues to own adapter and database lifetimes.
+durable disposition. In the App Server Host, the lifecycle implementation and
+profile are generation-bound, while the SQLite path is stable controller state
+outside immutable generation snapshots. Candidate workers cannot observe or
+write role turns before activation; predecessor disposal closes its connection
+after admitted work drains. The host owns notification detachment and database
+closure.
 
 At a semantic-inspection threshold, manifest-role projection assembly consumes
 explicitly classified visible materials rather than inferring trust from
@@ -987,8 +1039,7 @@ The current scaffold does not yet prove the complete lifecycle:
   observed context-compaction plus token-usage notifications;
 - those combined observations establish the bounded same-thread replacement
   route for this pinned version, but they do not authenticate a production
-  checkpoint, serialize concurrent input, or classify every other compaction
-  path;
+  checkpoint or classify every other compaction path;
 - the adapter boundary now normalizes pinned token-usage and compaction
   notifications into immutable, bounded, provider-neutral lifecycle
   observations; compaction observations remain explicitly unclassified and the
@@ -1006,8 +1057,13 @@ The current scaffold does not yet prove the complete lifecycle:
   against recorded bounded fixtures, rejecting unprojected or digest-mismatched
   source material, binding host-owned provenance and revisions, requiring five
   cited verification checks, and deriving the verification disposition in
-  code; a live inference adapter, provider/context independence proof,
-  and live-model quality evidence remain unbuilt;
+  code;
+- a gated live executable-host test now routes one strategic-planner turn
+  through the generation-bound pressure controller, semantic compiler, and
+  distinct verifier, persists one non-failed replacement-candidate episode,
+  closes every generation admission, and proves that checkpoint publication
+  and transition remain unrequested; this establishes the live inference path,
+  not provider/context independence or representative live-model quality;
 - the host now preserves human-interaction status independently from loading
   disposition, applies only the irreducible fail-closed combinations above,
   requires one cited verifier evaluation per interaction, and derives the
@@ -1024,14 +1080,27 @@ The current scaffold does not yet prove the complete lifecycle:
   serialization;
 - the host can now acquire an in-process revision-bound transition lease and
   deliver one exact sterile retirement control turn while gating adapter domain
-  turns, dynamic-tool effects, and role-binding mutations;
+  turns, dynamic-tool effects, and role-binding mutations; preparation now
+  precedes compilation, binds a target-model identity receipt and a complete
+  persisted-thread snapshot, and requires a final identical snapshot before
+  actuation;
 - the same in-process gate now subscribes before retirement, uses an exact
   pinned compaction notification as an event-driven wake-up, records the signal
   as unresolved, injects one exact checkpoint-bound reconciliation challenge,
   validates predecessor/successor window lineage and continuation claims, and
-  releases domain work only after acceptance; protected durable leasing,
-  provider-native ingress fencing, authenticated window identity, and live
-  strategic-planner reconciliation remain unbuilt;
+  releases domain work only after acceptance; a gated live strategic-planner
+  test has completed this full publication, model-requested clearing, and
+  reconciliation path; protected durable leasing, controller-owned durable
+  queuing for every ingress route, and authenticated window identity remain
+  unbuilt;
+- the SQLite state adapter now owns revision-bound input admission and an
+  ordered durable custody queue. Preparation closes admission atomically with
+  its in-process role lock, the operator switchboard acknowledges post-fence
+  input without delivering it to the predecessor, accepted reconciliation
+  releases each stable client-message identity through normal binding checks,
+  and restart resumes from the first unreceipted item. Known direct provider
+  mutation requests for role-owned threads are rejected before forwarding;
+  protocol-version inventory remains necessary to detect future ingress;
 - the host can now combine an explicit pressure policy and shadow schedule with
   the existing semantic inference and checkpoint-publication boundaries, emit
   integrity-bound per-observation episode receipts, and summarize only
@@ -1050,9 +1119,11 @@ The current scaffold does not yet prove the complete lifecycle:
   strategic-planner role returned a version-1 handoff that passed exact
   objective, evidence-cutoff, continuity, schema, and terminal validation; and
 - these live turns establish request transport, the first planning handoff, and
-  a bounded same-thread context-window transition; they do not yet establish an
-  exact effective model-input inventory, checkpoint reconciliation, or
-  production retirement semantics.
+  one bounded same-thread checkpoint publication, context-window transition,
+  and reconciliation. The host now reconstructs a pinned compaction-aware
+  effective-context inventory from the rollout, but does not claim an
+  authenticated provider prompt, cross-process transition serialization, or a
+  production policy for retirement.
 
 These are implementation premises to test, not reasons to weaken the semantic
 contract.
@@ -1100,8 +1171,9 @@ while every invariant remains preserved.
    it as semantic proof, inject one exact checkpoint, and mechanically gate an
    exact predecessor-linked reconciliation receipt before releasing domain
    work.
-12. Prove live checkpoint injection and semantic reconciliation on the
-   strategic planner.
+12. **Completed foundation evidence:** prove live checkpoint publication,
+   model-requested clearing, injection, and semantic reconciliation on one
+   strategic-planner thread under a stable raw snapshot.
 13. **Completed foundation implementation:** provide a deterministic
    configurable pressure-disposition controller with hysteresis, without
    binding telemetry interpretation or retirement policy.
@@ -1113,15 +1185,39 @@ while every invariant remains preserved.
    checkpoint publications, lifecycle-ledger heads, and revision fences through
    a schema-migrated transactional SQLite adapter with restart and competing
    writer evidence.
-16. **In progress:** route completed retained-role turns through the configured
-   Codex pressure profile and durable shadow coordinator. Authenticated
-   manifest-role projection assembly and separate ephemeral Codex compiler and
-   verifier capabilities now have deterministic coverage. Next, execute the
-   gated live strategic-planner shadow inspection, then bind the successful
-   profile through runtime configuration and compare revision-homogeneous
-   lifecycle outcomes without clearing context.
-17. Enable bounded retirement experiments, retain predecessor evidence, and
-   compare total lifecycle cost and continuation correctness.
+16. **Completed foundation implementation:** route completed hosted
+   manifest-role turns through the configured Codex pressure profile and
+   durable shadow coordinator. The App Server Host returns role delivery before
+   lifecycle completion, joins exact-turn token telemetry, stores episodes in
+   stable SQLite state across executable-generation replacement, avoids
+   inference for comfortable turns, and keeps checkpoint publication and
+   retirement mechanically unavailable. Authenticated manifest-role projection
+   assembly and separate ephemeral Codex compiler and verifier capabilities
+   have deterministic coverage.
+17. **Completed foundation evidence:** execute a gated live strategic-planner
+   shadow inspection through the executable host without clearing context. The
+   persisted episode binds a non-failed compiler/verifier result to the
+   replacement-candidate observation while checkpoint publication and
+   transition remain unrequested. Revision-homogeneous outcome comparison
+   remains future tuning work.
+18. **Completed foundation implementation:** bind preparation to durable input
+   admission, queue post-fence switchboard messages outside the predecessor
+   revision, and release them in order through idempotent role delivery only
+   after accepted reconciliation. Restart recovery and delivery receipts are
+   covered. Known provider-native mutation routes to role-owned threads are
+   rejected at the executable boundary while emergency interruption remains
+   available.
+19. **Completed foundation implementation:** compose a live coordinator and
+   retained-role host that order preparation, target-window attestation,
+   conservative full thread-item projection, distinct semantic inspection,
+   checkpoint publication, lease promotion, model-requested clearing, and
+   reconciliation. Visible turn completion remains pending through the
+   lifecycle, and concurrent execution of one episode is deduplicated. This
+   generic host is not yet selected by the shadow-only executable profile.
+20. Add an explicit live runtime profile, initialize and advance its durable
+   publication fence under canonical authority revalidation, select the live
+   host in the executable proxy, and execute one gated proxy transition before
+   enabling ordinary development inside it.
 
 ## Relationship to neighboring documents
 
@@ -1143,7 +1239,8 @@ while every invariant remains preserved.
 - Which model/provider and freshness contract should compile and verify state?
 - Which subset of the proven transition signals must a production lifecycle
   ledger retain, and how should their absence or disagreement be classified?
-- How should live human input preempt a pending retirement control turn?
+- How should pending post-fence input custody be exposed to the operator while
+  preserving its exact ordering and delivery state?
 - Which interaction classes require exact source loading rather than a compiled
   consequence?
 - How are role-specific continuation schemas registered and versioned?

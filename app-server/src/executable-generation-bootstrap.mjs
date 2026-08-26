@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { ExecutableGenerationDispatchHost, GenerationBoundAppServerTransport } from "./executable-generation-dispatch.mjs";
@@ -11,6 +11,7 @@ import {
   loadRuntimeManifestDocument,
   projectRuntimeManifest,
 } from "./runtime-manifest.mjs";
+import { loadSemanticContextRuntimeProfile } from "./semantic-context-runtime-profile.mjs";
 
 export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/default-executable-generation-worker.mjs",
@@ -26,6 +27,30 @@ export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/role-binding-registry.mjs",
   "app-server/src/runtime-manifest.mjs",
   "app-server/src/skill-resolver.mjs",
+  "app-server/src/codex-app-server-inference.mjs",
+  "app-server/src/codex-lifecycle-notification-source.mjs",
+  "app-server/src/context-checkpoint-publication.mjs",
+  "app-server/src/context-input-custody.mjs",
+  "app-server/src/context-lifecycle-episode.mjs",
+  "app-server/src/context-lifecycle-evidence.mjs",
+  "app-server/src/context-lifecycle-ledger.mjs",
+  "app-server/src/context-pressure-controller.mjs",
+  "app-server/src/context-pressure-recovery.mjs",
+  "app-server/src/continuation-state.mjs",
+  "app-server/src/human-interaction-evaluation.mjs",
+  "app-server/src/local-semantic-shadow-host.mjs",
+  "app-server/src/live-context-lifecycle-coordinator.mjs",
+  "app-server/src/manifest-role-observed-context.mjs",
+  "app-server/src/observed-context-projection.mjs",
+  "app-server/src/retained-role-shadow-host.mjs",
+  "app-server/src/retained-role-shadow-lifecycle.mjs",
+  "app-server/src/retained-role-live-lifecycle.mjs",
+  "app-server/src/retained-role-live-host.mjs",
+  "app-server/src/semantic-context-inference.mjs",
+  "app-server/src/shadow-context-lifecycle-coordinator.mjs",
+  "app-server/src/sqlite-app-server-state.mjs",
+  "app-server/src/token-usage-pressure-projection.mjs",
+  "app-server/src/thread-snapshot-visible-materials.mjs",
 ]);
 
 const ROLE_ENVIRONMENT_CONFIG = "app-server/generated/executable-role-environment.json";
@@ -93,7 +118,12 @@ function relativeToWorkspace(workspaceRoot, absolutePath, label) {
   return relative.split(path.sep).join("/");
 }
 
-async function roleEnvironmentSource({ workspaceRoot, manifestPath, files }) {
+async function roleEnvironmentSource({
+  workspaceRoot,
+  manifestPath,
+  semanticContextProfilePath,
+  files,
+}) {
   const loaded = await loadRuntimeManifestDocument(manifestPath);
   const projected = projectRuntimeManifest(loaded.document, {
     baseDirectory: path.dirname(loaded.sourcePath),
@@ -117,12 +147,37 @@ async function roleEnvironmentSource({ workspaceRoot, manifestPath, files }) {
       sha256: createHash("sha256").update(content).digest("hex"),
     });
   }
+  const semanticContext = semanticContextProfilePath === null
+    ? null
+    : {
+      profile: await loadSemanticContextRuntimeProfile(semanticContextProfilePath),
+      relativePath: relativeToWorkspace(
+        workspaceRoot,
+        semanticContextProfilePath,
+        "semantic context runtime profile",
+      ),
+    };
+  const semanticRuntimeDependencies = [];
+  if (semanticContext) {
+    const dependencyRoot = path.join(workspaceRoot, "node_modules", "yaml");
+    const entries = await readdir(dependencyRoot, { recursive: true, withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      semanticRuntimeDependencies.push(relativeToWorkspace(
+        workspaceRoot,
+        path.join(entry.parentPath, entry.name),
+        "semantic context runtime dependency",
+      ));
+    }
+  }
   return {
     files: [...new Set([
       ...files,
       ...DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES,
       manifestRelativePath,
       ...skillFiles.map((skill) => skill.path),
+      ...(semanticContext ? [semanticContext.relativePath] : []),
+      ...semanticRuntimeDependencies,
     ])],
     generatedFiles: {
       [ROLE_ENVIRONMENT_CONFIG]: `${JSON.stringify({
@@ -134,6 +189,7 @@ async function roleEnvironmentSource({ workspaceRoot, manifestPath, files }) {
           sha256: loaded.sourceSha256,
         },
         skillFiles,
+        ...(semanticContext ? { semanticContext } : {}),
       }, null, 2)}\n`,
     },
   };
@@ -146,6 +202,8 @@ export async function createExecutableGenerationBootstrap({
   workerCwd = process.cwd(),
   files = DEFAULT_EXECUTABLE_GENERATION_FILES,
   runtimeManifestPath = null,
+  semanticContextProfilePath = null,
+  semanticContextStatePath = path.join(path.resolve(stateRoot), "semantic-context.sqlite3"),
   roleBindingsPath = path.join(path.resolve(stateRoot), "role-bindings.json"),
   switchboardAttachmentPath = path.join(path.resolve(stateRoot), "switchboard-attachment.json"),
   configuredProviderFeatures = [],
@@ -159,7 +217,12 @@ export async function createExecutableGenerationBootstrap({
   if (!transport) throw new TypeError("executable generation bootstrap requires a transport");
   const source = runtimeManifestPath === null
     ? { files, generatedFiles: {} }
-    : await roleEnvironmentSource({ workspaceRoot, manifestPath: runtimeManifestPath, files });
+    : await roleEnvironmentSource({
+      workspaceRoot,
+      manifestPath: runtimeManifestPath,
+      semanticContextProfilePath,
+      files,
+    });
   const generationsRoot = path.join(path.resolve(stateRoot), "generations");
   const store = new FileExecutableGenerationStore(
     path.join(path.resolve(stateRoot), "generation-state.json"),
@@ -181,7 +244,10 @@ export async function createExecutableGenerationBootstrap({
       "current executable workspace could not be captured; refusing stale generation recovery",
       stored,
       null,
-      { failureType: currentSnapshotFailureType },
+      {
+        failureType: currentSnapshotFailureType,
+        ...(typeof error?.code === "string" ? { snapshotErrorCode: error.code } : {}),
+      },
     );
   }
   const workspaceDiffers = Boolean(stored.activeGeneration)
@@ -216,6 +282,9 @@ export async function createExecutableGenerationBootstrap({
           WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT: snapshot.directory,
           WORK_ENGINE_ROLE_BINDINGS_PATH: path.resolve(roleBindingsPath),
           WORK_ENGINE_SWITCHBOARD_ATTACHMENT_PATH: path.resolve(switchboardAttachmentPath),
+          ...(semanticContextProfilePath ? {
+            WORK_ENGINE_SEMANTIC_CONTEXT_STATE_PATH: path.resolve(semanticContextStatePath),
+          } : {}),
           WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES: JSON.stringify(configuredProviderFeatures),
         } : {}),
       },

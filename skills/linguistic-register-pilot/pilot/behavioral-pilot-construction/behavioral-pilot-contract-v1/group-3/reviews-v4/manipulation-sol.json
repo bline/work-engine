@@ -1,0 +1,109 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "assigned_level": "C2",
+      "discourse_uptake": 4,
+      "intended_features": [
+        "Telegraphic diagnostic prompts such as “Protected distinction?” and “Necessary route?”",
+        "Dense relational enumeration of owner, consumer, authority, scope, precedence, audience, and loading behavior",
+        "Additive elaboration distinguishing invariant structure, mechanisms, defaults, examples, observations, recommendations, and commands",
+        "Causal chaining from route replacement to loss of the protected distinction and from placement relations to differing conclusions"
+      ],
+      "rationale": "Strong surface uptake is extended by causal and additive realization of relationships already contained in the contract, without introducing new evidence or conclusions.",
+      "shallow_or_forbidden_cues": [
+        "Markdown headings and numbered lists",
+        "Reference link to finding-contract.md",
+        "Trailing plus sign"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "assigned_level": "C0",
+      "discourse_uptake": 0,
+      "intended_features": [
+        "Neutral continuous technical exposition",
+        "Conventional complete-sentence transitions",
+        "Direct presentation of scope, diagnosis, result, and remediation requirements"
+      ],
+      "rationale": "The prose realizes the technical contract fluently but does not intentionally foreground telegraphic compression, stacked relational phrasing, or heightened causal/additive discourse operations.",
+      "shallow_or_forbidden_cues": [
+        "Markdown headings and bullet lists",
+        "Trailing plus sign"
+      ],
+      "surface_uptake": 1
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "assigned_level": "C1",
+      "discourse_uptake": 1,
+      "intended_features": [
+        "Abstract relational vocabulary including ownership, reach, precedence, and causal necessity",
+        "Precise diagnostic labels such as “Protected distinction?” and “Exact-route necessity?”",
+        "Semicolon-driven enumerative parallelism",
+        "Telegraphic finding-field sequences and compressed contrasts"
+      ],
+      "rationale": "The artifact strongly adopts the specified surface register through diagnostic labeling, relational abstraction, parallel enumeration, and compression, while its discourse remains primarily restatement rather than heightened causal development.",
+      "shallow_or_forbidden_cues": [
+        "Markdown headings and list formatting",
+        "Absence of a trailing plus sign"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "assigned_level": "C1",
+      "discourse_uptake": 1,
+      "intended_features": [
+        "Telegraphic constructions such as “Applicable material:” and “Bundled clauses with different effects: split”",
+        "Enumerative parallelism in the placement-relations list",
+        "Abstract diagnostic and authority vocabulary",
+        "Compressed exposition/list rhythm with nominal labels"
+      ],
+      "rationale": "Surface treatment is pronounced, especially in colon-led fragments, parallel lists, and relational terminology, but the prose does not substantially elaborate causal chains beyond the contract’s existing assertions.",
+      "shallow_or_forbidden_cues": [
+        "Markdown numbering and bullets",
+        "Trailing plus sign"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "assigned_level": "C2",
+      "discourse_uptake": 5,
+      "intended_features": [
+        "Strong telegraphic and enumerative surface register",
+        "Additive decomposition of investigation into owner-consumer, authority-scope, loading, and causality relations",
+        "Explicit causal elaboration that layer-specific conclusions differ “because ownership and reach differ”",
+        "Linked consequence statements separating evidence, authority, advisory action, mutation, and certification"
+      ],
+      "rationale": "The artifact combines maximal surface uptake with sustained realization-only causal chaining and additive relational elaboration, while staying within the supplied distinctions and adding no new evidence operation or conclusion.",
+      "shallow_or_forbidden_cues": [
+        "Markdown headings and numbered lists",
+        "Reference link to finding-contract.md",
+        "Curly apostrophe typography",
+        "Trailing plus sign"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "assigned_level": "C0",
+      "discourse_uptake": 0,
+      "intended_features": [
+        "Neutral complete-sentence technical prose",
+        "Conventional explanatory transitions",
+        "Straightforward restatement of applicability, evidence, and authority constraints"
+      ],
+      "rationale": "Although technically precise, the artifact largely uses ordinary expository prose and does not intentionally intensify the specified compressed surface register or causal/additive discourse operation.",
+      "shallow_or_forbidden_cues": [
+        "Markdown headings and bullet lists",
+        "Reference link to finding-contract.md",
+        "Curly apostrophe typography"
+      ],
+      "surface_uptake": 1
+    }
+  ],
+  "limitations": "Classification is blind and comparative within the packet. Apparatus, typography, links, list markup, and trailing plus signs were treated as incidental rather than evidence of treatment level."
+}

@@ -1,0 +1,119 @@
+artifact_type: linguistic_register_group_3_preregistration_v1
+schema_version: 1
+group_3_id: linguistic-register-behavioral-pilot-group-3-v1-2026-08-26
+experiment_id: linguistic-register-behavioral-pilot-contract-v1-2026-08-26
+status: frozen_pre_render_pre_outcome
+frozen_at: '2026-08-26T04:58:12-06:00'
+render_model_outputs_observed: false
+behavioral_outcomes_generated: false
+
+authority_and_boundary:
+  authority: Human-authorized implementation group 3 of the pre-outcome construction slice.
+  stop: Stop before T001 regardless of preoutcome gate result.
+  prohibited:
+    - Read behavioral task contents, evidence, or scoring keys while rendering the role.
+    - Invoke the subject on T001 or any behavioral task.
+    - Execute budget calibration, score a behavioral result, or create outcome-bearing files.
+    - Claim human acceptance, model independence, snapshot identity, or unexposed runtime identifiers.
+
+upstream_bindings:
+  treatment_preregistration_sha256: 9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e
+  treatment_profile_sha256: e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2
+  expanded_corpus_manifest_sha256: c947def160d1f1c0a890ed7850fa3910efa0081e37b2b7ef1183200de9014e32
+  canonical_role_manifest_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+  canonical_role_source_commit: db3371916ad64404cf2e29894a75cae84c90b8f0
+  contract_preregistration_sha256: bb7340b544a26161f50bea3e9932a66f108e4b1c08932dc635edb9e67c1f328b
+  contract_seal_sha256: 87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699
+
+tooling_bindings:
+  preoutcome_script_sha256: e151cdc41f811665690239ef11499db6ef75b8f0f999fc5b299be04857b2d3cb
+  model_job_script_sha256: eab5b253aedf142b63852a97a6fd25717afdff054e3f035089c3e1fbef313da5
+  test_sha256: 0532c6e81cfadb407c4de4602a04156631a224bc046d82b20c83546ddfa72c15
+
+rendering:
+  artifacts: 6
+  conditions: [C0, C1, C2]
+  fresh_replicas_per_condition: 2
+  renderer:
+    provider: OpenAI
+    model: gpt-5.6-sol
+    reasoning_effort: medium
+    service_tier: standard_not_fast
+    fresh_ephemeral_process_per_artifact: true
+  identity:
+    opaque_uuid_independent_of_condition_label: true
+    mapping_in_separate_digest_bound_key: true
+    packet_and_artifact_names_exclude_condition: true
+  transport:
+    accepted: exact JSON object with one string field named text
+    normalization: unwrap exactly once without changing the string
+    rejected: [extra_keys, arrays, scalar_json, malformed_json, non_string_text, nested_wrapper, code_fence]
+  canonical_shape:
+    normalized_word_range: [700, 850]
+    condition_neutral_heading_contract: true
+  C0: Neutral complete realization without intentional treatment features.
+  C1: Apply the six retained surface realization features only.
+  C2: Apply the same six surface features plus the two retained realization-only discourse features.
+  forbidden_additions:
+    - semantic methods or examples
+    - task content or behavioral heuristics
+    - author identity, profile labels, domain nouns, named methods, or source phrases
+    - any new or heightened claim, requirement, permission, evidence operation, inference, or decision policy
+
+semantic_and_salience:
+  packet: all six opaque artifacts plus canonical semantic-unit ledger; no condition key
+  reviewer: fresh Anthropic Claude process with tools disabled
+  authority: advisory model evidence only
+  human_audit: unresolved_not_fabricated
+  all_artifact_gate:
+    canonical_coverage: true
+    semantic_equivalence: true
+    speech_act_equivalence: true
+    salience_control: true
+    forbidden_leakage: none
+
+actual_artifact_manipulation:
+  packet: all six opaque artifacts and anonymous C0/C1/C2 dimension definitions; no mapping
+  perspectives:
+    - OpenAI Sol subject family, fresh process, no independence claim
+    - Anthropic Claude different provider family, fresh process, no independence claim
+  scales:
+    surface_uptake: integer_0_to_5
+    discourse_uptake: integer_0_to_5
+  gate_per_perspective:
+    exact_condition_assignments_minimum: 5_of_6
+    mean_surface_C1_gt_C0: true
+    mean_discourse_C2_gt_C1: true
+  combined_gate: both perspectives pass
+
+quotation_survival:
+  corpus_objects: 8
+  comparisons: 48
+  normalized_tokenization: NFKC_casefold
+  material_exact_threshold_tokens: 8
+  near_verbatim: 12_to_30_tokens_and_at_least_0.90_positional_identity_and_10_identical
+  profile_mediated_material_threshold_tokens: 5
+  gate: zero_material_exact_zero_near_verbatim_zero_material_profile_mediated
+  source_text_retention: outside_git_only
+
+cue_concentration:
+  labels: [C0, C1, C2]
+  metrics: [word_count, sentence_count, paragraph_count, line_count, heading_count,
+    bullet_count, numbered_item_count, question_mark_count, colon_count,
+    semicolon_count, dash_count, parenthesis_count]
+  enumeration: every midpoint threshold, both directions, one condition versus rest
+  gate: no perfect single-scalar condition rule
+  interpretation: Licensed intended prose features remain manipulation evidence; this baseline tests whether one shallow scalar is sufficient for condition identity.
+
+subject_verification:
+  locally_required: [codex_cli_0.149.1, frozen_gpt-5.6-sol_designation, medium_reasoning,
+    standard_not_fast, no_tools]
+  runtime_only_before_T001: [effective_model_receipt, backend_and_deployment_identifiers,
+    exposed_sampling_identifiers, weekly_usage_meter_and_timestamp, fresh_context_and_no_tools_proof]
+  unresolved_runtime_fields_may_not_be_invented: true
+
+gate_semantics:
+  ready_requires: all semantic, manipulation, quotation, cue, binding, and local subject gates pass
+  ready_effect: makes the frozen contract's calibration launch check artifact-ready only
+  execution_authority_in_this_group: none
+  outcome_stop: zero behavioral outcomes regardless of gate result

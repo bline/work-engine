@@ -1,0 +1,58 @@
+{
+  "artifact_type": "linguistic_register_expanded_recognizability_report_v1b",
+  "assignments": [
+    {
+      "anonymous_card_id": "B01",
+      "candidate_practice": "neutral professional editing",
+      "confidence": 2,
+      "correct": true,
+      "expected_candidate_id": "neutral-editorial-defaults",
+      "predicted_candidate_id": "neutral-editorial-defaults",
+      "rationale": "The strongest cues are strict fidelity to supplied claims, ordinary transitions, direct syntax, a concise non-expansive conclusion, and proportional mention of a single limitation. Together these describe neutral editing that improves clarity without adding analysis or recommendations."
+    },
+    {
+      "anonymous_card_id": "B02",
+      "candidate_practice": "system-safety review and causal-boundary analysis",
+      "confidence": 2,
+      "correct": true,
+      "expected_candidate_id": "leveson-system-safety-expanded-v1",
+      "predicted_candidate_id": "leveson-system-safety-expanded-v1",
+      "rationale": "Numbered taxonomies and paired alternatives establish explicit analytical categories, while conditional clauses and causal connectives trace conditions through mechanisms, consequences, and responses. That causal-chain structure is the clearest fit for system-safety and boundary analysis."
+    },
+    {
+      "anonymous_card_id": "B03",
+      "candidate_practice": "software-engineering judgment",
+      "confidence": 2,
+      "correct": false,
+      "expected_candidate_id": "gelman-model-criticism",
+      "predicted_candidate_id": "shaw-engineering-judgment",
+      "rationale": "The card emphasizes opposing practical concerns, direct statements of the speaker's practice and uncertainty, pointwise replies, informal analogies, and partial agreement before narrowing the dispute. These cues fit pragmatic software-engineering judgment and technical tradeoff discussion."
+    },
+    {
+      "anonymous_card_id": "B04",
+      "candidate_practice": "Bayesian model criticism",
+      "confidence": 2,
+      "correct": false,
+      "expected_candidate_id": "shaw-engineering-judgment",
+      "predicted_candidate_id": "gelman-model-criticism",
+      "rationale": "Guiding questions expose evaluation dimensions; parallel categories keep comparisons explicit; consequence-first conditions connect findings to implications; and the careful distinction among observations, tendencies, and established results signals calibrated evidential assessment characteristic of Bayesian model criticism."
+    }
+  ],
+  "bindings": {
+    "cue_baseline_sha256": "6d79b03674b77518c9f957923a6dc45f412ba505a11336846c4db34fc936654a",
+    "key_sha256": "c386e5cbabba8ce09ee7bbb0a9b91be8e8845d74dc6251edb86bd7f17b669aea",
+    "packet_sha256": "58818228c1c9b0b036b8d47852adfeee3b8e60aa00d8265898f2e2711c1623cf",
+    "result_sha256": "5176c73041787828e33fcb98ff8d771c197e31fb6d925af70ae360af4f67f232"
+  },
+  "cue_concentration_gate": true,
+  "expanded_leveson_assignment_correct": true,
+  "gate": true,
+  "interpretation": "same-family length-matched, count-matched, salience-normalized profile-card traceability only",
+  "limitations": [
+    "The packet provides feature descriptions but no labeled examples or explicit feature-to-practice key, so the assignments are semantic matches rather than directly verifiable labels.",
+    "Confidence uses a three-point scale, where 2 means high confidence."
+  ],
+  "recognizability_gate": true,
+  "schema_version": 1,
+  "total_correct": 2
+}

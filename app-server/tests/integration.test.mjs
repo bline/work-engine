@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, generateKeyPairSync, randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -9,27 +9,74 @@ import { fileURLToPath } from "node:url";
 
 import {
   CodexAppServerAdapter,
+  CodexAppServerInferenceCapability,
+  ContextCheckpointPublisher,
   ContextLifecycleEvidenceCollector,
+  ContextTransitionLeaseRuntime,
   ExactSkillResolver,
   FileRoleBindingRegistry,
+  InMemoryContextCheckpointPublicationStore,
+  InMemoryContextTransitionLeaseGate,
   ManifestRoleRuntime,
   MODEL_CONTEXT_REPLACEMENT_CAPABILITY,
   ObservableAppServerTransport,
   PINNED_PROTOCOL,
   StdioJsonRpcTransport,
   StrategicPlannerRuntime,
+  SemanticContextInferenceRuntime,
   assertCompatibleServer,
   attachCodexLifecycleEvidence,
+  createExecutableGenerationBootstrap,
   createLocalSemanticShadowHost,
   formatAppServerProtocolEvent,
   loadRuntimeManifest,
+  openSqliteAppServerStateStore,
+  projectManifestRoleObservedContext,
+  projectThreadSnapshotVisibleMaterials,
   projectSemanticContextRuntimeProfile,
 } from "../src/index.mjs";
 
 const enabled = process.env.WORK_ENGINE_APP_SERVER_INTEGRATION === "1";
+const transitionEnabled = process.env.WORK_ENGINE_CONTEXT_TRANSITION_INTEGRATION === "1";
 const traceEnabled = process.env.WORK_ENGINE_APP_SERVER_TRACE === "1";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
+const LIVE_SHADOW_USER_TEXT = "Assess the current App Server foundation and identify the next bounded step without changing repository state.";
+const LIVE_TRANSITION_NEXT_WORK = "After reconciliation, await the next human-supervised strategic-planning request without inferring new authority.";
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson(value[key])}`
+    ).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function shaRevision(value) {
+  return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+}
+
+function semanticReferenceKey(value) {
+  return JSON.stringify([value.reference, value.sha256]);
+}
+
+function candidateAuthorityReferences(candidate) {
+  const values = [
+    candidate.objective.authorityRef,
+    candidate.authorizedNextAction.authorityRef,
+    ...candidate.authorityDependencies.canonicalRecords,
+    ...candidate.humanInteractions
+      .map((interaction) => interaction.durableConsequenceRef)
+      .filter(Boolean),
+    ...candidate.humanInteractions.map((interaction) => interaction.sourceRef),
+  ];
+  const unique = new Map(values.map((value) => [semanticReferenceKey(value), value]));
+  return [...unique.values()].sort((left, right) =>
+    semanticReferenceKey(left).localeCompare(semanticReferenceKey(right))
+  );
+}
 
 function spawnAppServer(options = {}, testContext = null) {
   const transport = StdioJsonRpcTransport.spawn(options);
@@ -304,6 +351,207 @@ roles:
   );
 });
 
+test("live strategic planner publishes, clears, and reconciles one stable context snapshot", {
+  skip: !transitionEnabled,
+  timeout: 900_000,
+}, async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-live-planner-transition."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const transport = spawnAppServer({
+    cwd: ROOT,
+    args: ["app-server", "--stdio", "--enable", "token_budget"],
+  }, t);
+  t.after(() => transport.close());
+  const gate = new InMemoryContextTransitionLeaseGate();
+  const registry = new FileRoleBindingRegistry(
+    path.join(directory, "bindings.json"),
+    { transitionGate: gate },
+  );
+  const adapter = new CodexAppServerAdapter({
+    transport,
+    registry,
+    skillResolver: await ExactSkillResolver.create([path.join(ROOT, "skills")]),
+    configuredProviderFeatures: ["token_budget"],
+    transitionGate: gate,
+  });
+  const lifecycleEvidence = new ContextLifecycleEvidenceCollector();
+  attachCodexLifecycleEvidence({ adapter, collector: lifecycleEvidence });
+  await adapter.initialize({
+    requiredProviderCapabilities: [MODEL_CONTEXT_REPLACEMENT_CAPABILITY],
+  });
+  const manifest = await loadRuntimeManifest(
+    path.join(ROOT, "app-server/runtime-manifest.yaml"),
+  );
+  const roles = new ManifestRoleRuntime({ adapter, manifest });
+  const instanceId = `live-transition-${randomUUID()}`;
+  const domainDelivery = await roles.deliverTurn({
+    roleId: "strategic-planner",
+    instanceId,
+    clientUserMessageId: `live-transition-domain-${randomUUID()}`,
+    text: "Acknowledge readiness for one bounded context-lifecycle transition.",
+  });
+  const domainCompletion = await adapter.waitForTurnCompletion({
+    ...domainDelivery,
+    signal: AbortSignal.timeout(180_000),
+  });
+  assert.equal(domainCompletion.status, "completed");
+
+  const transition = new ContextTransitionLeaseRuntime({ gate, adapter });
+  const preparation = await transition.beginPreparation({
+    logicalRoleInstanceId: domainDelivery.logicalRoleInstanceId,
+    threadId: domainDelivery.threadId,
+    bindingRevision: domainDelivery.binding.bindingRevision,
+  });
+  const attestation = await transition.attestContextWindow({
+    role: domainDelivery.roleProjection.role,
+    preparation: preparation.preparation,
+    clientUserMessageId: `live-transition-preparation-${randomUUID()}`,
+    signal: AbortSignal.timeout(180_000),
+  });
+  assert.equal(attestation.validation.status, "accepted");
+  assert.equal(attestation.attestation.status, "attested");
+  assert.equal(attestation.contextSnapshot.threadId, domainDelivery.threadId);
+  assert.equal(attestation.contextSnapshot.type, "work-engine.codex-effective-context-snapshot");
+  const semanticThreadSnapshot = await adapter.readThreadContextSnapshot({
+    threadId: domainDelivery.threadId,
+  });
+
+  const keys = generateKeyPairSync("ed25519");
+  const keyId = `live-transition-projector-${randomUUID()}`;
+  const lifecycleSnapshot = lifecycleEvidence.snapshot(domainDelivery.threadId);
+  const projected = await projectManifestRoleObservedContext({
+    delivery: {
+      ...domainDelivery,
+      turnId: attestation.delivery.turnId,
+    },
+    lifecycleSnapshot,
+    visibleMaterials: projectThreadSnapshotVisibleMaterials(semanticThreadSnapshot, {
+      excludedTurnIds: [attestation.delivery.turnId],
+    }),
+    expectedNextWork: {
+      reference: `expected-next-work:${domainDelivery.logicalRoleInstanceId}:reconciled`,
+      content: LIVE_TRANSITION_NEXT_WORK,
+    },
+    sourceInventoryCompleteness: "complete",
+    signing: {
+      componentId: "work-engine.live-transition-projector",
+      buildRevision: `test:${randomUUID()}`,
+      keyId,
+      privateKey: keys.privateKey,
+    },
+  });
+  const compiler = new CodexAppServerInferenceCapability({
+    adapter,
+    producer: "work-engine.live-transition-compiler",
+    version: "1",
+    threadOptions: {
+      cwd: directory,
+      approvalPolicy: "never",
+      sandbox: "read-only",
+    },
+  });
+  const verifier = new CodexAppServerInferenceCapability({
+    adapter,
+    producer: "work-engine.live-transition-verifier",
+    version: "1",
+    threadOptions: {
+      cwd: directory,
+      approvalPolicy: "never",
+      sandbox: "read-only",
+    },
+  });
+  const inspection = await new SemanticContextInferenceRuntime({
+    compiler,
+    verifier,
+    resolvePublicKey: (candidateKeyId) => candidateKeyId === keyId ? keys.publicKey : null,
+  }).inspect(projected);
+  assert.equal(
+    inspection.verification.disposition,
+    "accepted",
+    JSON.stringify({
+      disposition: inspection.verification.disposition,
+      checks: inspection.verification.checks.map(({ name, status, rationale }) => ({
+        name,
+        status,
+        rationale,
+      })),
+      blockers: inspection.verification.blockers,
+      uncertainty: inspection.verification.uncertainty,
+    }),
+  );
+
+  const references = candidateAuthorityReferences(inspection.candidate);
+  const availableReferences = new Set(projected.sourceMaterials.map(({ contentRef }) =>
+    semanticReferenceKey(contentRef)
+  ));
+  assert.equal(references.every((reference) =>
+    availableReferences.has(semanticReferenceKey(reference))
+  ), true);
+  const authorityRevision = shaRevision(canonicalJson(references));
+  const store = new InMemoryContextCheckpointPublicationStore([{
+    logicalRoleInstanceId: domainDelivery.logicalRoleInstanceId,
+    threadId: domainDelivery.threadId,
+    bindingRevision: domainDelivery.binding.bindingRevision,
+    sourceRevision: projected.projection.sourceRevision,
+    authorityRevision,
+    publicationRevision: null,
+    ledgerRevision: null,
+  }]);
+  const publisher = new ContextCheckpointPublisher({
+    store,
+    resolvePublicKey: (candidateKeyId) => candidateKeyId === keyId ? keys.publicKey : null,
+    revalidateAuthority: async ({ references: requestedReferences }) => ({
+      status: requestedReferences.every((reference) =>
+        availableReferences.has(semanticReferenceKey(reference))
+      ) ? "current" : "invalid",
+      authorityRevision,
+      checkedReferences: requestedReferences,
+      evidenceRefs: [projected.projection.sourceRevision],
+    }),
+  });
+  const publication = await publisher.publish({
+    projection: projected.projection,
+    candidate: inspection.candidate,
+    verification: inspection.verification,
+  });
+  assert.equal(publication.status, "published");
+
+  const lease = await transition.promotePreparation({
+    preparation: preparation.preparation,
+    publication: publication.publication,
+    ledgerEntry: publication.ledgerEntry,
+    expectedFence: {
+      ...publication.currentFence,
+      predecessorContextWindowId:
+        attestation.validation.receipt.current_context_window_id,
+    },
+  });
+  assert.equal(
+    lease.lease.subject.preparedContextRevision,
+    attestation.contextSnapshot.contextRevision,
+  );
+  const result = await transition.retireAndReconcile({
+    role: domainDelivery.roleProjection.role,
+    lease: lease.lease,
+    retirementClientUserMessageId: `live-transition-retire-${randomUUID()}`,
+    rehydrationClientUserMessageId: `live-transition-reconcile-${randomUUID()}`,
+    receiptNonce: randomUUID(),
+    skills: domainDelivery.roleProjection.skills,
+    signal: AbortSignal.timeout(240_000),
+  });
+  assert.equal(result.reconciliation.status, "reconciled");
+  assert.equal(result.retirementDelivery.threadId, domainDelivery.threadId);
+  assert.equal(result.rehydrationDelivery.threadId, domainDelivery.threadId);
+  assert.equal(
+    result.validation.receipt.previous_context_window_id,
+    attestation.validation.receipt.current_context_window_id,
+  );
+  assert.notEqual(
+    result.validation.receipt.current_context_window_id,
+    attestation.validation.receipt.current_context_window_id,
+  );
+});
+
 test("live strategic planner returns an exact request-bound handoff", {
   skip: !enabled,
   timeout: 300_000,
@@ -397,7 +645,7 @@ test("live strategic planner completes one non-clearing semantic shadow inspecti
       publish_accepted_checkpoint: false,
     },
   }, { sha256: "c".repeat(64) });
-  const userText = "Assess the current App Server foundation and identify the next bounded step without changing repository state.";
+  const userText = LIVE_SHADOW_USER_TEXT;
   const host = await createLocalSemanticShadowHost({
     adapter,
     manifest: await loadRuntimeManifest(path.join(ROOT, "app-server/runtime-manifest.yaml")),
@@ -451,4 +699,116 @@ test("live strategic planner completes one non-clearing semantic shadow inspecti
     status: "not_requested",
     retirementAttempted: false,
   });
+});
+
+test("live executable host records one non-clearing strategic-planner shadow inspection", {
+  skip: !enabled,
+  timeout: 900_000,
+}, async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-live-hosted-shadow."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const transport = spawnAppServer({ cwd: ROOT }, t);
+  t.after(() => transport.close());
+  const stateRoot = path.join(directory, "host-state");
+  const semanticStatePath = path.join(stateRoot, "semantic-context.sqlite3");
+  const bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot: ROOT,
+    stateRoot,
+    workerCwd: ROOT,
+    transport,
+    runtimeManifestPath: path.join(ROOT, "app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.join(
+      ROOT,
+      "app-server/tests/fixtures/semantic-context-host-inspection-profile.yaml",
+    ),
+    semanticContextStatePath: semanticStatePath,
+    roleBindingsPath: path.join(stateRoot, "role-bindings.json"),
+    switchboardAttachmentPath: path.join(stateRoot, "switchboard-attachment.json"),
+  });
+  t.after(() => bootstrap.close({ abandonActiveWork: true }));
+
+  const completedTurns = new Map();
+  const completionWaiters = new Map();
+  bootstrap.transport.onNotification((notification) => {
+    if (notification.method !== "turn/completed") return;
+    const turnId = notification.params?.turn?.id;
+    if (typeof turnId !== "string") return;
+    const waiter = completionWaiters.get(turnId);
+    if (waiter) {
+      completionWaiters.delete(turnId);
+      waiter(notification.params.turn);
+    } else {
+      completedTurns.set(turnId, notification.params.turn);
+    }
+  });
+  const waitForCompletion = (turnId) => {
+    const completed = completedTurns.get(turnId);
+    if (completed) {
+      completedTurns.delete(turnId);
+      return Promise.resolve(completed);
+    }
+    return new Promise((resolve) => completionWaiters.set(turnId, resolve));
+  };
+
+  await bootstrap.transport.request("initialize", {
+    clientInfo: {
+      name: "work-engine-live-hosted-shadow",
+      title: "Work Engine Live Hosted Shadow",
+      version: "0.1.0",
+    },
+    capabilities: { experimentalApi: false, requestAttestation: false },
+  });
+  bootstrap.transport.notify("initialized");
+  const shell = await bootstrap.transport.request("thread/start", { cwd: ROOT });
+  const instanceId = `live-hosted-shadow-${randomUUID()}`;
+
+  const attachment = await bootstrap.transport.request("turn/start", {
+    threadId: shell.thread.id,
+    clientUserMessageId: `live-hosted-attach-${randomUUID()}`,
+    input: [{
+      type: "text",
+      text: `:we attach strategic-planner:${instanceId}`,
+      text_elements: [],
+    }],
+  });
+  const attachmentCompletion = await waitForCompletion(attachment.turn.id);
+  assert.equal(attachmentCompletion.status, "completed");
+
+  const delivery = await bootstrap.transport.request("turn/start", {
+    threadId: shell.thread.id,
+    clientUserMessageId: `live-hosted-turn-${randomUUID()}`,
+    input: [{ type: "text", text: LIVE_SHADOW_USER_TEXT, text_elements: [] }],
+  });
+  const completion = await waitForCompletion(delivery.turn.id);
+  assert.equal(completion.status, "completed", JSON.stringify(completion.error));
+
+  const lifecycleStore = await openSqliteAppServerStateStore({
+    filePath: semanticStatePath,
+  });
+  t.after(() => lifecycleStore.close());
+  const receipts = lifecycleStore.receipts({
+    logicalRoleInstanceId: `strategic-planner:${instanceId}`,
+  });
+  assert.equal(receipts.length, 1);
+  const [episode] = receipts;
+  assert.equal(episode.pressure.disposition, "replacement_candidate");
+  assert.equal(["accepted", "rejected", "unresolved"].includes(
+    episode.inference.status,
+  ), true);
+  assert.notEqual(
+    episode.inference.compiler.inferenceId,
+    episode.inference.verifier.inferenceId,
+  );
+  assert.equal(episode.checkpoint.reason,
+    episode.inference.status === "accepted"
+      ? "shadow_publication_disabled"
+      : "verification_not_accepted");
+  assert.equal(episode.checkpoint.status, "not_attempted");
+  assert.equal(episode.checkpoint.checkpointRevision, null);
+  assert.equal(episode.checkpoint.ledgerRevision, null);
+  assert.deepEqual(episode.transition, {
+    status: "not_requested",
+    retirementAttempted: false,
+  });
+  assert.deepEqual(bootstrap.manager.snapshot().admissions, []);
 });

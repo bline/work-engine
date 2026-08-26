@@ -35,7 +35,22 @@ export class RetainedRoleShadowLifecycleRuntime {
   }
 
   async deliverTurn(turn) {
+    const started = await this.startTurn(turn);
+    const outcome = await started.completion;
+    return freeze({
+      delivery: started.delivery,
+      completion: outcome.completion,
+      shadow: outcome.shadow,
+    });
+  }
+
+  async startTurn(turn) {
     const delivery = await this.roleRuntime.deliverTurn(turn);
+    const completion = this.#completeTurn(turn, delivery);
+    return freeze({ delivery, completion });
+  }
+
+  async #completeTurn(turn, delivery) {
     const completion = await this.roleRuntime.adapter.waitForTurnCompletion({
       threadId: delivery.threadId,
       turnId: delivery.turnId,
@@ -45,14 +60,13 @@ export class RetainedRoleShadowLifecycleRuntime {
     const snapshot = this.lifecycleEvidence.snapshot(delivery.threadId);
     if (snapshot.latestTokenUsage?.turnId !== delivery.turnId) {
       return freeze({
-        delivery,
         completion,
         shadow: { status: "not_observed", reason: "completed_turn_token_usage_unavailable" },
       });
     }
     const pressure = this.pressureProjector.project(snapshot);
     if (pressure.status !== "projected") {
-      return freeze({ delivery, completion, shadow: pressure });
+      return freeze({ completion, shadow: pressure });
     }
     const roleInput = await this.projectionForTurn({
       turn,
@@ -87,6 +101,6 @@ export class RetainedRoleShadowLifecycleRuntime {
       },
       signal: turn.signal,
     });
-    return freeze({ delivery, completion, shadow });
+    return freeze({ completion, shadow });
   }
 }

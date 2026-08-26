@@ -1,0 +1,47 @@
+{
+  "artifact_type": "linguistic_register_subject_configuration_v1",
+  "schema_version": 1,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "execution_level": "exploratory_subscription",
+  "provider": "OpenAI",
+  "model_designation": "gpt-5.6-sol",
+  "model_snapshot": {
+    "value": null,
+    "status": "not_exposed",
+    "claim": "No immutable snapshot claim is made."
+  },
+  "reasoning_effort": "medium",
+  "service_tier": "standard_not_fast",
+  "sampling": {
+    "temperature": {"value": null, "status": "not_exposed"},
+    "top_p": {"value": null, "status": "not_exposed"},
+    "seed": {"value": null, "status": "not_exposed"}
+  },
+  "tools": {
+    "availability": "none",
+    "network": false,
+    "filesystem": false,
+    "shell": false
+  },
+  "execution_surface": {
+    "client": "Codex CLI subscription",
+    "codex_cli_version_at_freeze": "0.149.1",
+    "app_server_version": {"value": null, "status": "not_separately_exposed_by_freeze_surface"},
+    "backend_identifiers": {"values": [], "status": "capture_every_exposed_identifier_at_prelaunch_and_per_trial"}
+  },
+  "external_instruction_control": {
+    "rule": "Use the same launcher, system/developer instruction set, tool policy, working directory policy, and task presentation for every trial.",
+    "digest_requirement": "Bind every model-visible instruction byte exposed to the runner in the prelaunch manifest; if provider-owned instructions remain unexposed, record that limitation rather than claiming byte identity."
+  },
+  "prelaunch_verification": [
+    "Re-run codex --version and require 0.149.1 unless a fresh human-authorized contract supersedes this one.",
+    "Resolve the effective model designation and require gpt-5.6-sol.",
+    "Resolve reasoning effort and require medium.",
+    "Verify Standard service rather than Fast mode.",
+    "Record every model, backend, deployment, service, and app-server identifier exposed by initialization and the first receipt.",
+    "Record temperature, top_p, seed, and snapshot as values only when the execution surface exposes them; otherwise retain not_exposed.",
+    "Verify tools are disabled and each trial starts in a fresh context.",
+    "Record weekly-usage meter value and timestamp immediately before T001."
+  ],
+  "boundary_stop": "Stop on any known model designation, reasoning, service-tier, client-version, tool-policy, or exposed-backend transition. Comparisons crossing that boundary are invalid."
+}

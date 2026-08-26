@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { CodexAppServerAdapter } from "./codex-app-server-adapter.mjs";
+import { ContextInputCustodyController } from "./context-input-custody.mjs";
 import { FileRoleBindingRegistry } from "./role-binding-registry.mjs";
 import { ManifestRoleRuntime, projectRuntimeManifest } from "./runtime-manifest.mjs";
 import { ExactSkillResolver } from "./skill-resolver.mjs";
@@ -40,6 +41,22 @@ function exactTextInput(params) {
   }
   return params.input[0].text;
 }
+
+const ROLE_THREAD_INPUT_METHODS = new Set([
+  "turn/start",
+  "turn/steer",
+  "thread/inject_items",
+  "thread/compact/start",
+  "thread/queue/add",
+  "thread/queue/update",
+  "thread/queue/delete",
+  "thread/queue/reorder",
+  "thread/queue/start",
+  "thread/realtime/start",
+  "thread/realtime/appendAudio",
+  "thread/realtime/appendText",
+  "thread/realtime/appendSpeech",
+]);
 
 function syntheticTurnStart(threadId, startedAtMs) {
   const turnId = randomUUID();
@@ -134,11 +151,32 @@ class DispatchEffectTransport {
   }
 
   run(effect, operation) {
-    return this.effects.run(effect, operation);
+    const scope = { effect };
+    return this.effects.run(scope, async () => {
+      try {
+        return { result: await operation(), scope };
+      } finally {
+        scope.effect = null;
+      }
+    });
+  }
+
+  runCompletion(scope, effect, operation) {
+    if (!scope || scope.effect !== null) {
+      throw new Error("role completion effect scope is not available for rebinding");
+    }
+    scope.effect = effect;
+    return this.effects.run(scope, async () => {
+      try {
+        return await operation();
+      } finally {
+        scope.effect = null;
+      }
+    });
   }
 
   async request(method, params) {
-    const effect = this.effects.getStore();
+    const effect = this.effects.getStore()?.effect;
     if (typeof effect !== "function") {
       throw new Error("role App Server request is outside an admitted worker dispatch");
     }
@@ -189,6 +227,10 @@ class DispatchEffectTransport {
     return this.roleThreadIds.has(threadId);
   }
 
+  ownsRoleThread(threadId) {
+    return typeof threadId === "string" && this.roleThreadIds.has(threadId);
+  }
+
   emitNotification(notification) {
     for (const handler of this.notificationHandlers) handler(notification);
   }
@@ -204,6 +246,7 @@ export async function createExecutableGenerationRoleEnvironment({
   configRelativePath = "app-server/generated/executable-role-environment.json",
   bindingsPath,
   attachmentPath,
+  semanticContextStatePath = null,
   configuredProviderFeatures = [],
   dynamicTools = [],
   now = () => Date.now(),
@@ -231,7 +274,27 @@ export async function createExecutableGenerationRoleEnvironment({
     skillResolver: await ExactSkillResolver.create([path.join(root, "skills")]),
     configuredProviderFeatures,
   });
-  const runtime = new ManifestRoleRuntime({ adapter, manifest });
+  const semanticHost = config.semanticContext === undefined
+    ? null
+    : await (async () => {
+      const { createLocalSemanticShadowHost } = await import("./local-semantic-shadow-host.mjs");
+      return createLocalSemanticShadowHost({
+        adapter,
+        manifest,
+        stateFilePath: requireText(
+          semanticContextStatePath,
+          "semantic context lifecycle state path",
+        ),
+        profile: config.semanticContext.profile,
+        onLifecycleEvidenceError: (error) => {
+          process.stderr.write(`[context-lifecycle] evidence-error=${error.message}\n`);
+        },
+      });
+    })();
+  const runtime = semanticHost?.runtime ?? new ManifestRoleRuntime({ adapter, manifest });
+  const inputCustody = semanticHost === null
+    ? null
+    : new ContextInputCustodyController({ store: semanticHost.episodeStore });
   const switchboard = new OperatorSwitchboard({
     manifest,
     runtime,
@@ -239,6 +302,7 @@ export async function createExecutableGenerationRoleEnvironment({
     completionWaiter: (delivery) => adapter.waitForTurnCompletion(delivery),
     initialAttachment: await readAttachment(attachmentPath),
     onAttachmentChange: (attachment) => writeAttachment(attachmentPath, attachment),
+    inputCustody,
   });
   const uiThreadIds = new Set();
   const pendingUiTurns = new Map();
@@ -272,6 +336,7 @@ export async function createExecutableGenerationRoleEnvironment({
       return `sha256:${createHash("sha256").update(canonicalJson({
         manifestSha256: config.manifest.sha256,
         skillFiles: config.skillFiles,
+        semanticContextProfileSha256: config.semanticContext?.profile?.source?.sha256 ?? null,
         toolSpecification: dynamicTools,
       })).digest("hex")}`;
     },
@@ -288,14 +353,21 @@ export async function createExecutableGenerationRoleEnvironment({
         if (typeof threadId === "string") uiThreadIds.add(threadId);
         return { disposition: "respond", result: response };
       }
+      if (ROLE_THREAD_INPUT_METHODS.has(payload?.method)
+          && transport.ownsRoleThread(payload.params?.threadId)) {
+        throw new Error(
+          "role-owned threads accept domain input only through the Work Engine switchboard",
+        );
+      }
       if (payload?.method !== "turn/start" || !uiThreadIds.has(payload.params?.threadId)) {
         return { disposition: "forward", payload };
       }
       const text = exactTextInput(payload.params);
       const startedAtMs = now();
-      const started = await transport.run(effect, () => switchboard.startLine(text, {
+      const admitted = await transport.run(effect, () => switchboard.startLine(text, {
         clientUserMessageId: payload.params.clientUserMessageId ?? null,
       }));
+      const { result: started, scope: effectScope } = admitted;
       const lifecycle = syntheticTurnStart(payload.params.threadId, startedAtMs);
       if (started.result !== null) {
         const completion = syntheticTurnCompletion(
@@ -315,6 +387,7 @@ export async function createExecutableGenerationRoleEnvironment({
         uiTurnId: lifecycle.turnId,
         startedAtMs,
         completion: started.completion,
+        effectScope,
       };
       pendingUiTurns.set(started.delivery.turnId, pending);
       const earlyCompletion = completedRoleTurns.get(started.delivery.turnId);
@@ -331,29 +404,33 @@ export async function createExecutableGenerationRoleEnvironment({
       };
     },
 
-    async handleNotification(notification) {
+    async handleNotification(notification, effect) {
       const roleOwned = transport.observesRoleThread(notification);
-      if (roleOwned) transport.emitNotification(notification);
       if (!roleOwned) return { disposition: "forward" };
       if (notification?.method !== "turn/completed") {
+        transport.emitNotification(notification);
         return { disposition: "respond", result: null };
       }
       const roleTurnId = notification.params?.turn?.id;
       const pending = pendingUiTurns.get(roleTurnId);
       if (!pending) {
+        transport.emitNotification(notification);
         completedRoleTurns.set(roleTurnId, structuredClone(notification));
         if (completedRoleTurns.size > 256) {
           completedRoleTurns.delete(completedRoleTurns.keys().next().value);
         }
         return { disposition: "respond", result: null };
       }
-      pendingUiTurns.delete(roleTurnId);
-      const completion = await completeUiTurn(pending, notification);
-      return {
-        disposition: "respond",
-        result: null,
-        notifications: completion.notifications,
-      };
+      return transport.runCompletion(pending.effectScope, effect, async () => {
+        transport.emitNotification(notification);
+        pendingUiTurns.delete(roleTurnId);
+        const completion = await completeUiTurn(pending, notification);
+        return {
+          disposition: "respond",
+          result: null,
+          notifications: completion.notifications,
+        };
+      });
     },
 
     async handleServerRequest(request) {
@@ -364,6 +441,10 @@ export async function createExecutableGenerationRoleEnvironment({
         disposition: "respond",
         result: await transport.handleServerRequest(request),
       };
+    },
+
+    close() {
+      semanticHost?.close();
     },
   });
 }

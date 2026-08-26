@@ -1,0 +1,108 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "assigned_level": "C1",
+      "discourse_uptake": 1,
+      "intended_features": [
+        "Telegraphic colon-fragment compression: 'Applicability: materially normative text consumed by agents, wherever stored.'",
+        "Telegraphic compression: 'File type and imperative wording: candidate signals, not proof of applicability or structural necessity.'",
+        "Question-label diagnostic vocabulary: 'Protected distinction? What distinction must remain true...' / 'Necessary route? Does correctness require this exact route...'",
+        "Extracted enumerative list for contract types (1. instruction contract; 2. loading or precedence contract; 3. exact route) pulled out of the governing sentence",
+        "Stacked subordination: 'Investigation is bounded: examine only the neighboring context required to establish owner, consumer, loading reach, causal necessity, and consequence.'"
+      ],
+      "rationale": "Shows abstract relational vocabulary and diagnostic deficit vocabulary plus telegraphic colon-fragment compression and one extracted enumerative list, matching C1's surface markers. However, relationships (owner/consumer/authority/scope/precedence/audience/loading) remain stated in a single flowing sentence rather than being additively regrouped or sequentially chained the way C2 artifacts do, and no new causal ordering ('in order', explicit counting) is added, so no heightened discourse operation is present.",
+      "shallow_or_forbidden_cues": [
+        "Trailing stray '+' apparatus artifact at end of document (formatting residue, not prose signal)",
+        "Finding-contract bullet list (shared boilerplate template across all six artifacts, not diagnostic of treatment)"
+      ],
+      "surface_uptake": 4
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "assigned_level": "C0",
+      "discourse_uptake": 0,
+      "intended_features": [
+        "Full-sentence prose realization: 'The review applies to materially normative text consumed by agents, wherever that text is stored.'",
+        "Proposal-applicability criteria kept inline within a single sentence rather than extracted into an enumerated list",
+        "Standard subordinate clauses without colon-fragment compression, e.g. 'Investigate only the neighboring context needed to establish semantic owner, intended consumer, loading reach, causal necessity, and consequence.'"
+      ],
+      "rationale": "Realizes the same content as the other artifacts in ordinary flowing prose without colon-fragment telegraphy, semicolon-restructured boundary lists, or extracted enumerations of already-stated relationships. No stacked subordination beyond ordinary complex-sentence structure and no additive elaboration or causal chaining beyond the base content, consistent with neutral technical realization.",
+      "shallow_or_forbidden_cues": [
+        "Numbered 1./2. diagnostic question list (inherited base structure common to the packet, not a distinguishing treatment marker)",
+        "Finding-contract bullet list (shared boilerplate template, not diagnostic of treatment)"
+      ],
+      "surface_uptake": 1
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "assigned_level": "C1",
+      "discourse_uptake": 1,
+      "intended_features": [
+        "'Boundaries:' label plus semicolon-separated list restructuring of the do-not clause: 'Boundaries: do not edit the subject; choose architecture; form or accept a proposal; select a panel; approve implementation; or treat finding persistence as evidence.'",
+        "Telegraphic compression: 'File type and imperative wording: candidate signals, not proof of applicability or structural necessity.'",
+        "Numbered question labels: '1. Protected distinction? ... 2. Exact-route necessity? ...'",
+        "Precise diagnostic deficit vocabulary added in Finding contract: 'diagnoses insufficiency, error, ownership ambiguity, misplaced authority, or unsupported mechanism'",
+        "Enumerative parallelism in 'placement relationally: semantic owner, consumer, authority source, scope, precedence, audience, and loading behavior' (kept as parallel series within one sentence)"
+      ],
+      "rationale": "Displays the strongest diagnostic-deficit vocabulary in the group (insufficiency, error, ownership ambiguity, misplaced authority, unsupported mechanism) plus telegraphic fragments and a semicolon-restructured boundary list, matching C1's surface markers of precise deficit vocabulary and enumerative parallelism. Relationships are still expressed as parallel series within single sentences rather than extracted into additive/regrouped sub-lists or chained by new sequencing language, so no heightened discourse operation is present.",
+      "shallow_or_forbidden_cues": [
+        "Finding-contract bullet list (shared boilerplate template, not diagnostic of treatment)",
+        "Backtick-formatted `DESIGN.md`/`PHILOSOPHY.md` tokens (formatting convention shared across all artifacts)"
+      ],
+      "surface_uptake": 4
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "assigned_level": "C2",
+      "discourse_uptake": 3,
+      "intended_features": [
+        "Telegraphic subjectless fragments: 'Reasoning affordances, not a sentence-by-sentence form or closed taxonomy.' and 'Bundled clauses with different effects: split.'",
+        "Colon-fragment compression: 'Applicable material: materially normative text consumed by agents, irrespective of storage.' and 'A proposal that merely anticipates a future instruction artifact: truthfully omit.'",
+        "Realization-only causal/sequential chaining added to the diagnostic step: 'For each material instruction, ask, in order:'",
+        "Additive elaboration of an already-present relationship set into an extracted, regrouped numbered list: 'Placement requires relational judgment across: 1. semantic owner and intended consumer; 2. authority source and scope; 3. precedence and audience; 4. loading behavior and reach.'"
+      ],
+      "rationale": "Carries the same abstract relational and diagnostic vocabulary, telegraphic compression, and enumerative parallelism seen in the C1 artifacts, but additionally regroups a relationship list that appears as a single flat sentence elsewhere into a newly partitioned four-item numbered list (owner/consumer; authority/scope; precedence/audience; loading/reach) and inserts explicit sequencing ('in order') into the diagnostic procedure. This is realization-only causal chaining and additive elaboration of relationships already present, without introducing new inference, example, evidence, or conclusion, matching C2.",
+      "shallow_or_forbidden_cues": [
+        "Trailing stray '+' apparatus artifact at end of document (formatting residue, not prose signal)",
+        "Finding-contract bullet list (shared boilerplate template, not diagnostic of treatment)"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "assigned_level": "C2",
+      "discourse_uptake": 3,
+      "intended_features": [
+        "Colon-fragment compression: 'Applicable material: materially normative text consumed by agents, irrespective of storage location.' and 'Proposal content: applicable only when its present content creates or changes an instruction, loading, or precedence contract, or claims an exact route as mandatory.'",
+        "Additive elaboration/regrouping of an already-present relationship set into a new numbered list: 'Investigation must remain bounded to the neighboring context required to establish: 1. semantic owner and intended consumer; 2. authority source, scope, precedence, and audience; 3. loading reach and behavior; 4. causal necessity and consequence.'",
+        "Explicit count framing added to the diagnostic step: 'For every material instruction, ask two questions.'",
+        "Tighter colon-fragment compression of the authority-source rule: '`DESIGN.md`: binding only for the product structure it explicitly owns. `PHILOSOPHY.md`: non-normative reasoning.'"
+      ],
+      "rationale": "Shares the same abstract relational/diagnostic vocabulary and telegraphic compression present in C1 artifacts, but goes further by extracting the investigation-scope relationships (owner/consumer, authority/scope/precedence/audience, loading reach/behavior, causal necessity/consequence) into a newly partitioned four-item list not present as a discrete list elsewhere, and by adding explicit enumerative framing ('ask two questions'). This additive elaboration of relationships already present, without new inference or evidence operations, places it at C2.",
+      "shallow_or_forbidden_cues": [
+        "Trailing stray '+' apparatus artifact at end of document (formatting residue, not prose signal)",
+        "Finding-contract bullet list (shared boilerplate template, not diagnostic of treatment)"
+      ],
+      "surface_uptake": 5
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "assigned_level": "C0",
+      "discourse_uptake": 0,
+      "intended_features": [
+        "Full-sentence prose realization: 'Apply this review to materially normative text consumed by agents, wherever that text is stored.'",
+        "Subject-bearing sentence rather than fragment: 'Use these questions as reasoning affordances, not as a sentence-by-sentence form or a closed taxonomy.'",
+        "Authority-source rule kept as 'Treat X as Y' sentences ('Treat `DESIGN.md` as binding only for...') rather than colon-fragment compression",
+        "Proposal-applicability criteria kept inline within a single sentence, not extracted into an enumerated list"
+      ],
+      "rationale": "Consistently realizes content in ordinary flowing, subject-bearing prose without colon-fragment telegraphy, semicolon-restructured lists, or extraction/regrouping of already-stated relationship sets. No sequencing language or additive elaboration is introduced beyond the shared base content, consistent with neutral technical realization and no intentional treatment uptake.",
+      "shallow_or_forbidden_cues": [
+        "Numbered 1./2. diagnostic question list (inherited base structure common to the packet, not a distinguishing treatment marker)",
+        "Finding-contract bullet list (shared boilerplate template, not diagnostic of treatment)"
+      ],
+      "surface_uptake": 1
+    }
+  ],
+  "limitations": "This classification is blind and based solely on close paraphrase-level stylistic comparison across six near-identical realizations of the same underlying document; no ground-truth mapping, author intent, or generation metadata was available. Distinctions between C1 and C2 in particular rest on a proxy heuristic (whether a relationship set already stated in one sentence elsewhere in the packet is additionally extracted/regrouped into a new enumerated list, or whether new sequencing/counting language is inserted) rather than direct access to any underlying editing history, so boundary cases (especially 1d504763 vs. caac9200, and 41767db4 vs. 5522b147) could plausibly be swapped or re-weighted under a different but reasonable reading of the contract. Shared boilerplate elements (the Finding-contract bullet list, backtick code-formatted file names, trailing '+' formatting residue) were treated as non-diagnostic apparatus/forbidden cues and explicitly excluded from the surface/discourse scoring rationale, per instructions to report incidental cues separately. Surface and discourse uptake scores are relative rankings within this six-artifact set rather than calibrated against an external scale."
+}

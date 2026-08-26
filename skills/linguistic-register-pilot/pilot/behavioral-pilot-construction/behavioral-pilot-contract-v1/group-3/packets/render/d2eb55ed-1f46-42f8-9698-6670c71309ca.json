@@ -1,0 +1,40 @@
+{
+  "artifact_type": "linguistic_register_group_3_render_packet_v1",
+  "canonical_role": {
+    "entrypoint": "---\nname: agent-instruction-review\ndescription: Review materially normative agent-facing text for structural necessity, exact-route causality, semantic ownership, authority scope, audience, and loading placement. Use for implemented skills, role prompts, workflow instructions, or proposals that already contain instruction contracts; do not use for ordinary prose or proposals that only anticipate future instructions.\n---\n\n# Agent Instruction Review\n\nReview an immutable, revision-bound subject and return advisory findings. Do not\nedit the subject, choose architecture, form or accept a proposal, select a\npanel, approve implementation, or treat persistence of a finding as evidence.\n\nThe review applies to materially normative text consumed by agents, wherever it\nis stored. File type and imperative wording are candidate signals, not proof of\napplicability or structural necessity. For proposals, apply the review only\nwhen present proposal content creates or changes an instruction, loading or\nprecedence contract, or an exact route claimed as mandatory. Truthfully omit a\nproposal that merely anticipates a future instruction artifact.\n\n## Diagnose the instruction\n\nFor each material instruction, ask:\n\n1. What distinction must remain true for the governed outcome to stay valid,\n   safe, authorized, or observable?\n2. Does correctness require this exact route, sequence, trigger, or mechanism?\n\nThese questions are reasoning affordances, not a sentence-by-sentence form or\na closed taxonomy. Preserve an exact route when reversing or replacing it would\nlose the named distinction. Otherwise distinguish invariant structure from a\ncurrent mechanism, default, example, observation, or recommendation. Split\nbundled text when its clauses have different effects.\n\nJudge placement relative to the text's semantic owner, intended consumer,\nauthority source, scope, precedence, audience, and loading behavior. A local\nmechanism can be correctly placed without becoming general doctrine. Similar\nwording at project, role, skill-entrypoint, conditional-reference, adapter, and\nexample layers can warrant different conclusions.\n\nTreat `DESIGN.md` as binding only for the product structure it explicitly owns.\nTreat `PHILOSOPHY.md` as non-normative reasoning. If both matter, preserve their\ndifferent effects. Name any other authority source rather than silently\npromoting preference or current repository knowledge into a command.\n\nInvestigate only the neighboring context needed to establish owner, consumer,\nloading reach, causal necessity, and consequence. When the underlying\ncapability owner or governing authority is unresolved, report that limitation\nto the owning architecture or decision role instead of deciding it here.\n\n## Return evidence-bearing advice\n\nRead [references/finding-contract.md](references/finding-contract.md) before\nrecording findings or an applicability omission. Keep results compact and bind\nthem to the exact subject revision.\n\nOrdinary remediation may return to the same retained reviewer so it can\nevaluate its own findings against an exact new subject or bounded delta. That\ncontinuation does not create a new freshness or independence claim. Reset is a\njudgment for changed premise, material placement or architecture change,\nunusable context, contamination, or a renewed independence need.\n\nThe author or builder decides whether an advisory finding is valid and performs\nauthorized mutation. The named decision owner retains acceptance authority.\nThis skill cannot certify its own implementation; bootstrap evidence must use\nan independently defined review contract and fresh reasoning context.\n",
+    "finding_contract": "# Finding Contract\n\nUse the smallest result that preserves the review consequence. Bind every\nresult to the immutable subject revision and identify the inspected instruction\nby path and exact range or another stable subject-local identity.\n\n## Applicability\n\nState `applicable` or `omitted` and why. An omission names the absent present-day\ninstruction consequence; it is not a pass. Storage outside `SKILL.md` does not\nmake normative agent text inapplicable.\n\n## Findings\n\nFor each material issue record:\n\n- a stable finding identifier and severity;\n- the exact instruction and its placement;\n- semantic owner, consumer, audience, scope, precedence, and loading reach when\n  material;\n- the protected distinction, or the failure to identify one;\n- whether the exact route is causally necessary;\n- observed evidence and authority source;\n- consequence, confidence, and limitations; and\n- advisory outcome: `retain`, `restate`, `split`, `move`, `demote`, or `remove`.\n\nUse another concise outcome label only when these would misstate the advice.\nSeparate observation from inference. Do not convert a preferred rewrite into\nproof that current text is invalid.\n\n## No-finding result\n\nA no-finding result still records applicability, subject identity, inspected\nmaterial, decisive evidence, and limitations. It does not claim completeness,\nacceptance, self-certification, or correctness beyond the bounded subject.\n\n## Remediation\n\nBind re-evaluation to the exact new subject or delta and prior finding IDs.\nRecord each finding as resolved, still open, inapplicable after an authorized\nchange, or uncertain. Preserve unresolved ownership and lifecycle questions;\nthe reviewer does not resolve them by persistence or repetition.\n"
+  },
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "render_contract": {
+    "objective": "Render one complete, standalone SKILL.md role that preserves every supplied canonical instruction and authority boundary.",
+    "output": "Return only one JSON object with exactly one string field named text. The string is the complete SKILL.md artifact.",
+    "prohibitions": [
+      "Do not add, remove, strengthen, weaken, or reinterpret a claim, requirement, permission, evidence operation, decision policy, or authority boundary.",
+      "Do not add methods, examples, task content, behavioral heuristics, personal names, profile labels, source phrases, or subject-domain terminology.",
+      "Do not mention style transfer, conditions, candidates, authors, experiments, or this packet.",
+      "Do not use external information or tools."
+    ],
+    "realization": {
+      "instruction": "Use clear, ordinary technical prose. Do not intentionally apply any treatment features.",
+      "licensed_features": [],
+      "mode": "neutral"
+    },
+    "shape": {
+      "frontmatter_name": "agent-instruction-review",
+      "normalized_word_range": [
+        700,
+        850
+      ],
+      "required_second_level_headings": [
+        "Scope",
+        "Diagnose the instruction",
+        "Evidence-bearing result",
+        "Finding contract",
+        "Remediation and authority"
+      ],
+      "required_top_heading": "Agent Instruction Review"
+    }
+  },
+  "replica": 1,
+  "schema_version": 1
+}

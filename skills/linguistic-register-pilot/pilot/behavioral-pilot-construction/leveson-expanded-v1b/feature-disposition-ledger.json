@@ -1,0 +1,57 @@
+{
+  "artifact_type": "linguistic_register_expanded_feature_disposition_ledger_v1b",
+  "bindings": {
+    "evidence_packet_sha256": "854d0b31eda8b9a2f04f3600c007d07fba5a76f03dd98d208884d3a6be42d7eb",
+    "evidence_result_sha256": "59af95a79dc3024804667bf7c0a086a4a05d26f7046b365fc64b21954e8df888",
+    "preregistration_sha256": "9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e",
+    "profile_sha256": "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
+  },
+  "experiment_id": "leveson-expanded-v1b-treatment-validation-2026-08-26",
+  "features": [
+    {
+      "added_source_ids": [
+        "safety-iii-healthcare"
+      ],
+      "decision": "retain",
+      "feature_id": "lexicon-abstract-relational",
+      "final_document_count": 3,
+      "prior_document_count": 2,
+      "rationale": "A third distinct document concretely realizes the frozen abstract-relational vocabulary pattern.",
+      "treatment_disposition": "retained"
+    },
+    {
+      "added_source_ids": [
+        "safety-iii-healthcare"
+      ],
+      "decision": "retain",
+      "feature_id": "lexicon-diagnostic-deficit",
+      "final_document_count": 3,
+      "prior_document_count": 2,
+      "rationale": "A third distinct document contains a sustained diagnostic lexicon of insufficiency and error.",
+      "treatment_disposition": "retained"
+    },
+    {
+      "added_source_ids": [
+        "systems-theoretic-software-intensive"
+      ],
+      "decision": "retain",
+      "feature_id": "syntax-stacked-subordination",
+      "final_document_count": 3,
+      "prior_document_count": 2,
+      "rationale": "A third distinct document concretely exhibits the frozen stacked-subordination pattern.",
+      "treatment_disposition": "retained"
+    },
+    {
+      "added_source_ids": [
+        "software-system-safety-notes"
+      ],
+      "decision": "retain",
+      "feature_id": "rhythm-telegraphic-prompt-response",
+      "final_document_count": 3,
+      "prior_document_count": 2,
+      "rationale": "A third distinct presentation-like document exhibits the same prompt-response and verbless-label cadence.",
+      "treatment_disposition": "retained"
+    }
+  ],
+  "schema_version": 1
+}

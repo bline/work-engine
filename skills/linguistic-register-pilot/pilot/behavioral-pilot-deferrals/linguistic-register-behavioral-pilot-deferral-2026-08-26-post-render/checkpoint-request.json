@@ -1,0 +1,241 @@
+{
+  "baseline_commit_oid": "8e039d0519cda1925681c558924fb73dcc2a8be2",
+  "candidate_attempt": 1,
+  "created_at": "2026-08-26T13:32:25.895781Z",
+  "gate_receipt_digest": "be7a14d1ccd7d2fb5df63e4fdf9c26b4ef133bc567269bbf806d73b7e5316ccb",
+  "parent_checkpoint_commit_oid": null,
+  "paths": [
+    {
+      "action": "include",
+      "attribution": "task_owned",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/artifact-inventory.json"
+    },
+    {
+      "action": "include",
+      "attribution": "task_owned",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/provenance-audit.json"
+    },
+    {
+      "action": "include",
+      "attribution": "task_owned",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/deferral-record.json"
+    },
+    {
+      "action": "include",
+      "attribution": "task_owned",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/deferral-seal.json"
+    },
+    {
+      "action": "include",
+      "attribution": "task_owned",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/checkpoint-request.json"
+    },
+    {
+      "action": "include",
+      "attribution": "generated_dependency",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/preregistration.yaml"
+    },
+    {
+      "action": "include",
+      "attribution": "generated_dependency",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/contract-seal.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/condition-key.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/cue-concentration-v1.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/cue-concentration.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/evidence-summary.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-preoutcome-gate-v1.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-preoutcome-gate.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/group-3-report.md"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/instruction-review.md"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/manipulation-report.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/manipulation.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/1d504763-88bc-462e-aa4e-9d9581d5591e.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/41767db4-ea13-4f3c-90db-9d0b472d2551.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/5522b147-d5ac-4d37-9805-e1a0578cbcf5.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/caac9200-86b3-4614-bbe0-1b6865e951ab.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/d2eb55ed-1f46-42f8-9698-6670c71309ca.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/render/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets/semantic-review.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets-v4/manipulation.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/packets-v4/semantic-review.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/preregistration.yaml"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/quotation-audit.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/render-launch-manifest.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/rendering-manifest-v2.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/rendering-manifest.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v2.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v3.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest-v4.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/review-launch-manifest.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/manipulation-claude.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/manipulation-sol.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/reviews-v4/semantic-claude.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/manipulation-v2.schema.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/manipulation.schema.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/render-output.schema.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/semantic-review-v2.schema.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/schemas/semantic-review.schema.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/subject-verification.json"
+    },
+    {
+      "action": "include",
+      "attribution": "pre_existing_overlap",
+      "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3-preoutcome-gate.json"
+    }
+  ],
+  "plan_version": "revised-post-render-pretrial-deferral-v1",
+  "repository": "/home/bline/code/work-engine",
+  "run_id": "linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render",
+  "schema_version": 1,
+  "scope_revision": "user-authorized-read-only-provenance-audit-and-deferral-seal-2026-08-26",
+  "slice_number": 1
+}
+

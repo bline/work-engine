@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "behavioral-pilot-preoutcome-gate.schema.json",
+  "title": "Group-3 behavioral-pilot preoutcome gate",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "experiment_id", "contract_seal_sha256", "rendering_manifest_sha256", "subject_verification_sha256", "gates", "overall_gate"],
+  "properties": {
+    "artifact_type": {"const": "linguistic_register_group_3_preoutcome_gate_v1"},
+    "schema_version": {"const": 1},
+    "experiment_id": {"const": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26"},
+    "contract_seal_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "rendering_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "subject_verification_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gates": {
+      "type": "object",
+      "required": ["six_artifacts_bound", "canonical_coverage", "semantic_equivalence", "speech_act_equivalence", "salience_control", "actual_artifact_manipulation", "no_single_feature_concentration", "subject_prelaunch_verification"],
+      "properties": {
+        "six_artifacts_bound": {"type": "boolean"},
+        "canonical_coverage": {"type": "boolean"},
+        "semantic_equivalence": {"type": "boolean"},
+        "speech_act_equivalence": {"type": "boolean"},
+        "salience_control": {"type": "boolean"},
+        "actual_artifact_manipulation": {"type": "boolean"},
+        "no_single_feature_concentration": {"type": "boolean"},
+        "subject_prelaunch_verification": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "overall_gate": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,925 @@
+{
+  "artifact_count": 6,
+  "artifact_type": "linguistic_register_group_3_quotation_audit_v1",
+  "comparison_count": 48,
+  "comparisons": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 125,
+        "source_start": 2564
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 1689
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 434,
+        "source_start": 2598
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 184,
+        "source_start": 3217
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 127,
+        "source_start": 2564
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 1689
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 402,
+        "source_start": 10762
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 197,
+        "source_start": 3247
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 423,
+        "source_start": 10762
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 6,
+        "render_start": 52,
+        "source_start": 3247
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 430,
+        "source_start": 2598
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 47,
+        "source_start": 1689
+      },
+      "source_id": "systems-theoretic-software-intensive",
+      "source_sha256": "afc4e3a4f18cbb090121712a7608bca5634eb46528b51a5e710adac57f9d43e6"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 125,
+        "source_start": 1594
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 32,
+        "source_start": 812
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 215,
+        "source_start": 9067
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 48,
+        "source_start": 673
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 127,
+        "source_start": 1594
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 32,
+        "source_start": 812
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 451,
+        "source_start": 13004
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 44,
+        "source_start": 673
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 522,
+        "source_start": 12575
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 36,
+        "source_start": 2328
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 215,
+        "source_start": 9067
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 47,
+        "source_start": 673
+      },
+      "source_id": "spacecraft-accidents",
+      "source_sha256": "ec598103af0f58c20793ecb64b1f193ac770eb73a6c21754bc6109c45eb46a51"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 125,
+        "source_start": 1100
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 281
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 434,
+        "source_start": 265
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 16,
+        "source_start": 1178
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 452,
+        "source_start": 4029
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 281
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 5,
+        "render_start": 449,
+        "source_start": 3795
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 44,
+        "source_start": 281
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 448,
+        "source_start": 3795
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 36,
+        "source_start": 1630
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 430,
+        "source_start": 265
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 16,
+        "source_start": 1563
+      },
+      "source_id": "safety-assurance",
+      "source_sha256": "db3aa53b01ca641c0fa564aa946df8aede11c827b10f24f793faaf91196e7aa9"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 125,
+        "source_start": 964
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 11,
+        "source_start": 3187
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 215,
+        "source_start": 4182
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 11,
+        "source_start": 3187
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 127,
+        "source_start": 964
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 11,
+        "source_start": 3187
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 451,
+        "source_start": 8721
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 116,
+        "source_start": 14
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 510,
+        "source_start": 600
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 10,
+        "source_start": 3187
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 215,
+        "source_start": 4182
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 11,
+        "source_start": 3187
+      },
+      "source_id": "safety-iii-healthcare",
+      "source_sha256": "a3b414bb58416d400815f1c383a508609dc30c6c41e9cfa7947041ee1a218c94"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 43,
+        "source_start": 168
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 4,
+        "source_start": 82
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 190,
+        "source_start": 240
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 37,
+        "source_start": 168
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 4,
+        "source_start": 82
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 40,
+        "source_start": 1397
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 4,
+        "source_start": 82
+      },
+      "source_id": "improving-risk-matrix",
+      "source_sha256": "bf7cb7cbe9ff9d714e54c1fd9939453280a385bc7b5f7edc4a0c16e938052b0d"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 493,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 51,
+        "source_start": 116
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 435,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 49,
+        "source_start": 116
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 511,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 51,
+        "source_start": 116
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 478,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 45,
+        "source_start": 116
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 510,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 109,
+        "source_start": 117
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 431,
+        "source_start": 428
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 48,
+        "source_start": 116
+      },
+      "source_id": "workshop-faq",
+      "source_sha256": "b3d35236ab40610967b9239b958e62a5a45b7bde240b751b3cf33e4d5494fb01"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 125,
+        "source_start": 3289
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 813
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 434,
+        "source_start": 1733
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 48,
+        "source_start": 813
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 127,
+        "source_start": 3289
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 50,
+        "source_start": 813
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 477,
+        "source_start": 1733
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 44,
+        "source_start": 813
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 2,
+        "render_start": 25,
+        "source_start": 4301
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 180,
+        "source_start": 483
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 430,
+        "source_start": 1733
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 47,
+        "source_start": 813
+      },
+      "source_id": "oil-gas-testimony",
+      "source_sha256": "f6ec4aba3b8d72690bbbb44d6b6f52fe9dbf332881be8b8985aaec5d4e8baef8"
+    },
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "artifact_sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 492,
+        "source_start": 5730
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 6,
+        "render_start": 112,
+        "source_start": 375
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "artifact_sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 434,
+        "source_start": 5730
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 4,
+        "render_start": 112,
+        "source_start": 90
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "artifact_sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 511,
+        "source_start": 5731
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 52,
+        "source_start": 494
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "artifact_sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 477,
+        "source_start": 5730
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 6,
+        "render_start": 109,
+        "source_start": 375
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "artifact_sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+      "longest_exact": {
+        "length": 3,
+        "render_start": 510,
+        "source_start": 5731
+      },
+      "material_exact": false,
+      "material_profile_mediated": true,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 5,
+        "render_start": 54,
+        "source_start": 494
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "artifact_sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+      "longest_exact": {
+        "length": 4,
+        "render_start": 430,
+        "source_start": 5730
+      },
+      "material_exact": false,
+      "material_profile_mediated": false,
+      "near_verbatim": [],
+      "profile_mediated_longest_exact": {
+        "length": 3,
+        "render_start": 13,
+        "source_start": 654
+      },
+      "source_id": "software-system-safety-notes",
+      "source_sha256": "679ebda04ecd58e6b04c58e2282b23e80e031b696e7861657dbefda2afef0352"
+    }
+  ],
+  "material_exact_count": 0,
+  "material_profile_mediated_count": 9,
+  "maximum_exact_tokens": 5,
+  "near_verbatim_count": 0,
+  "schema_version": 1,
+  "source_count": 8
+}

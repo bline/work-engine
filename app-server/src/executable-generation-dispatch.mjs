@@ -72,14 +72,19 @@ export class ExecutableGenerationDispatchHost {
     this.manager = manager;
   }
 
-  async #dispatch(generation, { operation, payload, requestedByTurnId = null }, forward) {
+  async #dispatch(
+    generation,
+    { operation, payload, requestedByTurnId = null },
+    forward,
+    effect = forward,
+  ) {
     if (typeof generation.dispatch !== "function") {
       throw new TypeError("active executable generation cannot dispatch operations");
     }
     const result = decision(await generation.dispatch(
       text(operation, "generation dispatch operation"),
       structuredClone(payload),
-      (effectPayload) => forward(generation, structuredClone(effectPayload)),
+      (effectPayload) => effect(generation, structuredClone(effectPayload)),
     ));
     if (result.disposition === "respond") {
       if (!("notifications" in result)) return structuredClone(result.result);
@@ -108,16 +113,16 @@ export class ExecutableGenerationDispatchHost {
       : structuredClone(result.payload));
   }
 
-  run({ kind, id, operation, payload }, forward) {
+  run({ kind, id, operation, payload }, forward, effect = forward) {
     if (typeof forward !== "function") {
       throw new TypeError("generation dispatch requires a stable forward effect");
     }
     return this.manager.runAdmission({ kind, id }, (generation) =>
-      this.#dispatch(generation, { operation, payload }, forward)
+      this.#dispatch(generation, { operation, payload }, forward, effect)
     );
   }
 
-  runInAdmission({ kind, subjectId, operation, payload }, forward) {
+  runInAdmission({ kind, subjectId, operation, payload }, forward, effect = forward) {
     if (typeof forward !== "function") {
       throw new TypeError("generation dispatch requires a stable forward effect");
     }
@@ -126,20 +131,20 @@ export class ExecutableGenerationDispatchHost {
         operation,
         payload,
         requestedByTurnId: subjectId,
-      }, forward)
+      }, forward, effect)
     );
   }
 
-  runCallback({ kind, id, operation, payload }, forward) {
+  runCallback({ kind, id, operation, payload }, forward, effect = forward) {
     if (typeof forward !== "function") {
       throw new TypeError("generation callback requires a stable forward effect");
     }
     if (this.manager.snapshot().admissions.length > 0) {
       return this.manager.runDuringActiveAdmissions((generation) =>
-        this.#dispatch(generation, { operation, payload }, forward)
+        this.#dispatch(generation, { operation, payload }, forward, effect)
       );
     }
-    return this.run({ kind, id, operation, payload }, forward);
+    return this.run({ kind, id, operation, payload }, forward, effect);
   }
 
   snapshot() {
@@ -225,7 +230,8 @@ export class GenerationBoundAppServerTransport {
             subjectId: turnId,
             operation: "app_server.backend_notification",
             payload: notification,
-          }, () => { forwardNotification = true; });
+          }, () => { forwardNotification = true; }, (_generation, effectPayload) =>
+            this.#performGenerationEffect(effectPayload));
           this.turnAdmissions.delete(turnId);
           reloadCompletion = this.dispatchHost.manager.closeAdmission(admission);
         } else {
@@ -242,7 +248,8 @@ export class GenerationBoundAppServerTransport {
         id: text(this.idFactory("notification"), "generation callback admission id"),
         operation: "app_server.backend_notification",
         payload: notification,
-      }, () => { forwardNotification = true; });
+      }, () => { forwardNotification = true; }, (_generation, effectPayload) =>
+        this.#performGenerationEffect(effectPayload));
     }
     if (reloadCompletion) await reloadCompletion;
     if (forwardNotification) {
@@ -275,6 +282,14 @@ export class GenerationBoundAppServerTransport {
       throw error;
     }
     return response;
+  }
+
+  async #performGenerationEffect(payload) {
+    if (!payload || typeof payload.method !== "string") {
+      throw new TypeError("generation App Server effect requires a method");
+    }
+    const response = await this.transport.request(payload.method, payload.params);
+    return payload.method === "turn/start" ? this.#retainTurn(response) : response;
   }
 
   #scheduleSyntheticNotifications(notifications) {

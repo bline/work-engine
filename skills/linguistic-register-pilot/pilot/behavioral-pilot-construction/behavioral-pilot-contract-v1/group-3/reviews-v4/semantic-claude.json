@@ -1,0 +1,84 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "canonical_coverage": true,
+      "evidence": [
+        "Diagnose section rewrites canonical 'Otherwise distinguish invariant structure from a current mechanism, default, example, observation, or recommendation.' as 'Otherwise distinguish invariant structure from current mechanism; default from requirement; example, observation, or recommendation from command.' This inserts a new opposition ('default from requirement') and a new contrast term ('command') not present in that canonical sentence.",
+        "The Scope paragraph relocates the finding-contract's Applicability caveat ('Storage outside `SKILL.md` does not make normative agent text inapplicable.') into the top-level applicability statement, giving it earlier, more prominent placement than its canonical position inside the finding-contract Applicability subsection.",
+        "Retains 'Before recording findings or an applicability omission, read [references/finding-contract.md](references/finding-contract.md).' immediately before a fully inlined '## Finding contract' section, creating a dangling pointer to content that is already reproduced in the same document."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": false,
+      "semantic_equivalence": false,
+      "speech_act_equivalence": true
+    },
+    {
+      "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "canonical_coverage": true,
+      "evidence": [
+        "'Otherwise, distinguish invariant structure from a current mechanism, default, example, observation, or recommendation.' matches the canonical diagnostic sentence verbatim, with no added distinctions.",
+        "'Before recording findings or an applicability omission, apply the finding contract below.' cleanly resolves the reference to the (now-merged) finding contract without a dangling external pointer.",
+        "Finding-contract obligations list ('a stable finding identifier and severity; ... an advisory outcome of retain, restate, split, move, demote, or remove') reproduces all canonical elements without addition or omission.",
+        "'Judge placement relative to the text's semantic owner, intended consumer, authority source, scope, precedence, audience, and loading behavior... can warrant different conclusions.' matches canonical wording with no added justification clause."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": true,
+      "semantic_equivalence": true,
+      "speech_act_equivalence": true
+    },
+    {
+      "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "canonical_coverage": true,
+      "evidence": [
+        "'Otherwise, distinguish invariant structure from current mechanism; default from requirement; example from governing rule; observation from command; recommendation from authority.' fabricates four new binary distinctions using terms ('requirement', 'governing rule', 'command', 'authority') absent from the canonical parallel sentence, which lists only a single set of alternatives to 'invariant structure.'",
+        "'The result diagnoses insufficiency, error, ownership ambiguity, misplaced authority, or unsupported mechanism only to the extent established by the observed evidence and stated inference.' is an entirely new sentence with no counterpart anywhere in the canonical entrypoint or finding-contract text, adding new claims about what the review 'diagnoses.'",
+        "These additions elevate the salience of newly introduced categories (authority, governing rule, command, insufficiency, ownership ambiguity) that are not comparably emphasized in the canonical source."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": false,
+      "semantic_equivalence": false,
+      "speech_act_equivalence": true
+    },
+    {
+      "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "canonical_coverage": true,
+      "evidence": [
+        "'For each material instruction, ask, in order:' adds a mandatory sequencing requirement not present in the canonical 'For each material instruction, ask:' — the canonical two questions carry no explicit ordering mandate.",
+        "'persistence or repetition does not authorize the reviewer to resolve them' reframes the canonical claim ('repetition or persistence does not resolve them') into a permission/authorization statement about the reviewer, a subtle addition of scope not present in the source.",
+        "'Placement requires relational judgment across: 1. semantic owner and intended consumer; 2. authority source and scope; 3. precedence and audience; 4. loading behavior and reach.' restructures flowing canonical prose into an enumerated checklist and adds 'reach' to 'loading behavior,' increasing the structural salience of these items relative to the canonical sentence."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": false,
+      "semantic_equivalence": false,
+      "speech_act_equivalence": true
+    },
+    {
+      "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "canonical_coverage": true,
+      "evidence": [
+        "'Investigation must remain bounded to the neighboring context required to establish: 1. semantic owner and intended consumer; 2. authority source, scope, precedence, and audience; 3. loading reach and behavior; 4. causal necessity and consequence.' expands the canonical bounded-investigation list (owner, consumer, loading reach, causal necessity, consequence) to also include authority source, scope, precedence, and audience — items canonical reserves for the separate 'judge placement' diagnostic step, effectively broadening the scope of permitted/required investigation.",
+        "'Similar wording can yield different conclusions at project, role, skill-entrypoint, conditional-reference, adapter, and example layers because ownership and reach differ.' adds an explanatory causal clause not present in the canonical sentence, which states the fact without asserting a reason.",
+        "'Evidence does not become authority merely through persistence, and a preferred rewrite does not prove that existing text is invalid.' introduces a new claim about evidence and authority; canonical only states that persistence of a finding is not itself evidence, a different proposition."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": false,
+      "semantic_equivalence": false,
+      "speech_act_equivalence": true
+    },
+    {
+      "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "canonical_coverage": true,
+      "evidence": [
+        "'Judge placement relative to the text's semantic owner, intended consumer, authority source, scope, precedence, audience, and loading behavior... can warrant different conclusions.' matches canonical wording verbatim with no added justification.",
+        "'Otherwise, distinguish invariant structure from a current mechanism, default, example, observation, or recommendation.' matches the canonical diagnostic sentence verbatim, with no fabricated distinctions.",
+        "Finding-contract obligations list and remediation/authority paragraphs reproduce all canonical elements (stable finding identifier, severity, placement, owner/consumer/audience/scope/precedence/loading reach, protected distinction, causal necessity, evidence/authority source, consequence/confidence/limitations, advisory outcome set, resolved/still open/inapplicable/uncertain states, retained builder and named-owner authority, no self-certification) without addition or omission."
+      ],
+      "forbidden_leakage": [],
+      "salience_control": true,
+      "semantic_equivalence": true,
+      "speech_act_equivalence": true
+    }
+  ],
+  "limitations": "This assessment is advisory pattern-matching against the supplied canonical_role (entrypoint + finding-contract) and rubric only; no external tools, source-control history, or author intent were consulted. Judgments about 'addition' versus 'permissible paraphrase' rest on close textual comparison of parallel sentences across the two canonical source documents and each merged single-file artifact; because all six artifacts restructure two canonical files into one document, many content relocations (e.g., placement of the 'stored outside SKILL.md' caveat, or of the no-finding-result statement) were treated as neutral reorganization rather than semantic drift, since the same information remains present and boundedly scoped elsewhere in the document — only relocations or rewrites that appeared to measurably change prominence or introduce new terms/claims were flagged under salience_control or semantic_equivalence. Three artifacts (1d504763, 5522b147, e0f58b89) retain a literal pointer to 'read [references/finding-contract.md]' despite the referenced content being fully inlined in the same document; this internal inconsistency was treated as evidence but was only weighted toward a negative salience_control finding for 1d504763, since for e0f58b89 no other drift was found and the ambiguity (a real external file may still exist alongside the artifact) was judged insufficient alone to fail speech-act or coverage criteria. No record names, source/domain clues, profile labels, task content, examples, or behavioral heuristics were found in any artifact. A trailing stray '+' character at the end of four artifacts (1d504763, d2eb55ed, 41767db4, 5522b147) was noted as likely formatting noise and not scored as forbidden leakage or a rubric violation. This is advisory evidence only and not a substitute for human acceptance review.\""
+}

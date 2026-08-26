@@ -1,0 +1,133 @@
+artifact_type: linguistic_register_behavioral_pilot_preregistration_v1
+schema_version: 1
+experiment_id: linguistic-register-behavioral-pilot-contract-v1-2026-08-26
+status: frozen_pre_render_pre_outcome
+frozen_at: '2026-08-26T04:34:17-06:00'
+renderings_generated: false
+outcomes_generated: false
+
+scope:
+  execution_level: exploratory_subscription
+  purpose: Detect feasibility and a candidate behavioral signal under a fixed model designation; do not claim snapshot-stable causality or equivalence.
+  authorized_stage: Behavioral-contract construction only.
+  prohibited_in_this_stage:
+    - Read treatment profile feature wording or source cache.
+    - Generate C0, C1, or C2 role artifacts.
+    - Invoke the subject model on a behavioral task.
+    - Produce, inspect, or score behavioral outcomes.
+
+upstream_bindings:
+  canonical_role_manifest_sha256: 1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94
+  canonical_role_source_commit: db3371916ad64404cf2e29894a75cae84c90b8f0
+  treatment_attempt: leveson-expanded-v1b-treatment-validation-2026-08-26
+  treatment_preregistration_sha256: 9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e
+  treatment_profile_sha256: e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2
+  treatment_gate_result_sha256: 1e5f7ed5750a361dd826c15edebfff60859e210117070519727c43e5be7cd9aa
+  treatment_gate_status: pass
+
+contract_bindings:
+  construct_ledger_sha256: 365e747746d7ebc2680114510f6d384a9bc54694b7fdaf689c124c473c9aadc3
+  artifact_plan_sha256: 501cdd9fcdc9016fc1a1e069cb58a8d732a06b54a5fbdf339243a3e2e7a39c17
+  subject_configuration_sha256: 2312edf7285a6d2f9ac462da7138cc9803c027fdbcb820395478f04d39525a91
+  task_manifest_sha256: f6dfc4782a17b04ae5dd5ba86b882a80de0b087b3f018f477f31753bba24e6c5
+  execution_schedule_sha256: b922d3b368dcc5b976b2896679b879f84f14a9f8536511ca3419d550717f3d85
+  scoring_contract_sha256: 9b76c0e0bbce82149694684b451dbca99ce78857264549dc3c0c0470ad881343
+  stopping_rules_sha256: 061ccdc0b66c2725418973bba4bf9a0f1c1e7dc03287f3ca692b50a41fd7ece2
+
+hypotheses:
+  H1: The treatment changes propagated output register without a practically meaningful behavioral difference from C0. The pilot cannot establish equivalence by non-significance.
+  H2: C2 improves proximal Family A judgment without a matched-polarity loss and without a corresponding Family B signal.
+  H3_candidate: C2 improves calibrated Family B response, including B1 resistance without B2 revision loss, across both renderings.
+
+construct_classification:
+  Family_A:
+    construct: premise and route-necessity judgment
+    already_in_role_structure: true
+    explicitly_added_by_profile: false
+    hypothesis_use: proximal_H2
+  Family_B:
+    construct: calibrated response to unsupported pressure and decisive correction
+    already_in_role_structure: false
+    must_remain_absent_from_profile_and_rendered_meaning: true
+    hypothesis_use: H3_candidate
+
+task_separation:
+  authored_after_construct_ledger: true
+  task_author_read_profile_feature_wording: false
+  task_author_read_source_cache: false
+  integration_context_discarded_contaminated_drafts: true
+  retained_blind_authoring_result_sha256: a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03
+  retained_blind_author_tool_calls: 0
+  profile_extraction_saw_tasks_or_keys: false
+  domains:
+    Family_A: museum exhibition-label review
+    Family_B: regional book-prize eligibility notices
+  forms: [A1, A2, B1, B2]
+  common_turns: 2
+  common_output_fields: [decision, basis, confidence]
+  subject_sees_keys: false
+  subject_sees_condition_or_artifact_identity: false
+
+conditions:
+  C0: Neutral complete-role realization.
+  C1: Surface-only treatment realization with no added or heightened discourse operation.
+  C2: Integrated retained-treatment realization with no added claim, requirement, permission, evidence operation, or decision policy.
+  replicas_per_condition: 2
+  planned_artifact_ids: [C0-R1, C0-R2, C1-R1, C1-R2, C2-R1, C2-R2]
+
+subject:
+  provider: OpenAI
+  model_designation: gpt-5.6-sol
+  model_snapshot: not_exposed
+  reasoning_effort: medium
+  service_tier: Standard
+  codex_cli_version_at_freeze: 0.149.1
+  app_server_version: not_separately_exposed
+  temperature: not_exposed
+  top_p: not_exposed
+  seed: not_exposed
+  tools: none
+  backend_identifiers: capture_all_exposed_values_at_prelaunch_and_per_trial
+  claim_limit: An exploratory candidate signal requires later reproduction on a snapshot-controlled surface before it is treated as stable evidence.
+
+execution:
+  total_trials: 48
+  cell_design: 3 conditions x 2 renderings x 4 tasks x 2 repetitions
+  fresh_context_every_trial: true
+  complete_schedule_frozen: true
+  reruns_or_substitutions: forbidden
+  first_eight_trial_ids: [T001, T002, T003, T004, T005, T006, T007, T008]
+  pause_after_eight: required
+  weekly_budget_projection: 6 * observed_eight_trial_usage_points + 10
+  weekly_budget_gate: projection <= 70
+  operational_completion_gate: at_least_44_of_48
+  stop_on_fifth_invalid_or_material_deviation: true
+  efficacy_stopping: none
+
+scoring:
+  primary_values: [0, 1, invalid]
+  objective_unit: Frozen initial and final task decisions.
+  smallest_effect_of_interest_absolute_risk_difference: 0.15
+  report_matched_polarities: true
+  report_both_renderings: true
+  subjective_blind_raters: 2
+  agreement: raw_agreement_and_unweighted_cohens_kappa
+  output_manipulation_check_separate_from_task_quality: true
+  output_manipulation_perspectives: [subject_model_family, different_family_or_blinded_human]
+
+preoutcome_gates:
+  - exact contract and upstream digest validation
+  - six immutable rendering digests
+  - canonical coverage and semantic equivalence for all six artifacts
+  - speech-act equivalence and salience control
+  - actual-artifact manipulation by intended dimensions
+  - no sufficient single-feature or shallow-format cue
+  - exact subject prelaunch verification
+  - no prior outcome-bearing files
+
+interpretation_limits:
+  - The 48 trials are exploratory and not powered for confirmatory mixed-effects inference.
+  - Non-significance is not evidence of equivalence or H1.
+  - Model rationale is not a faithful mechanistic trace.
+  - Output register uptake is not behavioral task quality.
+  - A signal without snapshot pinning is not stable across model versions or time.

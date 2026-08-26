@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          },
+          "canonical_coverage": {
+            "type": "boolean"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "forbidden_leakage": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "salience_control": {
+            "type": "boolean"
+          },
+          "semantic_equivalence": {
+            "type": "boolean"
+          },
+          "speech_act_equivalence": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "canonical_coverage",
+          "semantic_equivalence",
+          "speech_act_equivalence",
+          "salience_control",
+          "forbidden_leakage",
+          "evidence"
+        ],
+        "type": "object"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "type": "array"
+    },
+    "limitations": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifacts",
+    "limitations"
+  ],
+  "type": "object"
+}

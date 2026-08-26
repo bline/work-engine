@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_sha256", "assignments", "limitations"],
+  "properties": {
+    "packet_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "assignments": {
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["anonymous_card_id", "candidate_practice", "confidence", "rationale"],
+        "properties": {
+          "anonymous_card_id": {"enum": ["R01", "R02", "R03", "R04"]},
+          "candidate_practice": {"enum": ["Bayesian model criticism", "system-safety review and causal-boundary analysis", "software-engineering judgment", "neutral professional editing"]},
+          "confidence": {"type": "integer", "minimum": 1, "maximum": 5},
+          "rationale": {"type": "string", "minLength": 20}
+        }
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -12,8 +12,9 @@ import {
 import {
   verifyContextLifecycleEpisode,
 } from "./context-lifecycle-episode.mjs";
+import { normalizeContextTransitionInput } from "./context-input-custody.mjs";
 
-export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 1;
+export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 2;
 
 function text(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -86,6 +87,44 @@ function episodeFromRow(row) {
   return episode;
 }
 
+function inputAdmissionFromRow(row) {
+  if (!row) return null;
+  return freeze({
+    logicalRoleInstanceId: row.logical_role_instance_id,
+    threadId: row.thread_id,
+    bindingRevision: row.binding_revision,
+    transitionRevision: row.transition_revision,
+    status: row.status,
+    reconciliationRevision: row.reconciliation_revision,
+    closedAt: row.closed_at,
+    reopenedAt: row.reopened_at,
+  });
+}
+
+function queuedInputFromRow(row) {
+  if (!row) return null;
+  const input = normalizeContextTransitionInput(
+    parseJson(row.input_json, "stored context transition input"),
+  );
+  if (input.inputRevision !== row.input_revision
+      || input.logicalRoleInstanceId !== row.logical_role_instance_id
+      || input.clientUserMessageId !== row.client_user_message_id) {
+    throw new TypeError("stored context transition input failed its integrity check");
+  }
+  return freeze({
+    queueId: row.queue_id,
+    sequence: row.sequence,
+    transitionRevision: row.transition_revision,
+    status: row.status,
+    input,
+    queuedAt: row.queued_at,
+    releasedAt: row.released_at,
+    delivery: row.delivery_json === null
+      ? null
+      : parseJson(row.delivery_json, "stored context input delivery"),
+  });
+}
+
 const MIGRATION_1 = `
   CREATE TABLE schema_migrations (
     version INTEGER PRIMARY KEY,
@@ -140,6 +179,37 @@ const MIGRATION_1 = `
     FOREIGN KEY(logical_role_instance_id)
       REFERENCES checkpoint_fences(logical_role_instance_id)
   ) STRICT;
+`;
+
+const MIGRATION_2 = `
+  CREATE TABLE context_input_admissions (
+    logical_role_instance_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    transition_revision TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('closed', 'releasing', 'open')),
+    reconciliation_revision TEXT,
+    closed_at TEXT NOT NULL,
+    reopened_at TEXT
+  ) STRICT;
+
+  CREATE TABLE context_input_queue (
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    queue_id TEXT NOT NULL UNIQUE,
+    logical_role_instance_id TEXT NOT NULL,
+    transition_revision TEXT NOT NULL,
+    client_user_message_id TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    input_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('queued', 'releasing', 'released')),
+    queued_at TEXT NOT NULL,
+    released_at TEXT,
+    delivery_json TEXT,
+    UNIQUE(logical_role_instance_id, client_user_message_id)
+  ) STRICT;
+
+  CREATE INDEX context_input_queue_release_order
+    ON context_input_queue(logical_role_instance_id, transition_revision, status, sequence);
 `;
 
 class SqliteAppServerStateStore {
@@ -487,6 +557,307 @@ class SqliteAppServerStateStore {
       return freeze({ status: "committed", currentFence: this.#fence(expected.logicalRoleInstanceId) });
     });
   }
+
+  contextInputAdmission(logicalRoleInstanceId) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input admission role");
+    return inputAdmissionFromRow(this.database.prepare(`
+      SELECT logical_role_instance_id, thread_id, binding_revision,
+             transition_revision, status, reconciliation_revision,
+             closed_at, reopened_at
+      FROM context_input_admissions
+      WHERE logical_role_instance_id = ?
+    `).get(logicalRoleInstanceId));
+  }
+
+  closeContextInputAdmission({
+    logicalRoleInstanceId,
+    threadId,
+    bindingRevision,
+    transitionRevision,
+    closedAt = new Date().toISOString(),
+  }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input admission role");
+    text(threadId, "context input admission thread");
+    positiveInteger(bindingRevision, "context input admission binding revision");
+    text(transitionRevision, "context input admission transition revision");
+    text(closedAt, "context input admission close timestamp");
+    if (Number.isNaN(Date.parse(closedAt))) {
+      throw new TypeError("context input admission close timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const existing = this.contextInputAdmission(logicalRoleInstanceId);
+      if (existing && existing.status !== "open") {
+        if (existing.threadId === threadId
+            && existing.bindingRevision === bindingRevision
+            && existing.transitionRevision === transitionRevision) {
+          return freeze({ status: "replayed", admission: existing });
+        }
+        throw new TypeError("context input admission is already closed by another transition");
+      }
+      this.database.prepare(`
+        INSERT INTO context_input_admissions (
+          logical_role_instance_id, thread_id, binding_revision,
+          transition_revision, status, reconciliation_revision,
+          closed_at, reopened_at
+        ) VALUES (?, ?, ?, ?, 'closed', NULL, ?, NULL)
+        ON CONFLICT(logical_role_instance_id) DO UPDATE SET
+          thread_id = excluded.thread_id,
+          binding_revision = excluded.binding_revision,
+          transition_revision = excluded.transition_revision,
+          status = 'closed',
+          reconciliation_revision = NULL,
+          closed_at = excluded.closed_at,
+          reopened_at = NULL
+      `).run(
+        logicalRoleInstanceId,
+        threadId,
+        bindingRevision,
+        transitionRevision,
+        closedAt,
+      );
+      return freeze({
+        status: "closed",
+        admission: this.contextInputAdmission(logicalRoleInstanceId),
+      });
+    });
+  }
+
+  queueContextInput(value, { queuedAt = new Date().toISOString() } = {}) {
+    this.#assertOpen();
+    const input = normalizeContextTransitionInput(value);
+    text(queuedAt, "context input queue timestamp");
+    if (Number.isNaN(Date.parse(queuedAt))) {
+      throw new TypeError("context input queue timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(input.logicalRoleInstanceId);
+      if (!admission || admission.status === "open") return rejected("admission_open");
+      if (admission.threadId !== input.threadId
+          || admission.bindingRevision !== input.bindingRevision) {
+        return rejected("stale_runtime_binding");
+      }
+      const existing = this.database.prepare(`
+        SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+               client_user_message_id, input_revision, input_json, status,
+               queued_at, released_at, delivery_json
+        FROM context_input_queue
+        WHERE logical_role_instance_id = ? AND client_user_message_id = ?
+      `).get(input.logicalRoleInstanceId, input.clientUserMessageId);
+      if (existing) {
+        if (existing.input_revision !== input.inputRevision
+            || existing.transition_revision !== admission.transitionRevision) {
+          throw new TypeError("context input client message id was reused for different input");
+        }
+        return freeze({ status: "replayed", item: queuedInputFromRow(existing) });
+      }
+      const queueId = `context-input:${input.inputRevision.slice("sha256:".length)}`;
+      this.database.prepare(`
+        INSERT INTO context_input_queue (
+          queue_id, logical_role_instance_id, transition_revision,
+          client_user_message_id, input_revision, input_json, status,
+          queued_at, released_at, delivery_json
+        ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, NULL, NULL)
+      `).run(
+        queueId,
+        input.logicalRoleInstanceId,
+        admission.transitionRevision,
+        input.clientUserMessageId,
+        input.inputRevision,
+        JSON.stringify(input),
+        queuedAt,
+      );
+      const row = this.database.prepare(`
+        SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+               client_user_message_id, input_revision, input_json, status,
+               queued_at, released_at, delivery_json
+        FROM context_input_queue WHERE queue_id = ?
+      `).get(queueId);
+      return freeze({ status: "queued", item: queuedInputFromRow(row) });
+    });
+  }
+
+  pendingContextInputs({ logicalRoleInstanceId, transitionRevision = null }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input queue role");
+    if (transitionRevision !== null) {
+      text(transitionRevision, "context input queue transition revision");
+    }
+    const sql = `
+      SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+             client_user_message_id, input_revision, input_json, status,
+             queued_at, released_at, delivery_json
+      FROM context_input_queue
+      WHERE logical_role_instance_id = ?
+        AND status != 'released'
+        ${transitionRevision === null ? "" : "AND transition_revision = ?"}
+      ORDER BY sequence
+    `;
+    const rows = transitionRevision === null
+      ? this.database.prepare(sql).all(logicalRoleInstanceId)
+      : this.database.prepare(sql).all(logicalRoleInstanceId, transitionRevision);
+    return freeze(rows.map(queuedInputFromRow));
+  }
+
+  beginContextInputRelease({
+    logicalRoleInstanceId,
+    transitionRevision,
+    reconciliationRevision,
+  }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input release role");
+    text(transitionRevision, "context input release transition revision");
+    text(reconciliationRevision, "context input release reconciliation revision");
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(logicalRoleInstanceId);
+      if (!admission || admission.transitionRevision !== transitionRevision) {
+        return rejected("transition_mismatch", admission);
+      }
+      if (admission.status === "open") {
+        if (admission.reconciliationRevision !== reconciliationRevision) {
+          return rejected("reconciliation_mismatch", admission);
+        }
+        return freeze({ status: "replayed", admission });
+      }
+      if (admission.reconciliationRevision !== null
+          && admission.reconciliationRevision !== reconciliationRevision) {
+        return rejected("reconciliation_mismatch", admission);
+      }
+      this.database.prepare(`
+        UPDATE context_input_admissions
+        SET status = 'releasing', reconciliation_revision = ?
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+      `).run(reconciliationRevision, logicalRoleInstanceId, transitionRevision);
+      return freeze({
+        status: admission.status === "releasing" ? "resuming" : "releasing",
+        admission: this.contextInputAdmission(logicalRoleInstanceId),
+      });
+    });
+  }
+
+  nextContextInputForRelease({ logicalRoleInstanceId, transitionRevision }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input release role");
+    text(transitionRevision, "context input release transition revision");
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(logicalRoleInstanceId);
+      if (!admission || admission.status !== "releasing"
+          || admission.transitionRevision !== transitionRevision) {
+        throw new TypeError("context input release requires the active releasing admission");
+      }
+      const row = this.database.prepare(`
+        SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+               client_user_message_id, input_revision, input_json, status,
+               queued_at, released_at, delivery_json
+        FROM context_input_queue
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status IN ('queued', 'releasing')
+        ORDER BY sequence LIMIT 1
+      `).get(logicalRoleInstanceId, transitionRevision);
+      if (!row) return null;
+      if (row.status === "queued") {
+        this.database.prepare(`
+          UPDATE context_input_queue SET status = 'releasing'
+          WHERE queue_id = ? AND status = 'queued'
+        `).run(row.queue_id);
+        row.status = "releasing";
+      }
+      return queuedInputFromRow(row);
+    });
+  }
+
+  completeContextInputRelease({
+    queueId,
+    inputRevision,
+    delivery,
+    releasedAt = new Date().toISOString(),
+  }) {
+    this.#assertOpen();
+    text(queueId, "context input queue id");
+    text(inputRevision, "context input revision");
+    if (!delivery || typeof delivery !== "object" || Array.isArray(delivery)) {
+      throw new TypeError("context input delivery receipt must be an object");
+    }
+    text(releasedAt, "context input release timestamp");
+    if (Number.isNaN(Date.parse(releasedAt))) {
+      throw new TypeError("context input release timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const row = this.database.prepare(`
+        SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+               client_user_message_id, input_revision, input_json, status,
+               queued_at, released_at, delivery_json
+        FROM context_input_queue WHERE queue_id = ?
+      `).get(queueId);
+      if (!row || row.input_revision !== inputRevision) {
+        return rejected("queued_input_mismatch");
+      }
+      if (row.status === "released") {
+        if (row.delivery_json !== JSON.stringify(delivery)) {
+          throw new TypeError("released context input has a different delivery receipt");
+        }
+        return freeze({ status: "replayed", item: queuedInputFromRow(row) });
+      }
+      if (row.status !== "releasing") {
+        throw new TypeError("context input must be claimed before release completion");
+      }
+      this.database.prepare(`
+        UPDATE context_input_queue
+        SET status = 'released', released_at = ?, delivery_json = ?
+        WHERE queue_id = ? AND status = 'releasing'
+      `).run(releasedAt, JSON.stringify(delivery), queueId);
+      const completed = this.database.prepare(`
+        SELECT sequence, queue_id, logical_role_instance_id, transition_revision,
+               client_user_message_id, input_revision, input_json, status,
+               queued_at, released_at, delivery_json
+        FROM context_input_queue WHERE queue_id = ?
+      `).get(queueId);
+      return freeze({ status: "released", item: queuedInputFromRow(completed) });
+    });
+  }
+
+  reopenContextInputAdmission({
+    logicalRoleInstanceId,
+    transitionRevision,
+    reconciliationRevision,
+    reopenedAt = new Date().toISOString(),
+  }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input admission role");
+    text(transitionRevision, "context input admission transition revision");
+    text(reconciliationRevision, "context input admission reconciliation revision");
+    text(reopenedAt, "context input admission reopen timestamp");
+    if (Number.isNaN(Date.parse(reopenedAt))) {
+      throw new TypeError("context input admission reopen timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(logicalRoleInstanceId);
+      if (!admission || admission.transitionRevision !== transitionRevision
+          || admission.reconciliationRevision !== reconciliationRevision) {
+        return rejected("transition_or_reconciliation_mismatch", admission);
+      }
+      if (admission.status === "open") return freeze({ status: "replayed", admission });
+      if (admission.status !== "releasing") {
+        return rejected("release_not_started", admission);
+      }
+      const pending = this.database.prepare(`
+        SELECT COUNT(*) AS count FROM context_input_queue
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status != 'released'
+      `).get(logicalRoleInstanceId, transitionRevision).count;
+      if (Number(pending) !== 0) return rejected("queued_inputs_pending", admission);
+      this.database.prepare(`
+        UPDATE context_input_admissions
+        SET status = 'open', reopened_at = ?
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+      `).run(reopenedAt, logicalRoleInstanceId, transitionRevision);
+      return freeze({
+        status: "open",
+        admission: this.contextInputAdmission(logicalRoleInstanceId),
+      });
+    });
+  }
 }
 
 function migrate(database) {
@@ -504,6 +875,13 @@ function migrate(database) {
         INSERT INTO schema_migrations(version, applied_at) VALUES (1, ?)
       `).run(new Date().toISOString());
       database.exec("PRAGMA user_version = 1");
+    }
+    if (current < 2) {
+      database.exec(MIGRATION_2);
+      database.prepare(`
+        INSERT INTO schema_migrations(version, applied_at) VALUES (2, ?)
+      `).run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 2");
     }
     const versions = database.prepare(`
       SELECT version FROM schema_migrations ORDER BY version

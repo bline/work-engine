@@ -9,6 +9,10 @@ import { normalizeCodexLifecycleNotification } from "./codex-lifecycle-notificat
 
 export const CONTEXT_TRANSITION_LEASE_SCHEMA_VERSION = 1;
 export const CONTEXT_TRANSITION_LEASE_TYPE = "work-engine.context-transition-lease";
+export const CONTEXT_TRANSITION_PREPARATION_SCHEMA_VERSION = 1;
+export const CONTEXT_TRANSITION_PREPARATION_TYPE = "work-engine.context-transition-preparation";
+export const CONTEXT_WINDOW_IDENTITY_RECEIPT_SCHEMA_VERSION = 1;
+export const CONTEXT_WINDOW_IDENTITY_RECEIPT_TYPE = "work-engine.context-window-identity-receipt";
 export const CONTEXT_RECONCILIATION_RECEIPT_SCHEMA_VERSION = 1;
 export const CONTEXT_RECONCILIATION_RECEIPT_TYPE = "work-engine.context-reconciliation-receipt";
 
@@ -168,6 +172,84 @@ export function compileContextRetirementDirective(lease) {
   ].join("\n");
 }
 
+export function verifyContextTransitionPreparation(value) {
+  try {
+    record(value, "context transition preparation");
+    const { preparationRevision, ...body } = value;
+    if (value.schemaVersion !== CONTEXT_TRANSITION_PREPARATION_SCHEMA_VERSION
+        || value.type !== CONTEXT_TRANSITION_PREPARATION_TYPE
+        || revision(body) !== preparationRevision) return false;
+    const subject = record(value.subject, "context transition preparation subject");
+    text(subject.logicalRoleInstanceId, "context transition preparation role");
+    text(subject.threadId, "context transition preparation thread");
+    if (!Number.isSafeInteger(subject.bindingRevision) || subject.bindingRevision < 1) return false;
+    timestamp(value.preparedAt, "context transition preparation timestamp");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function compileContextWindowIdentityDirective(preparation) {
+  if (!verifyContextTransitionPreparation(preparation)) {
+    throw new TypeError("context-window identity directive requires an integrity-valid preparation");
+  }
+  return [
+    "Context lifecycle control directive: attest_context_window_identity.",
+    "Perform no domain work and invoke no tools.",
+    "Return exactly one compact JSON object and no Markdown with these fields:",
+    `{"schema_version":1,"type":"${CONTEXT_WINDOW_IDENTITY_RECEIPT_TYPE}","preparation_revision":"${preparation.preparationRevision}","logical_role_instance_id":"${preparation.subject.logicalRoleInstanceId}","thread_id":"${preparation.subject.threadId}","first_context_window_id":"<runtime value>","current_context_window_id":"<runtime value>","previous_context_window_id":"<runtime value or null>"}`,
+    "Copy the runtime context-window values exactly. Use JSON null only when previous_context_window_id is absent.",
+  ].join("\n");
+}
+
+const IDENTITY_RECEIPT_FIELDS = [
+  "schema_version", "type", "preparation_revision", "logical_role_instance_id",
+  "thread_id", "first_context_window_id", "current_context_window_id",
+  "previous_context_window_id",
+];
+
+export function validateContextWindowIdentityReceipt(outputText, { preparation }) {
+  if (!verifyContextTransitionPreparation(preparation)) {
+    throw new TypeError("context-window identity validation requires an integrity-valid preparation");
+  }
+  const reasons = [];
+  let receipt;
+  try {
+    receipt = JSON.parse(text(outputText, "context-window identity receipt"));
+    record(receipt, "context-window identity receipt");
+  } catch {
+    return freeze({ status: "unresolved", reasons: ["malformed_receipt"], receipt: null });
+  }
+  if (!equalCanonical(Object.keys(receipt).sort(), [...IDENTITY_RECEIPT_FIELDS].sort())) {
+    reasons.push("unsupported_receipt_shape");
+  }
+  for (const [field, expected] of [
+    ["schema_version", CONTEXT_WINDOW_IDENTITY_RECEIPT_SCHEMA_VERSION],
+    ["type", CONTEXT_WINDOW_IDENTITY_RECEIPT_TYPE],
+    ["preparation_revision", preparation.preparationRevision],
+    ["logical_role_instance_id", preparation.subject.logicalRoleInstanceId],
+    ["thread_id", preparation.subject.threadId],
+  ]) {
+    if (receipt[field] !== expected) reasons.push(`mismatched_${field}`);
+  }
+  for (const field of ["first_context_window_id", "current_context_window_id"]) {
+    if (typeof receipt[field] !== "string" || receipt[field].trim() === "") {
+      reasons.push(`missing_${field}`);
+    }
+  }
+  if (receipt.previous_context_window_id !== null
+      && (typeof receipt.previous_context_window_id !== "string"
+        || receipt.previous_context_window_id.trim() === "")) {
+    reasons.push("invalid_previous_context_window_id");
+  }
+  return freeze({
+    status: reasons.length === 0 ? "accepted" : "unresolved",
+    reasons: [...new Set(reasons)],
+    receipt: freeze(receipt),
+  });
+}
+
 export function compileContextReconciliationDirective(lease) {
   verifyContextTransitionLease(lease);
   return [
@@ -308,6 +390,12 @@ export function verifyContextTransitionLease(value) {
       "sourceRevision", "authorityRevision", "checkpointRevision",
       "publicationLedgerRevision", "readinessLedgerRevision",
     ]) shaRevision(subject[field], `context transition lease ${field}`);
+    if (subject.preparedContextRevision != null) {
+      shaRevision(
+        subject.preparedContextRevision,
+        "context transition lease prepared context revision",
+      );
+    }
     timestamp(value.acquiredAt, "context transition lease acquiredAt");
     return true;
   } catch {
@@ -329,6 +417,56 @@ export class InMemoryContextTransitionLeaseGate {
     const current = prior.then(operation, operation);
     this.tails.set(logicalRoleInstanceId, current.catch(() => {}));
     return current;
+  }
+
+  beginPreparation(
+    { logicalRoleInstanceId, threadId, bindingRevision },
+    { closeAdmission = null } = {},
+  ) {
+    text(logicalRoleInstanceId, "context transition preparation role");
+    text(threadId, "context transition preparation thread");
+    if (!Number.isSafeInteger(bindingRevision) || bindingRevision < 1) {
+      throw new TypeError("context transition preparation bindingRevision must be positive");
+    }
+    if (closeAdmission !== null && typeof closeAdmission !== "function") {
+      throw new TypeError("context transition admission closer must be a function or null");
+    }
+    return this.#withRoleLock(logicalRoleInstanceId, async () => {
+      if (this.states.has(logicalRoleInstanceId)) {
+        throw new ContextTransitionLeaseError(
+          "preparation_conflict",
+          "a context transition subject already exists for this role",
+        );
+      }
+      const body = {
+        schemaVersion: CONTEXT_TRANSITION_PREPARATION_SCHEMA_VERSION,
+        type: CONTEXT_TRANSITION_PREPARATION_TYPE,
+        subject: { logicalRoleInstanceId, threadId, bindingRevision },
+        preparedAt: timestamp(this.now(), "context transition preparation timestamp"),
+      };
+      const preparation = freeze({ ...body, preparationRevision: revision(body) });
+      this.states.set(logicalRoleInstanceId, {
+        phase: "preparing",
+        preparation,
+        identityAttestation: null,
+        fence: null,
+        lease: null,
+        publication: null,
+        ledgerEntry: null,
+        delivery: null,
+        rehydration: null,
+        revocationReason: null,
+      });
+      this.threadRoles.set(threadId, logicalRoleInstanceId);
+      try {
+        if (closeAdmission) await closeAdmission(preparation);
+      } catch (error) {
+        this.states.delete(logicalRoleInstanceId);
+        this.threadRoles.delete(threadId);
+        throw error;
+      }
+      return freeze({ status: "preparing", preparation });
+    });
   }
 
   acquire({ publication, ledgerEntry, previousLedgerEntry = null, expectedFence }) {
@@ -364,6 +502,7 @@ export class InMemoryContextTransitionLeaseGate {
           checkpointRevision: fence.publicationRevision,
           publicationLedgerRevision: fence.ledgerRevision,
           readinessLedgerRevision: readinessEntry.entryRevision,
+          preparedContextRevision: null,
         },
         acquiredAt: readinessEntry.recordedAt,
       };
@@ -384,12 +523,100 @@ export class InMemoryContextTransitionLeaseGate {
     });
   }
 
+  promotePreparation({
+    preparation,
+    publication,
+    ledgerEntry,
+    previousLedgerEntry = null,
+    expectedFence,
+  }) {
+    if (!verifyContextTransitionPreparation(preparation)) {
+      throw new TypeError("transition promotion requires an integrity-valid preparation");
+    }
+    const fence = normalizeFence(expectedFence);
+    return this.#withRoleLock(preparation.subject.logicalRoleInstanceId, () => {
+      const state = this.states.get(preparation.subject.logicalRoleInstanceId);
+      if (!state || state.phase !== "identity_attested"
+          || state.preparation.preparationRevision !== preparation.preparationRevision) {
+        throw new ContextTransitionLeaseError(
+          "invalid_preparation_phase",
+          "transition promotion requires the active identity-attested preparation",
+        );
+      }
+      for (const field of ["logicalRoleInstanceId", "threadId", "bindingRevision"]) {
+        if (fence[field] !== preparation.subject[field]) {
+          throw new ContextTransitionLeaseError(
+            "preparation_fence_mismatch",
+            `transition promotion fence mismatches ${field}`,
+          );
+        }
+      }
+      if (fence.predecessorContextWindowId
+          !== state.identityAttestation.receipt.current_context_window_id) {
+        throw new ContextTransitionLeaseError(
+          "predecessor_identity_mismatch",
+          "transition promotion predecessor does not match the fenced target-model attestation",
+        );
+      }
+      verifyPublication(publication, fence);
+      verifyPublicationLedger(ledgerEntry, previousLedgerEntry, fence);
+      const readinessEntry = appendEvent(
+        ledgerEntry,
+        fence,
+        this.now,
+        "readiness_recorded",
+        "accepted",
+        [
+          preparation.preparationRevision,
+          fence.sourceRevision,
+          fence.authorityRevision,
+          fence.publicationRevision,
+        ],
+        {
+          checkpointRevision: fence.publicationRevision,
+          predecessorContextWindowId: fence.predecessorContextWindowId,
+        },
+      );
+      const body = {
+        schemaVersion: CONTEXT_TRANSITION_LEASE_SCHEMA_VERSION,
+        type: CONTEXT_TRANSITION_LEASE_TYPE,
+        subject: {
+          logicalRoleInstanceId: fence.logicalRoleInstanceId,
+          threadId: fence.threadId,
+          predecessorContextWindowId: fence.predecessorContextWindowId,
+          bindingRevision: fence.bindingRevision,
+          sourceRevision: fence.sourceRevision,
+          authorityRevision: fence.authorityRevision,
+          checkpointRevision: fence.publicationRevision,
+          publicationLedgerRevision: fence.ledgerRevision,
+          readinessLedgerRevision: readinessEntry.entryRevision,
+          preparedContextRevision: state.contextSnapshot.contextRevision,
+        },
+        acquiredAt: readinessEntry.recordedAt,
+      };
+      const lease = freeze({ ...body, leaseRevision: revision(body) });
+      const currentFence = freeze({ ...fence, ledgerRevision: readinessEntry.entryRevision });
+      Object.assign(state, {
+        phase: "ready",
+        fence: currentFence,
+        lease,
+        publication,
+        ledgerEntry: readinessEntry,
+      });
+      return freeze({ status: "acquired", lease, ledgerEntry: readinessEntry, currentFence });
+    });
+  }
+
   snapshot(logicalRoleInstanceId) {
     const state = this.states.get(logicalRoleInstanceId);
     if (!state) return null;
     return freeze({
       phase: state.phase,
-      fence: { ...state.fence },
+      preparation: state.preparation ?? null,
+      identityAttestation: state.identityAttestation ?? null,
+      contextSnapshot: state.contextSnapshot ?? null,
+      pendingContextSnapshot: state.pendingContextSnapshot ?? null,
+      fence: state.fence === null ? null : { ...state.fence },
       lease: state.lease,
       ledgerEntry: state.ledgerEntry,
       delivery: state.delivery,
@@ -428,6 +655,7 @@ export class InMemoryContextTransitionLeaseGate {
     logicalRoleInstanceId,
     text: turnText,
     transitionLease = null,
+    transitionPreparation = null,
     skills = [],
     toolBridge = null,
     requestContext = null,
@@ -436,16 +664,58 @@ export class InMemoryContextTransitionLeaseGate {
     if (typeof deliver !== "function") throw new TypeError("turn admission requires delivery");
     return this.#withRoleLock(logicalRoleInstanceId, async () => {
       const state = this.states.get(logicalRoleInstanceId);
+      if (transitionLease && transitionPreparation) {
+        throw new ContextTransitionLeaseError(
+          "ambiguous_transition_control",
+          "a turn cannot use both transition preparation and transition lease authority",
+        );
+      }
+      if (transitionPreparation) {
+        if (!state || state.phase !== "preparing"
+            || !verifyContextTransitionPreparation(transitionPreparation)
+            || transitionPreparation.preparationRevision
+              !== state.preparation.preparationRevision) {
+          throw new ContextTransitionLeaseError(
+            "invalid_transition_preparation",
+            "identity attestation requires the active transition preparation",
+          );
+        }
+        if (skills.length !== 0 || toolBridge !== null || requestContext !== null
+            || turnText !== compileContextWindowIdentityDirective(state.preparation)) {
+          state.phase = "preparation_failed";
+          throw new ContextTransitionLeaseError(
+            "non_sterile_identity_attestation",
+            "identity attestation must contain only the exact lifecycle directive",
+          );
+        }
+        state.phase = "identity_delivering";
+        try {
+          const delivery = await this.#deliverWithPermit(logicalRoleInstanceId, deliver);
+          state.phase = "identity_requested";
+          state.delivery = freeze({
+            threadId: text(delivery.threadId, "identity attestation delivery thread"),
+            turnId: text(delivery.turnId, "identity attestation delivery turn"),
+          });
+          return delivery;
+        } catch (error) {
+          state.phase = "preparation_failed";
+          throw error;
+        }
+      }
       if (!transitionLease) {
         if (state?.phase === "ready") this.#revokeReady(state, "competing_domain_turn");
         else if (state && [
+          "preparing", "identity_delivering", "identity_requested", "identity_attested",
+          "context_delta_observed",
           "delivering", "actuation_requested", "transition_signaled",
           "rehydrating", "rehydration_requested", "unreconciled",
         ].includes(state.phase)) {
           throw new ContextTransitionLeaseError(
             "transition_in_flight",
             "domain turn must remain outside the retiring revision",
-            { leaseRevision: state.lease.leaseRevision },
+            state.lease
+              ? { leaseRevision: state.lease.leaseRevision }
+              : { preparationRevision: state.preparation.preparationRevision },
           );
         }
         return this.#deliverWithPermit(logicalRoleInstanceId, deliver);
@@ -537,6 +807,139 @@ export class InMemoryContextTransitionLeaseGate {
         state.fence = freeze({ ...state.fence, ledgerRevision: failureEntry.entryRevision });
         throw error;
       }
+    });
+  }
+
+  recordContextWindowIdentity({ preparation, validation, contextSnapshot = null }) {
+    if (!verifyContextTransitionPreparation(preparation)) {
+      throw new TypeError("identity recording requires an integrity-valid preparation");
+    }
+    return this.#withRoleLock(preparation.subject.logicalRoleInstanceId, () => {
+      const state = this.states.get(preparation.subject.logicalRoleInstanceId);
+      if (!state || state.phase !== "identity_requested"
+          || state.preparation.preparationRevision !== preparation.preparationRevision) {
+        throw new ContextTransitionLeaseError(
+          "invalid_preparation_phase",
+          "identity receipt requires the active requested attestation",
+        );
+      }
+      if (validation?.status !== "accepted") {
+        state.phase = "preparation_failed";
+        state.identityAttestation = freeze({
+          status: "unresolved",
+          reasons: validation?.reasons ?? ["missing_validation"],
+          receipt: validation?.receipt ?? null,
+        });
+        return freeze({ status: "unresolved", validation: state.identityAttestation });
+      }
+      if (!contextSnapshot || contextSnapshot.threadId !== preparation.subject.threadId) {
+        state.phase = "preparation_failed";
+        throw new ContextTransitionLeaseError(
+          "invalid_context_snapshot",
+          "identity attestation requires a complete snapshot of the fenced thread",
+        );
+      }
+      shaRevision(contextSnapshot.contextRevision, "prepared thread context revision");
+      state.phase = "identity_attested";
+      state.identityAttestation = freeze({
+        status: "accepted",
+        reasons: [],
+        receipt: validation.receipt,
+      });
+      state.contextSnapshot = freeze(structuredClone(contextSnapshot));
+      return freeze({ status: "attested", validation: state.identityAttestation });
+    });
+  }
+
+  confirmPreparedContext({ lease, contextSnapshot }) {
+    if (!verifyContextTransitionLease(lease)) {
+      throw new TypeError("prepared-context confirmation requires an integrity-valid lease");
+    }
+    return this.#withRoleLock(lease.subject.logicalRoleInstanceId, () => {
+      const state = this.states.get(lease.subject.logicalRoleInstanceId);
+      if (!state || state.phase !== "ready" || state.lease.leaseRevision !== lease.leaseRevision) {
+        throw new ContextTransitionLeaseError(
+          "invalid_transition_phase",
+          "prepared-context confirmation requires the active ready lease",
+        );
+      }
+      if (lease.subject.preparedContextRevision === null) {
+        return freeze({ status: "not_required", contextSnapshot: null });
+      }
+      if (!contextSnapshot || contextSnapshot.threadId !== lease.subject.threadId) {
+        throw new ContextTransitionLeaseError(
+          "invalid_context_snapshot",
+          "final context snapshot does not match the leased thread",
+        );
+      }
+      shaRevision(contextSnapshot.contextRevision, "final thread context revision");
+      if (contextSnapshot.contextRevision !== lease.subject.preparedContextRevision) {
+        const deltaEntry = appendEvent(
+          state.ledgerEntry,
+          state.fence,
+          this.now,
+          "readiness_recorded",
+          "rejected",
+          [
+            lease.leaseRevision,
+            lease.subject.preparedContextRevision,
+            contextSnapshot.contextRevision,
+          ],
+          {
+            reason: "context_delta_after_preparation",
+            preparedContextRevision: lease.subject.preparedContextRevision,
+            currentContextRevision: contextSnapshot.contextRevision,
+          },
+        );
+        state.phase = "context_delta_observed";
+        state.pendingContextSnapshot = freeze(structuredClone(contextSnapshot));
+        state.ledgerEntry = deltaEntry;
+        state.fence = freeze({ ...state.fence, ledgerRevision: deltaEntry.entryRevision });
+        state.revocationReason = "context_delta_after_preparation";
+        throw new ContextTransitionLeaseError(
+          "context_snapshot_changed",
+          "thread context changed after checkpoint preparation; compile the captured delta before retirement",
+          {
+            preparedContextRevision: lease.subject.preparedContextRevision,
+            currentContextRevision: contextSnapshot.contextRevision,
+          },
+        );
+      }
+      state.contextSnapshotConfirmedAt = timestamp(
+        this.now(),
+        "prepared-context confirmation timestamp",
+      );
+      return freeze({ status: "confirmed", contextSnapshot: state.contextSnapshot });
+    });
+  }
+
+  adoptContextDeltaForRecompilation({ lease }) {
+    if (!verifyContextTransitionLease(lease)) {
+      throw new TypeError("context-delta adoption requires an integrity-valid lease");
+    }
+    return this.#withRoleLock(lease.subject.logicalRoleInstanceId, () => {
+      const state = this.states.get(lease.subject.logicalRoleInstanceId);
+      if (!state || state.phase !== "context_delta_observed"
+          || state.lease.leaseRevision !== lease.leaseRevision
+          || !state.pendingContextSnapshot) {
+        throw new ContextTransitionLeaseError(
+          "invalid_transition_phase",
+          "context-delta adoption requires the captured post-preparation delta",
+        );
+      }
+      state.phase = "identity_attested";
+      state.contextSnapshot = state.pendingContextSnapshot;
+      state.pendingContextSnapshot = null;
+      state.lease = null;
+      state.publication = null;
+      state.revocationReason = null;
+      return freeze({
+        status: "recompile_required",
+        preparation: state.preparation,
+        identityAttestation: state.identityAttestation,
+        contextSnapshot: state.contextSnapshot,
+        previousLedgerEntry: state.ledgerEntry,
+      });
     });
   }
 
@@ -639,7 +1042,9 @@ export class InMemoryContextTransitionLeaseGate {
     return this.#withRoleLock(lease.subject.logicalRoleInstanceId, () => {
       const state = this.states.get(lease.subject.logicalRoleInstanceId);
       if (!state || state.lease.leaseRevision !== lease.leaseRevision
-          || ["ready", "revoked", "failed", "reconciled", "unreconciled"].includes(state.phase)) {
+          || [
+            "ready", "context_delta_observed", "revoked", "failed", "reconciled", "unreconciled",
+          ].includes(state.phase)) {
         return freeze({ status: "not_recorded" });
       }
       const entry = appendEvent(
@@ -667,14 +1072,16 @@ export class InMemoryContextTransitionLeaseGate {
     if (!logicalRoleInstanceId) return Promise.resolve(freeze({ allowed: true }));
     return this.#withRoleLock(logicalRoleInstanceId, () => {
       const state = this.states.get(logicalRoleInstanceId);
-      if (!state || ["revoked", "failed", "reconciled"].includes(state.phase)) {
+      if (!state || ["preparation_failed", "revoked", "failed", "reconciled"].includes(state.phase)) {
         return freeze({ allowed: true });
       }
       if (state.phase === "ready") this.#revokeReady(state, "competing_tool_effect");
       return freeze({
         allowed: false,
         reason: state.phase === "revoked" ? "transition_lease_revoked" : "transition_in_flight",
-        leaseRevision: state.lease.leaseRevision,
+        ...(state.lease
+          ? { leaseRevision: state.lease.leaseRevision }
+          : { preparationRevision: state.preparation.preparationRevision }),
       });
     });
   }
@@ -691,13 +1098,17 @@ export class InMemoryContextTransitionLeaseGate {
       const state = this.states.get(logicalRoleInstanceId);
       if (state?.phase === "ready") this.#revokeReady(state, "runtime_binding_change");
       else if (state && [
+        "preparing", "identity_delivering", "identity_requested", "identity_attested",
+        "context_delta_observed",
         "delivering", "actuation_requested", "transition_signaled",
         "rehydrating", "rehydration_requested", "unreconciled",
       ].includes(state.phase)) {
         throw new ContextTransitionLeaseError(
           "transition_in_flight",
           "runtime binding cannot change while context transition actuation is in flight",
-          { leaseRevision: state.lease.leaseRevision },
+          state.lease
+            ? { leaseRevision: state.lease.leaseRevision }
+            : { preparationRevision: state.preparation.preparationRevision },
         );
       }
       return bind();
@@ -706,24 +1117,83 @@ export class InMemoryContextTransitionLeaseGate {
 }
 
 export class ContextTransitionLeaseRuntime {
-  constructor({ gate, adapter }) {
+  constructor({ gate, adapter, inputCustody = null }) {
     if (!gate || typeof gate.acquire !== "function" || typeof gate.runTurnAdmission !== "function") {
       throw new TypeError("context transition runtime requires a transition lease gate");
     }
     if (!adapter || typeof adapter.deliverTurn !== "function") {
       throw new TypeError("context transition runtime requires an App Server adapter");
     }
+    if (inputCustody !== null && (typeof inputCustody.closeAdmission !== "function"
+        || typeof inputCustody.admission !== "function"
+        || typeof inputCustody.releaseAfterReconciliation !== "function")) {
+      throw new TypeError("context transition runtime input custody is incomplete");
+    }
     this.gate = gate;
     this.adapter = adapter;
+    this.inputCustody = inputCustody;
   }
 
   acquire(input) {
     return this.gate.acquire(input);
   }
 
-  deliverRetirementControlTurn({ role, lease, clientUserMessageId }) {
+  beginPreparation(input) {
+    return this.gate.beginPreparation(input, this.inputCustody === null ? {} : {
+      closeAdmission: (preparation) => this.inputCustody.closeAdmission({
+        logicalRoleInstanceId: preparation.subject.logicalRoleInstanceId,
+        threadId: preparation.subject.threadId,
+        bindingRevision: preparation.subject.bindingRevision,
+        transitionRevision: preparation.preparationRevision,
+      }),
+    });
+  }
+
+  async attestContextWindow({ role, preparation, clientUserMessageId, signal }) {
+    if (!verifyContextTransitionPreparation(preparation)) {
+      throw new TypeError("context-window attestation requires an integrity-valid preparation");
+    }
+    const delivery = await this.adapter.deliverTurn({
+      role,
+      text: compileContextWindowIdentityDirective(preparation),
+      clientUserMessageId,
+      skills: [],
+      toolBridge: null,
+      requestContext: null,
+      transitionPreparation: preparation,
+    });
+    const completion = await this.adapter.waitForTurnCompletion({ ...delivery, signal });
+    const validation = validateContextWindowIdentityReceipt(completion.outputText, {
+      preparation,
+    });
+    const contextSnapshot = validation.status === "accepted"
+      ? await this.adapter.readThreadEffectiveContextSnapshot({ threadId: delivery.threadId })
+      : null;
+    const attestation = await this.gate.recordContextWindowIdentity({
+      preparation,
+      validation,
+      contextSnapshot,
+    });
+    return freeze({ delivery, completion, validation, contextSnapshot, attestation });
+  }
+
+  promotePreparation(input) {
+    return this.gate.promotePreparation(input);
+  }
+
+  adoptContextDeltaForRecompilation(input) {
+    return this.gate.adoptContextDeltaForRecompilation(input);
+  }
+
+  async deliverRetirementControlTurn({ role, lease, clientUserMessageId }) {
     if (!verifyContextTransitionLease(lease)) {
       throw new TypeError("retirement control turn requires an integrity-valid lease");
+    }
+    if (lease.subject.preparedContextRevision != null) {
+      const contextSnapshot = await this.adapter.readThreadEffectiveContextSnapshot({
+        threadId: lease.subject.threadId,
+      });
+      await this.gate.confirmPreparedContext({ lease, contextSnapshot });
     }
     return this.adapter.deliverTurn({
       role,
@@ -824,6 +1294,39 @@ export class ContextTransitionLeaseRuntime {
         { challenge: transition.request.challenge },
       );
       const reconciliation = await this.gate.recordReconciliation({ lease, validation });
+      let queuedInputRelease = null;
+      if (reconciliation.status === "reconciled" && this.inputCustody !== null) {
+        const admission = this.inputCustody.admission(lease.subject.logicalRoleInstanceId);
+        if (!admission || admission.threadId !== lease.subject.threadId
+            || admission.bindingRevision !== lease.subject.bindingRevision) {
+          throw new ContextTransitionLeaseError(
+            "input_custody_mismatch",
+            "reconciled transition does not match its closed input admission",
+          );
+        }
+        queuedInputRelease = await this.inputCustody.releaseAfterReconciliation({
+          logicalRoleInstanceId: lease.subject.logicalRoleInstanceId,
+          transitionRevision: admission.transitionRevision,
+          reconciliationRevision: reconciliation.ledgerEntry.entryRevision,
+        }, async (queuedInput) => {
+          const delivery = await this.adapter.deliverTurn({
+            role,
+            text: queuedInput.text,
+            clientUserMessageId: queuedInput.clientUserMessageId,
+            skills,
+            toolBridge: null,
+            requestContext: null,
+          });
+          await this.adapter.waitForTurnCompletion({ ...delivery, signal });
+          return freeze({
+            logicalRoleInstanceId: delivery.logicalRoleInstanceId,
+            threadId: delivery.threadId,
+            turnId: delivery.turnId,
+            clientUserMessageId: queuedInput.clientUserMessageId,
+            replayedDelivery: delivery.replayedDelivery,
+          });
+        });
+      }
       return freeze({
         retirementDelivery,
         transitionObservation: observation,
@@ -831,6 +1334,7 @@ export class ContextTransitionLeaseRuntime {
         completion,
         validation,
         reconciliation,
+        queuedInputRelease,
       });
     } catch (error) {
       await this.gate.recordTransitionFailure({

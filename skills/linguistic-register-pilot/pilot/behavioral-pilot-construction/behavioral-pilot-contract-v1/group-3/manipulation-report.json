@@ -1,0 +1,57 @@
+{
+  "artifact_type": "linguistic_register_group_3_manipulation_report_v1",
+  "gate": false,
+  "human_perspective": "unavailable_unresolved_not_fabricated",
+  "perspectives": [
+    {
+      "independence_claimed": false,
+      "provider_family": "OpenAI/Sol",
+      "raw_sha256": "68a00a6aaef3a739b331278b320d7a89410c5dca3d2dda7de5eb78432ac37942",
+      "result": {
+        "exact_assignments": 4,
+        "gate": false,
+        "means": {
+          "C0": {
+            "discourse": 0.0,
+            "surface": 1.0
+          },
+          "C1": {
+            "discourse": 3.0,
+            "surface": 5.0
+          },
+          "C2": {
+            "discourse": 2.5,
+            "surface": 5.0
+          }
+        },
+        "ordinal_gate": false
+      }
+    },
+    {
+      "different_provider_from_renderer": true,
+      "independence_claimed": false,
+      "provider_family": "Anthropic/Claude",
+      "raw_sha256": "22f0bc2c6f9efae1fc90beed9a4489f2979f4c45e0eacf8a4a732ab7572ff293",
+      "result": {
+        "exact_assignments": 2,
+        "gate": false,
+        "means": {
+          "C0": {
+            "discourse": 0.0,
+            "surface": 1.0
+          },
+          "C1": {
+            "discourse": 3.0,
+            "surface": 5.0
+          },
+          "C2": {
+            "discourse": 1.0,
+            "surface": 4.0
+          }
+        },
+        "ordinal_gate": false
+      }
+    }
+  ],
+  "schema_version": 1
+}

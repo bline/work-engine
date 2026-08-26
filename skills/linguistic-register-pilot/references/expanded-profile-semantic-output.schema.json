@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packet_sha256", "classifications", "content_screening", "limitations"],
+  "properties": {
+    "packet_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "classifications": {
+      "type": "array", "minItems": 8,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["feature_id", "disposition", "rationale"],
+        "properties": {
+          "feature_id": {"type": "string"},
+          "disposition": {"enum": ["realization_only", "semantic_duplicate", "semantic_addition", "uncertain"]},
+          "rationale": {"type": "string", "minLength": 20}
+        }
+      }
+    },
+    "content_screening": {
+      "type": "object", "additionalProperties": false,
+      "required": ["names_removed", "copied_language_removed", "domain_terms_removed", "named_methods_removed", "rationale"],
+      "properties": {
+        "names_removed": {"type": "boolean"},
+        "copied_language_removed": {"type": "boolean"},
+        "domain_terms_removed": {"type": "boolean"},
+        "named_methods_removed": {"type": "boolean"},
+        "rationale": {"type": "string"}
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

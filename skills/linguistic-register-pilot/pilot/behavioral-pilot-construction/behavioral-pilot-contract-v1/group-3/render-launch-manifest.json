@@ -1,0 +1,90 @@
+{
+  "artifact_type": "linguistic_register_group_3_render_launch_manifest_v1",
+  "condition_key_sha256": "b9476149d9e5c339a7ddb944621015e4dcb76a3528aeb06c9bbe61107c09d724",
+  "contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "jobs": [
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "a486cecb284f23be66a1e9d2466ed84e8efdf607ae6f08a1f63d42800f9a115a",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "a2e145fd9386229b0561cde57cfca260b206a01b52e813d6a1df3293719c2fa0",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "8b04540178d988248f7015ca61f635bdd53c065aaa737a75efd4bc8d2331c808",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "6cf3096c882bd776f223a4db0ffb873246fd0cebad44f261673d360999775093",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "cdfc2958f2e1f8d31f2bc2e8521929ceb5c5a86693e1e1a8c82a70bbbe88c04b",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "d5e5b392cb2044f2f8ef0cce062df59060d61f3786349e772617c14380790f50",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "5b9a6bda1c524608b12ff526492e7ee01b7487385b35c1c8e672ffb7e3588b40",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "559cd9c70e30ef00430d2946272e3b25321c0479d7d82f82c4255914b194a8ff",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "f3a04692af091caa0cbd43c9c4fcad8a4822f4cc3bc318398cb5052829dc2d60",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "edb2216a11ac5178772f6974fda76eb987a927ad40e46a3ca2596e8ad240607f",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "3a5df6cb52756553247a0058f163bbfe1ea912785233df8f9b4a5a92be5acf5e",
+      "prompt_sha256": "35cda8621daa8068d19563e797acbc2ae9875f8aa9721ccbc8d3e77153bf922d",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "a35e2dd81bc4276360a87077decf715ce4645116b9c9171e4d3adc6b0d0b5eba",
+      "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+      "service_tier": "standard_not_fast",
+      "stage": "render"
+    }
+  ],
+  "launch_set_sha256": "bb525f1f3d0d9ffa555360442e1daae506114897ce44b6c29417ca3e39ccef52",
+  "prompt": "Use only the supplied packet. Produce the requested role rendering without tools or external context.",
+  "schema_sha256": "29e1eaed972035ec13a27cc3cfb53e85ce930fdd8e0ba8d485047537f2f67e2f",
+  "schema_version": 1
+}

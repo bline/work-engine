@@ -1,0 +1,50 @@
+{
+  "artifact_type": "linguistic_register_group_3_review_launch_manifest_v1",
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "jobs": [
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "semantic-claude-v2",
+      "model": "sonnet",
+      "packet_sha256": "8e08a864de59adcca3a45feeea0c0c6d7e2b5ab9b26cb2ae3842a092e151c808",
+      "prompt_sha256": "6477196bfa0a392e0efa42846cfecc9f84420eb86cd854358233b5638fa2e2ab",
+      "provider": "Anthropic",
+      "reasoning_effort": "high",
+      "request_sha256": "a8a2269f12c7a5cdef39be1b7577544ef1538fcf63ca7c386e80ec93bf7ae30e",
+      "schema_sha256": "e3e8c3f69e2ef0d4dca834b41413ab625ca2434f6229810fe7b8c7eb450dada8",
+      "service_tier": "provider_default",
+      "stage": "semantic-review"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "manipulation-sol-v2",
+      "model": "gpt-5.6-sol",
+      "packet_sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "prompt_sha256": "0c89a0b78be17c29ddf08e6bc6ad3c2f258957bb1abf8cfcfe6f66410a6b3c15",
+      "provider": "OpenAI",
+      "reasoning_effort": "medium",
+      "request_sha256": "6129a0da1c9249c9c95a33d6b4c793b60c6fd6e47021dfe2b235f7e35e8b06c5",
+      "schema_sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "service_tier": "standard_not_fast",
+      "stage": "manipulation"
+    },
+    {
+      "experiment_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+      "job_id": "manipulation-claude-v2",
+      "model": "sonnet",
+      "packet_sha256": "92272ab6a451100fbb54c7eb1d63c0541efc8f245bc1424ac5713a15d86d5737",
+      "prompt_sha256": "0c89a0b78be17c29ddf08e6bc6ad3c2f258957bb1abf8cfcfe6f66410a6b3c15",
+      "provider": "Anthropic",
+      "reasoning_effort": "high",
+      "request_sha256": "eb5b4e855c6acca33f77b06ae841aa0dcefe2185f1ab3a1039f5fbdc7c20eb7d",
+      "schema_sha256": "3aeffe4adb8a9c8d2103ab64986faafac1164f2ee7475359b8e48212edce582e",
+      "service_tier": "provider_default",
+      "stage": "manipulation"
+    }
+  ],
+  "launch_set_sha256": "f19e73cb6961763e24112e443436b33c19bbe97da8a146f462d4a55dc92c89ba",
+  "manipulation_prompt": "Blindly classify all six artifacts under the supplied three-level manipulation contract. Use intended prose features, report incidental cues separately, and return only schema-valid JSON.",
+  "rendering_manifest_sha256": "a2188964ac793552245bbe6a1bf6ef14b388d8a3969930c54778f63f8adfee61",
+  "schema_version": 1,
+  "semantic_prompt": "Apply the supplied rubric independently to all six opaque role artifacts. Return only schema-valid JSON. This is advisory evidence, not human acceptance."
+}

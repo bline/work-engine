@@ -1,0 +1,29 @@
+{
+  "artifact_type": "linguistic_register_group_3_preoutcome_gate_v1",
+  "behavioral_outcomes_generated": false,
+  "boundary": "Terminal preoutcome group-3 result. Do not execute T001 in this slice.",
+  "contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+  "cue_concentration_sha256": "dfb078ad722f1e2342c41ae1d544ad597db9fb1347e3aa0cb2adb7087e8d0a0d",
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "gates": {
+    "actual_artifact_manipulation": false,
+    "canonical_coverage": true,
+    "no_single_feature_concentration": false,
+    "salience_control": false,
+    "semantic_equivalence": false,
+    "six_artifacts_bound": true,
+    "speech_act_equivalence": true,
+    "subject_prelaunch_verification": true
+  },
+  "group_3_id": "linguistic-register-behavioral-pilot-group-3-v1-2026-08-26",
+  "human_audit": "unresolved; model reviews are evidence only",
+  "manipulation_report_sha256": "fa08dbee991b3606471ab3aa396a397e6aadae165bd5ff7e9d80374731dfeeb1",
+  "overall_gate": false,
+  "quotation_audit_sha256": "4267e23e7d63328d804c619bd55bcafc7036b6fc32f456923581b37b6432ba7e",
+  "quotation_survival": false,
+  "rendering_manifest_sha256": "091596f8318cdc620c4f5426f75b4f26c93f8b28ad8276f2ccb47f9b0b63bc84",
+  "schema_version": 1,
+  "semantic_review_sha256": "9497c5abb77832ecda3e1fe7ce7d908553a26cffebf6ca0800e2c10a8731267c",
+  "subject_verification_sha256": "c5ac263ab2d684245fde418b1b389c418e81ded6cd47df81299b62ff8196d6f8",
+  "publication_qualification": "The bound v2 manifest description says terminal LF canonicalization, but four bound/reviewed publication artifacts instead contain a terminal plus character. Reviewers observed and excluded it; gate remains false."
+}

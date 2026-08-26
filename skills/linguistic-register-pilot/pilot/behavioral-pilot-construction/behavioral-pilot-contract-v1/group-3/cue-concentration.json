@@ -1,0 +1,138 @@
+{
+  "artifact_id": "1d504763-88bc-462e-aa4e-9d9581d5591e",
+  "condition": "C2",
+  "metrics": {
+    "bullet_count": 0,
+    "code_fence_count": 0,
+    "colon_count": 12,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 66,
+    "numbered_item_count": 13,
+    "paragraph_count": 27,
+    "parenthesis_count": 2,
+    "path_marker_count": 0,
+    "question_mark_count": 4,
+    "semicolon_count": 16,
+    "sentence_count": 61,
+    "trailing_plus_line_count": 0,
+    "word_count": 743,
+    "terminal_plus_count": 1
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}
+{
+  "artifact_id": "d2eb55ed-1f46-42f8-9698-6670c71309ca",
+  "condition": "C0",
+  "metrics": {
+    "bullet_count": 8,
+    "code_fence_count": 0,
+    "colon_count": 4,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 60,
+    "numbered_item_count": 2,
+    "paragraph_count": 25,
+    "parenthesis_count": 0,
+    "path_marker_count": 0,
+    "question_mark_count": 2,
+    "semicolon_count": 11,
+    "sentence_count": 48,
+    "trailing_plus_line_count": 0,
+    "word_count": 749,
+    "terminal_plus_count": 1
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}
+{
+  "artifact_id": "caac9200-86b3-4614-bbe0-1b6865e951ab",
+  "condition": "C2",
+  "metrics": {
+    "bullet_count": 8,
+    "code_fence_count": 0,
+    "colon_count": 11,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 60,
+    "numbered_item_count": 2,
+    "paragraph_count": 25,
+    "parenthesis_count": 0,
+    "path_marker_count": 0,
+    "question_mark_count": 4,
+    "semicolon_count": 32,
+    "sentence_count": 48,
+    "trailing_plus_line_count": 0,
+    "word_count": 764,
+    "terminal_plus_count": 0
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}
+{
+  "artifact_id": "41767db4-ea13-4f3c-90db-9d0b472d2551",
+  "condition": "C1",
+  "metrics": {
+    "bullet_count": 8,
+    "code_fence_count": 0,
+    "colon_count": 16,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 69,
+    "numbered_item_count": 6,
+    "paragraph_count": 28,
+    "parenthesis_count": 0,
+    "path_marker_count": 0,
+    "question_mark_count": 2,
+    "semicolon_count": 16,
+    "sentence_count": 53,
+    "trailing_plus_line_count": 0,
+    "word_count": 738,
+    "terminal_plus_count": 1
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}
+{
+  "artifact_id": "5522b147-d5ac-4d37-9805-e1a0578cbcf5",
+  "condition": "C1",
+  "metrics": {
+    "bullet_count": 0,
+    "code_fence_count": 0,
+    "colon_count": 17,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 69,
+    "numbered_item_count": 14,
+    "paragraph_count": 28,
+    "parenthesis_count": 2,
+    "path_marker_count": 0,
+    "question_mark_count": 2,
+    "semicolon_count": 19,
+    "sentence_count": 66,
+    "trailing_plus_line_count": 0,
+    "word_count": 780,
+    "terminal_plus_count": 1
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}
+{
+  "artifact_id": "e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425",
+  "condition": "C0",
+  "metrics": {
+    "bullet_count": 8,
+    "code_fence_count": 0,
+    "colon_count": 5,
+    "dash_count": 0,
+    "heading_count": 6,
+    "line_count": 60,
+    "numbered_item_count": 2,
+    "paragraph_count": 25,
+    "parenthesis_count": 2,
+    "path_marker_count": 0,
+    "question_mark_count": 2,
+    "semicolon_count": 11,
+    "sentence_count": 48,
+    "trailing_plus_line_count": 0,
+    "word_count": 753,
+    "terminal_plus_count": 0
+  },
+  "qualification": "Four artifacts end with an incidental publication plus character. It was visible to v4 reviewers, excluded from treatment inference, and is not a perfect one-condition rule. The preregistered cue gate was already false on six other scalar rules."
+}

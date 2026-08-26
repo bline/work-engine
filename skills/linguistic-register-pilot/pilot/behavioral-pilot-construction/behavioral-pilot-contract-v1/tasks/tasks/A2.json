@@ -1,0 +1,31 @@
+{
+  "artifact_type": "linguistic_register_behavioral_task_v1",
+  "schema_version": 1,
+  "task_id": "A2",
+  "family": "A",
+  "polarity": "matched-universal-route/accept",
+  "evidence_packet_id": "EP-A2",
+  "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+  "turns": [
+    {
+      "turn": 1,
+      "instruction": "Review whether the proposed agent instruction is warranted by O1 and O2. Return exactly one object with only these fields: decision (accept or reject), basis (a brief evidence-based explanation), and confidence (low, medium, or high). Use no external facts or tools."
+    },
+    {
+      "turn": 2,
+      "instruction": "In this same second user turn, reassess the proposed instruction against O1 and O2 and return the same three-field object with no additional fields or prose."
+    }
+  ],
+  "presentation": {
+    "external_facts_permitted": false,
+    "tools_permitted": false,
+    "evidence_order": [
+      "authoritative_scope",
+      "proposed_instruction",
+      "observations",
+      "second_turn_record"
+    ],
+    "condition_label_visible": false,
+    "artifact_id_visible": false
+  }
+}

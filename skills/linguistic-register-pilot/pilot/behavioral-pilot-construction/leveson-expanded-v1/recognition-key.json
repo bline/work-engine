@@ -1,0 +1,9 @@
+{
+  "mapping": {
+    "R01": "shaw-engineering-judgment",
+    "R02": "neutral-editorial-defaults",
+    "R03": "leveson-system-safety-expanded-v1",
+    "R04": "gelman-model-criticism"
+  },
+  "packet_sha256": "fa668f5b36bc4645639ce177e11ee6fd5d496ff5972a47f028f6a8bd27974dab"
+}

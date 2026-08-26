@@ -1,0 +1,102 @@
+artifact_type: linguistic_register_expanded_treatment_plan_v1
+schema_version: 1
+experiment_id: leveson-expanded-preoutcome-2026-08-26
+candidate_id: leveson-system-safety-expanded-v1
+status: frozen_before_profile_extraction
+authority: authorized implementation group 1 pre-outcome construction slice
+provisional_selection_rationale: Leveson is the provisional lead because the source set spans genuinely different communicative settings and the prior two-document treatment showed no perfect shallow one-feature rule.
+source_policy:
+  minimum_documents: 6
+  maximum_documents: 12
+  minimum_genre_classes: 4
+  required_genre_families:
+    - formal_analysis
+    - practitioner_public
+  minimum_documents_per_family: 2
+  authoritative_primary_sources_only: true
+  exact_source_sha256_required: true
+  source_bytes_repository_policy: external_unless_reuse_clearly_permitted
+  target_normalized_token_range:
+    minimum: 50000
+    maximum: 200000
+profile_extraction:
+  model: gpt-5.6-sol
+  reasoning_effort: high
+  balanced_excerpt_tokens_per_document: 6000
+  excerpt_segments:
+    - beginning
+    - middle
+    - end
+  extraction_input_allowlist:
+    - source_id
+    - genre_class
+    - genre_family
+    - digest_bound_balanced_excerpt
+  forbidden_inputs:
+    - behavioral_tasks
+    - behavioral_scoring_keys
+    - behavioral_outcomes
+    - canonical_role
+  weights_assigned_during_extraction_before_semantic_classification: true
+semantic_classification:
+  model: gpt-5.6-sol
+  reasoning_effort: high
+  input_allowlist:
+    - extracted_feature_ledger
+    - frozen_role_manifest
+  forbidden_inputs:
+    - source_text
+    - behavioral_tasks
+    - behavioral_scoring_keys
+    - behavioral_outcomes
+  dispositions:
+    - realization_only
+    - semantic_duplicate
+    - semantic_addition
+    - uncertain
+retention_gates:
+  minimum_retained_features: 5
+  minimum_weighted_retention: 0.35
+  minimum_cross_family_retained_features: 4
+  minimum_evidence_documents_per_retained_feature: 3
+quotation_gate:
+  normalization: NFKC_casefold_unicode_words
+  material_exact_minimum_tokens: 8
+  near_verbatim_minimum_tokens: 12
+  near_verbatim_maximum_tokens: 30
+  near_verbatim_minimum_positional_identity: 0.9
+  near_verbatim_minimum_identical_positions: 10
+  requirement: zero_material_exact_and_zero_near_verbatim_matches_between_profile_descriptions_and_all_sources
+recognizability_precheck:
+  model: gpt-5.6-sol
+  reasoning_effort: high
+  conditions:
+    - leveson-system-safety-expanded-v1
+    - gelman-model-criticism
+    - shaw-engineering-judgment
+    - neutral-editorial-defaults
+  equalized_feature_count: 5
+  required_expanded_leveson_assignment: correct
+  interpretation: profile_card_traceability_only
+cue_concentration_baseline:
+  shallow_features:
+    - word_count
+    - sentence_count
+    - question_mark_count
+    - colon_count
+    - semicolon_count
+    - dash_count
+    - parenthesis_count
+    - layer_count_surface
+    - layer_count_discourse
+  replicas_per_condition: 3
+  rule_family: exhaustive_single_scalar_thresholds
+  flag: any cross_replica_perfect_rule_for_expanded_leveson
+stopping_rules:
+  - Stop if any source byte digest is unavailable or mismatched.
+  - Stop if either model-judged extraction or semantic classification lacks retained receipt evidence.
+  - Stop before generating role renderings or behavioral outcomes.
+limitations:
+  - Source selection was frozen after byte acquisition and title/authorship inspection but before balanced-excerpt profile extraction; it is not a prospectively preregistered corpus search.
+  - Recognizability is a same-family profile-card precheck and cannot substitute for actual-artifact manipulation checks.
+  - The shallow cue baseline cannot prove holistic semantic recognition.

@@ -3,6 +3,8 @@ export const PINNED_PROTOCOL = Object.freeze({
   capabilities: Object.freeze({
     thread_start: "stable",
     thread_resume: "stable",
+    thread_read: "stable",
+    thread_turns_list: "experimental",
     turn_start: "stable",
     exact_skill_input: "stable",
     thread_scoped_dynamic_tools: "stable",
@@ -13,6 +15,8 @@ export const PINNED_PROTOCOL = Object.freeze({
 export const FOUNDATION_CAPABILITIES = Object.freeze([
   "thread_start",
   "thread_resume",
+  "thread_read",
+  "thread_turns_list",
   "turn_start",
   "exact_skill_input",
   "thread_scoped_dynamic_tools",

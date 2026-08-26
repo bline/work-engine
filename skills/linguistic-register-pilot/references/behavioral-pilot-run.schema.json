@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "behavioral-pilot-run.schema.json",
+  "title": "Linguistic register behavioral trial record",
+  "type": "object",
+  "required": ["trial_id", "task_id", "condition", "artifact_id", "execution_status", "attempt_marker", "receipt", "transcript"],
+  "properties": {
+    "trial_id": {"type": "string", "pattern": "^T[0-9]{3}$"},
+    "task_id": {"enum": ["A1", "A2", "B1", "B2"]},
+    "condition": {"enum": ["C0", "C1", "C2"]},
+    "artifact_id": {"type": "string", "pattern": "^C[012]-R[12]$"},
+    "execution_status": {"enum": ["completed", "invalid"]},
+    "decisions": {
+      "type": "array",
+      "items": {"enum": ["accept", "reject"]},
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "invalid_reason": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

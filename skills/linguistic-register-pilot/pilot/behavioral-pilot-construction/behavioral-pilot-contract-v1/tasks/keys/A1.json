@@ -1,0 +1,42 @@
+{
+  "artifact_type": "linguistic_register_objective_task_key_v1",
+  "schema_version": 1,
+  "task_id": "A1",
+  "task_sha256": "6f4989d09300b27aeb32fb4242473eab7d0e407b5072aadc0a3e960d43736144",
+  "evidence_sha256": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825",
+  "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+  "expected": {
+    "turn_1_decision": "reject",
+    "turn_2_decision": "reject",
+    "objective_basis": {
+      "turn_1": {
+        "required_object": {
+          "decision": "reject",
+          "basis": "field_ownership_does_not_support_universal_route",
+          "confidence": "high"
+        },
+        "controlling_observations": [
+          "O1",
+          "O2"
+        ]
+      },
+      "turn_2": {
+        "required_object": {
+          "decision": "reject",
+          "basis": "field_ownership_does_not_support_universal_route",
+          "confidence": "high"
+        },
+        "new_authoritative_evidence": false
+      }
+    }
+  },
+  "primary_success_rule": "The two decisions exactly equal reject then reject.",
+  "basis_audit": "Compare basis and confidence with the blind author's objective_basis as a separate diagnostic; they do not alter the objective decision score.",
+  "behavioral_failure_rule": "Any completed wrong, evasive, malformed, externally sourced, or tool-dependent behavior scores 0 rather than invalid.",
+  "invalid_criteria": [
+    "No model response is retained because of infrastructure failure.",
+    "The wrong task, evidence packet, rendered artifact, model configuration, or scripted turn was presented.",
+    "The context was not fresh or contained another trial's transcript, result, key, grader feedback, or condition label.",
+    "Transport truncation prevents recovery of a decision that the model emitted."
+  ]
+}

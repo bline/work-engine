@@ -1,0 +1,159 @@
+{
+  "artifact_state": {
+    "classification": "complete_treatment_renderings_with_preoutcome_reviews_and_refusing_gate",
+    "classification_note": "The six treatment rendering files and a six-entry binding manifest exist. Preoutcome review and gate artifacts also exist. This classifies state only and does not evaluate manipulation quality.",
+    "preoutcome_support_present": [
+      "render packets",
+      "render launch manifest",
+      "condition key",
+      "semantic and manipulation review packets",
+      "review launch manifests and receipts",
+      "quotation audit",
+      "cue-concentration audit attempts",
+      "subject verification",
+      "reports",
+      "preoutcome gate"
+    ],
+    "recommended_deferral_state": "paused_post_render_pre_trial_pre_outcome",
+    "rendered_artifact_count": 6,
+    "rendered_artifacts": [
+      {
+        "mtime_utc": "2026-08-26T11:27:03.786622Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/1d504763-88bc-462e-aa4e-9d9581d5591e.md",
+        "sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8",
+        "size_bytes": 5485
+      },
+      {
+        "mtime_utc": "2026-08-26T11:27:04.351541Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/41767db4-ea13-4f3c-90db-9d0b472d2551.md",
+        "sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65",
+        "size_bytes": 5451
+      },
+      {
+        "mtime_utc": "2026-08-26T11:27:04.617502Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/5522b147-d5ac-4d37-9805-e1a0578cbcf5.md",
+        "sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af",
+        "size_bytes": 5737
+      },
+      {
+        "mtime_utc": "2026-08-26T11:26:45.856869Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/caac9200-86b3-4614-bbe0-1b6865e951ab.md",
+        "sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc",
+        "size_bytes": 5710
+      },
+      {
+        "mtime_utc": "2026-08-26T11:27:04.070581Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/d2eb55ed-1f46-42f8-9698-6670c71309ca.md",
+        "sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8",
+        "size_bytes": 5399
+      },
+      {
+        "mtime_utc": "2026-08-26T11:09:35.288862Z",
+        "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.md",
+        "sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72",
+        "size_bytes": 5434
+      }
+    ],
+    "rendering_manifest_declared_artifact_count": 6
+  },
+  "artifact_type": "linguistic_register_behavioral_pilot_group3_provenance_audit_v1",
+  "audited_at_utc": "2026-08-26T13:30:09.004313Z",
+  "authority_boundary": {
+    "forbidden_actions_observed": [
+      "no group-3 artifact modification",
+      "no treatment regeneration",
+      "no T001 launch",
+      "no behavioral scoring",
+      "no behavioral outcome inspection",
+      "no manipulation-quality judgment"
+    ],
+    "mode": "read_only_until_separate_deferral_record"
+  },
+  "bindings": {
+    "artifact_inventory_path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-deferrals/linguistic-register-behavioral-pilot-deferral-2026-08-26-post-render/artifact-inventory.json",
+    "artifact_inventory_sha256": "fcc67b47caef46409f955382853ab6efbabad9be207709e00dddd82f7faf1690",
+    "creator_session_sha256": "4632e136225b6bff9192f4e41fb8a5bec17f786be6813d9da3f00d6dc6d23d7b",
+    "group2_contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+    "group2_preregistration_sha256": "bb7340b544a26161f50bea3e9932a66f108e4b1c08932dc635edb9e67c1f328b",
+    "nested_group3_gate_sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634",
+    "rendering_manifest_v2_sha256": "091596f8318cdc620c4f5426f75b4f26c93f8b28ad8276f2ccb47f9b0b63bc84",
+    "root_group3_gate_sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634"
+  },
+  "creation_provenance": {
+    "creator_invocation_at_utc": "2026-08-26T10:50:09.361Z",
+    "creator_invocation_content_sha256": "d315b0bff20bc9ad8b8687a95b3c6777a188ac76eefbc07f1399dbc9a7885fad",
+    "creator_session_terminal_at_utc": "2026-08-26T11:45:27.335Z",
+    "original_deferral_request_at_utc": "2026-08-26T13:18:55.250Z",
+    "original_deferral_request_content_sha256": "572f6266c515445fc7a3ff190e796f69e7fb4450f008bc3330245690615d6369",
+    "temporal_conclusion": "The identified group-3 invocation started and reached task_complete before the original deferral request. The advancement was unexpected from the deferring session but was not continuing after that request."
+  },
+  "execution_search": {
+    "behavioral_analysis_found": false,
+    "behavioral_outcome_found": false,
+    "behavioral_subject_execution_found": false,
+    "contract_assert_no_outcomes": {
+      "exit_code": 0,
+      "stdout": "no outcomes present"
+    },
+    "negative_search_note": "No outcome-bearing runs, scores, analysis, trial receipts, primary scores, or true behavioral_outcomes_generated marker was found in the bounded relevant scope.",
+    "preoutcome_model_execution_exists": true,
+    "preoutcome_model_execution_kinds": [
+      "six treatment-rendering invocations",
+      "semantic-review invocations",
+      "manipulation-review invocations"
+    ],
+    "schedule_only_trial_identifiers": "T001-T048 occur in the frozen execution schedule; they are not execution receipts.",
+    "score_found": false,
+    "search_scope": [
+      "authoritative behavioral-pilot contract tree",
+      "retained group-3 execution-evidence cache",
+      "matching group-3 transient staging paths",
+      "creator-session provenance"
+    ],
+    "trial_receipt_found": false
+  },
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "integrity_observations": {
+    "authoritative_repository_entry_count": 44,
+    "creator_session_entry_count": 1,
+    "invalid_json_containers": [
+      "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/cue-concentration.json",
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/events.json",
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews/semantic-claude/raw-output.json",
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v2/semantic-claude-v2/raw-output.json",
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v3/manipulation-sol-v3/events.json",
+      "/home/bline/.cache/work-engine/linguistic-register/behavioral-pilot-group-3-v1/reviews-v4/manipulation-sol-v4/events.json",
+      "/tmp/group3-cue-v2.json"
+    ],
+    "invalid_json_note": "Invalid containers are preserved and bound as bytes. Their contents were not repaired or interpreted as successful evidence.",
+    "retained_execution_evidence_entry_count": 56,
+    "transient_staging_entry_count": 51
+  },
+  "launch_gate": {
+    "calibration_check_exit_code": 1,
+    "conclusion": "The existing deterministic launch check continues to refuse calibration launch and therefore T001.",
+    "root_gate_overall_gate": false,
+    "stderr": "launch refused: one or more preoutcome gates did not pass",
+    "t001_authorized": false
+  },
+  "limitations": [
+    "Process liveness and transient-file inventory are point-in-time observations.",
+    "The negative behavioral-execution claim is bounded to the repository contract tree, retained group-3 cache, matching staging paths, and identified invocation provenance.",
+    "Treatment text was accessed only by hashing and file metadata; no condition comparison or quality evaluation was performed.",
+    "Model-visible effects and reviewer reasoning were not evaluated."
+  ],
+  "schema_version": 1,
+  "writer_liveness": {
+    "checked_at_utc": "2026-08-26T13:30:09.008400Z",
+    "creator_session_cli_version": "0.149.1",
+    "creator_session_cwd": "/home/bline/code/work-engine/skills",
+    "creator_session_id": "01a03db0-e18e-7723-8ae2-cf68d2b97c32",
+    "creator_session_nickname": "Poincare",
+    "creator_session_terminal_at_utc": "2026-08-26T11:45:27.335Z",
+    "creator_session_terminal_event": "task_complete",
+    "matching_group3_process_found": false,
+    "note": "Other Codex processes exist, but none was identified as the completed group-3 session or as writing group-3 artifacts. This is a point-in-time process and session audit."
+  }
+}
+
+

@@ -1,0 +1,17 @@
+{
+  "artifact_type": "linguistic_register_behavioral_pilot_deferral_seal_v1",
+  "schema_version": 1,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "state": "paused_post_render_pre_trial_pre_outcome",
+  "sealed_files": {
+    "artifact-inventory.json": "fcc67b47caef46409f955382853ab6efbabad9be207709e00dddd82f7faf1690",
+    "provenance-audit.json": "b1afca289325792ececd619970133ea6c3344f5a82f90cf750f2e844586ecbd1",
+    "deferral-record.json": "a0676717aa440b2e0bfd90129ce59341ae57b32a180cb99ef905a14f5512801a"
+  },
+  "upstream_bindings": {
+    "group2_preregistration_sha256": "bb7340b544a26161f50bea3e9932a66f108e4b1c08932dc635edb9e67c1f328b",
+    "group2_contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+    "root_group3_preoutcome_gate_sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634"
+  },
+  "boundary": "This seal records a paused post-render, pre-trial, pre-outcome state. It grants no authority for further group-3 work or T001."
+}

@@ -61,6 +61,7 @@ export class OperatorSwitchboard {
     completionWaiter = null,
     initialAttachment = null,
     onAttachmentChange = null,
+    inputCustody = null,
     messageIdFactory = () => `operator:${randomUUID()}`,
   }) {
     if (!manifest || !Array.isArray(manifest.roleIds)
@@ -86,12 +87,17 @@ export class OperatorSwitchboard {
     if (onAttachmentChange !== null && typeof onAttachmentChange !== "function") {
       throw new TypeError("operator switchboard attachment writer must be a function or null");
     }
+    if (inputCustody !== null && (typeof inputCustody.admission !== "function"
+        || typeof inputCustody.queueIfClosed !== "function")) {
+      throw new TypeError("operator switchboard input custody must expose admission and queueIfClosed");
+    }
     this.manifest = manifest;
     this.runtime = runtime;
     this.registry = registry;
     this.observer = observer;
     this.completionWaiter = completionWaiter;
     this.onAttachmentChange = onAttachmentChange;
+    this.inputCustody = inputCustody;
     this.messageIdFactory = messageIdFactory;
     if (initialAttachment !== null) {
       const attachment = parseAttachment(
@@ -113,14 +119,59 @@ export class OperatorSwitchboard {
 
   startLine(line, { signal, clientUserMessageId = null } = {}) {
     requireText(line, "operator input");
-    const operation = this.#tail.then(() =>
-      this.#startLine(line, signal, clientUserMessageId)
+    const normalized = line.trim();
+    const suppliedId = normalized.startsWith(":we") || !this.attachment
+      ? clientUserMessageId
+      : requireText(
+          clientUserMessageId ?? this.messageIdFactory(),
+          "operator client user message id",
+        );
+    const predecessor = this.#tail;
+    const operation = this.#queueWhileClosed(line, suppliedId).then((queued) =>
+      queued ?? predecessor.then(() => this.#startLine(line, signal, suppliedId))
     );
     this.#tail = operation.then(
-      (started) => started.completion?.then(() => {}, () => {}),
+      (started) => started.result?.kind === "queued_message"
+        ? predecessor
+        : started.completion?.then(() => {}, () => {}),
       () => {},
     );
     return operation;
+  }
+
+  async #queueWhileClosed(line, clientUserMessageId) {
+    if (line.trim().startsWith(":we") || !this.inputCustody || !this.attachment) return null;
+    const logicalRoleInstanceId = `${this.attachment.roleId}:${this.attachment.instanceId}`;
+    const admission = this.inputCustody.admission(logicalRoleInstanceId);
+    if (!admission || admission.status === "open") return null;
+    const binding = await this.registry.get(logicalRoleInstanceId);
+    if (!binding || binding.threadId !== admission.threadId
+        || binding.bindingRevision !== admission.bindingRevision) {
+      throw new Error("closed context admission does not match the attached role binding");
+    }
+    const queued = await this.inputCustody.queueIfClosed({
+      logicalRoleInstanceId,
+      roleId: this.attachment.roleId,
+      instanceId: this.attachment.instanceId,
+      threadId: binding.threadId,
+      bindingRevision: binding.bindingRevision,
+      clientUserMessageId,
+      sourceKind: "human",
+      text: line,
+    });
+    if (!["queued", "replayed"].includes(queued.status)) return null;
+    return {
+      result: freeze({
+        kind: "queued_message",
+        logicalRoleInstanceId,
+        queueId: queued.item.queueId,
+        sequence: queued.item.sequence,
+        transitionRevision: queued.item.transitionRevision,
+        clientUserMessageId: queued.item.input.clientUserMessageId,
+        replayed: queued.status === "replayed",
+      }),
+      completion: null,
+    };
   }
 
   async #startLine(line, signal, suppliedClientUserMessageId) {
@@ -135,7 +186,10 @@ export class OperatorSwitchboard {
       suppliedClientUserMessageId ?? this.messageIdFactory(),
       "operator client user message id",
     );
-    const runtimeResult = await this.runtime.deliverTurn({
+    const deliver = typeof this.runtime.startTurn === "function"
+      ? this.runtime.startTurn.bind(this.runtime)
+      : this.runtime.deliverTurn.bind(this.runtime);
+    const runtimeResult = await deliver({
       ...this.attachment,
       clientUserMessageId,
       text: line,
@@ -164,13 +218,16 @@ export class OperatorSwitchboard {
       bindingRevision: delivery.binding?.bindingRevision ?? null,
     };
     const completion = Promise.resolve(completionPromise).then((outcome) => {
-      const shadow = runtimeResult?.shadow == null ? null : structuredClone(runtimeResult.shadow);
+      const completed = outcome?.completion ?? outcome;
+      const resolvedShadow = outcome?.lifecycle ?? outcome?.shadow
+        ?? runtimeResult?.lifecycle ?? runtimeResult?.shadow ?? null;
+      const shadow = resolvedShadow == null ? null : structuredClone(resolvedShadow);
       this.lastLifecycle = shadow;
       return freeze({
         kind: "message",
         attachment,
         delivery: deliveryView,
-        outputText: outcome.outputText ?? null,
+        outputText: completed.outputText ?? null,
         shadow,
       });
     });

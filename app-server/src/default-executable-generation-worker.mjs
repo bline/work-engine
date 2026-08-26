@@ -60,6 +60,7 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       snapshotRoot: process.env.WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT,
       bindingsPath: process.env.WORK_ENGINE_ROLE_BINDINGS_PATH,
       attachmentPath: process.env.WORK_ENGINE_SWITCHBOARD_ATTACHMENT_PATH,
+      semanticContextStatePath: process.env.WORK_ENGINE_SEMANTIC_CONTEXT_STATE_PATH,
       configuredProviderFeatures: JSON.parse(
         process.env.WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES ?? "[]",
       ),
@@ -77,6 +78,7 @@ const generation = {
 
 runExecutableGenerationWorker({
   generation,
+  dispose: async () => roleEnvironment?.close(),
   dispatch: async (operation, payload, effect) => {
     if (operation === "app_server.request") {
       const forwarded = forwardedRequest(payload);
@@ -99,7 +101,7 @@ runExecutableGenerationWorker({
       return { disposition: "forward" };
     }
     if (operation === "app_server.backend_notification") {
-      if (roleEnvironment) return roleEnvironment.handleNotification(payload);
+      if (roleEnvironment) return roleEnvironment.handleNotification(payload, effect);
       return { disposition: "forward" };
     }
     throw new Error("unsupported executable generation operation");

@@ -277,7 +277,7 @@ test("SQLite state refuses an unknown future schema revision", async (t) => {
   store.close();
   const { DatabaseSync } = await import("node:sqlite");
   const database = new DatabaseSync(filePath);
-  database.exec("PRAGMA user_version = 2");
+  database.exec("PRAGMA user_version = 3");
   database.close();
   await assert.rejects(
     openSqliteAppServerStateStore({ filePath }),

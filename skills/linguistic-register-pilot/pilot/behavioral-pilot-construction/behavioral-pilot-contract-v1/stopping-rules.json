@@ -1,0 +1,26 @@
+{
+  "artifact_type": "linguistic_register_stopping_rules_v1",
+  "schema_version": 1,
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+  "preoutcome": [
+    "Do not launch any subject trial until all six rendered artifacts have immutable digests and pass canonical coverage, semantic equivalence, speech-act equivalence, salience, and actual-artifact manipulation gates.",
+    "Do not launch if the subject configuration or any contract binding fails verification.",
+    "Do not launch if any task or key entered profile extraction or treatment validation context."
+  ],
+  "execution": [
+    "Every trial uses a fresh context and the exact scheduled artifact, task, evidence packet, and scripted turns.",
+    "Never rerun, replace, salvage, or substitute a scheduled trial. A failed attempt remains invalid with its evidence chain.",
+    "Stop at a known model, backend, client, service-tier, reasoning, tool-policy, or platform boundary.",
+    "Stop when a fifth trial becomes invalid or materially deviates, because fewer than 44 of 48 valid trials cannot satisfy the 90 percent operational gate.",
+    "No efficacy, futility, or condition-aware early stopping is permitted."
+  ],
+  "budget_calibration": {
+    "trial_ids": ["T001", "T002", "T003", "T004", "T005", "T006", "T007", "T008"],
+    "pause_after_T008": true,
+    "meter_rule": "Record the same weekly-usage surface immediately before T001 and after T008; let the observed difference be u percentage points.",
+    "projection": "6 * u + 10",
+    "full_batch_gate": "Proceed only when 6 * u + 10 <= 70 and no other stop rule fired.",
+    "failure_disposition": "If the projection exceeds 70, stop before T009. Any revised model, repetition count, or billing surface requires a fresh schedule and contract; the eight observations are not substituted into that new experiment."
+  },
+  "terminal": "After the frozen 48 scheduled attempts, stop. Additional trials require a fresh experiment ID and preregistration."
+}

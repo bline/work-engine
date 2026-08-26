@@ -1,0 +1,455 @@
+{
+  "artifact_type": "linguistic_register_expanded_profile_v1",
+  "bindings": {
+    "construction_plan_sha256": "2981ddf6e725bccdaf10299f23176515b98f890904d354f57151ab8783d405ca",
+    "corpus_manifest_sha256": "c947def160d1f1c0a890ed7850fa3910efa0081e37b2b7ef1183200de9014e32",
+    "extraction_result_sha256": "d8ed7dce53fffe7c15ea77d4e4ef91f3114a9ab148ac9e1d7e0cf7fe22a95b3e",
+    "role_manifest_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94",
+    "semantic_result_sha256": "e497a9b58861ef89b7769677d6ba4cf54eceb930eebe099d97aeb0ac0621743e"
+  },
+  "candidate_id": "leveson-system-safety-expanded-v1",
+  "content_screening": {
+    "copied_language_removed": true,
+    "domain_terms_removed": true,
+    "named_methods_removed": true,
+    "names_removed": true,
+    "rationale": "Descriptions retained as realization-only use generic paraphrases and contain no identifying names, copied source wording, specialized subject terminology, or named techniques."
+  },
+  "features": [
+    {
+      "category": "vocabulary",
+      "cross_family": true,
+      "description": "Prefers abstract relational and process vocabulary over concrete scene-setting, repeatedly organizing discussion around structures, interactions, contexts, factors, constraints, and change.",
+      "disposition": "realization_only",
+      "disposition_rationale": "A wording preference that changes expression without adding analysis, authority, evidence rules, or claims.",
+      "distinctiveness_weight": 1,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Abstract nouns denoting processes, relationships, factors, and structures recur throughout the exposition.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "The discussion repeatedly moves from concrete examples into abstract language about processes, factors, structures, and change.",
+          "source_id": "oil-gas-testimony"
+        }
+      ],
+      "id": "lexicon-abstract-relational",
+      "layer": "surface"
+    },
+    {
+      "category": "vocabulary",
+      "cross_family": true,
+      "description": "Uses a dense diagnostic lexicon of insufficiency and error, favoring precise negative evaluation over emotive language.",
+      "disposition": "realization_only",
+      "disposition_rationale": "A tonal and lexical preference for precise criticism that does not change what must be evaluated or concluded.",
+      "distinctiveness_weight": 2,
+      "evidence": [
+        {
+          "excerpt_segment": "middle",
+          "observation": "Repeated negative evaluators characterize practices as inadequate, deficient, incorrect, obscuring, or poorly matched.",
+          "source_id": "spacecraft-accidents"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Compact lists repeatedly use terms for missing, incorrect, inconsistent, incomplete, delayed, or inadequate elements.",
+          "source_id": "software-system-safety-notes"
+        }
+      ],
+      "id": "lexicon-diagnostic-deficit",
+      "layer": "surface"
+    },
+    {
+      "category": "vocabulary",
+      "cross_family": true,
+      "description": "Relies on obligation and necessity modals to turn analysis into prescriptions, often pairing a required action with an excluded alternative.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Converting analysis into prescriptions and excluding alternatives adds directive force beyond an advisory mandate.",
+      "distinctiveness_weight": 3,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Must, need, should, and cannot recur when converting criticism into design or evaluation requirements.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Must, should, need, can, and cannot repeatedly frame institutional and procedural recommendations.",
+          "source_id": "oil-gas-testimony"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Short prescriptive statements repeatedly use must and should to express constraints and priorities.",
+          "source_id": "software-system-safety-notes"
+        }
+      ],
+      "id": "lexicon-obligation-necessity",
+      "layer": "surface"
+    },
+    {
+      "category": "syntax",
+      "cross_family": true,
+      "description": "Builds extended sentences through stacked complement, relative, conditional, and causal clauses, allowing a claim, rationale, exception, and consequence to occupy one syntactic unit.",
+      "disposition": "realization_only",
+      "disposition_rationale": "A sentence-construction choice that packages existing content without requiring additional reasoning.",
+      "distinctiveness_weight": 4,
+      "evidence": [
+        {
+          "excerpt_segment": "middle",
+          "observation": "Long argumentative units repeatedly accumulate clauses introduced by that, which, when, if, because, and therefore.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Explanations repeatedly embed qualifications and consequences inside extended causal and relative-clause sequences.",
+          "source_id": "oil-gas-testimony"
+        }
+      ],
+      "id": "syntax-stacked-subordination",
+      "layer": "surface"
+    },
+    {
+      "category": "syntax",
+      "cross_family": true,
+      "description": "Uses numbered taxonomies, paired alternatives, and repeated grammatical frames to present distinctions as ordered sets.",
+      "disposition": "realization_only",
+      "disposition_rationale": "An organizational pattern for presenting existing distinctions without changing their substance.",
+      "distinctiveness_weight": 5,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Numbered reasons, paired goals, and repeated causal formulations recur within otherwise continuous prose.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Numbered scenarios and ranked alternatives repeatedly reuse the same grammatical openings.",
+          "source_id": "improving-risk-matrix"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Lettered scenarios and numbered procedures create repeated parallel frames.",
+          "source_id": "workshop-faq"
+        }
+      ],
+      "id": "syntax-enumerative-parallelism",
+      "layer": "surface"
+    },
+    {
+      "category": "rhythm",
+      "cross_family": true,
+      "description": "Alternates dense explanatory runs with short labels, compact lists, and parallel fragments, producing emphatic bursts of compression.",
+      "disposition": "realization_only",
+      "disposition_rationale": "A pacing choice that alternates expanded and compressed expression without adding semantic requirements.",
+      "distinctiveness_weight": 4,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Extended exposition repeatedly gives way to numbered reasons, brief labels, and compact examples.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "beginning",
+          "observation": "A dense opening synthesis shifts into a rapid inventory of recurring factors and grouped categories.",
+          "source_id": "spacecraft-accidents"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Short headings and list fragments repeatedly interrupt denser explanatory passages.",
+          "source_id": "software-system-safety-notes"
+        }
+      ],
+      "id": "rhythm-exposition-list-bursts",
+      "layer": "surface"
+    },
+    {
+      "category": "rhythm",
+      "cross_family": false,
+      "description": "In presentation-like material, favors compressed prompt-response sequences and verbless labels, creating a rapid, telegraphic cadence.",
+      "disposition": "realization_only",
+      "disposition_rationale": "A compressed presentation cadence that affects form but introduces no new judgment or policy.",
+      "distinctiveness_weight": 3,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Successive prompts are followed by terse answers, fragments, and abbreviated comparison points.",
+          "source_id": "workshop-faq"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Slide-like headings, compact questions, labels, and short prescriptions recur with minimal connective prose.",
+          "source_id": "improving-risk-matrix"
+        }
+      ],
+      "id": "rhythm-telegraphic-prompt-response",
+      "layer": "surface"
+    },
+    {
+      "category": "claim-posture",
+      "cross_family": true,
+      "description": "Moves from cases, reports, observations, or studies to broader generalizations, treating examples as grounds for reusable conclusions.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Inferring reusable conclusions from examples introduces a generalization operation not required by the canonical meaning.",
+      "distinctiveness_weight": 5,
+      "evidence": [
+        {
+          "excerpt_segment": "middle",
+          "observation": "Multiple reported cases are accumulated before recurring deficiencies and broader recommendations are inferred.",
+          "source_id": "spacecraft-accidents"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Experimental and documentary evidence is summarized and then extended to a wider argumentative claim.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Reported incidents and numerical examples repeatedly support general claims about recurring practices and beliefs.",
+          "source_id": "oil-gas-testimony"
+        }
+      ],
+      "id": "claim-evidence-to-generalization",
+      "layer": "discourse"
+    },
+    {
+      "category": "claim-posture",
+      "cross_family": true,
+      "description": "Adopts a corrective, high-confidence posture: identifies a mistaken framing, rejects it directly, and replaces it with a preferred course of action.",
+      "disposition": "uncertain",
+      "disposition_rationale": "Corrective advice overlaps the advisory function, but rejecting an allegedly mistaken premise invokes premise judgment that the canonical meaning explicitly leaves ambiguous.",
+      "distinctiveness_weight": 5,
+      "evidence": [
+        {
+          "excerpt_segment": "end",
+          "observation": "The closing argument repeatedly rejects an existing emphasis and substitutes a strongly stated alternative.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Common labels and assumptions are directly challenged before a different interpretation and response are prescribed.",
+          "source_id": "oil-gas-testimony"
+        },
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Compressed answers repeatedly dismiss an inadequate premise and immediately state the preferred practical response.",
+          "source_id": "workshop-faq"
+        }
+      ],
+      "id": "claim-corrective-prescription",
+      "layer": "discourse"
+    },
+    {
+      "category": "qualification",
+      "cross_family": true,
+      "description": "Tempers categorical argument with calibrated possibility markers, especially when discussing explanations, applicability, prediction, or alternatives.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Requiring calibrated possibility language across explanations and predictions adds a general epistemic policy.",
+      "distinctiveness_weight": 3,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "May, might, perhaps, possible, and conditional constructions recur around explanatory reach and alternative interpretations.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Possibility and likelihood markers recur when moving from experimental findings to anticipated effects.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "May, might, likely, and conditional phrasing recur around consequences and contextual variation.",
+          "source_id": "oil-gas-testimony"
+        }
+      ],
+      "id": "qualification-epistemic-calibration",
+      "layer": "discourse"
+    },
+    {
+      "category": "qualification",
+      "cross_family": true,
+      "description": "Explicitly marks incomplete knowledge, scope limits, assumptions, exceptions, and residual alternatives rather than presenting analysis as exhaustive.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Systematically declaring uncertainty, assumptions, exceptions, and non-exhaustiveness adds an epistemic disclosure rule.",
+      "distinctiveness_weight": 4,
+      "evidence": [
+        {
+          "excerpt_segment": "end",
+          "observation": "The conclusion acknowledges alternatives and a possible drawback while maintaining its central recommendation.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "The argument repeatedly foregrounds omitted information, unverifiable completeness, assumptions, and evidentiary limits.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "The closing material explicitly raises completeness questions and repeats the presence of unknowns and flawed assumptions.",
+          "source_id": "workshop-faq"
+        }
+      ],
+      "id": "qualification-limits-and-unknowns",
+      "layer": "discourse"
+    },
+    {
+      "category": "connective",
+      "cross_family": true,
+      "description": "Uses dense causal connectives to make reasoning explicit, repeatedly linking condition, mechanism, consequence, and response.",
+      "disposition": "realization_only",
+      "disposition_rationale": "Explicit connective wording merely expresses already-required causal reasoning without expanding the reasoning operation.",
+      "distinctiveness_weight": 4,
+      "evidence": [
+        {
+          "excerpt_segment": "middle",
+          "observation": "Because, due to, resulting, therefore, and temporal links repeatedly organize multi-stage explanations.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Because, therefore, as a result, and conditional links repeatedly connect evidence to consequences.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Scenario fragments repeatedly use because, so, therefore, when, and delay language to expose consequence chains.",
+          "source_id": "workshop-faq"
+        }
+      ],
+      "id": "connective-causal-chain",
+      "layer": "discourse"
+    },
+    {
+      "category": "connective",
+      "cross_family": true,
+      "description": "Develops claims additively through examples, restatements, and further considerations, favoring cumulative elaboration over abrupt topic changes.",
+      "disposition": "realization_only",
+      "disposition_rationale": "Cumulative elaboration is a discourse-ordering choice that does not require new evidence or conclusions.",
+      "distinctiveness_weight": 3,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Examples and additional considerations repeatedly extend the opening diagnosis without abandoning its central line.",
+          "source_id": "safety-iii-healthcare"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Successive examples, similar cases, and added considerations accumulate support for the recommendations.",
+          "source_id": "oil-gas-testimony"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "Repeated additions and follow-on considerations extend the proposal from an initial procedure to later-stage factors.",
+          "source_id": "improving-risk-matrix"
+        }
+      ],
+      "id": "connective-additive-exemplification",
+      "layer": "discourse"
+    },
+    {
+      "category": "contrast",
+      "cross_family": true,
+      "description": "Frequently structures argument as a binary correction, opposing current and preferred framings through but, however, while, rather than, instead, and negative-positive parallelism.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Forcing issues into a current-versus-preferred binary adds a corrective reasoning structure not required by the canonical meaning.",
+      "distinctiveness_weight": 5,
+      "evidence": [
+        {
+          "excerpt_segment": "beginning",
+          "observation": "Established and proposed explanatory frames are repeatedly opposed through contrastive conjunctions and rather-than constructions.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "At-best and at-worst framing, repeated instead pivots, and negative-positive parallelism dominate the conclusion.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "middle",
+          "observation": "Repeated contrasts separate superficially similar categories and oppose common labels to the writer's preferred interpretation.",
+          "source_id": "oil-gas-testimony"
+        }
+      ],
+      "id": "contrast-binary-reframing",
+      "layer": "discourse"
+    },
+    {
+      "category": "conclusion",
+      "cross_family": true,
+      "description": "Conclusions synthesize the preceding contrast, restate the preferred principle in imperative or necessity language, and translate it into an actionable priority.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Turning synthesis into an imperative and assigning an actionable priority adds directive policy beyond advisory findings.",
+      "distinctiveness_weight": 5,
+      "evidence": [
+        {
+          "excerpt_segment": "end",
+          "observation": "The conclusion compresses the earlier comparison, restates the proposed shift, and closes on its practical preventive value.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "The conclusion restates the central opposition several times and ends with a direct prescription about where effort should be placed.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "The final section condenses earlier findings into short action statements and a preferred starting point.",
+          "source_id": "improving-risk-matrix"
+        }
+      ],
+      "id": "conclusion-synthesis-imperative",
+      "layer": "discourse"
+    },
+    {
+      "category": "conclusion",
+      "cross_family": true,
+      "description": "After a firm synthesis, endings preserve forward motion by acknowledging alternatives, limitations, refinements, or work still to follow.",
+      "disposition": "semantic_addition",
+      "disposition_rationale": "Requiring every ending to preserve alternatives, refinements, or future work adds a conclusion and uncertainty policy.",
+      "distinctiveness_weight": 3,
+      "evidence": [
+        {
+          "excerpt_segment": "end",
+          "observation": "The conclusion allows other explanatory models and notes a drawback before reaffirming the practical benefit.",
+          "source_id": "systems-theoretic-software-intensive"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "The ending distinguishes immediate recommendations from a separate issue deferred for later treatment.",
+          "source_id": "safety-assurance"
+        },
+        {
+          "excerpt_segment": "end",
+          "observation": "The conclusion labels its proposals as improvable, identifies a remaining limitation, and points toward a later alternative.",
+          "source_id": "improving-risk-matrix"
+        }
+      ],
+      "id": "conclusion-qualified-forward-opening",
+      "layer": "discourse"
+    }
+  ],
+  "judgment_provenance": {
+    "extractor_model": "gpt-5.6-sol",
+    "future_task_or_key_exposure": false,
+    "performed_before_behavioral_outcomes": true,
+    "semantic_classifier_model": "gpt-5.6-sol",
+    "weights_assigned_before_semantic_classification": true
+  },
+  "limitations": [
+    "Weights represent corpus-internal salience assigned without role-semantic input.",
+    "The packet supplies excerpts rather than complete documents, so recurrence claims are bounded to the included segments.",
+    "Several practitioner excerpts contain recognition noise and slide-derived fragments; punctuation and sentence-boundary inferences are therefore conservative.",
+    "Cross-family flags reflect only the genre-family evidence represented in the cited source documents.",
+    "Classification is limited to the frozen meanings and feature descriptions contained in the packet.",
+    "Features combining surface form with substantive force were classified by that force; the premise-related mixed case remains uncertain because the frozen meaning marks it ambiguous."
+  ],
+  "role_id": "agent-instruction-review",
+  "schema_version": 1,
+  "thresholds": {
+    "minimum_cross_family_retained_features": 4,
+    "minimum_evidence_documents_per_retained_feature": 3,
+    "minimum_retained_features": 5,
+    "minimum_weighted_retention": 0.35
+  }
+}

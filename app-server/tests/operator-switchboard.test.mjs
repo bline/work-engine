@@ -5,8 +5,10 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+  ContextInputCustodyController,
   FileRoleBindingRegistry,
   OperatorSwitchboard,
+  openSqliteAppServerStateStore,
   projectRuntimeManifest,
 } from "../src/index.mjs";
 
@@ -35,7 +37,7 @@ function manifest() {
   }, { baseDirectory: "/tmp/switchboard-test" });
 }
 
-async function fixture(t, runtimeResult = null) {
+async function fixture(t, runtimeResult = null, inputCustody = null) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-switchboard."));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const registryPath = path.join(directory, "bindings.json");
@@ -66,10 +68,56 @@ async function fixture(t, runtimeResult = null) {
       completions.push(delivery);
       return { outputText: "bounded model response" };
     },
+    inputCustody,
     messageIdFactory: () => `operator-message-${++message}`,
   });
   return { switchboard, registry, registryPath, calls, completions };
 }
+
+test("input arriving under a closed context admission is durably queued without reaching the role", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-custody-switchboard."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const store = await openSqliteAppServerStateStore({
+    filePath: path.join(directory, "state.sqlite3"),
+  });
+  t.after(() => store.close());
+  const custody = new ContextInputCustodyController({ store });
+  const completion = deferred();
+  const { switchboard, registry, calls } = await fixture(t, {
+    logicalRoleInstanceId: "alpha:main",
+    threadId: "thread-alpha",
+    turnId: "turn-alpha",
+    createdThread: false,
+    replayedDelivery: false,
+    binding: { bindingRevision: 1 },
+  }, custody);
+  switchboard.completionWaiter = () => completion.promise;
+  await registry.bind({
+    logicalRoleInstanceId: "alpha:main",
+    threadId: "thread-alpha",
+    protocolVersion: "0.149.1",
+    environmentFingerprint: "switchboard-test",
+  });
+  await switchboard.handleLine(":we attach alpha:main");
+  const first = await switchboard.startLine("current predecessor work");
+  await custody.closeAdmission({
+    logicalRoleInstanceId: "alpha:main",
+    threadId: "thread-alpha",
+    bindingRevision: 1,
+    transitionRevision: `sha256:${"a".repeat(64)}`,
+  });
+
+  const queued = await switchboard.startLine("input after the transition fence");
+  assert.equal(queued.result.kind, "queued_message");
+  assert.equal(queued.result.logicalRoleInstanceId, "alpha:main");
+  assert.equal(calls.length, 1);
+  assert.deepEqual(store.pendingContextInputs({
+    logicalRoleInstanceId: "alpha:main",
+  }).map((item) => item.input.text), ["input after the transition fence"]);
+
+  completion.resolve({ outputText: "predecessor completed" });
+  await first.completion;
+});
 
 test("administrative commands never reach the role runtime or create bindings", async (t) => {
   const { switchboard, registryPath, calls } = await fixture(t);
@@ -188,6 +236,28 @@ test("a lifecycle-aware runtime completion is not awaited a second time", async 
   assert.deepEqual(completions, []);
   assert.deepEqual((await switchboard.handleLine(":we status")).lifecycle, {
     status: "recorded",
+  });
+});
+
+test("a live lifecycle receipt is exposed through the compatible observer view", async (t) => {
+  const runtimeResult = {
+    delivery: {
+      logicalRoleInstanceId: "alpha:main",
+      threadId: "thread-1",
+      turnId: "turn-1",
+      createdThread: false,
+      replayedDelivery: false,
+      binding: { bindingRevision: 3 },
+    },
+    completion: { outputText: "continued after replacement" },
+    lifecycle: { status: "reconciled" },
+  };
+  const { switchboard } = await fixture(t, runtimeResult);
+  await switchboard.handleLine(":we attach alpha:main");
+  const result = await switchboard.handleLine("Run through the live lifecycle host.");
+  assert.deepEqual(result.shadow, { status: "reconciled" });
+  assert.deepEqual((await switchboard.handleLine(":we status")).lifecycle, {
+    status: "reconciled",
   });
 });
 

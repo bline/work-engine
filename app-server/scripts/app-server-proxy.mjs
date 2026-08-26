@@ -32,6 +32,7 @@ function parseArguments(argv) {
     socketPath: null,
     cwd: process.cwd(),
     manifestPath: path.join(WORKSPACE_ROOT, "app-server/runtime-manifest.yaml"),
+    semanticProfilePath: path.join(WORKSPACE_ROOT, "app-server/semantic-context-profile.yaml"),
     bindingsPath: process.env.WORK_ENGINE_APP_SERVER_BINDINGS
       ?? path.join(os.homedir(), ".local/state/work-engine/app-server-role-bindings.json"),
     trace: false,
@@ -49,6 +50,9 @@ function parseArguments(argv) {
     else if (argument === "--cwd") options.cwd = path.resolve(value());
     else if (argument === "--manifest") options.manifestPath = path.resolve(value());
     else if (argument === "--bindings") options.bindingsPath = path.resolve(value());
+    else if (argument === "--semantic-profile") {
+      options.semanticProfilePath = path.resolve(value());
+    }
     else if (argument === "--trace") options.trace = true;
     else if (argument === "--enable-token-budget") options.tokenBudget = true;
     else if (argument === "--generation-state") options.generationState = path.resolve(value());
@@ -101,6 +105,8 @@ async function main() {
       workerCwd: options.cwd,
       transport,
       runtimeManifestPath: options.manifestPath,
+      semanticContextProfilePath: options.semanticProfilePath,
+      semanticContextStatePath: path.join(options.generationState, "semantic-context.sqlite3"),
       roleBindingsPath: options.bindingsPath,
       configuredProviderFeatures: options.tokenBudget ? ["token_budget"] : [],
     });
