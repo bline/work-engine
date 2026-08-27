@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
-import { chmod, mkdtemp, readdir, rm, stat } from "node:fs/promises";
+import { chmod, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import test from "node:test";
 
+import { observeGitCheckpoint } from "../../../src/services/claim-evidence/git-checkpoint-observation.mjs";
+import { normalizeObservation, observationEventIdentity } from "../../../src/services/claim-evidence/observation.mjs";
 import { resolveRecord } from "../../../src/services/claim-evidence/projections.mjs";
 import { openSqliteClaimEvidenceStore } from "../../../src/services/claim-evidence/sqlite-store.mjs";
+
+const execFileAsync = promisify(execFile);
 
 const exactReference = (reference = "source") => ({
   owner: "repository", reference, revision: "blob-1", integrity_sha256: "a".repeat(64),
@@ -43,11 +49,81 @@ const createOperation = (operationId = "create") => operation(operationId, "crea
   initial_revision: revision(),
 });
 
+const exactObservation = (overrides = {}) => normalizeObservation({
+  event_identity: observationEventIdentity("test-producer", "test-source"),
+  producer: { identity: "test-producer", kind: "deterministic_test_adapter" },
+  origin: { kind: "test_receipt", reference: "receipt:test", trust_classification: "untrusted_input" },
+  subject: { namespace: "tests", subject_kind: "receipt", stable_subject_id: "sqlite", content_set: ["receipt.json"] },
+  evidence_baseline: exactReference("observation-baseline"),
+  artifact: {
+    kind: "test_receipt", reference: "receipt:test",
+    digest: { algorithm: "sha256", value: "b".repeat(64) }, verification: "verified",
+    checkpoint: { object_format: "sha256", commit: "receipt-test", tree: "suite-test" },
+  },
+  observed_at: "2026-08-26T12:00:00.000Z", provider_sequence: null,
+  completeness: "available", exclusions: [], collection_failures: [],
+  executable_generation: "test-generation", adapter_version: "test-adapter-v1",
+  ...overrides,
+});
+
 async function temporaryDatabase(t) {
   const directory = await mkdtemp(path.join(tmpdir(), "claim-evidence-sqlite-test-"));
   t.after(async () => rm(directory, { recursive: true, force: true }));
   return path.join(directory, "claims.sqlite3");
 }
+
+async function temporaryGitCheckpoint(t) {
+  const repositoryPath = await mkdtemp(path.join(tmpdir(), "claim-evidence-git-test-"));
+  t.after(async () => rm(repositoryPath, { recursive: true, force: true }));
+  await execFileAsync("git", ["init", "--quiet", repositoryPath]);
+  await execFileAsync("git", ["-C", repositoryPath, "config", "user.name", "Observation Test"]);
+  await execFileAsync("git", ["-C", repositoryPath, "config", "user.email", "observation@example.invalid"]);
+  await writeFile(path.join(repositoryPath, "artifact.txt"), "exact checkpoint artifact\n");
+  await execFileAsync("git", ["-C", repositoryPath, "add", "artifact.txt"]);
+  await execFileAsync("git", ["-C", repositoryPath, "commit", "--quiet", "-m", "checkpoint"]);
+  const { stdout: commitOutput } = await execFileAsync("git", ["-C", repositoryPath, "rev-parse", "HEAD"]);
+  const commit = commitOutput.trim();
+  const { stdout: treeOutput } = await execFileAsync("git", ["-C", repositoryPath, "rev-parse", `${commit}^{tree}`]);
+  return { repositoryPath, commit, tree: treeOutput.trim() };
+}
+
+test("vertical Git checkpoint observation survives SQLite restart without semantic promotion", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  const checkpoint = await temporaryGitCheckpoint(t);
+  const observation = await observeGitCheckpoint({
+    ...checkpoint,
+    expectedCommit: checkpoint.commit,
+    expectedTree: checkpoint.tree,
+    producerIdentity: "app-server:test-checkpoint-producer",
+    observedAt: "2026-08-26T12:00:00.000Z",
+    providerSequence: "checkpoint-1",
+    origin: { kind: "git_repository", reference: "test-repository", trust_classification: "host_verified_artifact" },
+    subject: { namespace: "tests", subject_kind: "checkpoint", stable_subject_id: "vertical", content_set: ["artifact.txt"] },
+    evidenceBaseline: exactReference("checkpoint-baseline"),
+    executableGeneration: "test-generation-1",
+    adapterVersion: "git-checkpoint-observation-v1",
+  });
+
+  let store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
+  const before = store.exportStore();
+  const recorded = store.recordObservation(observation);
+  assert.equal(recorded.idempotent, false);
+  assert.deepEqual(store.readObservation(observation.id), observation);
+  assert.deepEqual(store.exportStore(), before);
+  store.close();
+
+  store = await openSqliteClaimEvidenceStore({ filePath });
+  t.after(() => store.close());
+  assert.deepEqual(store.readObservation(observation.id), observation);
+  assert.deepEqual(store.listObservations(), [observation]);
+  const replay = store.recordObservation(structuredClone(observation));
+  assert.equal(replay.idempotent, true);
+  assert.equal(replay.observation_id, observation.id);
+  const after = store.exportStore();
+  for (const collection of ["claims", "revisions", "lineage", "reliances", "operations"]) {
+    assert.equal(after[collection].length, before[collection].length, collection);
+  }
+});
 
 test("vertical SQLite claim lifecycle survives restart, rebuilds, and replays exactly", async (t) => {
   const filePath = await temporaryDatabase(t);
@@ -141,6 +217,26 @@ test("two SQLite claim writers serialize and only one stale predecessor wins", a
   assert.equal(recovered.operations.some((item) => item.operation_id === "writer-two"), false);
 });
 
+test("SQLite observation custody replays exactly and rejects conflicting event reuse across writers", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  const firstStore = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
+  const secondStore = await openSqliteClaimEvidenceStore({ filePath });
+  t.after(() => firstStore.close());
+  t.after(() => secondStore.close());
+  const observation = exactObservation();
+  assert.equal(firstStore.recordObservation(observation).idempotent, false);
+  assert.equal(secondStore.recordObservation(structuredClone(observation)).idempotent, true);
+
+  const conflict = exactObservation({
+    provider_sequence: "different-payload-under-the-same-event",
+  });
+  assert.throws(() => secondStore.recordObservation(conflict), /event identity conflict/);
+  assert.deepEqual(firstStore.listObservations(), [observation]);
+  assert.deepEqual(firstStore.listObservations({ limit: 1, afterEventIdentity: observation.event_identity }), []);
+  assert.throws(() => firstStore.listObservations({ limit: 1_001 }), /exceeds 1000/);
+  assert.equal(firstStore.exportStore().operations.length, 0);
+});
+
 test("authority bootstrap is explicit and cannot become later admission", async (t) => {
   const filePath = await temporaryDatabase(t);
   await assert.rejects(
@@ -166,7 +262,7 @@ test("SQLite claim store refuses future or incomplete migration history", async 
   store.close();
   const { DatabaseSync } = await import("node:sqlite");
   let database = new DatabaseSync(futurePath);
-  database.exec("PRAGMA user_version = 2");
+  database.exec("PRAGMA user_version = 3");
   database.close();
   await assert.rejects(
     openSqliteClaimEvidenceStore({ filePath: futurePath }),
@@ -187,6 +283,25 @@ test("SQLite claim store refuses future or incomplete migration history", async 
   );
 });
 
+test("SQLite migrates canonical schema v1 to separate observation custody", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  let store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
+  const canonicalBefore = store.exportStore();
+  store.close();
+  const { DatabaseSync } = await import("node:sqlite");
+  const database = new DatabaseSync(filePath);
+  database.exec("DROP TABLE evidence_observations");
+  database.exec("DELETE FROM schema_migrations WHERE version = 2");
+  database.exec("PRAGMA user_version = 1");
+  database.close();
+
+  store = await openSqliteClaimEvidenceStore({ filePath });
+  t.after(() => store.close());
+  assert.deepEqual(store.exportStore(), canonicalBefore);
+  assert.deepEqual(store.listObservations(), []);
+  assert.equal(store.recordObservation(exactObservation()).idempotent, false);
+});
+
 test("canonical export detects stored payload corruption", async (t) => {
   const filePath = await temporaryDatabase(t);
   const store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
@@ -199,5 +314,23 @@ test("canonical export detects stored payload corruption", async (t) => {
   const reopened = await openSqliteClaimEvidenceStore({ filePath });
   t.after(() => reopened.close());
   assert.throws(() => reopened.exportStore(), /canonical integrity check/);
+  assert.throws(() => reopened.integrityCheck(), /canonical integrity check/);
+});
+
+test("observation reads and integrity checks detect stored payload corruption", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  const store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
+  const observation = exactObservation();
+  store.recordObservation(observation);
+  store.close();
+  const { DatabaseSync } = await import("node:sqlite");
+  const database = new DatabaseSync(filePath);
+  database.prepare("UPDATE evidence_observations SET observation_json = ? WHERE observation_id = ?")
+    .run("{}\n", observation.id);
+  database.close();
+  const reopened = await openSqliteClaimEvidenceStore({ filePath });
+  t.after(() => reopened.close());
+  assert.throws(() => reopened.readObservation(observation.id), /canonical integrity check/);
+  assert.throws(() => reopened.listObservations(), /canonical integrity check/);
   assert.throws(() => reopened.integrityCheck(), /canonical integrity check/);
 });

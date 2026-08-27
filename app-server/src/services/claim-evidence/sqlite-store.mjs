@@ -2,11 +2,12 @@ import { chmodSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { canonicalJson, digest } from "./identity.mjs";
+import { validateObservation } from "./observation.mjs";
 import { buildProjection } from "./projections.mjs";
 import { applyOperation, blankStore } from "./service.mjs";
 import { validateStore } from "./validation.mjs";
 
-export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 1;
+export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 2;
 
 function nonemptyText(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -61,6 +62,33 @@ const MIGRATION_1 = `
   ) STRICT;
 `;
 
+const MIGRATION_2 = `
+  CREATE TABLE evidence_observations (
+    event_identity TEXT PRIMARY KEY,
+    observation_id TEXT NOT NULL UNIQUE,
+    observation_sha256 TEXT NOT NULL CHECK(length(observation_sha256) = 64),
+    observation_json TEXT NOT NULL
+  ) STRICT;
+`;
+
+function observationFromRow(row) {
+  if (!row) return null;
+  let observation;
+  try {
+    observation = JSON.parse(row.observation_json);
+  } catch (error) {
+    throw new TypeError(`stored evidence observation contains invalid JSON: ${error.message}`);
+  }
+  if (canonicalJson(observation) !== row.observation_json
+      || digest(observation) !== row.observation_sha256
+      || observation.id !== row.observation_id
+      || observation.event_identity !== row.event_identity) {
+    throw new TypeError("stored evidence observation failed its canonical integrity check");
+  }
+  validateObservation(observation);
+  return observation;
+}
+
 function migrate(database, filePath) {
   database.exec("BEGIN EXCLUSIVE");
   try {
@@ -75,6 +103,12 @@ function migrate(database, filePath) {
       database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (1, ?)")
         .run(new Date().toISOString());
       database.exec("PRAGMA user_version = 1");
+    }
+    if (current < 2) {
+      database.exec(MIGRATION_2);
+      database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (2, ?)")
+        .run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 2");
     }
     const versions = database.prepare("SELECT version FROM schema_migrations ORDER BY version")
       .all().map((row) => Number(row.version));
@@ -170,6 +204,65 @@ class SqliteClaimEvidenceStore {
     });
   }
 
+  recordObservation(observation) {
+    validateObservation(observation);
+    return this.#transaction(() => {
+      const observationJson = canonicalJson(observation);
+      const observationSha256 = digest(observation);
+      const priorEvent = this.database.prepare(`
+        SELECT event_identity, observation_id, observation_sha256, observation_json
+        FROM evidence_observations WHERE event_identity = ?
+      `).get(observation.event_identity);
+      if (priorEvent) {
+        const prior = observationFromRow(priorEvent);
+        if (prior.id !== observation.id
+            || priorEvent.observation_sha256 !== observationSha256
+            || priorEvent.observation_json !== observationJson) {
+          throw new TypeError("evidence observation event identity conflict");
+        }
+        return { idempotent: true, observation_id: prior.id, observation: structuredClone(prior) };
+      }
+      const priorIdentity = this.database.prepare(`
+        SELECT event_identity FROM evidence_observations WHERE observation_id = ?
+      `).get(observation.id);
+      if (priorIdentity) throw new TypeError("evidence observation identity reused by another event");
+      this.database.prepare(`
+        INSERT INTO evidence_observations(
+          event_identity, observation_id, observation_sha256, observation_json
+        ) VALUES (?, ?, ?, ?)
+      `).run(observation.event_identity, observation.id, observationSha256, observationJson);
+      return { idempotent: false, observation_id: observation.id, observation: structuredClone(observation) };
+    });
+  }
+
+  readObservation(observationId) {
+    this.#assertOpen();
+    nonemptyText(observationId, "evidence observation identity");
+    const row = this.database.prepare(`
+      SELECT event_identity, observation_id, observation_sha256, observation_json
+      FROM evidence_observations WHERE observation_id = ?
+    `).get(observationId);
+    return row ? structuredClone(observationFromRow(row)) : null;
+  }
+
+  listObservations({ limit = 100, afterEventIdentity = null } = {}) {
+    this.#assertOpen();
+    positiveInteger(limit, "evidence observation list limit");
+    if (limit > 1_000) throw new TypeError("evidence observation list limit exceeds 1000");
+    if (afterEventIdentity !== null) nonemptyText(afterEventIdentity, "evidence observation cursor");
+    const rows = afterEventIdentity === null
+      ? this.database.prepare(`
+        SELECT event_identity, observation_id, observation_sha256, observation_json
+        FROM evidence_observations ORDER BY event_identity, observation_id LIMIT ?
+      `).all(limit)
+      : this.database.prepare(`
+        SELECT event_identity, observation_id, observation_sha256, observation_json
+        FROM evidence_observations WHERE event_identity > ?
+        ORDER BY event_identity, observation_id LIMIT ?
+      `).all(afterEventIdentity, limit);
+    return rows.map((row) => structuredClone(observationFromRow(row)));
+  }
+
   exportStore() {
     this.#assertOpen();
     const current = this.#canonicalState();
@@ -186,6 +279,13 @@ class SqliteClaimEvidenceStore {
     const physical = this.database.prepare("PRAGMA integrity_check").all()
       .map((row) => row.integrity_check);
     this.exportStore();
+    let afterEventIdentity = null;
+    while (true) {
+      const page = this.listObservations({ limit: 1_000, afterEventIdentity });
+      if (page.length === 0) break;
+      afterEventIdentity = page.at(-1).event_identity;
+      if (page.length < 1_000) break;
+    }
     return Object.freeze(physical);
   }
 
