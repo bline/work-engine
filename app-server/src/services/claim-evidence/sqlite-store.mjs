@@ -4,10 +4,11 @@ import path from "node:path";
 import { canonicalJson, digest } from "./identity.mjs";
 import { validateObservation } from "./observation.mjs";
 import { buildProjection } from "./projections.mjs";
+import { validateSemanticShadowEpisode } from "./semantic-shadow-contract.mjs";
 import { applyOperation, blankStore } from "./service.mjs";
 import { validateStore } from "./validation.mjs";
 
-export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 2;
+export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 3;
 
 function nonemptyText(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -71,6 +72,15 @@ const MIGRATION_2 = `
   ) STRICT;
 `;
 
+const MIGRATION_3 = `
+  CREATE TABLE semantic_shadow_episodes (
+    episode_identity TEXT PRIMARY KEY,
+    request_revision TEXT NOT NULL CHECK(length(request_revision) = 64),
+    episode_revision TEXT NOT NULL UNIQUE CHECK(length(episode_revision) = 64),
+    episode_json TEXT NOT NULL
+  ) STRICT;
+`;
+
 function observationFromRow(row) {
   if (!row) return null;
   let observation;
@@ -87,6 +97,21 @@ function observationFromRow(row) {
   }
   validateObservation(observation);
   return observation;
+}
+
+function shadowEpisodeFromRow(row) {
+  if (!row) return null;
+  let episode;
+  try { episode = JSON.parse(row.episode_json); }
+  catch (error) { throw new TypeError(`stored semantic shadow episode contains invalid JSON: ${error.message}`); }
+  if (canonicalJson(episode) !== row.episode_json
+      || episode.episode_revision !== row.episode_revision
+      || episode.episode_identity !== row.episode_identity
+      || episode.request_revision !== row.request_revision) {
+    throw new TypeError("stored semantic shadow episode failed its canonical integrity check");
+  }
+  validateSemanticShadowEpisode(episode);
+  return episode;
 }
 
 function migrate(database, filePath) {
@@ -109,6 +134,12 @@ function migrate(database, filePath) {
       database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (2, ?)")
         .run(new Date().toISOString());
       database.exec("PRAGMA user_version = 2");
+    }
+    if (current < 3) {
+      database.exec(MIGRATION_3);
+      database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (3, ?)")
+        .run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 3");
     }
     const versions = database.prepare("SELECT version FROM schema_migrations ORDER BY version")
       .all().map((row) => Number(row.version));
@@ -263,6 +294,64 @@ class SqliteClaimEvidenceStore {
     return rows.map((row) => structuredClone(observationFromRow(row)));
   }
 
+  recordShadowEpisode(episode) {
+    validateSemanticShadowEpisode(episode);
+    return this.#transaction(() => {
+      for (const binding of episode.observation_bindings) {
+        const row = this.database.prepare(`
+          SELECT event_identity, observation_id, observation_sha256, observation_json
+          FROM evidence_observations WHERE observation_id = ?
+        `).get(binding.observation_id);
+        if (!row || digest(observationFromRow(row)) !== binding.observation_digest) {
+          throw new TypeError("semantic shadow episode contains an unadmitted observation binding");
+        }
+      }
+      const episodeJson = canonicalJson(episode);
+      const prior = this.database.prepare(`
+        SELECT episode_identity, request_revision, episode_revision, episode_json
+        FROM semantic_shadow_episodes WHERE episode_identity = ?
+      `).get(episode.episode_identity);
+      if (prior) {
+        const stored = shadowEpisodeFromRow(prior);
+        if (prior.request_revision !== episode.request_revision
+            || prior.episode_revision !== episode.episode_revision
+            || prior.episode_json !== episodeJson) {
+          throw new TypeError("semantic shadow episode identity conflict");
+        }
+        return { idempotent: true, episode: structuredClone(stored) };
+      }
+      const reused = this.database.prepare(`
+        SELECT episode_identity FROM semantic_shadow_episodes WHERE episode_revision = ?
+      `).get(episode.episode_revision);
+      if (reused) throw new TypeError("semantic shadow episode revision reused by another identity");
+      this.database.prepare(`
+        INSERT INTO semantic_shadow_episodes(
+          episode_identity, request_revision, episode_revision, episode_json
+        ) VALUES (?, ?, ?, ?)
+      `).run(episode.episode_identity, episode.request_revision, episode.episode_revision, episodeJson);
+      return { idempotent: false, episode: structuredClone(episode) };
+    });
+  }
+
+  readShadowEpisode(episodeIdentity) {
+    this.#assertOpen(); nonemptyText(episodeIdentity, "semantic shadow episode identity");
+    const row = this.database.prepare(`
+      SELECT episode_identity, request_revision, episode_revision, episode_json
+      FROM semantic_shadow_episodes WHERE episode_identity = ?
+    `).get(episodeIdentity);
+    return row ? structuredClone(shadowEpisodeFromRow(row)) : null;
+  }
+
+  listShadowEpisodes({ limit = 100, afterEpisodeIdentity = null } = {}) {
+    this.#assertOpen(); positiveInteger(limit, "semantic shadow episode list limit");
+    if (limit > 1_000) throw new TypeError("semantic shadow episode list limit exceeds 1000");
+    if (afterEpisodeIdentity !== null) nonemptyText(afterEpisodeIdentity, "semantic shadow episode cursor");
+    const rows = afterEpisodeIdentity === null
+      ? this.database.prepare(`SELECT episode_identity, request_revision, episode_revision, episode_json FROM semantic_shadow_episodes ORDER BY episode_identity LIMIT ?`).all(limit)
+      : this.database.prepare(`SELECT episode_identity, request_revision, episode_revision, episode_json FROM semantic_shadow_episodes WHERE episode_identity > ? ORDER BY episode_identity LIMIT ?`).all(afterEpisodeIdentity, limit);
+    return rows.map(shadowEpisodeFromRow).map(structuredClone);
+  }
+
   exportStore() {
     this.#assertOpen();
     const current = this.#canonicalState();
@@ -284,6 +373,13 @@ class SqliteClaimEvidenceStore {
       const page = this.listObservations({ limit: 1_000, afterEventIdentity });
       if (page.length === 0) break;
       afterEventIdentity = page.at(-1).event_identity;
+      if (page.length < 1_000) break;
+    }
+    let afterEpisodeIdentity = null;
+    while (true) {
+      const page = this.listShadowEpisodes({ limit: 1_000, afterEpisodeIdentity });
+      if (page.length === 0) break;
+      afterEpisodeIdentity = page.at(-1).episode_identity;
       if (page.length < 1_000) break;
     }
     return Object.freeze(physical);

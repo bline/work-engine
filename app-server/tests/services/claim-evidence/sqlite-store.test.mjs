@@ -8,7 +8,9 @@ import test from "node:test";
 
 import { observeGitCheckpoint } from "../../../src/services/claim-evidence/git-checkpoint-observation.mjs";
 import { normalizeObservation, observationEventIdentity } from "../../../src/services/claim-evidence/observation.mjs";
+import { digest } from "../../../src/services/claim-evidence/identity.mjs";
 import { resolveRecord } from "../../../src/services/claim-evidence/projections.mjs";
+import { closeSemanticShadowEpisode, SEMANTIC_SHADOW_INSTRUCTION_BUNDLE_REVISION } from "../../../src/services/claim-evidence/semantic-shadow-contract.mjs";
 import { openSqliteClaimEvidenceStore } from "../../../src/services/claim-evidence/sqlite-store.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -262,7 +264,7 @@ test("SQLite claim store refuses future or incomplete migration history", async 
   store.close();
   const { DatabaseSync } = await import("node:sqlite");
   let database = new DatabaseSync(futurePath);
-  database.exec("PRAGMA user_version = 3");
+  database.exec("PRAGMA user_version = 4");
   database.close();
   await assert.rejects(
     openSqliteClaimEvidenceStore({ filePath: futurePath }),
@@ -291,7 +293,8 @@ test("SQLite migrates canonical schema v1 to separate observation custody", asyn
   const { DatabaseSync } = await import("node:sqlite");
   const database = new DatabaseSync(filePath);
   database.exec("DROP TABLE evidence_observations");
-  database.exec("DELETE FROM schema_migrations WHERE version = 2");
+  database.exec("DROP TABLE semantic_shadow_episodes");
+  database.exec("DELETE FROM schema_migrations WHERE version >= 2");
   database.exec("PRAGMA user_version = 1");
   database.close();
 
@@ -332,5 +335,52 @@ test("observation reads and integrity checks detect stored payload corruption", 
   t.after(() => reopened.close());
   assert.throws(() => reopened.readObservation(observation.id), /canonical integrity check/);
   assert.throws(() => reopened.listObservations(), /canonical integrity check/);
+  assert.throws(() => reopened.integrityCheck(), /canonical integrity check/);
+});
+
+const closedShadowEpisode = (observation, overrides = {}) => closeSemanticShadowEpisode({
+  episode_identity: "episode:sqlite", request_revision: "c".repeat(64),
+  instruction_bundle_revision: SEMANTIC_SHADOW_INSTRUCTION_BUNDLE_REVISION,
+  source_projection_revision: "d".repeat(64),
+  observation_bindings: [{ observation_id: observation.id, observation_digest: digest(observation) }],
+  started_at: "2026-08-27T12:00:00.000Z", closed_at: "2026-08-27T12:00:01.000Z",
+  terminal_stage: "compiler", terminal_status: "failed", compiler_attempt: null,
+  candidate: null, verifier_attempt: null, verification: null,
+  failure: { kind: "compiler_inference_failure", message: "provider unavailable" },
+  eligibility_disposition: null, ...overrides,
+});
+
+test("SQLite semantic shadow custody serializes writers and rejects conflicting replay", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  const first = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] });
+  const second = await openSqliteClaimEvidenceStore({ filePath });
+  t.after(() => first.close()); t.after(() => second.close());
+  const observation = exactObservation(); first.recordObservation(observation);
+  const before = first.exportStore(); const observations = first.listObservations(); const episode = closedShadowEpisode(observation);
+  assert.equal(first.recordShadowEpisode(episode).idempotent, false);
+  assert.equal(second.recordShadowEpisode(structuredClone(episode)).idempotent, true);
+  assert.throws(() => second.recordShadowEpisode(closedShadowEpisode(observation, { closed_at: "2026-08-27T12:00:02.000Z" })), /episode identity conflict/);
+  assert.deepEqual(second.readShadowEpisode(episode.episode_identity), episode);
+  assert.deepEqual(first.exportStore(), before); assert.deepEqual(first.listObservations(), observations);
+  const unadmitted = exactObservation({ event_identity: observationEventIdentity("other", "unadmitted") });
+  assert.throws(() => first.recordShadowEpisode(closedShadowEpisode(unadmitted, { episode_identity: "episode:unadmitted" })), /unadmitted observation binding/);
+});
+
+test("SQLite migrates schema v2 to separate semantic shadow custody", async (t) => {
+  const filePath = await temporaryDatabase(t); let store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] }); const before = store.exportStore(); store.close();
+  const { DatabaseSync } = await import("node:sqlite"); const database = new DatabaseSync(filePath);
+  database.exec("DROP TABLE semantic_shadow_episodes"); database.exec("DELETE FROM schema_migrations WHERE version = 3"); database.exec("PRAGMA user_version = 2"); database.close();
+  store = await openSqliteClaimEvidenceStore({ filePath }); t.after(() => store.close());
+  assert.deepEqual(store.exportStore(), before); assert.deepEqual(store.listShadowEpisodes(), []);
+  const observation = exactObservation(); store.recordObservation(observation);
+  assert.equal(store.recordShadowEpisode(closedShadowEpisode(observation)).idempotent, false);
+});
+
+test("semantic shadow reads and integrity checks detect stored payload corruption", async (t) => {
+  const filePath = await temporaryDatabase(t); const store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] }); const observation = exactObservation(); store.recordObservation(observation); const episode = closedShadowEpisode(observation); store.recordShadowEpisode(episode); store.close();
+  const { DatabaseSync } = await import("node:sqlite"); const database = new DatabaseSync(filePath);
+  database.prepare("UPDATE semantic_shadow_episodes SET episode_json = ? WHERE episode_identity = ?").run("{}\n", episode.episode_identity); database.close();
+  const reopened = await openSqliteClaimEvidenceStore({ filePath }); t.after(() => reopened.close());
+  assert.throws(() => reopened.readShadowEpisode(episode.episode_identity), /canonical integrity check/);
   assert.throws(() => reopened.integrityCheck(), /canonical integrity check/);
 });
