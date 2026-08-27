@@ -17,6 +17,7 @@ export * from "./retained-role-live-host.mjs";
 export * from "./retained-role-shadow-host.mjs";
 export * from "./manifest-role-observed-context.mjs";
 export * from "./local-semantic-shadow-host.mjs";
+export * from "./local-semantic-live-host.mjs";
 export * from "./context-checkpoint-publication.mjs";
 export * from "./context-transition-lease.mjs";
 export * from "./context-input-custody.mjs";

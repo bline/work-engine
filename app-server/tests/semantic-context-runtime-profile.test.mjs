@@ -54,3 +54,35 @@ test("local semantic shadow profile rejects publication and unknown fields", () 
     /unsupported fields: unsupported/,
   );
 });
+
+test("live semantic context profile declares an explicit transition schedule", () => {
+  const base = {
+    schema_version: 1,
+    profile_id: "test.live",
+    mode: "live",
+    pressure_profile: {
+      usage_field: "last.totalTokens",
+      window_field: "modelContextWindow",
+      rounding: "floor",
+      saturation: "clamp_10000",
+    },
+    pressure_policy: {
+      unit: "basis_points",
+      approaching: { enter: 100, exit: 50 },
+      replacement_candidate: { enter: 200, exit: 150 },
+      critical: { enter: 300, exit: 250 },
+    },
+    live_schedule: { transition_at: ["replacement_candidate", "critical"] },
+  };
+  const profile = projectSemanticContextRuntimeProfile(base, { sha256: "b".repeat(64) });
+  assert.equal(profile.mode, "live");
+  assert.equal(profile.shadowSchedule, null);
+  assert.deepEqual(profile.liveSchedule.transitionAt, ["replacement_candidate", "critical"]);
+  assert.throws(
+    () => projectSemanticContextRuntimeProfile({
+      ...base,
+      shadow_schedule: { inspect_at: [], publish_accepted_checkpoint: false },
+    }, { sha256: "b".repeat(64) }),
+    /cannot declare shadow_schedule/,
+  );
+});

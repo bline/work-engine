@@ -812,3 +812,89 @@ test("live executable host records one non-clearing strategic-planner shadow ins
   });
   assert.deepEqual(bootstrap.manager.snapshot().admissions, []);
 });
+
+test("live executable host publishes, clears, and reconciles through the switchboard", {
+  skip: !transitionEnabled,
+  timeout: 900_000,
+}, async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-live-hosted-transition."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const transport = spawnAppServer({
+    cwd: ROOT,
+    args: ["app-server", "--stdio", "--enable", "token_budget"],
+  }, t);
+  t.after(() => transport.close());
+  const stateRoot = path.join(directory, "host-state");
+  const semanticStatePath = path.join(stateRoot, "semantic-context.sqlite3");
+  const bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot: ROOT,
+    stateRoot,
+    workerCwd: ROOT,
+    transport,
+    runtimeManifestPath: path.join(ROOT, "app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.join(
+      ROOT,
+      "app-server/tests/fixtures/semantic-context-host-live-profile.yaml",
+    ),
+    semanticContextStatePath: semanticStatePath,
+    roleBindingsPath: path.join(stateRoot, "role-bindings.json"),
+    switchboardAttachmentPath: path.join(stateRoot, "switchboard-attachment.json"),
+    configuredProviderFeatures: ["token_budget"],
+    workerDispatchTimeoutMs: 15 * 60_000,
+  });
+  t.after(() => bootstrap.close({ abandonActiveWork: true }));
+  const completions = new Map();
+  const waiters = new Map();
+  bootstrap.transport.onNotification((notification) => {
+    if (notification.method !== "turn/completed") return;
+    const turnId = notification.params?.turn?.id;
+    const waiter = waiters.get(turnId);
+    if (waiter) {
+      waiters.delete(turnId);
+      waiter(notification.params.turn);
+    } else if (typeof turnId === "string") completions.set(turnId, notification.params.turn);
+  });
+  const waitForCompletion = (turnId) => {
+    if (completions.has(turnId)) {
+      const completion = completions.get(turnId);
+      completions.delete(turnId);
+      return Promise.resolve(completion);
+    }
+    return new Promise((resolve) => waiters.set(turnId, resolve));
+  };
+  await bootstrap.transport.request("initialize", {
+    clientInfo: { name: "work-engine-live-hosted-transition", version: "0.1.0" },
+    capabilities: { experimentalApi: false, requestAttestation: false },
+  });
+  bootstrap.transport.notify("initialized");
+  const shell = await bootstrap.transport.request("thread/start", { cwd: ROOT });
+  const instanceId = `live-hosted-transition-${randomUUID()}`;
+  const attached = await bootstrap.transport.request("turn/start", {
+    threadId: shell.thread.id,
+    clientUserMessageId: `live-hosted-transition-attach-${randomUUID()}`,
+    input: [{
+      type: "text",
+      text: `:we attach strategic-planner:${instanceId}`,
+      text_elements: [],
+    }],
+  });
+  assert.equal((await waitForCompletion(attached.turn.id)).status, "completed");
+  const started = await bootstrap.transport.request("turn/start", {
+    threadId: shell.thread.id,
+    clientUserMessageId: `live-hosted-transition-turn-${randomUUID()}`,
+    input: [{
+      type: "text",
+      text: "Acknowledge readiness for one executable-host context transition.",
+      text_elements: [],
+    }],
+  });
+  const completion = await waitForCompletion(started.turn.id);
+  assert.equal(completion.status, "completed", JSON.stringify(completion.error));
+  const store = await openSqliteAppServerStateStore({ filePath: semanticStatePath });
+  t.after(() => store.close());
+  const lifecycle = store.snapshot(`strategic-planner:${instanceId}`);
+  assert.ok(lifecycle?.publication?.checkpointRevision);
+  assert.equal(lifecycle.fence.publicationRevision, lifecycle.publication.checkpointRevision);
+  assert.equal(lifecycle.fence.ledgerRevision, lifecycle.ledgerEntry.entryRevision);
+  assert.deepEqual(bootstrap.manager.snapshot().admissions, []);
+});

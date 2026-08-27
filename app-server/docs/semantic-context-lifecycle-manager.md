@@ -1214,10 +1214,15 @@ while every invariant remains preserved.
    reconciliation. Visible turn completion remains pending through the
    lifecycle, and concurrent execution of one episode is deduplicated. This
    generic host is not yet selected by the shadow-only executable profile.
-20. Add an explicit live runtime profile, initialize and advance its durable
-   publication fence under canonical authority revalidation, select the live
-   host in the executable proxy, and execute one gated proxy transition before
-   enabling ordinary development inside it.
+20. **Completed foundation implementation and evidence:** add an explicit live runtime
+   profile, initialize and advance its durable publication fence under
+   host-owned authority revalidation, and select the live host in the
+   executable proxy when that profile is supplied. A gated executable-host
+   integration test covers switchboard delivery through publication,
+   model-requested clearing, reconciliation, and durable fence evidence. The
+   gated test completed against the pinned local Codex App Server with
+   `token_budget`; other installed versions should pass the same gate before
+   ordinary development uses the live profile.
 
 ## Relationship to neighboring documents
 

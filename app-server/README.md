@@ -175,15 +175,21 @@ the user's local state directory.
 
 Hosted manifest-role turns pass through the semantic lifecycle in shadow mode
 by default. The proxy loads `semantic-context-profile.yaml`; use
-`--semantic-profile PATH` to select another closed profile. Completed role
+`--semantic-profile PATH` to select another closed profile. The checked-in
+`semantic-context-live-profile.yaml` selects the live host and must be paired
+with `--enable-token-budget`; use it only after the gated live transition test
+passes on the installed Codex version. Completed role
 turns are joined only to token telemetry carrying the same turn ID, and their
 episodes are stored at `semantic-context.sqlite3` under the proxy's stable
 state directory. The SQLite path therefore survives executable-generation
 replacement and host restart, while the profile and lifecycle implementation
 remain part of the immutable generation and its environment fingerprint.
 Comfortable turns persist without semantic inference. Configured inspection
-bands may run the ephemeral compiler and verifier, but this host assembly
-cannot publish a checkpoint or invoke `new_context`.
+bands may run the ephemeral compiler and verifier. Shadow mode cannot publish
+a checkpoint or invoke `new_context`. Live mode keeps the operator turn pending
+through checkpoint publication, model-requested context replacement,
+reconciliation, and ordered release of input received while admission was
+closed.
 
 The proxy uses the connected Codex thread as a UI shell. It intercepts
 single-text `turn/start` requests inside the active executable generation:

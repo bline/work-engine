@@ -4,7 +4,9 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { CodexAppServerAdapter } from "./codex-app-server-adapter.mjs";
+import { MODEL_CONTEXT_REPLACEMENT_CAPABILITY } from "./capabilities.mjs";
 import { ContextInputCustodyController } from "./context-input-custody.mjs";
+import { InMemoryContextTransitionLeaseGate } from "./context-transition-lease.mjs";
 import { FileRoleBindingRegistry } from "./role-binding-registry.mjs";
 import { ManifestRoleRuntime, projectRuntimeManifest } from "./runtime-manifest.mjs";
 import { ExactSkillResolver } from "./skill-resolver.mjs";
@@ -267,20 +269,26 @@ export async function createExecutableGenerationRoleEnvironment({
     throw new TypeError("executable role environment dynamic tools must be an array");
   }
   const transport = new DispatchEffectTransport(dynamicTools);
-  const registry = new FileRoleBindingRegistry(bindingsPath);
+  const liveContext = config.semanticContext?.profile?.mode === "live";
+  const transitionGate = liveContext ? new InMemoryContextTransitionLeaseGate() : null;
+  const registry = new FileRoleBindingRegistry(bindingsPath, { transitionGate });
   const adapter = new CodexAppServerAdapter({
     transport,
     registry,
     skillResolver: await ExactSkillResolver.create([path.join(root, "skills")]),
     configuredProviderFeatures,
+    transitionGate,
   });
   const semanticHost = config.semanticContext === undefined
     ? null
     : await (async () => {
-      const { createLocalSemanticShadowHost } = await import("./local-semantic-shadow-host.mjs");
-      return createLocalSemanticShadowHost({
+      const createHost = liveContext
+        ? (await import("./local-semantic-live-host.mjs")).createLocalSemanticLiveHost
+        : (await import("./local-semantic-shadow-host.mjs")).createLocalSemanticShadowHost;
+      return createHost({
         adapter,
         manifest,
+        ...(liveContext ? { transitionGate } : {}),
         stateFilePath: requireText(
           semanticContextStatePath,
           "semantic context lifecycle state path",
@@ -294,7 +302,8 @@ export async function createExecutableGenerationRoleEnvironment({
   const runtime = semanticHost?.runtime ?? new ManifestRoleRuntime({ adapter, manifest });
   const inputCustody = semanticHost === null
     ? null
-    : new ContextInputCustodyController({ store: semanticHost.episodeStore });
+    : semanticHost.inputCustody
+      ?? new ContextInputCustodyController({ store: semanticHost.episodeStore });
   const switchboard = new OperatorSwitchboard({
     manifest,
     runtime,
@@ -344,7 +353,11 @@ export async function createExecutableGenerationRoleEnvironment({
     async handleRequest(payload, effect) {
       if (payload?.method === "initialize") {
         const response = await effect(payload);
-        adapter.adoptInitialization(response);
+        adapter.adoptInitialization(response, {
+          requiredProviderCapabilities: liveContext
+            ? [MODEL_CONTEXT_REPLACEMENT_CAPABILITY]
+            : [],
+        });
         return { disposition: "respond", result: response };
       }
       if (["thread/start", "thread/resume"].includes(payload?.method)) {

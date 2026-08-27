@@ -11,9 +11,11 @@ import { validateTokenUsagePressureProfile } from "./token-usage-pressure-projec
 const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "profile_id",
+  "mode",
   "pressure_profile",
   "pressure_policy",
   "shadow_schedule",
+  "live_schedule",
 ]);
 const PRESSURE_PROFILE_FIELDS = new Set([
   "usage_field",
@@ -29,6 +31,7 @@ const PRESSURE_POLICY_FIELDS = new Set([
 ]);
 const BAND_FIELDS = new Set(["enter", "exit"]);
 const SCHEDULE_FIELDS = new Set(["inspect_at", "publish_accepted_checkpoint"]);
+const LIVE_SCHEDULE_FIELDS = new Set(["transition_at"]);
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 
@@ -75,6 +78,10 @@ export function projectSemanticContextRuntimeProfile(document, source = {}) {
   if (!IDENTIFIER.test(profileId)) {
     throw new TypeError("semantic context runtime profile id is invalid");
   }
+  const mode = document.mode ?? "shadow";
+  if (!["shadow", "live"].includes(mode)) {
+    throw new TypeError("semantic context runtime profile mode must be shadow or live");
+  }
   const sourceSha256 = text(source.sha256, "semantic context runtime profile source digest");
   if (!SHA256.test(sourceSha256)) {
     throw new TypeError("semantic context runtime profile source digest must be SHA-256 hex");
@@ -100,19 +107,42 @@ export function projectSemanticContextRuntimeProfile(document, source = {}) {
     ),
     critical: band(authoredPolicy.critical, "pressure_policy.critical"),
   });
-  const authoredSchedule = record(document.shadow_schedule, "shadow_schedule");
-  rejectUnknown(authoredSchedule, SCHEDULE_FIELDS, "shadow_schedule");
-  const shadowSchedule = validateShadowContextLifecycleSchedule({
-    schemaVersion: 1,
-    inspectAt: authoredSchedule.inspect_at,
-    publishAcceptedCheckpoint: authoredSchedule.publish_accepted_checkpoint,
-  });
-  if (shadowSchedule.publishAcceptedCheckpoint) {
-    throw new TypeError("local semantic shadow profile cannot publish checkpoints");
+  let shadowSchedule = null;
+  let liveSchedule = null;
+  if (mode === "shadow") {
+    if (document.live_schedule !== undefined) {
+      throw new TypeError("shadow semantic context profile cannot declare live_schedule");
+    }
+    const authoredSchedule = record(document.shadow_schedule, "shadow_schedule");
+    rejectUnknown(authoredSchedule, SCHEDULE_FIELDS, "shadow_schedule");
+    shadowSchedule = validateShadowContextLifecycleSchedule({
+      schemaVersion: 1,
+      inspectAt: authoredSchedule.inspect_at,
+      publishAcceptedCheckpoint: authoredSchedule.publish_accepted_checkpoint,
+    });
+    if (shadowSchedule.publishAcceptedCheckpoint) {
+      throw new TypeError("local semantic shadow profile cannot publish checkpoints");
+    }
+  } else {
+    if (document.shadow_schedule !== undefined) {
+      throw new TypeError("live semantic context profile cannot declare shadow_schedule");
+    }
+    const authoredSchedule = record(document.live_schedule, "live_schedule");
+    rejectUnknown(authoredSchedule, LIVE_SCHEDULE_FIELDS, "live_schedule");
+    const transitionAt = authoredSchedule.transition_at;
+    if (!Array.isArray(transitionAt) || transitionAt.length === 0
+        || new Set(transitionAt).size !== transitionAt.length
+        || transitionAt.some((value) => ![
+          "comfortable", "approaching", "replacement_candidate", "critical",
+        ].includes(value))) {
+      throw new TypeError("live_schedule.transition_at is invalid");
+    }
+    liveSchedule = freeze({ schemaVersion: 1, transitionAt: [...transitionAt] });
   }
   return freeze({
     schemaVersion: 1,
     profileId,
+    mode,
     source: {
       path: source.path ? path.resolve(source.path) : null,
       sha256: sourceSha256,
@@ -120,6 +150,7 @@ export function projectSemanticContextRuntimeProfile(document, source = {}) {
     pressureProfile,
     pressurePolicy,
     shadowSchedule,
+    liveSchedule,
   });
 }
 
