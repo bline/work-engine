@@ -277,19 +277,25 @@ S0 inventory and baseline
  +--> S2 sterile slice-builder compiler experiment
           |
           +--> S3 canonical graph/compiler convergence
-          |       |
-          |       +--> S4 runtime-requirements and manifest satisfaction
-          |                    |
-          |                    +--> S5 lifecycle instruction closure
-          |
-          +--> S6 non-role skill import
+                  |
+                  +--> S4 runtime requirements and manifest satisfaction
+                           |
+                           +--> S5 lifecycle instruction closure
+                           |
+                           +--> S6 repo-search non-role import
+                           |
+                           +--> S7 immutable subject/profile capabilities
 
-S1 + S4 + S5 --> S7 reviewer role import
-S0 + service evidence --> S8 service-backed skill import
-S4 + S5 + S6 + S8 --> S9 product-development role imports
-S3 + S4 + S5 + S7 + S8 --> S10 retained engineering roles
-S6 through S10 --> S11 remaining portfolio batches
-S11 --> S12 ownership cutover and legacy retirement
+S2 through S7 --> S8 builder role and supervisor core
+S1 + S3 + S5 + S7 --> S9 generic review contract and episode service
+S6 + S7 + S9 --> S10 reviewer role, profile registry, OpenRouter adapter
+S1 + S10 --> S11 instruction-review specialist composition
+S8 + S9 + S10 + S11 + claim-service evidence --> S12 native review closure
+S9 through S12 --> S13 reviewer research and admission evidence
+S4 + S5 + S6 + S12 --> S14 product-development role imports
+S0 + S5 + S12 + service evidence --> S15 remaining service-backed imports
+S6 through S15 --> S16 remaining portfolio batches
+S16 --> S17 ownership cutover and legacy retirement
 ```
 
 This is a dependency model, not a compulsory execution sequence. Independent
@@ -480,91 +486,312 @@ post-transition effective instructions.
 **Excluded:** Moving role objectives, claims, decisions, schedules, or human
 authority into lifecycle checkpoints.
 
-### S6 — First non-role instruction-package import
+## Reviewer-stack priority amendment
 
-**Objective:** Prove that a reusable agent skill without a role profile can use
-the same canonical package, compiler, projection, provenance, and test system
-without becoming an App Server role instance.
+The user approved this ordering amendment on 2026-08-28 after S1 acceptance.
+Reviewer production and research became near-term consumers of the migration,
+but that urgency does not remove the compiler, manifest, or context-lifecycle
+dependencies established by S2–S5. The revised route therefore:
 
-**Candidate selection:** Choose a bounded skill with limited state and clear
-consumers after S0 evidence; `ui-design-principles` or another instruction-only
-package may be suitable, but this plan does not preselect it authoritatively.
+- preserves S2–S5 as the common role and skill foundation;
+- uses `repo-search` as the first non-role import instead of importing an
+  unrelated demonstration package;
+- establishes immutable subject and change-profile mechanics before any
+  reviewer role consumes them;
+- splits builder and supervisor core realization from complete native-review
+  integration, avoiding the former dependency cycle in which the engineering
+  workflow slice required a reviewer stack that had not yet been migrated;
+- gives provider-neutral review semantics and review-episode state owners
+  before constructing provider adapters;
+- requires a minimal closed reviewer-profile registry before an OpenRouter
+  adapter may accept a profile identifier or model slug;
+- treats independence as a configured and receipted execution property, never
+  as an implication of a role name or provider choice; and
+- moves reviewer research immediately behind the production-review vertical
+  while keeping benchmark, analysis, adjudication, and routing evidence
+  outside production acceptance authority.
 
-**Independently valuable outcome:** The schema demonstrates that roles are
-optional and avoids turning the whole skill estate into thread templates.
+This amendment changes priority and slice boundaries, not the campaign
+objective, accepted S0/S1 consequences, canonical ownership, or migration
+authority. Candidate slices may still split when one boundary cannot be
+accepted independently.
 
-**Required consequences:** Byte or explicitly reviewed semantic parity;
-complete causal projection; no role-only placeholder fields; exact runtime
-activation through configured consumers; retained references; and classified
-tests.
+### S6 — First non-role import: repository evidence retrieval
 
-**Acceptance evidence:** Deterministic generation, drift detection, effective
-loading test in at least one consumer role, and S1 semantic review.
+**Objective:** Import `repo-search` as a reusable provider-neutral evidence
+skill using the canonical package, compiler, projection, provenance, and test
+system without creating an App Server role instance.
 
-**Excluded:** Adding a role instance merely to fit the compiler schema.
-
-### S7 — Instruction-review specialist role import
-
-**Objective:** Realize `agent-instruction-review` as a bounded App Server review
-role using compiled instructions, immutable subjects, and explicit reviewer
-lifetime without granting mutation or acceptance authority.
-
-**Independently valuable outcome:** The campaign has a production-like
-specialist capable of reviewing later migrated projections under the corrected
-contract.
+**Independently valuable outcome:** The compiler proves that role profiles are
+optional, and later reviewers receive one bounded evidence-retrieval contract
+over configured indexed-structure and direct-source capabilities.
 
 **Required consequences:**
 
-- Fresh entry is available when the evidence claim requires it.
-- The same isolated reviewer may continue through bounded remediation without
-  falsely claiming renewed independence.
-- Subjects and findings bind exact revisions and stable finding identities.
-- The reviewer receives the actual effective instruction closure being
-  evaluated, including manifest fragments and conditional references.
+- Repository orientation, discovery, tracing, impact, and bounded audit
+  semantics remain provider-neutral.
+- Codebase Memory and direct-source access are configured capabilities rather
+  than semantic owners or independence evidence.
+- Coverage, pagination, fallback provenance, negative-claim limits, and exact
+  source verification remain model-facing causal instructions.
+- The package contains no role-only placeholder fields and grants no mutation,
+  review, or acceptance authority.
+
+**Acceptance evidence:** Deterministic generation and drift detection; byte or
+explicitly reviewed semantic parity; configured capability fixtures; effective
+loading in one bounded consumer; coverage/fallback cases; and S1 projection
+review.
+
+**Excluded:** Creating a repository-search role, hard-coding one evidence
+provider, or claiming that retrieval is independent review.
+
+### S7 — Immutable review-subject and change-profile capabilities
+
+**Objective:** Port `slice-checkpoint` and `code-change-profile` as host or
+server capabilities that produce an immutable attributed review subject and a
+recomputable deterministic physical profile before reviewer selection or
+execution.
+
+**Independently valuable outcome:** Every later reviewer can receive the exact
+commit, tree, manifest, patch identity, and subject-side metrics it is meant to
+review without acquiring checkpoint or profiling authority.
+
+**Required consequences:**
+
+- Checkpoint creation preserves the user's branch, worktree, index, unrelated
+  files, attribution, and private-ref boundary.
+- Change profiles bind immutable checkpoint subjects and are recomputable from
+  exact repository evidence.
+- Profile metrics describe physical change characteristics only; they neither
+  select a reviewer nor infer semantic risk, quality, or acceptance.
+- Both capabilities remain mediated and unreachable as reviewer judgment.
+
+**Acceptance evidence:** Git-state preservation and conflict fixtures; exact
+subject and manifest verification; deterministic profile recomputation;
+tamper, stale-subject, and mismatch refusal; and legacy compatibility evidence.
+
+**Excluded:** Reviewer selection, semantic risk inference, review findings,
+user-visible commit publication, or moving Git mechanics into a reviewer role.
+
+### S8 — Retained builder role and supervisor core
+
+**Objective:** Import the retained `slice-builder` role and the smallest
+`slice-supervisor` campaign core while preserving their distinct authority,
+context lifetimes, mutable-workspace admission, mediated transitions, and a
+closed compatibility seam for review that has not yet migrated.
+
+**Independently valuable outcome:** App Server can plan, authorize, execute,
+gate, checkpoint, recover, and terminalize a bounded slice through compiled
+roles and server services without pretending that native review integration is
+already complete.
+
+**Required consequences:**
+
+- Supervisor campaign authority remains distinct from builder repository-domain
+  judgment and user approval.
+- Builder retention spans one accepted slice while useful; supervisor
+  continuity spans the campaign without absorbing builder reasoning.
+- Plan acceptance, mutation admission, gate execution, checkpoint creation,
+  receipt finalization, and completion-commit prompting remain mediated by
+  their existing owners.
+- Mutable-workspace admission prevents conflicting builders.
+- The review boundary is explicit, fail-closed, and compatibility-backed; it
+  is not silently implemented by the supervisor or builder.
+- Context lifecycle preserves role continuation without becoming campaign
+  state.
+
+**Acceptance evidence:** Planning and implementation verticals; deterministic
+gate and checkpoint evidence; restart/recovery; negative authority,
+concurrency, and publication tests; exact compatibility-boundary evidence; and
+legacy outcome comparison excluding native review closure.
+
+**Excluded:** Claiming a complete App Server-native campaign review loop,
+automatic user-visible commits, silent scope expansion, or absorbing provider
+review semantics into either workflow role.
+
+### S9 — Provider-neutral implementation review and episode service
+
+**Objective:** Extract one canonical provider-neutral implementation-review
+contract from the semantics currently mixed into
+`claude-recon-implementation`, `codex-adversarial-review`, and experimental
+review harnesses, and port `independent-review-state` as the corresponding
+provider-neutral review-episode service.
+
+**Independently valuable outcome:** Adversarial code-review judgment, finding
+and verdict meaning, evidence sufficiency, read-only authority, remediation
+re-evaluation, and retained episode truth have owners independent of any
+provider adapter.
+
+**Required consequences:**
+
+- Findings bind exact subjects, stable identities, evidence, observed facts,
+  violated expectations, consequences, confidence, and bounded remediation.
+- `acceptable_as_is`, `remediation_required`, and incomplete or limited
+  outcomes retain explicit evidence requirements.
+- Mutation, implementation acceptance, architecture choice, reviewer
+  selection, and human authority remain outside the reviewer contract.
+- The episode service preserves findings, remediation status, reviewer
+  generation, pending actions, resumable provider references, replacement,
+  reconstruction, uncertainty, and retirement provenance.
+- Review-episode state remains distinct from hidden provider-thread context
+  lifecycle and from durable-state storage mechanics.
+
+**Acceptance evidence:** Provider-neutral contract fixtures; exact-subject and
+finding validation; fresh-entry, retained-remediation, replacement, recovery,
+writer-fence, and uncertainty cases; cross-provider compatibility evidence;
+and independent bootstrap review.
+
+**Excluded:** A provider adapter, a production reviewer profile, benchmark
+scoring, claim publication, or an independence claim based only on process or
+provider identity.
+
+### S10 — Canonical reviewer role, minimal profile registry, and OpenRouter adapter
+
+**Objective:** Realize the provider-neutral review contract as a canonical
+read-only App Server reviewer role, establish the minimum closed registry
+needed to validate production reviewer profiles, and execute one admitted
+profile through a bounded OpenRouter Codex adapter.
+
+**Independently valuable outcome:** App Server can run a revision-bound
+implementation review through a selected provider without allowing provider
+configuration or adapter behavior to redefine review semantics.
+
+**Required consequences:**
+
+- The role derives from the verified independent-reviewer environment while
+  replacing its provider-specific legacy contract with the generic review
+  contract and `repo-search` composition.
+- Independence is established only by configuration and receipts proving fresh
+  entry outside builder reasoning and mutation authority.
+- The minimal registry owns approved profile identifiers, exact permitted
+  model slugs, capability/schema bindings, configuration digests, enabled
+  state, limitations, and the accepting authority.
+- The OpenRouter adapter accepts only an admitted profile identifier and owns
+  isolated `CODEX_HOME` construction, pinned provider/model configuration,
+  transport provenance, failure classification, and raw event capture.
+- Arbitrary or untested model slugs, undeclared capabilities, subject drift,
+  and malformed output fail closed.
+- MCP is used only if the isolated process cannot receive the same bounded
+  meaning through internal dynamic tools; transport never becomes a semantic
+  owner.
+
+**Acceptance evidence:** Manifest and runtime-requirement satisfaction;
+read-only and effect-ceiling tests; admitted/rejected profile fixtures;
+isolated-home and exact-model verification; raw-event and failure receipts;
+fresh-entry and retained-remediation verticals; immutable-subject evidence;
+and independent bootstrap review.
+
+**Excluded:** General reviewer admission research, routing policy, arbitrary
+OpenRouter model selection, benchmark-based production approval, or calling a
+role independent merely because of its name.
+
+### S11 — Agent-instruction-review specialist composition
+
+**Objective:** Import `agent-instruction-review` as a specialist contract that
+composes with the canonical reviewer role when an immutable subject contains
+materially normative agent-facing instructions.
+
+**Independently valuable outcome:** Later role and skill migrations can receive
+production-like specialist review under the corrected causal-exposure contract
+without confusing instruction review with generic implementation review.
+
+**Required consequences:**
+
+- Applicability is explicit and does not imply selection or acceptance.
+- The reviewer receives the actual effective instruction closure, including
+  manifest fragments, precedence, omissions, and conditional references.
+- Fresh entry and bounded retained remediation preserve truthful independence
+  and reviewer-generation claims.
+- Subjects and findings bind exact revisions and stable identities.
 - Mutation, architecture choice, proposal acceptance, panel selection, and
   implementation approval remain unreachable.
-- Runtime retention choices satisfy rather than redefine review semantics.
 
-**Acceptance evidence:** Manifest satisfaction; read-only effect tests;
-fresh-entry and retained-remediation fixtures; corrected-defect corpus; and an
-independent bootstrap review of the migrated role projection.
+**Acceptance evidence:** Corrected S1 regression corpus; manifest satisfaction;
+read-only effect tests; applicability, no-finding, limitation, remediation,
+fresh-entry, and retained-remediation fixtures; and independent bootstrap
+review of the generated projection.
 
-**Excluded:** Treating every review as independent or allowing the role to
-certify its own implementation.
+**Excluded:** Making the specialist the generic code-review contract, treating
+every review as independent, or allowing it to certify its own implementation.
 
-### S8 — First service-backed skill import
+### S12 — Claim-backed findings and native supervisor review closure
 
-**Objective:** Prove the decomposition of a legacy skill whose durable and
-mechanical responsibilities have been promoted to a server service while
-retaining only the agent-facing semantics and authorized client surface that
-agents actually need.
+**Objective:** Port the thin reviewer-facing `claim-evidence` projection over
+the existing App Server claim service, publish revision-bound review findings
+without transferring verdict authority, and close the supervisor's native
+review-selection, delivery, remediation, checkpoint, and receipt loop.
 
-**Preferred evidence-bearing candidate:** `claim-evidence`, because its App
-Server service, compatibility tests, read projections, and migration design
-already exist. Final selection follows S0 reconciliation.
-
-**Independently valuable outcome:** The migration can remove agent-local state
-ownership instead of copying it behind a new path.
+**Independently valuable outcome:** One App Server-native campaign can execute
+a bounded slice from planning through immutable, retained, claim-backed review
+and terminal receipt without relying on the legacy agent-local review harness
+as semantic owner.
 
 **Required consequences:**
 
 - Canonical claim identity, revision, lineage, reliance, authority, and store
   mechanics remain server-owned.
-- Model judgment remains outside deterministic publication mechanics.
-- The thin skill explains semantic use and limitations without teaching the
-  agent to emulate the registry.
-- Runtime capabilities expose only authorized operations.
-- Legacy fixtures establish exact parity or an authorized semantic-difference
-  receipt.
-- No second local store, authority ledger, or lifecycle owner remains active.
+- Review materiality, applicability, verdict, episode status, synthesis, and
+  acceptance remain with their existing owners rather than the claims service.
+- The thin projection explains authorized reviewer use and limitations without
+  teaching the reviewer to emulate the registry.
+- The supervisor selects configured specialists; the builder evaluates and
+  remediates findings; neither selects or certifies itself.
+- Exact checkpoint, profile, episode, finding, claim revision, remediation,
+  and terminal receipt identities remain reconstructable.
+- No second local claim store, review-state owner, or context-lifecycle owner
+  remains active.
 
-**Acceptance evidence:** Service and compatibility suites; concurrent-instance
-and restart tests; capability refusal tests; exact projection review; and one
-bounded real consumer using the service rather than legacy local machinery.
+**Acceptance evidence:** Claim service and compatibility suites;
+concurrent-instance, restart, and capability-refusal tests; exact projection
+review; one revision-bound review finding publication and reliance vertical;
+one end-to-end accepted fixture slice with remediation and recovery; negative
+authority tests; and legacy outcome comparison.
 
-**Excluded:** Turning the claims service into a universal claims role.
+**Excluded:** Letting claims accept a review, automatic completion commits,
+silent campaign expansion, or treating the claims service as a reviewer role.
 
-### S9 — Initial product-development role imports
+### S13 — Reviewer research and admission evidence
+
+**Objective:** Build the provider-neutral experimental machinery needed to
+compare, understand, adjudicate, and eventually admit reviewer profiles without
+turning research output into production review approval.
+
+**Candidate responsibility sequence:**
+
+1. Port `review-bench` as experimental evaluation machinery.
+2. Define an immutable provider-neutral reviewer-turn event schema and
+   normalizers for Codex, OpenRouter, Claude, Gemini, and later providers.
+3. Add a versioned reviewer-turn behavior analyzer over raw traces.
+4. Define a review-adjudication contract or role bound to sealed truth,
+   executable adjudication, or explicitly incomplete historical truth.
+5. Extend the minimal profile registry with evidence-bearing admission,
+   limitations, last-tested revisions, and authorized acceptance.
+6. Add review-routing recommendations only after adjudicated evidence can
+   support them.
+
+Each responsibility remains its own slice when its owner, acceptance evidence,
+or experimental status differs materially.
+
+**Independently valuable outcome:** Reviewer research can improve provider and
+profile choices while production review retains exact authority, provenance,
+and failure boundaries.
+
+**Required consequences:** Raw events remain immutable; normalizers and
+mechanical metrics remain reproducible; semantic behavior metrics are
+versioned and attributed; incomplete truth stays incomplete; harnesses propose
+admission but an authorized owner accepts it; and routing scores cannot accept
+implementation.
+
+**Acceptance evidence:** Cross-provider event fixtures; normalization and drift
+tests; sealed and incomplete adjudication cases; benchmark provenance;
+profile-admission receipts; routing refusal and escalation cases; and explicit
+experimental-versus-production projections.
+
+**Excluded:** Silent ground-truth manufacture, benchmark-based production
+approval, reviewer self-selection, or runtime behavior scores that accept a
+slice.
+
+### S14 — Initial product-development role imports
 
 **Objective:** Import bounded role-bearing skills that already have App Server
 vertical evidence, beginning with roles whose inputs, outputs, authority, and
@@ -577,16 +804,11 @@ Each remains its own slice if their evidence or ownership differs materially.
 generic compiled role packages and manifest composition rather than additional
 handcrafted gateways.
 
-**Required consequences:**
-
-- Exact request, source, evidence-cutoff, and output bindings remain enforced.
-- Host publication proves mechanical integrity and persistence only, not
-  semantic quality, acceptance, priority, or implementation authority.
-- Logical instances bind to replaceable threads and server lifecycle services.
-- Existing role-specific code is classified into generic boundary machinery,
-  named deterministic integration, compatibility adapter, or retirement.
-- Zero-output and unresolved outcomes remain truthful where the current host
-  lacks a closed durable disposition.
+**Required consequences:** Exact request, source, evidence-cutoff, and output
+bindings remain enforced; host publication proves mechanics rather than
+semantic quality or acceptance; logical instances use server lifecycle
+services; existing role-specific code receives an explicit disposition; and
+zero-output or unresolved outcomes remain truthful.
 
 **Acceptance evidence:** One exact end-to-end vertical per role; restart and
 binding evidence; negative authority tests; projection review; deterministic
@@ -596,47 +818,32 @@ owners.
 **Excluded:** Proposal acceptance, roadmap mutation, artifact-root migration,
 or implementation authorization.
 
-### S10 — Retained engineering workflow roles and mediated capabilities
+### S15 — Remaining service-backed skill imports
 
-**Objective:** Import the retained builder and supervisor environments while
-preserving their distinct authority, context lifetimes, mediated transitions,
-review boundaries, checkpoint ownership, and recovery behavior.
+**Objective:** Apply the accepted service-backed pattern to retained skills
+whose durable or mechanical responsibilities belong above agents, while
+retaining only necessary agent-facing semantics and authorized clients.
 
-**Candidate responsibility set:** `slice-builder`, `slice-supervisor`,
-`slice-checkpoint`, `slice-completion-commit`, `independent-review-state`,
-provider review adapters, and campaign receipt machinery. The supervisor and
-builder should not be forced into one slice if mutable-workspace or authority
-risks warrant separation.
+**Candidate set:** `durable-state`, `role-scheduler`, and other S0 ledger items
+whose server-service destination is accepted. Context lifecycle remains hidden
+service infrastructure rather than an ordinary reviewer or agent skill.
 
-**Independently valuable outcome:** An authorized campaign can execute one
-bounded slice through App Server-native roles and services without relying on
-the legacy agent-local harness as semantic owner.
+**Independently valuable outcome:** Each accepted import removes one
+agent-local state or mechanics owner without copying it behind a new path.
 
-**Required consequences:**
+**Required consequences:** Service state and mechanics remain canonical at the
+server boundary; model and human judgment do not move with them; authorized
+clients expose only bounded operations; legacy parity or authorized difference
+is explicit; and no duplicate local owner remains active.
 
-- Supervisor campaign authority remains distinct from builder repository-domain
-  judgment and user approval.
-- Builder retention spans the accepted slice while useful; supervisor
-  continuity spans the campaign without absorbing builder reasoning.
-- Plan acceptance, checkpoint creation, review selection, receipt finalization,
-  and user-visible commit publication remain mediated by their owners.
-- Independent reviewers begin outside builder reasoning context and cannot
-  mutate implementation.
-- Mutable workspace admission prevents conflicting replacement builders.
-- Checkpoint and completion-commit capabilities preserve exact Git and human
-  authority fences.
-- Context lifecycle preserves role-specific continuation without becoming
-  campaign state.
+**Acceptance evidence:** Service and compatibility suites; restart,
+concurrency, and refusal tests; exact thin-projection review; bounded real
+consumers; and ownership-transition evidence.
 
-**Acceptance evidence:** One end-to-end accepted test slice in an isolated
-fixture repository; deterministic gates; immutable review candidate;
-remediation loop; exact checkpoint and receipt evidence; restart/recovery;
-negative authority and concurrency tests; and legacy outcome comparison.
+**Excluded:** Turning services into universal roles or treating durable
+mechanics as cognitive work.
 
-**Excluded:** Automatic user-visible commit publication, silent campaign scope
-expansion, or a broad rewrite of all campaign machinery in one slice.
-
-### S11 — Evidence-driven remaining portfolio batches
+### S16 — Evidence-driven remaining portfolio batches
 
 **Objective:** Migrate all remaining retained responsibilities in coherent
 batches selected from the S0 ledger, using the proven non-role, reviewer,
@@ -662,7 +869,7 @@ ownership decision; and rollback or reconstruction evidence.
 **Excluded:** A final bulk copy or deletion justified only by inventory
 completion pressure.
 
-### S12 — Canonical ownership cutover and legacy retirement
+### S17 — Canonical ownership cutover and legacy retirement
 
 **Objective:** Complete explicit ownership transitions and remove legacy
 execution paths only after every active consumer uses accepted generated
