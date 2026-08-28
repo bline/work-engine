@@ -19,6 +19,9 @@ For each material issue record:
 - semantic owner, consumer, audience, scope, precedence, and loading reach when
   material;
 - the protected distinction, or the failure to identify one;
+- whether the causal reason and concrete failure mode are available to the
+  governed agent at the command's effective loading boundary, distinguishing
+  actual exposure from reviewer reconstruction or source traceability;
 - whether the exact route is causally necessary;
 - observed evidence and authority source;
 - consequence, confidence, and limitations; and

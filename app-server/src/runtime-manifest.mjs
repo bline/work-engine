@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const TOP_LEVEL_FIELDS = new Set(["schema_version", "manifest_id", "roles"]);
-const ROLE_FIELDS = new Set(["contract", "developer_instructions", "thread_options", "skills"]);
+const ROLE_FIELDS = new Set(["contract", "developer_instructions", "thread_options", "skills", "capabilities"]);
 const SKILL_FIELDS = new Set(["name", "path"]);
 const IDENTIFIER_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const APPROVAL_POLICIES = new Set(["untrusted", "on-request", "never"]);
@@ -103,6 +103,19 @@ function normalizeSkills(value, baseDirectory, roleId) {
   });
 }
 
+function normalizeCapabilities(value, roleId) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new TypeError(`role ${roleId} capabilities must be an array`);
+  const capabilities = value.map((capability, index) => {
+    requireIdentifierSegment(capability, `role ${roleId} capabilities[${index}]`);
+    return capability;
+  });
+  if (new Set(capabilities).size !== capabilities.length) {
+    throw new TypeError(`role ${roleId} capabilities must be unique`);
+  }
+  return capabilities.sort();
+}
+
 export class RuntimeManifest {
   constructor({ manifestId, source, roles }) {
     this.manifestId = manifestId;
@@ -126,6 +139,7 @@ export class RuntimeManifest {
       roleContract: { ...template.roleContract },
       role: {
         logicalRoleInstanceId: `${roleId}:${instanceId}`,
+        capabilities: [...template.capabilities],
         developerInstructions: template.developerInstructions,
         runtimeEnvironmentRevision: template.runtimeEnvironmentRevision,
         threadOptions: { ...template.threadOptions },
@@ -182,6 +196,7 @@ export function projectRuntimeManifest(document, {
         roleId,
       ),
       skills,
+      capabilities: normalizeCapabilities(role.capabilities, roleId),
     };
     roles[roleId] = {
       ...roleTemplate,

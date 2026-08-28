@@ -395,6 +395,7 @@ export class CodexAppServerAdapter {
     providerRuntimeProfile = PINNED_PROVIDER_RUNTIME,
     configuredProviderFeatures = [],
     transitionGate = null,
+    roleToolBridgeResolver = null,
     rolloutSnapshotReader = readCodexRolloutSnapshot,
   }) {
     if (transitionGate
@@ -405,6 +406,9 @@ export class CodexAppServerAdapter {
     if (typeof rolloutSnapshotReader !== "function") {
       throw new TypeError("rollout snapshot reader must be a function");
     }
+    if (roleToolBridgeResolver !== null && typeof roleToolBridgeResolver !== "function") {
+      throw new TypeError("role tool bridge resolver must be a function");
+    }
     this.transport = transport;
     this.registry = registry;
     if (transitionGate) this.registry.setTransitionGate?.(transitionGate);
@@ -414,6 +418,7 @@ export class CodexAppServerAdapter {
     this.configuredProviderFeatures = configuredProviderFeatures;
     this.transitionGate = transitionGate;
     this.rolloutSnapshotReader = rolloutSnapshotReader;
+    this.roleToolBridgeResolver = roleToolBridgeResolver;
     this.negotiated = null;
     this.threadTools = new Map();
     this.turnCompletionOutcomes = new Map();
@@ -715,6 +720,9 @@ export class CodexAppServerAdapter {
     transitionPreparation = null,
   }) {
     requireText(role?.logicalRoleInstanceId, "logical role instance id");
+    const resolvedToolBridge = toolBridge
+      ?? this.roleToolBridgeResolver?.(role.capabilities ?? [], role)
+      ?? null;
     if (transitionLease || transitionPreparation) {
       this.requireProviderCapability("model_context_replacement");
     }
@@ -723,7 +731,7 @@ export class CodexAppServerAdapter {
         throw new Error("transition control delivery requires an adapter transition gate");
       }
       return this.#deliverTurn({
-        role, text, clientUserMessageId, skills, toolBridge, requestContext,
+        role, text, clientUserMessageId, skills, toolBridge: resolvedToolBridge, requestContext,
       });
     }
     return this.transitionGate.runTurnAdmission({
@@ -732,10 +740,10 @@ export class CodexAppServerAdapter {
       transitionLease,
       transitionPreparation,
       skills,
-      toolBridge,
+      toolBridge: resolvedToolBridge,
       requestContext,
     }, (admissionPermit) => this.#deliverTurn({
-      role, text, clientUserMessageId, skills, toolBridge, requestContext,
+      role, text, clientUserMessageId, skills, toolBridge: resolvedToolBridge, requestContext,
       boundControlTurn: Boolean(transitionLease || transitionPreparation),
       transitionAdmissionPermit: admissionPermit,
     }));

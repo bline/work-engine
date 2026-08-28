@@ -38,6 +38,7 @@ function parseArguments(argv) {
     trace: false,
     tokenBudget: false,
     generationState: null,
+    developmentArtifactRoot: WORKSPACE_ROOT,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -56,6 +57,9 @@ function parseArguments(argv) {
     else if (argument === "--trace") options.trace = true;
     else if (argument === "--enable-token-budget") options.tokenBudget = true;
     else if (argument === "--generation-state") options.generationState = path.resolve(value());
+    else if (argument === "--development-artifact-root") {
+      options.developmentArtifactRoot = path.resolve(value());
+    }
     else throw new Error(`unknown App Server proxy option ${argument}`);
   }
   if (!options.socketPath) throw new Error("--socket PATH is required");
@@ -109,6 +113,7 @@ async function main() {
       semanticContextStatePath: path.join(options.generationState, "semantic-context.sqlite3"),
       roleBindingsPath: options.bindingsPath,
       configuredProviderFeatures: options.tokenBudget ? ["token_budget"] : [],
+      developmentArtifactRoot: options.developmentArtifactRoot,
     });
   } catch (error) {
     transport.close();

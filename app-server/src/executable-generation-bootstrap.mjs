@@ -37,6 +37,7 @@ export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/context-pressure-controller.mjs",
   "app-server/src/context-pressure-recovery.mjs",
   "app-server/src/context-transition-lease.mjs",
+  "app-server/src/dynamic-tool-bridge.mjs",
   "app-server/src/continuation-state.mjs",
   "app-server/src/human-interaction-evaluation.mjs",
   "app-server/src/local-semantic-shadow-host.mjs",
@@ -53,6 +54,14 @@ export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/sqlite-app-server-state.mjs",
   "app-server/src/token-usage-pressure-projection.mjs",
   "app-server/src/thread-snapshot-visible-materials.mjs",
+  "app-server/src/services/product-development/artifact-root.mjs",
+  "app-server/src/services/product-development/intake-delivery.mjs",
+  "app-server/src/services/product-development/proposal-delivery.mjs",
+  "skills/idea-intake/scripts/idea_intake.py",
+  "skills/idea-intake/schemas/intake-record-v1.schema.json",
+  "skills/proposal-packets/scripts/proposal_packets.py",
+  "skills/proposal-packets/schemas/proposal-packet-v1.schema.json",
+  "skills/proposal-packets/schemas/proposal-decision-v1.schema.json",
 ]);
 
 const ROLE_ENVIRONMENT_CONFIG = "app-server/generated/executable-role-environment.json";
@@ -209,6 +218,7 @@ export async function createExecutableGenerationBootstrap({
   roleBindingsPath = path.join(path.resolve(stateRoot), "role-bindings.json"),
   switchboardAttachmentPath = path.join(path.resolve(stateRoot), "switchboard-attachment.json"),
   configuredProviderFeatures = [],
+  developmentArtifactRoot = path.resolve(workspaceRoot),
   entryRelativePath = "app-server/src/default-executable-generation-worker.mjs",
   environmentFingerprint = DEFAULT_EXECUTABLE_ENVIRONMENT_FINGERPRINT,
   bootstrapFingerprint = DEFAULT_EXECUTABLE_BOOTSTRAP_FINGERPRINT,
@@ -288,6 +298,8 @@ export async function createExecutableGenerationBootstrap({
             WORK_ENGINE_SEMANTIC_CONTEXT_STATE_PATH: path.resolve(semanticContextStatePath),
           } : {}),
           WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES: JSON.stringify(configuredProviderFeatures),
+          WORK_ENGINE_LIVE_REPOSITORY_ROOT: path.resolve(workspaceRoot),
+          WORK_ENGINE_DEVELOPMENT_ARTIFACT_ROOT: path.resolve(developmentArtifactRoot),
         } : {}),
       },
     });

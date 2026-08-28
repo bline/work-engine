@@ -13,6 +13,7 @@ import {
   ContextCheckpointPublisher,
   ContextLifecycleEvidenceCollector,
   ContextTransitionLeaseRuntime,
+  DynamicToolBridge,
   ExactSkillResolver,
   FileRoleBindingRegistry,
   InMemoryContextCheckpointPublicationStore,
@@ -20,6 +21,7 @@ import {
   ManifestRoleRuntime,
   MODEL_CONTEXT_REPLACEMENT_CAPABILITY,
   ObservableAppServerTransport,
+  OperatorSwitchboard,
   PINNED_PROTOCOL,
   StdioJsonRpcTransport,
   StrategicPlannerRuntime,
@@ -43,6 +45,94 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
 const LIVE_SHADOW_USER_TEXT = "Assess the current App Server foundation and identify the next bounded step without changing repository state.";
 const LIVE_TRANSITION_NEXT_WORK = "After reconciliation, await the next human-supervised strategic-planning request without inferring new authority.";
+
+class ScriptedRoleTransport {
+  constructor() {
+    this.requests = [];
+    this.serverRequestHandler = null;
+    this.thread = 0;
+  }
+
+  onServerRequest(handler) { this.serverRequestHandler = handler; }
+  onNotification() { return () => {}; }
+  onClosed() { return () => {}; }
+  notify() {}
+
+  async request(method, params) {
+    this.requests.push({ method, params });
+    if (method === "initialize") return { userAgent: "work-engine/0.149.1 (Linux; x86_64)", codexHome: "/tmp/codex", platformFamily: "unix", platformOs: "linux" };
+    if (method === "thread/start") return { thread: { id: `scripted-thread-${++this.thread}` } };
+    if (method === "turn/start") return { turn: { id: `scripted-turn-${this.thread}` } };
+    throw new Error(`unexpected scripted request ${method}`);
+  }
+}
+
+test("switchboard exposes only manifest-declared role capabilities and dispatches through the adapter", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-role-capability."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const skills = path.join(directory, "skills");
+  for (const name of ["intake", "planner"]) {
+    await mkdir(path.join(skills, name), { recursive: true });
+    await writeFile(path.join(skills, name, "SKILL.md"), `# ${name}\n`);
+  }
+  const manifestPath = path.join(directory, "runtime.yaml");
+  await writeFile(manifestPath, `
+schema_version: 1
+manifest_id: scripted.capabilities
+roles:
+  intake:
+    contract: skills/intake/SKILL.md
+    developer_instructions: Bounded intake fixture.
+    thread_options: {cwd: ., approval_policy: never, sandbox: read-only}
+    capabilities: [product-development.intake.read-source]
+    skills: [{name: intake, path: skills/intake/SKILL.md}]
+  planner:
+    contract: skills/planner/SKILL.md
+    developer_instructions: Planner fixture without development effects.
+    thread_options: {cwd: ., approval_policy: never, sandbox: read-only}
+    skills: [{name: planner, path: skills/planner/SKILL.md}]
+`);
+  const manifest = await loadRuntimeManifest(manifestPath);
+  const registry = new FileRoleBindingRegistry(path.join(directory, "bindings.json"));
+  const transport = new ScriptedRoleTransport();
+  const adapter = new CodexAppServerAdapter({
+    transport,
+    registry,
+    skillResolver: await ExactSkillResolver.create([skills]),
+    roleToolBridgeResolver: (capabilities) => capabilities.includes("product-development.intake.read-source")
+      ? new DynamicToolBridge([{
+        namespace: "development", name: "read_source",
+        description: "Return an exact scripted source.",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        handler: () => ({ source: "exact-fixture" }),
+      }])
+      : null,
+  });
+  await adapter.initialize();
+  const runtime = new ManifestRoleRuntime({ adapter, manifest });
+  const switchboard = new OperatorSwitchboard({
+    manifest,
+    runtime,
+    registry,
+    completionWaiter: async () => ({ status: "completed" }),
+  });
+  await switchboard.startLine(":we attach intake:fixture");
+  await switchboard.startLine("Assess the exact fixture.", { clientUserMessageId: "intake-1" });
+  const intakeStart = transport.requests.find(({ method }) => method === "thread/start");
+  assert.deepEqual(intakeStart.params.dynamicTools.map(({ name }) => name), ["development"]);
+  const toolResult = await transport.serverRequestHandler({
+    method: "item/tool/call",
+    params: { threadId: "scripted-thread-1", namespace: "development", tool: "read_source", arguments: {} },
+  });
+  assert.equal(toolResult.success, true);
+  assert.match(toolResult.contentItems[0].text, /exact-fixture/);
+
+  await switchboard.startLine(":we detach");
+  await switchboard.startLine(":we attach planner:fixture");
+  await switchboard.startLine("Plan without development effects.", { clientUserMessageId: "planner-1" });
+  const starts = transport.requests.filter(({ method }) => method === "thread/start");
+  assert.equal(starts[1].params.dynamicTools, undefined);
+});
 
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;

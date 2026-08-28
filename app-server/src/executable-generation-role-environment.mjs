@@ -251,6 +251,8 @@ export async function createExecutableGenerationRoleEnvironment({
   semanticContextStatePath = null,
   configuredProviderFeatures = [],
   dynamicTools = [],
+  roleToolBridgeResolver = null,
+  productDevelopmentEnvironmentIdentity = null,
   now = () => Date.now(),
 } = {}) {
   const root = path.resolve(requireText(snapshotRoot, "generation snapshot root"));
@@ -278,6 +280,7 @@ export async function createExecutableGenerationRoleEnvironment({
     skillResolver: await ExactSkillResolver.create([path.join(root, "skills")]),
     configuredProviderFeatures,
     transitionGate,
+    roleToolBridgeResolver,
   });
   const semanticHost = config.semanticContext === undefined
     ? null
@@ -347,6 +350,7 @@ export async function createExecutableGenerationRoleEnvironment({
         skillFiles: config.skillFiles,
         semanticContextProfileSha256: config.semanticContext?.profile?.source?.sha256 ?? null,
         toolSpecification: dynamicTools,
+        productDevelopmentEnvironmentIdentity,
       })).digest("hex")}`;
     },
 

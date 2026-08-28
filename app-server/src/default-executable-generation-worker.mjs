@@ -53,9 +53,44 @@ function forwardedRequest(payload) {
 
 const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === "1"
   ? await (async () => {
+    const { DynamicToolBridge } = await import("./dynamic-tool-bridge.mjs");
+    const { ProductDevelopmentArtifactRoot } = await import(
+      "./services/product-development/artifact-root.mjs"
+    );
+    const { createIntakeDelivery, intakeCapabilityDefinitions } = await import(
+      "./services/product-development/intake-delivery.mjs"
+    );
+    const { createProposalDelivery, proposalCapabilityDefinitions } = await import(
+      "./services/product-development/proposal-delivery.mjs"
+    );
     const { createExecutableGenerationRoleEnvironment } = await import(
       "./executable-generation-role-environment.mjs"
     );
+    const repositoryRoot = process.env.WORK_ENGINE_LIVE_REPOSITORY_ROOT;
+    const artifactRoot = process.env.WORK_ENGINE_DEVELOPMENT_ARTIFACT_ROOT;
+    const snapshotRoot = process.env.WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT;
+    const artifacts = new ProductDevelopmentArtifactRoot({ repositoryRoot, artifactRoot });
+    const intake = createIntakeDelivery({ repositoryRoot, snapshotRoot, artifacts });
+    const proposal = createProposalDelivery({ repositoryRoot, artifactRoot, snapshotRoot, artifacts });
+    const catalog = new Map([
+      ...Object.entries(intakeCapabilityDefinitions).map(([id, definition]) => [id, {
+        ...definition,
+        handler: definition.name === "read_source" ? intake.readSource : intake.publish,
+      }]),
+      ...Object.entries(proposalCapabilityDefinitions).map(([id, definition]) => [id, {
+        ...definition,
+        handler: definition.name === "read_intake" ? proposal.readIntake : proposal.publish,
+      }]),
+    ]);
+    const roleToolBridgeResolver = (capabilityIds) => {
+      if (!Array.isArray(capabilityIds)) throw new TypeError("role capabilities must be an array");
+      const registrations = capabilityIds.map((id) => {
+        const registration = catalog.get(id);
+        if (!registration) throw new Error(`runtime role declares unknown capability ${id}`);
+        return registration;
+      });
+      return registrations.length === 0 ? null : new DynamicToolBridge(registrations);
+    };
     return createExecutableGenerationRoleEnvironment({
       snapshotRoot: process.env.WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT,
       bindingsPath: process.env.WORK_ENGINE_ROLE_BINDINGS_PATH,
@@ -65,6 +100,8 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
         process.env.WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES ?? "[]",
       ),
       dynamicTools: ENVIRONMENT_TOOLS,
+      roleToolBridgeResolver,
+      productDevelopmentEnvironmentIdentity: artifacts.environmentIdentity(),
     });
   })()
   : null;

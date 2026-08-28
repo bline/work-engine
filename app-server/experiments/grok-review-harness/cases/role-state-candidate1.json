@@ -1,0 +1,46 @@
+{
+  "subject": {
+    "commit": "508fe3865d19e3aa767e70e1a33389333c2ff527",
+    "tree": "70de7a9ad03f7a6854e001581750233a7c05c698",
+    "patch_identity": "e7335d475ff17c883c5fd8989c3b9d7769030f026925d8192b218dad4d6c34c7"
+  },
+  "base_commit": "e54ca790ca4c608de82629d72cacf9958445af31",
+  "changed_files": [
+    ".mcp.json",
+    "ARCHITECTURE.md",
+    "package-lock.json",
+    "package.json",
+    "skills/independent-review-state/SKILL.md",
+    "skills/independent-review-state/scripts/independent_review_state.py",
+    "skills/independent-review-state/tests/test_independent_review_state.py",
+    "skills/work-engine-mcp/SKILL.md",
+    "skills/work-engine-mcp/scripts/server.mjs",
+    "skills/work-engine-mcp/tests/server.test.mjs"
+  ],
+  "dependency_files": [],
+  "contract_files": [],
+  "focus": [
+    "The profile persists only one authority-bound review episode and cannot mutate supervisor state, proposal decisions, claims, checkpoints, schedules, repository content, or generic durable state.",
+    "The exact episode, subject, writer generation, predecessor revision, and authorized readers are validated and stale or cross-episode writers are fenced.",
+    "Finding lineage and remediation evidence remain attributable and auditable across initial review, remediation, re-evaluation, and reviewer replacement.",
+    "Compare-and-swap transitions are retry-idempotent and the documented uncertainty and retirement lifecycle is mechanically enforced.",
+    "The episode-scoped MCP surface exposes only the bounded read and transition operations and preserves the same authority and lifecycle constraints end to end."
+  ],
+  "agy_execution": {
+    "model": "gemini-3.7-flash-high",
+    "effort": "high",
+    "timeout_ms": 300000
+  },
+  "agy_pro_execution": {
+    "model": "gemini-3.1-pro-high",
+    "effort": "high",
+    "timeout_ms": 600000,
+    "allow_pro": true
+  },
+  "agy_pro_low_execution": {
+    "model": "gemini-3.1-pro-low",
+    "effort": "low",
+    "timeout_ms": 300000,
+    "allow_pro": true
+  }
+}

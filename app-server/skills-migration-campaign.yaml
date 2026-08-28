@@ -1,0 +1,10 @@
+version: 2
+objective: >-
+  Migrate the current Work Engine skill estate into the App Server-native
+  system defined by the skills migration campaign, preserving single semantic
+  ownership, complete model-facing causal instructions, server-level service
+  ownership, runtime-manifest role composition, compatibility evidence, and
+  human authority.
+work_source:
+  kind: file
+  value: docs/skills-migration-plan.md

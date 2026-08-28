@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   CodexAppServerAdapter,
+  DynamicToolBridge,
   ExactSkillResolver,
   FileRoleBindingRegistry,
   ManifestRoleRuntime,
@@ -77,6 +78,8 @@ roles:
       cwd: .
       approval_policy: on-request
       sandbox: workspace-write
+    capabilities:
+      - fixture.lookup
     skills:
       - {name: shared, path: skills/shared/SKILL.md}
 `, "utf8");
@@ -90,6 +93,8 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   const first = manifest.projectRole("alpha", "one");
   const second = manifest.projectRole("alpha", "two");
   assert.equal(first.role.logicalRoleInstanceId, "alpha:one");
+  assert.deepEqual(first.role.capabilities, []);
+  assert.deepEqual(manifest.projectRole("beta", "one").role.capabilities, ["fixture.lookup"]);
   assert.equal(second.role.logicalRoleInstanceId, "alpha:two");
   assert.equal(first.role.threadOptions.cwd, directory);
   assert.match(first.role.runtimeEnvironmentRevision, /^[a-f0-9]{64}$/);
@@ -125,6 +130,15 @@ test("manifest role runtime delivers projected roles through the shared adapter"
     transport,
     registry: new FileRoleBindingRegistry(path.join(directory, "bindings.json")),
     skillResolver: await ExactSkillResolver.create([skillRoot]),
+    roleToolBridgeResolver: (capabilities) => capabilities.includes("fixture.lookup")
+      ? new DynamicToolBridge([{
+        namespace: "fixture",
+        name: "lookup",
+        description: "Return one bounded fixture value.",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        handler: () => "fixture-value",
+      }])
+      : null,
   });
   await adapter.initialize();
   const runtime = new ManifestRoleRuntime({
@@ -146,6 +160,7 @@ test("manifest role runtime delivers projected roles through the shared adapter"
   const start = transport.requests.find(({ method }) => method === "thread/start");
   assert.equal(start.params.developerInstructions, "Keep beta isolated.");
   assert.equal(start.params.approvalPolicy, "on-request");
+  assert.deepEqual(start.params.dynamicTools.map(({ name }) => name), ["fixture"]);
   const turn = transport.requests.find(({ method }) => method === "turn/start");
   assert.equal(turn.params.input[0].type, "skill");
   assert.equal(turn.params.input[0].name, "shared");

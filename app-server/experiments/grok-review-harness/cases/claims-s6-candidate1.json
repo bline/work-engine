@@ -1,0 +1,45 @@
+{
+  "subject": {
+    "commit": "41ddac13654064c6d50c2028e7815d7095459c23",
+    "tree": "1e20b5078b786b99cdcab9c1716681d5cefdd908",
+    "patch_identity": "c58e157b67e5d070d05f88b0a77bce50c24c327c87f384bbd01900a1f7b39b0d"
+  },
+  "base_commit": "dc71de379f38ac6da61bb40b841accd003dd81c5",
+  "changed_files": [
+    "app-server/src/services/claim-evidence/authorized-vertical.mjs",
+    "app-server/src/services/claim-evidence/read-service.mjs",
+    "app-server/tests/services/claim-evidence/authorized-vertical.test.mjs",
+    "app-server/tests/services/claim-evidence/read-service.test.mjs",
+    "app-server/tests/services/claim-evidence/legacy-parity.test.mjs"
+  ],
+  "dependency_files": [
+    "app-server/src/services/claim-evidence/service.mjs",
+    "app-server/src/services/claim-evidence/sqlite-store.mjs",
+    "app-server/src/services/claim-evidence/projections.mjs",
+    "app-server/src/services/claim-evidence/validation.mjs",
+    "app-server/src/services/claim-evidence/contract.mjs",
+    "app-server/src/services/claim-evidence/identity.mjs"
+  ],
+  "contract_files": [
+    "DESIGN.md",
+    "app-server/docs/claim-evidence-service.md"
+  ],
+  "focus": [
+    "Host authority admission and exact source/review binding",
+    "Independent transaction truth, failure atomicity, and mutation fences",
+    "Idempotency, predecessor behavior, and shared-watermark projection completeness",
+    "Capability leakage, exact validation, persistence, restart, and concurrency",
+    "Input bounds, misleading states, legacy parity, and missing adversarial tests"
+  ],
+  "execution": {
+    "model": "grok-4.6",
+    "reasoning_effort": "medium",
+    "max_turns": 8,
+    "timeout_ms": 120000
+  },
+  "agy_execution": {
+    "model": "gemini-3.7-flash-high",
+    "effort": "high",
+    "timeout_ms": 180000
+  }
+}

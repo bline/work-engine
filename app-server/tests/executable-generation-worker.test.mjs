@@ -18,10 +18,23 @@ import {
   createExecutableGenerationBootstrap,
   openSqliteAppServerStateStore,
 } from "../src/index.mjs";
+import { DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES } from "../src/executable-generation-bootstrap.mjs";
 
 const ENTRY = path.resolve(
   "app-server/tests/fixtures/executable-generation-worker-fixture.mjs",
 );
+
+test("role generations pin product-development services and deterministic validators", () => {
+  for (const expected of [
+    "app-server/src/services/product-development/artifact-root.mjs",
+    "app-server/src/services/product-development/intake-delivery.mjs",
+    "app-server/src/services/product-development/proposal-delivery.mjs",
+    "skills/idea-intake/scripts/idea_intake.py",
+    "skills/idea-intake/schemas/intake-record-v1.schema.json",
+    "skills/proposal-packets/scripts/proposal_packets.py",
+    "skills/proposal-packets/schemas/proposal-packet-v1.schema.json",
+  ]) assert.equal(DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES.includes(expected), true, expected);
+});
 
 function record(generationId) {
   return {

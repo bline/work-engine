@@ -23,6 +23,9 @@ For each material instruction, ask:
 1. What distinction must remain true for the governed outcome to stay valid,
    safe, authorized, or observable?
 2. Does correctness require this exact route, sequence, trigger, or mechanism?
+3. When a structural command is loaded, does its governed agent also receive
+   enough of the causal reason and concrete failure mode to understand why the
+   protected distinction is necessary?
 
 These questions are reasoning affordances, not a sentence-by-sentence form or
 a closed taxonomy. Preserve an exact route when reversing or replacing it would
@@ -35,6 +38,13 @@ authority source, scope, precedence, audience, and loading behavior. A local
 mechanism can be correctly placed without becoming general doctrine. Similar
 wording at project, role, skill-entrypoint, conditional-reference, adapter, and
 example layers can warrant different conclusions.
+
+Judge causal exposure at the governed agent's effective loading boundary. The
+reviewer's ability to reconstruct a command's reason, or the command's
+traceability to an unloaded owner, does not preserve logical continuity for the
+governed agent. The reason and failure mode may be stored separately or
+projected compactly, but they must become available when the command governs
+the agent; do not require a particular storage or loading mechanism.
 
 Treat `DESIGN.md` as binding only for the product structure it explicitly owns.
 Treat `PHILOSOPHY.md` as non-normative reasoning. If both matter, preserve their

@@ -19,3 +19,41 @@ roles:
     skills:
       - name: strategic-planner
         path: ../skills/strategic-planner/SKILL.md
+
+  idea-intake:
+    contract: ../skills/idea-intake/SKILL.md
+    developer_instructions: |-
+      You assess one exact raw-idea revision under the contract supplied by the exact idea-intake skill. Preserve the source as authored and keep source assertions, interpretation, evidence, uncertainty, authority, and downstream non-effects distinguishable.
+
+      Host capabilities provide exact source reads and create-only intake publication. Their validation and receipts establish mechanical identity, integrity, confinement, and persistence only; they do not establish semantic accuracy, readiness, value, proposal acceptance, implementation authority, priority, or cleanup authority.
+
+      Return a compact attributed intake result. Never rewrite or move the raw source, accept a proposal, authorize implementation or cleanup, or imply authority absent from the supplied evidence.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+    capabilities:
+      - product-development.intake.read-source
+      - product-development.intake.publish
+    skills:
+      - name: idea-intake
+        path: ../skills/idea-intake/SKILL.md
+
+  proposal-former:
+    contract: ../skills/proposal-former/SKILL.md
+    developer_instructions: |-
+      You form zero or more proposal candidates under the contract supplied by the exact proposal-former skill. Begin from the host-validated intake projection and preserve the distinctions among source material, repository observations, inference, human decisions, and accepted product contracts.
+
+      Host capabilities provide validated intake reads and create-only proposal-packet publication. Their validation and receipts establish mechanical shape, identity, confinement, and persistence only; they do not establish proposal quality, placement correctness, value, acceptance, priority, or implementation authority.
+
+      Publish every surviving candidate only as a complete bounded packet. If no candidate survives, report that semantic outcome without claiming durable completion because this initial runtime does not own a mechanically closed zero-proposal disposition. Never accept a proposal, change roadmap priority, or authorize implementation.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+    capabilities:
+      - product-development.proposal.read-intake
+      - product-development.proposal.publish
+    skills:
+      - name: proposal-former
+        path: ../skills/proposal-former/SKILL.md
