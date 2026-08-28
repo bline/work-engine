@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { canonicalJson, digest, stableClaimId } from "../../../src/services/claim-evidence/identity.mjs";
 import { BUILD_VERSION } from "../../../src/services/claim-evidence/contract.mjs";
 import { LEGACY_BUILD_VERSION, NATIVE_BUILD_VERSION, buildLegacyProjection } from "../../../src/services/claim-evidence/legacy-compatibility.mjs";
-import { blankStore } from "../../../src/services/claim-evidence/service.mjs";
+import { applyOperation, blankStore } from "../../../src/services/claim-evidence/service.mjs";
 
 const vector = {
   value: { z: [true, null, "é"], a: { beta: 2, alpha: 1 } },
@@ -45,3 +46,62 @@ test("legacy projection compatibility changes only implementation build metadata
   assert.equal(projection.canonical_input.path, "canonical/store.json");
 });
 
+test("both authorized vertical domain profiles match the legacy publication contract", async (t) => {
+  const fixture = JSON.parse(await readFile("skills/claim-evidence/tests/fixtures/representative-domain-records.json", "utf8"));
+  const authorities = fixture.records.map((record) => ({
+    schema_version: 1, grant_id: `grant:${record.profile}`, actor: `producer:${record.profile}`,
+    profile: record.profile, permissions: ["create_claim", "publish_revision"], decision_scope: "formation",
+    authority_reference: {
+      owner: "repository", reference: `authority/${record.profile}.json`, revision: "authority-revision",
+      integrity_sha256: "b".repeat(64), freshness: "exact_revision", status: "verified",
+    },
+  }));
+  const operations = fixture.records.map((record, index) => {
+    const source = {
+      owner: "repository", reference: `${record.namespace}/${record.stable_subject_id}.json`, revision: `source-${index + 1}`,
+      integrity_sha256: String(index + 1).repeat(64), freshness: "exact_revision", status: "verified",
+    };
+    return {
+      authority: authorities[index],
+      request: {
+        schema_version: 1, operation_id: `vertical-${index + 1}`, action: "create_claim",
+        profile: record.profile, expected_state: null,
+        payload: {
+          subject: {
+            namespace: record.namespace, subject_kind: "artifact", stable_subject_id: record.stable_subject_id,
+            evidence_baseline: source, content_set: [source.reference],
+          },
+          statement_identity: record.statement_identity,
+          initial_revision: {
+            proposition: record.statement_identity, support_qualification: "supported", assumptions: [],
+            limitations: fixture.limitations, confidence: "high", evidence_references: [source], sensitivity_references: [],
+            evidence_mode: "direct_source", judgment_kind: "domain_judgment", decision_scope: "formation",
+            profile_payload: record.profile_payload, reopening_conditions: [], tombstone: false,
+          },
+        },
+      },
+    };
+  });
+
+  let nativeStore = blankStore(authorities);
+  for (const item of operations) nativeStore = applyOperation(nativeStore, item.request, item.authority).store;
+  const script = String.raw`
+import importlib.util, json, pathlib, sys
+path = pathlib.Path('skills/claim-evidence/scripts/claim_evidence.py')
+spec = importlib.util.spec_from_file_location('claim_evidence_oracle', path)
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+payload = json.load(sys.stdin)
+store = module.blank_store(payload['authorities'])
+for item in payload['operations']:
+    store = module.apply_operation(store, item['request'], item['authority'])['store']
+print(json.dumps(store, sort_keys=True))
+`;
+  const result = spawnSync("python3", ["-c", script], {
+    cwd: process.cwd(), input: JSON.stringify({ authorities, operations }), encoding: "utf8",
+    env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" },
+  });
+  if (result.error?.code === "ENOENT") return t.skip("python3 is unavailable");
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(nativeStore, JSON.parse(result.stdout));
+  assert.deepEqual(nativeStore.claims.map((item) => item.profile), fixture.records.map((item) => item.profile));
+});

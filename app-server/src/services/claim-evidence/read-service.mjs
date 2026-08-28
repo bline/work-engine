@@ -7,7 +7,8 @@ import {
 import { exactFields, nonempty, requireCondition } from "./validation.mjs";
 
 const OPERATIONS = new Set([
-  "resolve", "discover", "traverse_lineage", "query_direct_reliance", "query_reverse_reliance",
+  "resolve", "discover", "project_relevant_revisions", "traverse_lineage",
+  "query_direct_reliance", "query_reverse_reliance",
 ]);
 const PAGE_LIMIT = 100;
 const TRAVERSAL_LIMIT = 1_000;
@@ -86,6 +87,34 @@ function execute(projection, operation, parameters) {
       cursor: parameters.cursor, identity: (item) => item.claim.id,
     });
     return { applicability: result.applicability, criteria: result.criteria, candidates: bounded.items, page: bounded.page };
+  }
+  if (operation === "project_relevant_revisions") {
+    exactFields(parameters, ["selections"], "relevant revision parameters");
+    requireCondition(Array.isArray(parameters.selections) && parameters.selections.length > 0 && parameters.selections.length <= PAGE_LIMIT, "relevant revision selections must contain from 1 through 100 items");
+    const revisionIds = new Set();
+    const relevantExactRevisions = parameters.selections.map((selection) => {
+      exactFields(selection, ["revision_id", "selection_reason"], "relevant revision selection");
+      nonempty(selection.revision_id, "relevant revision selection revision_id");
+      nonempty(selection.selection_reason, "relevant revision selection selection_reason");
+      requireCondition(!revisionIds.has(selection.revision_id), "relevant revision selections must be unique");
+      revisionIds.add(selection.revision_id);
+      const revision = projection.revisions.find((item) => item.id === selection.revision_id);
+      requireCondition(revision, "relevant revision not found");
+      const claim = projection.claims.find((item) => item.id === revision.claim_id);
+      const authority = projection.authorities.find((item) => item.grant_id === revision.authority_ref);
+      requireCondition(claim && authority, "relevant revision has incomplete provenance");
+      return {
+        selection_reason: selection.selection_reason,
+        claim: {
+          id: claim.id, profile: claim.profile, subject: claim.subject,
+          statement_identity: claim.statement_identity,
+        },
+        revision,
+        authority_ref: revision.authority_ref,
+        authority_reference: authority.authority_reference,
+      };
+    });
+    return { relevant_exact_revisions: relevantExactRevisions, ...projectionContext(projection) };
   }
   if (operation === "traverse_lineage") {
     exactFields(parameters, ["revision_id", "direction", "max_revision_ids", "max_lineage_edges"], "traversal parameters");

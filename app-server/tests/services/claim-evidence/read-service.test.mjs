@@ -80,6 +80,28 @@ test("persisted read service is exact, bounded, provenance-bearing, and mutation
   assert.equal(resolved.result.revision.id, first);
   assert.notEqual(resolved.result.revision.id, second);
 
+  const relevant = readClaimEvidence(store, read("relevant", "project_relevant_revisions", {
+    selections: [
+      { revision_id: first, selection_reason: "accepted placement evidence" },
+      { revision_id: second, selection_reason: "current exact successor" },
+    ],
+  }));
+  assert.equal(relevant.outcome, "succeeded");
+  assert.deepEqual(relevant.result.relevant_exact_revisions.map((item) => item.revision.id), [first, second]);
+  assert.deepEqual(relevant.result.relevant_exact_revisions.map((item) => item.selection_reason), ["accepted placement evidence", "current exact successor"]);
+  for (const selected of relevant.result.relevant_exact_revisions) {
+    assert.equal(selected.claim.profile, "proposal-research-v1");
+    assert.equal(selected.authority_ref, authority.grant_id);
+    assert.deepEqual(selected.authority_reference, authority.authority_reference);
+    assert.equal("permissions" in selected, false);
+  }
+  assert.match(readClaimEvidence(store, read("duplicate-relevant", "project_relevant_revisions", {
+    selections: [
+      { revision_id: first, selection_reason: "first" },
+      { revision_id: first, selection_reason: "second" },
+    ],
+  })).refusal.message, /must be unique/);
+
   const criteria = { namespace: "research" };
   const pageOne = readClaimEvidence(store, read("discover-1", "discover", { criteria, limit: 2, cursor: null }));
   assert.equal(pageOne.result.applicability, "not_assessed");
@@ -116,7 +138,7 @@ test("persisted read service is exact, bounded, provenance-bearing, and mutation
   assert.equal(reverse.result.query.consumer, "proposal:consumer");
   assert.deepEqual(direct.result.reliances, reverse.result.reliances);
 
-  for (const response of [resolved, pageOne, pageTwo, lineage, direct, reverse]) {
+  for (const response of [resolved, relevant, pageOne, pageTwo, lineage, direct, reverse]) {
     assert.equal(response.projection.projection_schema_version, 1);
     assert.equal(typeof response.projection.build_version, "string");
     assert.equal(response.projection.projection_identity.sha256, beforeDigest);
@@ -190,6 +212,10 @@ test("closed requests and unavailable projections refuse without apparent empty 
   assert.equal(readClaimEvidence(partialStore, read("bad-limit", "discover", {
     criteria: { namespace: "research" }, limit: 0, cursor: null,
   })).outcome, "refused");
+  snapshot.projection_boundary.completeness = "partial";
+  assert.match(readClaimEvidence(partialStore, read("missing-relevant", "project_relevant_revisions", {
+    selections: [{ revision_id: "revision@missing", selection_reason: "bounded reason" }],
+  })).refusal.message, /relevant revision not found/);
 
   const corruptStore = { exportStore() { throw new TypeError("stored claim-evidence state failed its canonical integrity check"); } };
   const corrupt = readClaimEvidence(corruptStore, read("corrupt", "resolve", { identity: "revision" }));
