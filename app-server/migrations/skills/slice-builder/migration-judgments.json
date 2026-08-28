@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "producer": "S2 bounded one-time slice-builder legacy migration",
+  "judgments": [
+    {
+      "id": "s2-section-identity",
+      "category": "ownership",
+      "subject": "structure.sections.identity",
+      "conclusion": "This section identifies the retained slice-builder role and its complete-slice responsibility; the experimental record does not replace the legacy skill as owner.",
+      "evidence": ["skills/slice-builder/SKILL.md#slice-builder", "docs/agent-environments.yaml#role.builder"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-launch",
+      "category": "conditionality",
+      "subject": "structure.sections.launch-builder",
+      "conclusion": "This section describes launch configuration, evidence affordances, and provider boundaries that apply before and during builder execution; it is preserved without selective omission.",
+      "evidence": ["skills/slice-builder/SKILL.md#launch-the-builder"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-lifetime",
+      "category": "causal_parent",
+      "subject": "structure.sections.builder-lifetime",
+      "conclusion": "This section owns builder and reviewer continuity consequences whose causal parents are retained context value, review-episode identity, and truthful recovery provenance.",
+      "evidence": ["skills/slice-builder/SKILL.md#continue-one-identity-through-the-slice", "DESIGN.md#information-lifetime-is-a-decision-dimension"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-planning",
+      "category": "conditionality",
+      "subject": "structure.sections.planning-turn",
+      "conclusion": "This section applies to the read-only planning phase and produces the plan and placement certificate without granting mutation authority.",
+      "evidence": ["skills/slice-builder/SKILL.md#planning-turn", "docs/agent-environments.yaml#role.builder"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-implementation",
+      "category": "authority",
+      "subject": "structure.sections.implementation-turn",
+      "conclusion": "This section applies only after mediated plan acceptance and constrains mutation to the accepted task boundary.",
+      "evidence": ["skills/slice-builder/SKILL.md#implementation-turn", "docs/agent-environments.yaml#role.builder"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-gate",
+      "category": "ownership",
+      "subject": "structure.sections.gate-turn",
+      "conclusion": "This section assigns deterministic gate execution to the builder and specialist selection to the supervisor while preserving specialist finding ownership.",
+      "evidence": ["skills/slice-builder/SKILL.md#gate-turn", "skills/slice-supervisor/references/review-selection.md"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-escalation",
+      "category": "conditionality",
+      "subject": "structure.sections.reasoning-escalation",
+      "conclusion": "This section defines evidence-conditioned reasoning escalation and does not grant a general authority to replace builders or alter configuration.",
+      "evidence": ["skills/slice-builder/SKILL.md#escalate-reasoning-only-from-evidence"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-boundary",
+      "category": "authority",
+      "subject": "structure.sections.scope-enforcement",
+      "conclusion": "This section preserves the prohibition on silent scope expansion and mutation of unattributed work.",
+      "evidence": ["skills/slice-builder/SKILL.md#enforce-the-boundary", "docs/agent-environments.yaml#role.builder"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s2-section-receipt",
+      "category": "ownership",
+      "subject": "structure.sections.final-receipt",
+      "conclusion": "This section owns the builder-produced receipt and proposal consequences while durable acceptance and publication remain mediated by their existing owners.",
+      "evidence": ["skills/slice-builder/SKILL.md#collect-the-final-receipt", "skills/slice-builder/references/builder-receipt.md", "skills/slice-builder/references/handoff-receipt.md"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

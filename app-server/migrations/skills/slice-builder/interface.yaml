@@ -1,0 +1,34 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: slice-builder
+boundaries:
+  - id: planning.read-only
+    kind: prohibition
+    semantic_section: planning-turn
+    authority_source: authority.legacy-skill
+    enforcement: denied
+  - id: mutation.accepted-scope
+    kind: mutation
+    semantic_section: implementation-turn
+    authority_source: authority.environment
+    enforcement: scoped_write
+  - id: acceptance.supervisor-mediated
+    kind: mediation
+    semantic_section: implementation-turn
+    authority_source: authority.environment
+    enforcement: mediated
+  - id: checkpoint.supervisor-mediated
+    kind: mediation
+    semantic_section: final-receipt
+    authority_source: authority.environment
+    enforcement: mediated
+  - id: publication.supervisor-mediated
+    kind: mediation
+    semantic_section: final-receipt
+    authority_source: authority.environment
+    enforcement: mediated
+  - id: receipt.schema-bound
+    kind: interface
+    semantic_section: final-receipt
+    authority_source: authority.legacy-skill
+    enforcement: receipt_contract
