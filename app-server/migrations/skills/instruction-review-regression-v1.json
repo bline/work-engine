@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "corpus_id": "skills-migration-instruction-review-regression-v1",
+  "authority_notice": "This campaign evidence does not grant, transfer, or accept semantic, runtime, service, review, or human authority.",
+  "contract_sources": [
+    { "path": "skills/agent-instruction-review/SKILL.md", "role": "canonical review diagnosis contract" },
+    { "path": "skills/agent-instruction-review/references/finding-contract.md", "role": "canonical finding result contract" },
+    { "path": "app-server/docs/skills-migration-plan.md", "role": "campaign objective and invariants" }
+  ],
+  "bootstrap_contract": {
+    "owner": "skills-migration campaign",
+    "reviewer_independence": "fresh reasoning context separate from the corrected skill and corpus author",
+    "mutation": "read-only",
+    "authority": "advisory and non-accepting",
+    "required_checks": [
+      "the vertical pair differs only in effective causal loading",
+      "expected consequences are semantic distinctions rather than preferred wording",
+      "the corpus does not certify the canonical review skill",
+      "results preserve applicability, limitations, remediation, and reviewer-lifetime truth"
+    ]
+  },
+  "cases": [
+    {
+      "id": "vertical-unloaded-source",
+      "pair_id": "vertical-causal-exposure",
+      "variant": "missing",
+      "instruction_kind": "structural_command",
+      "command": "Publish the accepted artifact only after validation.",
+      "source_catalog": { "reason": "Publication makes the artifact authoritative.", "failure_mode": "Publishing an invalid artifact gives consumers false authoritative state." },
+      "effective_instructions": ["Publish the accepted artifact only after validation."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": false, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "missing_causal_exposure", "missing_causal_exposure_finding": true, "protected_distinction": "A structural publication fence is loaded without the reason and invalid-state consequence needed by the governed agent." },
+      "limitations": ["The case tests instruction closure, not whether publication validation is otherwise sufficient."]
+    },
+    {
+      "id": "vertical-projected-source",
+      "pair_id": "vertical-causal-exposure",
+      "variant": "loaded",
+      "instruction_kind": "structural_command",
+      "command": "Publish the accepted artifact only after validation.",
+      "source_catalog": { "reason": "Publication makes the artifact authoritative.", "failure_mode": "Publishing an invalid artifact gives consumers false authoritative state." },
+      "effective_instructions": ["Publish the accepted artifact only after validation.", "Publication makes the artifact authoritative; publishing an invalid artifact gives consumers false authoritative state."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Separately stored causal content is sufficient when it is actually projected; co-location is not required." },
+      "limitations": ["The case does not prescribe a storage or projection mechanism."]
+    },
+    {
+      "id": "reviewer-reconstruction-only",
+      "instruction_kind": "structural_command",
+      "command": "Independent reviewers are read-only.",
+      "source_catalog": { "reason": "Mutation would invalidate the independence claim.", "failure_mode": "A mutating reviewer can repair away the evidence it is meant to challenge." },
+      "effective_instructions": ["Independent reviewers are read-only."],
+      "relations": { "source_traceable": false, "reviewer_can_reconstruct": true, "reason_loaded": false, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "missing_causal_exposure", "missing_causal_exposure_finding": true, "protected_distinction": "Reviewer reconstruction does not expose causal meaning to the governed agent." },
+      "limitations": ["The reviewer inference may be correct but remains unloaded."]
+    },
+    {
+      "id": "direct-role-loading",
+      "instruction_kind": "structural_command",
+      "command": "Independent reviewers are read-only.",
+      "source_catalog": { "reason": "Mutation would invalidate the independence claim.", "failure_mode": "A mutating reviewer can repair away the evidence it is meant to challenge." },
+      "effective_instructions": ["Independent reviewers are read-only because mutation would invalidate the independence claim and could repair away the challenged evidence."],
+      "relations": { "source_traceable": false, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "role", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Direct role loading can provide complete causal exposure." },
+      "limitations": ["The case does not establish runtime enforcement of read-only effects."]
+    },
+    {
+      "id": "compact-sufficient-projection",
+      "instruction_kind": "structural_command",
+      "command": "Bind every result to the immutable subject revision.",
+      "source_catalog": { "reason": "Unbound results can be applied to the wrong subject.", "failure_mode": "A stale finding may be treated as current evidence." },
+      "effective_instructions": ["Bind results to the exact subject; otherwise stale findings can be misapplied."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "skill", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "A compact projection may preserve the reason and concrete failure mode without preferred wording." },
+      "limitations": ["Semantic adequacy remains a reviewer judgment."]
+    },
+    {
+      "id": "precedence-suppresses-reason",
+      "instruction_kind": "structural_command",
+      "command": "Require explicit human approval before publication.",
+      "source_catalog": { "reason": "Publication authority remains with the human.", "failure_mode": "Automatic publication would cross an authority boundary." },
+      "effective_instructions": ["Require explicit human approval before publication.", "Higher-priority role rule: proceed automatically when tests pass; ignore approval commentary."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "conflicting_higher_layer", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "precedence_conflict", "missing_causal_exposure_finding": false, "protected_distinction": "Textual inclusion preserves causal exposure, while the higher effective layer creates a distinct precedence conflict." },
+      "limitations": ["The case does not decide which layer should own publication authority."]
+    },
+    {
+      "id": "conditional-omission-without-closure",
+      "instruction_kind": "structural_command",
+      "command": "Preserve unresolved human interaction across context replacement.",
+      "source_catalog": { "reason": "Replacement cannot resolve or discard human-owned interaction.", "failure_mode": "The resumed role may act as if an unanswered human decision was settled." },
+      "effective_instructions": [],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": false, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "declared_without_closure" },
+      "expected": { "applicability": "applicable", "finding_consequence": "unsafe_omission", "missing_causal_exposure_finding": false, "protected_distinction": "Applicability metadata alone cannot safely omit a structural continuation boundary; complete omission is distinct from a loaded command missing its cause." },
+      "limitations": ["No accepted closure contract is present."]
+    },
+    {
+      "id": "conditional-omission-with-closure",
+      "instruction_kind": "structural_command",
+      "command": "Preserve unresolved human interaction across context replacement.",
+      "source_catalog": { "reason": "Replacement cannot resolve or discard human-owned interaction.", "failure_mode": "The resumed role may act as if an unanswered human decision was settled." },
+      "effective_instructions": [],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": false, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "accepted_closed_no_replacement_path" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "The assembly remains a reviewable normative surface, while accepted closure proving the governed replacement path unreachable permits the instruction's omission." },
+      "limitations": ["The accepted closure is fixture-local and grants no general omission authority."]
+    },
+    {
+      "id": "route-preference",
+      "instruction_kind": "route_preference",
+      "command": "Prefer the smallest useful evidence packet.",
+      "source_catalog": { "reason": "Smaller packets reduce context cost.", "failure_mode": "Oversized packets may waste attention but do not inherently invalidate the product state." },
+      "effective_instructions": ["Prefer the smallest useful evidence packet."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": false, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "A route preference is not promoted into structural causal-exposure doctrine." },
+      "limitations": ["Other placement or route findings remain possible."]
+    },
+    {
+      "id": "causal-sequencing",
+      "instruction_kind": "causally_required_sequence",
+      "command": "Validate before authoritative publication.",
+      "source_catalog": { "reason": "Publication exposes the artifact as authoritative.", "failure_mode": "Validation after publication cannot prevent consumers from observing invalid authority-bearing state." },
+      "effective_instructions": ["Validate before authoritative publication because consumers must not observe invalid authority-bearing state."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Exact ordering remains structural when reversing it exposes invalid authoritative state." },
+      "limitations": ["The case does not prescribe the validator implementation."]
+    },
+    {
+      "id": "bundled-distinct-effects",
+      "instruction_kind": "bundled",
+      "command": "Reviewers are read-only and should usually inspect compact evidence first.",
+      "source_catalog": { "reason": "Read-only preserves independent evidence; compact inspection is a cost preference.", "failure_mode": "Mutation invalidates independence, while a larger packet ordinarily affects cost rather than validity." },
+      "effective_instructions": ["Reviewers are read-only and should usually inspect compact evidence first because mutation invalidates independence."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "bundled_clause", "missing_causal_exposure_finding": false, "protected_distinction": "Bundled structural and preferential clauses retain distinct effects rather than making both mandatory." },
+      "limitations": ["A split or restatement finding may still be advisory."]
+    },
+    {
+      "id": "conflicting-layers",
+      "instruction_kind": "structural_command",
+      "command": "Reviewers must not accept implementation.",
+      "source_catalog": { "reason": "Acceptance belongs to the named decision owner.", "failure_mode": "Reviewer acceptance would transfer authority without authorization." },
+      "effective_instructions": ["Skill layer: reviewers must not accept implementation because acceptance belongs to the decision owner.", "Role layer: return an acceptance decision after review."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": true, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "unresolved_conflict", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "layer_conflict", "missing_causal_exposure_finding": false, "protected_distinction": "The causal authority reason is loaded, while conflicting effective layers create a distinct unresolved authority conflict." },
+      "limitations": ["The review reports the conflict and does not choose architecture or authority."]
+    },
+    {
+      "id": "ordinary-prose-omission",
+      "instruction_kind": "non_normative",
+      "command": "This document recounts why the project once preferred compact contexts.",
+      "source_catalog": { "reason": "Historical explanation.", "failure_mode": "None; the text does not govern an agent." },
+      "effective_instructions": ["This document recounts why the project once preferred compact contexts."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": false, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "omitted", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Ordinary non-normative prose is truthfully omitted rather than passed." },
+      "limitations": ["Omission is not a correctness claim about the prose."]
+    },
+    {
+      "id": "bounded-no-finding",
+      "instruction_kind": "structural_command",
+      "command": "Reject a result whose subject digest does not match.",
+      "source_catalog": { "reason": "A digest mismatch means the result addresses another subject.", "failure_mode": "A stale or substituted result may be consumed as current evidence." },
+      "effective_instructions": ["Reject mismatched subject digests because they can make stale or substituted results appear current."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "A no-finding result remains bounded to the exact inspected subject and named limitation." },
+      "limitations": ["The fixture does not establish cryptographic implementation correctness or complete review coverage."]
+    },
+    {
+      "id": "exact-subject-remediation",
+      "instruction_kind": "remediation",
+      "command": "Re-evaluate prior finding AIR-001 against subject revision two.",
+      "source_catalog": { "reason": "Remediation changes the subject without erasing finding lineage.", "failure_mode": "An unbound re-evaluation may close a finding against the wrong revision." },
+      "effective_instructions": ["For subject revision two, re-evaluate AIR-001 and preserve its lineage; otherwise closure may bind the wrong revision."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Remediation binds the exact new subject and prior finding identity." },
+      "limitations": ["The fixture records semantic lineage, not durable episode-state mechanics."]
+    },
+    {
+      "id": "retained-review-continuation",
+      "instruction_kind": "reviewer_lifecycle",
+      "command": "Resume the same isolated reviewer for ordinary remediation.",
+      "source_catalog": { "reason": "The reviewer retains useful understanding of its own findings.", "failure_mode": "Calling continuation fresh would fabricate a renewed independence claim." },
+      "effective_instructions": ["Resume the same isolated reviewer for ordinary remediation, and describe it as continuation rather than renewed independence."],
+      "relations": { "source_traceable": true, "reviewer_can_reconstruct": false, "reason_loaded": true, "failure_mode_loaded": true, "precedence": "ordinary", "conditional_omission": "none" },
+      "expected": { "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "protected_distinction": "Retained remediation preserves context without claiming a second fresh review." },
+      "limitations": ["The fixture does not prove provider session persistence."]
+    }
+  ]
+}

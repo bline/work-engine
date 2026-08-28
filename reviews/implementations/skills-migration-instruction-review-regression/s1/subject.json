@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "subject_id": "skills-migration-app-server-20260828-slice-2-s1",
+  "status": "implementation-candidate",
+  "authority_notice": "This revision-bound subject identifies evidence for review and does not certify, accept, publish, or grant authority.",
+  "baseline": {
+    "git_head": "bf1c51a022e04ae34eb22cc93d00924568fd38a2",
+    "accepted_s0_commit": "ead795071c70d438157158f115f424fb7dd213ab"
+  },
+  "canonical_contracts": [
+    { "path": "skills/agent-instruction-review/SKILL.md", "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72", "mutation": "excluded" },
+    { "path": "skills/agent-instruction-review/references/finding-contract.md", "sha256": "ad0099e0744011aeb5662f8e630d3cf7b70411635b09a8b9dc7e856df625f69a", "mutation": "excluded" }
+  ],
+  "candidate_artifacts": [
+    { "path": "app-server/migrations/skills/instruction-review-regression-v1.json", "sha256": "34c652b93be22a7f42ab3adba4b614970b194cab81029faec79fae2e49caf5ef", "role": "campaign-owned regression corpus" },
+    { "path": "app-server/migrations/skills/instruction-review-regression-v1.schema.json", "sha256": "de021c86d22d8dc8bae24b83c7992c9d884fe86529d82b56f3ff5097b601159e", "role": "portable corpus schema" },
+    { "path": "app-server/scripts/validate-skills-migration-instruction-review-regression.mjs", "sha256": "472d11fdb46f22588a265a0a2b64a2900490ccc59968c9b8b6d3ab1ecc0e49e9", "role": "deterministic fixture, identity, and result validator" },
+    { "path": "app-server/scripts/run-skills-migration-instruction-review-regression.mjs", "sha256": "918c2d10afa2ede10ef46ff44aee73cfd3130816860d72ba2a40297a1653f97f", "role": "identity-bound behavioral packet and result checker" },
+    { "path": "app-server/tests/skills-migration-instruction-review-regression.test.mjs", "sha256": "232dc0abc705b0f0b44a6287b6f069acc01127fd11a9aeffe5739744df41d643", "role": "App Server execution integration and negative distinctions" },
+    { "path": "reviews/implementations/skills-migration-instruction-review-regression/s1/behavioral-results.json", "sha256": "eb04c708dcb39210e740089083e8885325fd906d0c429986a4970b29e27853b9", "role": "fresh blind read-only behavioral evidence" }
+  ],
+  "vertical_proof": {
+    "pair_id": "vertical-causal-exposure",
+    "missing_case": "vertical-unloaded-source",
+    "loaded_case": "vertical-projected-source",
+    "corpus_semantic_digest": "a44d14fa69598065e6e27247e3206dd78221cdf931bff91e21e13b7426f7f4ba",
+    "behavioral_results_semantic_digest": "5a0bb9eb1742cdda8a898faba6f4e0ec7e6f1cd1cd14ea46c0dce662a05fefab"
+  },
+  "limitations": [
+    "The fixtures represent assembled effective instructions and do not implement runtime loading.",
+    "Behavioral evidence is advisory and cannot certify its own corpus or canonical review contract.",
+    "No canonical skill, runtime manifest, server service, or authority owner changes in this subject."
+  ]
+}

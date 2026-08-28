@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "review_id": "skills-migration-s1-bootstrap-episode-1",
+  "profile": "skills-migration-s1-independent-bootstrap-v1",
+  "authority": {
+    "read_only": true,
+    "advisory": true,
+    "acceptance_exercised": false,
+    "self_certification_claimed": false
+  },
+  "provider": {
+    "name": "claude",
+    "model": "claude-sonnet-5",
+    "skill": "claude-recon-implementation",
+    "fresh_entry_for_each_assessment": true,
+    "builder_context_inherited": false
+  },
+  "initial_assessment": {
+    "verdict": "findings",
+    "findings": [
+      {
+        "id": "AIR-BOOT-S1-001",
+        "severity": "critical",
+        "consequence": "The reviewer-facing behavioral packet exposed expected answers and pair hints, defeating blind semantic evidence.",
+        "builder_disposition": "valid_and_repaired"
+      },
+      {
+        "id": "AIR-BOOT-S1-002",
+        "severity": "high",
+        "consequence": "The reviewer alleged that the subject digest was malformed.",
+        "builder_disposition": "invalid_visual_miscount"
+      }
+    ]
+  },
+  "remediation": {
+    "AIR-BOOT-S1-001": "behavioralPacket now strips expected, pair_id, and variant; the focused test rejects answer-key leakage; behavioral evidence was regenerated in a fresh blind context.",
+    "AIR-BOOT-S1-002": "Mechanical SHA-256 output and length checks establish a 64-character digest matching the recorded subject binding."
+  },
+  "post_remediation_assessment": {
+    "verdict": "findings",
+    "passed_checks": [
+      "review packets strip expected answers and pair hints",
+      "corpus distinguishes causal exposure, precedence conflict, unsafe omission, bundled clauses, and layer conflict",
+      "fresh blind results cover all 16 exact corpus cases with limitations",
+      "deterministic code does not infer free-text semantic adequacy",
+      "ownership separation and downstream reuse remain intact"
+    ],
+    "findings": [
+      {
+        "id": "AIR-BOOT-S1-N01",
+        "severity": "medium",
+        "consequence": "The reviewer alleged that the canonical finding-contract digest was malformed.",
+        "builder_disposition": "invalid_visual_miscount",
+        "mechanical_evidence": "The recorded value has length 64 and equals sha256sum of skills/agent-instruction-review/references/finding-contract.md."
+      }
+    ]
+  },
+  "unresolved_valid_findings": [],
+  "limitations": [
+    "Provider assessments were static and did not execute deterministic checks.",
+    "The builder, not the advisory reviewer, evaluates findings and supplies mechanical digest verification.",
+    "Fixture relations stand in for assembled effective loading and do not prove runtime projection machinery."
+  ]
+}

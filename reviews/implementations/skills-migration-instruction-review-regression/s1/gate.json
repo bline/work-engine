@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "profile": "engineering-proportional",
+  "status": "passed",
+  "baseline": "bf1c51a022e04ae34eb22cc93d00924568fd38a2",
+  "gate_identity": "s1-final-deterministic-gate-v1",
+  "requirements": ["semantic_proof", "risk_proportional_checks", "workspace_integrity"],
+  "initial_attempt": {
+    "status": "failed",
+    "failed_check": "full-app-server-suite",
+    "cause": "The manifest passed app-server/tests/ as a Node test target; Node treated the directory as a module path.",
+    "product_failure": false,
+    "repair": "Corrected only the gate manifest to invoke the repository-owned npm test:app-server script."
+  },
+  "final_attempt": {
+    "status": "passed",
+    "checks": [
+      { "identity": "corpus-validation", "requirement": "semantic_proof", "state": "passed", "duration_seconds": 0.034 },
+      { "identity": "behavioral-result-check", "requirement": "semantic_proof", "state": "passed", "duration_seconds": 0.026 },
+      { "identity": "focused-s1-tests", "requirement": "risk_proportional_checks", "state": "passed", "duration_seconds": 0.081 },
+      { "identity": "s0-inventory-regression", "requirement": "risk_proportional_checks", "state": "passed", "duration_seconds": 0.212 },
+      { "identity": "binding-and-answer-key-protections", "requirement": "semantic_proof", "state": "passed", "duration_seconds": 0.071 },
+      { "identity": "diff-check", "requirement": "workspace_integrity", "state": "passed", "duration_seconds": 0.003 },
+      { "identity": "exact-task-boundary", "requirement": "workspace_integrity", "state": "passed", "duration_seconds": 0.029 },
+      { "identity": "full-app-server-suite", "requirement": "risk_proportional_checks", "state": "passed", "duration_seconds": 1.519 },
+      { "identity": "pending-gate-artifact-truth", "requirement": "workspace_integrity", "state": "passed", "duration_seconds": 0.017 }
+    ],
+    "totals": { "configured": 9, "executed": 9, "passed": 9, "failed": 0 },
+    "duration_seconds": 1.99
+  },
+  "authority_notice": "Passing deterministic checks does not accept the slice, select specialists, certify semantic adequacy, or grant authority."
+}

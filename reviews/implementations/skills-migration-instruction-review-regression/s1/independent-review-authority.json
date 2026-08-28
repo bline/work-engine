@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "profile": "skills-migration-s1-independent-bootstrap-v1",
+  "grant_id": "skills-migration-app-server-20260828-slice-2-bootstrap-1",
+  "authority": {
+    "owner": "slice-supervisor accepted plan",
+    "scope": "fresh read-only bootstrap assessment of the exact S1 candidate",
+    "mutation": "denied",
+    "acceptance": "denied",
+    "architecture_and_authority_choice": "denied"
+  },
+  "reviewer": {
+    "provider": "claude",
+    "skill": "claude-recon-implementation",
+    "fresh_context_required": true,
+    "builder_context_inherited": false,
+    "session_persistence": false
+  },
+  "initial_subject": {
+    "path": "reviews/implementations/skills-migration-instruction-review-regression/s1/subject.json",
+    "sha256": "fed1b14caf811dafe8927f63807222b2b5e886d4d330924d16744dd6badf5149"
+  },
+  "required_consequence": "Challenge corpus completeness, vertical-pair discrimination, ownership separation, deterministic-versus-semantic authority, behavioral result truth, and downstream reusability without applying the corrected skill as self-certification.",
+  "decision_owner": "slice-supervisor and authorized campaign workflow"
+}

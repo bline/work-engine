@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "result_id": "s1-fresh-blind-behavioral-evaluation-2",
+  "authority_notice": "This fresh read-only advisory evaluation does not certify the skill or corpus, accept implementation, choose architecture, mutate state, or grant authority.",
+  "corpus": {
+    "id": "skills-migration-instruction-review-regression-v1",
+    "sha256": "a44d14fa69598065e6e27247e3206dd78221cdf931bff91e21e13b7426f7f4ba"
+  },
+  "configuration": {
+    "provider": "claude",
+    "model": "claude-sonnet-5",
+    "effort": "medium",
+    "prompt_contract": "fresh read-only evaluation under the canonical agent-instruction-review diagnosis and finding contracts",
+    "temperature": null
+  },
+  "freshness": {
+    "fresh_context": true,
+    "builder_context_inherited": false,
+    "session_persisted": false
+  },
+  "cases": [
+    { "case_id": "vertical-unloaded-source", "applicability": "applicable", "finding_consequence": "missing_causal_exposure", "missing_causal_exposure_finding": true, "consequence": "The structural publication fence is loaded without its reason or false-authoritative-state failure mode; traceability and reconstruction do not expose them to the governed agent.", "limitations": ["The case tests instruction closure, not whether publication validation is otherwise sufficient."] },
+    { "case_id": "vertical-projected-source", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "The separately stored reason and failure mode are actually carried into effective instructions, satisfying causal exposure without requiring co-location or a particular mechanism.", "limitations": ["The case does not prescribe a storage or projection mechanism."] },
+    { "case_id": "reviewer-reconstruction-only", "applicability": "applicable", "finding_consequence": "missing_causal_exposure", "missing_causal_exposure_finding": true, "consequence": "Reviewer reconstruction does not preserve logical continuity for the governed agent when neither reason nor failure mode is loaded.", "limitations": ["The reviewer inference may be correct but remains unloaded."] },
+    { "case_id": "direct-role-loading", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "Direct role instructions include the reason and failure mode, providing complete causal exposure at the governed boundary.", "limitations": ["The case does not establish runtime enforcement of read-only effects."] },
+    { "case_id": "compact-sufficient-projection", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "The compact projection retains the misapplication reason and stale-finding failure mode without requiring preferred wording.", "limitations": ["Semantic adequacy remains a reviewer judgment."] },
+    { "case_id": "precedence-suppresses-reason", "applicability": "applicable", "finding_consequence": "precedence_conflict", "missing_causal_exposure_finding": false, "consequence": "The reason is loaded; the higher-priority rule creates a distinct precedence conflict that can suppress the human-authority boundary.", "limitations": ["The case does not decide which layer should own publication authority."] },
+    { "case_id": "conditional-omission-without-closure", "applicability": "applicable", "finding_consequence": "unsafe_omission", "missing_causal_exposure_finding": false, "consequence": "The command is absent rather than causally incomplete; without accepted closure, that complete omission is unsafe.", "limitations": ["No accepted closure contract is present."] },
+    { "case_id": "conditional-omission-with-closure", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "The assembly remains reviewable, while fixture-local accepted closure makes this instruction omission safe without granting general omission authority.", "limitations": ["The accepted closure is fixture-local and grants no general omission authority."] },
+    { "case_id": "route-preference", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "A cost-oriented route preference is not promoted into structural causal-exposure doctrine.", "limitations": ["Other placement or route findings remain possible."] },
+    { "case_id": "causal-sequencing", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "Validation-before-publication remains causally exact because reversal exposes invalid authoritative state, and that reason is loaded.", "limitations": ["The case does not prescribe the validator implementation."] },
+    { "case_id": "bundled-distinct-effects", "applicability": "applicable", "finding_consequence": "bundled_clause", "missing_causal_exposure_finding": false, "consequence": "The loaded cause supports read-only while the compact-evidence preference remains distinct; bundling, not causal exposure, is the material issue.", "limitations": ["A split or restatement finding may still be advisory."] },
+    { "case_id": "conflicting-layers", "applicability": "applicable", "finding_consequence": "layer_conflict", "missing_causal_exposure_finding": false, "consequence": "The authority reason is loaded; the role layer creates a distinct unresolved authority conflict.", "limitations": ["The review reports the conflict and does not choose architecture or authority."] },
+    { "case_id": "ordinary-prose-omission", "applicability": "omitted", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "Historical non-normative prose is truthfully omitted rather than treated as a passed instruction.", "limitations": ["Omission is not a correctness claim about the prose."] },
+    { "case_id": "bounded-no-finding", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "The digest-mismatch command includes its stale-result failure mode; the no-finding consequence remains bounded to this subject.", "limitations": ["The fixture does not establish cryptographic implementation correctness or complete review coverage."] },
+    { "case_id": "exact-subject-remediation", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "Remediation binds the exact new subject and prior finding identity, preserving lineage rather than creating an unbound fresh review.", "limitations": ["The fixture records semantic lineage, not durable episode-state mechanics."] },
+    { "case_id": "retained-review-continuation", "applicability": "applicable", "finding_consequence": "none", "missing_causal_exposure_finding": false, "consequence": "Retained remediation preserves useful reviewer context while explicitly avoiding a renewed freshness or independence claim.", "limitations": ["The fixture does not prove provider session persistence."] }
+  ],
+  "limitations": [
+    "The evaluation is bound to the exact fixture corpus and does not certify the canonical review skill or the corpus itself.",
+    "Fixture relations stand in for actual agent-side loading; no independent runtime loading verification was performed.",
+    "Omission and no-finding results make no completeness or acceptance claim beyond each bounded case.",
+    "The evaluation is advisory, read-only, and non-accepting and does not resolve architecture, precedence, or authority conflicts."
+  ]
+}
