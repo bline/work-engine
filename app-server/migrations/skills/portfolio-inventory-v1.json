@@ -55,7 +55,7 @@
         },
         {
           "path": "skills/agent-environment-graph/scripts/agent_environment_graph.py",
-          "sha256": "cb03e634414cbd325a7a60cbb6395cc2a78609c9d37412abdfb2678abd852af4"
+          "sha256": "24583ce14385728da3459acd848368fbb7768258bdb80dfefa3f00cef7545450"
         }
       ],
       "tests": [
@@ -73,8 +73,8 @@
         },
         {
           "path": "skills/agent-environment-graph/tests/test_agent_environment_graph.py",
-          "sha256": "5fb1ca56baf93328f54812e8d92d40d33b28a7a03b593bebe9150997034eb61c",
-          "protected_distinction": "Protects the package-specific behaviors exercised by this file: vertical pipeline validates analyzes and renders stably; unknown reference fails closed; duplicate yaml key fails closed; contract judgment requires human approval; candidates do not claim semantic authority; escaped pipe is cell content not a column boundary; same target in two subgraphs has distinct node ids; mermaid layout is top down with invisible ordering edges; invariants use catalog text and semantic color; relationship table surfaces consumes and emits; relation matrix combines relations for one target; rendered table escapes pipe in mutation boundary; plus 3 additional declared cases.",
+          "sha256": "9c83e913bbd0f81fd3e164101e2e39d134b51afd692d059d85eeee1b8e2ea063",
+          "protected_distinction": "Protects the package-specific behaviors exercised by this file: vertical pipeline validates analyzes and renders stably; unknown reference fails closed; duplicate yaml key fails closed; contract judgment requires human approval; candidates do not claim semantic authority; escaped pipe is cell content not a column boundary; same target in two subgraphs has distinct node ids; mermaid layout is top down with invisible ordering edges; invariants use catalog text and semantic color; relationship table surfaces consumes and emits; relation matrix combines relations for one target; rendered table escapes pipe in mutation boundary; render site builds overview index and role detail; role YAML closes transitive invariant relations; site check detects stale role pages; machine projection closes an exact canonical role; machine projection refuses candidate semantic delta; machine projection refuses unknown request fields.",
           "candidate_disposition": "retain"
         }
       ]

@@ -365,7 +365,21 @@ It also expands the relevant invariant and mechanism closure. That expanded proj
 
 The canonical `structure.yaml` should remain skill-local and compact. For a role-bearing skill, the compiler joins its role profile with shared catalogs to reproduce the expanded environment view. The implementation should reuse a shared structural core or consume the Agent Environment Graph as a validation and projection backend; it must not create a second owner for relation semantics merely to avoid the current CLI boundary. The exact code-sharing route should be chosen from implementation evidence.
 
+S3 selected the validation-and-projection backend route. The Python Agent
+Environment Graph remains the sole owner of the role vocabulary, reference
+validation, and transitive closure. A bounded App Server process adapter submits
+the complete candidate role and consumes a versioned, digest-bound machine
+projection. During the pre-migration state, the backend requires exact equality
+with the corresponding role in `docs/agent-environments.yaml` before computing
+closure. The compiler then compares the complete result—not only relation
+arrays—with the pinned generated YAML oracle. Concept ownership and transition
+details are recorded in [structural-core-ownership.md](structural-core-ownership.md).
+
 Before ownership migration, the central environment definition remains canonical and the generated builder view is the comparison oracle. After an accepted migration, the central environment definition may itself become an aggregate projection rather than a competing canonical declaration.
+
+Parity does not authorize that migration. Generated graph views, machine
+projection envelopes, and compiler IR remain subordinate evidence and never
+become doctrine merely because they agree with canonical inputs.
 
 ## Structural invariants
 

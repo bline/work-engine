@@ -45,9 +45,14 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
     source: { path: "legacy.md", repository_revision: "fixture", sha256: digest(legacy), producer: "fixture migration" },
     frontmatter: { name: "vertical", description: "Vertical proof." },
     document: { line_ending: "lf", final_newline: true },
-    authority_sources: [{ id: "authority.fixture", path: "authority.txt", sha256: digest(authority), role: "fixture authority" }],
+    source_bindings: [{
+      id: "authority.fixture", kind: "canonical_authority", path: "authority.txt",
+      sha256: digest(authority), role: "fixture authority",
+    }],
     role_profile: {
-      role_id: "role.builder", projection: { path: "projection.yaml", sha256: digest(projection) },
+      role_id: "role.builder", label: "Builder", objective: "Build the fixture.",
+      context_lifetime: "one fixture",
+      projection: { path: "projection.yaml", sha256: digest(projection) },
       relations: { bound_by: ["INV-001"], may_invoke: [], may_observe: [], may_mutate: [], owns: [], consumes: [], emits: [], mediated_transitions: [], forbidden_from: [] },
     }, sections,
   };
@@ -55,16 +60,28 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
     schema_version: 1, status: "experimental_non_authoritative", skill_id: "vertical",
     boundaries: [{ id: "mutation.scoped", kind: "mutation", semantic_section: "authority", authority_source: "authority.fixture", enforcement: "scoped_write" }],
   };
-  const result = await compileSkill({ structureSource: stringify(structure), interfaceSource: stringify(skillInterface), workspaceRoot: root });
+  const result = await compileSkill({
+    structureSource: stringify(structure), interfaceSource: stringify(skillInterface), workspaceRoot: root,
+    agentEnvironmentGraphAdapter: {
+      projectRole: async () => ({
+        backend: "fixture.aeg", backend_sha256: "0".repeat(64), canonical_role_match: true,
+        projection: parse(projection),
+      }),
+    },
+  });
   assert.equal(result.output.toString(), "---\nname: vertical\ndescription: Vertical proof.\n---\n\n# Vertical\n\nExact prose.\n\n## Authority\n\nMutation is scoped.\n");
   assert.deepEqual(result.ir.section_provenance.map(({ id }) => id), ["identity", "authority"]);
   assert.equal(result.ir.interface.boundaries[0].authority_source, "authority.fixture");
+  assert.equal(result.ir.source_bindings[0].kind, "canonical_authority");
 
   const invalid = structuredClone(skillInterface);
   invalid.boundaries[0].authority_source = "authority.unknown";
   await assert.rejects(
-    compileSkill({ structureSource: stringify(structure), interfaceSource: stringify(invalid), workspaceRoot: root }),
-    /unresolved authority source authority\.unknown/,
+    compileSkill({
+      structureSource: stringify(structure), interfaceSource: stringify(invalid), workspaceRoot: root,
+      agentEnvironmentGraphAdapter: { projectRole: async () => { throw new Error("must not reach projection"); } },
+    }),
+    /unresolved canonical authority source authority\.unknown/,
   );
 });
 
@@ -82,6 +99,16 @@ test("pinned slice-builder decomposition regenerates exact canonical bytes and A
   assert.equal(first.ir.status, "experimental_non_authoritative");
   assert.match(first.ir.input_sha256.structure, /^[0-9a-f]{64}$/);
   assert.match(first.ir.input_sha256.interface, /^[0-9a-f]{64}$/);
+  assert.equal(first.ir.role_projection.canonical_role_match, true);
+  assert.equal(first.ir.role_projection.projection.role_id, "role.builder");
+  assert.deepEqual(first.ir.role_projection.projection.role, first.ir.role_profile && {
+    label: first.ir.role_profile.label,
+    objective: first.ir.role_profile.objective,
+    context_lifetime: first.ir.role_profile.context_lifetime,
+    ...first.ir.role_profile.relations,
+  });
+  assert.ok(first.ir.role_projection.projection.invariants["INV-001"]);
+  assert.ok(first.ir.role_projection.projection.mechanisms);
 });
 
 test("schema v1 rejects duplicate keys and whole-document escape hatches", async () => {
@@ -97,6 +124,33 @@ test("schema v1 rejects duplicate keys and whole-document escape hatches", async
   await assert.rejects(
     compileSkill({ structureSource: invalid, interfaceSource: skillInterface, verifySources: false }),
     /unknown field whole_document/,
+  );
+});
+
+test("schema v1 requires a closed source binding kind", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const structure = parse(await readFile(path.join(root, "app-server/migrations/skills/slice-builder/structure.yaml"), "utf8"));
+  const interfaceSource = await readFile(path.join(root, "app-server/migrations/skills/slice-builder/interface.yaml"), "utf8");
+  delete structure.source_bindings[0].kind;
+  await assert.rejects(
+    compileSkill({ structureSource: stringify(structure), interfaceSource, verifySources: false }),
+    /source_bindings\[0\]\.kind must be nonempty text/,
+  );
+  structure.source_bindings[0].kind = "projection_maybe_authority";
+  await assert.rejects(
+    compileSkill({ structureSource: stringify(structure), interfaceSource, verifySources: false }),
+    /unsupported source binding kind projection_maybe_authority/,
+  );
+});
+
+test("generated evidence cannot satisfy an interface authority reference", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const structureSource = await readFile(path.join(root, "app-server/migrations/skills/slice-builder/structure.yaml"), "utf8");
+  const skillInterface = parse(await readFile(path.join(root, "app-server/migrations/skills/slice-builder/interface.yaml"), "utf8"));
+  skillInterface.boundaries[0].authority_source = "evidence.role-projection";
+  await assert.rejects(
+    compileSkill({ structureSource, interfaceSource: stringify(skillInterface), verifySources: false }),
+    /unresolved canonical authority source evidence\.role-projection/,
   );
 });
 

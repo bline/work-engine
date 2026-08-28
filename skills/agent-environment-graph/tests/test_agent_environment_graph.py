@@ -220,6 +220,49 @@ class AgentEnvironmentGraphTest(unittest.TestCase):
             "Dangling invariant references make the projection incomplete.",
         )
 
+    def test_machine_projection_closes_an_exact_canonical_role(self):
+        catalog, environment = self.load_fixture()
+        result = AEG.project_candidate_role(
+            FIXTURES / "workflow-invariants.md",
+            FIXTURES / "agent-environments.yaml",
+            {
+                "schema_version": 1,
+                "role_id": "role.builder",
+                "role": environment["roles"]["role.builder"],
+            },
+        )
+        self.assertEqual(result["status"], "closed_projection")
+        self.assertEqual(result["backend"], "work-engine.agent-environment-graph.v1")
+        self.assertRegex(result["backend_sha256"], r"^[0-9a-f]{64}$")
+        self.assertTrue(result["canonical_role_match"])
+        self.assertEqual(result["projection"]["role"], environment["roles"]["role.builder"])
+        self.assertEqual(result["projection"]["direct_invariant_ids"], ["INV-001"])
+
+    def test_machine_projection_refuses_candidate_semantic_delta(self):
+        _, environment = self.load_fixture()
+        candidate = dict(environment["roles"]["role.builder"])
+        candidate["objective"] = "A locally coherent but unauthorized replacement."
+        with self.assertRaisesRegex(AEG.GraphError, "candidate role differs from canonical role"):
+            AEG.project_candidate_role(
+                FIXTURES / "workflow-invariants.md",
+                FIXTURES / "agent-environments.yaml",
+                {"schema_version": 1, "role_id": "role.builder", "role": candidate},
+            )
+
+    def test_machine_projection_refuses_unknown_request_fields(self):
+        _, environment = self.load_fixture()
+        with self.assertRaisesRegex(AEG.GraphError, "request has invalid fields"):
+            AEG.project_candidate_role(
+                FIXTURES / "workflow-invariants.md",
+                FIXTURES / "agent-environments.yaml",
+                {
+                    "schema_version": 1,
+                    "role_id": "role.builder",
+                    "role": environment["roles"]["role.builder"],
+                    "analysis": True,
+                },
+            )
+
     def test_site_check_detects_stale_role_page(self):
         catalog, environment = self.load_fixture()
         overview, pages = AEG.render_site(

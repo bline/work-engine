@@ -12,25 +12,32 @@ frontmatter:
 document:
   line_ending: lf
   final_newline: true
-authority_sources:
+source_bindings:
   - id: authority.legacy-skill
+    kind: canonical_authority
     path: skills/slice-builder/SKILL.md
     sha256: d3eb81d00b8b517a7f552e9bcbd300773e49f30c035b2f016115189d5f6fd8c0
     role: canonical legacy skill and role contract
   - id: authority.environment
+    kind: canonical_authority
     path: docs/agent-environments.yaml
     sha256: ad7a49c73a773d9d077053def9739892a99d00f411558fb2e79df1dbf9fe56c7
     role: canonical role environment
   - id: authority.invariants
+    kind: canonical_authority
     path: docs/workflow-invariants.md
     sha256: 8586f785a7b707c8c90583caba8174f5c28b61bb874ca8108e6e54eca0b132d9
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
+    kind: generated_evidence
     path: docs/agent-environment-views/slice-builder.yaml
     sha256: ce75c430d0d9e38948f40f39eb957146869acf36d51130d424816afa77f00154
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.builder
+  label: Slice Builder
+  objective: Own one accepted engineering slice from repository understanding through implementation, validation, remediation, and truthful receipts.
+  context_lifetime: one slice across planning, implementation, and gate phases
   projection:
     path: docs/agent-environment-views/slice-builder.yaml
     sha256: ce75c430d0d9e38948f40f39eb957146869acf36d51130d424816afa77f00154

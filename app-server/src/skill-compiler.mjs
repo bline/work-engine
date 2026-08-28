@@ -4,17 +4,22 @@ import path from "node:path";
 
 import { parseDocument } from "yaml";
 
+import { createAgentEnvironmentGraphAdapter } from "./agent-environment-graph-adapter.mjs";
+
 const STRUCTURE_FIELDS = new Set([
   "schema_version", "status", "skill_id", "source", "frontmatter", "document",
-  "authority_sources", "role_profile", "sections",
+  "source_bindings", "role_profile", "sections",
 ]);
 const INTERFACE_FIELDS = new Set(["schema_version", "status", "skill_id", "boundaries"]);
 const SECTION_FIELDS = new Set(["id", "kind", "heading", "content", "source_span"]);
 const HEADING_FIELDS = new Set(["level", "text"]);
 const SPAN_FIELDS = new Set(["start_byte", "end_byte", "sha256"]);
 const SOURCE_FIELDS = new Set(["path", "repository_revision", "sha256", "producer"]);
-const AUTHORITY_SOURCE_FIELDS = new Set(["id", "path", "sha256", "role"]);
-const ROLE_FIELDS = new Set(["role_id", "projection", "relations"]);
+const SOURCE_BINDING_FIELDS = new Set(["id", "kind", "path", "sha256", "role"]);
+const SOURCE_BINDING_KINDS = new Set(["canonical_authority", "generated_evidence"]);
+const ROLE_FIELDS = new Set([
+  "role_id", "label", "objective", "context_lifetime", "projection", "relations",
+]);
 const PROJECTION_FIELDS = new Set(["path", "sha256"]);
 const BOUNDARY_FIELDS = new Set([
   "id", "kind", "semantic_section", "authority_source", "enforcement",
@@ -64,6 +69,16 @@ function integer(value, label) {
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson(value[key])}`,
+    ).join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function digest(value, label) {
@@ -123,17 +138,19 @@ function validateStructure(raw) {
   if (raw.document.line_ending !== "lf") fail("only LF line endings are supported by schema v1");
   if (typeof raw.document.final_newline !== "boolean") fail("structure.document.final_newline must be boolean");
 
-  if (!Array.isArray(raw.authority_sources) || raw.authority_sources.length === 0) fail("structure.authority_sources must be nonempty");
-  const authoritySources = raw.authority_sources.map((entry, index) => {
-    exactFields(entry, AUTHORITY_SOURCE_FIELDS, `structure.authority_sources[${index}]`);
+  if (!Array.isArray(raw.source_bindings) || raw.source_bindings.length === 0) fail("structure.source_bindings must be nonempty");
+  const sourceBindings = raw.source_bindings.map((entry, index) => {
+    exactFields(entry, SOURCE_BINDING_FIELDS, `structure.source_bindings[${index}]`);
+    const kind = text(entry.kind, `structure.source_bindings[${index}].kind`);
+    if (!SOURCE_BINDING_KINDS.has(kind)) fail(`unsupported source binding kind ${kind}`);
     return {
-      id: text(entry.id, `structure.authority_sources[${index}].id`),
-      path: text(entry.path, `structure.authority_sources[${index}].path`),
-      sha256: digest(entry.sha256, `structure.authority_sources[${index}].sha256`),
-      role: text(entry.role, `structure.authority_sources[${index}].role`),
+      id: text(entry.id, `structure.source_bindings[${index}].id`), kind,
+      path: text(entry.path, `structure.source_bindings[${index}].path`),
+      sha256: digest(entry.sha256, `structure.source_bindings[${index}].sha256`),
+      role: text(entry.role, `structure.source_bindings[${index}].role`),
     };
   });
-  if (new Set(authoritySources.map(({ id }) => id)).size !== authoritySources.length) fail("structure.authority_sources contains duplicate ids");
+  if (new Set(sourceBindings.map(({ id }) => id)).size !== sourceBindings.length) fail("structure.source_bindings contains duplicate ids");
 
   if (!Array.isArray(raw.sections) || raw.sections.length < 2) fail("structure.sections must meaningfully decompose the document");
   const sections = raw.sections.map((entry, index) => {
@@ -169,9 +186,12 @@ function validateStructure(raw) {
   const relations = Object.fromEntries(RELATIONS.map((relation) => [relation, relationEntries(raw.role_profile.relations[relation], relation, `structure.role_profile.relations.${relation}`)]));
   return {
     schema_version: 1, status: raw.status, skill_id: skillId, source, frontmatter,
-    document: raw.document, authority_sources: authoritySources,
+    document: raw.document, source_bindings: sourceBindings,
     role_profile: {
       role_id: text(raw.role_profile.role_id, "structure.role_profile.role_id"),
+      label: text(raw.role_profile.label, "structure.role_profile.label"),
+      objective: text(raw.role_profile.objective, "structure.role_profile.objective"),
+      context_lifetime: text(raw.role_profile.context_lifetime, "structure.role_profile.context_lifetime"),
       projection: {
         path: text(raw.role_profile.projection.path, "structure.role_profile.projection.path"),
         sha256: digest(raw.role_profile.projection.sha256, "structure.role_profile.projection.sha256"),
@@ -187,7 +207,9 @@ function validateInterface(raw, structure) {
   if (raw.skill_id !== structure.skill_id) fail("interface.skill_id must match structure.skill_id");
   if (!Array.isArray(raw.boundaries) || raw.boundaries.length === 0) fail("interface.boundaries must be nonempty");
   const sectionsById = new Map(structure.sections.map((section) => [section.id, section]));
-  const sourceIds = new Set(structure.authority_sources.map(({ id }) => id));
+  const authorityIds = new Set(structure.source_bindings
+    .filter(({ kind }) => kind === "canonical_authority")
+    .map(({ id }) => id));
   const boundaries = raw.boundaries.map((entry, index) => {
     exactFields(entry, BOUNDARY_FIELDS, `interface.boundaries[${index}]`);
     const kind = text(entry.kind, `interface.boundaries[${index}].kind`);
@@ -201,7 +223,7 @@ function validateInterface(raw, structure) {
     if (!BOUNDARY_SECTION_KINDS[kind].has(section.kind)) {
       fail(`boundary kind ${kind} is incompatible with semantic section kind ${section.kind}`);
     }
-    if (!sourceIds.has(authoritySource)) fail(`unresolved authority source ${authoritySource}`);
+    if (!authorityIds.has(authoritySource)) fail(`unresolved canonical authority source ${authoritySource}`);
     return { id: text(entry.id, `interface.boundaries[${index}].id`), kind, semantic_section: semanticSection, authority_source: authoritySource, enforcement };
   });
   if (new Set(boundaries.map(({ id }) => id)).size !== boundaries.length) fail("interface.boundaries contains duplicate ids");
@@ -222,10 +244,10 @@ function renderCodexSkill(structure) {
   return Buffer.concat([frontmatter, Buffer.from(body)]);
 }
 
-async function verifyAuthoritySources(structure, workspaceRoot) {
-  for (const source of structure.authority_sources) {
+async function verifySourceBindings(structure, workspaceRoot) {
+  for (const source of structure.source_bindings) {
     const bytes = await readFile(path.resolve(workspaceRoot, source.path));
-    if (sha256(bytes) !== source.sha256) fail(`authority source ${source.id} digest mismatch`);
+    if (sha256(bytes) !== source.sha256) fail(`source binding ${source.id} digest mismatch`);
   }
 }
 
@@ -250,26 +272,44 @@ async function verifyLegacySource(structure, workspaceRoot) {
   if (previousEnd !== bytes.length) fail("section source spans do not reach the end of the legacy source");
 }
 
-async function verifyRoleProjection(structure, workspaceRoot) {
+async function verifyRoleProjection(structure, workspaceRoot, aegAdapter) {
   const projectionPath = path.resolve(workspaceRoot, structure.role_profile.projection.path);
   const bytes = await readFile(projectionPath);
   if (sha256(bytes) !== structure.role_profile.projection.sha256) fail("role projection digest mismatch");
-  const projection = parseYaml(bytes.toString("utf8"), "role projection");
-  if (projection.role_id !== structure.role_profile.role_id) fail("role projection role_id mismatch");
-  for (const relation of RELATIONS) {
-    const actual = projection.role?.[relation];
-    if (JSON.stringify(actual) !== JSON.stringify(structure.role_profile.relations[relation])) fail(`role projection relation delta: ${relation}`);
+  const oracle = parseYaml(bytes.toString("utf8"), "role projection");
+  const role = {
+    label: structure.role_profile.label,
+    objective: structure.role_profile.objective,
+    context_lifetime: structure.role_profile.context_lifetime,
+    ...structure.role_profile.relations,
+  };
+  const envelope = await aegAdapter.projectRole({
+    roleId: structure.role_profile.role_id,
+    role,
+  });
+  if (canonicalJson(envelope.projection) !== canonicalJson(oracle)) {
+    fail("complete role projection differs from pinned generated oracle");
   }
+  return envelope;
 }
 
-export async function compileSkill({ structureSource, interfaceSource, workspaceRoot = process.cwd(), verifySources = true }) {
+export async function compileSkill({
+  structureSource,
+  interfaceSource,
+  workspaceRoot = process.cwd(),
+  verifySources = true,
+  agentEnvironmentGraphAdapter = null,
+}) {
   const structure = validateStructure(parseYaml(structureSource, "structure"));
   const skillInterface = validateInterface(parseYaml(interfaceSource, "interface"), structure);
   if (verifySources) {
     await verifyLegacySource(structure, workspaceRoot);
-    await verifyAuthoritySources(structure, workspaceRoot);
-    await verifyRoleProjection(structure, workspaceRoot);
+    await verifySourceBindings(structure, workspaceRoot);
+    agentEnvironmentGraphAdapter ??= createAgentEnvironmentGraphAdapter({ workspaceRoot });
   }
+  const roleProjection = verifySources
+    ? await verifyRoleProjection(structure, workspaceRoot, agentEnvironmentGraphAdapter)
+    : null;
   const output = renderCodexSkill(structure);
   const ir = {
     schema_version: 1,
@@ -283,8 +323,14 @@ export async function compileSkill({ structureSource, interfaceSource, workspace
     },
     source: structure.source,
     section_provenance: structure.sections.map(({ id, kind, source_span }) => ({ id, kind, source_span })),
-    authority_sources: structure.authority_sources,
+    source_bindings: structure.source_bindings,
     role_profile: structure.role_profile,
+    role_projection: roleProjection ? {
+      backend: roleProjection.backend,
+      backend_sha256: roleProjection.backend_sha256,
+      canonical_role_match: roleProjection.canonical_role_match,
+      projection: roleProjection.projection,
+    } : null,
     interface: skillInterface,
     output_sha256: sha256(output),
   };
