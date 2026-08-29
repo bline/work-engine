@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 import {
   appendLifecycleLedgerEntry,
@@ -59,6 +60,65 @@ function canonical(value) {
 
 function revision(value) {
   return `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
+}
+
+function digest(value) {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+const RUNTIME_ENVIRONMENT_REFERENCE = /^work-engine\.runtime-role-environment\/v1\/([^/]+)\/([a-f0-9]{64})\/(none|[a-f0-9]{64})\/(.+)$/;
+
+async function verifyRehydrationEnvironment({ publication, role, skills }) {
+  record(role, "rehydration role environment");
+  if (!Array.isArray(skills)) throw new TypeError("rehydration skills must be an array");
+  const environment = record(
+    publication.continuationState?.governingEnvironment,
+    "checkpoint governing environment",
+  );
+  const roleContract = record(environment.roleContract, "checkpoint role contract");
+  const match = text(roleContract.reference, "checkpoint role contract reference")
+    .match(RUNTIME_ENVIRONMENT_REFERENCE);
+  if (!match) {
+    if (role.compiledSkillSha256 !== null) {
+      throw new TypeError("compiled checkpoint role contract is not runtime-environment bound");
+    }
+    return;
+  }
+  const [, encodedRole, environmentRevision, satisfactionSha256, encodedContractPath] = match;
+  const logicalRoleInstanceId = decodeURIComponent(encodedRole);
+  const contractPath = decodeURIComponent(encodedContractPath);
+  if (role.logicalRoleInstanceId !== logicalRoleInstanceId
+      || role.runtimeEnvironmentRevision !== environmentRevision) {
+    throw new TypeError("successor role does not match the checkpointed runtime environment");
+  }
+  if ((role.compiledSkillSha256 === null) !== (satisfactionSha256 === "none")) {
+    throw new TypeError("successor role runtime satisfaction provenance is incompatible");
+  }
+  const projectedSkills = await Promise.all(skills.map(async (skill, index) => {
+    record(skill, `rehydration skill ${index}`);
+    const skillPath = text(skill.path, `rehydration skill ${index} path`);
+    return { reference: skillPath, sha256: digest(await readFile(skillPath, "utf8")) };
+  }));
+  const expectedSkills = environment.activatedSkills ?? [];
+  if (!Array.isArray(expectedSkills)
+      || canonical(projectedSkills.map((value) => canonical(value)).sort())
+        !== canonical(expectedSkills.map((value) => canonical(value)).sort())) {
+    throw new TypeError("successor activated skills do not match the checkpointed environment");
+  }
+  const contract = projectedSkills.find(({ reference }) => reference === contractPath);
+  if (!contract) throw new TypeError("successor environment omits the checkpointed role contract");
+  const content = canonical({
+    schema_version: 1,
+    logical_role_instance_id: logicalRoleInstanceId,
+    runtime_environment_revision: environmentRevision,
+    compiled_skill_sha256: role.compiledSkillSha256,
+    runtime_satisfaction_sha256: satisfactionSha256,
+    developer_instructions: role.developerInstructions,
+    role_contract: { path: contractPath, sha256: contract.sha256 },
+  });
+  if (roleContract.sha256 !== digest(content)) {
+    throw new TypeError("successor governing instructions differ from the checkpointed environment");
+  }
 }
 
 function freeze(value) {
@@ -166,6 +226,8 @@ export function compileContextRetirementDirective(lease) {
     `Transition lease: ${lease.leaseRevision}`,
     `Checkpoint: ${lease.subject.checkpointRevision}`,
     `Observed source: ${lease.subject.sourceRevision}`,
+    "Context replacement changes runtime memory; it does not decide or complete human intent.",
+    "Replacing context after later input could discard unresolved human interaction or let a successor continue as though that interaction were settled.",
     "Perform no domain work and call no tool except new_context.",
     "If this is still the latest input and you have observed no later human input or domain work, invoke new_context now as your only action.",
     "If you have observed later human input or domain work, do not invoke new_context and do not perform domain work.",
@@ -257,6 +319,8 @@ export function compileContextReconciliationDirective(lease) {
     "Perform no domain work and invoke no tools.",
     "Read the exact work-engine.context.checkpoint and work-engine.context.reconciliation-challenge request-context entries.",
     "Reconcile the checkpoint against the governing environment and canonical references that are actually available in this context.",
+    "A successful provider transition alone does not establish semantic continuation safety.",
+    "If the governing environment, authority, commitments, or uncertainty cannot be established, claiming success could resume under stale, substituted, or incomplete instructions or silently settle unresolved human interaction.",
     "Do not infer missing authority, close an interaction, or represent uncertainty as success.",
     "Return exactly one compact JSON object and no Markdown with these fields:",
     '{"schema_version":1,"type":"work-engine.context-reconciliation-receipt","lease_revision":"<challenge value>","checkpoint_revision":"<challenge value>","logical_role_instance_id":"<challenge value>","thread_id":"<challenge value>","receipt_nonce":"<challenge value>","first_context_window_id":"<runtime value>","current_context_window_id":"<runtime value>","previous_context_window_id":"<runtime value or null>","checkpoint_loaded":true,"governing_environment_applicable":true,"authority_reconciled":true,"open_commitments_preserved":true,"authorized_next_action_valid":true,"uncertainty":[]}',
@@ -618,6 +682,7 @@ export class InMemoryContextTransitionLeaseGate {
       pendingContextSnapshot: state.pendingContextSnapshot ?? null,
       fence: state.fence === null ? null : { ...state.fence },
       lease: state.lease,
+      publication: state.publication,
       ledgerEntry: state.ledgerEntry,
       delivery: state.delivery,
       rehydration: state.rehydration,
@@ -1218,6 +1283,11 @@ export class ContextTransitionLeaseRuntime {
     if (!verifyContextTransitionLease(lease)) {
       throw new TypeError("retirement and reconciliation requires an integrity-valid lease");
     }
+    if (role?.logicalRoleInstanceId !== lease.subject.logicalRoleInstanceId) {
+      throw new TypeError("successor role does not match the transition lease subject");
+    }
+    const state = this.gate.snapshot(lease.subject.logicalRoleInstanceId);
+    await verifyRehydrationEnvironment({ publication: state?.publication, role, skills });
     signal?.throwIfAborted();
     let retirementDelivery = null;
     const buffered = [];

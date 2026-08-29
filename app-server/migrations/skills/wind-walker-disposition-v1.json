@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "record_id": "wind-walker-disposition-v1",
+  "authority_notice": "This evidence records a provisional successor boundary and does not grant, transfer, or accept semantic, service, role, or human authority.",
+  "classification_state": "provisional",
+  "authority_status": "not_accepted",
+  "subject": {
+    "path": "skills/wind-walker/SKILL.md",
+    "sha256": "bfc453242d01b625ecc96469c39f20afc43d8340bfc51523d4371a973c189005"
+  },
+  "target_owner": "app-server semantic context lifecycle service",
+  "legacy_status": "retained_compatibility",
+  "residual_projection": {
+    "status": "required",
+    "owner": "canonical role and lifecycle contracts",
+    "instructions": [
+      {
+        "id": "context-is-not-canonical-state",
+        "statement": "Treat provider context and continuation checkpoints as temporary or derived runtime state, never as canonical domain truth or authority.",
+        "cause": "Canonical meaning remains with its named semantic and human owners across context replacement.",
+        "failure_mode": "A checkpoint or provider thread could silently acquire authority it was never granted."
+      },
+      {
+        "id": "continuation-independence",
+        "statement": "Replace context only after every continuation-critical meaning has an adequate durable owner or integrity-bound reference.",
+        "cause": "Correct continuation cannot depend on meaning available only in the context being retired.",
+        "failure_mode": "The successor may omit commitments, boundaries, evidence, or the authorized next action."
+      },
+      {
+        "id": "human-interaction-preservation",
+        "statement": "Preserve unresolved human interaction without resolving it or transferring the human's authority.",
+        "cause": "Context replacement is a runtime transition, not a human decision boundary.",
+        "failure_mode": "The successor may act as though an unanswered human decision was settled."
+      },
+      {
+        "id": "fail-closed-rehydration",
+        "statement": "Refuse replacement or reconciliation when the exact governing environment and required continuation meaning cannot be established.",
+        "cause": "A successful provider transition does not prove semantic continuation safety.",
+        "failure_mode": "A technically resumed role may continue under stale, substituted, or incomplete instructions."
+      }
+    ]
+  },
+  "retirement": {
+    "status": "blocked_pending_authority",
+    "prerequisites": [
+      {
+        "id": "server-lifecycle-coverage",
+        "statement": "Every retained manifest role participates in the server-owned lifecycle path or has an explicit accepted exemption.",
+        "cause": "Removing the legacy skill before coverage would leave an active role without continuation protection.",
+        "failure_mode": "A retained role could lose safe context replacement behavior."
+      },
+      {
+        "id": "effective-instruction-parity",
+        "statement": "Revision-bound pre- and post-transition instruction assemblies preserve every necessary causal instruction.",
+        "cause": "Traceability to unloaded legacy prose is not effective model-facing closure.",
+        "failure_mode": "Retirement could remove a reason or failure mode required for correct agent judgment."
+      },
+      {
+        "id": "consumer-closure",
+        "statement": "Every active consumer of the legacy package has an explicit successor or historical disposition.",
+        "cause": "Legacy deletion is safe only after no active consumer depends on the old loading path.",
+        "failure_mode": "An unclassified consumer could silently lose governing instructions."
+      },
+      {
+        "id": "compatibility-evidence",
+        "statement": "Exact successor evidence demonstrates parity or records an explicitly authorized semantic difference.",
+        "cause": "Passing implementation tests cannot authorize a semantic difference from the legacy contract.",
+        "failure_mode": "Retirement could conceal an unauthorized behavior or authority change."
+      },
+      {
+        "id": "human-ownership-transition",
+        "statement": "The human owner explicitly accepts the canonical ownership transition and legacy retirement.",
+        "cause": "Migration evidence and projections cannot grant ownership authority.",
+        "failure_mode": "Automation could delete the legacy owner without authorization."
+      }
+    ]
+  },
+  "compatibility": {
+    "required": true,
+    "evidence": [
+      "skills/wind-walker/SKILL.md",
+      "app-server/migrations/skills/instruction-review-regression-v1.json"
+    ],
+    "difference_authority": "human-owned explicit ownership transition"
+  }
+}

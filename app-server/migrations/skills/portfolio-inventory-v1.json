@@ -745,21 +745,21 @@
         "skills/independent-review-state/SKILL.md",
         "app-server/docs/skills-migration-plan.md"
       ],
-      "source": {
-        "path": "skills/independent-review-state/SKILL.md",
-        "sha256": "661fa7a945d84a78c020c1da4ef2f14d336effc1ad9406a02f05630ead9de652"
-      },
-      "artifacts": [
-        {
-          "path": "skills/independent-review-state/scripts/independent_review_state.py",
-          "sha256": "42892a365846770a3eb604091460fd2112217f33d54f91b99b250e42fcbf96cc"
-        }
-      ],
-      "tests": [
-        {
-          "path": "skills/independent-review-state/tests/test_independent_review_state.py",
-          "sha256": "1700bf12fb7b6c5432f6269b4d55fff96c89f7604032199481e672a1fda8a0a7",
-          "protected_distinction": "Protects the package-specific behaviors exercised by this file: codex same model reviewer uses same episode contract; recovery history and writer fence; uncertainty and retirement are observationally terminal; rejects cross episode claim fields and finding rewrite.",
+  "source": {
+    "path": "skills/independent-review-state/SKILL.md",
+    "sha256": "f786fefdec815522958dfdec2105e36e30bdea27e2e9910d0e7ea5fb8c7aca5f"
+  },
+  "artifacts": [
+    {
+      "path": "skills/independent-review-state/scripts/independent_review_state.py",
+      "sha256": "44968e3ac7b4be38758a654c646969c804865deb107409c7abdb1bfb6496bdf4"
+    }
+  ],
+  "tests": [
+    {
+      "path": "skills/independent-review-state/tests/test_independent_review_state.py",
+      "sha256": "0285c945bd5653fcf393e3c1b1154d0f0b0ba35f851bbc67e189c8d15ef166b7",
+      "protected_distinction": "Protects the package-specific behaviors exercised by this file: begin retry idempotency and conflicting-content rejection; uncertain initial review and re-evaluation require replacement before publication; reported results accept multiple exact same-session subjects; codex same model reviewer uses same episode contract; recovery history and writer fence; uncertainty and retirement are observationally terminal; rejects cross episode claim fields and finding rewrite.",
           "candidate_disposition": "retain"
         }
       ]
@@ -4717,10 +4717,10 @@
           "sha256": "e5f964caeabd99ee18266bca66c947de6526b835c26c9a6b29efd766c8d3f2d0"
         }
       ],
-      "tests": [
-        {
-          "path": "skills/work-engine-mcp/tests/server.test.mjs",
-          "sha256": "b08ce00ded2c9b2e995ff33e22222805a5fc9d30a8a0108227af10ef39a86909",
+  "tests": [
+    {
+      "path": "skills/work-engine-mcp/tests/server.test.mjs",
+      "sha256": "3516adf634e39abf657d8ddc78e1d81fc5a87ce89dc29d60e745146a540fad47",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: lists only the bounded read-only tool surface; reads current state and retained history without mutating the repository; projects production claim reads with exact CLI semantics and no mutation surface; recovers an authority-bound review episode and fences the prior writer.",
           "candidate_disposition": "retain"
         }

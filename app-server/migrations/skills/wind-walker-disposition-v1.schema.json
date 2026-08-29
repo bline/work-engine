@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-engine.skills-migration.wind-walker-disposition-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_id", "authority_notice", "classification_state", "authority_status", "subject", "target_owner", "legacy_status", "residual_projection", "retirement", "compatibility"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_id": {"const": "wind-walker-disposition-v1"},
+    "authority_notice": {"type": "string", "minLength": 1},
+    "classification_state": {"const": "provisional"},
+    "authority_status": {"const": "not_accepted"},
+    "subject": {"$ref": "#/$defs/evidence"},
+    "target_owner": {"const": "app-server semantic context lifecycle service"},
+    "legacy_status": {"const": "retained_compatibility"},
+    "residual_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "owner", "instructions"],
+      "properties": {
+        "status": {"const": "required"},
+        "owner": {"const": "canonical role and lifecycle contracts"},
+        "instructions": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/clause"}}
+      }
+    },
+    "retirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "prerequisites"],
+      "properties": {
+        "status": {"const": "blocked_pending_authority"},
+        "prerequisites": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/clause"}}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "evidence", "difference_authority"],
+      "properties": {
+        "required": {"const": true},
+        "evidence": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "difference_authority": {"const": "human-owned explicit ownership transition"}
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"const": "skills/wind-walker/SKILL.md"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "cause", "failure_mode"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "statement": {"type": "string", "minLength": 1},
+        "cause": {"type": "string", "minLength": 1},
+        "failure_mode": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

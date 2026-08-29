@@ -26,6 +26,61 @@ function digest(content) {
   return createHash("sha256").update(content, "utf8").digest("hex");
 }
 
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonical(value[key])}`
+    ).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function runtimeEnvironmentMaterial(delivery, roleProjection, contract) {
+  const role = roleProjection.role;
+  const satisfaction = delivery.runtimeSatisfaction ?? null;
+  if (role.compiledSkillSha256 === null) {
+    if (satisfaction === null) return null;
+    throw new TypeError("uncompiled manifest role cannot claim runtime satisfaction");
+  }
+  record(satisfaction, "manifest role runtime satisfaction");
+  const unsigned = { ...satisfaction };
+  delete unsigned.sha256;
+  if (satisfaction.schema_version !== 1
+      || satisfaction.role_id !== roleProjection.roleId
+      || satisfaction.compiled_skill_sha256 !== role.compiledSkillSha256
+      || satisfaction.manifest_sha256 !== roleProjection.manifest.sha256
+      || satisfaction.runtime_environment_revision !== role.runtimeEnvironmentRevision
+      || satisfaction.sha256 !== digest(canonical(unsigned))) {
+    throw new TypeError("manifest role runtime satisfaction does not match its role environment");
+  }
+  const satisfactionSha256 = satisfaction.sha256;
+  const contractPath = contract.activatedSkill.path;
+  const content = canonical({
+    schema_version: 1,
+    logical_role_instance_id: role.logicalRoleInstanceId,
+    runtime_environment_revision: role.runtimeEnvironmentRevision,
+    compiled_skill_sha256: role.compiledSkillSha256,
+    runtime_satisfaction_sha256: satisfactionSha256,
+    developer_instructions: role.developerInstructions,
+    role_contract: {
+      path: contractPath,
+      sha256: contract.sourceMaterial.contentRef.sha256,
+    },
+  });
+  const reference = [
+    "work-engine.runtime-role-environment", "v1",
+    encodeURIComponent(role.logicalRoleInstanceId),
+    role.runtimeEnvironmentRevision,
+    satisfactionSha256,
+    encodeURIComponent(contractPath),
+  ].join("/");
+  return {
+    contentRef: { kind: "runtime-role-environment", reference, sha256: digest(content) },
+    content,
+  };
+}
+
 function material(value, index) {
   record(value, `visible material ${index}`);
   rejectUnknown(value, [
@@ -67,7 +122,17 @@ export async function projectManifestRoleObservedContext({
   record(delivery, "manifest role delivery");
   record(delivery.binding, "manifest role delivery binding");
   const roleProjection = record(delivery.roleProjection, "manifest role projection");
-  record(roleProjection.role, "manifest role runtime projection");
+  const role = record(roleProjection.role, "manifest role runtime projection");
+  const deliveryLogicalRoleInstanceId = text(
+    delivery.logicalRoleInstanceId,
+    "manifest role logical identity",
+  );
+  if (deliveryLogicalRoleInstanceId !== text(
+    role.logicalRoleInstanceId,
+    "manifest role projected logical identity",
+  )) {
+    throw new TypeError("manifest role delivery does not match projected logical identity");
+  }
   if (!Array.isArray(roleProjection.skills) || roleProjection.skills.length === 0) {
     throw new TypeError("manifest role projection requires exact skill inputs");
   }
@@ -99,6 +164,7 @@ export async function projectManifestRoleObservedContext({
     activatedSkill.path === activatedContractPath
   );
   if (!contract) throw new TypeError("manifest role contract is not an activated skill");
+  const environmentMaterial = runtimeEnvironmentMaterial(delivery, roleProjection, contract);
   record(expectedNextWork, "manifest role expected next work");
   rejectUnknown(expectedNextWork, ["reference", "content"], "manifest role expected next work");
   const nextContent = text(expectedNextWork.content, "manifest role expected next work content");
@@ -108,7 +174,7 @@ export async function projectManifestRoleObservedContext({
     sha256: digest(nextContent),
   };
   const projection = projectObservedContext({
-    logicalRoleInstanceId: text(delivery.logicalRoleInstanceId, "manifest role logical identity"),
+    logicalRoleInstanceId: deliveryLogicalRoleInstanceId,
     runtimeBinding: {
       threadId: text(delivery.threadId, "manifest role thread id"),
       bindingRevision: delivery.binding.bindingRevision,
@@ -122,7 +188,7 @@ export async function projectManifestRoleObservedContext({
     governingSources: [{
       identity: "role-contract",
       owner: contractPath,
-      contentRef: contract.sourceMaterial.contentRef,
+      contentRef: environmentMaterial?.contentRef ?? contract.sourceMaterial.contentRef,
     }],
     activatedSkills: skillMaterials.map(({ activatedSkill }) => activatedSkill),
     lifecycleSnapshot,
@@ -135,6 +201,7 @@ export async function projectManifestRoleObservedContext({
     sourceMaterials: Object.freeze([
       ...visible.map(({ sourceMaterial }) => sourceMaterial),
       ...skillMaterials.map(({ sourceMaterial }) => sourceMaterial),
+      ...(environmentMaterial === null ? [] : [environmentMaterial]),
       { contentRef: nextRef, content: nextContent },
     ]),
   });

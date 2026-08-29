@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -24,7 +25,21 @@ import {
   verifyLifecycleLedgerEntry,
 } from "../src/index.mjs";
 
-const ROLE = Object.freeze({ logicalRoleInstanceId: "strategic-planner:main" });
+const SKILL_PATH = path.resolve("skills/strategic-planner/SKILL.md");
+const SKILL_SHA256 = createHash("sha256").update(readFileSync(SKILL_PATH, "utf8")).digest("hex");
+const ENVIRONMENT_REVISION = "e".repeat(64);
+const SATISFACTION_SHA256 = "f".repeat(64);
+const ROLE = Object.freeze({
+  logicalRoleInstanceId: "strategic-planner:main",
+  runtimeEnvironmentRevision: ENVIRONMENT_REVISION,
+  compiledSkillSha256: "d".repeat(64),
+  developerInstructions:
+    "Preserve causal instructions because substituted inputs invalidate continuation.",
+});
+const TRANSITION_SKILLS = Object.freeze([{
+  name: "strategic-planner",
+  path: SKILL_PATH,
+}]);
 const SOURCE_REVISION = `sha256:${"a".repeat(64)}`;
 const AUTHORITY_REVISION = `sha256:${"b".repeat(64)}`;
 
@@ -384,12 +399,28 @@ function identityReceipt(preparation, overrides = {}) {
   });
 }
 
-function publicationFixture() {
+function publicationFixture({ role = ROLE, runtimeBound = true } = {}) {
+  const environmentContent = canonical({
+    schema_version: 1,
+    logical_role_instance_id: role.logicalRoleInstanceId,
+    runtime_environment_revision: role.runtimeEnvironmentRevision,
+    compiled_skill_sha256: role.compiledSkillSha256,
+    runtime_satisfaction_sha256: SATISFACTION_SHA256,
+    developer_instructions: role.developerInstructions,
+    role_contract: { path: SKILL_PATH, sha256: SKILL_SHA256 },
+  });
+  const environmentReference = [
+    "work-engine.runtime-role-environment", "v1",
+    encodeURIComponent(role.logicalRoleInstanceId),
+    role.runtimeEnvironmentRevision,
+    SATISFACTION_SHA256,
+    encodeURIComponent(SKILL_PATH),
+  ].join("/");
   const body = {
     schemaVersion: 1,
     type: "work-engine.context-checkpoint",
     subject: {
-      logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+      logicalRoleInstanceId: role.logicalRoleInstanceId,
       threadId: "thread-1",
       bindingRevision: 1,
       sourceRevision: SOURCE_REVISION,
@@ -400,7 +431,21 @@ function publicationFixture() {
     publishedAt: "2026-08-25T20:00:01.000Z",
     predecessorCheckpointRevision: null,
     authority: {},
-    continuationState: {},
+    continuationState: {
+      governingEnvironment: {
+        roleContract: {
+          reference: runtimeBound ? environmentReference : SKILL_PATH,
+          sha256: runtimeBound
+            ? createHash("sha256").update(environmentContent).digest("hex")
+            : SKILL_SHA256,
+        },
+        instructionsToReload: runtimeBound ? [{
+          reference: environmentReference,
+          sha256: createHash("sha256").update(environmentContent).digest("hex"),
+        }] : [{ reference: SKILL_PATH, sha256: SKILL_SHA256 }],
+        activatedSkills: [{ reference: SKILL_PATH, sha256: SKILL_SHA256 }],
+      },
+    },
     verification: {},
   };
   const publication = Object.freeze({ ...body, checkpointRevision: revision(body) });
@@ -409,7 +454,7 @@ function publicationFixture() {
     status: "observed",
     recordedAt: "2026-08-25T20:00:01.000Z",
     subject: {
-      logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+      logicalRoleInstanceId: role.logicalRoleInstanceId,
       threadId: "thread-1",
       bindingRevision: 1,
     },
@@ -417,7 +462,7 @@ function publicationFixture() {
     details: { checkpointRevision: publication.checkpointRevision },
   });
   const currentFence = Object.freeze({
-    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    logicalRoleInstanceId: role.logicalRoleInstanceId,
     threadId: "thread-1",
     predecessorContextWindowId: "window-predecessor",
     bindingRevision: 1,
@@ -438,9 +483,9 @@ function toolBridge(counter) {
   }]);
 }
 
-async function harness() {
+async function harness({ publicationOptions } = {}) {
   const subject = await preparationHarness();
-  const fixture = publicationFixture();
+  const fixture = publicationFixture(publicationOptions);
   const acquired = await subject.runtime.acquire({
     publication: fixture.publication,
     ledgerEntry: fixture.ledgerEntry,
@@ -530,6 +575,11 @@ test("revision-bound lease delivers one sterile retirement control turn", async 
     text: compileContextRetirementDirective(acquired.lease),
     text_elements: [],
   }]);
+  assert.match(turn.params.input[0].text, /does not decide or complete human intent/);
+  assert.match(
+    turn.params.input[0].text,
+    /discard unresolved human interaction.*as though that interaction were settled/,
+  );
   const state = gate.snapshot(ROLE.logicalRoleInstanceId);
   assert.equal(state.phase, "actuation_requested");
   assert.equal(state.ledgerEntry.eventType, "actuation_requested");
@@ -711,6 +761,7 @@ test("compaction notification wakes one checkpoint rehydration without polling",
   transport.deferNextTurn();
   const flow = runtime.retireAndReconcile({
     role: ROLE,
+    skills: TRANSITION_SKILLS,
     lease: acquired.lease,
     retirementClientUserMessageId: "retire-and-reconcile-retirement",
     rehydrationClientUserMessageId: "retire-and-reconcile-rehydration",
@@ -743,6 +794,18 @@ test("compaction notification wakes one checkpoint rehydration without polling",
   ]));
   await transport.turnStarted;
   const rehydrating = gate.snapshot(ROLE.logicalRoleInstanceId);
+  const rehydrationTurn = transport.requests
+    .filter((request) => request.method === "turn/start").at(-1);
+  const rehydrationInputText = rehydrationTurn.params.input
+    .map((item) => item.text ?? "").join("\n");
+  assert.match(
+    rehydrationInputText,
+    /provider transition alone does not establish semantic continuation safety/,
+  );
+  assert.match(
+    rehydrationInputText,
+    /stale, substituted, or incomplete instructions.*unresolved human interaction/,
+  );
   assert.equal(rehydrating.phase, "rehydrating");
   assert.equal(
     rehydrating.rehydration.request.requestContext["work-engine.context.checkpoint"].value
@@ -769,6 +832,102 @@ test("compaction notification wakes one checkpoint rehydration without polling",
     toolBridge: bridge,
   });
   assert.equal(resumed.turnId, "turn-4");
+});
+
+test("successor admission rejects substituted environment inputs before retirement delivery", async () => {
+  for (const [name, role, skills, pattern] of [
+    [
+      "environment revision",
+      { ...ROLE, runtimeEnvironmentRevision: "0".repeat(64) },
+      TRANSITION_SKILLS,
+      /does not match the checkpointed runtime environment/,
+    ],
+    [
+      "developer instructions",
+      { ...ROLE, developerInstructions: "Substituted instructions." },
+      TRANSITION_SKILLS,
+      /governing instructions differ/,
+    ],
+    [
+      "activated skills",
+      ROLE,
+      [],
+      /activated skills do not match/,
+    ],
+    [
+      "compiled satisfaction provenance",
+      { ...ROLE, compiledSkillSha256: null },
+      TRANSITION_SKILLS,
+      /runtime satisfaction provenance is incompatible/,
+    ],
+    [
+      "transition lease role identity",
+      { ...ROLE, logicalRoleInstanceId: "strategic-planner:substituted" },
+      TRANSITION_SKILLS,
+      /does not match the transition lease subject/,
+    ],
+  ]) {
+    const { acquired, runtime, transport } = await harness();
+    await assert.rejects(runtime.retireAndReconcile({
+      role,
+      skills,
+      lease: acquired.lease,
+      retirementClientUserMessageId: `substituted-${name}-retirement`,
+      rehydrationClientUserMessageId: `substituted-${name}-rehydration`,
+      receiptNonce: `substituted-${name}-nonce`,
+    }), pattern);
+    assert.equal(transport.turns, 1);
+  }
+});
+
+test("legacy uncompiled checkpoint rehydrates and rejects a compiled successor before delivery", async () => {
+  const legacyRole = { ...ROLE, compiledSkillSha256: null };
+  const legacy = await harness({ publicationOptions: { role: legacyRole, runtimeBound: false } });
+  legacy.transport.deferNextTurn();
+  const flow = legacy.runtime.retireAndReconcile({
+    role: legacyRole,
+    skills: [],
+    lease: legacy.acquired.lease,
+    retirementClientUserMessageId: "legacy-retirement",
+    rehydrationClientUserMessageId: "legacy-rehydration",
+    receiptNonce: "legacy-nonce",
+  });
+  await legacy.transport.turnStarted;
+  legacy.transport.releaseTurn();
+  legacy.transport.deferNextTurn();
+  legacy.transport.emitNotification({
+    method: "item/completed",
+    params: {
+      threadId: "thread-1",
+      turnId: "turn-2",
+      item: { type: "contextCompaction", id: "legacy-compaction" },
+    },
+  });
+  legacy.transport.emitNotification(completedTurnNotification("turn-2", [
+    { type: "contextCompaction", id: "legacy-compaction" },
+  ]));
+  await legacy.transport.turnStarted;
+  const rehydrating = legacy.gate.snapshot(ROLE.logicalRoleInstanceId);
+  legacy.transport.emitNotification(completedTurnNotification("turn-3", [{
+    type: "agentMessage",
+    phase: "final_answer",
+    text: reconciliationReceipt(rehydrating.rehydration.request.challenge),
+  }]));
+  legacy.transport.releaseTurn();
+  assert.equal((await flow).validation.status, "accepted");
+
+  const substituted = await harness({
+    publicationOptions: { role: legacyRole, runtimeBound: false },
+  });
+  await assert.rejects(substituted.runtime.retireAndReconcile({
+    role: ROLE,
+    skills: TRANSITION_SKILLS,
+    lease: substituted.acquired.lease,
+    retirementClientUserMessageId: "legacy-substitution-retirement",
+    rehydrationClientUserMessageId: "legacy-substitution-rehydration",
+    receiptNonce: "legacy-substitution-nonce",
+  }), /compiled checkpoint role contract is not runtime-environment bound/);
+  assert.equal(substituted.transport.turns, 1);
 });
 
 test("accepted reconciliation releases durable post-fence input through idempotent role delivery", async (t) => {
@@ -809,6 +968,7 @@ test("accepted reconciliation releases durable post-fence input through idempote
   transport.deferNextTurn();
   const flow = runtime.retireAndReconcile({
     role: ROLE,
+    skills: TRANSITION_SKILLS,
     lease: acquired.lease,
     retirementClientUserMessageId: "custody-retirement",
     rehydrationClientUserMessageId: "custody-rehydration",
@@ -899,6 +1059,7 @@ test("aborted transition observation records failure and remains fenced", async 
   transport.deferNextTurn();
   const flow = runtime.retireAndReconcile({
     role: ROLE,
+    skills: TRANSITION_SKILLS,
     lease: acquired.lease,
     retirementClientUserMessageId: "aborted-retirement",
     rehydrationClientUserMessageId: "aborted-rehydration",
