@@ -188,12 +188,15 @@ def validate_receipt(value: Any) -> dict[str, Any]:
     if text_git(repository, ["show", "-s", "--format=%B", commit_oid]) != expected_message:
         fail("created completion commit message does not match the proposal")
     branch_ref = f"refs/heads/{value['expected_branch']}"
-    if text_git(repository, ["rev-parse", "--verify", branch_ref]) != commit_oid:
-        fail("completion commit publication target does not match the receipt")
+    branch_tip = text_git(repository, ["rev-parse", "--verify", branch_ref])
     if text_git(repository, ["symbolic-ref", "--quiet", "HEAD"]) != branch_ref:
         fail("completion commit resulting branch attachment does not match the receipt")
-    if text_git(repository, ["rev-parse", "HEAD"]) != commit_oid:
+    if text_git(repository, ["rev-parse", "HEAD"]) != branch_tip:
         fail("completion commit resulting HEAD does not match the receipt")
+    if branch_tip != commit_oid:
+        ancestry = git(repository, ["merge-base", "--is-ancestor", commit_oid, branch_tip])
+        if ancestry.returncode:
+            fail("completion commit publication target does not contain the recorded commit")
     return value
 
 

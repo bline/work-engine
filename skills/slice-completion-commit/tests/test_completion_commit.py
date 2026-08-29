@@ -189,6 +189,47 @@ class CompletionCommitTest(unittest.TestCase):
                 self.assertEqual(before_index, run(repository, "write-tree"))
                 self.assertEqual("", run(repository, "status", "--porcelain=v2", "--untracked-files=all"))
 
+    def test_created_receipt_verification_accepts_later_same_branch_history(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, head = self.repository(directory)
+            created = ADAPTER.decide(self.request(repository, head), "create")
+            (repository / "later.txt").write_text("later accepted work\n")
+            run(repository, "add", "later.txt")
+            run(repository, "commit", "-q", "-m", "later accepted work")
+            before_head = run(repository, "rev-parse", "HEAD")
+            before_index = run(repository, "write-tree")
+
+            self.assertEqual(created, ADAPTER.validate_receipt(created))
+            self.assertEqual(before_head, run(repository, "rev-parse", "HEAD"))
+            self.assertEqual(before_index, run(repository, "write-tree"))
+            self.assertEqual("", run(repository, "status", "--porcelain=v2", "--untracked-files=all"))
+
+    def test_created_receipt_verification_rejects_diverged_or_wrong_attached_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, head = self.repository(directory)
+            created = ADAPTER.decide(self.request(repository, head), "create")
+            created_commit = created["commit_oid"]
+            (repository / "later.txt").write_text("later accepted work\n")
+            run(repository, "add", "later.txt")
+            run(repository, "commit", "-q", "-m", "later accepted work")
+
+            run(repository, "checkout", "-q", "-b", "other")
+            with self.assertRaisesRegex(ValueError, "branch attachment"):
+                ADAPTER.validate_receipt(created)
+
+            run(repository, "checkout", "-q", "-B", "main", head)
+            (repository / "sibling.txt").write_text("diverged work\n")
+            run(repository, "add", "sibling.txt")
+            run(repository, "commit", "-q", "-m", "diverged work")
+            before_head = run(repository, "rev-parse", "HEAD")
+            before_index = run(repository, "write-tree")
+            self.assertNotEqual(created_commit, before_head)
+            with self.assertRaisesRegex(ValueError, "does not contain"):
+                ADAPTER.validate_receipt(created)
+            self.assertEqual(before_head, run(repository, "rev-parse", "HEAD"))
+            self.assertEqual(before_index, run(repository, "write-tree"))
+            self.assertEqual("", run(repository, "status", "--porcelain=v2", "--untracked-files=all"))
+
     def test_postpublication_failure_receipt_can_be_finalized_when_publication_is_intact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository, head = self.repository(directory)

@@ -16,7 +16,10 @@ evidence. A fabricated receipt would otherwise let terminal history claim a
 mutation that never occurred. Expose read-only receipt verification that
 re-establishes the repository, proposal binding, commit, parent, tree, message,
 publication target, and resulting state before finalization persists that
-claim. Non-created states retain only their actual evidence boundary.
+claim. Later commits on the same attached branch do not invalidate historical
+publication: the recorded commit must either remain the branch tip or be its
+ancestor. A missing branch, different attached branch, or divergent tip fails
+closed. Non-created states retain only their actual evidence boundary.
 
 The supervisor owns any durable live completion offer separately from terminal
 audit history. When publication may have succeeded before that offer was

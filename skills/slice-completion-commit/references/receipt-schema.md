@@ -24,8 +24,11 @@ surfaced uncertainty.
 Before a terminal consumer persists `created`, the adapter's read-only
 verification re-establishes the named repository, proposal digest and
 checkpoint binding, commit object, parent, tree, message, publication ref, and
-resulting branch state. The other lifecycle states do not claim that Git
-evidence.
+resulting branch state. The expected branch must remain attached and its tip
+must either equal the recorded commit or descend from it. A missing expected
+branch, a different attached branch, or a divergent branch tip does not prove
+the recorded publication and is rejected. The other lifecycle states do not
+claim that Git evidence.
 
 New delayed interactions use the supervisor-owned completion-offer lifecycle
 rather than persisting `pending` in immutable terminal history. Historical
