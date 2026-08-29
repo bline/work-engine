@@ -1,11 +1,11 @@
 ---
 name: claude-recon-implementation
-description: Use Claude CLI for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and fresh-entry adversarial review with retained remediation context while preserving Codex context for judgment and implementation. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
+description: Use native Claude Code for shallow architectural placement alternatives, fresh targeted repository reconnaissance, failure diagnosis, and fresh-entry adversarial review with retained remediation context while preserving Codex context for judgment and implementation. Supports provenance-bearing Anthropic or OpenRouter inference routes without replacing the Claude Code harness. Use for non-trivial repository work, especially when a roadmap objective could plausibly belong in multiple subsystems or cross authoring, persistence, runtime, or presentation boundaries.
 ---
 
 # Claude Recon Implementation
 
-Use Claude CLI as a forked external process for optional high-volume disposable
+Use native Claude Code as a forked external process for optional high-volume disposable
 repository retrieval, fresh placement falsification, failure diagnosis, and
 adversarial review. Codex owns task interpretation, architectural judgment,
 implementation, durable understanding, and final acceptance. In Work Engine
@@ -13,6 +13,23 @@ config version 2, repository retrieval and independent review are separate
 roles; selecting this skill for one role never implicitly selects or satisfies
 the other. Direct Codebase Memory through $repo-search is the default retrieval
 path.
+
+Claude Code is the harness identity, not merely a convenient client for a
+Claude-family model. When Anthropic subscription capacity is unavailable, the
+same native `claude` executable may use OpenRouter's Anthropic-compatible
+endpoint; do not substitute Codex or a generic OpenRouter agent loop and still
+call the result a Claude review. Before invoking either transport, read
+[references/native-claude-transport.md](references/native-claude-transport.md)
+and use its deterministic launcher. Keep gateway, exact requested model,
+Claude Code version, session continuity, and observed-versus-requested upstream
+provider distinct in provenance.
+
+For research or experimental execution, require the transport reference's
+fresh Anthropic-1P key-guardrail attestation. An exact Claude model slug without
+an enforced upstream allowlist is insufficient because OpenRouter may route
+that model through another provider implementation. Ordinary review may use an
+unpinned route only when its receipt and resulting evidence class disclose
+that limitation.
 
 Provision Codebase Memory and bounded read-only filesystem tools together for
 repository-aware Claude calls. Codebase Memory remains the primary path for
@@ -70,11 +87,13 @@ Assess placement ambiguity before invoking Claude. Use direct targeted reconnais
 
 Before implementation reconnaissance, use one read-only Claude process to map architectural placement. This call is a routing pass, not an implementation survey. It must inspect canonical design/roadmap evidence, module ownership boundaries, and only the minimum symbols needed to distinguish plausible homes. Do not ask it to trace every candidate deeply.
 
-Prefer:
+Prefer the native-Claude transport launcher. The command below shows the
+underlying Claude invocation; wrap it as specified in the transport reference:
 
 ```bash
 claude -p \
   --effort medium \
+  --model sonnet \
   --no-session-persistence \
   --tools "mcp__codebase-memory-mcp,Read,Glob,Grep" \
   --output-format json \
@@ -97,6 +116,14 @@ wait for an index-only call to fail before making an already-required external
 artifact readable.
 
 If Claude fails before returning repository evidence, treat that as infrastructure failure. Inspect the execution conditions before retrying; do not repeatedly issue the same invocation. Prefer correct API/config access outside the sandbox, then retry once. On a direct low-risk route, return the failure to the builder for a recorded route decision: builder-direct observation may replace a defaulted provider only when no explicit independence requirement applies and the same acceptance condition remains provable. Never silently substitute for an explicitly selected provider or high-assurance falsifier.
+
+A recognized quota failure may activate the configured OpenRouter route under
+the transport contract. That route is still native Claude Code, but it is not
+the same gateway or necessarily the same upstream inference provider. Any
+other failure returns without paid failover. A retained review may cross the
+gateway only through a verified same-session resume or a truthful authorized
+reviewer replacement; disposable replay rules do not establish retained
+continuity.
 
 Require a JSON schema with:
 
@@ -282,6 +309,8 @@ When available, report:
   evidence to direct source observation, including whether the reason was index
   availability, coverage, graph ambiguity, or provider failure;
 - Claude wall-clock duration, cost, cache creation/read usage, output tokens, and thinking tokens;
+- Claude Code version, gateway, exact requested model, transport attempts,
+  quota-failover outcome, and whether the upstream provider was observed;
 - files, exact ranges, and approximate lines supplied to Codex;
 - whether missing context blocked implementation;
 - local repository exploration outside Claude-provided ranges;

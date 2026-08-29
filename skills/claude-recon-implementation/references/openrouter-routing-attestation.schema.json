@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://work-engine.local/schemas/openrouter-routing-attestation-v1.json",
+  "title": "OpenRouter Anthropic 1P routing attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "observed_at",
+    "guardrail_id",
+    "key_hash",
+    "allowed_providers",
+    "allowed_models",
+    "assignment_guardrail_id"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "openrouter-key-guardrail"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "guardrail_id": {"type": "string", "minLength": 1},
+    "key_hash": {"type": "string", "minLength": 1},
+    "allowed_providers": {
+      "type": "array",
+      "prefixItems": [{"const": "anthropic"}],
+      "items": false,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "allowed_models": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "assignment_guardrail_id": {"type": "string", "minLength": 1}
+  }
+}
