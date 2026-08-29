@@ -42,5 +42,8 @@ export * from "./executable-generation-worker.mjs";
 export * from "./executable-generation-dispatch.mjs";
 export * from "./executable-generation-bootstrap.mjs";
 export * from "./operator-switchboard.mjs";
+export * from "./services/review-subject/contract.mjs";
+export * from "./services/review-subject/legacy-backend-adapter.mjs";
+export * from "./services/review-subject/service.mjs";
 export * from "../roles/strategic-planner.mjs";
 export * from "../roles/strategic-planning-handoff.mjs";
