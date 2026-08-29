@@ -346,23 +346,49 @@ test("recovers an authority-bound review episode and fences the prior writer", a
       payload: { reviewed_subject: [remediation], evidence_references: [remediation] } },
   });
   assert.equal(reevaluation.structuredContent.result.pending_next_action, "re_evaluate_delta_in_same_session");
+  const reported = await secondClient.callTool({
+    name: "advance_independent_review_episode",
+    arguments: { expected_revision: reevaluation.structuredContent.result.durable_revision,
+      transition_id: "re-evaluation-1", action: "record_re_evaluation",
+      payload: {
+        findings: [{ finding_id: "finding-1", attributed_reviewer: "reviewer-1", reviewer_generation: 1,
+          severity: "high", observation: "bounded issue", evidence_references: [evidence],
+          status: "verified_resolved", remediation_references: [remediation] }],
+        unresolved_questions: [], evidence_references: [remediation], claim_references: [],
+      } },
+  });
+  assert.equal(reported.structuredContent.result.current_review_phase, "reported");
+  const laterSubject = exactReference("checkpoint", "candidate", "tree-3");
+  const laterReevaluation = await secondClient.callTool({
+    name: "advance_independent_review_episode",
+    arguments: { expected_revision: reported.structuredContent.result.durable_revision,
+      transition_id: "remediation-2", action: "record_remediation_subject",
+      payload: { reviewed_subject: [laterSubject], evidence_references: [laterSubject] } },
+  });
+  assert.equal(laterReevaluation.structuredContent.result.current_review_phase, "re_evaluation");
+  assert.equal(laterReevaluation.structuredContent.result.continuity, "same_session");
+  assert.equal(laterReevaluation.structuredContent.result.writer_binding.generation, 2);
+  assert.equal(laterReevaluation.structuredContent.result.writer_binding.runtime_session_ref.reference,
+    "session-2");
+  assert.deepEqual(laterReevaluation.structuredContent.result.reviewed_subject, [laterSubject]);
+  assert.equal(laterReevaluation.structuredContent.result.findings[0].status, "verified_resolved");
   const history = await secondClient.callTool({
     name: "list_independent_review_episode_history", arguments: { limit: 10 },
   });
-  assert.equal(history.structuredContent.result.items.length, 4);
+  assert.equal(history.structuredContent.result.items.length, 6);
 
   const staleClient = await connect(repository, authority1);
   t.after(() => staleClient.close());
   const stale = await staleClient.callTool({
     name: "advance_independent_review_episode",
-    arguments: { expected_revision: reevaluation.structuredContent.result.durable_revision,
+    arguments: { expected_revision: laterReevaluation.structuredContent.result.durable_revision,
       transition_id: "stale-writer", action: "mark_uncertain",
       payload: { reason: "must fail", reconciliation_action: "stop" } },
   });
   assert.equal(stale.isError, true);
   const forbidden = await secondClient.callTool({
     name: "advance_independent_review_episode",
-    arguments: { expected_revision: reevaluation.structuredContent.result.durable_revision,
+    arguments: { expected_revision: laterReevaluation.structuredContent.result.durable_revision,
       transition_id: "claim-write", action: "record_re_evaluation", payload: { claim_revision: "forbidden" } },
   });
   assert.equal(forbidden.isError, true);

@@ -32,15 +32,26 @@ caller admission remains the responsibility of the trusted process launcher,
 operating-system permissions, and MCP tool configuration. A runtime session ID
 is a resumable reference, not a credential or semantic owner.
 
-The lifecycle is:
+The ordinary result lifecycle is:
 
 ```text
 fresh initial review
   -> initial result
-  -> remediation / same-session re-evaluation (zero or more)
-  -> reported or uncertain
-  -> retired
+  -> remediation / same-session re-evaluation
+  -> reported
+  -> exact later remediation subject / same-session re-evaluation (zero or more)
+  -> reported
 ```
+
+`reported` publishes the current result; it does not retire the episode. While
+the episode and its bound writer remain active, an exact later remediation
+subject may enter same-session re-evaluation from either `remediation` or
+`reported`. This continuation preserves the prior result in immutable history
+and does not create a new freshness or independence claim. This ordinary chain
+is not an exhaustive state machine: any non-retired phase may become uncertain
+when continuity cannot be trusted, may receive an authorized writer replacement,
+or may be retired. Uncertain continuity requires reconciliation, authorized
+writer replacement, or retirement; retirement is terminal.
 
 Replacement requires a separately issued successor manifest for the same
 episode, the next writer generation, and the exact predecessor durable

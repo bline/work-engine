@@ -253,8 +253,6 @@ def publish(store: Any, value: dict[str, Any], expected: str | None) -> dict[str
 
 
 def begin(store: Any, authority: dict[str, Any], manifest_sha256: str, request: dict[str, Any]) -> dict[str, Any]:
-    if authority["writer"]["generation"] != 1 or load(store, authority["identity"]) is not None:
-        fail("review episode already exists or initial writer generation is invalid")
     allowed = {"transition_id", "evidence_references", "claim_references", "unresolved_questions"}
     if not isinstance(request, dict) or set(request) != allowed:
         fail("begin request fields are invalid")
@@ -264,6 +262,17 @@ def begin(store: Any, authority: dict[str, Any], manifest_sha256: str, request: 
     if not isinstance(request["unresolved_questions"], list):
         fail("unresolved_questions must be an array")
     transition_digest = digest(request)
+    current = load(store, authority["identity"])
+    if current is not None:
+        assert_authorized(current, authority, manifest_sha256)
+        previous = current["handled_transition_ids"].get(transition_id)
+        if previous == transition_digest:
+            return current
+        if previous is not None:
+            fail("transition identity conflicts with durable content")
+        fail("review episode already exists")
+    if authority["writer"]["generation"] != 1:
+        fail("initial writer generation is invalid")
     return publish(store, {"schema_version": 1, "profile": PROFILE, "identity": authority["identity"],
         "authority_binding": binding(authority, manifest_sha256), "writer_binding": authority["writer"],
         "status": "active", "current_review_phase": "initial_review",
@@ -324,7 +333,9 @@ def advance(store: Any, authority: dict[str, Any], manifest_sha256: str, expecte
     else:
         assert_authorized(current, authority, manifest_sha256)
         if action == "record_initial_result":
-            if current["current_review_phase"] != "initial_review" or set(payload) != {"findings", "unresolved_questions", "evidence_references", "claim_references"}:
+            if (current["status"] != "active"
+                    or current["current_review_phase"] != "initial_review"
+                    or set(payload) != {"findings", "unresolved_questions", "evidence_references", "claim_references"}):
                 fail("initial result transition is invalid")
             validate_findings(payload["findings"])
             if any(finding["status"] not in {"open", "unresolved"}
@@ -338,14 +349,18 @@ def advance(store: Any, authority: dict[str, Any], manifest_sha256: str, expecte
                        "pending_next_action": "await_remediation" if pending else "return_review_result_to_builder",
                        "continuity": "same_session"}
         elif action == "record_remediation_subject":
-            if current["current_review_phase"] != "remediation" or set(payload) != {"reviewed_subject", "evidence_references"}:
+            if (current["status"] != "active"
+                    or current["current_review_phase"] not in {"remediation", "reported"}
+                    or set(payload) != {"reviewed_subject", "evidence_references"}):
                 fail("remediation subject transition is invalid")
             validate_references(payload["reviewed_subject"], "reviewed_subject", required=True)
             validate_references(payload["evidence_references"], "evidence_references", required=True)
             updated = {**semantic(current), **payload, "current_review_phase": "re_evaluation",
                        "pending_next_action": "re_evaluate_delta_in_same_session", "continuity": "same_session"}
         elif action == "record_re_evaluation":
-            if current["current_review_phase"] != "re_evaluation" or set(payload) != {"findings", "unresolved_questions", "evidence_references", "claim_references"}:
+            if (current["status"] != "active"
+                    or current["current_review_phase"] != "re_evaluation"
+                    or set(payload) != {"findings", "unresolved_questions", "evidence_references", "claim_references"}):
                 fail("re-evaluation transition is invalid")
             validate_findings(payload["findings"])
             preserve_finding_lineage(current["findings"], payload["findings"])
