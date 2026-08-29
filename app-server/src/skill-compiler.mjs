@@ -182,14 +182,13 @@ function validateStructure(raw) {
     if (sha256(rendered) !== section.source_span.sha256) fail(`section ${section.id} source span digest mismatch`);
   }
 
-  exactFields(raw.role_profile, ROLE_FIELDS, "structure.role_profile");
-  exactFields(raw.role_profile.projection, PROJECTION_FIELDS, "structure.role_profile.projection");
-  exactFields(raw.role_profile.relations, new Set(RELATIONS), "structure.role_profile.relations");
-  const relations = Object.fromEntries(RELATIONS.map((relation) => [relation, relationEntries(raw.role_profile.relations[relation], relation, `structure.role_profile.relations.${relation}`)]));
-  return {
-    schema_version: 1, status: raw.status, skill_id: skillId, source, frontmatter,
-    document: raw.document, source_bindings: sourceBindings,
-    role_profile: {
+  let roleProfile = null;
+  if (raw.role_profile != null) {
+    exactFields(raw.role_profile, ROLE_FIELDS, "structure.role_profile");
+    exactFields(raw.role_profile.projection, PROJECTION_FIELDS, "structure.role_profile.projection");
+    exactFields(raw.role_profile.relations, new Set(RELATIONS), "structure.role_profile.relations");
+    const relations = Object.fromEntries(RELATIONS.map((relation) => [relation, relationEntries(raw.role_profile.relations[relation], relation, `structure.role_profile.relations.${relation}`)]));
+    roleProfile = {
       role_id: text(raw.role_profile.role_id, "structure.role_profile.role_id"),
       label: text(raw.role_profile.label, "structure.role_profile.label"),
       objective: text(raw.role_profile.objective, "structure.role_profile.objective"),
@@ -198,7 +197,12 @@ function validateStructure(raw) {
         path: text(raw.role_profile.projection.path, "structure.role_profile.projection.path"),
         sha256: digest(raw.role_profile.projection.sha256, "structure.role_profile.projection.sha256"),
       }, relations,
-    }, sections,
+    };
+  }
+  return {
+    schema_version: 1, status: raw.status, skill_id: skillId, source, frontmatter,
+    document: raw.document, source_bindings: sourceBindings,
+    role_profile: roleProfile, sections,
   };
 }
 
@@ -232,20 +236,24 @@ function validateInterface(raw, structure) {
   exactFields(raw.runtime_requirements, RUNTIME_REQUIREMENT_FIELDS, "interface.runtime_requirements");
   const requiredCapabilities = uniqueTexts(raw.runtime_requirements.required_capabilities, "interface.runtime_requirements.required_capabilities").sort();
   const capabilityCeiling = uniqueTexts(raw.runtime_requirements.capability_ceiling, "interface.runtime_requirements.capability_ceiling").sort();
-  const invokableCapabilities = new Set(structure.role_profile.relations.may_invoke);
-  for (const capability of requiredCapabilities) {
-    if (!invokableCapabilities.has(capability)) fail(`runtime requirement capability ${capability} is not declared by the role`);
-  }
-  for (const capability of capabilityCeiling) {
-    if (!invokableCapabilities.has(capability)) fail(`runtime capability ceiling ${capability} is not declared by the role`);
+  if (structure.role_profile) {
+    const invokableCapabilities = new Set(structure.role_profile.relations.may_invoke);
+    for (const capability of requiredCapabilities) {
+      if (!invokableCapabilities.has(capability)) fail(`runtime requirement capability ${capability} is not declared by the role`);
+    }
+    for (const capability of capabilityCeiling) {
+      if (!invokableCapabilities.has(capability)) fail(`runtime capability ceiling ${capability} is not declared by the role`);
+    }
   }
   for (const capability of requiredCapabilities) {
     if (!capabilityCeiling.includes(capability)) fail(`required capability ${capability} exceeds the runtime capability ceiling`);
   }
   const effectCeiling = uniqueTexts(raw.runtime_requirements.effect_ceiling, "interface.runtime_requirements.effect_ceiling").sort();
-  const mutableTargets = new Set(structure.role_profile.relations.may_mutate.map(({ target }) => target));
-  for (const effect of effectCeiling) {
-    if (!mutableTargets.has(effect)) fail(`runtime effect ceiling ${effect} is not declared by the role`);
+  if (structure.role_profile) {
+    const mutableTargets = new Set(structure.role_profile.relations.may_mutate.map(({ target }) => target));
+    for (const effect of effectCeiling) {
+      if (!mutableTargets.has(effect)) fail(`runtime effect ceiling ${effect} is not declared by the role`);
+    }
   }
   const prohibitedEffects = uniqueTexts(raw.runtime_requirements.prohibited_effects, "interface.runtime_requirements.prohibited_effects").sort();
   for (const effect of prohibitedEffects) {
@@ -265,13 +273,14 @@ function validateInterface(raw, structure) {
 function projectRuntimeRequirements(structure, skillInterface, outputSha256, verifiedSources) {
   const requirements = {
     schema_version: 1,
-    role_id: structure.role_profile.role_id,
+    ...(structure.role_profile ? { role_id: structure.role_profile.role_id } : {}),
     skill_id: structure.skill_id,
     contract: {
       source_binding_id: structure.source_bindings.find(({ kind }) => kind === "canonical_authority")?.id,
       path: structure.source.path,
       sha256: structure.source.sha256,
       must_be_activated: true,
+      kind: structure.role_profile ? "role_contract" : "skill",
     },
     ...skillInterface.runtime_requirements,
     compiled_skill_sha256: outputSha256,
@@ -355,34 +364,37 @@ export async function compileSkill({
   if (verifySources) {
     await verifyLegacySource(structure, workspaceRoot);
     await verifySourceBindings(structure, workspaceRoot);
-    agentEnvironmentGraphAdapter ??= createAgentEnvironmentGraphAdapter({ workspaceRoot });
+    if (structure.role_profile) {
+      agentEnvironmentGraphAdapter ??= createAgentEnvironmentGraphAdapter({ workspaceRoot });
+    }
   }
-  const roleProjection = verifySources
+  const roleProjection = verifySources && structure.role_profile
     ? await verifyRoleProjection(structure, workspaceRoot, agentEnvironmentGraphAdapter)
     : null;
   const output = renderCodexSkill(structure);
   const outputSha256 = sha256(output);
-  const runtimeRequirements = projectRuntimeRequirements(structure, skillInterface, outputSha256, roleProjection !== null);
+  const runtimeRequirements = projectRuntimeRequirements(structure, skillInterface, outputSha256, verifySources);
+  const inputSha256 = {
+    structure: sha256(Buffer.from(structureSource)),
+    interface: sha256(Buffer.from(interfaceSource)),
+    ...(structure.role_profile ? { role_projection: structure.role_profile.projection.sha256 } : {}),
+  };
   const ir = {
     schema_version: 1,
     compiler: "work-engine.skill-compiler.bootstrap-v1",
     skill_id: structure.skill_id,
     status: "experimental_non_authoritative",
-    input_sha256: {
-      structure: sha256(Buffer.from(structureSource)),
-      interface: sha256(Buffer.from(interfaceSource)),
-      role_projection: structure.role_profile.projection.sha256,
-    },
+    input_sha256: inputSha256,
     source: structure.source,
     section_provenance: structure.sections.map(({ id, kind, source_span }) => ({ id, kind, source_span })),
     source_bindings: structure.source_bindings,
-    role_profile: structure.role_profile,
-    role_projection: roleProjection ? {
+    ...(structure.role_profile ? { role_profile: structure.role_profile } : {}),
+    ...(roleProjection ? { role_projection: {
       backend: roleProjection.backend,
       backend_sha256: roleProjection.backend_sha256,
       canonical_role_match: roleProjection.canonical_role_match,
       projection: roleProjection.projection,
-    } : null,
+    } } : {}),
     interface: skillInterface,
     runtime_requirements: runtimeRequirements,
     output_sha256: outputSha256,

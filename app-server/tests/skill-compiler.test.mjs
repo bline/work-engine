@@ -223,3 +223,42 @@ test("source verification rejects an unverified gap before the first section", a
     /first section source span must begin immediately after canonical frontmatter/,
   );
 });
+
+test("repo-search compiles byte-exactly as a role-free evidence skill", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const structureSource = await readFile(path.join(root, "app-server/migrations/skills/repo-search/structure.yaml"), "utf8");
+  const interfaceSource = await readFile(path.join(root, "app-server/migrations/skills/repo-search/interface.yaml"), "utf8");
+  const result = await compileSkill({ structureSource, interfaceSource, workspaceRoot: root });
+  const canonical = await readFile(path.join(root, "skills/repo-search/SKILL.md"));
+
+  assert.deepEqual(result.output, canonical);
+  assert.equal(result.ir.output_sha256, digest(canonical));
+  assert.equal("role_profile" in result.ir, false);
+  assert.equal("role_projection" in result.ir, false);
+  assert.equal("role_projection" in result.ir.input_sha256, false);
+  assert.equal("role_id" in result.ir.runtime_requirements, false);
+  assert.equal(result.ir.runtime_requirements.contract.kind, "skill");
+  assert.deepEqual(result.ir.runtime_requirements.required_capabilities, [
+    "capability.direct_source_observation",
+    "capability.repository_evidence",
+  ]);
+  assert.deepEqual(result.ir.runtime_requirements.effect_ceiling, []);
+});
+
+test("role-free skills reject role placeholders and source drift", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const structure = parse(await readFile(path.join(root, "app-server/migrations/skills/repo-search/structure.yaml"), "utf8"));
+  const interfaceSource = await readFile(path.join(root, "app-server/migrations/skills/repo-search/interface.yaml"), "utf8");
+  structure.role_profile = {};
+  await assert.rejects(
+    compileSkill({ structureSource: stringify(structure), interfaceSource, verifySources: false }),
+    /structure\.role_profile\.projection must be an object/,
+  );
+
+  delete structure.role_profile;
+  structure.source.sha256 = "0".repeat(64);
+  await assert.rejects(
+    compileSkill({ structureSource: stringify(structure), interfaceSource, workspaceRoot: root }),
+    /legacy source digest mismatch/,
+  );
+});

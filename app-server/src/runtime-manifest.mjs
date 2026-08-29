@@ -5,7 +5,7 @@ import path from "node:path";
 const TOP_LEVEL_FIELDS = new Set(["schema_version", "manifest_id", "roles"]);
 const ROLE_FIELDS = new Set(["contract", "compiled_environment", "compiled_skill_sha256", "developer_instructions", "thread_options", "skills", "capabilities", "effects", "continuity"]);
 const COMPILED_ENVIRONMENT_FIELDS = new Set(["structure", "interface"]);
-const SKILL_FIELDS = new Set(["name", "path"]);
+const SKILL_FIELDS = new Set(["name", "path", "compiled_environment", "compiled_skill_sha256", "capabilities", "effects"]);
 const IDENTIFIER_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const APPROVAL_POLICIES = new Set(["untrusted", "on-request", "never"]);
 const SANDBOX_MODES = new Set(["read-only", "workspace-write", "danger-full-access"]);
@@ -99,14 +99,33 @@ function normalizeSkills(value, baseDirectory, roleId) {
     rejectUnknownFields(skill, SKILL_FIELDS, `role ${roleId} skills[${index}]`);
     requireText(skill.name, `role ${roleId} skills[${index}].name`);
     requireText(skill.path, `role ${roleId} skills[${index}].path`);
+    if (skill.compiled_environment != null) {
+      requireRecord(skill.compiled_environment, `role ${roleId} skills[${index}] compiled_environment`);
+      rejectUnknownFields(skill.compiled_environment, COMPILED_ENVIRONMENT_FIELDS, `role ${roleId} skills[${index}] compiled_environment`);
+      requireText(skill.compiled_environment.structure, `role ${roleId} skills[${index}] compiled_environment structure`);
+      requireText(skill.compiled_environment.interface, `role ${roleId} skills[${index}] compiled_environment interface`);
+      requireSha256(skill.compiled_skill_sha256, `role ${roleId} skills[${index}] compiled_skill_sha256`);
+    } else if (skill.compiled_skill_sha256 != null) {
+      throw new TypeError(`role ${roleId} skills[${index}] compiled_skill_sha256 requires compiled_environment`);
+    }
     if (names.has(skill.name)) {
       throw new TypeError(`role ${roleId} contains duplicate skill name ${skill.name}`);
     }
     names.add(skill.name);
-    return {
+    const normalized = {
       name: skill.name,
       path: path.resolve(baseDirectory, skill.path),
     };
+    if (skill.compiled_environment != null) {
+      normalized.compiledEnvironment = {
+        structure: path.resolve(baseDirectory, skill.compiled_environment.structure),
+        interface: path.resolve(baseDirectory, skill.compiled_environment.interface),
+      };
+      normalized.compiledSkillSha256 = skill.compiled_skill_sha256;
+      normalized.capabilities = normalizeCapabilities(skill.capabilities, `${roleId} skill ${skill.name}`);
+      normalized.effects = normalizeEffects(skill.effects, `${roleId} skill ${skill.name}`);
+    }
+    return normalized;
   });
 }
 
@@ -135,10 +154,11 @@ function normalizeEffects(value, roleId) {
 }
 
 export class RuntimeManifest {
-  constructor({ manifestId, source, roles }) {
+  constructor({ manifestId, source, roles, requirementsBaseDirectory }) {
     this.manifestId = manifestId;
     this.source = freezeProjection(source);
     this.roles = freezeProjection(roles);
+    this.requirementsBaseDirectory = requirementsBaseDirectory;
     Object.freeze(this);
   }
 
@@ -173,6 +193,7 @@ export class RuntimeManifest {
 export function projectRuntimeManifest(document, {
   baseDirectory = process.cwd(),
   identityBaseDirectory = baseDirectory,
+  requirementsBaseDirectory = identityBaseDirectory,
   sourcePath = null,
   sourceSha256 = null,
   runtimeRequirementsByRole = {},
@@ -190,6 +211,7 @@ export function projectRuntimeManifest(document, {
 
   const resolvedBase = path.resolve(baseDirectory);
   const resolvedIdentityBase = path.resolve(identityBaseDirectory);
+  const resolvedRequirementsBase = path.resolve(requirementsBaseDirectory);
   const roles = {};
   for (const roleId of Object.keys(document.roles).sort()) {
     requireIdentifierSegment(roleId, "runtime role id");
@@ -207,6 +229,10 @@ export function projectRuntimeManifest(document, {
       throw new TypeError(`role ${roleId} contract must be present in its exact skill inputs`);
     }
     const identityRoleContract = { path: contractPath };
+    const projectedSkills = skills.map((skill) => {
+      const runtimeRequirements = runtimeRequirementsByRole[`${roleId}:${skill.name}`];
+      return runtimeRequirements == null ? skill : { ...skill, runtimeRequirements };
+    });
     const roleTemplate = {
       roleContract: {
         ...identityRoleContract,
@@ -218,7 +244,7 @@ export function projectRuntimeManifest(document, {
         resolvedIdentityBase,
         roleId,
       ),
-      skills,
+      skills: projectedSkills,
       capabilities: normalizeCapabilities(role.capabilities, roleId),
       effects: normalizeEffects(role.effects, roleId),
       continuity: role.continuity == null ? "ephemeral" : role.continuity,
@@ -252,6 +278,7 @@ export function projectRuntimeManifest(document, {
       sha256: digest,
     },
     roles,
+    requirementsBaseDirectory: resolvedRequirementsBase,
   });
 }
 
@@ -281,16 +308,30 @@ export async function hydrateRuntimeRequirements(document, {
   const resolvedWorkspace = path.resolve(workspaceRoot ?? resolvedBase);
   const runtimeRequirementsByRole = {};
   for (const [roleId, role] of Object.entries(document.roles)) {
-    if (role.compiled_environment == null) continue;
-    requireRecord(role.compiled_environment, `role ${roleId} compiled_environment`);
-    rejectUnknownFields(role.compiled_environment, COMPILED_ENVIRONMENT_FIELDS, `role ${roleId} compiled_environment`);
     const { compileSkill } = await import("./skill-compiler.mjs");
-    const compiled = await compileSkill({
-      structureSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.structure), "utf8"),
-      interfaceSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.interface), "utf8"),
-      workspaceRoot: resolvedWorkspace,
-    });
-    runtimeRequirementsByRole[roleId] = compiled.ir.runtime_requirements;
+    if (role.compiled_environment != null) {
+      requireRecord(role.compiled_environment, `role ${roleId} compiled_environment`);
+      rejectUnknownFields(role.compiled_environment, COMPILED_ENVIRONMENT_FIELDS, `role ${roleId} compiled_environment`);
+      const compiled = await compileSkill({
+        structureSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.structure), "utf8"),
+        interfaceSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.interface), "utf8"),
+        workspaceRoot: resolvedWorkspace,
+      });
+      if (!compiled.ir.role_profile) throw new Error(`role ${roleId} compiled environment does not define a role profile`);
+      runtimeRequirementsByRole[roleId] = compiled.ir.runtime_requirements;
+    }
+    for (const [index, skill] of (role.skills ?? []).entries()) {
+      if (skill.compiled_environment == null) continue;
+      const compiled = await compileSkill({
+        structureSource: await readFile(path.resolve(resolvedBase, skill.compiled_environment.structure), "utf8"),
+        interfaceSource: await readFile(path.resolve(resolvedBase, skill.compiled_environment.interface), "utf8"),
+        workspaceRoot: resolvedWorkspace,
+      });
+      if (compiled.ir.role_profile) throw new Error(`role ${roleId} skills[${index}] secondary compiled skill must not define a role profile`);
+      if (compiled.ir.skill_id !== skill.name) throw new Error(`role ${roleId} skills[${index}] compiled skill identity differs`);
+      if (compiled.ir.output_sha256 !== skill.compiled_skill_sha256) throw new Error(`role ${roleId} skills[${index}] compiled skill fingerprint differs`);
+      runtimeRequirementsByRole[`${roleId}:${skill.name}`] = compiled.ir.runtime_requirements;
+    }
   }
   return freezeProjection(runtimeRequirementsByRole);
 }
@@ -298,19 +339,21 @@ export async function hydrateRuntimeRequirements(document, {
 export async function loadRuntimeManifest(manifestPath) {
   const loaded = await loadRuntimeManifestDocument(manifestPath);
   const base = path.dirname(loaded.sourcePath);
+  const workspaceRoot = path.resolve(base, "..");
   const runtimeRequirementsByRole = await hydrateRuntimeRequirements(loaded.document, {
     baseDirectory: base,
-    workspaceRoot: path.resolve(base, ".."),
+    workspaceRoot,
   });
   return projectRuntimeManifest(loaded.document, {
-    baseDirectory: path.dirname(loaded.sourcePath),
+    baseDirectory: base,
+    requirementsBaseDirectory: workspaceRoot,
     sourcePath: loaded.sourcePath,
     sourceSha256: loaded.sourceSha256,
     runtimeRequirementsByRole,
   });
 }
 
-export function satisfyRuntimeRequirements({ manifest, roleId, requirements }) {
+export function satisfyRuntimeRequirements({ manifest, roleId, requirements, skillName = null }) {
   if (!(manifest instanceof RuntimeManifest)) throw new TypeError("runtime satisfaction requires a projected runtime manifest");
   requireRecord(requirements, "runtime requirements");
   if (requirements.schema_version !== 1) throw new TypeError("runtime requirements schema_version must be 1");
@@ -321,38 +364,60 @@ export function satisfyRuntimeRequirements({ manifest, roleId, requirements }) {
   const observedRequirementsSha256 = createHash("sha256").update(canonicalJson(unsignedRequirements)).digest("hex");
   if (observedRequirementsSha256 !== requirements.sha256) throw new Error("runtime requirements digest mismatch");
   const projection = manifest.projectRole(roleId, "admission");
-  const grantedCapabilities = new Set(projection.role.capabilities);
+  const activatedSkill = skillName == null
+    ? null
+    : projection.skills.find(({ name }) => name === skillName);
+  if (skillName != null && !activatedSkill) throw new Error(`runtime role ${roleId} omits compiled skill ${skillName}`);
+  const grantedCapabilities = new Set(skillName == null ? projection.role.capabilities : activatedSkill.capabilities);
+  if (skillName != null) {
+    for (const capability of grantedCapabilities) {
+      if (!projection.role.capabilities.includes(capability)) throw new Error(`compiled skill ${skillName} capability ${capability} is not granted to runtime role ${roleId}`);
+    }
+  }
   for (const capability of requirements.required_capabilities ?? []) {
     if (!grantedCapabilities.has(capability)) throw new Error(`runtime role ${roleId} is missing required capability ${capability}`);
   }
   const capabilityCeiling = new Set(requirements.capability_ceiling ?? []);
-  for (const capability of projection.role.capabilities) {
+  for (const capability of grantedCapabilities) {
     if (!capabilityCeiling.has(capability)) throw new Error(`runtime role ${roleId} exceeds capability ceiling with ${capability}`);
   }
   const ceiling = new Set(requirements.effect_ceiling ?? []);
   const prohibited = new Set(requirements.prohibited_effects ?? []);
-  for (const effect of projection.role.effects) {
+  const grantedEffects = skillName == null ? projection.role.effects : activatedSkill.effects;
+  if (skillName != null) {
+    for (const effect of grantedEffects) {
+      if (!projection.role.effects.includes(effect)) throw new Error(`compiled skill ${skillName} effect ${effect} is not granted to runtime role ${roleId}`);
+    }
+  }
+  for (const effect of grantedEffects) {
     if (prohibited.has(effect)) throw new Error(`runtime role ${roleId} grants prohibited effect ${effect}`);
     if (!ceiling.has(effect)) throw new Error(`runtime role ${roleId} exceeds effect ceiling with ${effect}`);
   }
-  if (projection.role.continuity !== requirements.continuity) {
+  if (skillName == null && projection.role.continuity !== requirements.continuity) {
     throw new Error(`runtime role ${roleId} has incompatible continuity`);
   }
-  if (projection.role.compiledSkillSha256 !== requirements.compiled_skill_sha256) {
+  const compiledSkillSha256 = skillName == null ? projection.role.compiledSkillSha256 : activatedSkill.compiledSkillSha256;
+  if (compiledSkillSha256 !== requirements.compiled_skill_sha256) {
     throw new Error(`runtime role ${roleId} compiled skill fingerprint differs from requirements`);
   }
   if (!requirements.contract?.must_be_activated) throw new TypeError("runtime requirements must require the exact contract input");
-  if (projection.roleContract.path !== path.resolve(requirements.contract.path)) {
-    throw new Error(`runtime role ${roleId} contract differs from compiled requirements`);
-  }
-  if (!projection.skills.some(({ path: skillPath }) => skillPath === projection.roleContract.activatedPath)) {
-    throw new Error(`runtime role ${roleId} omits the compiled contract input`);
+  const requiredPath = path.resolve(manifest.requirementsBaseDirectory, requirements.contract.path);
+  if (skillName == null) {
+    if (requirements.contract.kind !== "role_contract") throw new Error("role requirements must identify a role contract");
+    if (projection.roleContract.path !== requiredPath) throw new Error(`runtime role ${roleId} contract differs from compiled requirements`);
+    if (!projection.skills.some(({ path: skillPath }) => skillPath === projection.roleContract.activatedPath)) {
+      throw new Error(`runtime role ${roleId} omits the compiled contract input`);
+    }
+  } else {
+    if (requirements.contract.kind !== "skill") throw new Error(`compiled skill ${skillName} requirements must identify a secondary skill`);
+    if (activatedSkill.path !== requiredPath) throw new Error(`runtime role ${roleId} compiled skill ${skillName} path differs from requirements`);
   }
   const receipt = {
     schema_version: 1,
     role_id: roleId,
     requirements_sha256: requirements.sha256,
     compiled_skill_sha256: requirements.compiled_skill_sha256,
+    ...(skillName == null ? {} : { skill_id: skillName }),
     manifest_sha256: projection.manifest.sha256,
     runtime_environment_revision: projection.role.runtimeEnvironmentRevision,
   };
@@ -381,11 +446,28 @@ export class ManifestRoleRuntime {
     const runtimeSatisfaction = requirements
       ? satisfyRuntimeRequirements({ manifest: this.manifest, roleId, requirements })
       : null;
+    const skillRuntimeSatisfactions = {};
+    for (const skill of projection.skills) {
+      const skillRequirements = this.runtimeRequirements?.[`${roleId}:${skill.name}`] ?? skill.runtimeRequirements;
+      if (skill.compiledSkillSha256 && !skillRequirements) {
+        throw new Error(`runtime role ${roleId} compiled skill ${skill.name} has no verified compiled requirements`);
+      }
+      if (skillRequirements) {
+        skillRuntimeSatisfactions[skill.name] = satisfyRuntimeRequirements({
+          manifest: this.manifest, roleId, requirements: skillRequirements, skillName: skill.name,
+        });
+      }
+    }
     const delivery = await this.adapter.deliverTurn({
       ...turn,
       role: projection.role,
       skills: projection.skills,
     });
-    return Object.freeze({ ...delivery, roleProjection: projection, runtimeSatisfaction });
+    return Object.freeze({
+      ...delivery,
+      roleProjection: projection,
+      runtimeSatisfaction,
+      skillRuntimeSatisfactions: freezeProjection(skillRuntimeSatisfactions),
+    });
   }
 }

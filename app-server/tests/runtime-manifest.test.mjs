@@ -134,6 +134,7 @@ test("compiled slice-builder requirements admit one generic manifest role and re
   const delivered = await runtime.deliverTurn({ roleId: "slice-builder", instanceId: "vertical", text: "prove" });
   assert.equal(deliveries, 1);
   assert.equal(delivered.runtimeSatisfaction.sha256, receipt.sha256);
+  assert.equal(delivered.skillRuntimeSatisfactions["repo-search"].skill_id, "repo-search");
   assert.equal(delivered.roleProjection.role.continuity, "retained");
 
   const loaded = await loadRuntimeManifestDocument(manifestPath);
@@ -331,4 +332,87 @@ roles:
     loadRuntimeManifest(unsupportedTurnOptionPath),
     /unsupported fields: effort/,
   );
+});
+
+test("repo-search is admitted as an exact role-free secondary skill", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const manifest = await loadRuntimeManifest(path.join(root, "app-server/runtime-manifest.yaml"));
+  const projection = manifest.projectRole("slice-builder", "repo-search-vertical");
+  const skill = projection.skills.find(({ name }) => name === "repo-search");
+
+  assert.ok(skill);
+  assert.equal(manifest.roleIds.includes("repo-search"), false);
+  assert.equal(skill.path, path.join(root, "skills/repo-search/SKILL.md"));
+  assert.equal(skill.compiledSkillSha256, "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949");
+  assert.deepEqual(skill.capabilities, [
+    "capability.direct_source_observation",
+    "capability.repository_evidence",
+  ]);
+  assert.deepEqual(skill.effects, []);
+  assert.equal("role_id" in skill.runtimeRequirements, false);
+  assert.equal(skill.runtimeRequirements.contract.kind, "skill");
+
+  const receipt = satisfyRuntimeRequirements({
+    manifest,
+    roleId: "slice-builder",
+    skillName: "repo-search",
+    requirements: skill.runtimeRequirements,
+  });
+  assert.equal(receipt.skill_id, "repo-search");
+  assert.equal(receipt.compiled_skill_sha256, skill.compiledSkillSha256);
+});
+
+test("repo-search admission is independent of the ambient working directory", async (t) => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const manifest = await loadRuntimeManifest(path.join(root, "app-server/runtime-manifest.yaml"));
+  const requirements = manifest.roles["slice-builder"].skills
+    .find(({ name }) => name === "repo-search").runtimeRequirements;
+  const temporaryCwd = await mkdtemp(path.join(os.tmpdir(), "work-engine-manifest-cwd."));
+  t.after(() => rm(temporaryCwd, { recursive: true, force: true }));
+  const originalCwd = process.cwd();
+
+  try {
+    process.chdir(temporaryCwd);
+    const receipt = satisfyRuntimeRequirements({
+      manifest,
+      roleId: "slice-builder",
+      skillName: "repo-search",
+      requirements,
+    });
+    assert.equal(receipt.skill_id, "repo-search");
+    assert.equal(receipt.compiled_skill_sha256, requirements.compiled_skill_sha256);
+  } finally {
+    process.chdir(originalCwd);
+  }
+});
+
+test("repo-search secondary admission refuses missing, excess, effect, path, and fingerprint grants", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const manifestPath = path.join(root, "app-server/runtime-manifest.yaml");
+  const manifest = await loadRuntimeManifest(manifestPath);
+  const requirements = manifest.roles["slice-builder"].skills
+    .find(({ name }) => name === "repo-search").runtimeRequirements;
+  const loaded = await loadRuntimeManifestDocument(manifestPath);
+
+  const cases = [
+    ["missing", (skill) => skill.capabilities.splice(skill.capabilities.indexOf("capability.repository_evidence"), 1), /missing required capability capability\.repository_evidence/],
+    ["excess", (skill) => skill.capabilities.push("capability.independent_review"), /exceeds capability ceiling with capability\.independent_review/],
+    ["effect", (skill) => skill.effects.push("state.worktree"), /grants prohibited effect state\.worktree/],
+    ["path", (skill) => { skill.path = "../skills/strategic-planner/SKILL.md"; }, /path differs from requirements/],
+    ["fingerprint", (skill) => { skill.compiled_skill_sha256 = "0".repeat(64); }, /compiled skill fingerprint differs/],
+  ];
+  for (const [name, mutate, expected] of cases) {
+    const document = structuredClone(loaded.document);
+    mutate(document.roles["slice-builder"].skills.find(({ name: skillName }) => skillName === "repo-search"));
+    const projected = projectRuntimeManifest(document, {
+      baseDirectory: path.dirname(loaded.sourcePath),
+      identityBaseDirectory: root,
+      runtimeRequirementsByRole: { "slice-builder:repo-search": requirements },
+    });
+    assert.throws(
+      () => satisfyRuntimeRequirements({ manifest: projected, roleId: "slice-builder", skillName: "repo-search", requirements }),
+      expected,
+      name,
+    );
+  }
 });

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "producer": "S6 bounded non-role repo-search legacy migration",
+  "judgments": [
+    {
+      "id": "s6-non-role-classification",
+      "category": "ownership",
+      "subject": "structure.role_profile",
+      "conclusion": "Repository retrieval is a reusable evidence contract and configured capability consumer, not a logical App Server role; role_profile is therefore absent rather than populated with placeholders.",
+      "evidence": ["skills/repo-search/SKILL.md#repository-search", "app-server/docs/skills-migration-plan.md#s6--first-non-role-import-repository-evidence-retrieval"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s6-provider-neutral-semantics",
+      "category": "ownership",
+      "subject": "structure.sections.repository-intent",
+      "conclusion": "The durable orient, find, trace, impact, and audit intents remain provider-neutral; backend-capability material describes configured mechanics and limitations without becoming semantic owner.",
+      "evidence": ["skills/repo-search/SKILL.md#express-repository-intent", "skills/repo-search/references/backend-capabilities.md"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s6-causal-evidence-closure",
+      "category": "causal_parent",
+      "subject": "structure.sections.claim-routing",
+      "conclusion": "Coverage, pagination, exact-source verification, negative-claim limits, fallback causes, provenance, and limitations remain complete model-facing causal instructions in the generated projection.",
+      "evidence": ["skills/repo-search/SKILL.md#route-the-claim", "skills/repo-search/SKILL.md#return-an-evidence-packet"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s6-authority-boundary",
+      "category": "authority",
+      "subject": "structure.sections.role-boundaries",
+      "conclusion": "Repository retrieval supplies evidence only and acquires no mutation, architecture-selection, runtime-validation, adversarial-review, or acceptance authority.",
+      "evidence": ["skills/repo-search/SKILL.md#preserve-role-boundaries"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

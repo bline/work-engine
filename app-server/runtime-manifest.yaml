@@ -25,6 +25,16 @@ roles:
     skills:
       - name: slice-builder
         path: ../skills/slice-builder/SKILL.md
+      - name: repo-search
+        path: ../skills/repo-search/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/repo-search/structure.yaml
+          interface: migrations/skills/repo-search/interface.yaml
+        compiled_skill_sha256: cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949
+        capabilities:
+          - capability.repository_evidence
+          - capability.direct_source_observation
+        effects: []
 
   strategic-planner:
     contract: ../skills/strategic-planner/SKILL.md
