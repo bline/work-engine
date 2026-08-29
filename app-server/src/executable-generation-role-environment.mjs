@@ -266,6 +266,7 @@ export async function createExecutableGenerationRoleEnvironment({
     identityBaseDirectory: config.manifest.identityBaseDirectory,
     sourcePath: manifestPath,
     sourceSha256: config.manifest.sha256,
+    runtimeRequirementsByRole: config.manifest.runtimeRequirementsByRole ?? {},
   });
   if (!Array.isArray(dynamicTools)) {
     throw new TypeError("executable role environment dynamic tools must be an array");
@@ -347,6 +348,7 @@ export async function createExecutableGenerationRoleEnvironment({
     environmentFingerprint() {
       return `sha256:${createHash("sha256").update(canonicalJson({
         manifestSha256: config.manifest.sha256,
+        runtimeRequirementsByRole: config.manifest.runtimeRequirementsByRole ?? {},
         skillFiles: config.skillFiles,
         semanticContextProfileSha256: config.semanticContext?.profile?.source?.sha256 ?? null,
         toolSpecification: dynamicTools,

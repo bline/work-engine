@@ -9,6 +9,7 @@ import { FileExecutableGenerationStore } from "./executable-generation-store.mjs
 import { ForkedExecutableGenerationWorker } from "./executable-generation-worker.mjs";
 import {
   loadRuntimeManifestDocument,
+  hydrateRuntimeRequirements,
   projectRuntimeManifest,
 } from "./runtime-manifest.mjs";
 import { loadSemanticContextRuntimeProfile } from "./semantic-context-runtime-profile.mjs";
@@ -136,10 +137,15 @@ async function roleEnvironmentSource({
   files,
 }) {
   const loaded = await loadRuntimeManifestDocument(manifestPath);
+  const runtimeRequirementsByRole = await hydrateRuntimeRequirements(loaded.document, {
+    baseDirectory: path.dirname(loaded.sourcePath),
+    workspaceRoot,
+  });
   const projected = projectRuntimeManifest(loaded.document, {
     baseDirectory: path.dirname(loaded.sourcePath),
     sourcePath: loaded.sourcePath,
     sourceSha256: loaded.sourceSha256,
+    runtimeRequirementsByRole,
   });
   const manifestRelativePath = relativeToWorkspace(
     workspaceRoot,
@@ -198,6 +204,7 @@ async function roleEnvironmentSource({
           identityBaseDirectory: path.dirname(loaded.sourcePath),
           relativePath: manifestRelativePath,
           sha256: loaded.sourceSha256,
+          runtimeRequirementsByRole,
         },
         skillFiles,
         ...(semanticContext ? { semanticContext } : {}),

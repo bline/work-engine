@@ -1,6 +1,27 @@
 schema_version: 1
 status: experimental_non_authoritative
 skill_id: slice-builder
+runtime_requirements:
+  required_capabilities:
+    - capability.repository_evidence
+    - capability.direct_source_observation
+    - capability.repository_mutation
+    - capability.deterministic_gate
+    - capability.independent_review
+  capability_ceiling:
+    - capability.repository_evidence
+    - capability.direct_source_observation
+    - capability.repository_mutation
+    - capability.deterministic_gate
+    - capability.independent_review
+  effect_ceiling:
+    - state.task_changes
+    - state.worktree
+  prohibited_effects:
+    - state.campaign_config
+    - state.private_checkpoint
+    - state.user_history
+  continuity: retained
 boundaries:
   - id: planning.read-only
     kind: prohibition

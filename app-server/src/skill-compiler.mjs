@@ -10,7 +10,7 @@ const STRUCTURE_FIELDS = new Set([
   "schema_version", "status", "skill_id", "source", "frontmatter", "document",
   "source_bindings", "role_profile", "sections",
 ]);
-const INTERFACE_FIELDS = new Set(["schema_version", "status", "skill_id", "boundaries"]);
+const INTERFACE_FIELDS = new Set(["schema_version", "status", "skill_id", "boundaries", "runtime_requirements"]);
 const SECTION_FIELDS = new Set(["id", "kind", "heading", "content", "source_span"]);
 const HEADING_FIELDS = new Set(["level", "text"]);
 const SPAN_FIELDS = new Set(["start_byte", "end_byte", "sha256"]);
@@ -41,6 +41,8 @@ const BOUNDARY_SECTION_KINDS = Object.freeze({
   prohibition: new Set(["planning", "boundary"]),
   interface: new Set(["receipt"]),
 });
+const RUNTIME_REQUIREMENT_FIELDS = new Set(["required_capabilities", "capability_ceiling", "effect_ceiling", "prohibited_effects", "continuity"]);
+const CONTINUITY_KINDS = new Set(["ephemeral", "retained"]);
 
 function fail(message) {
   throw new TypeError(message);
@@ -227,7 +229,55 @@ function validateInterface(raw, structure) {
     return { id: text(entry.id, `interface.boundaries[${index}].id`), kind, semantic_section: semanticSection, authority_source: authoritySource, enforcement };
   });
   if (new Set(boundaries.map(({ id }) => id)).size !== boundaries.length) fail("interface.boundaries contains duplicate ids");
-  return { schema_version: 1, status: raw.status, skill_id: raw.skill_id, boundaries };
+  exactFields(raw.runtime_requirements, RUNTIME_REQUIREMENT_FIELDS, "interface.runtime_requirements");
+  const requiredCapabilities = uniqueTexts(raw.runtime_requirements.required_capabilities, "interface.runtime_requirements.required_capabilities").sort();
+  const capabilityCeiling = uniqueTexts(raw.runtime_requirements.capability_ceiling, "interface.runtime_requirements.capability_ceiling").sort();
+  const invokableCapabilities = new Set(structure.role_profile.relations.may_invoke);
+  for (const capability of requiredCapabilities) {
+    if (!invokableCapabilities.has(capability)) fail(`runtime requirement capability ${capability} is not declared by the role`);
+  }
+  for (const capability of capabilityCeiling) {
+    if (!invokableCapabilities.has(capability)) fail(`runtime capability ceiling ${capability} is not declared by the role`);
+  }
+  for (const capability of requiredCapabilities) {
+    if (!capabilityCeiling.includes(capability)) fail(`required capability ${capability} exceeds the runtime capability ceiling`);
+  }
+  const effectCeiling = uniqueTexts(raw.runtime_requirements.effect_ceiling, "interface.runtime_requirements.effect_ceiling").sort();
+  const mutableTargets = new Set(structure.role_profile.relations.may_mutate.map(({ target }) => target));
+  for (const effect of effectCeiling) {
+    if (!mutableTargets.has(effect)) fail(`runtime effect ceiling ${effect} is not declared by the role`);
+  }
+  const prohibitedEffects = uniqueTexts(raw.runtime_requirements.prohibited_effects, "interface.runtime_requirements.prohibited_effects").sort();
+  for (const effect of prohibitedEffects) {
+    if (effectCeiling.includes(effect)) fail(`runtime effect ${effect} cannot be both permitted and prohibited`);
+  }
+  const continuity = text(raw.runtime_requirements.continuity, "interface.runtime_requirements.continuity");
+  if (!CONTINUITY_KINDS.has(continuity)) fail(`unsupported runtime continuity ${continuity}`);
+  return {
+    schema_version: 1, status: raw.status, skill_id: raw.skill_id, boundaries,
+    runtime_requirements: {
+      required_capabilities: requiredCapabilities, capability_ceiling: capabilityCeiling, effect_ceiling: effectCeiling,
+      prohibited_effects: prohibitedEffects, continuity,
+    },
+  };
+}
+
+function projectRuntimeRequirements(structure, skillInterface, outputSha256, verifiedSources) {
+  const requirements = {
+    schema_version: 1,
+    role_id: structure.role_profile.role_id,
+    skill_id: structure.skill_id,
+    contract: {
+      source_binding_id: structure.source_bindings.find(({ kind }) => kind === "canonical_authority")?.id,
+      path: structure.source.path,
+      sha256: structure.source.sha256,
+      must_be_activated: true,
+    },
+    ...skillInterface.runtime_requirements,
+    compiled_skill_sha256: outputSha256,
+    verified_sources: verifiedSources,
+  };
+  return Object.freeze({ ...requirements, sha256: sha256(Buffer.from(canonicalJson(requirements))) });
 }
 
 function renderSchemaV1Frontmatter(frontmatter) {
@@ -311,6 +361,8 @@ export async function compileSkill({
     ? await verifyRoleProjection(structure, workspaceRoot, agentEnvironmentGraphAdapter)
     : null;
   const output = renderCodexSkill(structure);
+  const outputSha256 = sha256(output);
+  const runtimeRequirements = projectRuntimeRequirements(structure, skillInterface, outputSha256, roleProjection !== null);
   const ir = {
     schema_version: 1,
     compiler: "work-engine.skill-compiler.bootstrap-v1",
@@ -332,9 +384,10 @@ export async function compileSkill({
       projection: roleProjection.projection,
     } : null,
     interface: skillInterface,
-    output_sha256: sha256(output),
+    runtime_requirements: runtimeRequirements,
+    output_sha256: outputSha256,
   };
   return { ir, output };
 }
 
-export const skillCompilerInternals = Object.freeze({ parseYaml, validateStructure, validateInterface, renderCodexSkill, sha256 });
+export const skillCompilerInternals = Object.freeze({ parseYaml, validateStructure, validateInterface, renderCodexSkill, projectRuntimeRequirements, sha256 });

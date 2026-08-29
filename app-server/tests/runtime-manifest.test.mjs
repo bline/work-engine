@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -13,7 +13,9 @@ import {
   loadRuntimeManifest,
   loadRuntimeManifestDocument,
   projectRuntimeManifest,
+  satisfyRuntimeRequirements,
 } from "../src/index.mjs";
+import { compileSkill } from "../src/skill-compiler.mjs";
 
 class ManifestTransport {
   constructor() {
@@ -103,6 +105,92 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   assert.match(first.manifest.sha256, /^[a-f0-9]{64}$/);
   assert.equal(first.manifest.path, manifestPath);
   assert.equal(Object.isFrozen(first), true);
+});
+
+test("compiled slice-builder requirements admit one generic manifest role and reject excess before delivery", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const compiled = await compileSkill({
+    structureSource: await readFile(path.join(root, "app-server/migrations/skills/slice-builder/structure.yaml"), "utf8"),
+    interfaceSource: await readFile(path.join(root, "app-server/migrations/skills/slice-builder/interface.yaml"), "utf8"),
+    workspaceRoot: root,
+  });
+  const manifestPath = path.join(root, "app-server/runtime-manifest.yaml");
+  const manifest = await loadRuntimeManifest(manifestPath);
+  const receipt = satisfyRuntimeRequirements({
+    manifest,
+    roleId: "slice-builder",
+    requirements: compiled.ir.runtime_requirements,
+  });
+  assert.equal(receipt.requirements_sha256, compiled.ir.runtime_requirements.sha256);
+  assert.equal(receipt.compiled_skill_sha256, compiled.ir.output_sha256);
+  assert.match(receipt.sha256, /^[0-9a-f]{64}$/);
+
+  let deliveries = 0;
+  const runtime = new ManifestRoleRuntime({
+    adapter: { deliverTurn: async () => { deliveries += 1; return { turnId: "turn-1" }; } },
+    manifest,
+    runtimeRequirements: { "slice-builder": compiled.ir.runtime_requirements },
+  });
+  const delivered = await runtime.deliverTurn({ roleId: "slice-builder", instanceId: "vertical", text: "prove" });
+  assert.equal(deliveries, 1);
+  assert.equal(delivered.runtimeSatisfaction.sha256, receipt.sha256);
+  assert.equal(delivered.roleProjection.role.continuity, "retained");
+
+  const loaded = await loadRuntimeManifestDocument(manifestPath);
+  const excessive = structuredClone(loaded.document);
+  excessive.roles["slice-builder"].effects.push("state.user_history");
+  const excessiveManifest = projectRuntimeManifest(excessive, {
+    baseDirectory: path.dirname(loaded.sourcePath),
+    sourcePath: loaded.sourcePath,
+    runtimeRequirementsByRole: { "slice-builder": compiled.ir.runtime_requirements },
+  });
+  const refused = new ManifestRoleRuntime({
+    adapter: { deliverTurn: async () => { deliveries += 1; return {}; } },
+    manifest: excessiveManifest,
+    runtimeRequirements: { "slice-builder": compiled.ir.runtime_requirements },
+  });
+  await assert.rejects(
+    refused.deliverTurn({ roleId: "slice-builder", instanceId: "excess", text: "must refuse" }),
+    /grants prohibited effect state\.user_history/,
+  );
+  assert.equal(deliveries, 1);
+
+  const refusalCases = [
+    ["missing-capability", (role) => role.capabilities.splice(role.capabilities.indexOf("capability.repository_evidence"), 1), /missing required capability capability\.repository_evidence/],
+    ["continuity", (role) => { role.continuity = "ephemeral"; }, /incompatible continuity/],
+    ["fingerprint", (role) => { role.compiled_skill_sha256 = "0".repeat(64); }, /compiled skill fingerprint differs/],
+  ];
+  for (const [name, mutate, pattern] of refusalCases) {
+    const invalid = structuredClone(loaded.document);
+    mutate(invalid.roles["slice-builder"]);
+    const invalidManifest = projectRuntimeManifest(invalid, {
+      baseDirectory: path.dirname(loaded.sourcePath),
+      runtimeRequirementsByRole: { "slice-builder": compiled.ir.runtime_requirements },
+    });
+    const invalidRuntime = new ManifestRoleRuntime({
+      adapter: { deliverTurn: async () => { deliveries += 1; return {}; } },
+      manifest: invalidManifest,
+      runtimeRequirements: { "slice-builder": compiled.ir.runtime_requirements },
+    });
+    await assert.rejects(
+      invalidRuntime.deliverTurn({ roleId: "slice-builder", instanceId: name, text: "must refuse" }),
+      pattern,
+    );
+  }
+  assert.equal(deliveries, 1);
+
+  const excessCapability = structuredClone(loaded.document);
+  excessCapability.roles["slice-builder"].capabilities.push("capability.unapproved");
+  const excessCapabilityManifest = projectRuntimeManifest(excessCapability, {
+    baseDirectory: path.dirname(loaded.sourcePath),
+    runtimeRequirementsByRole: { "slice-builder": compiled.ir.runtime_requirements },
+  });
+  await assert.rejects(
+    new ManifestRoleRuntime({ adapter: { deliverTurn: async () => { deliveries += 1; } }, manifest: excessCapabilityManifest })
+      .deliverTurn({ roleId: "slice-builder", instanceId: "extra-cap", text: "must refuse" }),
+    /exceeds capability ceiling with capability\.unapproved/,
+  );
+  assert.equal(deliveries, 1);
 });
 
 test("snapshot delivery paths do not change canonical role environment identity", async (t) => {

@@ -2,6 +2,30 @@ schema_version: 1
 manifest_id: work-engine.app-server
 
 roles:
+  slice-builder:
+    contract: ../skills/slice-builder/SKILL.md
+    compiled_environment:
+      structure: migrations/skills/slice-builder/structure.yaml
+      interface: migrations/skills/slice-builder/interface.yaml
+    compiled_skill_sha256: d3eb81d00b8b517a7f552e9bcbd300773e49f30c035b2f016115189d5f6fd8c0
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: danger-full-access
+    continuity: retained
+    capabilities:
+      - capability.repository_evidence
+      - capability.direct_source_observation
+      - capability.repository_mutation
+      - capability.deterministic_gate
+      - capability.independent_review
+    effects:
+      - state.task_changes
+      - state.worktree
+    skills:
+      - name: slice-builder
+        path: ../skills/slice-builder/SKILL.md
+
   strategic-planner:
     contract: ../skills/strategic-planner/SKILL.md
     developer_instructions: |-

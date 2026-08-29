@@ -58,6 +58,7 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
   };
   const skillInterface = {
     schema_version: 1, status: "experimental_non_authoritative", skill_id: "vertical",
+    runtime_requirements: { required_capabilities: [], capability_ceiling: [], effect_ceiling: [], prohibited_effects: [], continuity: "ephemeral" },
     boundaries: [{ id: "mutation.scoped", kind: "mutation", semantic_section: "authority", authority_source: "authority.fixture", enforcement: "scoped_write" }],
   };
   const result = await compileSkill({
@@ -73,6 +74,8 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
   assert.deepEqual(result.ir.section_provenance.map(({ id }) => id), ["identity", "authority"]);
   assert.equal(result.ir.interface.boundaries[0].authority_source, "authority.fixture");
   assert.equal(result.ir.source_bindings[0].kind, "canonical_authority");
+  assert.equal(result.ir.runtime_requirements.compiled_skill_sha256, result.ir.output_sha256);
+  assert.match(result.ir.runtime_requirements.sha256, /^[0-9a-f]{64}$/);
 
   const invalid = structuredClone(skillInterface);
   invalid.boundaries[0].authority_source = "authority.unknown";
@@ -100,6 +103,15 @@ test("pinned slice-builder decomposition regenerates exact canonical bytes and A
   assert.match(first.ir.input_sha256.structure, /^[0-9a-f]{64}$/);
   assert.match(first.ir.input_sha256.interface, /^[0-9a-f]{64}$/);
   assert.equal(first.ir.role_projection.canonical_role_match, true);
+  assert.deepEqual(first.ir.runtime_requirements.required_capabilities, [
+    "capability.deterministic_gate",
+    "capability.direct_source_observation",
+    "capability.independent_review",
+    "capability.repository_evidence",
+    "capability.repository_mutation",
+  ]);
+  assert.deepEqual(first.ir.runtime_requirements.capability_ceiling, first.ir.runtime_requirements.required_capabilities);
+  assert.deepEqual(first.ir.runtime_requirements.effect_ceiling, ["state.task_changes", "state.worktree"]);
   assert.equal(first.ir.role_projection.projection.role_id, "role.builder");
   assert.deepEqual(first.ir.role_projection.projection.role, first.ir.role_profile && {
     label: first.ir.role_profile.label,
@@ -124,6 +136,28 @@ test("schema v1 rejects duplicate keys and whole-document escape hatches", async
   await assert.rejects(
     compileSkill({ structureSource: invalid, interfaceSource: skillInterface, verifySources: false }),
     /unknown field whole_document/,
+  );
+});
+
+test("unverified compilation cannot produce runtime-admissible requirements", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const result = await compileSkill({
+    structureSource: await readFile(path.join(root, "app-server/migrations/skills/slice-builder/structure.yaml"), "utf8"),
+    interfaceSource: await readFile(path.join(root, "app-server/migrations/skills/slice-builder/interface.yaml"), "utf8"),
+    verifySources: false,
+  });
+  assert.equal(result.ir.runtime_requirements.verified_sources, false);
+});
+
+test("role projection divergence fails closed", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const structureSource = await readFile(path.join(root, "app-server/migrations/skills/slice-builder/structure.yaml"), "utf8");
+  const interfaceSource = await readFile(path.join(root, "app-server/migrations/skills/slice-builder/interface.yaml"), "utf8");
+  await assert.rejects(
+    compileSkill({ structureSource, interfaceSource, workspaceRoot: root, agentEnvironmentGraphAdapter: {
+      projectRole: async () => ({ backend: "fixture", backend_sha256: "0".repeat(64), canonical_role_match: true, projection: { role_id: "role.builder", role: {} } }),
+    } }),
+    /complete role projection differs from pinned generated oracle/,
   );
 });
 

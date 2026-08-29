@@ -19,6 +19,7 @@ import {
   openSqliteAppServerStateStore,
 } from "../src/index.mjs";
 import { DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES } from "../src/executable-generation-bootstrap.mjs";
+import { createExecutableGenerationRoleEnvironment } from "../src/executable-generation-role-environment.mjs";
 
 const ENTRY = path.resolve(
   "app-server/tests/fixtures/executable-generation-worker-fixture.mjs",
@@ -756,6 +757,23 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     workerDispatchTimeoutMs: 2_000,
   });
   t.after(() => bootstrap.close({ abandonActiveWork: true }));
+  const generationConfig = JSON.parse(await readFile(path.join(
+    root,
+    "state",
+    "generations",
+    bootstrap.manager.snapshot().activeGeneration.generationId,
+    "app-server/generated/executable-role-environment.json",
+  ), "utf8"));
+  const transportedBuilderRequirements = generationConfig.manifest.runtimeRequirementsByRole[
+    "slice-builder"
+  ];
+  assert.equal(transportedBuilderRequirements.schema_version, 1);
+  assert.equal(transportedBuilderRequirements.verified_sources, true);
+  assert.equal(
+    transportedBuilderRequirements.compiled_skill_sha256,
+    generationConfig.manifest.document.roles["slice-builder"].compiled_skill_sha256,
+  );
+  assert.match(transportedBuilderRequirements.sha256, /^[0-9a-f]{64}$/);
   bootstrap.transport.onNotification((notification) => {
     forwardedNotifications.push(notification);
     if (notification.method === "turn/started") {
@@ -904,4 +922,68 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     "turn/steer", "thread/inject_items", "thread/compact/start",
     "thread/realtime/appendText",
   ].includes(request.method)), false);
+});
+
+test("executable role snapshots refuse missing, corrupt, or excessive transported requirements before adapter delivery", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-requirements-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot: path.resolve("."),
+    stateRoot: path.join(root, "state"),
+    transport: {
+      onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
+      async request() { return {}; },
+    },
+    runtimeManifestPath: path.resolve("app-server/runtime-manifest.yaml"),
+    workerRequestTimeoutMs: 2_000,
+    workerDispatchTimeoutMs: 2_000,
+  });
+  await bootstrap.close({ abandonActiveWork: true });
+  const snapshotRoot = path.join(
+    root,
+    "state",
+    "generations",
+    bootstrap.manager.snapshot().activeGeneration.generationId,
+  );
+  const configPath = path.join(
+    snapshotRoot,
+    "app-server/generated/executable-role-environment.json",
+  );
+  const original = JSON.parse(await readFile(configPath, "utf8"));
+
+  for (const [label, mutate, expected] of [
+    ["missing", (config) => { delete config.manifest.runtimeRequirementsByRole["slice-builder"]; }, /no verified compiled requirements/],
+    ["corrupt", (config) => { config.manifest.runtimeRequirementsByRole["slice-builder"].sha256 = "0".repeat(64); }, /runtime requirements digest mismatch/],
+    ["excessive", (config) => { config.manifest.document.roles["slice-builder"].capabilities.push("capability.uncompiled"); }, /exceeds capability ceiling/],
+  ]) {
+    const config = structuredClone(original);
+    mutate(config);
+    await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+    const attachmentPath = path.join(root, `${label}-attachment.json`);
+    await writeFile(attachmentPath, `${JSON.stringify({ roleId: "slice-builder", instanceId: "main" })}\n`);
+    const environment = await createExecutableGenerationRoleEnvironment({
+      snapshotRoot,
+      bindingsPath: path.join(root, `${label}-bindings.json`),
+      attachmentPath,
+    });
+    t.after(() => environment.close());
+    let adapterDeliveries = 0;
+    await environment.handleRequest({ method: "thread/start", params: {} }, async () => ({
+      thread: { id: `ui-${label}` },
+    }));
+    await assert.rejects(
+      environment.handleRequest({
+        method: "turn/start",
+        params: {
+          threadId: `ui-${label}`,
+          input: [{ type: "text", text: "Build the accepted slice." }],
+        },
+      }, async () => {
+        adapterDeliveries += 1;
+        return {};
+      }),
+      expected,
+    );
+    assert.equal(adapterDeliveries, 0, `${label} requirements reached adapter delivery`);
+  }
 });
