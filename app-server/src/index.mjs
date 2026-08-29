@@ -45,5 +45,6 @@ export * from "./operator-switchboard.mjs";
 export * from "./services/review-subject/contract.mjs";
 export * from "./services/review-subject/legacy-backend-adapter.mjs";
 export * from "./services/review-subject/service.mjs";
+export * from "./services/product-development/claim-context-delivery.mjs";
 export * from "../roles/strategic-planner.mjs";
 export * from "../roles/strategic-planning-handoff.mjs";
