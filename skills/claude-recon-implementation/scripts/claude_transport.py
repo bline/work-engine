@@ -113,6 +113,29 @@ def _sha256_text(value: str) -> str:
     return _sha256_bytes(value.encode("utf-8"))
 
 
+def sha256_directory(path: Path) -> str:
+    """Digest one frozen config tree without retaining any of its contents."""
+    if not path.is_dir():
+        raise TransportError(f"Claude config directory does not exist: {path}")
+    digest = hashlib.sha256()
+    for child in sorted(path.rglob("*"), key=lambda item: item.relative_to(path).as_posix()):
+        relative = child.relative_to(path).as_posix()
+        if child.is_symlink():
+            kind = b"symlink"
+            payload = os.readlink(child).encode("utf-8")
+        elif child.is_file():
+            kind = b"file"
+            payload = child.read_bytes()
+        elif child.is_dir():
+            kind = b"directory"
+            payload = b""
+        else:
+            raise TransportError(f"unsupported entry in Claude config directory: {child}")
+        digest.update(kind + b"\0" + relative.encode("utf-8") + b"\0")
+        digest.update(hashlib.sha256(payload).digest())
+    return digest.hexdigest()
+
+
 def classify_quota_failure(returncode: int, stdout: str, stderr: str) -> str | None:
     """Return the narrow quota signature that permits failover, if any."""
     if returncode == 0:
@@ -281,6 +304,10 @@ def _write_receipt(path: Path, receipt: dict[str, Any]) -> None:
 def _base_receipt(args: argparse.Namespace, command: Sequence[str]) -> dict[str, Any]:
     session_mode, session_id = _session_reference(command)
     script_digest = _sha256_bytes(Path(__file__).read_bytes())
+    config_dir_value = os.environ.get("CLAUDE_CONFIG_DIR")
+    config_digest = (
+        sha256_directory(Path(config_dir_value)) if config_dir_value else None
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "launcher": {
@@ -297,7 +324,14 @@ def _base_receipt(args: argparse.Namespace, command: Sequence[str]) -> dict[str,
             "batch_route_explicitly_allowed": args.allow_batch_route,
             "paid_failover_explicitly_allowed": args.allow_paid_failover,
             "anthropic_1p_required": args.require_anthropic_1p,
-            "claude_config_dir": os.environ.get("CLAUDE_CONFIG_DIR"),
+            "claude_config_dir": config_dir_value,
+            "claude_config_dir_sha256_before": config_digest,
+            "experimental_betas_disabled": (
+                os.environ.get("CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS") == "1"
+            ),
+            "terminal_title_disabled": (
+                os.environ.get("CLAUDE_CODE_DISABLE_TERMINAL_TITLE") == "1"
+            ),
             "session_mode": session_mode,
             "session_id": session_id,
         },

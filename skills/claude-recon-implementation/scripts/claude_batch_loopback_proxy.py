@@ -189,6 +189,10 @@ class MicrobatchCoordinator:
         self.progress({
             "event": "microbatch_flushed", "item_count": len(requests),
             "rejected_item_count": len(preparation_errors),
+            "items": [
+                {"request_sha256": digest, "custom_id": custom_id}
+                for digest, custom_id, _incoming in pending
+            ],
         })
         try:
             if requests:
@@ -218,6 +222,19 @@ class MicrobatchCoordinator:
                     entry.error = outcome
                 else:
                     entry.message = outcome
+            self.progress({
+                "event": "turn_completed",
+                "request_sha256": digest,
+                "custom_id": custom_id,
+                "successful": entry.error is None,
+                "message_sha256": (
+                    hashlib.sha256(json.dumps(
+                        entry.message, sort_keys=True, separators=(",", ":"),
+                        ensure_ascii=False,
+                    ).encode("utf-8")).hexdigest()
+                    if entry.message is not None else None
+                ),
+            })
             entry.ready.set()
 
 
@@ -399,6 +416,12 @@ class OpenRouterBatchClient:
         self.progress({
             "event": "submitted", "batch_id": batch_id,
             "status": state.get("status"),
+            "custom_ids": list(custom_ids),
+            "request_count": len(custom_ids),
+            "payload_sha256": hashlib.sha256(json.dumps(
+                payload, sort_keys=True, separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")).hexdigest(),
         })
         deadline = time.monotonic() + self.timeout
         poll_count = 0
@@ -658,6 +681,18 @@ def main() -> int:
         print(f"error: {failure}", file=sys.stderr)
         return 2
     progress = event_logger(args.event_log)
+    progress({
+        "event": "proxy_started",
+        "schema_version": 1,
+        "proxy_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "batch_model": args.batch_model,
+        "guardrail_model": args.guardrail_model,
+        "routing_attestation_sha256": attestation["sha256"],
+        "poll_interval_seconds": args.poll_interval_seconds,
+        "poll_timeout_seconds": args.poll_timeout_seconds,
+        "collection_window_seconds": args.collection_window_seconds,
+        "realtime_context_management": args.realtime_context_management,
+    })
     client = OpenRouterBatchClient(
         api_key, poll_interval=args.poll_interval_seconds,
         timeout=args.poll_timeout_seconds, progress=progress,
@@ -693,6 +728,7 @@ def main() -> int:
         pass
     finally:
         server.server_close()
+        progress({"event": "proxy_stopped"})
     return 0
 
 

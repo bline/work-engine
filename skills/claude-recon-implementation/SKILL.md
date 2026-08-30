@@ -30,6 +30,16 @@ quota-failover route. Before using it, read
 and preserve its harness-configuration and compatibility limitations in the
 review receipt.
 
+When comparing OpenRouter realtime and batch reviews, read
+[references/paired-openrouter-review-calibration.md](references/paired-openrouter-review-calibration.md).
+During an active calibration campaign, use its `claude_paired_review.py` front
+controller rather than invoking either arm separately. That exact route is
+required so every paid realtime attempt is registered in the denominator and
+both arms receive the registered packet without one result contaminating the
+other. Return only the realtime review to the workflow, and keep the batch
+result advisory until the complete campaign is adjudicated. A campaign score
+never approves the reviewed slice.
+
 For research or experimental execution, require the transport reference's
 fresh Anthropic-1P key-guardrail attestation. An exact Claude model slug without
 an enforced upstream allowlist is insufficient because OpenRouter may route

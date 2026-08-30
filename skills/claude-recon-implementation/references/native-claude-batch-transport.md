@@ -14,6 +14,14 @@ requires a fresh Anthropic-1P routing attestation, and emits content-free
 events. Prompts, tool schemas, responses, and credentials are not written to
 the event log.
 
+For one complete review invocation, use
+[`claude_batch_review.py`](../scripts/claude_batch_review.py). It starts the
+proxy, runs the native Claude command with the required compatibility flags,
+retains stdout and stderr separately, and atomically writes an execution
+receipt. The receipt binds the Claude version, initial config digest, exact
+command digest, model, routing attestation, event-log digest, terminal batch
+lineage, actual Batch usage, and compatibility flags.
+
 ## Established compatibility boundary
 
 Live tests on 2026-08-29 used Claude Code 2.1.237 and
@@ -105,11 +113,12 @@ beta switch silently to the ordinary realtime launcher.
 ## Evidence and current limitations
 
 The event log records request digests, tool counts, serialized tool-schema byte
-counts, deferred-tool counts, context-management presence, batch IDs, poll
-state, request counts, and OpenRouter's aggregate usage and cost. It contains
-no request or response content. Claude Code's final JSON may estimate standard
-model cost even when its returned service tier is `batch`; use the terminal
-Batch API usage record as billing evidence.
+counts, deferred-tool counts, context-management presence, custom IDs and their
+batch IDs, returned-Message hashes, poll state, request counts, and OpenRouter's
+aggregate usage and cost. It contains no request or response content. Claude
+Code's final JSON may estimate standard model cost even when its returned
+service tier is `batch`; use the terminal Batch API usage record as billing
+evidence.
 
 The proxy preserves Messages bodies except for setting the selected canonical
 model and `stream: false`, then reconstructs Anthropic SSE from the final
@@ -120,14 +129,17 @@ and concurrent distinct turns are collected into one batch.
 
 Before production or research use beyond a disposable review, add and retain:
 
-- a multi-turn and compaction test under the exact frozen config;
+- a compaction test under the exact frozen config;
 - disconnect/restart recovery for already-paid batch IDs;
 - bounded cache eviction and maximum microbatch size;
-- an immutable execution receipt binding Claude version, config digest,
-  compatibility flags, routing attestation, event-log digest, batch terminal
-  record, and exact review subject.
+- app-server ownership and context-lifecycle integration when this skill is
+  migrated.
 
 Until those gates pass, do not auto-select this transport after a subscription
 quota error. Manual selection may use it for disposable work when the caller
 accepts the explicit beta-disabled harness configuration and asynchronous
 latency.
+
+For a bounded realtime/batch calibration, bind the exact review subject and
+pair-level evidence using
+[paired-openrouter-review-calibration.md](paired-openrouter-review-calibration.md).

@@ -287,8 +287,21 @@ class ClaudeBatchLoopbackProxyTest(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(
             [event["event"] for event in events],
-            ["turn_queued", "turn_queued", "microbatch_flushed", "turn_joined"],
+            [
+                "turn_queued", "turn_queued", "microbatch_flushed",
+                "turn_completed", "turn_completed", "turn_joined",
+            ],
         )
+        flushed = next(event for event in events
+                       if event["event"] == "microbatch_flushed")
+        self.assertEqual(
+            {item["request_sha256"] for item in flushed["items"]},
+            {"digest-0", "digest-1"},
+        )
+        completed = [event for event in events
+                     if event["event"] == "turn_completed"]
+        self.assertTrue(all(event["successful"] for event in completed))
+        self.assertTrue(all(event["message_sha256"] for event in completed))
 
     def test_invalid_item_releases_itself_and_valid_sibling(self) -> None:
         results = []

@@ -313,6 +313,38 @@ class ClaudeTransportTest(unittest.TestCase):
         )
         self.assertFalse(receipt["upstream_provider_observed"])
 
+    def test_receipt_binds_initial_config_and_compatibility_flags(self) -> None:
+        config = self.root / "claude-config"
+        config.mkdir()
+        (config / "settings.json").write_text('{"tools":[]}', encoding="utf-8")
+        prior_config = os.environ.get("CLAUDE_CONFIG_DIR")
+        prior_betas = os.environ.get("CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS")
+        prior_title = os.environ.get("CLAUDE_CODE_DISABLE_TERMINAL_TITLE")
+        os.environ["CLAUDE_CONFIG_DIR"] = str(config)
+        os.environ["CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"] = "1"
+        os.environ["CLAUDE_CODE_DISABLE_TERMINAL_TITLE"] = "1"
+        try:
+            result = self.invoke(
+                "success", "-p", "prompt",
+                wrapper_args=("--transport", "openrouter"),
+            )
+        finally:
+            for name, value in (
+                ("CLAUDE_CONFIG_DIR", prior_config),
+                ("CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS", prior_betas),
+                ("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", prior_title),
+            ):
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+        self.assertEqual(result.returncode, 0, result.stderr)
+        request = json.loads(self.receipt.read_text())["request"]
+        self.assertEqual(request["claude_config_dir"], str(config))
+        self.assertRegex(request["claude_config_dir_sha256_before"], r"^[0-9a-f]{64}$")
+        self.assertTrue(request["experimental_betas_disabled"])
+        self.assertTrue(request["terminal_title_disabled"])
+
     def test_research_route_rejects_fallback_provider_or_wrong_key(self) -> None:
         attestation = self.write_routing_attestation(
             providers=["anthropic", "google"]
