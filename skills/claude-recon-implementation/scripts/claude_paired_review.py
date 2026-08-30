@@ -33,7 +33,18 @@ FORBIDDEN_CALLER_CONTROL_FLAGS = {
     "--allowed-tools", "--disallowedTools", "--disallowed-tools",
     "--model", "--fallback-model",
 }
-PAIRED_REVIEW_TOOLS = "mcp__codebase-memory-mcp,Read,Glob,Grep"
+PAIRED_REVIEW_TOOLS = ",".join((
+    "Read", "Glob", "Grep",
+    "mcp__codebase-memory-mcp__list_projects",
+    "mcp__codebase-memory-mcp__index_status",
+    "mcp__codebase-memory-mcp__search_graph",
+    "mcp__codebase-memory-mcp__trace_path",
+    "mcp__codebase-memory-mcp__get_code_snippet",
+    "mcp__codebase-memory-mcp__check_index_coverage",
+    "mcp__codebase-memory-mcp__query_graph",
+    "mcp__codebase-memory-mcp__get_architecture",
+    "mcp__codebase-memory-mcp__search_code",
+))
 
 
 def now() -> str:
@@ -183,6 +194,7 @@ def prepare_initial_command(
         "--mcp-config", str(paired_mcp_config),
         "--tools", PAIRED_REVIEW_TOOLS,
         "--model", "sonnet",
+        "--dangerously-skip-permissions",
     ]
     return prepared
 
@@ -338,7 +350,19 @@ def run_review(args: argparse.Namespace) -> int:
         packet = packet_bytes.decode("utf-8")
     except UnicodeDecodeError as failure:
         raise TransportError("registered review packet must be UTF-8") from failure
-    command.append(packet)
+    subject_path = Path(registration["subject"]["path"])
+    subject_bytes = subject_path.read_bytes()
+    try:
+        subject_projection = subject_bytes.decode("utf-8")
+    except UnicodeDecodeError as failure:
+        raise TransportError("registered subject artifact must be UTF-8") from failure
+    projected_packet = (
+        f"{packet}\n\n## Controller-bound review subject\n\n"
+        "The exact registered subject artifact follows. It is supplied by the "
+        "controller and is not expected to exist in the detached worktree.\n\n"
+        f"```json\n{subject_projection}\n```\n"
+    )
+    command.append(projected_packet)
     command_digest = sha256_bytes(canonical_json(command))
     paths = runtime_paths(args)
     paths["runtime"].mkdir(parents=True, exist_ok=True)
@@ -354,6 +378,10 @@ def run_review(args: argparse.Namespace) -> int:
         "status": "registered",
         "command_sha256": command_digest,
         "review_packet_sha256": registration["review_packet"]["sha256"],
+        "subject_prompt_projection": {
+            "source_sha256": registration["subject"]["sha256"],
+            "projected_packet_sha256": sha256_bytes(projected_packet.encode("utf-8")),
+        },
         "working_directory": str(args.working_directory.resolve()),
         "reviewer_continuity": {
             "mode": "retained_native_claude_session",

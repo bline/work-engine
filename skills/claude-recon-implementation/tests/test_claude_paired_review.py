@@ -289,8 +289,20 @@ class ClaudePairedReviewTest(unittest.TestCase):
         self.assertEqual(
             controller["review_packet_sha256"], registration["review_packet"]["sha256"]
         )
+        self.assertEqual(
+            controller["subject_prompt_projection"]["source_sha256"],
+            registration["subject"]["sha256"],
+        )
         self.assertEqual(controller["realtime"]["status"], "success")
         self.assertTrue(controller["realtime"]["continuity_verified"])
+        command = MODULE.prepare_initial_command(
+            ["claude", "-p"], SESSION_ID, self.paired_mcp
+        )
+        self.assertIn("--dangerously-skip-permissions", command)
+        tools = command[command.index("--tools") + 1].split(",")
+        self.assertIn("mcp__codebase-memory-mcp__search_graph", tools)
+        self.assertNotIn("mcp__codebase-memory-mcp", tools)
+        self.assertFalse(any("delete_project" in tool for tool in tools))
         self.assertEqual(controller["batch"]["status"], "launched")
         self.assertEqual(
             registration["realtime_continuity"]["session_id"], SESSION_ID
