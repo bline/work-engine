@@ -287,6 +287,7 @@ S0 inventory and baseline
                            +--> S7 immutable subject/profile capabilities
 
 S2 through S7 --> S8 builder role and supervisor core
+S8 --> S8P isolated agent worktrees and publication authority
 S1 + S3 + S5 + S7 --> S9 generic review contract and episode service
 S6 + S7 + S9 --> S10 reviewer role, profile registry, OpenRouter adapter
 S1 + S10 --> S11 instruction-review specialist composition
@@ -302,6 +303,80 @@ S16 --> S17 ownership cutover and legacy retirement
 This is a dependency model, not a compulsory execution sequence. Independent
 work may proceed concurrently when immutable subjects and non-overlapping
 ownership make that safe.
+
+The approved operational cutover route runs S8P before the first multi-agent
+S9 development campaign. S8P does not become a semantic prerequisite of the
+provider-neutral review contract: it removes the shared-worktree publication
+hazard from the environment in which that contract and later slices are built.
+
+## Approved post-S8 execution direction
+
+This section is the durable continuation owner for the operational direction
+approved on 2026-08-30. It records sequencing and cutover boundaries that must
+not depend on retained conversation context.
+
+- S8 is accepted and published. Its accepted checkpoint was independently
+  reviewed with zero findings, and its 31 migration paths are byte-identical in
+  published commit `419d6da3a44e4a2ba1586882f55160af49b07b67`.
+- S8P is the immediate next implementation slice. After S8P acceptance, new
+  multi-agent migration development moves into App Server using the retained
+  supervisor and builder imported by S8.
+- The first development slice used to prove that cutover is S9. The existing
+  environment may continue to perform proposal adjustment, provider review,
+  or other responsibilities that have not yet acquired an App Server owner;
+  this compatibility seam remains explicit and fail-closed.
+- S9 through S12 migrate provider-neutral review semantics, provider adapters,
+  instruction-review specialization, and native review closure. S12 completes
+  the native review-loop cutover; it is not a prerequisite for beginning to
+  realize the development-economics benefit after S8P.
+- S13 through S17 remain the broader evidence, portfolio, ownership-cutover,
+  and legacy-retirement path. S8P must not silently absorb those semantics.
+
+The S8P coordination boundary is deliberately precise:
+
+- Per-agent local worktrees isolate checkouts, indexes, staging, private
+  commits, and `HEAD` without cloning repository history or performing network
+  operations.
+- The durable chatboard carries messages and advisory claims during the
+  transition, but does not confer mutation authority or provide host-enforced
+  mutual exclusion. App Server leases, resource-specific fencing tokens, and
+  mutation-authority admission are required wherever collision must fail
+  closed.
+- Worktree isolation does not isolate campaign ordinals, paid-provider budget,
+  fixed output or configuration directories, ports, databases, caches, or
+  other hidden operational resources. These resources must be operation-
+  namespaced when possible and explicitly mediated when genuinely shared.
+- Resources that cannot enforce fencing must be isolated or classified as
+  advisory-only; a prior token check separated from the mutation is not an
+  authoritative fence.
+
+Test and research harnesses use the following compatibility contract rather
+than acquiring publication authority merely because they run inside an agent
+worktree:
+
+1. Launches receive an explicit repository or assigned-worktree root and an
+   immutable subject revision; ambient current-directory selection is not an
+   authoritative subject binding.
+2. Mutable outputs, provider configuration, and execution scratch space are
+   operation-namespaced, while genuinely shared resources are declared for
+   mediated admission.
+3. Each harness declares whether it is read-only, produces private mutable
+   artifacts, or requests canonical publication.
+4. Ordinary isolated unit tests may continue to use temporary directories and
+   repositories; they do not each require an App Server worktree.
+5. Promotion of research results or generated artifacts to a canonical branch
+   uses the same accepted-checkpoint, integrated-tree validation, fencing, and
+   publisher authority as agent-authored code.
+
+The operational sequence is therefore:
+
+```text
+published S8
+    -> implement and accept S8P
+    -> run the first multi-agent S9 campaign through App Server
+    -> complete S9-S12 native review closure
+    -> finish S13-S17 portfolio cutover and legacy retirement
+```
 
 ## Candidate slices
 
@@ -542,6 +617,12 @@ The cutover is staged:
   claim authority into the builder.
 - S8 may move retained builder and supervisor execution into App Server while
   preserving the explicit compatibility-backed legacy review seam.
+- The user approved S8P on 2026-08-30 as the first post-S8 operational cutover
+  slice. Before multi-agent development proceeds, App Server gives each agent
+  or slice a local Git worktree and index, then confines canonical branch
+  publication to an isolated integration worktree and server-owned publisher.
+  A single-agent development pilot may exercise this slice itself; the broader
+  coordination substrate does not become a prerequisite for S9.
 - S12's accepted end-to-end claim-backed review vertical is the retirement
   gate for the legacy development workflow. S9 alone does not establish native
   reviewer execution, specialist composition, or claim-backed closure.
@@ -592,6 +673,23 @@ admissions. Once admitted, completion must occur within an explicitly defined
 transactional boundary. Resources that cannot enforce fencing, especially
 arbitrary filesystem writes, must be isolated or namespaced, mediated through
 an enforcing adapter, or explicitly classified as advisory-only.
+
+Git development uses local worktrees created from the existing repository, not
+per-slice clones or implicit network fetches. Agent worktrees share the local
+object database and history while retaining independent files, indexes, and
+`HEAD` state. Builders may stage and create private commits only inside their
+assigned worktrees. Accepted checkpoints remain immutable publication inputs;
+they do not authorize movement of a canonical branch ref.
+
+Canonical publication uses a separate operation-namespaced integration
+worktree. A server-owned publisher applies one accepted checkpoint to the
+observed current branch tip, records or returns semantic conflicts to the
+responsible owner, reruns validation affected by reconciliation, and admits the
+branch-ref mutation atomically with its fencing token and expected parent.
+Unrelated branch advancement may require reconciliation and new validation; it
+does not invalidate another agent's private workspace or permit the publisher
+to absorb unmanifested files. The user's ordinary checkout and index remain a
+human workspace rather than shared agent staging or publication machinery.
 
 Keep intent, resource authority, observation, and judgment-bearing messages
 distinct. Intent is advisory; an acquired fenced lease supplies a candidate
@@ -716,6 +814,58 @@ legacy outcome comparison excluding native review closure.
 **Excluded:** Claiming a complete App Server-native campaign review loop,
 automatic user-visible commits, silent scope expansion, or absorbing provider
 review semantics into either workflow role.
+
+### S8P — Isolated agent worktrees and publication authority
+
+**Objective:** Remove the shared-worktree and shared-index coupling from
+App Server development while preserving immutable checkpoint, validation,
+human-approval, and canonical branch-publication boundaries.
+
+**Independently valuable outcome:** Multiple agents can edit, stage, test, and
+produce private checkpoint commits concurrently without another agent's stage,
+commit, or branch advancement corrupting their workspace or publication
+preconditions.
+
+**Required consequences:**
+
+- App Server creates local, operation-namespaced Git worktrees from explicit
+  repository baselines without cloning history or performing implicit network
+  operations.
+- Each agent or slice receives an independent checkout, index, and `HEAD`;
+  generated outputs, caches, and other mutable physical resources are also
+  namespaced or explicitly mediated when sharing is safe.
+- Agent commits remain private development or checkpoint artifacts. Only the
+  publisher owns admission to a configured canonical branch ref, and neither a
+  worktree lease nor an accepted checkpoint grants publication authority.
+- Publication begins from an accepted checkpoint and the observed current
+  branch tip in a separate integration worktree. It preserves the exact
+  attributed manifest, refuses unmanifested content, and distinguishes clean
+  mechanical reconciliation from conflicts requiring builder or human
+  judgment.
+- Validation is bound to the integrated result rather than a stale pre-merge
+  tree. Branch admission checks the fencing token and expected parent at the
+  mutation authority, then records the starting tip, accepted checkpoint,
+  resulting commit and tree, validation receipt, and observed branch
+  generation.
+- Cleanup removes disposable worktrees and per-operation mutable state without
+  deleting accepted checkpoints, private evidence refs, shared Git objects, or
+  user-authored work.
+- Explicit fetch and push remain separately authorized network operations;
+  local worktree creation, use, integration, and cleanup require no network.
+
+**Acceptance evidence:** Two concurrent agent worktrees that stage and commit
+without index or file interference; publication after unrelated branch
+advancement; clean automatic reconciliation and semantic-conflict refusal;
+stale, expired, superseded, wrong-resource, and wrong-parent fencing cases;
+unmanifested-file and dirty-human-index preservation; validation bound to the
+integrated tree; restart recovery; cleanup retention; and proof that worktree
+creation performs no network operation.
+
+**Excluded:** General-purpose merge policy, automatic semantic conflict
+resolution, implicit fetch or push, publication without explicit human or
+workflow authority, treating advisory source-scope claims as mutation
+authority, or completing the broader host-adapter and selective-context
+coordination substrate.
 
 ### S9 — Provider-neutral implementation review and episode service
 
