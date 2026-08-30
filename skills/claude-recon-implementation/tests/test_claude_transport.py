@@ -76,7 +76,7 @@ class ClaudeTransportTest(unittest.TestCase):
                     "guardrail_id": "guardrail-1",
                     "key_hash": key_hash,
                     "allowed_providers": providers or ["anthropic"],
-                    "allowed_models": models or ["anthropic/claude-sonnet-5"],
+                    "allowed_models": models or ["anthropic/claude-sonnet-5-20260630"],
                     "assignment_guardrail_id": "guardrail-1",
                 }
             ),
@@ -152,7 +152,9 @@ class ClaudeTransportTest(unittest.TestCase):
         self.assertEqual(calls[1]["base_url"], "https://openrouter.ai/api")
         self.assertTrue(calls[1]["auth_token_present"])
         self.assertEqual(calls[1]["anthropic_api_key"], "")
-        self.assertEqual(calls[1]["sonnet_model"], "anthropic/claude-sonnet-5")
+        self.assertEqual(
+            calls[1]["sonnet_model"], "anthropic/claude-sonnet-5-20260630"
+        )
         receipt_text = self.receipt.read_text()
         self.assertNotIn("test-secret-that-must-not-be-recorded", receipt_text)
         receipt = json.loads(receipt_text)
@@ -260,7 +262,7 @@ class ClaudeTransportTest(unittest.TestCase):
                 "--transport",
                 "openrouter",
                 "--openrouter-model",
-                "anthropic/claude-sonnet-5:batch",
+                "anthropic/claude-sonnet-5-20260630:batch",
             ),
         )
         self.assertEqual(blocked.returncode, 2)
@@ -275,12 +277,15 @@ class ClaudeTransportTest(unittest.TestCase):
                 "--transport",
                 "openrouter",
                 "--openrouter-model",
-                "anthropic/claude-sonnet-5:batch",
+                "anthropic/claude-sonnet-5-20260630:batch",
                 "--allow-batch-route",
             ),
         )
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
-        self.assertEqual(self.calls()[0]["sonnet_model"], "anthropic/claude-sonnet-5:batch")
+        self.assertEqual(
+            self.calls()[0]["sonnet_model"],
+            "anthropic/claude-sonnet-5-20260630:batch",
+        )
 
     def test_research_route_requires_exact_anthropic_key_guardrail(self) -> None:
         attestation = self.write_routing_attestation()

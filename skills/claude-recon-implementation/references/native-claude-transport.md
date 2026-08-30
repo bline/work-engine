@@ -29,7 +29,7 @@ python3 skills/claude-recon-implementation/scripts/claude_transport.py \
   --continuity disposable \
   --allow-paid-failover \
   --receipt '<transport-receipt.json>' \
-  --openrouter-model 'anthropic/claude-sonnet-5' \
+  --openrouter-model 'anthropic/claude-sonnet-5-20260630' \
   -- \
   claude -p \
     --effort medium \
@@ -76,7 +76,7 @@ OPENROUTER_MANAGEMENT_KEY='<management credential>' \
 OPENROUTER_API_KEY_HASH='<non-secret inference-key hash>' \
 python3 skills/claude-recon-implementation/scripts/openrouter_routing_attestation.py \
   --guardrail-id '<guardrail UUID>' \
-  --model 'anthropic/claude-sonnet-5' \
+  --model 'anthropic/claude-sonnet-5-20260630' \
   --output '<routing-attestation.json>'
 ```
 

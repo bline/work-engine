@@ -17,7 +17,7 @@ class OpenRouterRoutingAttestationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.guardrail_id = "550e8400-e29b-41d4-a716-446655440001"
         self.key_hash = "c56454edb818d6b14bc0d61c46025f1450b0f4012d12304ab40aacb519fcbc93"
-        self.model = "anthropic/claude-sonnet-5"
+        self.model = "anthropic/claude-sonnet-5-20260630"
         self.guardrail = {
             "id": self.guardrail_id,
             "allowed_providers": ["anthropic"],

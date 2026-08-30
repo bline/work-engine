@@ -19,7 +19,7 @@ from typing import Any, Sequence
 
 SCHEMA_VERSION = 1
 DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api"
-DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-5"
+DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-5-20260630"
 QUOTA_PHRASES = (
     "you've hit your limit",
     "you have hit your limit",
