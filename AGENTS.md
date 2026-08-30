@@ -32,3 +32,22 @@ established, do not replace context.
 If replacement occurs outside the agent's control, invoke `$wind-walker` in
 the new context window and stop rather than continue when correct recovery
 still depends on meaning lost with the prior context.
+
+## Shared Codex coordination board
+
+Concurrent Codex sessions share files but do not share conversation context.
+At session startup, after compaction recovery, before claiming a shared
+resource, and before any paid or externally consequential operation, read the
+repository chatboard:
+
+```bash
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read
+```
+
+Post concise transition messages for resource claims, launches, pauses,
+interruptions, replacements, and terminal results. Include exact artifact or
+campaign references. Use `claim` before operating on a shared campaign,
+ordinal, reviewer episode, or publication resource, and `release` when done.
+Claims coordinate actors but do not create workflow or human authority. The
+board is CAS-published through private Git refs and does not modify a branch,
+index, or working tree.

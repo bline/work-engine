@@ -236,7 +236,8 @@ class ClaudePairedReviewTest(unittest.TestCase):
         )
 
     def run_controller(
-        self, realtime_returncode: int = 0, observed_session_id: str | None = None
+        self, realtime_returncode: int = 0, observed_session_id: str | None = None,
+        arguments: argparse.Namespace | None = None,
     ) -> int:
         old_transport = MODULE.TRANSPORT_SCRIPT
         old_batch = MODULE.BATCH_SCRIPT
@@ -247,12 +248,13 @@ class ClaudePairedReviewTest(unittest.TestCase):
         MODULE.BATCH_SCRIPT = self.fake_batch
         MODULE.sys.stdout = Capture()
         MODULE.sys.stderr = Capture()
+        self.stderr_capture = MODULE.sys.stderr
         os.environ["EXPECTED_CONFIG_DIGEST"] = self.config_digest()
         os.environ["FAKE_REALTIME_RETURNCODE"] = str(realtime_returncode)
         if observed_session_id is not None:
             os.environ["FAKE_REALTIME_SESSION_ID"] = observed_session_id
         try:
-            return MODULE.run_review(self.arguments())
+            return MODULE.run_review(arguments or self.arguments())
         finally:
             MODULE.TRANSPORT_SCRIPT = old_transport
             MODULE.BATCH_SCRIPT = old_batch
@@ -302,6 +304,41 @@ class ClaudePairedReviewTest(unittest.TestCase):
             handoff["production_review_state"],
             "pending_external_same_session_bookkeeping",
         )
+        self.assertIn(b"1/1 registered", self.stderr_capture.buffer.getvalue())
+        progress = json.loads((self.campaign / "progress.json").read_text())
+        self.assertEqual(progress["comparison_ready_pairs"], 1)
+        self.assertTrue(progress["campaign_ready_for_adjudication"])
+
+    def test_relative_paths_are_canonicalized_before_cross_process_launch(self) -> None:
+        arguments = self.arguments()
+        for field in (
+            "campaign_root", "subject_artifact", "review_packet", "config_manifest",
+            "realtime_config_dir", "batch_config_dir", "routing_attestation",
+            "paired_mcp_config", "working_directory",
+        ):
+            setattr(arguments, field, Path(getattr(arguments, field).name))
+        previous = Path.cwd()
+        os.chdir(self.root)
+        try:
+            self.assertEqual(self.run_controller(arguments=arguments), 0)
+        finally:
+            os.chdir(previous)
+        pair = self.wait_for_pair_receipt()
+        self.assertTrue(pair["comparison_ready"])
+        registration = json.loads(
+            (self.campaign / "pairs/pair-01/registration.json").read_text()
+        )
+        self.assertTrue(Path(registration["claude_config"]["realtime_directory"]).is_absolute())
+        self.assertTrue(Path(registration["paired_mcp_config"]["path"]).is_absolute())
+
+    def test_retired_or_paused_campaign_is_rejected_before_registration(self) -> None:
+        (self.root / "active-campaign.json").write_text(json.dumps({
+            "active_campaign_root": str(self.campaign.resolve()),
+            "status": "paused_batch_diagnosis",
+        }), encoding="utf-8")
+        with self.assertRaisesRegex(MODULE.TransportError, "campaign is not active"):
+            MODULE.run_review(self.arguments())
+        self.assertFalse((self.campaign / "pairs/pair-01").exists())
 
     def test_realtime_failure_is_returned_and_shadow_remains_in_denominator(self) -> None:
         self.assertEqual(self.run_controller(realtime_returncode=1), 1)

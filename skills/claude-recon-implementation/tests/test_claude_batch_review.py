@@ -33,6 +33,8 @@ class ClaudeBatchReviewTest(unittest.TestCase):
             {"event": "turn_completed", "successful": True},
         ])
         self.assertTrue(complete["terminal_lineage_complete"])
+        self.assertEqual(complete["transient_poll_error_count"], 0)
+        self.assertEqual(complete["poll_abandoned_batch_ids"], [])
         self.assertEqual(complete["actual_openrouter_usage"]["cost"], 0.01)
 
         incomplete = MODULE.summarize_events([
@@ -41,6 +43,28 @@ class ClaudeBatchReviewTest(unittest.TestCase):
             {"event": "turn_completed", "successful": True},
         ])
         self.assertFalse(incomplete["terminal_lineage_complete"])
+
+    def test_event_summary_quantifies_poll_failures(self) -> None:
+        summary = MODULE.summarize_events([
+            {"event": "proxy_started"},
+            {"event": "submitted", "batch_id": "batch-1"},
+            {"event": "poll_not_found", "batch_id": "batch-1"},
+            {
+                "event": "poll_transient_error", "batch_id": "batch-1",
+                "error_type": "BatchHttpError", "http_status": 502,
+            },
+            {
+                "event": "poll_transient_error", "batch_id": "batch-1",
+                "error_type": "BatchTransportError", "http_status": None,
+            },
+            {"event": "poll_abandoned", "batch_id": "batch-1"},
+            {"event": "turn_completed", "successful": False},
+        ])
+        self.assertEqual(summary["poll_not_found_count"], 1)
+        self.assertEqual(summary["transient_poll_error_count"], 2)
+        self.assertEqual(summary["transient_poll_http_status_counts"], {"502": 1})
+        self.assertEqual(summary["poll_abandoned_batch_ids"], ["batch-1"])
+        self.assertFalse(summary["terminal_lineage_complete"])
 
     def test_local_worker_binds_environment_output_and_terminal_lineage(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

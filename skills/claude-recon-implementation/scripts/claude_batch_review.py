@@ -105,6 +105,12 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
     submitted = [event for event in events if event.get("event") == "submitted"]
     completed = [event for event in events if event.get("event") == "completed"]
     turns = [event for event in events if event.get("event") == "turn_completed"]
+    transient_poll_errors = [
+        event for event in events if event.get("event") == "poll_transient_error"
+    ]
+    abandoned_polls = [
+        event for event in events if event.get("event") == "poll_abandoned"
+    ]
     submitted_ids = [event.get("batch_id") for event in submitted]
     completed_ids = [event.get("batch_id") for event in completed]
     usage_fields = ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
@@ -125,6 +131,23 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
         "completed_batch_count": len(completed),
         "successful_turn_count": sum(event.get("successful") is True for event in turns),
         "failed_turn_count": sum(event.get("successful") is False for event in turns),
+        "poll_not_found_count": sum(
+            event.get("event") == "poll_not_found" for event in events
+        ),
+        "transient_poll_error_count": len(transient_poll_errors),
+        "transient_poll_http_status_counts": {
+            str(status): sum(
+                event.get("http_status") == status for event in transient_poll_errors
+            )
+            for status in sorted({
+                event.get("http_status") for event in transient_poll_errors
+                if isinstance(event.get("http_status"), int)
+            })
+        },
+        "poll_abandoned_batch_ids": [
+            event.get("batch_id") for event in abandoned_polls
+            if isinstance(event.get("batch_id"), str)
+        ],
         "terminal_lineage_complete": (
             len(starts) == 1
             and bool(submitted_ids)

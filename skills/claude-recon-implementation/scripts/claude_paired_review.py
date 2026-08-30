@@ -83,6 +83,64 @@ def pair_directory(root: Path, pair_id: str) -> Path:
     return root / "pairs" / pair_id
 
 
+def canonicalize_path_arguments(args: argparse.Namespace) -> None:
+    """Resolve every cross-process path before registration or cwd changes."""
+    for field in (
+        "campaign_root", "subject_artifact", "review_packet", "config_manifest",
+        "realtime_config_dir", "batch_config_dir", "routing_attestation",
+        "paired_mcp_config", "working_directory",
+    ):
+        setattr(args, field, getattr(args, field).resolve())
+
+
+def require_active_campaign(campaign_root: Path) -> None:
+    registry_path = campaign_root.parent / "active-campaign.json"
+    if not registry_path.exists():
+        return
+    registry = load_object(registry_path)
+    selected = Path(registry.get("active_campaign_root", "")).resolve()
+    if selected != campaign_root or registry.get("status") != "active":
+        raise TransportError(
+            "paired-review campaign is not active; inspect "
+            f"{registry_path} before registering another pair"
+        )
+
+
+def write_campaign_progress(campaign_root: Path, trigger: str) -> dict[str, Any]:
+    campaign = load_object(campaign_root / "campaign.json")
+    pairs_root = campaign_root / "pairs"
+    registrations = list(pairs_root.glob("*/registration.json")) if pairs_root.exists() else []
+    ready = sum(
+        load_object(path).get("comparison_ready") is True
+        for path in pairs_root.glob("*/pair-receipt.json")
+    ) if pairs_root.exists() else 0
+    report = {
+        "artifact_type": "claude_review_pair_campaign_progress_v1",
+        "schema_version": 1,
+        "campaign_id": campaign["campaign_id"],
+        "observed_at": now(),
+        "trigger": trigger,
+        "target_pairs": campaign["target_pairs"],
+        "registered_pairs": len(registrations),
+        "comparison_ready_pairs": ready,
+        "campaign_ready_for_adjudication": (
+            len(registrations) == campaign["target_pairs"]
+            and ready == campaign["target_pairs"]
+        ),
+    }
+    atomic_json(campaign_root / "progress.json", report)
+    return report
+
+
+def progress_warning(progress: dict[str, Any]) -> str:
+    return (
+        "paired calibration progress: "
+        f"{progress['registered_pairs']}/{progress['target_pairs']} registered; "
+        f"{progress['comparison_ready_pairs']}/{progress['target_pairs']} comparison-ready; "
+        "adjudication remains blocked until the campaign audit passes\n"
+    )
+
+
 def canonical_session_id(value: str | None) -> str:
     if value is None:
         raise TransportError("--reviewer-session-id is required")
@@ -219,8 +277,10 @@ def run_review(args: argparse.Namespace) -> int:
     command = list(args.claude_command)
     if command and command[0] == "--":
         command = command[1:]
+    canonicalize_path_arguments(args)
     if not args.working_directory.is_dir():
         raise TransportError("--working-directory must be an existing directory")
+    require_active_campaign(args.campaign_root)
     args.reviewer_session_id = canonical_session_id(args.reviewer_session_id)
     if not command:
         raise TransportError("a native Claude command is required after '--'")
@@ -242,6 +302,9 @@ def run_review(args: argparse.Namespace) -> int:
         )
 
     registration = register_pair(args)
+    progress = write_campaign_progress(args.campaign_root, f"registered:{args.pair_id}")
+    sys.stderr.write(progress_warning(progress))
+    sys.stderr.flush()
     command = prepare_initial_command(
         command,
         args.reviewer_session_id,
@@ -478,6 +541,7 @@ def finalize_worker(args: argparse.Namespace) -> int:
     receipt["stderr_sha256"] = sha256_bytes(result.stderr.encode("utf-8"))
     receipt["completed_at"] = now()
     atomic_json(args.receipt, receipt)
+    write_campaign_progress(args.campaign_root, f"finalized:{args.pair_id}")
     return 0 if result.returncode in {0, 1} else 1
 
 

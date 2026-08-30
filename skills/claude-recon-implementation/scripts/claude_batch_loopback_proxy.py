@@ -24,6 +24,7 @@ BATCH_URL = "https://openrouter.ai/api/beta/batches"
 REALTIME_URL = "https://openrouter.ai/api/v1/messages?beta=true"
 MAX_REQUEST_BYTES = 32 * 1024 * 1024
 TERMINAL_STATUSES = {"completed", "failed", "expired", "cancelled"}
+TRANSIENT_POLL_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 
 
 class BatchProxyError(ValueError):
@@ -34,6 +35,10 @@ class BatchHttpError(BatchProxyError):
     def __init__(self, status: int):
         super().__init__(f"OpenRouter Batch API returned HTTP {status}")
         self.status = status
+
+
+class BatchTransportError(BatchProxyError):
+    """Raised for retryable network failures while contacting OpenRouter."""
 
 
 def request_profile(incoming: dict[str, Any]) -> dict[str, Any]:
@@ -227,6 +232,9 @@ class MicrobatchCoordinator:
                 "request_sha256": digest,
                 "custom_id": custom_id,
                 "successful": entry.error is None,
+                "error_type": (
+                    type(entry.error).__name__ if entry.error is not None else None
+                ),
                 "message_sha256": (
                     hashlib.sha256(json.dumps(
                         entry.message, sort_keys=True, separators=(",", ":"),
@@ -382,7 +390,9 @@ class OpenRouterBatchClient:
         except error.HTTPError as failure:
             raise BatchHttpError(failure.code) from failure
         except (error.URLError, TimeoutError, OSError) as failure:
-            raise BatchProxyError("OpenRouter Batch API request failed") from failure
+            raise BatchTransportError(
+                "OpenRouter Batch API request failed"
+            ) from failure
         try:
             value = json.loads(payload)
         except (UnicodeDecodeError, json.JSONDecodeError) as failure:
@@ -425,8 +435,16 @@ class OpenRouterBatchClient:
         })
         deadline = time.monotonic() + self.timeout
         poll_count = 0
+        last_poll_error: dict[str, Any] | None = None
         while state.get("status") not in TERMINAL_STATUSES:
             if time.monotonic() >= deadline:
+                self.progress({
+                    "event": "poll_abandoned", "batch_id": batch_id,
+                    "poll_count": poll_count,
+                    "last_known_status": state.get("status"),
+                    "last_poll_error": last_poll_error,
+                    "reason": "configured_timeout",
+                })
                 raise BatchProxyError("batch polling exceeded the configured timeout")
             time.sleep(self.poll_interval)
             poll_count += 1
@@ -440,13 +458,37 @@ class OpenRouterBatchClient:
                     method="GET",
                 ))
             except BatchHttpError as failure:
-                if failure.status != 404:
+                if (failure.status != 404
+                        and failure.status not in TRANSIENT_POLL_HTTP_STATUSES):
                     raise
-                self.progress({
-                    "event": "poll_not_found", "batch_id": batch_id,
+                event = {
+                    "event": (
+                        "poll_not_found" if failure.status == 404
+                        else "poll_transient_error"
+                    ),
+                    "batch_id": batch_id,
                     "poll_count": poll_count,
+                    "error_type": type(failure).__name__,
+                    "http_status": failure.status,
+                }
+                last_poll_error = {
+                    "error_type": type(failure).__name__,
+                    "http_status": failure.status,
+                }
+                self.progress(event)
+                continue
+            except BatchTransportError as failure:
+                last_poll_error = {
+                    "error_type": type(failure).__name__,
+                    "http_status": None,
+                }
+                self.progress({
+                    "event": "poll_transient_error", "batch_id": batch_id,
+                    "poll_count": poll_count,
+                    **last_poll_error,
                 })
                 continue
+            last_poll_error = None
             self.progress({
                 "event": "polled", "batch_id": batch_id,
                 "poll_count": poll_count, "status": state.get("status"),

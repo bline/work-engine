@@ -101,6 +101,23 @@ ordering prevents a realtime-only attempt from becoming invisible in the
 denominator if the caller exits or the shadow later fails. The batch arm never
 changes the review returned to the workflow.
 
+The controller canonicalizes every caller-supplied filesystem path before
+registration and before either arm changes to the immutable review working
+directory. This keeps registrations and native-Claude arguments valid when the
+front controller itself is invoked with repository-relative paths.
+
+Every registration emits a campaign-progress warning on stderr while leaving
+the realtime JSON result alone on stdout. Registration and background
+finalization also refresh `<campaign-root>/progress.json` with target,
+registered, and comparison-ready counts. This is an operational warning, not a
+replacement for the fail-closed final campaign audit.
+
+When multiple campaign directories coexist under one calibration root, publish
+`active-campaign.json` beside them. The controller refuses registration into a
+different campaign or whenever the selected campaign status is not `active`.
+Use a paused status while diagnosing a failed arm; retaining an old directory
+does not make it eligible for new pairs.
+
 Runtime evidence is written under
 `<campaign-root>/pairs/<pair-id>/runtime/`. The background worker records
 infrastructure failure, Claude failure, or complete batch lineage atomically;
@@ -108,6 +125,14 @@ the finalizer converts terminal arm evidence into `pair-receipt.json`. If
 automatic finalizer launch fails, the controller receipt explicitly marks
 `manual_finalization_required`. A missing or failed shadow remains a registered
 pair in the campaign denominator.
+
+Batch submission is never retried automatically. After one submission, polling
+retries HTTP 404 and transient HTTP/network failures until the configured
+deadline. The event log binds each retry to its batch ID and records the error
+class, safe HTTP status when available, poll count, and any final abandonment;
+the execution receipt summarizes those counts and abandoned IDs. Contract and
+authentication failures remain fail-fast. This distinction makes a completed
+remote batch recoverable as late evidence without risking duplicate paid work.
 
 ## Production review-state isolation
 

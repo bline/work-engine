@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import threading
 import unittest
+from unittest import mock
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "claude_batch_loopback_proxy.py"
@@ -240,6 +241,114 @@ class ClaudeBatchLoopbackProxyTest(unittest.TestCase):
         self.assertEqual([event["event"] for event in events], [
             "submitted", "poll_not_found", "polled", "completed",
         ])
+
+    def test_transient_poll_failures_are_observed_without_resubmitting(self) -> None:
+        events = []
+        message = {
+            "type": "message", "role": "assistant", "content": [],
+            "usage": self.usage,
+        }
+
+        class FakeClient(MODULE.OpenRouterBatchClient):
+            def __init__(self):
+                super().__init__(
+                    "secret", poll_interval=0, timeout=1, progress=events.append
+                )
+                self.calls = 0
+
+            def _json(self, call):
+                self.calls += 1
+                if self.calls == 1:
+                    return {"id": "batch-1", "status": "validating"}
+                if self.calls == 2:
+                    raise MODULE.BatchHttpError(502)
+                if self.calls == 3:
+                    raise MODULE.BatchTransportError("network timeout")
+                return {
+                    "status": "completed",
+                    "request_counts": {"total": 1, "completed": 1, "failed": 0},
+                    "usage": {"cost": 0.1},
+                    "results": [{
+                        "custom_id": "turn-1",
+                        "response": {"status_code": 200, "body": message},
+                        "error": None,
+                    }],
+                }
+
+        client = FakeClient()
+        result = client.submit_and_wait(
+            {"model": "batch", "endpoint": "/v1/messages", "requests": []},
+            "turn-1",
+        )
+        self.assertEqual(result, message)
+        self.assertEqual(client.calls, 4)
+        transient = [
+            event for event in events if event["event"] == "poll_transient_error"
+        ]
+        self.assertEqual(transient, [
+            {
+                "event": "poll_transient_error", "batch_id": "batch-1",
+                "poll_count": 1, "error_type": "BatchHttpError",
+                "http_status": 502,
+            },
+            {
+                "event": "poll_transient_error", "batch_id": "batch-1",
+                "poll_count": 2, "error_type": "BatchTransportError",
+                "http_status": None,
+            },
+        ])
+        self.assertEqual(
+            [event["event"] for event in events].count("submitted"), 1
+        )
+
+    def test_nontransient_poll_failure_is_not_retried(self) -> None:
+        events = []
+
+        class FakeClient(MODULE.OpenRouterBatchClient):
+            def __init__(self):
+                super().__init__(
+                    "secret", poll_interval=0, timeout=1, progress=events.append
+                )
+                self.calls = 0
+
+            def _json(self, call):
+                self.calls += 1
+                if self.calls == 1:
+                    return {"id": "batch-1", "status": "validating"}
+                raise MODULE.BatchHttpError(401)
+
+        client = FakeClient()
+        with self.assertRaisesRegex(MODULE.BatchHttpError, "HTTP 401"):
+            client.submit_and_wait(
+                {"model": "batch", "endpoint": "/v1/messages", "requests": []},
+                "turn-1",
+            )
+        self.assertEqual(client.calls, 2)
+        self.assertEqual([event["event"] for event in events], ["submitted"])
+
+    def test_poll_timeout_records_batch_identity_and_last_error(self) -> None:
+        events = []
+
+        class FakeClient(MODULE.OpenRouterBatchClient):
+            def __init__(self):
+                super().__init__(
+                    "secret", poll_interval=0, timeout=1, progress=events.append
+                )
+
+            def _json(self, call):
+                return {"id": "batch-1", "status": "validating"}
+
+        with mock.patch.object(MODULE.time, "monotonic", side_effect=[0, 1]):
+            with self.assertRaisesRegex(MODULE.BatchProxyError, "configured timeout"):
+                FakeClient().submit_and_wait(
+                    {"model": "batch", "endpoint": "/v1/messages", "requests": []},
+                    "turn-1",
+                )
+        self.assertEqual(events[-1], {
+            "event": "poll_abandoned", "batch_id": "batch-1",
+            "poll_count": 0, "last_known_status": "validating",
+            "last_poll_error": None, "reason": "configured_timeout",
+        })
 
     def test_concurrent_turns_microbatch_and_retry_joins(self) -> None:
         events = []
