@@ -162,7 +162,12 @@ enumeration or unvalidated claim files for the bounded projection.
 When active-slice recovery is configured and this builder launches the
 reviewer, assign the provider's resumable runtime reference before the initial
 review call and publish it through the active-slice mechanism as
-`actor_binding.runtime_session_id`. After builder or supervisor context
+`actor_binding.runtime_session_id` with `scripts/manage_active_slice.py
+bind-actor`, passing the exact current durable revision as `--expected-revision`
+and a stable unique `--event-id`. This CAS route prevents a stale writer or a
+conflicting replay from silently binding the wrong reviewer session; omitting
+it can make later recovery resume a lost or different reviewer continuation.
+After builder or supervisor context
 replacement, recover the binding with `resume_active_slice.py` before issuing
 the next reviewer call; resume that exact session rather than reconstructing
 the review. If the binding cannot be recovered or the provider session is no

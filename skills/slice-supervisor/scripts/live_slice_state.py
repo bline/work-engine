@@ -49,6 +49,18 @@ def stable_key(identity: dict[str, Any]) -> str:
     return "slice-attempt-v1/" + hashlib.sha256(canonical(identity)).hexdigest()
 
 
+def validate_actor_binding(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != {
+            "logical_actor_id", "provider", "runtime_session_id"}:
+        fail("actor_binding fields are invalid")
+    if not isinstance(value["logical_actor_id"], str) or not value["logical_actor_id"]:
+        fail("logical_actor_id must be nonempty")
+    if any(value[field] is not None and not isinstance(value[field], str)
+           for field in ("provider", "runtime_session_id")):
+        fail("provider bindings must be strings or null")
+    return value
+
+
 def validate(value: Any) -> dict[str, Any]:
     fields = {"schema_version", "identity", "actor_binding", "phase", "status",
               "pending_obligation", "handled_consequences", "authoritative_refs",
@@ -56,14 +68,7 @@ def validate(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != fields or value["schema_version"] != 2:
         fail("live slice state fields or schema are invalid")
     validate_identity(value["identity"])
-    actor = value["actor_binding"]
-    if not isinstance(actor, dict) or set(actor) != {"logical_actor_id", "provider", "runtime_session_id"}:
-        fail("actor_binding fields are invalid")
-    if not isinstance(actor["logical_actor_id"], str) or not actor["logical_actor_id"]:
-        fail("logical_actor_id must be nonempty")
-    if any(actor[field] is not None and not isinstance(actor[field], str)
-           for field in ("provider", "runtime_session_id")):
-        fail("provider bindings must be strings or null")
+    validate_actor_binding(value["actor_binding"])
     if value["phase"] not in PHASES or value["status"] not in STATUSES:
         fail("phase or status is invalid")
     obligation = value["pending_obligation"]
@@ -248,6 +253,27 @@ def resume_capability(store: Any, current: dict[str, Any], *, event_id: str,
             fail("state is not waiting on the specified capability")
         return {**value, "status": "active", "waiting": None}
     return transition(store, current, "resume_capability", event_id, apply)
+
+
+def bind_actor(store: Any, current: dict[str, Any], *, event_id: str,
+               actor_binding: dict[str, Any]) -> dict[str, Any]:
+    validate(semantic(current))
+    validate_actor_binding(actor_binding)
+    if not event_id:
+        fail("event_id must be nonempty")
+    event_digest = hashlib.sha256(canonical(actor_binding)).hexdigest()
+    for encoded in current["handled_consequences"]:
+        parts = json.loads(encoded)
+        if len(parts) >= 2 and parts[0] == "bind_actor" and parts[1] == event_id:
+            if len(parts) == 3 and parts[2] == event_digest:
+                return current
+            fail("actor binding event identity conflicts with its durable content")
+    if current["status"] != "active":
+        fail("only active state may bind an actor")
+    updated = {**semantic(current), "actor_binding": actor_binding}
+    updated["handled_consequences"] = [*updated["handled_consequences"], json.dumps(
+        ["bind_actor", event_id, event_digest], separators=(",", ":"))]
+    return publish(store, updated, current["durable_revision"])
 
 
 def publish_phase_consequence(store: Any, current: dict[str, Any], *, phase: str,

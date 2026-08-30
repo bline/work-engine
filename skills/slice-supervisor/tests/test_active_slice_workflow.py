@@ -92,6 +92,57 @@ class ActiveSliceWorkflowTest(unittest.TestCase):
                 ["git", "-C", str(repository), "status", "--short"], text=True,
                 stdout=subprocess.PIPE, check=True).stdout)
 
+    def test_actor_binding_rebinds_sequential_reviewers_with_cas_and_history(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            identity = json.dumps(self.identity)
+            active = self.manage(repository, "begin", "--identity-json", identity,
+                "--actor-binding-json", json.dumps({"logical_actor_id": "builder-1",
+                    "provider": "codex", "runtime_session_id": None}),
+                "--phase", "review", "--obligation-json", json.dumps({
+                    "obligation_id": "review-1", "kind": "independent_review",
+                    "summary": "Review accepted implementation"}))
+            reviewer_a = {"logical_actor_id": "reviewer-a", "provider": "claude",
+                          "runtime_session_id": "session-a"}
+            bound_a = self.manage(repository, "bind-actor", "--identity-json", identity,
+                "--expected-revision", active["durable_revision"], "--event-id", "bind-a",
+                "--actor-binding-json", json.dumps(reviewer_a))
+            self.assertEqual(reviewer_a, bound_a["actor_binding"])
+
+            replay = self.manage(repository, "bind-actor", "--identity-json", identity,
+                "--expected-revision", bound_a["durable_revision"], "--event-id", "bind-a",
+                "--actor-binding-json", json.dumps(reviewer_a))
+            self.assertEqual(bound_a["durable_revision"], replay["durable_revision"])
+            conflict = self.invoke(MANAGE, repository, "bind-actor", "--identity-json", identity,
+                "--expected-revision", bound_a["durable_revision"], "--event-id", "bind-a",
+                "--actor-binding-json", json.dumps({**reviewer_a,
+                    "runtime_session_id": "conflicting-session"}), check=False)
+            self.assertEqual(2, conflict.returncode)
+            self.assertIn("conflicts", conflict.stderr)
+
+            reviewer_b = {"logical_actor_id": "reviewer-b", "provider": "claude",
+                          "runtime_session_id": "session-b"}
+            bound_b = self.manage(repository, "bind-actor", "--identity-json", identity,
+                "--expected-revision", bound_a["durable_revision"], "--event-id", "bind-b",
+                "--actor-binding-json", json.dumps(reviewer_b))
+            current = json.loads(self.invoke(RESUME, repository,
+                "--identity-json", identity).stdout)
+            self.assertEqual({**reviewer_b, "semantic": False}, current["runtime_binding"])
+            historical = json.loads(self.invoke(RESUME, repository, "--identity-json", identity,
+                "--revision", bound_a["durable_revision"]).stdout)
+            self.assertEqual({**reviewer_a, "semantic": False}, historical["runtime_binding"])
+
+            stale = self.invoke(MANAGE, repository, "bind-actor", "--identity-json", identity,
+                "--expected-revision", bound_a["durable_revision"], "--event-id", "bind-c",
+                "--actor-binding-json", json.dumps(reviewer_a), check=False)
+            self.assertEqual(2, stale.returncode)
+            self.assertIn("expected durable revision", stale.stderr)
+            self.assertEqual(bound_b["durable_revision"], current["durable_revision"])
+            self.assertEqual("", subprocess.run(
+                ["git", "-C", str(repository), "status", "--short"], text=True,
+                stdout=subprocess.PIPE, check=True).stdout)
+
     def test_phase_consequence_survives_runtime_and_mailbox_loss(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)

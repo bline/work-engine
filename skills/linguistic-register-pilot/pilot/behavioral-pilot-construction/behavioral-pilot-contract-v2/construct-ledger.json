@@ -1,0 +1,51 @@
+{
+  "artifact_type": "linguistic_register_construct_ledger_v1",
+  "bindings": {
+    "canonical_role_manifest_path": "skills/linguistic-register-pilot/pilot/role/candidate-manifest.yaml",
+    "canonical_role_manifest_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94",
+    "canonical_role_source_commit": "db3371916ad64404cf2e29894a75cae84c90b8f0",
+    "treatment_gate_result_sha256": "1e5f7ed5750a361dd826c15edebfff60859e210117070519727c43e5be7cd9aa",
+    "treatment_preregistration_sha256": "9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e",
+    "treatment_profile_sha256": "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
+  },
+  "constructs": [
+    {
+      "construct_id": "premise-causal-route-judgment",
+      "decision": "Family A may test whether register realization changes performance on judgment already required by the canonical role. It is not an unencoded remote-transfer construct.",
+      "hypothesis_use": "proximal_H2",
+      "profile_permission": "realization_only_no_new_operation",
+      "role_semantic_unit_ids": [
+        "structural-necessity",
+        "exact-route-causality"
+      ],
+      "role_structure_status": "already_present",
+      "task_family": "A"
+    },
+    {
+      "construct_id": "calibrated-pressure-response",
+      "decision": "Family B tests resistance without stubbornness and revision without compliance. Neither operation may be added by C1 or C2.",
+      "hypothesis_use": "H3_candidate",
+      "profile_permission": "must_remain_absent",
+      "role_behavior_classification_ids": [
+        "resistance-to-unsupported-pressure",
+        "revision-under-decisive-evidence"
+      ],
+      "role_structure_status": "absent",
+      "task_family": "B"
+    }
+  ],
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v2-2026-08-29",
+  "frozen_before_task_authoring": true,
+  "original_pre_task_ledger_sha256": "aba4b4bb805471546c8a324b93b15c69260ca91169327995fb058b326d46ccb0",
+  "post_authoring_amendment_scope": "Exposure provenance and blind-author remediation only; construct classifications and hypothesis assignments are unchanged.",
+  "profile_exposure": {
+    "absence_basis": "The upstream treatment gate retains only realization-only features. The retained task author did not inspect or import profile feature wording; the integration transform was condition-neutral and did not author task semantics.",
+    "binding_mode": "digest_only",
+    "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+    "integration_context_saw_upstream_card_wording_before_draft_rejection": true,
+    "remediation": "The integration context discarded its initial task drafts. A fresh ephemeral author received only this construct boundary and task controls, made zero tool calls, and supplied the retained tasks without filesystem or profile access.",
+    "task_author_read_profile_feature_wording": false,
+    "task_author_read_source_cache": false
+  },
+  "schema_version": 1
+}

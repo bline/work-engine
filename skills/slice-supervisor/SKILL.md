@@ -207,7 +207,12 @@ semantic consequence and its integrity-bound references.
 
 For a review provider that supports resumable sessions, assign the reviewer
 runtime session ID before the initial provider call and publish it in
-`actor_binding.runtime_session_id`. Require the builder to use that exact
+`actor_binding.runtime_session_id` through `scripts/manage_active_slice.py
+bind-actor`, with the current durable revision as `--expected-revision` and a
+stable unique `--event-id`. The compare-and-swap and replay identity prevent a
+stale transition from replacing the intended reviewer binding; skipping this
+route can make recovery lose the session or resume the wrong reviewer
+continuation. Require the builder to use that exact
 binding for the fresh-entry review and every ordinary remediation continuation.
 After supervisor-context replacement, recover the binding with
 `resume_active_slice.py` and resume the provider session instead of recreating

@@ -360,10 +360,88 @@
       ],
       "source": {
         "path": "skills/claude-recon-implementation/SKILL.md",
-        "sha256": "633d3c521e47558d5fc35e161d08e9364c1be986e42d7edcd3d555bbc74328d2"
+        "sha256": "0710df876d9097eebf70ff003deafca8707382379bbce999caa78d366f291489"
       },
-      "artifacts": [],
-      "tests": []
+      "artifacts": [
+        {
+          "path": "skills/claude-recon-implementation/references/native-claude-batch-transport.md",
+          "sha256": "204d48815d547c33250f4f0bf4b42f0c05fa9049f0f2adf089d19443860dcd67"
+        },
+        {
+          "path": "skills/claude-recon-implementation/references/native-claude-transport.md",
+          "sha256": "2cd752005cf647a4e65e45ca14994bb78d55c69c8357e4a15f2375510323bdd9"
+        },
+        {
+          "path": "skills/claude-recon-implementation/references/openrouter-routing-attestation.schema.json",
+          "sha256": "dc8b48cf76e26131946bc2674b10a7a7202508da6e8c18b0801f5ee60578d6b5"
+        },
+    {
+      "path": "skills/claude-recon-implementation/references/paired-openrouter-review-calibration.md",
+      "sha256": "17fff642101a6c3e8790e99bd701e64a4e9b97f58420a9434123b01d7bfea7f2"
+        },
+    {
+      "path": "skills/claude-recon-implementation/scripts/claude_batch_loopback_proxy.py",
+      "sha256": "465a6247c21576d0c93febed7fd1de30465a60985fdbcc6439d0cfaa804e60b7"
+        },
+    {
+      "path": "skills/claude-recon-implementation/scripts/claude_batch_review.py",
+      "sha256": "ebdcc073c7dd9ce1e499b36cf5140eb1fe2241c74dddaf2272d5ba0ff84e0414"
+        },
+    {
+      "path": "skills/claude-recon-implementation/scripts/claude_paired_review.py",
+      "sha256": "353abb65f7579125e810e5aede3ca194adc53fd9c77cf693018a4b0605d3f8bb"
+        },
+        {
+          "path": "skills/claude-recon-implementation/scripts/claude_transport.py",
+          "sha256": "7a134478ce814a8c46f93da59f0db518849298353ea4c1ef6406d5703df03fd1"
+        },
+        {
+          "path": "skills/claude-recon-implementation/scripts/openrouter_routing_attestation.py",
+          "sha256": "cfeaeb69a15fd4a6793c012dc48796a2cd76915b114a76dcb8ffe46e8ad3caa8"
+        },
+        {
+          "path": "skills/claude-recon-implementation/scripts/paired_review_evidence.py",
+          "sha256": "a172c886441289703bbd5566581800f6ccbbd33d844128b1ea93e316ce7d7b57"
+        }
+      ],
+      "tests": [
+    {
+      "path": "skills/claude-recon-implementation/tests/test_claude_batch_loopback_proxy.py",
+      "sha256": "2778a6b005fd4e14ae90530b78873012c903443a78d2644b34f48fc05ba36c2f",
+      "protected_distinction": "Native batch transport preserves request and response semantics, exact model and request lineage, sibling isolation, retry joining, realtime compatibility, and loopback authorization; polling retries only attributable transient failures without resubmitting a paid batch, and terminal abandonment remains bound to the batch ID and poll history.",
+          "candidate_disposition": "retain"
+        },
+    {
+      "path": "skills/claude-recon-implementation/tests/test_claude_batch_review.py",
+      "sha256": "c0900e0904196d9dc739239c4b4ed830304c435363106c0b1622e91136e37e92",
+      "protected_distinction": "A native batch review is reportable only when request, environment, output, terminal event lineage, transient polling failures, and any abandoned batch identities remain exactly bound through the local worker and complete event summary.",
+          "candidate_disposition": "retain"
+        },
+    {
+      "path": "skills/claude-recon-implementation/tests/test_claude_paired_review.py",
+      "sha256": "82376b6b889723ef70a61187cadff3d90e71499166ac522a0800e11cbf68a2b8",
+      "protected_distinction": "A paired review returns the realtime result while independently finalizing the shadow arm, preserves canonical path, session, subject, command, and campaign bindings, and refuses paused or non-selected campaigns and transport/session mismatches without removing registered attempts from evidence.",
+          "candidate_disposition": "retain"
+        },
+        {
+          "path": "skills/claude-recon-implementation/tests/test_claude_transport.py",
+          "sha256": "4b6f34ac139fbbbbe8eeb3bd280042c538e4ae9dffd0c810661ead98dbae2423",
+          "protected_distinction": "Claude transport preserves primary-provider preference, explicit paid and continuity authority, exact retained-session replay, routing guardrails, initial configuration provenance, and secret exclusion while failing closed on nonquota, incompatible, or unattested routes.",
+          "candidate_disposition": "retain"
+        },
+        {
+          "path": "skills/claude-recon-implementation/tests/test_openrouter_routing_attestation.py",
+          "sha256": "3cb590d440b9c8323b9ed290a5f3982f009009aa147d921cce2ff5c9230f5400",
+          "protected_distinction": "OpenRouter routing attestation binds exactly one key assignment to the requested Anthropic provider and model across complete stable pagination, rejects broader or changing routes, and excludes management credentials from the artifact.",
+          "candidate_disposition": "retain"
+        },
+        {
+          "path": "skills/claude-recon-implementation/tests/test_paired_review_evidence.py",
+          "sha256": "f12c70c5968bcaea2c2044367cde3185bc9f50c1b8a24e251ce6482a987cb3a8",
+          "protected_distinction": "Paired-review evidence remains auditable and comparison-ready only when exact command, routing, configuration, session, arm, and campaign-count bindings hold, while mismatches and mutable production-review access remain visible and fail closed.",
+          "candidate_disposition": "retain"
+        }
+      ]
     },
     {
       "name": "code-change-profile",
@@ -393,12 +471,12 @@
       ],
       "source": {
         "path": "skills/code-change-profile/SKILL.md",
-        "sha256": "45a3650808a4bf70d9c12ac46493d620730c741fe66c61e0b3b85aa010fa939d"
+        "sha256": "f1cb40e4918ec04dfb1cc35105b09ec590e989fb87db40ade646ce9b50d6705a"
       },
       "artifacts": [
         {
           "path": "skills/code-change-profile/references/profile-contract.md",
-          "sha256": "1e76326a72a75ce705a284b483648cac821e4d8d9ac7be8cd634595978ac24d4"
+          "sha256": "fce26f80e40123675ba91a2e0d4814b4ee88334f25b1ac5d8c596213eb32a14e"
         },
         {
           "path": "skills/code-change-profile/schemas/change-profile-v1.schema.json",
@@ -409,8 +487,16 @@
           "sha256": "64ccc9ff2d9c7dfc7e2ca7771657d950901ec2e696679953e32143f56559323c"
         },
         {
+          "path": "skills/code-change-profile/schemas/change-profile-v2.schema.json",
+          "sha256": "8c57b1a4c013fcd121d4c447240cf93483611c047da4ff7609f8b5c980c10897"
+        },
+        {
+          "path": "skills/code-change-profile/schemas/change-subject-v2.schema.json",
+          "sha256": "6e2d871ceb776c89d23a387d352f5ae7f9952f587a25c834cf7dc1b92d5ba59c"
+        },
+        {
           "path": "skills/code-change-profile/scripts/code_change_profile.py",
-          "sha256": "5ad0a23a377e6393d7d413aec084b03ebe0b4835d1017a90507ec1896375bbff"
+          "sha256": "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003"
         }
       ],
       "tests": [
@@ -422,7 +508,7 @@
         },
         {
           "path": "skills/code-change-profile/tests/test_code_change_profile.py",
-          "sha256": "50fd61a1b1495242bd9ba32f3d66866d24280bcd317a11ba8281d15fc160d809",
+          "sha256": "81836bc81de94bcd600a3703e84bf49896d179762d1411944bf047101b6462a6",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: real checkpoint is recomputed deterministically for fresh consumer; cli output is byte identical and ignores current worktree; tampered immutable binding is rejected; measurement states do not collapse; lossy metrics projection is not a subject; profile digest and measurement shape fail closed; dirty checkpoint validator fails closed before import; adversarial checkpoint code is not executed before binding; nested forged profiles are rejected even when resigned; provenance omission contradiction and false use fail when resigned; each forged runtime identity field fails when resigned.",
           "candidate_disposition": "retain"
         }
@@ -606,20 +692,30 @@
         "path": "skills/durable-state/SKILL.md",
         "sha256": "54729ce23224081b75361615902d9eea582c5cc05a080fd27a89e8e798b1f952"
       },
-      "artifacts": [
-        {
-          "path": "skills/durable-state/scripts/durable_state.py",
-          "sha256": "2f1f7b42e5b1f3f362caf7c0ea6f26eab2eb03479d06d5f9b9564c214bd58a2b"
-        }
-      ],
+  "artifacts": [
+    {
+      "path": "skills/durable-state/scripts/durable_state.py",
+      "sha256": "2f1f7b42e5b1f3f362caf7c0ea6f26eab2eb03479d06d5f9b9564c214bd58a2b"
+    },
+    {
+      "path": "skills/durable-state/scripts/codex_chatboard.py",
+      "sha256": "8cd5d219f8390fd8de8f2c44d9afdbac3b1d156b5f8bfb19d6563837608d36bb"
+    }
+  ],
       "tests": [
         {
           "path": "skills/durable-state/tests/test_durable_state.py",
           "sha256": "411762755f9030a0050ff9792e6a7ef74ef3aab7359248b405c528363f4ba3ea",
-          "protected_distinction": "Protects the package-specific behaviors exercised by this file: atomic read integrity and stale revision; legacy value is readable and is an explicit history boundary; revision reads validate key integrity and missing predecessors.",
-          "candidate_disposition": "retain"
-        }
-      ]
+      "protected_distinction": "Protects the package-specific behaviors exercised by this file: atomic read integrity and stale revision; legacy value is readable and is an explicit history boundary; revision reads validate key integrity and missing predecessors.",
+      "candidate_disposition": "retain"
+    },
+    {
+      "path": "skills/durable-state/tests/test_codex_chatboard.py",
+      "sha256": "d6266c8b3038c76467d1bc1ee79dfcd793ded6699fd80e09a5b72481ab48e10c",
+      "protected_distinction": "Cross-session messages remain ordered, idempotent, and retained, while advisory resource claims reject live conflicts and allow only exact release or expiry before replacement.",
+      "candidate_disposition": "retain"
+    }
+  ]
     },
     {
       "name": "idea-intake",
@@ -819,30 +915,6 @@
         {
           "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3-preoutcome-gate.json",
           "sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/1d504763-88bc-462e-aa4e-9d9581d5591e.md",
-          "sha256": "8b1609a4d487f755d0c33f8f0a5b287f6cfd27326cfe606dc07e254ae17cdab8"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/41767db4-ea13-4f3c-90db-9d0b472d2551.md",
-          "sha256": "553d7c97e86188a1528772a34bc7999e74281a0b80551d8e341e8417be5ace65"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/5522b147-d5ac-4d37-9805-e1a0578cbcf5.md",
-          "sha256": "378b2cf40d701f4916756a60cbc7fadbe298b54836da64a1a2bf16593f8322af"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/caac9200-86b3-4614-bbe0-1b6865e951ab.md",
-          "sha256": "4fb8850f62809b525868b1835fdcff9a2bbe6f69365f40a72a90f1cb645cbcdc"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/d2eb55ed-1f46-42f8-9698-6670c71309ca.md",
-          "sha256": "7340b3c5c98f0ef607de24c86217731cd5fb85b06cc209b49dacab272b83cff8"
-        },
-        {
-          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/artifacts/e0f58b89-cd75-4cb8-b6b9-fa7c8bfb7425.md",
-          "sha256": "7939346b8fe97bec69661e9680cc09c9539d442afcd456a0b7dea0a957f77d72"
         },
         {
           "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/group-3/condition-key.json",
@@ -4180,7 +4252,7 @@
       ],
       "source": {
         "path": "skills/slice-builder/SKILL.md",
-        "sha256": "d3eb81d00b8b517a7f552e9bcbd300773e49f30c035b2f016115189d5f6fd8c0"
+        "sha256": "561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e"
       },
       "artifacts": [
         {
@@ -4304,22 +4376,22 @@
       ],
       "source": {
         "path": "skills/slice-completion-commit/SKILL.md",
-        "sha256": "39cbb812e93630a4e05287d9e171e0537f391ed9906944367fbf784a8722681a"
+        "sha256": "8886d6f3f9cbd085c2a57e59871d616acc881d1df5832176f505702a01e8c325"
       },
       "artifacts": [
         {
           "path": "skills/slice-completion-commit/references/receipt-schema.md",
-          "sha256": "3e22d208776378ee491cb5277578f8e320e6deca690f3cca8f5a21a0117e5f3c"
+          "sha256": "484fbdd8e7a5a00ab05a3136cc30d536644ecba6f5f0ab23b7df900da7fe4b9a"
         },
         {
           "path": "skills/slice-completion-commit/scripts/completion_commit.py",
-          "sha256": "4f06eae392fce3715d4033d1b4ff6aa8535c7a70d818b1b92725d3b7f2b39dd5"
+          "sha256": "fa09dbd9b7b215fcc704f36846ce58398f9a3ebea070882cd6af24ffa4fad83d"
         }
       ],
       "tests": [
         {
           "path": "skills/slice-completion-commit/tests/test_completion_commit.py",
-          "sha256": "1c1eeacf213741766afd775d4644e164a5b6cbf8578ca78d0a6d1eac7ff5aba8",
+          "sha256": "67da41c6d269e9a4e718b95843d9c0f60686ae5630b0419c22889df009da5807",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: approved commit is exact and clean; identical authorized content accepts distinct truthful provenance; historical v1 proposal remains readable but origin is closed; created receipt verification rejects false git claims without mutation; postpublication failure receipt can be finalized when publication is intact; approved deletion is part of complete delta; approved rename is authorized as delete and include; declined and unsafe states do not mutate; atomic publication does not overwrite concurrent head; postpublication crash reconciles without replaying create; reconciliation fails closed when publication state is ambiguous; path order is not authority relevant; plus 2 additional declared cases.",
           "candidate_disposition": "retain"
         }
@@ -4371,7 +4443,7 @@
       ],
       "source": {
         "path": "skills/slice-supervisor/SKILL.md",
-        "sha256": "6f983ee3c28f03d808091b2dbf1d0d8f284e8cff857a5805614f3aec1abb5c3b"
+        "sha256": "cc0694a6a3658eb533b3f5eca3239201f7145104e0609c201d2b2fdd6b25d5c3"
       },
       "artifacts": [
         {
@@ -4428,11 +4500,11 @@
         },
         {
           "path": "skills/slice-supervisor/scripts/live_slice_state.py",
-          "sha256": "cf7852f6734d6a0c0daf0b43d819310d0380fd6231b8f93012939924d11e5f6c"
+          "sha256": "242f7f285a72866998a74212228f300b1d6a046873e5f6c8165469206955fe0b"
         },
         {
           "path": "skills/slice-supervisor/scripts/manage_active_slice.py",
-          "sha256": "89ed7947ff87fe051c9ec79927265a39e2a6b5098df47d5a4dcca9be27f26dcf"
+          "sha256": "58cb8eb52ee7205905b6bdc44ea4dc66b17adfbbcd67eb0891d323842b58977e"
         },
         {
           "path": "skills/slice-supervisor/scripts/resume_active_slice.py",
@@ -4470,7 +4542,7 @@
         },
         {
           "path": "skills/slice-supervisor/tests/test_active_slice_workflow.py",
-          "sha256": "cda5ad2aa4a94dc5c8e4116eb9011e4f4af7fd4bafd5ef87c909772835df53c7",
+          "sha256": "99bdbb307477c913faebbca47e23244717c0bb473922cf928001a440fdecfb49",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: subprocess lifecycle replay conflict retirement and integrity; invalid input fails without publication; phase consequence survives runtime and mailbox loss.",
           "candidate_disposition": "retain"
         },

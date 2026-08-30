@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.concern-scoped-review-judgments",
+  "family_id": "work-engine.adaptive-specialized-review",
+  "title": "Concern-Scoped Review Judgments and Provenance",
+  "lifecycle_state": "formed",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "proposal_family",
+      "path": "../family.md"
+    },
+    {
+      "kind": "semantic_parent",
+      "path": "../revision-bound-review-artifacts/proposal.md"
+    },
+    {
+      "kind": "parent_decision",
+      "path": "../revision-bound-review-artifacts/decision.json"
+    },
+    {
+      "kind": "implementation_evidence",
+      "path": "../../../skills/independent-review-state/SKILL.md"
+    },
+    {
+      "kind": "migration_consumer",
+      "path": "../../../app-server/docs/skills-migration-plan.md"
+    },
+    {
+      "kind": "ui_consumer",
+      "path": "../../../app-server/docs/control-plane-causal-observability-ui.md"
+    },
+    {
+      "kind": "formation_evidence",
+      "path": "formation-evidence.md"
+    },
+    {
+      "kind": "formation_judgments",
+      "path": "ownership-judgments.json"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "A shared App Server review-result capability probably owns immutable ReviewResult and concern-scoped ReviewJudgment semantics; the review-episode service owns unfinished continuation state; domain evidence and finding services retain their existing meaning; and Codebase Memory supplies a replaceable generation-bound navigation projection."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Implementation dogfood shows that immutable result publication and unfinished episode continuation cannot remain separate without losing atomicity or recoverability.",
+      "A provider-neutral reviewer cannot emit concern-scoped judgments compactly without materially increasing inference cost or introducing ambiguous host expansion.",
+      "Stable concern identities cannot be versioned independently from provider profiles without duplicating or fragmenting review-contract ownership.",
+      "Real remediation shows that finding lineage and judgment succession require one canonical record rather than linked but distinct records.",
+      "Code-change evidence cannot nominate possibly affected judgments across rename, move, split, merge, deletion, and unresolved identity without manufacturing semantic invalidation.",
+      "Codebase Memory cannot preserve owner isolation, exact structural-generation binding, atomic projection publication, and truthful unresolved endpoints through a bounded extension.",
+      "A bounded paired evaluation shows that concern-scoped delta review reduces cost only by losing material adjudicated findings.",
+      "Privacy, confidentiality, retention, or deletion requirements make the proposed observed-activity and asserted-judgment separation insufficient."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "implementation_authorized": false
+  },
+  "relationships": [
+    {
+      "type": "split_from",
+      "target_id": "work-engine.revision-bound-review-artifacts",
+      "rationale": "Implementation-review and remediation evidence now distinguishes immutable published result and judgment meaning from unfinished episode continuation while preserving the earlier proposal's approved review-artifact consequences.",
+      "causal": true
+    },
+    {
+      "type": "enables",
+      "target_id": "work-engine.adaptive-review-panel-coordination",
+      "rationale": "Concern-scoped judgments allow a coordinator to nominate bounded affected perspectives and preserve explicit carried-forward coverage without making selection or synthesis authoritative.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.code-change-characterization-profile",
+      "rationale": "Exact physical and structural before-and-after observations can nominate judgments for relevance assessment, while the review-result capability retains semantic carry-forward authority.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.raw-agent-execution-evidence-archive",
+      "rationale": "Observed runtime activity may support but cannot manufacture reviewer assertions of inspection, reliance, or judgment.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.production-claim-evidence-interface",
+      "rationale": "Material revision-bound findings may be published through the production claim service while positive, incomplete, and uncertain review judgments remain review-domain meaning.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.claim-maintenance-and-reliance-propagation",
+      "rationale": "Both candidates require exact-revision reliance and selective reconsideration while preserving distinct domain owners; their projections may compose without forming a universal semantic registry.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.ui-experience-evidence-interface",
+      "rationale": "Review judgments may rely on exact browser, structural, pixel, accessibility, geometry, or interaction evidence without absorbing capture or evidence-freshness ownership.",
+      "causal": false
+    }
+  ]
+}

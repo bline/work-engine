@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 ANALYZER_NAME = "work-engine-deterministic-baseline"
-ANALYZER_VERSION = "1"
+ANALYZER_VERSION = "2"
 CHECKPOINT_VALIDATOR_SHA256 = "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"
 STATES = {"observed", "unknown", "unsupported", "failed", "not_applicable"}
 
@@ -124,8 +124,15 @@ def validate_subject(raw: Any, repository_override: Path | None = None) -> dict[
     if not isinstance(raw, dict) or set(raw) != {
         "schema_version", "construction_method", "evidence_cutoff", "checkpoint"
     }:
-        raise ProfileError("subject fields must exactly match schema version 1")
-    if raw["schema_version"] != 1 or raw["construction_method"] != "full_slice_checkpoint_lifecycle_receipt":
+        raise ProfileError("subject fields must exactly match a supported schema")
+    schema_version = raw["schema_version"]
+    construction_method = raw["construction_method"]
+    if not (
+        schema_version == 1 and construction_method == "full_slice_checkpoint_lifecycle_receipt"
+        or schema_version == 2 and construction_method in {
+            "slice_checkpoint_candidate_receipt", "full_slice_checkpoint_lifecycle_receipt"
+        }
+    ):
         raise ProfileError("unsupported subject schema or construction method")
     if not isinstance(raw["evidence_cutoff"], str) or not raw["evidence_cutoff"]:
         raise ProfileError("evidence_cutoff must be nonempty")
@@ -135,10 +142,18 @@ def validate_subject(raw: Any, repository_override: Path | None = None) -> dict[
     repository = (repository_override or Path(checkpoint.get("repository", ""))).resolve()
     checkpoint = materialize_receipt(checkpoint, repository)
     kind = checkpoint.get("checkpoint_kind")
-    if kind not in {"accepted", "stopped"}:
-        raise ProfileError("subject requires an accepted or stopped lifecycle receipt")
     try:
-        checkpoint_module(repository).validate_lifecycle_receipt(checkpoint, kind, require_paths=True)
+        owner = checkpoint_module(repository)
+        if construction_method == "slice_checkpoint_candidate_receipt":
+            if kind != "candidate":
+                raise ProfileError("candidate construction requires a candidate checkpoint receipt")
+            owner.validate_candidate_receipt(checkpoint)
+        else:
+            if kind not in {"accepted", "stopped"}:
+                raise ProfileError("lifecycle construction requires an accepted or stopped receipt")
+            owner.validate_lifecycle_receipt(checkpoint, kind, require_paths=True)
+    except ProfileError:
+        raise
     except SystemExit as error:
         raise ProfileError("slice-checkpoint rejected lifecycle receipt") from error
     except Exception as error:
@@ -165,12 +180,12 @@ def validate_subject(raw: Any, repository_override: Path | None = None) -> dict[
     if len(paths) != len(set(paths)):
         raise ProfileError("checkpoint manifest contains duplicate paths")
     identity_fields = required | {
-        "schema_version", "checkpoint_id", "checkpoint_kind", "candidate_checkpoint_id",
+        "schema_version", "checkpoint_id", "checkpoint_kind",
         "parent_checkpoint_commit_oid", "gate_receipt_digest", "ref",
-    }
+    } | ({"created_at"} if kind == "candidate" else {"candidate_checkpoint_id"})
     return {
-        "schema_version": 1,
-        "construction_method": raw["construction_method"],
+        "schema_version": schema_version,
+        "construction_method": construction_method,
         "evidence_cutoff": raw["evidence_cutoff"],
         "repository": str(repository),
         "checkpoint": {key: checkpoint[key] for key in sorted(identity_fields - {"limitations"})},
@@ -243,7 +258,7 @@ def profile(raw: Any, repository_override: Path | None = None) -> dict[str, Any]
     symbol_files: list[dict[str, Any]] = []
     for path in paths:
         if Path(path).suffix != ".py":
-            symbol_files.append({"path": path, "measurement": measurement("unsupported", reason="version 1 symbol analysis supports Python only")})
+            symbol_files.append({"path": path, "measurement": measurement("unsupported", reason=f"version {subject['schema_version']} symbol analysis supports Python only")})
             continue
         try:
             before_source = blob(repository, base, path)
@@ -285,7 +300,7 @@ def profile(raw: Any, repository_override: Path | None = None) -> dict[str, Any]
     subject_digest = digest(subject)
     analyzer = {
         "name": ANALYZER_NAME,
-        "version": ANALYZER_VERSION,
+        "version": str(subject["schema_version"]),
         "source_sha256": sha256_file(Path(__file__).resolve()),
         "checkpoint_validator_sha256": CHECKPOINT_VALIDATOR_SHA256,
     }
@@ -331,7 +346,7 @@ def profile(raw: Any, repository_override: Path | None = None) -> dict[str, Any]
         },
     }
     result_profile = {
-        "schema_version": 1,
+        "schema_version": subject["schema_version"],
         "analyzer": analyzer,
         "provenance": provenance,
         "subject": subject,
@@ -353,14 +368,14 @@ def validate_profile(value: Any) -> dict[str, Any]:
         "schema_version", "analyzer", "subject", "subject_digest", "observations",
         "coverage", "limitations", "provenance", "profile_digest",
     }
-    if not isinstance(value, dict) or set(value) != required or value.get("schema_version") != 1:
-        raise ProfileError("profile fields must exactly match schema version 1")
+    if not isinstance(value, dict) or set(value) != required or value.get("schema_version") not in {1, 2}:
+        raise ProfileError("profile fields must exactly match a supported schema")
     analyzer = value["analyzer"]
     if not isinstance(analyzer, dict) or set(analyzer) != {
         "name", "version", "source_sha256", "checkpoint_validator_sha256"
     }:
         raise ProfileError("analyzer identity is invalid")
-    if analyzer.get("name") != ANALYZER_NAME or analyzer.get("version") != ANALYZER_VERSION:
+    if analyzer.get("name") != ANALYZER_NAME or analyzer.get("version") != str(value["schema_version"]):
         raise ProfileError("analyzer name or version is unsupported")
     if analyzer.get("source_sha256") != sha256_file(Path(__file__).resolve()):
         raise ProfileError("analyzer source digest does not match this validator")
@@ -427,7 +442,7 @@ def validate_provenance(
                 identity = source.get("identity")
                 if not isinstance(identity, dict) or not identity or any(not isinstance(v, str) or not v for v in identity.values()):
                     raise ProfileError(f"used provenance source {name} requires exact revision/source identity")
-            raise ProfileError(f"version 1 provenance source {name} must remain deferred and unused")
+            raise ProfileError("deterministic baseline provenance source " + name + " must remain deferred and unused")
 
 
 def is_sha256(value: Any) -> bool:
@@ -438,23 +453,33 @@ def validate_derived_subject(subject: Any) -> None:
     fields = {"schema_version", "construction_method", "evidence_cutoff", "repository", "checkpoint", "limitations"}
     if not isinstance(subject, dict) or set(subject) != fields:
         raise ProfileError("derived subject structure is invalid")
-    if subject["schema_version"] != 1 or subject["construction_method"] != "full_slice_checkpoint_lifecycle_receipt":
+    schema_version = subject["schema_version"]
+    construction_method = subject["construction_method"]
+    if not (
+        schema_version == 1 and construction_method == "full_slice_checkpoint_lifecycle_receipt"
+        or schema_version == 2 and construction_method in {
+            "slice_checkpoint_candidate_receipt", "full_slice_checkpoint_lifecycle_receipt"
+        }
+    ):
         raise ProfileError("derived subject identity is invalid")
     if not all(isinstance(subject[field], str) and subject[field] for field in ("evidence_cutoff", "repository")):
         raise ProfileError("derived subject strings must be nonempty")
     if not isinstance(subject["limitations"], list) or not all(isinstance(x, str) for x in subject["limitations"]):
         raise ProfileError("subject limitations are invalid")
     checkpoint = subject["checkpoint"]
-    fields = {
+    lifecycle_fields = {
         "schema_version", "checkpoint_id", "checkpoint_kind", "candidate_checkpoint_id",
         "parent_checkpoint_commit_oid", "baseline_commit_oid", "baseline_tree_oid",
         "checkpoint_commit_oid", "checkpoint_tree_oid", "task_patch_digest", "manifest_digest",
         "gate_receipt_digest", "run_id", "slice_number", "candidate_attempt", "plan_version",
         "scope_revision", "paths", "ref",
     }
-    if not isinstance(checkpoint, dict) or set(checkpoint) != fields or checkpoint["schema_version"] != 1:
+    candidate_fields = lifecycle_fields - {"candidate_checkpoint_id"} | {"created_at"}
+    expected_fields = candidate_fields if construction_method == "slice_checkpoint_candidate_receipt" else lifecycle_fields
+    if not isinstance(checkpoint, dict) or set(checkpoint) != expected_fields or checkpoint["schema_version"] != 1:
         raise ProfileError("derived checkpoint structure is invalid")
-    if checkpoint["checkpoint_kind"] not in {"accepted", "stopped"}:
+    expected_kinds = {"candidate"} if construction_method == "slice_checkpoint_candidate_receipt" else {"accepted", "stopped"}
+    if checkpoint["checkpoint_kind"] not in expected_kinds:
         raise ProfileError("derived checkpoint disposition is invalid")
     for field in ("checkpoint_id", "task_patch_digest", "manifest_digest", "gate_receipt_digest"):
         if not is_sha256(checkpoint[field]):
@@ -463,7 +488,9 @@ def validate_derived_subject(subject: Any) -> None:
         item = checkpoint[field]
         if not isinstance(item, str) or len(item) not in {40, 64} or any(c not in "0123456789abcdef" for c in item):
             raise ProfileError(f"derived checkpoint {field} is invalid")
-    for field in ("candidate_checkpoint_id", "run_id", "plan_version", "scope_revision", "ref"):
+    string_fields = ["run_id", "plan_version", "scope_revision", "ref"]
+    string_fields.append("created_at" if checkpoint["checkpoint_kind"] == "candidate" else "candidate_checkpoint_id")
+    for field in string_fields:
         if not isinstance(checkpoint[field], str) or not checkpoint[field]:
             raise ProfileError(f"derived checkpoint {field} is invalid")
     for field in ("slice_number", "candidate_attempt"):

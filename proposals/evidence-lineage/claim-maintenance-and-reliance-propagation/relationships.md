@@ -33,6 +33,19 @@ Operational history may observe delivery, waiting, recovery, and terminal role
 consequences. It cannot infer or publish claim refresh, applicability, reliance,
 or completion merely from an operational transition.
 
+## Related to: code change characterization profile
+
+Type: non-owning evidence integration.
+
+An immutable code-change profile can describe the exact checkpoint subject,
+planned-versus-actual scope inputs, changed files, before/after entity lineage,
+structural relationships, documentation anchors, and coverage. Claim
+maintenance may consume those observations to publish stable `may_affect`
+nominations. The profile does not acquire claim meaning, refresh authority,
+causality, applicability, or downstream reopening authority, and claim
+maintenance remains usable with another evidence producer that preserves the
+same exact-subject and provenance consequences.
+
 ## Delivery relationship: control plane and scheduler
 
 Type: reusable transport with separate semantic authority.

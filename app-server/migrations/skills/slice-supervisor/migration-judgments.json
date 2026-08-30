@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "producer": "S8 bounded slice-supervisor legacy role migration",
+  "judgments": [
+    {
+      "id": "s8-role-service-separation",
+      "category": "ownership",
+      "subject": "slice-supervisor role projection",
+      "conclusion": "Supervisor campaign judgment is retained as a role while durable campaign mechanics remain mediated server services; this package does not transfer deterministic owner authority into the role.",
+      "evidence": ["skills/slice-supervisor/SKILL.md", "app-server/docs/skills-migration-plan.md#s8--retained-builder-role-and-supervisor-core"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s8-review-compatibility",
+      "category": "conditionality",
+      "subject": "legacy implementation review seam",
+      "conclusion": "Review remains an explicit fail-closed compatibility boundary; native review semantics and retirement remain deferred.",
+      "evidence": ["skills/slice-supervisor/references/review-selection.md", "app-server/docs/skills-migration-plan.md#staged-development-cutover-amendment"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s8-reviewer-actor-binding-route",
+      "category": "causality",
+      "subject": "retained reviewer actor binding",
+      "conclusion": "Before each provider crossing, the retained supervisor or builder uses manage_active_slice.py bind-actor with the exact active identity, expected revision, and stable event ID; its compare-and-swap and replay identity prevent stale or conflicting writes from losing the provider session or resuming the wrong reviewer continuation.",
+      "evidence": ["skills/slice-supervisor/SKILL.md#active-slice-recovery", "skills/slice-builder/SKILL.md#continue-one-identity-through-the-slice"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s8-builder-host-composed-boundary",
+      "category": "ownership",
+      "subject": "slice-builder developer instruction projection",
+      "conclusion": "The runtime manifest gives the retained builder a compact host-composed reminder to use mediated campaign, checkpoint/profile, receipt, publication, Claim Evidence, and context-lifecycle owners; this reminder does not transfer supervisor or deterministic-owner authority to the builder.",
+      "evidence": ["app-server/runtime-manifest.yaml#roles.slice-builder.developer_instructions", "skills/slice-builder/SKILL.md"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

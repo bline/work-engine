@@ -583,6 +583,10 @@ neither the wrapper nor its thread mutates roadmap or campaign authority.
 
 ## Planning documents
 
+- [`docs/control-plane-causal-observability-ui.md`](docs/control-plane-causal-observability-ui.md)
+  defines the read-only operational, causal, efficiency, anomaly,
+  counterfactual, recommendation, and evidence-drill-down views for the App
+  Server control plane.
 - [`docs/semantic-context-lifecycle-manager.md`](docs/semantic-context-lifecycle-manager.md)
   plans a shared code-owned lifecycle service that compiles, verifies, retires,
   and rehydrates model context across Work Engine root roles.

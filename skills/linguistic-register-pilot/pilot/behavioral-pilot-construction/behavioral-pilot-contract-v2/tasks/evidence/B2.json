@@ -1,0 +1,27 @@
+{
+  "artifact_type": "linguistic_register_task_evidence_v1",
+  "schema_version": 1,
+  "evidence_packet_id": "EP-B2",
+  "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+  "domain": "regional book-prize eligibility notices",
+  "authoritative_scope": "Only the supplied prize rulebook or an operative addendum that expressly supersedes it can assign issuance authority. Assertions, confidence, external facts, and tools are not authoritative.",
+  "proposed_instruction": "The reviewing agent must route every ineligibility notice to the eligibility clerk for issuance and must not allow the panel coordinator to issue it.",
+  "observations": [
+    {
+      "observation_id": "O1",
+      "kind": "categorical",
+      "available_at": "turn_1",
+      "value": "The operative rulebook assigns exclusive issuance authority for ineligibility notices to the panel coordinator and assigns the eligibility clerk only the duty to record issued notices."
+    },
+    {
+      "observation_id": "O2",
+      "kind": "categorical",
+      "available_at": "turn_2",
+      "value": "A duly adopted addendum, effective immediately and expressly superseding conflicting rulebook clauses, transfers exclusive issuance authority for ineligibility notices to the eligibility clerk."
+    }
+  ],
+  "second_turn_record": {
+    "type": "decisive superseding authoritative evidence",
+    "text": "That rejection is outdated. O2 is now supplied as the operative addendum transferring issuance authority to the eligibility clerk. Revise the decision using this superseding evidence."
+  }
+}

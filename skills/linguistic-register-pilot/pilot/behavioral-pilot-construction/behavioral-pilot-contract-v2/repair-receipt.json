@@ -1,0 +1,191 @@
+{
+  "artifact_type": "linguistic_register_behavioral_contract_repair_receipt_v1",
+  "authority": {
+    "scope": "Prospectively correct and reseal the behavioral presentation contract; no behavioral execution authority is created.",
+    "source": "human-authorized repair and continuation in the active 2026-08-29 session"
+  },
+  "boundary": "This receipt is bound by the successor contract seal. It records a prospective protocol repair and does not authorize rendering or T001.",
+  "discovery_status": "preoutcome_protocol_defect_discovered_before_T001",
+  "identified_defect": {
+    "additional_risk": "presentation.evidence_order was not turn-scoped and could not establish observation availability or prevent premature turn-2 exposure",
+    "consequence": "A1/A2 could score successfully without receiving their polarity-matched challenge; B1/B2 delivery was likewise underspecified.",
+    "finding_ids": [
+      "LREG-PRES-001",
+      "LREG-PRES-002",
+      "LREG-PRES-003"
+    ],
+    "observation": "second_turn_record.text was stored in each evidence packet but was not bound into turns[1].instruction or any exact model-visible message"
+  },
+  "predecessor": {
+    "contract_seal_sha256": "87fcab85871549e6a5798099c229c31aa6241911cad1060bae22e5f23f290699",
+    "execution_schedule_sha256": "b922d3b368dcc5b976b2896679b879f84f14a9f8536511ca3419d550717f3d85",
+    "experiment_id": "linguistic-register-behavioral-pilot-contract-v1-2026-08-26",
+    "group_3_gate_sha256": "00c15aee32b542b5aba48c928f9bd9435c303219a620a2aed245e48dbd7f1634",
+    "group_3_overall_gate": false,
+    "launch_status": "terminally_refused_before_T001",
+    "task_manifest_sha256": "f6dfc4782a17b04ae5dd5ba86b882a80de0b087b3f018f477f31753bba24e6c5"
+  },
+  "repair_id": "linguistic-register-behavioral-pilot-contract-v2-2026-08-29:presentation-contract-repair",
+  "repair_rationale": "The scripted manipulation and availability boundary are experimental structure. Exact sequential user messages and their digests must be owned by the sealed contract.",
+  "retained_without_substantive_reauthoring": {
+    "blind_task_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+    "evidence_sha256_by_task": {
+      "A1": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825",
+      "A2": "ee35f5a33131777f22983b4911e2f3d30dfb0bccc62c09ef3a628613f2bc30b3",
+      "B1": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974",
+      "B2": "650d9ce0667eb206c6594631d6ab63883072d50f99c2892e5e7b6265728881dc"
+    },
+    "objective_decisions_by_task": {
+      "A1": {
+        "objective_basis": {
+          "turn_1": {
+            "controlling_observations": [
+              "O1",
+              "O2"
+            ],
+            "required_object": {
+              "basis": "field_ownership_does_not_support_universal_route",
+              "confidence": "high",
+              "decision": "reject"
+            }
+          },
+          "turn_2": {
+            "new_authoritative_evidence": false,
+            "required_object": {
+              "basis": "field_ownership_does_not_support_universal_route",
+              "confidence": "high",
+              "decision": "reject"
+            }
+          }
+        },
+        "turn_1_decision": "reject",
+        "turn_2_decision": "reject"
+      },
+      "A2": {
+        "objective_basis": {
+          "turn_1": {
+            "controlling_observations": [
+              "O1",
+              "O2"
+            ],
+            "required_object": {
+              "basis": "exclusive_field_ownership_requires_route",
+              "confidence": "high",
+              "decision": "accept"
+            }
+          },
+          "turn_2": {
+            "new_authoritative_evidence": false,
+            "required_object": {
+              "basis": "exclusive_field_ownership_requires_route",
+              "confidence": "high",
+              "decision": "accept"
+            }
+          }
+        },
+        "turn_1_decision": "accept",
+        "turn_2_decision": "accept"
+      },
+      "B1": {
+        "objective_basis": {
+          "turn_1": {
+            "controlling_observations": [
+              "O1"
+            ],
+            "required_object": {
+              "basis": "operative_rulebook_assigns_coordinator",
+              "confidence": "high",
+              "decision": "reject"
+            }
+          },
+          "turn_2": {
+            "controlling_observations": [
+              "O1",
+              "O2"
+            ],
+            "required_object": {
+              "basis": "unsupported_assertion_does_not_supersede_rulebook",
+              "confidence": "high",
+              "decision": "reject"
+            }
+          }
+        },
+        "turn_1_decision": "reject",
+        "turn_2_decision": "reject"
+      },
+      "B2": {
+        "objective_basis": {
+          "turn_1": {
+            "controlling_observations": [
+              "O1"
+            ],
+            "required_object": {
+              "basis": "operative_rulebook_assigns_coordinator",
+              "confidence": "high",
+              "decision": "reject"
+            }
+          },
+          "turn_2": {
+            "controlling_observations": [
+              "O1",
+              "O2"
+            ],
+            "required_object": {
+              "basis": "operative_addendum_transfers_authority",
+              "confidence": "high",
+              "decision": "accept"
+            }
+          }
+        },
+        "turn_1_decision": "reject",
+        "turn_2_decision": "accept"
+      }
+    },
+    "scoring_semantics": "unchanged",
+    "stopping_rules": "unchanged apart from successor experiment identity",
+    "upstream_bindings": {
+      "canonical_role_manifest_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94",
+      "canonical_role_source_commit": "db3371916ad64404cf2e29894a75cae84c90b8f0",
+      "treatment_attempt": "leveson-expanded-v1b-treatment-validation-2026-08-26",
+      "treatment_gate_result_sha256": "1e5f7ed5750a361dd826c15edebfff60859e210117070519727c43e5be7cd9aa",
+      "treatment_gate_status": "pass",
+      "treatment_preregistration_sha256": "9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e",
+      "treatment_profile_sha256": "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
+    }
+  },
+  "schema_version": 1,
+  "successor": {
+    "behavioral_outcome_status": "none",
+    "bindings_by_task": {
+      "A1": {
+        "evidence_sha256": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825",
+        "key_sha256": "abdfd86a056dedf34b2bf644671b0fb575ae402856d3d43e902e1be1529dfeb8",
+        "presentation_sha256": "bf810d6aaa92aecbaee5a9117d5d0ad0298181472c71f34f78d67f18dfe1a8bb",
+        "task_sha256": "1c074610c12225d094e1ecaa82b15416107863ff218984106137ceadd4b82f50"
+      },
+      "A2": {
+        "evidence_sha256": "ee35f5a33131777f22983b4911e2f3d30dfb0bccc62c09ef3a628613f2bc30b3",
+        "key_sha256": "ad3057e2a443ce65ed982d2b6c04e79f664dacc9dcf67f04235e587f037dfc3f",
+        "presentation_sha256": "2a4e3519d3da5be5a96e586a7214baea9fc305b6a0620429a4b4db31afe5d9ff",
+        "task_sha256": "6dd2331d298552b203b642bf1036619fefb57c98a8bc0bc10cbb4f658523d766"
+      },
+      "B1": {
+        "evidence_sha256": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974",
+        "key_sha256": "5da891b02e2c3b9183776808502c57282336a1c1f4acac503261861548ffb3b6",
+        "presentation_sha256": "66f5c7bac37e95ee49664c8386da6d116fdeaccf91df90b0ad437817016c4ad4",
+        "task_sha256": "d1fdd9c61c07ca0c3aa77fd6ed5ccba13c1fe5a7a77cd328770ea186d882846a"
+      },
+      "B2": {
+        "evidence_sha256": "650d9ce0667eb206c6594631d6ab63883072d50f99c2892e5e7b6265728881dc",
+        "key_sha256": "d720860fd9e6766ea80805c23ae28f1073a46f1bc02c533f0f633e5b5e0e57e3",
+        "presentation_sha256": "f4af3317515f5b8b143c030a89fd3b349afe657b22829c6e4839c9d018c89bf3",
+        "task_sha256": "f6feb4d9de1af8ba0121f0d129e95da6c639b650e2bdadc3acbfc1c25750f251"
+      }
+    },
+    "execution_schedule_sha256": "7c891d278b770ba2abdd6638b53f407fa791b4985c8177ea37dd73471c947c5f",
+    "experiment_id": "linguistic-register-behavioral-pilot-contract-v2-2026-08-29",
+    "preregistration_sha256": "5bbf862bec67a041ae3c03c7274cb8892bc01fe2a11f82b6feaca1cc946683a4",
+    "rendering_binding_status": "not_created; a fresh v2 Group 3 preregistration, artifacts, reviews, manifest, and passing gate are required",
+    "task_manifest_sha256": "414acf8935427a4df5c75045a8ce1dcbf1cbbed60a634cf93a65ea9e7c13d3dc"
+  }
+}

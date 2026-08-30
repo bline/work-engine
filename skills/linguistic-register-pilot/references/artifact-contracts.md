@@ -248,3 +248,21 @@ total assignment accuracy and within-pass recurrence for every condition. This
 tests realized recognizability while remaining upstream of full role rendering:
 it cannot select a corpus without human audit, establish cross-family
 reliability, or substitute for C0/C1/C2 artifact validation.
+
+## Behavioral presentation repair
+
+Behavioral contract v1 is retained as a sealed historical preoutcome contract,
+but its task representation did not bind `second_turn_record.text` into an
+exact model-visible second user message. Its unscoped `evidence_order` also did
+not mechanically preserve per-turn observation availability. The launch gate
+therefore refuses v1 independently of its failed Group 3 gate.
+
+Behavioral contract v2 is a prospective, pre-T001 repair. Four presentation
+artifacts deterministically materialize the exact two user messages for each
+task. The second message contains the frozen reconsideration stimulus and only
+observations declared available at turn 2. Task keys, manifest rows, every
+schedule row, and the v2 seal bind presentation digests. The sealed repair
+receipt binds the v1 seal and failed prelaunch status, the defect and rationale,
+retained evidence and objective decisions, all successor task/presentation/key
+bindings, and the absence of v2 renderings and outcomes. V1 Group 3 artifacts
+cannot satisfy any v2 gate.

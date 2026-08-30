@@ -80,6 +80,17 @@ test("host service produces immutable attributed subject and deterministic physi
   assert.deepEqual(candidate.paths.map(({ path: item, attribution }) => [item, attribution]), [
     ["task.py", "task_owned"], ["overlap.txt", "pre_existing_overlap"],
   ]);
+  const candidateSubject = {
+    schema_version: 2,
+    construction_method: "slice_checkpoint_candidate_receipt",
+    evidence_cutoff: candidate.created_at,
+    checkpoint: candidate,
+  };
+  const candidateProfile = await service.createPhysicalProfile({ subject: candidateSubject });
+  assert.equal(candidateProfile.schema_version, 2);
+  assert.equal(candidateProfile.analyzer.version, "2");
+  assert.equal(candidateProfile.subject.checkpoint.checkpoint_commit_oid, candidate.checkpoint_commit_oid);
+  assert.deepEqual(await service.createPhysicalProfile({ subject: candidateSubject }), candidateProfile);
   const accepted = await service.transitionCandidate({ candidate, kind: "accepted" });
   assert.deepEqual(await snapshot(value.repository), before);
   assert.deepEqual(
@@ -141,4 +152,15 @@ test("service refuses stale refs, tampered subjects, and non-private authority",
   };
   subject.checkpoint.paths[0].attribution = "validation_dependency";
   await assert.rejects(service.createPhysicalProfile({ subject }), /path attribution manifest/);
+  const tamperedCandidate = structuredClone(candidate);
+  tamperedCandidate.manifest_digest = "0".repeat(64);
+  await assert.rejects(service.createPhysicalProfile({ subject: {
+    schema_version: 2, construction_method: "slice_checkpoint_candidate_receipt",
+    evidence_cutoff: tamperedCandidate.created_at, checkpoint: tamperedCandidate,
+  } }), /immutable commit metadata/);
+  await assert.rejects(service.createPhysicalProfile({ subject: candidate }), /subject fields/);
+  await assert.rejects(service.createPhysicalProfile({ subject: {
+    schema_version: 2, construction_method: "full_slice_checkpoint_lifecycle_receipt",
+    evidence_cutoff: candidate.created_at, checkpoint: candidate,
+  } }), /lifecycle construction/);
 });

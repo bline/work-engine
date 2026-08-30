@@ -1,0 +1,51 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: slice-supervisor
+runtime_requirements:
+  required_capabilities:
+    - capability.preflight
+    - capability.lifecycle_control
+    - capability.receipt_finalization
+    - capability.checkpoint_lifecycle
+    - capability.completion_offer
+    - capability.completion_publication
+    - capability.resume
+    - capability.strategic_reconciliation
+  capability_ceiling:
+    - capability.preflight
+    - capability.lifecycle_control
+    - capability.receipt_finalization
+    - capability.checkpoint_lifecycle
+    - capability.completion_offer
+    - capability.completion_publication
+    - capability.resume
+    - capability.strategic_reconciliation
+  effect_ceiling:
+    - state.campaign_lifecycle
+    - state.durable_history
+  prohibited_effects:
+    - state.repository
+    - state.worktree
+    - state.task_changes
+  continuity: retained
+boundaries:
+  - id: authority.supervisor-only
+    kind: prohibition
+    semantic_section: start-one-configured-builder
+    authority_source: authority.environment
+    enforcement: denied
+  - id: campaign.lifecycle
+    kind: mutation
+    semantic_section: resolve-the-campaign-contract
+    authority_source: authority.environment
+    enforcement: mediated
+  - id: implementation.builder-mediated
+    kind: mediation
+    semantic_section: execute-in-controlled-phases
+    authority_source: authority.environment
+    enforcement: mediated
+  - id: publication.human-mediated
+    kind: mediation
+    semantic_section: accept-and-record-a-slice
+    authority_source: authority.environment
+    enforcement: mediated

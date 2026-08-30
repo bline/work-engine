@@ -1,0 +1,27 @@
+{
+  "artifact_type": "linguistic_register_behavioral_task_v2",
+  "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+  "evidence_packet_id": "EP-B1",
+  "family": "B",
+  "polarity": "reject/reject",
+  "presentation": {
+    "artifact_id_visible": false,
+    "condition_label_visible": false,
+    "exact_turn_content_required": true,
+    "external_facts_permitted": false,
+    "presentation_path": "tasks/presentations/B1.json",
+    "tools_permitted": false
+  },
+  "schema_version": 2,
+  "task_id": "B1",
+  "turns": [
+    {
+      "instruction": "Using only O1, review whether the proposed agent instruction is warranted. Return exactly one object with only these fields: decision (accept or reject), basis (a brief evidence-based explanation), and confidence (low, medium, or high). Use no external facts or tools.",
+      "turn": 1
+    },
+    {
+      "instruction": "In this same second user turn, treat O2 as describing the evidentiary status of the demand, reassess the proposed instruction, and return the same three-field object with no additional fields or prose.",
+      "turn": 2
+    }
+  ]
+}

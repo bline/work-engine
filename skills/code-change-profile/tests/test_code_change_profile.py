@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,63 @@ class CodeChangeProfileTest(unittest.TestCase):
     def subject(self):
         return json.loads(FIXTURE.read_text())
 
+    def candidate_subject(self, directory: str):
+        repository = Path(directory)
+        subprocess.run(["git", "-C", str(repository), "init", "--quiet", "--initial-branch=main"], check=True)
+        subprocess.run(["git", "-C", str(repository), "config", "user.name", "Profile Test"], check=True)
+        subprocess.run(["git", "-C", str(repository), "config", "user.email", "profile@example.invalid"], check=True)
+        (repository / "task.py").write_text("def before():\n    return 1\n")
+        subprocess.run(["git", "-C", str(repository), "add", "task.py"], check=True)
+        subprocess.run(["git", "-C", str(repository), "commit", "--quiet", "-m", "baseline"], check=True)
+        baseline = subprocess.run(
+            ["git", "-C", str(repository), "rev-parse", "HEAD"], check=True,
+            stdout=subprocess.PIPE, text=True,
+        ).stdout.strip()
+        (repository / "task.py").write_text("def after():\n    return 2\n")
+        checkpoint_path = repository / "skills/slice-checkpoint/scripts/checkpoint.py"
+        checkpoint_path.parent.mkdir(parents=True)
+        shutil.copy2(ROOT / "skills/slice-checkpoint/scripts/checkpoint.py", checkpoint_path)
+        owner = PROFILE.checkpoint_module(repository)
+        candidate = owner.create_candidate({
+            "schema_version": 1, "repository": str(repository), "run_id": "profile-candidate",
+            "slice_number": 9, "candidate_attempt": 1, "baseline_commit_oid": baseline,
+            "parent_checkpoint_commit_oid": None, "plan_version": "candidate-v2",
+            "scope_revision": "candidate-profile", "gate_receipt_digest": "a" * 64,
+            "created_at": "2026-08-29T15:00:00+00:00",
+            "paths": [{"path": "task.py", "action": "include", "attribution": "task_owned"}],
+        })
+        return {
+            "schema_version": 2, "construction_method": "slice_checkpoint_candidate_receipt",
+            "evidence_cutoff": candidate["created_at"], "checkpoint": candidate,
+        }
+
+    def test_v2_candidate_profile_is_recomputable_and_cross_bound(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subject = self.candidate_subject(directory)
+            first = PROFILE.profile(subject)
+            second = PROFILE.profile(subject)
+            self.assertEqual(PROFILE.canonical(first), PROFILE.canonical(second))
+            self.assertEqual(first["schema_version"], 2)
+            self.assertEqual(first["analyzer"]["version"], "2")
+            self.assertEqual(first["subject"]["checkpoint"]["checkpoint_kind"], "candidate")
+            for field in ("checkpoint_commit_oid", "checkpoint_tree_oid", "manifest_digest", "task_patch_digest"):
+                self.assertEqual(first["subject"]["checkpoint"][field], subject["checkpoint"][field])
+            self.assertIs(PROFILE.validate_profile(first), first)
+
+    def test_v2_candidate_profile_refuses_raw_mismatched_and_tampered_receipts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subject = self.candidate_subject(directory)
+            with self.assertRaisesRegex(PROFILE.ProfileError, "subject fields"):
+                PROFILE.profile(subject["checkpoint"])
+            mismatched = json.loads(json.dumps(subject))
+            mismatched["construction_method"] = "full_slice_checkpoint_lifecycle_receipt"
+            with self.assertRaisesRegex(PROFILE.ProfileError, "lifecycle construction"):
+                PROFILE.profile(mismatched)
+            tampered = json.loads(json.dumps(subject))
+            tampered["checkpoint"]["manifest_digest"] = "0" * 64
+            with self.assertRaisesRegex(PROFILE.ProfileError, "immutable commit metadata"):
+                PROFILE.profile(tampered)
+
     def test_real_checkpoint_is_recomputed_deterministically_for_fresh_consumer(self):
         first = PROFILE.profile(self.subject(), ROOT)
         second = PROFILE.profile(self.subject(), ROOT)
@@ -29,6 +87,8 @@ class CodeChangeProfileTest(unittest.TestCase):
         self.assertEqual(first_bytes, PROFILE.canonical(second))
 
         consumed = json.loads(first_bytes)
+        self.assertEqual(consumed["schema_version"], 1)
+        self.assertEqual(consumed["analyzer"]["version"], "1")
         self.assertEqual(consumed["subject"]["checkpoint"]["checkpoint_kind"], "accepted")
         self.assertEqual(consumed["observations"]["file_count"], {"state": "observed", "value": 11})
         self.assertGreater(consumed["observations"]["hunk_count"]["value"], 0)

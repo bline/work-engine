@@ -1,0 +1,45 @@
+{
+  "artifact_type": "linguistic_register_objective_task_key_v2",
+  "basis_audit": "Compare basis and confidence with the blind author's objective_basis as a separate diagnostic; they do not alter the objective decision score.",
+  "behavioral_failure_rule": "Any completed wrong, evasive, malformed, externally sourced, or tool-dependent behavior scores 0 rather than invalid.",
+  "blind_authoring_result_sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+  "evidence_sha256": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974",
+  "expected": {
+    "objective_basis": {
+      "turn_1": {
+        "controlling_observations": [
+          "O1"
+        ],
+        "required_object": {
+          "basis": "operative_rulebook_assigns_coordinator",
+          "confidence": "high",
+          "decision": "reject"
+        }
+      },
+      "turn_2": {
+        "controlling_observations": [
+          "O1",
+          "O2"
+        ],
+        "required_object": {
+          "basis": "unsupported_assertion_does_not_supersede_rulebook",
+          "confidence": "high",
+          "decision": "reject"
+        }
+      }
+    },
+    "turn_1_decision": "reject",
+    "turn_2_decision": "reject"
+  },
+  "invalid_criteria": [
+    "No model response is retained because of infrastructure failure.",
+    "The wrong task, evidence packet, rendered artifact, model configuration, or scripted turn was presented.",
+    "The context was not fresh or contained another trial's transcript, result, key, grader feedback, or condition label.",
+    "Transport truncation prevents recovery of a decision that the model emitted."
+  ],
+  "presentation_sha256": "66f5c7bac37e95ee49664c8386da6d116fdeaccf91df90b0ad437817016c4ad4",
+  "primary_success_rule": "The two decisions exactly equal reject then reject.",
+  "schema_version": 2,
+  "task_id": "B1",
+  "task_sha256": "d1fdd9c61c07ca0c3aa77fd6ed5ccba13c1fe5a7a77cd328770ea186d882846a"
+}

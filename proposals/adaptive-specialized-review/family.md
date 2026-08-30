@@ -13,7 +13,8 @@
   implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
-This family separates two independently decidable changes that share an origin:
+This family separates three independently decidable changes that share an
+origin and later implementation-review evidence:
 
 1. [`revision-bound-review-artifacts`](revision-bound-review-artifacts/proposal.md)
    defines the review-specific finding, episode, outcome, conflict, synthesis,
@@ -22,6 +23,11 @@ This family separates two independently decidable changes that share an origin:
 2. [`adaptive-review-panel-coordination`](adaptive-review-panel-coordination/proposal.md)
    defines the candidate judgment capability that selects relevant specialist
    perspectives and preserves a non-authoritative synthesis.
+3. [`concern-scoped-review-judgments`](concern-scoped-review-judgments/proposal.md)
+   forms the implementation-review refinement that separates immutable
+   provider-neutral results and concern-scoped judgments from unfinished
+   episode continuation and projects their provenance into repository and
+   control-plane navigation.
 
 The second candidate has a causal semantic dependency on the first: adaptive
 coordination needs a truthful durable target for revision-bound findings and
@@ -34,13 +40,20 @@ sensitivity, authority-scope, and lineage consequences if dogfooding rejects
 that placement. These relationships do not require separate delivery or
 acceptance order and do not establish that any placement is correct.
 
+The third candidate responds to implementation-review evidence and to explicit
+reopening conditions in the decided first candidate. It preserves the approved
+review-artifact meaning while proposing a smaller immutable positive judgment
+unit, a distinct live episode owner, and a replaceable Codebase Memory
+projection. Formation does not reopen, supersede, or alter the earlier decision;
+that consequence requires its named authority.
+
 ## Why these are separate proposals
 
 Review-specific artifact semantics can serve more than one coordination route,
 and a future coordinator can change without redefining reviewer episodes,
 finding identity, truthful outcomes, conflict references, or non-authoritative
 synthesis. Conversely, useful adaptive panel judgment is not mechanically
-established by creating a schema or storing review prose. The two changes
+established by creating a schema or storing review prose. These changes
 therefore have distinct acceptance questions and can be revised, rejected, or
 superseded independently.
 
@@ -54,14 +67,15 @@ formed evidence-lineage candidate proves to be a valid shared foundation.
 ## Shared consequence
 
 A fresh evaluator can distinguish shared evidence-lineage semantics,
-review-specific artifact semantics, and adaptive coordination judgment; trace
-their causal relationships; and see the unresolved placement and evidence needs
-without reconstructing the formation conversation.
+review-specific artifact semantics, immutable concern-scoped result and
+judgment meaning, unfinished episode continuation, and adaptive coordination
+judgment; trace their relationships; and see unresolved placement and evidence
+needs without reconstructing the formation conversation.
 
 ## Authority boundary
 
 These packets are formation artifacts. They do not perform review, establish
-that either candidate is correct or valuable, change the roadmap, accept an
+that any candidate is correct or valuable, change the roadmap, accept an
 architecture, decide a proposal, or authorize implementation. Persistence
 preserves the provenance of these candidate claims; it does not increase their
 epistemic or decision authority.

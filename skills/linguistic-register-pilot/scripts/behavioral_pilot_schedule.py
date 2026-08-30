@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 
-EXPERIMENT_ID = "linguistic-register-behavioral-pilot-contract-v1-2026-08-26"
-SEED = "sha256:linguistic-register-behavioral-pilot-contract-v1:balanced-order:v1"
+LEGACY_EXPERIMENT_ID = "linguistic-register-behavioral-pilot-contract-v1-2026-08-26"
+LEGACY_SEED = "sha256:linguistic-register-behavioral-pilot-contract-v1:balanced-order:v1"
 CONDITIONS = ("C0", "C1", "C2")
 TASKS = ("A1", "A2", "B1", "B2")
 REPLICAS = (1, 2)
@@ -52,25 +52,27 @@ def descriptor_key(row: tuple[str, int, str, int]) -> str:
     return f"{condition}-R{replica}|{task}|P{repetition}"
 
 
-def hashed_order(row: tuple[str, int, str, int]) -> str:
-    return hashlib.sha256(f"{SEED}|{descriptor_key(row)}".encode()).hexdigest()
+def hashed_order(row: tuple[str, int, str, int], seed: str = LEGACY_SEED) -> str:
+    return hashlib.sha256(f"{seed}|{descriptor_key(row)}".encode()).hexdigest()
 
 
-def ordered_descriptors() -> list[tuple[str, int, str, int]]:
+def ordered_descriptors(seed: str = LEGACY_SEED) -> list[tuple[str, int, str, int]]:
     universe = list(product(CONDITIONS, REPLICAS, TASKS, REPETITIONS))
     require(len(universe) == 48 and len(set(universe)) == 48, "invalid schedule universe")
-    remainder = sorted((row for row in universe if row not in CALIBRATION), key=hashed_order)
+    remainder = sorted((row for row in universe if row not in CALIBRATION), key=lambda row: hashed_order(row, seed))
     return list(CALIBRATION) + remainder
 
 
 def build_schedule(task_manifest: Path) -> dict[str, Any]:
     manifest = json.loads(task_manifest.read_text())
+    expected_experiment_id = manifest.get("experiment_id", LEGACY_EXPERIMENT_ID)
+    seed = manifest.get("schedule_seed", LEGACY_SEED)
     rows = {row["task_id"]: row for row in manifest["task_rows"]}
     require(set(rows) == set(TASKS), "task manifest must contain A1/A2/B1/B2 exactly")
     trials = []
-    for index, (condition, replica, task_id, repetition) in enumerate(ordered_descriptors(), 1):
+    for index, (condition, replica, task_id, repetition) in enumerate(ordered_descriptors(seed), 1):
         row = rows[task_id]
-        trials.append({
+        trial = {
             "trial_id": f"T{index:03d}",
             "order": index,
             "phase": "budget_calibration" if index <= 8 else "main_batch_pending_budget_gate",
@@ -85,14 +87,18 @@ def build_schedule(task_manifest: Path) -> dict[str, Any]:
             "evidence_sha256": row["evidence_sha256"],
             "fresh_context_required": True,
             "rerun_permitted": False,
-        })
+        }
+        if "presentation_sha256" in row:
+            trial["presentation_sha256"] = row["presentation_sha256"]
+        trials.append(trial)
+    schema_version = 2 if any("presentation_sha256" in row for row in rows.values()) else 1
     return {
-        "artifact_type": "linguistic_register_execution_schedule_v1",
-        "schema_version": 1,
-        "experiment_id": EXPERIMENT_ID,
+        "artifact_type": f"linguistic_register_execution_schedule_v{schema_version}",
+        "schema_version": schema_version,
+        "experiment_id": expected_experiment_id,
         "generation": {
             "algorithm": "explicit frozen eight-trial calibration prefix; remaining unique descriptors sorted by SHA-256 of seed and descriptor",
-            "seed": SEED,
+            "seed": seed,
             "task_manifest_sha256": sha256_file(task_manifest),
         },
         "trials": trials,

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "producer": "proposal-former/Codex",
+  "judgments": [
+    {
+      "id": "csrj-ownership-episode-state-v1",
+      "category": "ownership",
+      "subject": "review.episode.operational_state",
+      "conclusion": "The current independent-review-state contract owns unfinished episode continuation, reviewer generation, remediation, replacement, uncertainty, and retirement state; it does not presently own a permanent concern-scoped review-result ledger.",
+      "evidence": [
+        "skills/independent-review-state/SKILL.md#independent-review-state",
+        "skills/independent-review-state/scripts/independent_review_state.py#validate_state"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "csrj-ownership-result-capability-v1",
+      "category": "ownership",
+      "subject": "review.result_and_judgment_records",
+      "conclusion": "A shared App Server review-result capability is the probable owner of immutable provider-neutral ReviewResult and ReviewJudgment semantics, adjacent to but distinct from unfinished episode state.",
+      "evidence": [
+        "proposals/adaptive-specialized-review/revision-bound-review-artifacts/decision.json",
+        "proposals/adaptive-specialized-review/revision-bound-review-artifacts/placement.md#reopening-conditions",
+        "app-server/docs/skills-migration-plan.md#s9-provider-neutral-implementation-review-and-episode-service"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "csrj-ownership-codebase-memory-projection-v1",
+      "category": "ownership",
+      "subject": "review.provenance_navigation_projection",
+      "conclusion": "Codebase Memory is the probable replaceable current-world projection and traversal provider after a bounded owner-isolated and generation-bound synchronization extension; it does not own canonical review meaning or semantic coverage validity.",
+      "evidence": [
+        "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/repository-integration.md#probable-codebase-memory-placement",
+        "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/codebase-memory-feasibility.md#formation-inference"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "csrj-authority-projection-gap-v1",
+      "category": "authority",
+      "subject": "review.provenance_gap",
+      "conclusion": "Missing review provenance or projection coverage may expose uncertainty or nominate work but cannot itself authorize reviewer activation or a review obligation.",
+      "evidence": [
+        "DESIGN.md#1-1-contracts-and-invariants",
+        "proposals/adaptive-specialized-review/concern-scoped-review-judgments/proposal.md#projection-gaps-do-not-create-work-authority"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

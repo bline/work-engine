@@ -139,10 +139,20 @@ and scoring rules. Its launch check must refuse behavioral outcomes until a
 separate group-3 artifact-rendering and prelaunch gate passes; a sealed contract
 alone is not execution authority.
 
+Behavioral contract v2 is the current preoutcome contract. It retains the v1
+fixtures and objective decisions while replacing the ambiguous presentation
+representation with four exact, sequential, model-visible presentation
+artifacts. Every second user message contains the frozen
+`second_turn_record.text`; observations appear only at their declared
+availability turn; and task keys, the manifest, schedule rows, and contract seal
+bind each presentation digest. The launch check refuses v1 even if another gate
+were supplied. Do not execute or revive the v1 schedule.
+
 The retained group-3 preoutcome attempt is terminal and failed its frozen gate.
 Read its group report before proposing behavioral execution or a rendering
 successor. The six artifacts preserve canonical coverage and advisory speech
 act, but semantic/salience, incremental C2 manipulation, shallow-cue, and
 profile-mediated quotation gates failed. Do not launch T001, repair these
 artifacts in place, or reuse their outputs. A successor requires fresh human
-authorization and a new preregistration.
+authorization and a new preregistration. That failed attempt binds behavioral
+contract v1 and supplies no gate or rendering evidence for v2.

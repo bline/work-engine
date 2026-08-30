@@ -17,6 +17,52 @@
       },
       "additionalProperties": true
     },
+    "task_v2": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "task_id", "family", "polarity", "evidence_packet_id", "turns", "presentation"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_behavioral_task_v2"},
+        "schema_version": {"const": 2},
+        "task_id": {"enum": ["A1", "A2", "B1", "B2"]},
+        "family": {"enum": ["A", "B"]},
+        "turns": {"type": "array", "minItems": 2, "maxItems": 2},
+        "presentation": {
+          "type": "object",
+          "required": ["presentation_path", "exact_turn_content_required", "external_facts_permitted", "tools_permitted"],
+          "properties": {
+            "presentation_path": {"type": "string"},
+            "exact_turn_content_required": {"const": true},
+            "external_facts_permitted": {"const": false},
+            "tools_permitted": {"const": false}
+          },
+          "not": {"required": ["evidence_order"]}
+        }
+      },
+      "additionalProperties": true
+    },
+    "presentation_v2": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "task_id", "task_sha256", "evidence_sha256", "delivery_contract", "component_paths", "turns"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_behavioral_presentation_v2"},
+        "schema_version": {"const": 2},
+        "task_id": {"enum": ["A1", "A2", "B1", "B2"]},
+        "task_sha256": {"$ref": "#/$defs/digest"},
+        "evidence_sha256": {"$ref": "#/$defs/digest"},
+        "delivery_contract": {"type": "object"},
+        "component_paths": {"type": "object", "required": ["turn_1", "turn_2"]},
+        "turns": {
+          "type": "array",
+          "prefixItems": [
+            {"type": "object", "properties": {"turn": {"const": 1}, "role": {"const": "user"}, "content": {"type": "string", "minLength": 1}}, "required": ["turn", "role", "content"]},
+            {"type": "object", "properties": {"turn": {"const": 2}, "role": {"const": "user"}, "content": {"type": "string", "minLength": 1}}, "required": ["turn", "role", "content"]}
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
     "evidence": {
       "type": "object",
       "required": ["artifact_type", "schema_version", "evidence_packet_id", "domain", "authoritative_scope", "proposed_instruction", "observations", "second_turn_record"],
@@ -24,6 +70,26 @@
         "artifact_type": {"const": "linguistic_register_task_evidence_v1"},
         "schema_version": {"const": 1},
         "observations": {"type": "array", "minItems": 2, "maxItems": 2}
+      },
+      "additionalProperties": true
+    },
+    "key_v2": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "task_id", "task_sha256", "evidence_sha256", "presentation_sha256", "expected", "primary_success_rule", "invalid_criteria"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_objective_task_key_v2"},
+        "schema_version": {"const": 2},
+        "task_sha256": {"$ref": "#/$defs/digest"},
+        "evidence_sha256": {"$ref": "#/$defs/digest"},
+        "presentation_sha256": {"$ref": "#/$defs/digest"},
+        "expected": {
+          "type": "object",
+          "required": ["turn_1_decision", "turn_2_decision", "objective_basis"],
+          "properties": {
+            "turn_1_decision": {"$ref": "#/$defs/decision"},
+            "turn_2_decision": {"$ref": "#/$defs/decision"}
+          }
+        }
       },
       "additionalProperties": true
     },
@@ -53,6 +119,21 @@
         "artifact_type": {"const": "linguistic_register_execution_schedule_v1"},
         "schema_version": {"const": 1},
         "trials": {"type": "array", "minItems": 48, "maxItems": 48}
+      },
+      "additionalProperties": true
+    },
+    "schedule_v2": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "experiment_id", "generation", "trials"],
+      "properties": {
+        "artifact_type": {"const": "linguistic_register_execution_schedule_v2"},
+        "schema_version": {"const": 2},
+        "trials": {
+          "type": "array",
+          "minItems": 48,
+          "maxItems": 48,
+          "items": {"type": "object", "required": ["task_sha256", "evidence_sha256", "presentation_sha256"]}
+        }
       },
       "additionalProperties": true
     }

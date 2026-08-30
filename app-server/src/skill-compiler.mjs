@@ -28,6 +28,7 @@ const RELATIONS = [
   "bound_by", "may_invoke", "may_observe", "may_mutate", "owns", "consumes",
   "emits", "mediated_transitions", "forbidden_from",
 ];
+const RELATION_FIELDS = new Set([...RELATIONS, "must_require", "observation_limits"]);
 const SECTION_KINDS = new Set([
   "identity", "operation", "authority", "lifecycle", "planning", "implementation",
   "validation", "escalation", "boundary", "receipt",
@@ -112,6 +113,28 @@ function relationEntries(value, relation, label) {
   return result;
 }
 
+function mustRequireEntries(value, label) {
+  const mapping = object(value, label);
+  const result = {};
+  for (const roleId of Object.keys(mapping).sort()) {
+    text(roleId, `${label} role id`);
+    const invariants = uniqueTexts(mapping[roleId], `${label}.${roleId}`);
+    if (invariants.length === 0) fail(`${label}.${roleId} must contain at least one invariant`);
+    result[roleId] = invariants;
+  }
+  return result;
+}
+
+function observationLimitEntries(value, label) {
+  const mapping = object(value, label);
+  const result = {};
+  for (const entityId of Object.keys(mapping).sort()) {
+    text(entityId, `${label} entity id`);
+    result[entityId] = text(mapping[entityId], `${label}.${entityId}`);
+  }
+  return result;
+}
+
 function parseYaml(source, label) {
   const document = parseDocument(source, { uniqueKeys: true, maxAliasCount: 0 });
   if (document.errors.length) fail(`invalid ${label} YAML: ${document.errors[0].message}`);
@@ -186,8 +209,20 @@ function validateStructure(raw) {
   if (raw.role_profile != null) {
     exactFields(raw.role_profile, ROLE_FIELDS, "structure.role_profile");
     exactFields(raw.role_profile.projection, PROJECTION_FIELDS, "structure.role_profile.projection");
-    exactFields(raw.role_profile.relations, new Set(RELATIONS), "structure.role_profile.relations");
+    exactFields(raw.role_profile.relations, RELATION_FIELDS, "structure.role_profile.relations");
     const relations = Object.fromEntries(RELATIONS.map((relation) => [relation, relationEntries(raw.role_profile.relations[relation], relation, `structure.role_profile.relations.${relation}`)]));
+    if (raw.role_profile.relations.must_require != null) {
+      relations.must_require = mustRequireEntries(
+        raw.role_profile.relations.must_require,
+        "structure.role_profile.relations.must_require",
+      );
+    }
+    if (raw.role_profile.relations.observation_limits != null) {
+      relations.observation_limits = observationLimitEntries(
+        raw.role_profile.relations.observation_limits,
+        "structure.role_profile.relations.observation_limits",
+      );
+    }
     roleProfile = {
       role_id: text(raw.role_profile.role_id, "structure.role_profile.role_id"),
       label: text(raw.role_profile.label, "structure.role_profile.label"),

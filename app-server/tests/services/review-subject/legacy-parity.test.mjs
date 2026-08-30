@@ -62,6 +62,13 @@ print(json.dumps(module.create_candidate(json.load(sys.stdin)), sort_keys=True, 
   const service = createReviewSubjectService({ workspaceRoot });
   const mediated = await service.createCandidate(request);
   assert.deepEqual(mediated, legacy);
+  const candidateSubject = {
+    schema_version: 2, construction_method: "slice_checkpoint_candidate_receipt",
+    evidence_cutoff: mediated.created_at, checkpoint: mediated,
+  };
+  const candidateProfile = await service.createPhysicalProfile({ subject: candidateSubject });
+  assert.equal(candidateProfile.subject.checkpoint.checkpoint_commit_oid, mediated.checkpoint_commit_oid);
+  assert.equal(candidateProfile.subject.checkpoint.manifest_digest, mediated.manifest_digest);
 
   const transitionScript = `
 import importlib.util, json, sys

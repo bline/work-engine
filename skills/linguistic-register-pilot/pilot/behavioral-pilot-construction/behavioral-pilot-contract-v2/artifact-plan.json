@@ -1,0 +1,52 @@
+{
+  "artifact_type": "linguistic_register_rendering_plan_v1",
+  "artifacts": [
+    {
+      "artifact_id": "C0-R1",
+      "condition": "C0",
+      "replica": 1,
+      "sha256": null
+    },
+    {
+      "artifact_id": "C0-R2",
+      "condition": "C0",
+      "replica": 2,
+      "sha256": null
+    },
+    {
+      "artifact_id": "C1-R1",
+      "condition": "C1",
+      "replica": 1,
+      "sha256": null
+    },
+    {
+      "artifact_id": "C1-R2",
+      "condition": "C1",
+      "replica": 2,
+      "sha256": null
+    },
+    {
+      "artifact_id": "C2-R1",
+      "condition": "C2",
+      "replica": 1,
+      "sha256": null
+    },
+    {
+      "artifact_id": "C2-R2",
+      "condition": "C2",
+      "replica": 2,
+      "sha256": null
+    }
+  ],
+  "canonical_role_manifest_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94",
+  "conditions": {
+    "C0": "Neutral realization of the complete canonical role without treatment features.",
+    "C1": "Surface-only treatment realization; no discourse operation may be added or made more salient than C0.",
+    "C2": "Integrated retained-treatment realization; supplied claims may be realized differently, but no claim, requirement, permission, evidence operation, or decision policy may be added."
+  },
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v2-2026-08-29",
+  "group_2_boundary": "No artifact text or digest is produced in this construction group. Group 3 must generate fresh artifacts and replace null digests only in a separately sealed manifest.",
+  "schema_version": 1,
+  "status": "planned_not_rendered",
+  "treatment_profile_sha256": "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
+}

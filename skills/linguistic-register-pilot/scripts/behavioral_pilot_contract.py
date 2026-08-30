@@ -14,12 +14,11 @@ from typing import Any
 import yaml
 
 
-EXPERIMENT_ID = "linguistic-register-behavioral-pilot-contract-v1-2026-08-26"
 ROLE_SHA256 = "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94"
 TREATMENT_PREREG_SHA256 = "9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e"
 TREATMENT_PROFILE_SHA256 = "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
 TREATMENT_GATE_SHA256 = "1e5f7ed5750a361dd826c15edebfff60859e210117070519727c43e5be7cd9aa"
-REQUIRED_CONTRACT_FILES = (
+BASE_CONTRACT_FILES = (
     "preregistration.yaml",
     "construct-ledger.json",
     "blind-task-authoring-result.json",
@@ -60,6 +59,97 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def contract_path(contract: Path, relative: str) -> Path:
+    candidate = Path(relative)
+    require(not candidate.is_absolute() and ".." not in candidate.parts,
+            f"contract-relative path escapes contract: {relative}")
+    resolved = (contract / candidate).resolve()
+    require(resolved.is_relative_to(contract.resolve()), f"contract-relative path escapes contract: {relative}")
+    return resolved
+
+
+def experiment_id(contract: Path) -> str:
+    value = yaml.safe_load((contract / "preregistration.yaml").read_text())
+    identifier = value.get("experiment_id") if isinstance(value, dict) else None
+    require(isinstance(identifier, str) and identifier, "preregistration experiment ID is absent")
+    return identifier
+
+
+def required_contract_files(contract: Path) -> tuple[str, ...]:
+    manifest_path = contract / "tasks/manifest.json"
+    if not manifest_path.is_file():
+        return BASE_CONTRACT_FILES
+    manifest = load_json(manifest_path)
+    presentations = tuple(
+        row["presentation_path"]
+        for row in manifest.get("task_rows", [])
+        if isinstance(row, dict) and "presentation_path" in row
+    )
+    provenance = tuple(
+        relative for relative in manifest.get("provenance_artifacts", [])
+        if isinstance(relative, str) and relative
+    )
+    files = BASE_CONTRACT_FILES + presentations + provenance
+    require(len(files) == len(set(files)), "contract file list contains duplicates")
+    for relative in files:
+        contract_path(contract, relative)
+    return files
+
+
+def _section(label: str, value: str) -> str:
+    return f"{label}:\n{value}"
+
+
+def build_presentation(task: dict[str, Any], evidence: dict[str, Any], task_sha256: str,
+                       evidence_sha256: str) -> dict[str, Any]:
+    """Materialize the only model-visible task messages for presentation-v2 tasks."""
+    observations = evidence["observations"]
+    turn_1_observations = [row for row in observations if row["available_at"] == "turn_1"]
+    turn_2_observations = [row for row in observations if row["available_at"] == "turn_2"]
+    turn_1_parts = [
+        _section("Authoritative scope", evidence["authoritative_scope"]),
+        _section("Proposed instruction", evidence["proposed_instruction"]),
+        *[_section(row["observation_id"], row["value"]) for row in turn_1_observations],
+        _section("Response instruction", task["turns"][0]["instruction"]),
+    ]
+    turn_2_parts = [
+        _section("User reconsideration", evidence["second_turn_record"]["text"]),
+        *[_section(row["observation_id"], row["value"]) for row in turn_2_observations],
+        _section("Response instruction", task["turns"][1]["instruction"]),
+    ]
+    return {
+        "artifact_type": "linguistic_register_behavioral_presentation_v2",
+        "schema_version": 2,
+        "task_id": task["task_id"],
+        "task_sha256": task_sha256,
+        "evidence_sha256": evidence_sha256,
+        "delivery_contract": {
+            "model_visible_task_content": "exact_turn_content_only",
+            "roles": ["user", "user"],
+            "sequential": True,
+            "turn_2_after_turn_1_response": True,
+            "additional_task_or_evidence_content_permitted": False,
+        },
+        "component_paths": {
+            "turn_1": [
+                "evidence.authoritative_scope",
+                "evidence.proposed_instruction",
+                *[f"evidence.observations[{row['observation_id']}]" for row in turn_1_observations],
+                "task.turns[0].instruction",
+            ],
+            "turn_2": [
+                "evidence.second_turn_record.text",
+                *[f"evidence.observations[{row['observation_id']}]" for row in turn_2_observations],
+                "task.turns[1].instruction",
+            ],
+        },
+        "turns": [
+            {"turn": 1, "role": "user", "content": "\n\n".join(turn_1_parts)},
+            {"turn": 2, "role": "user", "content": "\n\n".join(turn_2_parts)},
+        ],
+    }
+
+
 def load_schedule_module() -> Any:
     path = Path(__file__).with_name("behavioral_pilot_schedule.py")
     spec = importlib.util.spec_from_file_location("behavioral_pilot_schedule", path)
@@ -82,9 +172,9 @@ def validate_upstream(contract: Path, repository: Path) -> None:
             "upstream treatment is not ready for contract construction")
 
 
-def validate_ledger(contract: Path) -> None:
+def validate_ledger(contract: Path, expected_experiment_id: str) -> None:
     ledger = load_json(contract / "construct-ledger.json")
-    require(ledger["experiment_id"] == EXPERIMENT_ID, "construct ledger experiment mismatch")
+    require(ledger["experiment_id"] == expected_experiment_id, "construct ledger experiment mismatch")
     require(ledger["frozen_before_task_authoring"] is True, "construct ledger was not frozen before tasks")
     require(ledger["bindings"]["canonical_role_manifest_sha256"] == ROLE_SHA256, "ledger role binding mismatch")
     require(ledger["bindings"]["treatment_profile_sha256"] == TREATMENT_PROFILE_SHA256, "ledger profile binding mismatch")
@@ -104,10 +194,11 @@ def validate_ledger(contract: Path) -> None:
             "blind authoring result binding mismatch")
 
 
-def validate_tasks(contract: Path) -> dict[str, Any]:
+def validate_tasks(contract: Path, expected_experiment_id: str | None = None) -> dict[str, Any]:
     manifest_path = contract / "tasks/manifest.json"
     manifest = load_json(manifest_path)
-    require(manifest["experiment_id"] == EXPERIMENT_ID, "task manifest experiment mismatch")
+    expected_experiment_id = expected_experiment_id or experiment_id(contract)
+    require(manifest["experiment_id"] == expected_experiment_id, "task manifest experiment mismatch")
     require(manifest["frozen_after_construct_ledger"] is True, "task ordering declaration missing")
     blind = manifest["blind_authoring"]
     require(blind["event_trace_tool_calls"] == 0, "blind task author used tools")
@@ -117,7 +208,7 @@ def validate_tasks(contract: Path) -> dict[str, Any]:
     require(set(rows) == {"A1", "A2", "B1", "B2"} and len(manifest["task_rows"]) == 4, "expected four unique task rows")
     measures = {}
     for task_id, row in rows.items():
-        task_path, evidence_path, key_path = (contract / row[name] for name in ("task_path", "evidence_path", "key_path"))
+        task_path, evidence_path, key_path = (contract_path(contract, row[name]) for name in ("task_path", "evidence_path", "key_path"))
         require(sha256_file(task_path) == row["task_sha256"], f"task digest mismatch: {task_id}")
         require(sha256_file(evidence_path) == row["evidence_sha256"], f"evidence digest mismatch: {task_id}")
         require(sha256_file(key_path) == row["key_sha256"], f"key digest mismatch: {task_id}")
@@ -129,14 +220,39 @@ def validate_tasks(contract: Path) -> dict[str, Any]:
         require(len(task["turns"]) == 2 and [turn["turn"] for turn in task["turns"]] == [1, 2], f"turn mismatch: {task_id}")
         require(task["presentation"]["external_facts_permitted"] is False and task["presentation"]["tools_permitted"] is False,
                 f"task isolation mismatch: {task_id}")
+        presentation = None
+        if manifest.get("schema_version") == 2:
+            require(task.get("schema_version") == 2 and task.get("artifact_type") == "linguistic_register_behavioral_task_v2",
+                    f"task presentation version mismatch: {task_id}")
+            require("evidence_order" not in task["presentation"], f"legacy unscoped evidence order remains: {task_id}")
+            require(task["presentation"].get("exact_turn_content_required") is True,
+                    f"exact presentation contract missing: {task_id}")
+            require(task["presentation"].get("presentation_path") == row.get("presentation_path"),
+                    f"task presentation path mismatch: {task_id}")
+            presentation_path = contract_path(contract, row["presentation_path"])
+            require(sha256_file(presentation_path) == row.get("presentation_sha256"),
+                    f"presentation digest mismatch: {task_id}")
+            presentation = load_json(presentation_path)
+            expected_presentation = build_presentation(task, evidence, row["task_sha256"], row["evidence_sha256"])
+            require(presentation == expected_presentation, f"presentation composition mismatch: {task_id}")
+            require(key.get("presentation_sha256") == row["presentation_sha256"],
+                    f"key presentation binding mismatch: {task_id}")
+            require(evidence["second_turn_record"]["text"] in presentation["turns"][1]["content"],
+                    f"second-turn stimulus is not delivered: {task_id}")
+            require(evidence["second_turn_record"]["text"] not in presentation["turns"][0]["content"],
+                    f"second-turn stimulus is exposed at turn 1: {task_id}")
         task_text = json.dumps({"task": task, "evidence": evidence}, ensure_ascii=False).casefold()
         for forbidden in FORBIDDEN_TASK_TERMS:
             require(re.search(rf"\b{re.escape(forbidden)}\b", task_text) is None, f"forbidden identity/method term in {task_id}: {forbidden}")
+        visible_turns = presentation["turns"] if presentation else task["turns"]
+        visible_text = " ".join(turn.get("content", turn.get("instruction", "")) for turn in visible_turns)
         measures[task_id] = {
             "turns": len(task["turns"]),
             "observations": len(evidence["observations"]),
             "normalized_words": len(WORD_RE.findall(task_text)),
             "turn_instruction_words": [len(WORD_RE.findall(turn["instruction"])) for turn in task["turns"]],
+            "model_visible_words": len(WORD_RE.findall(visible_text)),
+            "model_visible_turn_words": [len(WORD_RE.findall(turn.get("content", turn.get("instruction", "")))) for turn in visible_turns],
             "required_output_fields": ["decision", "basis", "confidence"],
         }
     for left, right in (("A1", "A2"), ("B1", "B2")):
@@ -146,6 +262,12 @@ def validate_tasks(contract: Path) -> dict[str, Any]:
                 f"prompt/evidence word-count mismatch exceeds frozen tolerance: {left}/{right}")
         require(all(abs(a - b) <= 8 for a, b in zip(measures[left]["turn_instruction_words"], measures[right]["turn_instruction_words"])),
                 f"turn-instruction mismatch exceeds frozen tolerance: {left}/{right}")
+        if manifest.get("schema_version") == 2:
+            require(abs(measures[left]["model_visible_words"] - measures[right]["model_visible_words"]) <= 12,
+                    f"model-visible prompt mismatch exceeds frozen tolerance: {left}/{right}")
+            require(all(abs(a - b) <= 8 for a, b in zip(measures[left]["model_visible_turn_words"],
+                                                        measures[right]["model_visible_turn_words"])),
+                    f"model-visible turn mismatch exceeds frozen tolerance: {left}/{right}")
     return measures
 
 
@@ -164,45 +286,49 @@ def validate_subject_and_analysis(contract: Path) -> None:
     require(stopping["budget_calibration"]["projection"] == "6 * u + 10", "budget projection mismatch")
 
 
-def validate_preregistration(contract: Path) -> None:
+def validate_preregistration(contract: Path, expected_experiment_id: str) -> None:
     value = yaml.safe_load((contract / "preregistration.yaml").read_text())
-    require(value["experiment_id"] == EXPERIMENT_ID, "preregistration experiment mismatch")
+    require(value["experiment_id"] == expected_experiment_id, "preregistration experiment mismatch")
     require(value["status"] == "frozen_pre_render_pre_outcome", "preregistration status mismatch")
     require(value["outcomes_generated"] is False and value["renderings_generated"] is False, "pre-outcome boundary violated")
 
 
-def validate_seal(contract: Path) -> None:
+def validate_seal(contract: Path, expected_experiment_id: str) -> None:
     path = contract / "contract-seal.json"
     if not path.exists():
         return
     seal = load_json(path)
-    require(seal["experiment_id"] == EXPERIMENT_ID, "seal experiment mismatch")
-    expected = {relative: sha256_file(contract / relative) for relative in REQUIRED_CONTRACT_FILES}
+    require(seal["experiment_id"] == expected_experiment_id, "seal experiment mismatch")
+    expected = {relative: sha256_file(contract_path(contract, relative)) for relative in required_contract_files(contract)}
     require(seal["files"] == expected, "contract seal file digest mismatch")
 
 
 def validate_contract(contract: Path, repository: Path) -> dict[str, Any]:
-    for relative in REQUIRED_CONTRACT_FILES:
-        require((contract / relative).is_file(), f"missing contract file: {relative}")
+    expected_experiment_id = experiment_id(contract)
+    for relative in required_contract_files(contract):
+        require(contract_path(contract, relative).is_file(), f"missing contract file: {relative}")
     validate_upstream(contract, repository)
-    validate_ledger(contract)
-    measures = validate_tasks(contract)
+    validate_ledger(contract, expected_experiment_id)
+    measures = validate_tasks(contract, expected_experiment_id)
     validate_subject_and_analysis(contract)
-    validate_preregistration(contract)
+    validate_preregistration(contract, expected_experiment_id)
     schedule_module = load_schedule_module()
     balance = schedule_module.validate_schedule(load_json(contract / "execution-schedule.json"), contract / "tasks/manifest.json")
-    validate_seal(contract)
-    return {"experiment_id": EXPERIMENT_ID, "task_measures": measures, "schedule_balance": balance, "valid": True}
+    validate_seal(contract, expected_experiment_id)
+    return {"experiment_id": expected_experiment_id, "task_measures": measures, "schedule_balance": balance, "valid": True}
 
 
 def seal_contract(contract: Path, repository: Path, output: Path) -> None:
     require(not output.exists(), f"refusing to overwrite: {output}")
     validate_contract(contract, repository)
-    files = {relative: sha256_file(contract / relative) for relative in REQUIRED_CONTRACT_FILES}
+    expected_experiment_id = experiment_id(contract)
+    files = {relative: sha256_file(contract_path(contract, relative)) for relative in required_contract_files(contract)}
+    manifest = load_json(contract / "tasks/manifest.json")
+    schema_version = manifest.get("schema_version", 1)
     output.write_bytes(canonical({
-        "artifact_type": "linguistic_register_behavioral_contract_seal_v1",
-        "schema_version": 1,
-        "experiment_id": EXPERIMENT_ID,
+        "artifact_type": f"linguistic_register_behavioral_contract_seal_v{schema_version}",
+        "schema_version": schema_version,
+        "experiment_id": expected_experiment_id,
         "files": files,
         "upstream": {"role_manifest_sha256": ROLE_SHA256, "treatment_preregistration_sha256": TREATMENT_PREREG_SHA256,
                      "treatment_profile_sha256": TREATMENT_PROFILE_SHA256, "treatment_gate_sha256": TREATMENT_GATE_SHA256},
@@ -211,6 +337,9 @@ def seal_contract(contract: Path, repository: Path, output: Path) -> None:
 
 
 def require_launch_gate(contract: Path, stage: str) -> dict[str, Any]:
+    manifest = load_json(contract / "tasks/manifest.json")
+    require(manifest.get("schema_version", 1) >= 2,
+            "launch refused: legacy contract does not bind exact model-visible turn content")
     seal_path = contract / "contract-seal.json"
     require(seal_path.is_file(), "launch refused: contract is not sealed")
     gate_path = contract / "group-3-preoutcome-gate.json"

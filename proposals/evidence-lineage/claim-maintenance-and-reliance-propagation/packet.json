@@ -31,11 +31,19 @@
     {
       "kind": "semantic_review",
       "path": "../../../reviews/proposals/claim-centered-evidence-lineage/cd50e79/synthesis.md"
+    },
+    {
+      "kind": "repository_integration",
+      "path": "../../empirical-agent-research/code-change-characterization-profile/proposal.md"
+    },
+    {
+      "kind": "provider_feasibility_evidence",
+      "path": "evidence/codebase-memory-feasibility.md"
     }
   ],
   "placement": {
     "state": "probable",
-    "claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions, while a general control-plane capability may own cross-owner delivery without acquiring claim meaning."
+    "claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions; a general control-plane capability may own cross-owner delivery without acquiring claim meaning; and Codebase Memory probably supplies the replaceable current-world projection after a bounded, reindex-safe synchronization extension."
   },
   "uncertainty": {
     "state": "unresolved",
@@ -43,6 +51,9 @@
       "The production foundation cannot preserve the stable identities, revisions, profiles, and authority envelopes required by this phase.",
       "Concurrent or branching refresh requires a different canonical-support model than explicit attributed selection among immutable revisions.",
       "A real domain consumer cannot distinguish candidate impact, investigation, unchanged refresh, changed support, applicability, and reopening without collapsing owners.",
+      "The slice lifecycle cannot durably preserve or derive the exact attributed checkpoint subject needed for post-slice impact analysis before its terminal projection becomes lossy.",
+      "Stable code, test, schema, configuration, or documentation-anchor identity cannot be reconciled across rename, move, split, merge, deletion, and ambiguity without converting uncertain structural matching into semantic authority.",
+      "Codebase Memory cannot preserve owner isolation, content-bound generation identity, atomic projection publication, and truthful unresolved references through a bounded extension.",
       "Cross-owner obligation delivery cannot be made lossless and idempotent without assigning semantic completion to transport acknowledgement.",
       "Compaction, authority revocation, inactive recipients, or partial publication requires durable semantics outside the proposed claim, domain-workflow, and delivery ownership split."
     ]
@@ -74,6 +85,12 @@
       "type": "related_to",
       "target_id": "work-engine.operational-state-transition-history",
       "rationale": "Operational transition history may observe delivery and role-state consequences without becoming the owner of claim judgments, reliance, or refresh completion.",
+      "causal": false
+    },
+    {
+      "type": "related_to",
+      "target_id": "work-engine.code-change-characterization-profile",
+      "rationale": "An exact change profile can supply immutable physical and structural before/after observations for repository impact nomination, while claim maintenance retains nomination, refresh, reliance, and semantic authority and does not depend on one analyzer implementation.",
       "causal": false
     }
   ]

@@ -2,12 +2,49 @@ schema_version: 1
 manifest_id: work-engine.app-server
 
 roles:
+  slice-supervisor:
+    contract: ../skills/slice-supervisor/SKILL.md
+    compiled_environment:
+      structure: migrations/skills/slice-supervisor/structure.yaml
+      interface: migrations/skills/slice-supervisor/interface.yaml
+    compiled_skill_sha256: cc0694a6a3658eb533b3f5eca3239201f7145104e0609c201d2b2fdd6b25d5c3
+    developer_instructions: |-
+      You supervise one configured campaign under the exact slice-supervisor contract. Campaign authority, phase decisions, specialist selection, acceptance, and human escalation remain yours; repository-domain judgment and mutation remain with the retained builder.
+
+      Durable campaign state, workspace admission, gates, checkpoint/profile creation, receipts, completion offers, Claim Evidence, and context lifecycle are mediated services with their own semantic owners. Use their bounded projections and operations; do not absorb their state or reinterpret their receipts. The legacy review boundary is explicit compatibility, not native review closure.
+
+      Provider thread history is reasoning context, not campaign state. Return only the requested bounded campaign decision and preserve every unresolved authority or validation obligation.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+    continuity: retained
+    capabilities:
+      - capability.preflight
+      - capability.lifecycle_control
+      - capability.receipt_finalization
+      - capability.checkpoint_lifecycle
+      - capability.completion_offer
+      - capability.completion_publication
+      - capability.resume
+      - capability.strategic_reconciliation
+    effects:
+      - state.campaign_lifecycle
+      - state.durable_history
+    skills:
+      - name: slice-supervisor
+        path: ../skills/slice-supervisor/SKILL.md
+
   slice-builder:
     contract: ../skills/slice-builder/SKILL.md
+    developer_instructions: |-
+      You own one accepted implementation slice under the supervisor's exact boundary; you do not own campaign lifecycle, reviewer selection, checkpoint/profile semantics, receipts, completion publication, Claim Evidence, or context-lifecycle state.
+
+      Use the supplied App Server services and deterministic owners for those effects. The legacy review seam is compatibility only, not native review closure. Bypassing a mediated owner can lose authority, attribution, recovery, or the exact review subject even when repository changes appear correct.
     compiled_environment:
       structure: migrations/skills/slice-builder/structure.yaml
       interface: migrations/skills/slice-builder/interface.yaml
-    compiled_skill_sha256: d3eb81d00b8b517a7f552e9bcbd300773e49f30c035b2f016115189d5f6fd8c0
+    compiled_skill_sha256: 561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e
     thread_options:
       cwd: ..
       approval_policy: never

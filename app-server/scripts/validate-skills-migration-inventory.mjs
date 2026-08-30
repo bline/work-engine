@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { readdir, readFile, realpath, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,36 +20,28 @@ function requireArray(value, label) {
   if (!Array.isArray(value)) fail(`${label} must be an array`);
 }
 function digest(bytes) { return createHash("sha256").update(bytes).digest("hex"); }
-function portable(relativePath) { return relativePath.split(path.sep).join("/"); }
-
-async function filesBelow(root) {
-  const output = [];
-  async function visit(directory) {
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      if (entry.name === "__pycache__" || entry.name === ".DS_Store") continue;
-      const absolute = path.join(directory, entry.name);
-      if (entry.isSymbolicLink()) fail(`symbolic links are unsupported in inventory scope: ${absolute}`);
-      if (entry.isDirectory()) await visit(absolute);
-      else if (entry.isFile()) output.push(absolute);
-    }
+const execute = promisify(execFile);
+async function git(repository, args, options = {}) {
+  try {
+    return (await execute("git", ["-C", repository, ...args], { encoding: options.encoding ?? "utf8", maxBuffer: 32 * 1024 * 1024 })).stdout;
+  } catch (error) {
+    fail(`Git inventory source failed: ${error.stderr?.toString().trim() || error.message}`);
   }
-  await visit(root);
-  return output.sort();
 }
-
-async function currentSkillNames(repository) {
-  const skillsRoot = path.join(repository, "skills");
-  const names = [];
-  for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    try {
-      const skill = path.join(skillsRoot, entry.name, "SKILL.md");
-      if ((await stat(skill)).isFile()) names.push(entry.name);
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
-  }
-  return names.sort();
+async function resolveTree(repository, treeish) {
+  requireText(treeish, "treeish");
+  return (await git(repository, ["rev-parse", "--verify", `${treeish}^{tree}`])).trim();
+}
+async function treeFiles(repository, treeOid, prefix = "skills/") {
+  const output = await git(repository, ["ls-tree", "-r", "-z", "--name-only", treeOid, "--", prefix]);
+  return output.split("\0").filter(Boolean).sort();
+}
+async function treeBlob(repository, treeOid, relativePath, label) {
+  const line = (await git(repository, ["ls-tree", treeOid, "--", relativePath])).trim();
+  const match = /^(\d+) (\w+) ([a-f0-9]+)\t/.exec(line);
+  if (!match) fail(`${label} declared path absent from Git tree: ${relativePath}`);
+  if (match[1] === "120000" || match[2] !== "blob") fail(`${label} evidence must be a non-symlink Git blob: ${relativePath}`);
+  return git(repository, ["cat-file", "blob", match[3]], { encoding: "buffer" });
 }
 
 function validateEvidenceEntry(entry, label, expectedPrefix) {
@@ -58,7 +52,7 @@ function validateEvidenceEntry(entry, label, expectedPrefix) {
   if (!SHA256.test(entry.sha256)) fail(`${label}.sha256 must be a lowercase SHA-256 digest`);
 }
 
-export async function validateInventory({ repository, inventory }) {
+export async function validateInventory({ repository, inventory, treeish = "HEAD" }) {
   if (inventory?.schema_version !== 1) fail("inventory schema_version must be 1");
   requireText(inventory.inventory_id, "inventory_id");
   requireText(inventory.evidence_only_notice, "evidence_only_notice");
@@ -72,7 +66,9 @@ export async function validateInventory({ repository, inventory }) {
   requireArray(inventory.graph_limitations, "graph_limitations");
   requireArray(inventory.packages, "packages");
 
-  const liveNames = await currentSkillNames(repository);
+  const tree_oid = await resolveTree(repository, treeish);
+  const gitPaths = await treeFiles(repository, tree_oid);
+  const liveNames = gitPaths.filter((entry) => /^skills\/[^/]+\/SKILL\.md$/.test(entry)).map((entry) => entry.split("/")[1]).sort();
   const names = inventory.packages.map((record) => record.name);
   if (new Set(names).size !== names.length) fail("inventory contains duplicate package records");
   if (JSON.stringify([...names].sort()) !== JSON.stringify(liveNames)) {
@@ -117,30 +113,30 @@ export async function validateInventory({ repository, inventory }) {
       if (!DISPOSITIONS.has(test.candidate_disposition)) fail(`${label}.tests[${index}].candidate_disposition is unsupported`);
     }
 
-    const directory = path.join(repository, "skills", record.name);
-    const livePaths = (await filesBelow(directory)).map((absolute) => portable(path.relative(repository, absolute)));
+    const entryBlobs = new Map();
+    for (const entry of entries) entryBlobs.set(entry.path, await treeBlob(repository, tree_oid, entry.path, label));
+    const livePaths = gitPaths.filter((entry) => entry.startsWith(prefix));
     if (JSON.stringify([...entryPaths].sort()) !== JSON.stringify(livePaths)) {
       fail(`${label} file closure mismatch`);
     }
     for (const entry of entries) {
-      const absolute = path.resolve(repository, entry.path);
-      const canonical = await realpath(absolute);
-      if (!canonical.startsWith(`${await realpath(directory)}${path.sep}`)) fail(`${label} evidence escapes its package`);
-      if (digest(await readFile(canonical)) !== entry.sha256) fail(`${label} stale exact-byte digest: ${entry.path}`);
+      if (digest(entryBlobs.get(entry.path)) !== entry.sha256) fail(`${label} stale exact-byte digest: ${entry.path}`);
       verifiedFiles += 1;
     }
   }
-  return Object.freeze({ packages: names.length, verified_files: verifiedFiles });
+  return Object.freeze({ packages: names.length, verified_files: verifiedFiles, tree_oid });
 }
 
 async function main(argv) {
   const repositoryFlag = argv.indexOf("--repository");
   const inventoryFlag = argv.indexOf("--inventory");
+  const treeFlag = argv.indexOf("--tree-ish");
   if (repositoryFlag < 0 || inventoryFlag < 0) fail("usage: --repository <path> --inventory <path>");
   const repository = path.resolve(argv[repositoryFlag + 1]);
   const inventoryPath = path.resolve(argv[inventoryFlag + 1]);
   const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
-  process.stdout.write(`${JSON.stringify(await validateInventory({ repository, inventory }))}\n`);
+  const treeish = treeFlag < 0 ? "HEAD" : argv[treeFlag + 1];
+  process.stdout.write(`${JSON.stringify(await validateInventory({ repository, inventory, treeish }))}\n`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

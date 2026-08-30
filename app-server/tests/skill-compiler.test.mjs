@@ -18,7 +18,9 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
   const projection = stringify({
     role_id: "role.builder",
     role: {
-      bound_by: ["INV-001"], may_invoke: [], may_observe: [], may_mutate: [], owns: [],
+      bound_by: ["INV-001"], must_require: { "role.reviewer": ["INV-012"] },
+      may_invoke: [], may_observe: ["artifact.plan"],
+      observation_limits: { "artifact.plan": "accepted consequence only" }, may_mutate: [], owns: [],
       consumes: [], emits: [], mediated_transitions: [], forbidden_from: [],
     },
   });
@@ -53,7 +55,7 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
       role_id: "role.builder", label: "Builder", objective: "Build the fixture.",
       context_lifetime: "one fixture",
       projection: { path: "projection.yaml", sha256: digest(projection) },
-      relations: { bound_by: ["INV-001"], may_invoke: [], may_observe: [], may_mutate: [], owns: [], consumes: [], emits: [], mediated_transitions: [], forbidden_from: [] },
+      relations: { bound_by: ["INV-001"], must_require: { "role.reviewer": ["INV-012"] }, may_invoke: [], may_observe: ["artifact.plan"], observation_limits: { "artifact.plan": "accepted consequence only" }, may_mutate: [], owns: [], consumes: [], emits: [], mediated_transitions: [], forbidden_from: [] },
     }, sections,
   };
   const skillInterface = {
@@ -76,6 +78,46 @@ test("vertical compiler path preserves exact bytes, provenance, and authority cl
   assert.equal(result.ir.source_bindings[0].kind, "canonical_authority");
   assert.equal(result.ir.runtime_requirements.compiled_skill_sha256, result.ir.output_sha256);
   assert.match(result.ir.runtime_requirements.sha256, /^[0-9a-f]{64}$/);
+  assert.deepEqual(result.ir.role_profile.relations.must_require, {
+    "role.reviewer": ["INV-012"],
+  });
+  assert.deepEqual(result.ir.role_profile.relations.observation_limits, {
+    "artifact.plan": "accepted consequence only",
+  });
+
+  for (const [value, message] of [
+    [[], /must_require must be an object/],
+    [{ "role.reviewer": [] }, /must contain at least one invariant/],
+    [{ "role.reviewer": ["INV-012", "INV-012"] }, /contains duplicates/],
+  ]) {
+    const malformed = structuredClone(structure);
+    malformed.role_profile.relations.must_require = value;
+    await assert.rejects(
+      compileSkill({
+        structureSource: stringify(malformed),
+        interfaceSource: stringify(skillInterface),
+        verifySources: false,
+      }),
+      message,
+    );
+  }
+
+  for (const [value, message] of [
+    [[], /observation_limits must be an object/],
+    [{ "": "accepted consequence only" }, /entity id must be nonempty text/],
+    [{ "artifact.plan": "" }, /observation_limits\.artifact\.plan must be nonempty text/],
+  ]) {
+    const malformed = structuredClone(structure);
+    malformed.role_profile.relations.observation_limits = value;
+    await assert.rejects(
+      compileSkill({
+        structureSource: stringify(malformed),
+        interfaceSource: stringify(skillInterface),
+        verifySources: false,
+      }),
+      message,
+    );
+  }
 
   const invalid = structuredClone(skillInterface);
   invalid.boundaries[0].authority_source = "authority.unknown";
@@ -98,7 +140,7 @@ test("pinned slice-builder decomposition regenerates exact canonical bytes and A
   assert.ok(first.output.equals(expected));
   assert.ok(second.output.equals(first.output));
   assert.equal(first.ir.section_provenance.length, 9);
-  assert.equal(first.ir.output_sha256, "d3eb81d00b8b517a7f552e9bcbd300773e49f30c035b2f016115189d5f6fd8c0");
+  assert.equal(first.ir.output_sha256, "561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e");
   assert.equal(first.ir.status, "experimental_non_authoritative");
   assert.match(first.ir.input_sha256.structure, /^[0-9a-f]{64}$/);
   assert.match(first.ir.input_sha256.interface, /^[0-9a-f]{64}$/);

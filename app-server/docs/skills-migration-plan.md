@@ -10,8 +10,8 @@ classification, authorize a contract change, approve a slice plan, or make a
 generated projection authoritative.
 
 Evidence cutoff: repository `HEAD`
-`41b72898af28d489fd6dbed456593bf20abc5696` plus the directly inspected working
-tree on 2026-08-28. The working tree already contained unrelated and ongoing
+`b4d749672990aadb51bab391a2e286b057128ea4` plus the directly inspected working
+tree on 2026-08-29. The working tree already contained unrelated and ongoing
 App Server, product-development, experiment, and instruction-review changes.
 Those changes remain user-owned and must not be reverted, absorbed, or treated
 as accepted migration state merely because this plan observes them.
@@ -291,6 +291,7 @@ S1 + S3 + S5 + S7 --> S9 generic review contract and episode service
 S6 + S7 + S9 --> S10 reviewer role, profile registry, OpenRouter adapter
 S1 + S10 --> S11 instruction-review specialist composition
 S8 + S9 + S10 + S11 + claim-service evidence --> S12 native review closure
+S6 + S7 + S8 + S12 + accepted claim-maintenance proposal and implementation grant --> S12M claim-maintenance projection vertical
 S9 through S12 --> S13 reviewer research and admission evidence
 S4 + S5 + S6 + S12 --> S14 product-development role imports
 S0 + S5 + S12 + service evidence --> S15 remaining service-backed imports
@@ -516,6 +517,104 @@ objective, accepted S0/S1 consequences, canonical ownership, or migration
 authority. Candidate slices may still split when one boundary cannot be
 accepted independently.
 
+## Staged development cutover amendment
+
+The user approved this bootstrap and cutover boundary on 2026-08-29. The
+migration does not need to reproduce proposal intake before App Server can
+become the development environment. Existing accepted proposal and roadmap
+revisions may enter through their exact durable owners. When proposal meaning
+must change, formation, evaluation, and approval may continue in the legacy
+environment and supply a new immutable authorized revision; that bridge does
+not transfer proposal authority to App Server or make legacy conversation a
+runtime dependency.
+
+The cutover is staged:
+
+- S5 establishes hidden context-lifecycle participation for compiled roles,
+  and the existing App Server claim service remains the canonical claim owner.
+- S7 remains a prerequisite for development orchestration because supervisor
+  and reviewer consumers require immutable attributed subjects and
+  deterministic physical change profiles.
+- Before S8, verify that the existing claim service is reachable through the
+  environment boundary required by one real development consumer. Add an
+  earlier thin claim projection only when that observed consumer cannot use the
+  current service boundary; do not preemptively move S12 review semantics or
+  claim authority into the builder.
+- S8 may move retained builder and supervisor execution into App Server while
+  preserving the explicit compatibility-backed legacy review seam.
+- S12's accepted end-to-end claim-backed review vertical is the retirement
+  gate for the legacy development workflow. S9 alone does not establish native
+  reviewer execution, specialist composition, or claim-backed closure.
+
+Development of the remaining workflow may therefore occur inside the App
+Server environment while the legacy workflow bootstraps planning, review, and
+acceptance boundaries that are not yet native. This is an explicit temporary
+architecture, not evidence that those boundaries have already migrated.
+
+Expected cost and latency savings are hypotheses to measure rather than
+acceptance assumptions. Preserve comparable legacy baselines for model/provider
+tokens, charged cost, wall time, context recovery, review repair iterations,
+and user interventions, then compare like-for-like App Server slices as native
+boundaries become active. Lower cost or latency never substitutes for semantic,
+authority, or validation evidence.
+
+### Coordination substrate successor note
+
+The current working-tree cross-session chatboard and fail-closed
+active-campaign registry form the first operational coordination slice, not the
+complete App Server coordination architecture. This observation remains
+provisional until that infrastructure has its own exact checkpoint or commit
+and acceptance evidence. The slice provides durable messages, expiring
+advisory resource claims, compare-and-swap conflict handling, and guarded
+campaign registration. It addresses immediate shared-tool collisions when
+every caller follows the repository entry contract, but does not establish
+automatic interception, fencing, observation of external effects, or
+model-context delivery.
+
+The App Server and context-lifecycle successor must coordinate both semantic
+scope and typed physical operational resources. Disjoint source ownership is
+insufficient when agents can still collide on fixed directories, generated
+indexes or caches, ports and sockets, database files, Git index or branch
+state, tool-global configuration, rate limits, or named remote campaigns. The
+resource model must distinguish independently governable identities and access
+modes, such as an exclusive Git index or branch ref, an exclusive canonical
+output directory or port, reserved provider capacity, and advisory or
+shared/exclusive source scopes; it must not collapse ordinary disjoint edits
+into a global workspace lock.
+
+Prefer session- and operation-namespaced resources where possible. Genuinely
+singular resources require expiring leases whose grants carry resource-specific
+monotonically increasing fencing tokens. Validation by an adapter immediately
+before mutation is insufficient because lease expiry or supersession can occur
+between validation and use. The mutation authority must atomically admit the
+operation with its token and reject absent, expired, superseded, or mismatched
+admissions. Once admitted, completion must occur within an explicitly defined
+transactional boundary. Resources that cannot enforce fencing, especially
+arbitrary filesystem writes, must be isolated or namespaced, mediated through
+an enforcing adapter, or explicitly classified as advisory-only.
+
+Keep intent, resource authority, observation, and judgment-bearing messages
+distinct. Intent is advisory; an acquired fenced lease supplies a candidate
+admission rather than mutation authority by itself; filesystem, Git, service,
+and provider receipts establish what actually happened; and only messages that
+can invalidate or redirect an agent's reasoning should enter model context.
+Completion must bind the intent, exact resource set, lease and fencing tokens,
+starting repository generation, and observed resulting generation, while
+append-only typed events support rebuildable projections for current leases,
+active agents, repository generation, and relevant pending messages. Messages,
+acknowledgements, and advisory claims never confer mutation authority.
+
+Host adapters should eventually register intents and resource claims before
+tool entry, submit admissions to the authoritative mutation boundary, reject or
+delay conflicts, observe completion and release, and project only causally
+relevant changes at safe turn or context-lifecycle boundaries. The app server
+owns coordination authority; mediated tools enforce it; agent-facing skills
+teach declaration and conflict interpretation without becoming authority.
+Until that successor is implemented and accepted, the lightweight board
+remains an explicit compatibility and safety mechanism; its existence does not
+prove that hidden resources are declared, that all callers are guarded, or
+that multi-agent coordination has migrated into App Server.
+
 ### S6 — First non-role import: repository evidence retrieval
 
 **Objective:** Import `repo-search` as a reusable provider-neutral evidence
@@ -564,6 +663,10 @@ review without acquiring checkpoint or profiling authority.
   exact repository evidence.
 - Profile metrics describe physical change characteristics only; they neither
   select a reviewer nor infer semantic risk, quality, or acceptance.
+- Any later semantic characterization of authority, persistence, concurrency,
+  security, topology, or other change meaning is a separately attributed and
+  versioned projection. It may consume the physical profile but cannot acquire
+  its deterministic identity or silently revise its observations.
 - Both capabilities remain mediated and unreachable as reviewer judgment.
 
 **Acceptance evidence:** Git-state preservation and conflict fixtures; exact
@@ -594,6 +697,11 @@ already complete.
 - Plan acceptance, mutation admission, gate execution, checkpoint creation,
   receipt finalization, and completion-commit prompting remain mediated by
   their existing owners.
+- The accepted plan can reference an integrity-bound expected semantic-impact
+  artifact, while the immutable candidate and accepted checkpoint preserve the
+  actual attributed before/after subject, changed-file manifest, and physical
+  change-profile identity. Expected and observed scope remain distinct and
+  lossless even when no claim-maintenance consumer is active.
 - Mutable-workspace admission prevents conflicting builders.
 - The review boundary is explicit, fail-closed, and compatibility-backed; it
   is not silently implemented by the supervisor or builder.
@@ -666,9 +774,23 @@ configuration or adapter behavior to redefine review semantics.
 - The minimal registry owns approved profile identifiers, exact permitted
   model slugs, capability/schema bindings, configuration digests, enabled
   state, limitations, and the accepting authority.
+- A profile records requested model, provider constraints, reasoning, effective
+  instructions, tools, output schema, and isolated-home configuration. The run
+  receipt records observed model, resolved provider, serving variant or
+  explicit unknowns separately; configured identity never substitutes for
+  execution evidence.
 - The OpenRouter adapter accepts only an admitted profile identifier and owns
   isolated `CODEX_HOME` construction, pinned provider/model configuration,
   transport provenance, failure classification, and raw event capture.
+- Provider admission uses and records a freshness-bound canonical projection
+  of the live catalog evidence relevant to the admitted profile. A known
+  missing required capability or violated routing constraint fails closed;
+  catalog presence does not guarantee inference admission or replace the
+  actual execution receipt.
+- Raw event capture follows an explicit data classification, access, retention,
+  redaction or omission, and tamper-evidence contract. When exact retention is
+  not authorized, the adapter emits an authenticated bounded projection and
+  records what was omitted rather than silently discarding evidence.
 - Arbitrary or untested model slugs, undeclared capabilities, subject drift,
   and malformed output fail closed.
 - MCP is used only if the isolated process cannot receive the same bounded
@@ -738,6 +860,9 @@ as semantic owner.
   remediates findings; neither selects or certifies itself.
 - Exact checkpoint, profile, episode, finding, claim revision, remediation,
   and terminal receipt identities remain reconstructable.
+- Claim reads and relevant-revision projections remain provider-neutral. They
+  may later be joined to a replaceable structural projection without making a
+  graph provider, retrieval result, or cache the canonical claims owner.
 - No second local claim store, review-state owner, or context-lifecycle owner
   remains active.
 
@@ -750,6 +875,71 @@ authority tests; and legacy outcome comparison.
 **Excluded:** Letting claims accept a review, automatic completion commits,
 silent campaign expansion, or treating the claims service as a reviewer role.
 
+### S12M — Conditional claim-maintenance projection vertical
+
+**Status and authority gate:** This is a conditional companion slice, not an
+authorized consequence of the skills-migration campaign. It may enter campaign
+planning only after an exact revision of
+[`claim-maintenance-and-reliance-propagation`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md)
+is evaluated, accepted, and granted implementation authority by its named
+decision owner. Merely recording this dependency does not accept that proposal,
+authorize mutation of Codebase Memory, or make S12M a prerequisite for S13
+through S17 or for campaign completion.
+
+**Objective:** After S12 proves the production claim-backed review vertical,
+exercise one provider-neutral, generation-bound claim-maintenance projection
+from exact planned and observed slice evidence through bounded impact retrieval,
+canonical `may_affect` nomination, authorized refresh, and exact-revision
+reliance consequences.
+
+**Independently valuable outcome:** Work Engine can revalidate one affected
+claim neighborhood after a repository or documentation change without making
+builders maintain a graph, making structural reachability semantic authority,
+or introducing a second canonical claim registry.
+
+**Required consequences:**
+
+- Canonical claims, authored relationships, nominations, judgments, reliance,
+  and obligations remain owned by the production claim-evidence boundary and
+  their authorized domain workflows.
+- A deterministic compiler may derive a cacheable projection specification
+  from exact canonical records. Losing that specification requires
+  recompilation, not semantic recovery or human reconstruction.
+- The current structural provider is replaceable. If Codebase Memory is used,
+  synchronization protects projection-owner namespaces, binds the exact
+  repository subject and structural index generation, evaluates projections
+  before atomic generation publication, and retains unresolved endpoints
+  truthfully.
+- `repo-search` remains the role-facing evidence contract. Results include
+  projection revision, structural generation, repository subject, freshness,
+  coverage, exclusions, failures, truncation, unresolved endpoints, and
+  unmapped candidates within the declared bounds.
+- The code-change profile owns immutable physical and structural before/after
+  observations and identity reconciliation. It does not publish semantic
+  nominations or refresh judgments.
+- Retrieved candidate impact, a canonical `may_affect` nomination, an
+  authorized refresh judgment, any resulting claim revision, reliance
+  reconsideration, delivery, acknowledgement, and semantic completion remain
+  separately addressable consequences.
+- At least one code-to-documentation and one documentation-to-code path exercise
+  planned-versus-actual comparison, stable identity across ordinary movement,
+  explicit unresolved matching, and one newly unmapped candidate.
+
+**Acceptance evidence:** Exact proposal decision and implementation grant;
+immutable subject and change-profile fixtures; projection-owner collision and
+parser-structure protection tests; stale-generation refusal; full-rebuild
+atomic-publication and unresolved-endpoint recovery; deterministic projection
+recompilation; claim-aware `repo-search` receipts; retained-unchanged and
+changed refresh paths; exact reliance and selective-reopening evidence; and one
+restart- and context-replacement-safe end-to-end vertical across both change
+directions.
+
+**Excluded:** Making Codebase Memory canonical semantic state or a permanent
+provider doctrine; automatic semantic invalidation, causality, applicability,
+reopening, role activation, or scheduling from graph reachability; builder-owned
+projection maintenance; silent newest-revision selection; or widening the
+active migration campaign without its owning amendment and authorization.
+
 ### S13 — Reviewer research and admission evidence
 
 **Objective:** Build the provider-neutral experimental machinery needed to
@@ -760,36 +950,135 @@ turning research output into production review approval.
 
 1. Port `review-bench` as experimental evaluation machinery.
 2. Define an immutable provider-neutral reviewer-turn event schema and
-   normalizers for Codex, OpenRouter, Claude, Gemini, and later providers.
-3. Add a versioned reviewer-turn behavior analyzer over raw traces.
-4. Define a review-adjudication contract or role bound to sealed truth,
-   executable adjudication, or explicitly incomplete historical truth.
-5. Extend the minimal profile registry with evidence-bearing admission,
+   normalizers for Codex, OpenRouter, Claude, Gemini, and later providers while
+   preserving provider payloads or explicit authorized omissions.
+3. Recover the historical AGY experiment evidence from Codex rollout telemetry
+   and AGY conversation stores into immutable, source-bound attempt artifacts
+   before either source is pruned or reinterpreted.
+4. Add a versioned reviewer-turn behavior analyzer over raw traces, keeping
+   mechanical observations separate from semantic phase or evidence-use
+   interpretations and binding every derived interpretation to its evaluator,
+   inputs, confidence, and failure state.
+5. Define a review-adjudication contract or role bound to sealed truth,
+   executable adjudication, or explicitly incomplete historical truth, with
+   truth completeness and later adjudication revisions visible.
+6. Extend the minimal profile registry with evidence-bearing admission,
    limitations, last-tested revisions, and authorized acceptance.
-6. Add review-routing recommendations only after adjudicated evidence can
-   support them.
+7. Add review-routing recommendations only after adjudicated evidence can
+   support them; keep economic ordering such as free-first and the configured
+   high-assurance escalation provider as replaceable policy rather than review
+   doctrine.
+8. Build a versioned reviewer-coverage map as a rebuildable projection over
+   exact change profiles, reviewer configurations, truth, results, scoring,
+   and defect-class opportunities. Use production frequency, consequence,
+   current review cost, uncertainty, and expected information value to propose
+   active benchmark candidates, and estimate reviewer combinations only from
+   observed joint evidence with failure correlation visible.
+9. Pilot runtime supervision only under a distinct protocol after descriptive
+   behavior evidence exists. A warning, forced pass, challenge, or escalation
+   changes the reviewer configuration and cannot be pooled with an
+   observational baseline.
 
 Each responsibility remains its own slice when its owner, acceptance evidence,
 or experimental status differs materially.
+
+**Historical AGY evidence recovery:** The existing repository cases, Codex
+rollout records, and AGY conversation databases jointly retain the earlier
+Gemini attempts, admitted receipts, tool traces, latency and token usage, and
+failure evidence, but the runner did not publish repository-owned Review Bench
+result or scoring artifacts. Recovery must bind every extracted artifact to the
+exact source path, source digest, extraction implementation and version,
+reviewer configuration, immutable subject, and observed limitations. Preserve
+raw evidence or an explicitly authorized bounded projection independently from
+derived metrics. A completed and admitted review may become a reconstructed
+result with reconstruction confidence visible; rejected output, timeout,
+quota exhaustion, capability violation, and other incomplete attempts remain
+attempt artifacts and cannot be promoted retroactively into reviewer results.
+Later adjudication and scoring are separate artifacts and must not overwrite
+the recovered observation. At minimum, recover both admitted Flash runs, the
+Flash false-acceptance comparison, the Pro High non-termination evidence, the
+rejected Pro Low attempt, and the later native-agent and quota-failure attempts
+before launching another paid provider comparison.
+
+**Deferred Gemini 2.5 comparison:** After the S10 execution boundary and the
+minimum S13 experiment machinery run inside App Server, evaluate the currently
+catalogued OpenRouter candidates `google/gemini-2.5-flash` and
+`google/gemini-2.5-pro` against one sharp immutable, independently adjudicated
+case before expanding either configuration. This is candidate research, not
+profile admission. The experiment has these constraints:
+
+- Preserve two distinct reviewer configurations and never pool their results:
+  Codex/App Server through the bounded OpenRouter adapter measures the intended
+  execution substrate, while AGY through an inspected compatibility mechanism
+  measures comparability with the earlier AGY Gemini experiments.
+- Treat the AGY compatibility route as disposable experimental infrastructure.
+  Its exact source revision, installation mutations, request and response
+  translations, credential access, provider routing, and observed model must be
+  inspected and receipted before use. It cannot become a production adapter or
+  establish harness equivalence merely because a request completes.
+- Bind each run to the same immutable subject and truth revision used for its
+  comparator. Distinguish defect localization, causal interpretation, decision
+  polarity, false findings, false exoneration, non-termination, and result
+  admission; transport success is not reviewer evidence.
+- Begin with Flash as the low-cost capability gate, then run Pro only when the
+  preceding result can answer a comparison question. Use provider-default
+  reasoning first and vary the reasoning budget only to test a named
+  hypothesis. Replicate a promising configuration before broadening the case
+  set, and stop a configuration after a reproduced false-exoneration or other
+  disqualifying failure unless a subsequent run tests a specific correction.
+- Apply a hard USD 8 experiment ceiling. After every paid run, record actual
+  input, reasoning, output, latency, provider, serving identity or explicit
+  unknowns, and charged cost before admitting another run. Price estimates and
+  catalog capabilities are freshness-bound planning evidence, not durable
+  properties of a model slug.
+- Run a translation control through the AGY compatibility route only when an
+  admitted native AGY result exists for a meaningful comparison and the
+  additional spend has decision value. An unavailable historical result or an
+  unadmitted prior attempt cannot establish proxy equivalence.
+
+Execution remains intentionally deferred until the App Server role, isolated
+provider adapter, immutable event capture, and minimum adjudication path exist.
+No compatibility installation or paid inference is part of the migration
+slice that records this plan.
 
 **Independently valuable outcome:** Reviewer research can improve provider and
 profile choices while production review retains exact authority, provenance,
 and failure boundaries.
 
-**Required consequences:** Raw events remain immutable; normalizers and
-mechanical metrics remain reproducible; semantic behavior metrics are
-versioned and attributed; incomplete truth stays incomplete; harnesses propose
-admission but an authorized owner accepts it; and routing scores cannot accept
-implementation.
+**Required consequences:** Raw events or authorized bounded projections remain
+immutable and confidentiality-classified; normalizers and mechanical metrics
+remain reproducible; semantic behavior metrics are versioned and attributed;
+physical and semantic change characterizations remain distinct; inference,
+transport, result admission, and later adjudication are orthogonal states;
+sealed-defective, sealed-clean, incomplete historical, and operational cases
+retain their different truth ceilings; incomplete truth stays incomplete;
+requested reviewer configuration remains distinct from observed execution
+identity; coverage is declared only for a named reviewer configuration, region
+definition, defect-class opportunity set, consequence ceiling, protocol, and
+evidence cutoff using conservative lower bounds for desirable outcomes and
+upper bounds for harmful outcomes; repeated attempts do not inflate effective
+sample count or case diversity; harnesses propose admission but an authorized
+owner accepts it; and coverage, routing, or runtime-behavior scores cannot
+accept implementation.
 
-**Acceptance evidence:** Cross-provider event fixtures; normalization and drift
-tests; sealed and incomplete adjudication cases; benchmark provenance;
-profile-admission receipts; routing refusal and escalation cases; and explicit
+**Acceptance evidence:** Cross-provider raw-event and authorized-redaction
+fixtures; normalization, derivation, and drift tests; orthogonal execution,
+admission, and adjudication transitions; sealed-clean, sealed-defective,
+incomplete-historical, and operational adjudication cases; requested-versus-
+observed identity fixtures; benchmark provenance; profile-admission receipts;
+routing refusal and escalation cases; sparse-region, stale-evidence,
+truth-ceiling, repeated-case, defect-opportunity, known-failure, and
+joint-reviewer overlap fixtures; active benchmark selection receipts;
+observational-versus-supervised protocol separation; and explicit
 experimental-versus-production projections.
 
 **Excluded:** Silent ground-truth manufacture, benchmark-based production
 approval, reviewer self-selection, or runtime behavior scores that accept a
-slice.
+slice; a universal change-difficulty score; a universal inspection-coverage
+threshold; or permanent doctrine naming one price tier or provider as the
+required first or escalation route; raw attempt count treated as independent
+sample size; or reviewer-combination coverage inferred by unioning marginal
+scores without joint evidence.
 
 ### S14 — Initial product-development role imports
 
@@ -1011,6 +1300,9 @@ The skills migration campaign is complete when:
   claim-evidence service architecture.
 - [`../claims-service-migration.md`](../claims-service-migration.md) records the
   claims and product-development migration inventory and existing slices.
+- [`../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md)
+  owns the formed but not yet accepted phase-two claim-maintenance consequence;
+  its repository-integration evidence informs S12M without authorizing it.
 - [`../../docs/workflow-invariants.md`](../../docs/workflow-invariants.md) and
   [`../../docs/agent-environments.yaml`](../../docs/agent-environments.yaml)
   remain the current canonical graph inputs until an explicit ownership

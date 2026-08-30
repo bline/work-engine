@@ -57,6 +57,12 @@ def main() -> int:
     publish_phase.add_argument("--phase", required=True)
     publish_phase.add_argument("--consequence-json", required=True)
 
+    bind_actor = commands.add_parser("bind-actor")
+    bind_actor.add_argument("--identity-json", required=True)
+    bind_actor.add_argument("--expected-revision", required=True)
+    bind_actor.add_argument("--event-id", required=True)
+    bind_actor.add_argument("--actor-binding-json", required=True)
+
     wait = commands.add_parser("wait")
     wait.add_argument("--identity-json", required=True)
     wait.add_argument("--expected-revision", required=True)
@@ -94,6 +100,9 @@ def main() -> int:
             elif args.command == "retire":
                 result = LIVE.retire(store, current, event_id=args.event_id,
                     outcome=args.outcome, reason=args.reason)
+            elif args.command == "bind-actor":
+                result = LIVE.bind_actor(store, current, event_id=args.event_id,
+                    actor_binding=json_value(args.actor_binding_json, "actor binding JSON"))
             else:
                 result = LIVE.publish_phase_consequence(store, current, phase=args.phase,
                     consequence=json_value(args.consequence_json, "consequence JSON"))

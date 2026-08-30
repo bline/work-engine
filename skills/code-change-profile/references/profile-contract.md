@@ -5,12 +5,20 @@ including repository, baseline commit/tree, result commit/tree, disposition,
 run/slice/attempt, plan/scope revision, attributed paths and manifest digest,
 task patch digest, construction method, evidence cutoff, and limitations.
 
+Version 2 adds a discriminated `slice_checkpoint_candidate_receipt`
+construction for a validated immutable candidate checkpoint. Candidate
+construction delegates to `slice-checkpoint.validate_candidate_receipt`; the
+version 2 lifecycle construction continues to delegate to the strict
+accepted/stopped lifecycle validator. The two constructions cannot be
+substituted for one another. Candidate evidence cutoff is the immutable
+candidate `created_at` value. Version 1 and its schemas remain unchanged.
+
 `slice-checkpoint` remains authoritative for checkpoint refs, lifecycle,
 attribution, and receipt integrity. This capability owns only the derived subject
 and profile identities, analyzer version, canonical encoding, observations, and
 measurement-state vocabulary.
 
-Analyzer version 1 binds the exact SHA-256 of the checkpoint-owner validator it
+Every analyzer version binds the exact SHA-256 of the checkpoint-owner validator it
 is allowed to execute. The digest is checked before Python import. A missing,
 dirty, or revised validator fails closed and requires an explicit analyzer
 revision; mutable validator bytes never silently change validation behavior or
@@ -52,7 +60,7 @@ invariant catalog, and classifier sources are explicitly `not_used` with reason
 or observations. A later analyzer may mark one used only with a nonempty exact
 revision or source identity and a corresponding contract revision.
 
-Version 1 observations are deliberately physical: files, additions/deletions,
+All current observations are deliberately physical: files, additions/deletions,
 binary files, hunks, file categories, test/documentation/configuration counts,
 bounded Python symbol changes, and top-level module distribution. It does not
 classify semantics, architecture, claims, review truth, outcomes, or policy.

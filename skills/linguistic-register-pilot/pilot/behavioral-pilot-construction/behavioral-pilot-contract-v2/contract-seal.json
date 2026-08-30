@@ -1,0 +1,40 @@
+{
+  "artifact_type": "linguistic_register_behavioral_contract_seal_v2",
+  "boundary": "Seals the pre-render, pre-outcome contract. It does not authorize rendering or subject execution.",
+  "experiment_id": "linguistic-register-behavioral-pilot-contract-v2-2026-08-29",
+  "files": {
+    "artifact-plan.json": "ead0a19dafd5c2232ddc532a264c8b8354284fc4b67ffb6868b3ec305a1fe062",
+    "blind-task-authoring-result.json": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03",
+    "construct-ledger.json": "f5ff330d5f618557c306e59c340d57cffbd91db02acae7d0f7ad25dbeb969a7b",
+    "execution-schedule.json": "7c891d278b770ba2abdd6638b53f407fa791b4985c8177ea37dd73471c947c5f",
+    "preregistration.yaml": "5bbf862bec67a041ae3c03c7274cb8892bc01fe2a11f82b6feaca1cc946683a4",
+    "repair-receipt.json": "bd85f1d636ae6bc6618730235d88ae149cb5e7290b2e89b709836e2bb58ed090",
+    "scoring-contract.json": "f619699ddb40bd4dd010b1c03d383774857e5a1cbe19661a8396b155914a90b4",
+    "stopping-rules.json": "c57c0f2eaac7fa73b413a10367c42a1081ce2e4bf5f87de74775440b9a78ef12",
+    "subject-configuration.json": "1c1cf680b6a49783cc3d236206c9f29582f883466b693beaeb3908b2cf8276b4",
+    "tasks/evidence/A1.json": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825",
+    "tasks/evidence/A2.json": "ee35f5a33131777f22983b4911e2f3d30dfb0bccc62c09ef3a628613f2bc30b3",
+    "tasks/evidence/B1.json": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974",
+    "tasks/evidence/B2.json": "650d9ce0667eb206c6594631d6ab63883072d50f99c2892e5e7b6265728881dc",
+    "tasks/keys/A1.json": "abdfd86a056dedf34b2bf644671b0fb575ae402856d3d43e902e1be1529dfeb8",
+    "tasks/keys/A2.json": "ad3057e2a443ce65ed982d2b6c04e79f664dacc9dcf67f04235e587f037dfc3f",
+    "tasks/keys/B1.json": "5da891b02e2c3b9183776808502c57282336a1c1f4acac503261861548ffb3b6",
+    "tasks/keys/B2.json": "d720860fd9e6766ea80805c23ae28f1073a46f1bc02c533f0f633e5b5e0e57e3",
+    "tasks/manifest.json": "414acf8935427a4df5c75045a8ce1dcbf1cbbed60a634cf93a65ea9e7c13d3dc",
+    "tasks/presentations/A1.json": "bf810d6aaa92aecbaee5a9117d5d0ad0298181472c71f34f78d67f18dfe1a8bb",
+    "tasks/presentations/A2.json": "2a4e3519d3da5be5a96e586a7214baea9fc305b6a0620429a4b4db31afe5d9ff",
+    "tasks/presentations/B1.json": "66f5c7bac37e95ee49664c8386da6d116fdeaccf91df90b0ad437817016c4ad4",
+    "tasks/presentations/B2.json": "f4af3317515f5b8b143c030a89fd3b349afe657b22829c6e4839c9d018c89bf3",
+    "tasks/tasks/A1.json": "1c074610c12225d094e1ecaa82b15416107863ff218984106137ceadd4b82f50",
+    "tasks/tasks/A2.json": "6dd2331d298552b203b642bf1036619fefb57c98a8bc0bc10cbb4f658523d766",
+    "tasks/tasks/B1.json": "d1fdd9c61c07ca0c3aa77fd6ed5ccba13c1fe5a7a77cd328770ea186d882846a",
+    "tasks/tasks/B2.json": "f6feb4d9de1af8ba0121f0d129e95da6c639b650e2bdadc3acbfc1c25750f251"
+  },
+  "schema_version": 2,
+  "upstream": {
+    "role_manifest_sha256": "1ca5b13fa66e53381f0980dcd87db8f8b8f831140aba441fd66de096f0265c94",
+    "treatment_gate_sha256": "1e5f7ed5750a361dd826c15edebfff60859e210117070519727c43e5be7cd9aa",
+    "treatment_preregistration_sha256": "9467ce4dff704cc840eb57f50a9e20f85e6387841e28081ad191bceadfc2bc4e",
+    "treatment_profile_sha256": "e3592b0c6b99032e85d87ae2453f49ce1f24048c4f3e12f049cf786e537e5ef2"
+  }
+}

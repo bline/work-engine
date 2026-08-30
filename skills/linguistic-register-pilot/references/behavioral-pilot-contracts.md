@@ -4,7 +4,7 @@ Use this reference only after an expanded treatment has passed its frozen
 treatment-validation gate and a human has authorized behavioral-pilot
 construction.
 
-The `behavioral-pilot-contract-v1` artifact family separates three authorities:
+The current `behavioral-pilot-contract-v2` artifact family separates three authorities:
 
 1. The construct ledger classifies what the canonical role already requires
    before tasks are authored.
@@ -18,7 +18,7 @@ Validate the current contract with:
 ```bash
 python3 skills/linguistic-register-pilot/scripts/behavioral_pilot_contract.py \
   --repository . \
-  --contract skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1 \
+  --contract skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2 \
   validate
 ```
 
@@ -26,9 +26,18 @@ The schedule is deterministic and must recompute byte-for-byte:
 
 ```bash
 python3 skills/linguistic-register-pilot/scripts/behavioral_pilot_schedule.py validate \
-  --task-manifest skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/tasks/manifest.json \
-  skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/execution-schedule.json
+  --task-manifest skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/manifest.json \
+  skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/execution-schedule.json
 ```
+
+V2 is a prospective presentation-contract repair. Each task has a sealed
+`tasks/presentations/<task-id>.json` artifact containing exactly two sequential
+user messages. Turn 2 must follow the retained turn-1 response, must contain the
+frozen `second_turn_record.text`, and must expose only observations whose
+`available_at` value is `turn_2`. The task, objective key, task manifest,
+execution schedule, and contract seal bind the presentation digest. A trial
+that does not deliver those exact bytes is invalid. The v1 seal and its schedule
+are historical and non-executable.
 
 Before any model-visible behavioral task, call `check-launch --stage
 calibration`. It refuses execution until a separately sealed
@@ -59,7 +68,7 @@ claim.
 
 ## Retained group-3 stop
 
-The first group-3 attempt generated and bound six opaque full-role artifacts,
+The first group-3 attempt, against behavioral contract v1, generated and bound six opaque full-role artifacts,
 then stopped before T001. Its final `group-3-preoutcome-gate.json` is a valid
 consumer artifact with `overall_gate: false`. The launch check must reject it.
 
@@ -71,6 +80,7 @@ threshold. Direct material quotation and near-verbatim checks were clean.
 
 Review transport and publication failures are preserved separately from the
 final clean-packet judgments. Do not rewrite the failed gate or substitute an
-earlier packet. A future treatment rendering must use a fresh preregistration,
-fresh artifacts, and fresh review evidence; the existing behavioral tasks and
-keys remain preoutcome and must not be exposed during that rendering work.
+earlier packet. A future treatment rendering for v2 must use a fresh
+preregistration, fresh artifacts, and fresh review evidence; the v2 behavioral
+tasks, presentations, and keys remain preoutcome and must not be exposed during
+that rendering work.
