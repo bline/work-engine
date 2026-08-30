@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "producer": "Codex migration coordinator",
+  "judgments": [
+    {
+      "id": "s8p-ownership-workspace-coordination",
+      "category": "ownership",
+      "subject": "shared workspace resource admission",
+      "conclusion": "An App Server workspace-coordination service owns resource leases and fencing generations; neither a role, chatboard message, nor Git adapter owns that authority.",
+      "evidence": [
+        "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction",
+        "app-server/docs/skills-migration-plan.md#s8p--isolated-agent-worktrees-and-publication-authority"
+      ],
+      "changes_contract": true,
+      "human_approval": {
+        "approver": "repository user",
+        "reference": "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction"
+      }
+    },
+    {
+      "id": "s8p-authority-canonical-publication",
+      "category": "authority",
+      "subject": "canonical Git branch mutation",
+      "conclusion": "Only the server-owned Git publisher may admit an authorized canonical branch mutation, atomically checking resource fencing and expected parent at the mutation boundary.",
+      "evidence": [
+        "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction",
+        "docs/workflow-invariants.md#checkpoints-and-publication"
+      ],
+      "changes_contract": true,
+      "human_approval": {
+        "approver": "repository user",
+        "reference": "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction"
+      }
+    },
+    {
+      "id": "s8p-causal-parent-physical-interference",
+      "category": "causal_parent",
+      "subject": "isolated agent worktrees and namespaced resources",
+      "conclusion": "Semantically disjoint agents can still corrupt one another through a shared index, branch ref, fixed directory, port, cache, database, or provider allocation; advisory intent cannot prevent that invalid state.",
+      "evidence": [
+        "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction",
+        "app-server/docs/skills-migration-plan.md#s8p--isolated-agent-worktrees-and-publication-authority"
+      ],
+      "changes_contract": true,
+      "human_approval": {
+        "approver": "repository user",
+        "reference": "app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction"
+      }
+    }
+  ]
+}

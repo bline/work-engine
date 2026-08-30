@@ -6,10 +6,10 @@ generated_by: skills/agent-environment-graph/scripts/agent_environment_graph.py
 source_inputs:
   invariant_catalog:
     path: ../workflow-invariants.md
-    sha256: 8586f785a7b707c8c90583caba8174f5c28b61bb874ca8108e6e54eca0b132d9
+    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
   role_environment:
     path: ../agent-environments.yaml
-    sha256: ad7a49c73a773d9d077053def9739892a99d00f411558fb2e79df1dbf9fe56c7
+    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
 environment_context:
   document_id: work-engine.agent-environments
   status: verified_baseline
@@ -89,10 +89,15 @@ role:
   - INV-027
   - INV-030
   - INV-034
+  - INV-036
+  - INV-037
+  - INV-038
+  - INV-039
   may_invoke:
   - capability.repository_evidence
   - capability.direct_source_observation
   - capability.repository_mutation
+  - capability.worktree_lifecycle
   - capability.deterministic_gate
   - capability.independent_review
   may_observe:
@@ -100,6 +105,8 @@ role:
   - state.accepted_scope
   - state.repository
   - state.worktree
+  - state.agent_worktree
+  - state.resource_admissions
   - state.task_changes
   - state.gate
   - state.review
@@ -108,8 +115,8 @@ role:
   may_mutate:
   - target: state.task_changes
     boundary: accepted scope and exact task-owned manifest after plan acceptance
-  - target: state.worktree
-    boundary: accepted task paths while preserving user-owned and unrelated work
+  - target: state.agent_worktree
+    boundary: assigned operation namespace and accepted task paths under current worktree allocation
   owns:
   - state.builder_context
   - artifact.plan
@@ -118,11 +125,13 @@ role:
   - artifact.gate_receipt
   - artifact.handoff_receipt
   - artifact.commit_proposal
+  - artifact.worktree_allocation
   consumes:
   - state.campaign_config
   - state.accepted_scope
   - artifact.handoff_receipt
   - artifact.review_result
+  - artifact.worktree_allocation
   emits:
   - artifact.plan
   - artifact.placement_certificate
@@ -138,7 +147,7 @@ role:
   - transition: private checkpoint creation or acceptance
     mediated_by: role.supervisor
   - transition: user-visible commit publication
-    mediated_by: role.supervisor
+    mediated_by: capability.canonical_publication
   - transition: durable audit append
     mediated_by: capability.receipt_finalization
   forbidden_from:
@@ -149,7 +158,8 @@ role:
   - weakening configured validation
   - accepting its own slice
   - directly controlling checkpoint refs or user-visible Git publication
-  - running concurrent replacement builders on the same mutable workspace
+  - mutating the ordinary human worktree or another operation's assigned worktree
+  - treating a chatboard message or advisory claim as resource mutation authority
 direct_invariant_ids:
 - INV-001
 - INV-002
@@ -173,6 +183,10 @@ direct_invariant_ids:
 - INV-027
 - INV-030
 - INV-034
+- INV-036
+- INV-037
+- INV-038
+- INV-039
 referenced_roles:
   role.supervisor:
     label: Slice Supervisor
@@ -189,6 +203,10 @@ entities:
       label: Repository structure and source
     state.worktree:
       label: Ordinary worktree and real index
+    state.agent_worktree:
+      label: Operation-namespaced agent worktree and independent index
+    state.resource_admissions:
+      label: Current shared-resource leases and fencing generations
     state.task_changes:
       label: Task-owned implementation changes
     state.gate:
@@ -216,6 +234,8 @@ entities:
       label: Attributed checkpoint manifest
     artifact.commit_proposal:
       label: Completion commit proposal
+    artifact.worktree_allocation:
+      label: Worktree allocation and cleanup receipt
   capabilities:
     capability.repository_evidence:
       label: Configured repository evidence
@@ -237,6 +257,12 @@ entities:
     capability.receipt_finalization:
       label: Authoritative receipt finalization
       mechanism: MECH-FINALIZER
+    capability.worktree_lifecycle:
+      label: Isolated local worktree lifecycle
+      mechanism: MECH-WORKTREE-LIFECYCLE
+    capability.canonical_publication:
+      label: Fenced integrated canonical Git publication
+      mechanism: MECH-GIT-PUBLISHER
 invariants:
   INV-001:
     owner: user
@@ -824,6 +850,92 @@ invariants:
     - INV-030
     sources: '[Configuration: field contract](../skills/slice-supervisor/references/work-engine-config.md#field-contract),
       [Supervisor: continue](../skills/slice-supervisor/SKILL.md#decide-whether-to-continue)'
+  INV-036:
+    owner: workspace-coordination service
+    applies: mediated shared-resource mutation
+    class: authority / mutation
+    condition: Every mediated shared mutation identifies its complete resource set and carries a current
+      resource-matched admission backed by an unexpired lease and monotonically increasing fencing token;
+      messages, acknowledgements, and advisory claims confer no mutation authority.
+    causal_parent: Semantically disjoint agents can still collide on physical resources, and stale or
+      cooperative-only claims cannot exclude a superseded actor. Admitting absent, expired, mismatched,
+      or stale authority permits conflicting mutations.
+    enforcement: durable lease generations + mutation-boundary admission
+    mechanisms:
+    - MECH-WORKSPACE-COORDINATION
+    relations:
+    - INV-002
+    - INV-008
+    - INV-028
+    - INV-038
+    - INV-039
+    sources: '[S8P direction](../app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction),
+      [S8P slice](../app-server/docs/skills-migration-plan.md#s8p--isolated-agent-worktrees-and-publication-authority)'
+  INV-037:
+    owner: workspace-coordination service / resource adapter
+    applies: resource allocation and mutation
+    class: mutation
+    condition: Resources that cannot enforce fencing at mutation admission are operation-namespaced or
+      explicitly classified as advisory-only; a prior token check separated from mutation never establishes
+      exclusive authority.
+    causal_parent: Validation followed by later mutation has a time-of-check/time-of-use window in which
+      the lease can expire or be superseded. Treating such validation as a fence permits stale mutation.
+    enforcement: namespaced allocation or mediated mutation adapter
+    mechanisms:
+    - MECH-WORKSPACE-COORDINATION
+    - MECH-WORKTREE-LIFECYCLE
+    relations:
+    - INV-036
+    - INV-008
+    sources: '[S8P coordination boundary](../app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction),
+      [Design §4](../DESIGN.md#4-state-and-persistence)'
+  INV-038:
+    owner: worktree-lifecycle adapter
+    applies: builder workspace allocation and cleanup
+    class: ownership / mutation
+    condition: Each agent or slice mutates only an operation-namespaced local worktree created from an
+      explicit repository baseline with an independent checkout, index, and `HEAD`; allocation, use, and
+      cleanup perform no implicit fetch or push and preserve shared objects, accepted checkpoints, and
+      user-authored work.
+    causal_parent: A shared checkout or index lets one actor's stage, commit, cleanup, or branch movement
+      corrupt another actor's state, while per-slice cloning needlessly couples local execution to network
+      and repository-history duplication.
+    enforcement: explicit-baseline local worktree adapter + retention-safe cleanup
+    mechanisms:
+    - MECH-WORKTREE-LIFECYCLE
+    - MECH-WORKSPACE-COORDINATION
+    relations:
+    - INV-008
+    - INV-036
+    - INV-037
+    - INV-024
+    - INV-039
+    sources: '[S8P slice](../app-server/docs/skills-migration-plan.md#s8p--isolated-agent-worktrees-and-publication-authority)'
+  INV-039:
+    owner: user / Git publisher / validation owner
+    applies: canonical branch publication
+    class: authority / acceptance / provenance
+    condition: Canonical publication starts from an accepted checkpoint and the observed branch tip in
+      a separate integration worktree, admits only the exact attributed manifest, validates the integrated
+      tree, and atomically checks the current resource fencing token and expected parent at branch mutation
+      before recording the resulting commit, tree, and generation.
+    causal_parent: A validated private checkpoint can become stale relative to the publication target,
+      and non-atomic fencing or validation of the pre-integration tree can publish unreviewed, conflicting,
+      or superseded state.
+    enforcement: isolated integration + integrated-tree gate + mutation-authority atomic admission
+    mechanisms:
+    - MECH-GIT-PUBLISHER
+    - MECH-WORKSPACE-COORDINATION
+    - MECH-WORKTREE-LIFECYCLE
+    relations:
+    - INV-002
+    - INV-025
+    - INV-027
+    - INV-036
+    - INV-038
+    - INV-028
+    sources: '[S8P direction](../app-server/docs/skills-migration-plan.md#approved-post-s8-execution-direction),
+      [S8P slice](../app-server/docs/skills-migration-plan.md#s8p--isolated-agent-worktrees-and-publication-authority)'
 mechanisms:
   MECH-APPEND:
     component: '`append_metrics.py`'
@@ -862,6 +974,11 @@ mechanisms:
     component: '`run_gate.py`'
     affordance: Executes an explicit check manifest as argument arrays with compact fail-fast results.
     edges: enforces evidence for `INV-014`, `INV-015`
+  MECH-GIT-PUBLISHER:
+    component: App Server canonical Git publisher
+    affordance: Reconciles an accepted checkpoint in an isolated integration worktree, validates the integrated
+      tree, and atomically admits the branch mutation.
+    edges: realizes `INV-039`; refines `INV-028`
   MECH-PREFLIGHT:
     component: '`campaign-preflight.mjs`'
     affordance: Resolves named campaigns, defaults, source digests, and transient capabilities; rejects
@@ -887,3 +1004,13 @@ mechanisms:
     component: telemetry ingress schema and harvester
     affordance: Binds host runtime measurements to the launched builder identity.
     edges: enforces `INV-018`, `INV-021`
+  MECH-WORKSPACE-COORDINATION:
+    component: App Server workspace-coordination service
+    affordance: Issues expiring resource leases and monotonic fencing generations and admits mediated
+      mutations against current resource state.
+    edges: realizes `INV-036`, `INV-037`; supports `INV-039`
+  MECH-WORKTREE-LIFECYCLE:
+    component: App Server Git worktree adapter
+    affordance: Allocates and cleans operation-namespaced local worktrees from explicit baselines without
+      implicit network operations.
+    edges: realizes `INV-037`, `INV-038`

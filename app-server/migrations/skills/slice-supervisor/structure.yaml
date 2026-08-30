@@ -25,17 +25,17 @@ source_bindings:
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: ad7a49c73a773d9d077053def9739892a99d00f411558fb2e79df1dbf9fe56c7
+    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
     path: docs/workflow-invariants.md
-    sha256: 8586f785a7b707c8c90583caba8174f5c28b61bb874ca8108e6e54eca0b132d9
+    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: e5ea960ebbdf0c21aceb2449a5709b022f12b0a77ee40300219e7bdae5e18fe0
+    sha256: 909903de245e19782487a18059434d92cdc9553fdebe260abb2fd9cf730073c7
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.supervisor
@@ -45,7 +45,7 @@ role_profile:
   context_lifetime: one campaign; compact lifecycle state across slices
   projection:
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: e5ea960ebbdf0c21aceb2449a5709b022f12b0a77ee40300219e7bdae5e18fe0
+    sha256: 909903de245e19782487a18059434d92cdc9553fdebe260abb2fd9cf730073c7
   relations:
     bound_by:
       - INV-001
@@ -74,6 +74,10 @@ role_profile:
       - INV-032
       - INV-034
       - INV-035
+      - INV-036
+      - INV-037
+      - INV-038
+      - INV-039
     must_require:
       role.builder:
         - INV-006
@@ -91,12 +95,18 @@ role_profile:
       - capability.checkpoint_lifecycle
       - capability.completion_offer
       - capability.completion_publication
+      - capability.workspace_coordination
+      - capability.worktree_lifecycle
+      - capability.canonical_publication
       - capability.resume
       - capability.strategic_reconciliation
     may_observe:
       - state.campaign_config
       - state.campaign_lifecycle
       - state.private_checkpoint
+      - state.resource_admissions
+      - state.integration_worktree
+      - state.branch_publication
       - state.durable_history
       - artifact.campaign_preflight
       - artifact.plan
@@ -109,6 +119,9 @@ role_profile:
       - artifact.commit_proposal
       - artifact.completion_offer
       - artifact.completion_receipt
+      - artifact.worktree_allocation
+      - artifact.resource_admission
+      - artifact.canonical_publication
       - artifact.telemetry_ingress
       - artifact.planning_handoff
     observation_limits:
@@ -146,7 +159,7 @@ role_profile:
       - transition: private checkpoint mutation
         mediated_by: capability.checkpoint_lifecycle
       - transition: user-visible commit publication
-        mediated_by: capability.completion_publication
+        mediated_by: capability.canonical_publication
       - transition: strategic recommendation
         mediated_by: capability.strategic_reconciliation
     forbidden_from:

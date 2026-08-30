@@ -6,10 +6,10 @@ generated_by: skills/agent-environment-graph/scripts/agent_environment_graph.py
 source_inputs:
   invariant_catalog:
     path: ../workflow-invariants.md
-    sha256: 8586f785a7b707c8c90583caba8174f5c28b61bb874ca8108e6e54eca0b132d9
+    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
   role_environment:
     path: ../agent-environments.yaml
-    sha256: ad7a49c73a773d9d077053def9739892a99d00f411558fb2e79df1dbf9fe56c7
+    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
 environment_context:
   document_id: work-engine.agent-environments
   status: verified_baseline

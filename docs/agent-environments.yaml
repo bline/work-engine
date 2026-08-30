@@ -50,6 +50,14 @@ entities:
       label: Repository structure and source
     state.worktree:
       label: Ordinary worktree and real index
+    state.agent_worktree:
+      label: Operation-namespaced agent worktree and independent index
+    state.resource_admissions:
+      label: Current shared-resource leases and fencing generations
+    state.integration_worktree:
+      label: Isolated canonical-publication integration worktree
+    state.branch_publication:
+      label: Canonical branch publication generation
     state.task_changes:
       label: Task-owned implementation changes
     state.gate:
@@ -94,6 +102,12 @@ entities:
       label: Live completion offer
     artifact.completion_receipt:
       label: Completion commit receipt
+    artifact.worktree_allocation:
+      label: Worktree allocation and cleanup receipt
+    artifact.resource_admission:
+      label: Resource lease and fenced admission receipt
+    artifact.canonical_publication:
+      label: Integrated canonical publication receipt
     artifact.telemetry_ingress:
       label: Authoritative telemetry ingress
     artifact.planning_handoff:
@@ -135,6 +149,15 @@ entities:
     capability.completion_publication:
       label: Authorized completion publication
       mechanism: MECH-COMPLETION
+    capability.workspace_coordination:
+      label: Shared-resource lease and mutation admission
+      mechanism: MECH-WORKSPACE-COORDINATION
+    capability.worktree_lifecycle:
+      label: Isolated local worktree lifecycle
+      mechanism: MECH-WORKTREE-LIFECYCLE
+    capability.canonical_publication:
+      label: Fenced integrated canonical Git publication
+      mechanism: MECH-GIT-PUBLISHER
     capability.resume:
       label: Validated campaign resume
       mechanism: MECH-RESUME
@@ -182,6 +205,10 @@ roles:
       - INV-032
       - INV-034
       - INV-035
+      - INV-036
+      - INV-037
+      - INV-038
+      - INV-039
     must_require:
       role.builder:
         - INV-006
@@ -199,12 +226,18 @@ roles:
       - capability.checkpoint_lifecycle
       - capability.completion_offer
       - capability.completion_publication
+      - capability.workspace_coordination
+      - capability.worktree_lifecycle
+      - capability.canonical_publication
       - capability.resume
       - capability.strategic_reconciliation
     may_observe:
       - state.campaign_config
       - state.campaign_lifecycle
       - state.private_checkpoint
+      - state.resource_admissions
+      - state.integration_worktree
+      - state.branch_publication
       - state.durable_history
       - artifact.campaign_preflight
       - artifact.plan
@@ -217,6 +250,9 @@ roles:
       - artifact.commit_proposal
       - artifact.completion_offer
       - artifact.completion_receipt
+      - artifact.worktree_allocation
+      - artifact.resource_admission
+      - artifact.canonical_publication
       - artifact.telemetry_ingress
       - artifact.planning_handoff
     observation_limits:
@@ -254,7 +290,7 @@ roles:
       - transition: private checkpoint mutation
         mediated_by: capability.checkpoint_lifecycle
       - transition: user-visible commit publication
-        mediated_by: capability.completion_publication
+        mediated_by: capability.canonical_publication
       - transition: strategic recommendation
         mediated_by: capability.strategic_reconciliation
     forbidden_from:
@@ -293,10 +329,15 @@ roles:
       - INV-027
       - INV-030
       - INV-034
+      - INV-036
+      - INV-037
+      - INV-038
+      - INV-039
     may_invoke:
       - capability.repository_evidence
       - capability.direct_source_observation
       - capability.repository_mutation
+      - capability.worktree_lifecycle
       - capability.deterministic_gate
       - capability.independent_review
     may_observe:
@@ -304,6 +345,8 @@ roles:
       - state.accepted_scope
       - state.repository
       - state.worktree
+      - state.agent_worktree
+      - state.resource_admissions
       - state.task_changes
       - state.gate
       - state.review
@@ -312,8 +355,8 @@ roles:
     may_mutate:
       - target: state.task_changes
         boundary: accepted scope and exact task-owned manifest after plan acceptance
-      - target: state.worktree
-        boundary: accepted task paths while preserving user-owned and unrelated work
+      - target: state.agent_worktree
+        boundary: assigned operation namespace and accepted task paths under current worktree allocation
     owns:
       - state.builder_context
       - artifact.plan
@@ -322,11 +365,13 @@ roles:
       - artifact.gate_receipt
       - artifact.handoff_receipt
       - artifact.commit_proposal
+      - artifact.worktree_allocation
     consumes:
       - state.campaign_config
       - state.accepted_scope
       - artifact.handoff_receipt
       - artifact.review_result
+      - artifact.worktree_allocation
     emits:
       - artifact.plan
       - artifact.placement_certificate
@@ -342,7 +387,7 @@ roles:
       - transition: private checkpoint creation or acceptance
         mediated_by: role.supervisor
       - transition: user-visible commit publication
-        mediated_by: role.supervisor
+        mediated_by: capability.canonical_publication
       - transition: durable audit append
         mediated_by: capability.receipt_finalization
     forbidden_from:
@@ -353,7 +398,8 @@ roles:
       - weakening configured validation
       - accepting its own slice
       - directly controlling checkpoint refs or user-visible Git publication
-      - running concurrent replacement builders on the same mutable workspace
+      - mutating the ordinary human worktree or another operation's assigned worktree
+      - treating a chatboard message or advisory claim as resource mutation authority
 
   role.independent_reviewer:
     label: Independent Reviewer

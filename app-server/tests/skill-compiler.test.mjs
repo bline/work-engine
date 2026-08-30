@@ -151,9 +151,10 @@ test("pinned slice-builder decomposition regenerates exact canonical bytes and A
     "capability.independent_review",
     "capability.repository_evidence",
     "capability.repository_mutation",
+    "capability.worktree_lifecycle",
   ]);
   assert.deepEqual(first.ir.runtime_requirements.capability_ceiling, first.ir.runtime_requirements.required_capabilities);
-  assert.deepEqual(first.ir.runtime_requirements.effect_ceiling, ["state.task_changes", "state.worktree"]);
+  assert.deepEqual(first.ir.runtime_requirements.effect_ceiling, ["state.agent_worktree", "state.task_changes"]);
   assert.equal(first.ir.role_projection.projection.role_id, "role.builder");
   assert.deepEqual(first.ir.role_projection.projection.role, first.ir.role_profile && {
     label: first.ir.role_profile.label,

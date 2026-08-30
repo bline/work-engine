@@ -14,6 +14,10 @@ The first vertical provides:
 - a durable logical-role-to-thread binding registry;
 - a closed, digest-attributed runtime manifest that projects logical role
   templates, thread settings, and exact skill inputs;
+- a durable workspace-development runtime that assigns operation-namespaced
+  local Git worktrees, persists expiring resource leases and monotonically
+  increasing fencing generations, and confines accepted-checkpoint publication
+  to configured canonical branches through isolated integrated-tree validation;
 - exact `SKILL.md` input resolution within configured roots;
 - thread-scoped dynamic-tool declaration and dispatch;
 - idempotent turn delivery through client message IDs;
@@ -76,6 +80,31 @@ live adapter retains a bounded result cache so fast notifications cannot race
 their consumer. A replay whose completion is no longer retained fails with an
 explicit reconciliation requirement instead of waiting for an event that has
 already occurred.
+
+## Isolated development workspaces and canonical publication
+
+`openWorkspaceDevelopmentRuntime` is the App Server-owned composition boundary
+for development workspace allocation and publication. It opens a private
+SQLite coordination store, creates local worktrees from exact commits in the
+existing repository, and performs no implicit clone, fetch, or push. Builders
+receive only their assigned checkout and index; an accepted checkpoint remains
+a publication input rather than branch-mutation authority.
+
+The runtime is configured with an explicit canonical-branch allowlist.
+`publishAcceptedCheckpoint` acquires the corresponding Git-ref lease inside the
+host boundary, reconciles the accepted checkpoint against the observed branch
+tip in a separate integration worktree, validates that exact integrated tree,
+and admits `update-ref` atomically with the current fencing generation and
+expected parent. It refuses checked-out canonical targets, unmanifested
+content, semantic conflicts, expired or superseded admissions, validation
+mutations, and targets outside the configured allowlist. Publication receipts
+bind the starting tip, accepted checkpoint, resulting commit and tree,
+validation receipt, resource generation, and authorization reference.
+
+Cleanup preserves the latest private commit under a namespaced Git ref. A
+dirty worktree is retained for recovery; a clean worktree can be removed after
+restart using its allocation receipt. The user's ordinary checkout, index, and
+checked-out branch are never used as agent staging or integration state.
 
 Live integration tests can expose the observable transport in real time:
 

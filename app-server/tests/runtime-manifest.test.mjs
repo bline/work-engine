@@ -397,7 +397,7 @@ test("repo-search secondary admission refuses missing, excess, effect, path, and
   const cases = [
     ["missing", (skill) => skill.capabilities.splice(skill.capabilities.indexOf("capability.repository_evidence"), 1), /missing required capability capability\.repository_evidence/],
     ["excess", (skill) => skill.capabilities.push("capability.independent_review"), /exceeds capability ceiling with capability\.independent_review/],
-    ["effect", (skill) => skill.effects.push("state.worktree"), /grants prohibited effect state\.worktree/],
+    ["effect", (skill) => skill.effects.push("state.agent_worktree"), /exceeds effect ceiling with state\.agent_worktree/],
     ["path", (skill) => { skill.path = "../skills/strategic-planner/SKILL.md"; }, /path differs from requirements/],
     ["fingerprint", (skill) => { skill.compiled_skill_sha256 = "0".repeat(64); }, /compiled skill fingerprint differs/],
   ];

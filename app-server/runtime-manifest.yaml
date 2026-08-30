@@ -26,6 +26,9 @@ roles:
       - capability.checkpoint_lifecycle
       - capability.completion_offer
       - capability.completion_publication
+      - capability.workspace_coordination
+      - capability.worktree_lifecycle
+      - capability.canonical_publication
       - capability.resume
       - capability.strategic_reconciliation
     effects:
@@ -54,11 +57,12 @@ roles:
       - capability.repository_evidence
       - capability.direct_source_observation
       - capability.repository_mutation
+      - capability.worktree_lifecycle
       - capability.deterministic_gate
       - capability.independent_review
     effects:
       - state.task_changes
-      - state.worktree
+      - state.agent_worktree
     skills:
       - name: slice-builder
         path: ../skills/slice-builder/SKILL.md
