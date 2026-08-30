@@ -23,7 +23,7 @@ export class InMemorySliceCampaignStore {
 
 export function createSliceCampaignService({
   store = new InMemorySliceCampaignStore(), reviewSubject, legacyReview,
-  receiptFinalizer, completionOffer = null,
+  implementationReview = null, receiptFinalizer, completionOffer = null,
 } = {}) {
   for (const [owner, methods] of [[reviewSubject, ["createCandidate", "createPhysicalProfile"]], [legacyReview, ["review"]], [receiptFinalizer, ["finalize"]]]) {
     if (!owner || methods.some((method) => typeof owner[method] !== "function")) throw new TypeError(`slice campaign requires composed owner ${methods.join("/")}`);
@@ -60,7 +60,8 @@ export function createSliceCampaignService({
       const initial = { schemaVersion: SLICE_CAMPAIGN_SCHEMA_VERSION, identity: normalized, workspace,
         acceptedBoundary: freeze(structuredClone(acceptedBoundary)), expectedImpact: expectedImpact && freeze(structuredClone(expectedImpact)),
         baseline: freeze(structuredClone(baseline)), phase: "accepted", latestConsequence: null,
-        candidateRequestDigest: null, candidate: null, physicalProfile: null, review: null, terminal: null };
+        candidateRequestDigest: null, candidate: null, physicalProfile: null,
+        review: null, implementationReview: null, terminal: null };
       const published = freeze({ ...initial, revision: digest(initial) });
       store.admit(key, workspace, published);
       return published;
@@ -89,14 +90,35 @@ export function createSliceCampaignService({
     },
     async runLegacyReview({ identity, expectedRevision, selectionPlan }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (state.phase !== "review_ready" || state.review) throw new Error("legacy review requires review-ready state without a prior review");
+      if (state.phase !== "review_ready" || state.review || state.implementationReview) {
+        throw new Error("legacy review requires review-ready state without a prior review");
+      }
       if (!state.candidate || !state.physicalProfile) throw new Error("legacy review requires an immutable candidate and physical profile");
       const review = await legacyReview.review({ subject: state.candidate, profile: state.physicalProfile, selectionPlan });
       return publish({ ...state, review }, state.revision);
     },
+    bindImplementationReview({ identity, expectedRevision, result }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      if (state.phase !== "review_ready" || state.review || state.implementationReview) {
+        throw new Error("implementation review requires review-ready state without a prior review");
+      }
+      if (!state.candidate || !state.physicalProfile) throw new Error("implementation review requires an immutable candidate and physical profile");
+      if (!implementationReview || typeof implementationReview.admit !== "function") {
+        throw new Error("native implementation-review service is unavailable");
+      }
+      const subject = {
+        commit: state.candidate.checkpoint_commit_oid ?? state.candidate.commit,
+        tree: state.candidate.checkpoint_tree_oid ?? state.candidate.tree,
+        patchIdentity: state.candidate.task_patch_digest ?? state.candidate.manifestSha256,
+      };
+      const admitted = implementationReview.admit({ result, expectedSubject: subject });
+      return publish({ ...state, implementationReview: admitted }, state.revision);
+    },
     async terminalize({ identity, expectedRevision, outcome, receipt }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (state.phase !== "review_ready" || !state.review) throw new Error("terminalization requires completed compatibility review");
+      if (state.phase !== "review_ready" || (!state.review && !state.implementationReview)) {
+        throw new Error("terminalization requires completed compatibility or implementation review");
+      }
       requireText(outcome, "terminal outcome"); requireRecord(receipt, "terminal receipt");
       const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome, receipt, candidate: state.candidate });
       const offer = completionOffer ? await completionOffer.offer({ identity: state.identity, outcome, candidate: state.candidate }) : null;

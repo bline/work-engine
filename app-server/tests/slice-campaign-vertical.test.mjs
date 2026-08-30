@@ -7,7 +7,11 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import { createLegacyReviewCompatibilityAdapter, createReviewSubjectService, createSliceCampaignService, openSqliteSliceCampaignStore } from "../src/index.mjs";
+import {
+  createImplementationReviewService, createLegacyReviewCompatibilityAdapter,
+  createReviewEpisodeService, createReviewSubjectService, createSliceCampaignService,
+  reviewEpisodeDigest, openSqliteSliceCampaignStore,
+} from "../src/index.mjs";
 import { openPrivateSqliteDatabase } from "../src/services/slice-campaign/sqlite-store.mjs";
 
 const sha = (value) => createHash("sha256").update(value).digest("hex");
@@ -182,4 +186,51 @@ test("campaign vertical preserves owners, exclusive admission, expected/actual i
   assert.equal(service.recover(identity).revision, state.revision);
   assert.equal(state.terminal.completionOffer.publicationAuthorized, false);
   assert.deepEqual(calls, ["candidate", "profile", "legacy-review", "receipt", "offer"]);
+});
+
+test("S9 vertical admits exact review meaning, persists episode truth, and binds the native campaign path", async () => {
+  const implementationReview = createImplementationReviewService();
+  const episode = createReviewEpisodeService({ implementationReview });
+  const candidate = { commit: "candidate-commit", tree: "candidate-tree", manifestSha256: sha("candidate-patch") };
+  const subject = { commit: candidate.commit, tree: candidate.tree, patchIdentity: candidate.manifestSha256 };
+  const result = { schemaVersion: 1, subject, verdict: "acceptable_as_is", findings: [],
+    decisiveEvidence: [{ path: "task.mjs", startLine: 1, endLine: 2, sha256: sha("evidence") }], limitations: [] };
+  const reviewReference = (owner, reference, revision, integrity) => ({
+    owner, reference, revision, sha256: integrity, freshness: "exact_revision",
+  });
+  const episodeIdentity = { runId: identity.runId, sliceNumber: identity.sliceNumber,
+    attemptId: identity.attemptId, planVersion: identity.planVersion,
+    reviewObligationId: "native-review", reviewEpisodeId: "native-episode" };
+  const authority = { schemaVersion: 1, grantId: "review-grant", identity: episodeIdentity,
+    source: reviewReference("human", "accepted-plan", "plan-revision", sha("plan")),
+    writer: { actorId: "reviewer", provider: "claude", generation: 1,
+      runtimeSession: reviewReference("runtime", "session-1", "generation-1", sha("session")) },
+    readers: ["reviewer", "builder", "supervisor"],
+    initialSubject: reviewReference("checkpoint", candidate.commit, candidate.commit, reviewEpisodeDigest(subject)),
+    predecessorRevision: null };
+  let episodeState = episode.begin({ authority, transitionId: "begin" });
+  episodeState = episode.transition({ authority, expectedRevision: episodeState.revision,
+    transitionId: "result", action: "record_result", payload: { result, unresolvedQuestions: [] } });
+  assert.equal(episode.recover(episodeIdentity).revision, episodeState.revision);
+  assert.equal(episodeState.phase, "reported");
+
+  const service = createSliceCampaignService({ implementationReview,
+    reviewSubject: { async createCandidate() { return candidate; }, async createPhysicalProfile({ subject: value }) { return { subject: value }; } },
+    legacyReview: { async review() { throw new Error("legacy path must not run"); } },
+    receiptFinalizer: { async finalize(value) { return value; } } });
+  const nativeIdentity = { ...identity, attemptId: "s9-native" };
+  let state = service.admit({ identity: nativeIdentity, workspace: "/s9-native-workspace",
+    acceptedBoundary: { reference: "plan:s9", sha256: sha("s9-plan") },
+    baseline: { acceptedCommit: "baseline", acceptedTree: "tree", interSliceCommit: "inter" } });
+  state = service.advance({ identity: nativeIdentity, expectedRevision: state.revision, phase: "implementing", consequence: {} });
+  state = service.advance({ identity: nativeIdentity, expectedRevision: state.revision, phase: "gate_ready", consequence: {} });
+  state = await service.bindCandidate({ identity: nativeIdentity, expectedRevision: state.revision, request: candidate });
+  state = service.advance({ identity: nativeIdentity, expectedRevision: state.revision, phase: "review_ready", consequence: {} });
+  await assert.rejects(service.terminalize({ identity: nativeIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {} }), /requires completed/);
+  state = service.bindImplementationReview({ identity: nativeIdentity, expectedRevision: state.revision, result });
+  assert.equal(state.implementationReview.resultRevision, implementationReview.admit({ result, expectedSubject: subject }).resultRevision);
+  assert.equal(state.review, null);
+  assert.equal(state.implementationReview.authority.implementationAcceptanceAuthorized, false);
+  await assert.rejects(service.runLegacyReview({ identity: nativeIdentity, expectedRevision: state.revision, selectionPlan: {} }), /without a prior review/);
 });

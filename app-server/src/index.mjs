@@ -45,6 +45,20 @@ export * from "./operator-switchboard.mjs";
 export * from "./services/review-subject/contract.mjs";
 export * from "./services/review-subject/legacy-backend-adapter.mjs";
 export * from "./services/review-subject/service.mjs";
+export {
+  IMPLEMENTATION_REVIEW_FINDING_STATUSES, IMPLEMENTATION_REVIEW_SCHEMA_VERSION,
+  IMPLEMENTATION_REVIEW_VERDICTS, ImplementationReviewError,
+  digest as implementationReviewDigest, validateImplementationReviewResult,
+} from "./services/implementation-review/contract.mjs";
+export * from "./services/implementation-review/service.mjs";
+export {
+  REVIEW_EPISODE_SCHEMA_VERSION, ReviewEpisodeError,
+  digest as reviewEpisodeDigest, identityKey as reviewEpisodeIdentityKey,
+  validateAuthority as validateReviewEpisodeAuthority,
+  validateState as validateReviewEpisodeState,
+} from "./services/review-episode/contract.mjs";
+export * from "./services/review-episode/service.mjs";
+export * from "./services/review-episode/sqlite-store.mjs";
 export * from "./services/product-development/claim-context-delivery.mjs";
 export * from "./services/slice-campaign/contract.mjs";
 export * from "./services/slice-campaign/legacy-review-adapter.mjs";
