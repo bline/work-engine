@@ -22,6 +22,18 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ClaudeBatchReviewTest(unittest.TestCase):
+    def test_cancellation_marker_stops_claude_child(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cancel = root / "cancel.json"
+            cancel.write_text('{"reason":"realtime_arm_failed"}', encoding="utf-8")
+            result, request = MODULE.run_claude_with_cancellation(
+                [sys.executable, "-c", "import time; time.sleep(30)"],
+                env=dict(os.environ), cwd=root, cancel_file=cancel,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(request, {"reason": "realtime_arm_failed"})
+
     def test_event_summary_requires_full_request_to_terminal_lineage(self) -> None:
         complete = MODULE.summarize_events([
             {"event": "proxy_started"},
@@ -147,6 +159,7 @@ else:
                 poll_timeout_seconds=2,
                 collection_window_seconds=0,
                 proxy_start_timeout_seconds=2,
+                cancel_file=None,
                 command=[str(claude), "-p", "prompt"],
             )
             prior_proxy = MODULE.PROXY_SCRIPT

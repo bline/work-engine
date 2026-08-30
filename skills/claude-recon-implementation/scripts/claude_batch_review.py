@@ -196,6 +196,36 @@ def stop_proxy(process: subprocess.Popen[str]) -> None:
         process.wait(timeout=10)
 
 
+def run_claude_with_cancellation(
+    command: list[str], *, env: dict[str, str], cwd: Path,
+    cancel_file: Path | None,
+) -> tuple[subprocess.CompletedProcess[bytes], dict[str, Any] | None]:
+    claude = subprocess.Popen(
+        command, env=env, cwd=cwd,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    cancellation = None
+    while True:
+        try:
+            stdout, stderr = claude.communicate(timeout=0.1)
+            break
+        except subprocess.TimeoutExpired:
+            if cancel_file is None or not cancel_file.exists():
+                continue
+            cancellation = json.loads(cancel_file.read_text(encoding="utf-8"))
+            try:
+                os.killpg(claude.pid, signal.SIGINT)
+            except ProcessLookupError:
+                pass
+            stdout, stderr = claude.communicate()
+            break
+    return (
+        subprocess.CompletedProcess(command, claude.returncode, stdout, stderr),
+        cancellation,
+    )
+
+
 def base_receipt(args: argparse.Namespace, command: list[str]) -> dict[str, Any]:
     config_digest = sha256_directory(args.claude_config_dir)
     attestation = read_routing_attestation(
@@ -295,9 +325,9 @@ def run(args: argparse.Namespace) -> int:
             claude_env["ANTHROPIC_DEFAULT_SONNET_MODEL"] = args.batch_model
             claude_env["CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"] = "1"
             claude_env["CLAUDE_CODE_DISABLE_TERMINAL_TITLE"] = "1"
-            result = subprocess.run(
+            result, cancellation = run_claude_with_cancellation(
                 command, env=claude_env, cwd=args.working_directory,
-                capture_output=True, check=False,
+                cancel_file=getattr(args, "cancel_file", None),
             )
             atomic_bytes(args.stdout, result.stdout)
             atomic_bytes(args.stderr, result.stderr)
@@ -306,7 +336,17 @@ def run(args: argparse.Namespace) -> int:
                 "stderr_sha256": sha256_bytes(result.stderr),
                 "returncode": result.returncode,
             })
-            receipt["status"] = "success" if result.returncode == 0 else "failed"
+            if cancellation is not None:
+                receipt["status"] = "cancelled"
+                receipt["cancellation"] = {
+                    "request": cancellation,
+                    "request_sha256": sha256_bytes(
+                        args.cancel_file.read_bytes()
+                    ),
+                    "claude_returncode": result.returncode,
+                }
+            else:
+                receipt["status"] = "success" if result.returncode == 0 else "failed"
     except Exception as failure:
         receipt["status"] = "infrastructure_failed"
         receipt["failure"] = {
@@ -379,6 +419,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--poll-interval-seconds", type=float, default=2.0)
     parser.add_argument("--poll-timeout-seconds", type=float, default=3600.0)
     parser.add_argument("--collection-window-seconds", type=float, default=0.5)
+    parser.add_argument("--cancel-file", type=Path)
     parser.add_argument("--proxy-start-timeout-seconds", type=float, default=15.0)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     return parser

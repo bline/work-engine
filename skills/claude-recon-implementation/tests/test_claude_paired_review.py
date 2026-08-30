@@ -344,6 +344,16 @@ class ClaudePairedReviewTest(unittest.TestCase):
         self.assertEqual(self.run_controller(realtime_returncode=1), 1)
         pair = self.wait_for_pair_receipt()
         self.assertFalse(pair["comparison_ready"])
+        controller = json.loads(
+            (self.campaign / "pairs/pair-01/runtime/controller-receipt.json").read_text()
+        )
+        self.assertEqual(
+            controller["status"], "realtime_failed_batch_cancellation_requested"
+        )
+        self.assertIn(
+            controller["batch"]["cancellation"]["status"],
+            {"requested", "already_terminal"},
+        )
         self.assertTrue(any(
             "realtime arm did not complete successfully" in error
             for error in pair["validation_errors"]

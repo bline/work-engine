@@ -101,6 +101,11 @@ ordering prevents a realtime-only attempt from becoming invisible in the
 denominator if the caller exits or the shadow later fails. The batch arm never
 changes the review returned to the workflow.
 
+If realtime fails, the controller immediately interrupts the local batch
+process group. A batch request already admitted remotely may still settle and
+must be reconciled, but the disabled-beta Claude tool loop must not submit
+additional paid turns for a pair that can no longer become comparison-ready.
+
 The controller canonicalizes every caller-supplied filesystem path before
 registration and before either arm changes to the immutable review working
 directory. This keeps registrations and native-Claude arguments valid when the
@@ -208,9 +213,19 @@ initial campaign to choose a production configuration, then reopen calibration
 when a change can materially affect inference requests, context, tools, or
 review-result semantics.
 
-Keep each successor calibration in a separately versioned campaign. Preserve
-the earlier artifacts under their original protocol; do not pool results merely
-because they use the same model or review subjects.
+Keep each successor calibration in a separately versioned campaign and
+preserve every failed or incomplete registration in its original denominator.
+For the initial transport calibration, a human-authorized aggregate may count
+comparison-ready pairs across versioned campaign directories only when their
+frozen protocol, model, command, schema, tool exposure, routing constraints,
+and experimental-beta distinction are identical. Infrastructure failures stay
+visible as reliability evidence but do not erase compatible valid pairs. Do
+not pool merely because campaigns use the same model or review subjects.
+
+The per-directory audit remains the fail-closed integrity check for one
+execution cohort. Before adjudicating a cross-directory initial aggregate,
+bind the included pair receipts and protocol identity in a separate durable
+ledger; do not represent a per-directory audit as aggregate completeness.
 
 ### Initial transport campaign
 

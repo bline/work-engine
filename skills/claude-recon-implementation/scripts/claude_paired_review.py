@@ -23,7 +23,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TRANSPORT_SCRIPT = SCRIPT_DIR / "claude_transport.py"
 BATCH_SCRIPT = SCRIPT_DIR / "claude_batch_review.py"
 EVIDENCE_SCRIPT = SCRIPT_DIR / "paired_review_evidence.py"
-TERMINAL_BATCH_STATES = {"success", "failed", "infrastructure_failed"}
+TERMINAL_BATCH_STATES = {"success", "failed", "infrastructure_failed", "cancelled"}
 FORBIDDEN_INITIAL_SESSION_FLAGS = {
     "--no-session-persistence", "--resume", "-r", "--continue", "-c",
     "--session-id",
@@ -237,6 +237,27 @@ def launch_process(
     return process
 
 
+def request_batch_cancellation(
+    process: subprocess.Popen[bytes], marker: Path,
+) -> dict[str, Any]:
+    """Ask the receipt-owning worker to stop its Claude child safely."""
+    returncode = process.poll()
+    if returncode is not None:
+        return {
+            "status": "already_terminal",
+            "observed_at": now(),
+            "returncode": returncode,
+        }
+    request = {
+        "status": "requested",
+        "observed_at": now(),
+        "scope": "batch_claude_child",
+        "reason": "realtime_arm_failed",
+    }
+    atomic_json(marker, request)
+    return request
+
+
 def runtime_paths(args: argparse.Namespace) -> dict[str, Path]:
     runtime = pair_directory(args.campaign_root, args.pair_id) / "runtime"
     return {
@@ -250,6 +271,7 @@ def runtime_paths(args: argparse.Namespace) -> dict[str, Path]:
         "batch_receipt": runtime / "batch-execution-receipt.json",
         "batch_events": runtime / "batch-events.jsonl",
         "batch_worker_log": runtime / "batch-worker.log",
+        "batch_cancel": runtime / "batch-cancel.json",
         "finalizer_log": runtime / "finalizer.log",
         "finalizer_receipt": runtime / "finalizer-receipt.json",
         "reviewer_handoff": runtime / "realtime-reviewer-handoff.json",
@@ -380,6 +402,7 @@ def run_review(args: argparse.Namespace) -> int:
         "--poll-interval-seconds", str(args.batch_poll_interval_seconds),
         "--poll-timeout-seconds", str(args.batch_poll_timeout_seconds),
         "--collection-window-seconds", str(args.collection_window_seconds),
+        "--cancel-file", str(paths["batch_cancel"]),
         "--", *command,
     ]
     batch_env = dict(os.environ)
@@ -467,9 +490,13 @@ def run_review(args: argparse.Namespace) -> int:
         "observed_session_id": observed_session_id,
         "continuity_verified": continuity_verified,
     }
+    if caller_returncode != 0:
+        controller["batch"]["cancellation"] = request_batch_cancellation(
+            batch, paths["batch_cancel"]
+        )
     controller["status"] = (
         "realtime_returned_state_bookkeeping_pending_batch_pending"
-        if caller_returncode == 0 else "realtime_failed_batch_pending"
+        if caller_returncode == 0 else "realtime_failed_batch_cancellation_requested"
     )
     atomic_json(paths["controller_receipt"], controller)
     handoff.update({
