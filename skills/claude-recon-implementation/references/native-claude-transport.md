@@ -69,6 +69,24 @@ and its key assignment through OpenRouter's management API and normalize them
 to
 [openrouter-routing-attestation.schema.json](openrouter-routing-attestation.schema.json).
 
+Produce that artifact with the read-only collector:
+
+```bash
+OPENROUTER_MANAGEMENT_KEY='<management credential>' \
+OPENROUTER_API_KEY_HASH='<non-secret inference-key hash>' \
+python3 skills/claude-recon-implementation/scripts/openrouter_routing_attestation.py \
+  --guardrail-id '<guardrail UUID>' \
+  --model 'anthropic/claude-sonnet-5' \
+  --output '<routing-attestation.json>'
+```
+
+The collector issues only `GET` requests: one exact guardrail lookup and a
+complete paginated read of key assignments. It fails closed unless the
+guardrail permits only `anthropic`, permits only the requested model, and the
+selected key hash has exactly one direct assignment to that guardrail. Keep the
+management credential separate from the inference key; neither credential is
+written to the artifact. The key hash is an identifier, not a secret.
+
 Pass that fresh artifact with `--require-anthropic-1p`,
 `--routing-attestation`, and the non-secret `OPENROUTER_API_KEY_HASH`. The
 launcher checks the provider/model restrictions, key assignment, and freshness
