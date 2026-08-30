@@ -53,10 +53,12 @@ may cause an OpenRouter call. Selecting `--transport openrouter` is itself an
 explicit paid-route selection.
 
 Use `--transport openrouter` when the route is selected before provider entry.
-Use a `:batch` model only after the exact model and native Claude Code route
-have passed a separately recorded compatibility test, then supply
-`--allow-batch-route`. Standard and batch routes are distinct execution
-configurations even when their model family is the same.
+Do not point this synchronous launcher at a `:batch` model. Live testing with
+Claude Code 2.1.237 established that direct synchronous use returns 404 and
+that OpenRouter's asynchronous Batch API requires a loopback transport. See
+[native-claude-batch-transport.md](native-claude-batch-transport.md). Standard
+and batch routes are distinct execution configurations even when their model
+family and native Claude executable are the same.
 
 ### Research-grade upstream pinning
 

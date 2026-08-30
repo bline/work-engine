@@ -41,7 +41,7 @@ class TransportError(ValueError):
     """Raised when a requested transport cannot be run safely."""
 
 
-def _read_routing_attestation(
+def read_routing_attestation(
     path: Path,
     *,
     expected_model: str,
@@ -345,7 +345,7 @@ def run(args: argparse.Namespace) -> int:
             raise TransportError(
                 "--require-anthropic-1p requires --routing-attestation"
             )
-        receipt["routing_attestation"] = _read_routing_attestation(
+        receipt["routing_attestation"] = read_routing_attestation(
             args.routing_attestation,
             expected_model=args.openrouter_model,
             expected_key_hash=args.openrouter_key_hash,

@@ -24,6 +24,12 @@ and use its deterministic launcher. Keep gateway, exact requested model,
 Claude Code version, session continuity, and observed-versus-requested upstream
 provider distinct in provenance.
 
+OpenRouter Batch is a separate experimental execution mode, not an automatic
+quota-failover route. Before using it, read
+[references/native-claude-batch-transport.md](references/native-claude-batch-transport.md)
+and preserve its harness-configuration and compatibility limitations in the
+review receipt.
+
 For research or experimental execution, require the transport reference's
 fresh Anthropic-1P key-guardrail attestation. An exact Claude model slug without
 an enforced upstream allowlist is insufficient because OpenRouter may route
