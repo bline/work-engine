@@ -11,13 +11,14 @@ from pathlib import Path
 import shutil
 import tempfile
 from typing import Any, Sequence
+from uuid import UUID
 
 from claude_transport import TransportError, sha256_directory
 
 
-CAMPAIGN_TYPE = "claude_review_pair_campaign_v1"
-REGISTRATION_TYPE = "claude_review_pair_registration_v1"
-RECEIPT_TYPE = "claude_review_pair_receipt_v1"
+CAMPAIGN_TYPE = "claude_review_pair_campaign_v2"
+REGISTRATION_TYPE = "claude_review_pair_registration_v2"
+RECEIPT_TYPE = "claude_review_pair_receipt_v2"
 
 
 def now() -> str:
@@ -63,7 +64,7 @@ def pair_dir(root: Path, pair_id: str) -> Path:
 
 def require_campaign(root: Path) -> dict[str, Any]:
     campaign = load_object(campaign_path(root))
-    if campaign.get("artifact_type") != CAMPAIGN_TYPE or campaign.get("schema_version") != 1:
+    if campaign.get("artifact_type") != CAMPAIGN_TYPE or campaign.get("schema_version") != 2:
         raise TransportError("unsupported paired-review campaign contract")
     return campaign
 
@@ -76,7 +77,7 @@ def initialize(args: argparse.Namespace) -> int:
         raise TransportError("--target-pairs must be positive")
     value = {
         "artifact_type": CAMPAIGN_TYPE,
-        "schema_version": 1,
+        "schema_version": 2,
         "campaign_id": args.campaign_id,
         "created_at": now(),
         "target_pairs": args.target_pairs,
@@ -91,6 +92,7 @@ def initialize(args: argparse.Namespace) -> int:
                 "transport": "openrouter-realtime",
                 "experimental_betas_disabled": False,
                 "workflow_authority": "caller-facing-review",
+                "continuity": "retained-native-claude-session",
             },
             "batch": {
                 "transport": "openrouter-batch",
@@ -102,6 +104,10 @@ def initialize(args: argparse.Namespace) -> int:
             "Practical deployable-configuration comparison; transport and the "
             "experimental-beta setting are intentionally bundled."
         ),
+        "review_state_isolation": (
+            "Paired inference has read-only evidence tools and no mutable production "
+            "independent-review-state tools; realtime bookkeeping is a later same-session step."
+        ),
     }
     atomic_json(path, value)
     print(path)
@@ -109,10 +115,38 @@ def initialize(args: argparse.Namespace) -> int:
 
 
 def copy_bound_artifact(source: Path, destination: Path) -> dict[str, Any]:
-    digest = sha256_file(source)
+    if not source.is_file():
+        raise TransportError(f"required artifact is not a file: {source}")
+    payload = source.read_bytes()
+    digest = hashlib.sha256(payload).hexdigest()
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
+    destination.write_bytes(payload)
     return {"path": str(destination), "sha256": digest, "source_path": str(source)}
+
+
+def canonical_session_id(value: str) -> str:
+    try:
+        parsed = UUID(value)
+    except (ValueError, AttributeError) as failure:
+        raise TransportError("--reviewer-session-id must be a valid UUID") from failure
+    if str(parsed) != value.lower():
+        raise TransportError("--reviewer-session-id must use canonical UUID syntax")
+    return str(parsed)
+
+
+def validate_paired_mcp_config(path: Path) -> None:
+    value = load_object(path)
+    servers = value.get("mcpServers")
+    if not isinstance(servers, dict) or set(servers) != {"codebase-memory-mcp"}:
+        raise TransportError(
+            "paired MCP config must contain only the codebase-memory-mcp server"
+        )
+    serialized = json.dumps(value, sort_keys=True).lower()
+    forbidden = ("review-authority", "independent-review-state", "work-engine-mcp")
+    if any(fragment in serialized for fragment in forbidden):
+        raise TransportError(
+            "paired MCP config must not expose mutable production review state"
+        )
 
 
 def register(args: argparse.Namespace) -> int:
@@ -127,6 +161,8 @@ def register(args: argparse.Namespace) -> int:
         raise TransportError("realtime and batch arms require separate config-directory clones")
     if realtime_config_digest != batch_config_digest:
         raise TransportError("realtime and batch config-directory clones are not identical")
+    reviewer_session_id = canonical_session_id(args.reviewer_session_id)
+    validate_paired_mcp_config(args.paired_mcp_config)
     directory.mkdir(parents=True)
     inputs = directory / "inputs"
     subject = copy_bound_artifact(
@@ -142,9 +178,12 @@ def register(args: argparse.Namespace) -> int:
         args.routing_attestation,
         inputs / f"routing-attestation{args.routing_attestation.suffix}",
     )
+    paired_mcp_config = copy_bound_artifact(
+        args.paired_mcp_config, inputs / "paired-read-only-mcp.json"
+    )
     registration = {
         "artifact_type": REGISTRATION_TYPE,
-        "schema_version": 1,
+        "schema_version": 2,
         "campaign_id": campaign["campaign_id"],
         "pair_id": args.pair_id,
         "ordinal": args.ordinal,
@@ -158,10 +197,23 @@ def register(args: argparse.Namespace) -> int:
             "directory_sha256": realtime_config_digest,
         },
         "routing_attestation": attestation,
+        "paired_mcp_config": paired_mcp_config,
         "model": campaign["model"],
         "review_protocol": campaign["review_protocol"],
         "batch_shadow_registered_before_realtime": True,
         "realtime_result_must_not_be_an_input_to_batch": True,
+        "realtime_continuity": {
+            "mode": "retained_native_claude_session",
+            "session_id": reviewer_session_id,
+            "config_directory": str(args.realtime_config_dir),
+            "loss_policy": "explicit_replacement_or_reconstructed_continuation_required",
+        },
+        "review_state_isolation": {
+            "strict_mcp_config": True,
+            "allowed_mcp_servers": ["codebase-memory-mcp"],
+            "mutable_production_review_state_available": False,
+            "realtime_same_session_bookkeeping_required": True,
+        },
     }
     if not isinstance(args.ordinal, int) or args.ordinal <= 0:
         raise TransportError("--ordinal must be positive")
@@ -219,6 +271,7 @@ def validate_inputs(registration: dict[str, Any], errors: list[str]) -> None:
         ("review_packet", registration["review_packet"]),
         ("config_manifest", registration["claude_config"]["manifest"]),
         ("routing_attestation", registration["routing_attestation"]),
+        ("paired_mcp_config", registration["paired_mcp_config"]),
     ):
         path = Path(binding["path"])
         try:
@@ -245,9 +298,30 @@ def validate_realtime(
         errors.append("realtime arm did not record experimental betas enabled")
     if request.get("terminal_title_disabled") is not True:
         errors.append("realtime arm did not disable the non-review terminal-title call")
+    continuity = registration["realtime_continuity"]
+    if request.get("continuity") != "retained":
+        errors.append("realtime arm did not declare retained continuity")
+    if request.get("session_mode") != "new":
+        errors.append("realtime arm did not create the registered reviewer session")
+    if request.get("session_id") != continuity["session_id"]:
+        errors.append("realtime transport session does not match registration")
+    try:
+        observed_session_id = load_object(result_path).get("session_id")
+    except TransportError as failure:
+        errors.append(str(failure))
+    else:
+        if observed_session_id != continuity["session_id"]:
+            errors.append("realtime result did not return the registered reviewer session")
     shape = request.get("command_shape", [])
     if "--json-schema" not in shape or "--output-format" not in shape:
         errors.append("realtime arm did not record structured-output command flags")
+    for flag in (
+        "--session-id", "--strict-mcp-config", "--mcp-config", "--tools", "--model",
+    ):
+        if flag not in shape:
+            errors.append(f"realtime arm did not record required isolated flag {flag}")
+    if "--no-session-persistence" in shape:
+        errors.append("realtime arm disabled required reviewer-session persistence")
     if request.get("claude_config_dir_sha256_before") != registration["claude_config"]["directory_sha256"]:
         errors.append("realtime initial Claude config does not match registration")
     routing = receipt.get("routing_attestation") or {}
@@ -278,6 +352,13 @@ def validate_batch(
     shape = receipt.get("command_shape", [])
     if "--json-schema" not in shape or "--output-format" not in shape:
         errors.append("batch arm did not record structured-output command flags")
+    for flag in (
+        "--session-id", "--strict-mcp-config", "--mcp-config", "--tools", "--model",
+    ):
+        if flag not in shape:
+            errors.append(f"batch arm did not record required isolated flag {flag}")
+    if "--no-session-persistence" in shape:
+        errors.append("batch arm disabled the registered isolated session")
     if receipt.get("claude_config_dir_sha256_before") != registration["claude_config"]["directory_sha256"]:
         errors.append("batch initial Claude config does not match registration")
     routing = receipt.get("routing_attestation") or {}
@@ -291,31 +372,63 @@ def validate_batch(
         errors.append("batch event log does not match its execution receipt")
     if not (receipt.get("batch_summary") or {}).get("terminal_lineage_complete"):
         errors.append("batch request-to-terminal lineage is incomplete")
+    try:
+        observed_session_id = load_object(result_path).get("session_id")
+    except TransportError as failure:
+        errors.append(str(failure))
+    else:
+        if observed_session_id != registration["realtime_continuity"]["session_id"]:
+            errors.append("batch result did not return its isolated copy of the registered session")
 
 
 def finalize(args: argparse.Namespace) -> int:
     campaign = require_campaign(args.campaign_root)
     directory = pair_dir(args.campaign_root, args.pair_id)
     registration = load_object(directory / "registration.json")
+    controller = load_object(args.controller_receipt)
     realtime = load_object(args.realtime_receipt)
     batch = load_object(args.batch_receipt)
-    errors: list[str] = []
-    validate_inputs(registration, errors)
-    validate_realtime(registration, args.realtime_result, realtime, errors)
-    validate_batch(registration, args.batch_result, batch, args.batch_event_log, errors)
+    input_errors: list[str] = []
+    realtime_errors: list[str] = []
+    batch_errors: list[str] = []
+    pair_errors: list[str] = []
+    validate_inputs(registration, input_errors)
+    validate_realtime(
+        registration, args.realtime_result, realtime, realtime_errors
+    )
+    validate_batch(
+        registration, args.batch_result, batch, args.batch_event_log, batch_errors
+    )
     realtime_command = (realtime.get("request") or {}).get("command_sha256")
     batch_command = batch.get("command_sha256")
+    if (controller.get("artifact_type") != "claude_paired_review_controller_v2"
+            or controller.get("campaign_id") != registration["campaign_id"]
+            or controller.get("pair_id") != registration["pair_id"]):
+        input_errors.append("controller receipt does not match the registered pair")
+    if controller.get("command_sha256") != realtime_command:
+        input_errors.append("arms did not execute the controller-bound Claude command")
+    controller_continuity = controller.get("realtime") or {}
+    if controller_continuity.get("continuity_verified") is not True:
+        realtime_errors.append("controller did not verify realtime reviewer continuity")
+    controller_isolation = controller.get("review_state_isolation") or {}
+    if (controller_isolation.get("mutable_production_review_state_available") is not False
+            or controller_isolation.get("paired_mcp_config_sha256")
+            != registration["paired_mcp_config"]["sha256"]):
+        input_errors.append("controller did not preserve registered review-state isolation")
     if not realtime_command or realtime_command != batch_command:
-        errors.append("arms did not execute the exact same native Claude command")
+        pair_errors.append("arms did not execute the exact same native Claude command")
     if realtime.get("claude_version") != batch.get("claude_version"):
-        errors.append("arms used different Claude Code versions")
+        pair_errors.append("arms used different Claude Code versions")
     semantic_profiles: dict[str, dict[str, Any] | None] = {}
     for arm, path in (("realtime", args.realtime_result), ("batch", args.batch_result)):
         try:
             semantic_profiles[arm] = semantic_profile(path)
         except TransportError as failure:
             semantic_profiles[arm] = None
-            errors.append(str(failure))
+            (realtime_errors if arm == "realtime" else batch_errors).append(
+                str(failure)
+            )
+    errors = input_errors + realtime_errors + batch_errors + pair_errors
 
     artifacts = directory / "artifacts"
     artifacts.mkdir(exist_ok=True)
@@ -326,13 +439,14 @@ def finalize(args: argparse.Namespace) -> int:
         ("batch_result", args.batch_result),
         ("batch_receipt", args.batch_receipt),
         ("batch_event_log", args.batch_event_log),
+        ("controller_receipt", args.controller_receipt),
     ):
         destination = artifacts / f"{label}{source.suffix}"
         shutil.copyfile(source, destination)
         copies[label] = {"path": str(destination), "sha256": sha256_file(destination)}
     receipt = {
         "artifact_type": RECEIPT_TYPE,
-        "schema_version": 1,
+        "schema_version": 2,
         "campaign_id": campaign["campaign_id"],
         "pair_id": args.pair_id,
         "ordinal": registration["ordinal"],
@@ -347,10 +461,15 @@ def finalize(args: argparse.Namespace) -> int:
             "command_sha256": realtime_command,
             "model": registration["model"],
             "claude_version": realtime.get("claude_version"),
+            "reviewer_session_id": registration["realtime_continuity"]["session_id"],
+            "paired_mcp_config_sha256": registration["paired_mcp_config"]["sha256"],
+            "controller_receipt_sha256": copies["controller_receipt"]["sha256"],
         },
         "arms": {
             "realtime": {
                 "experimental_betas_disabled": False,
+                "evidence_valid": not input_errors and not realtime_errors,
+                "validation_errors": input_errors + realtime_errors,
                 "result_profile": result_profile(args.realtime_result),
                 "semantic_profile": semantic_profiles["realtime"],
                 "artifacts": {
@@ -360,6 +479,8 @@ def finalize(args: argparse.Namespace) -> int:
             },
             "batch": {
                 "experimental_betas_disabled": True,
+                "evidence_valid": not input_errors and not batch_errors,
+                "validation_errors": input_errors + batch_errors,
                 "result_profile": result_profile(args.batch_result),
                 "semantic_profile": semantic_profiles["batch"],
                 "actual_openrouter_usage": (
@@ -379,6 +500,8 @@ def finalize(args: argparse.Namespace) -> int:
             "realtime": "caller-facing-review",
             "batch": "shadow-measurement-only",
             "bench_result_is_not_production_approval": True,
+            "production_state_bookkeeping": "required_after_pair_on_realtime_session_only",
+            "production_state_bookkeeping_assessed": False,
         },
         "known_confound": "transport plus experimental-beta setting",
     }
@@ -423,8 +546,8 @@ def audit(args: argparse.Namespace) -> int:
         and sorted(ordinals) == list(range(1, campaign["target_pairs"] + 1))
     )
     report = {
-        "artifact_type": "claude_review_pair_campaign_audit_v1",
-        "schema_version": 1,
+        "artifact_type": "claude_review_pair_campaign_audit_v2",
+        "schema_version": 2,
         "campaign_id": campaign["campaign_id"],
         "audited_at": now(),
         "target_pairs": campaign["target_pairs"],
@@ -473,8 +596,8 @@ def compare(args: argparse.Namespace) -> int:
             "requires_adjudication": realtime["sha256"] != batch["sha256"],
         })
     report = {
-        "artifact_type": "claude_review_pair_descriptive_comparison_v1",
-        "schema_version": 1,
+        "artifact_type": "claude_review_pair_descriptive_comparison_v2",
+        "schema_version": 2,
         "campaign_id": campaign["campaign_id"],
         "created_at": now(),
         "pair_count": len(rows),
@@ -521,6 +644,8 @@ def parser() -> argparse.ArgumentParser:
     add.add_argument("--realtime-config-dir", required=True, type=Path)
     add.add_argument("--batch-config-dir", required=True, type=Path)
     add.add_argument("--routing-attestation", required=True, type=Path)
+    add.add_argument("--reviewer-session-id", required=True)
+    add.add_argument("--paired-mcp-config", required=True, type=Path)
     add.set_defaults(handler=register)
 
     finish = commands.add_parser("finalize")
@@ -531,6 +656,7 @@ def parser() -> argparse.ArgumentParser:
     finish.add_argument("--batch-result", required=True, type=Path)
     finish.add_argument("--batch-receipt", required=True, type=Path)
     finish.add_argument("--batch-event-log", required=True, type=Path)
+    finish.add_argument("--controller-receipt", required=True, type=Path)
     finish.set_defaults(handler=finalize)
 
     check = commands.add_parser("audit")

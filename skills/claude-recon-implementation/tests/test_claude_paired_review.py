@@ -24,6 +24,7 @@ assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 MODEL = "anthropic/claude-sonnet-5-20260630"
+SESSION_ID = "11111111-1111-4111-8111-111111111111"
 
 
 FAKE_TRANSPORT = r'''#!/usr/bin/env python3
@@ -38,11 +39,13 @@ model = sys.argv[sys.argv.index("--openrouter-model") + 1]
 attestation = Path(sys.argv[sys.argv.index("--routing-attestation") + 1])
 separator = sys.argv.index("--")
 command = sys.argv[separator + 1:]
+expected_session_id = command[command.index("--session-id") + 1]
+session_id = os.environ.get("FAKE_REALTIME_SESSION_ID", expected_session_id)
 payload = {
     "verdict": "accepted", "findings": [],
     "verified_claims": [{"claim_id": "v1"}], "observations": [],
 }
-stdout = (json.dumps({"session_id": "rt", "result": json.dumps(payload)}) + "\n").encode()
+stdout = (json.dumps({"session_id": session_id, "result": json.dumps(payload)}) + "\n").encode()
 returncode = int(os.environ.get("FAKE_REALTIME_RETURNCODE", "0"))
 receipt = {
     "schema_version": 1,
@@ -51,13 +54,19 @@ receipt = {
     "claude_version": "fake-claude 1.0",
     "request": {
         "openrouter_model": model,
+        "continuity": "retained",
+        "session_mode": "new",
+        "session_id": expected_session_id,
         "experimental_betas_disabled": False,
         "terminal_title_disabled": os.environ.get("CLAUDE_CODE_DISABLE_TERMINAL_TITLE") == "1",
         "claude_config_dir_sha256_before": os.environ["EXPECTED_CONFIG_DIGEST"],
         "command_sha256": hashlib.sha256(json.dumps(
             command, sort_keys=True, separators=(",", ":"), ensure_ascii=False
         ).encode()).hexdigest(),
-        "command_shape": ["claude", "-p", "--output-format", "--json-schema"],
+        "command_shape": [
+            "claude", "--session-id", "--strict-mcp-config", "--mcp-config",
+            "--tools", "--model", "-p", "--output-format", "--json-schema",
+        ],
     },
     "routing_attestation": {"sha256": hashlib.sha256(attestation.read_bytes()).hexdigest()},
     "attempts": [{
@@ -91,11 +100,12 @@ model = argument("--batch-model")
 attestation = Path(argument("--routing-attestation"))
 separator = sys.argv.index("--")
 command = sys.argv[separator + 1:]
+session_id = command[command.index("--session-id") + 1]
 payload = {
     "verdict": "accepted", "findings": [],
     "verified_claims": [{"claim_id": "v1"}], "observations": [],
 }
-stdout = (json.dumps({"session_id": "batch", "result": json.dumps(payload)}) + "\n").encode()
+stdout = (json.dumps({"session_id": session_id, "result": json.dumps(payload)}) + "\n").encode()
 time.sleep(0.1)
 for path in (receipt_path, event_path, stdout_path, stderr_path):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -119,7 +129,10 @@ receipt = {
     "command_sha256": hashlib.sha256(json.dumps(
         command, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode()).hexdigest(),
-    "command_shape": ["claude", "-p", "--output-format", "--json-schema"],
+    "command_shape": [
+        "claude", "--session-id", "--strict-mcp-config", "--mcp-config",
+        "--tools", "--model", "-p", "--output-format", "--json-schema",
+    ],
     "claude_config_dir_sha256_before": os.environ["EXPECTED_CONFIG_DIGEST"],
     "routing_attestation": {"sha256": hashlib.sha256(attestation.read_bytes()).hexdigest()},
     "output": {"stdout_sha256": hashlib.sha256(stdout).hexdigest()},
@@ -154,6 +167,7 @@ class ClaudePairedReviewTest(unittest.TestCase):
         self.packet = self.root / "packet.md"
         self.manifest = self.root / "config-manifest.json"
         self.attestation = self.root / "attestation.json"
+        self.paired_mcp = self.root / "paired-mcp.json"
         self.workspace = self.root / "workspace"
         self.realtime_config = self.root / "realtime-config"
         self.batch_config = self.root / "batch-config"
@@ -166,6 +180,13 @@ class ClaudePairedReviewTest(unittest.TestCase):
         self.packet.write_text("the exact paired prompt", encoding="utf-8")
         self.manifest.write_text('{"tools":["Read"]}', encoding="utf-8")
         self.attestation.write_text('{"route":"anthropic"}', encoding="utf-8")
+        self.paired_mcp.write_text(json.dumps({
+            "mcpServers": {
+                "codebase-memory-mcp": {
+                    "type": "stdio", "command": "codebase-memory-mcp",
+                }
+            }
+        }), encoding="utf-8")
         subprocess.run([
             sys.executable, str(EVIDENCE), "init",
             "--campaign-root", str(self.campaign),
@@ -199,7 +220,9 @@ class ClaudePairedReviewTest(unittest.TestCase):
             realtime_config_dir=self.realtime_config,
             batch_config_dir=self.batch_config,
             routing_attestation=self.attestation,
-            working_directory=self.workspace, continuity="retained",
+            paired_mcp_config=self.paired_mcp,
+            reviewer_session_id=SESSION_ID,
+            working_directory=self.workspace,
             attestation_max_age_seconds=900,
             batch_poll_interval_seconds=0.01,
             batch_poll_timeout_seconds=5,
@@ -212,7 +235,9 @@ class ClaudePairedReviewTest(unittest.TestCase):
             ],
         )
 
-    def run_controller(self, realtime_returncode: int = 0) -> int:
+    def run_controller(
+        self, realtime_returncode: int = 0, observed_session_id: str | None = None
+    ) -> int:
         old_transport = MODULE.TRANSPORT_SCRIPT
         old_batch = MODULE.BATCH_SCRIPT
         old_stdout = MODULE.sys.stdout
@@ -224,6 +249,8 @@ class ClaudePairedReviewTest(unittest.TestCase):
         MODULE.sys.stderr = Capture()
         os.environ["EXPECTED_CONFIG_DIGEST"] = self.config_digest()
         os.environ["FAKE_REALTIME_RETURNCODE"] = str(realtime_returncode)
+        if observed_session_id is not None:
+            os.environ["FAKE_REALTIME_SESSION_ID"] = observed_session_id
         try:
             return MODULE.run_review(self.arguments())
         finally:
@@ -236,10 +263,13 @@ class ClaudePairedReviewTest(unittest.TestCase):
 
     def wait_for_pair_receipt(self) -> dict[str, object]:
         path = self.campaign / "pairs/pair-01/pair-receipt.json"
+        finalizer_path = self.campaign / "pairs/pair-01/runtime/finalizer-receipt.json"
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
-            if path.exists():
-                return json.loads(path.read_text())
+            if path.exists() and finalizer_path.exists():
+                finalizer = json.loads(finalizer_path.read_text())
+                if finalizer.get("status") in {"finalized", "failed"}:
+                    return json.loads(path.read_text())
             time.sleep(0.02)
         self.fail("background finalizer did not write the pair receipt")
 
@@ -258,7 +288,20 @@ class ClaudePairedReviewTest(unittest.TestCase):
             controller["review_packet_sha256"], registration["review_packet"]["sha256"]
         )
         self.assertEqual(controller["realtime"]["status"], "success")
+        self.assertTrue(controller["realtime"]["continuity_verified"])
         self.assertEqual(controller["batch"]["status"], "launched")
+        self.assertEqual(
+            registration["realtime_continuity"]["session_id"], SESSION_ID
+        )
+        self.assertEqual(pair["bindings"]["reviewer_session_id"], SESSION_ID)
+        handoff = json.loads(
+            (self.campaign / "pairs/pair-01/runtime/realtime-reviewer-handoff.json").read_text()
+        )
+        self.assertEqual(handoff["status"], "resume_ready")
+        self.assertEqual(
+            handoff["production_review_state"],
+            "pending_external_same_session_bookkeeping",
+        )
 
     def test_realtime_failure_is_returned_and_shadow_remains_in_denominator(self) -> None:
         self.assertEqual(self.run_controller(realtime_returncode=1), 1)
@@ -268,6 +311,54 @@ class ClaudePairedReviewTest(unittest.TestCase):
             "realtime arm did not complete successfully" in error
             for error in pair["validation_errors"]
         ))
+
+    def test_session_mismatch_fails_closed_and_is_not_resume_ready(self) -> None:
+        self.assertEqual(
+            self.run_controller(
+                observed_session_id="22222222-2222-4222-8222-222222222222"
+            ),
+            2,
+        )
+        pair = self.wait_for_pair_receipt()
+        self.assertFalse(pair["comparison_ready"])
+        self.assertFalse(pair["arms"]["realtime"]["evidence_valid"])
+        handoff = json.loads(
+            (self.campaign / "pairs/pair-01/runtime/realtime-reviewer-handoff.json").read_text()
+        )
+        self.assertEqual(handoff["status"], "not_resume_ready")
+
+    def test_no_session_persistence_is_rejected_before_registration(self) -> None:
+        arguments = self.arguments()
+        arguments.claude_command.insert(2, "--no-session-persistence")
+        with self.assertRaisesRegex(
+            MODULE.TransportError, "initial retained paired review"
+        ):
+            MODULE.run_review(arguments)
+        self.assertFalse((self.campaign / "pairs/pair-01").exists())
+
+    def test_caller_model_override_is_rejected_before_registration(self) -> None:
+        arguments = self.arguments()
+        arguments.claude_command[2:2] = ["--model", "opus"]
+        with self.assertRaisesRegex(
+            MODULE.TransportError, "controller-owned"
+        ):
+            MODULE.run_review(arguments)
+        self.assertFalse((self.campaign / "pairs/pair-01").exists())
+
+    def test_mutable_review_state_mcp_is_rejected_before_registration(self) -> None:
+        self.paired_mcp.write_text(json.dumps({
+            "mcpServers": {
+                "work-engine": {
+                    "command": "node",
+                    "args": ["server.mjs", "--review-authority", "authority.json"],
+                }
+            }
+        }), encoding="utf-8")
+        with self.assertRaisesRegex(
+            MODULE.TransportError, "paired MCP config"
+        ):
+            MODULE.run_review(self.arguments())
+        self.assertFalse((self.campaign / "pairs/pair-01").exists())
 
     def test_finalizer_launch_failure_returns_realtime_and_requires_recovery(self) -> None:
         original_launch = MODULE.launch_process

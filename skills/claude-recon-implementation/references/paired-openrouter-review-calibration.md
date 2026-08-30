@@ -22,8 +22,10 @@ Before the realtime provider call:
 2. create separate, byte-identical isolated `CLAUDE_CONFIG_DIR` clones for the
    two arms so realtime mutations cannot change the batch starting state;
 3. retain a content-safe manifest describing the frozen config;
-4. create a fresh Anthropic-only routing attestation; and
-5. register the pair durably.
+4. provide a strict MCP config containing only `codebase-memory-mcp`;
+5. create or supply one canonical reviewer-session UUID;
+6. create a fresh Anthropic-only routing attestation; and
+7. register the pair durably.
 
 The batch command must be byte-for-byte the same native Claude command as the
 realtime command. Only the transport environment, isolated config path, and
@@ -58,29 +60,46 @@ python3 skills/claude-recon-implementation/scripts/claude_paired_review.py run \
   --config-manifest '<content-safe-config-manifest.json>' \
   --realtime-config-dir '<realtime-config-clone>' \
   --batch-config-dir '<batch-config-clone>' \
+  --paired-mcp-config '<codebase-memory-only-mcp.json>' \
+  --reviewer-session-id '<canonical-uuid>' \
   --routing-attestation '<routing-attestation.json>' \
   --working-directory '<immutable-review-workspace>' \
   -- claude -p \
     --effort medium \
-    --model sonnet \
-    --no-session-persistence \
-    --tools 'mcp__codebase-memory-mcp,Read,Glob,Grep' \
     --output-format json \
     --json-schema '<review-bench-v2-schema>' \
     --dangerously-skip-permissions
 ```
 
-Do not put the review packet in the trailing Claude command. The controller
-copies the packet into the registered pair and appends that exact UTF-8 content
-to both Claude argument vectors. This makes packet identity executable rather
-than merely documentary.
+Create the session UUID before invoking the controller. When active-slice
+recovery is configured, publish that UUID as the reviewer runtime-session
+binding before provider entry; registration inside the controller does not
+replace the supervisor-owned binding.
+
+Do not put session, MCP, tool-selection, or review-packet arguments in the
+trailing Claude command. The controller injects `--session-id`,
+`--strict-mcp-config`, the registered read-only MCP config, and the fixed
+`mcp__codebase-memory-mcp,Read,Glob,Grep` tool set. It also injects the Sonnet
+alias that both transport launchers bind to the campaign's exact canonical
+model. Caller-supplied model and fallback-model arguments are rejected. The
+controller copies the packet into the registered pair and appends that exact
+UTF-8 content to both Claude argument vectors. This makes model, session, state
+isolation, and packet identity executable rather than merely documentary.
+
+`--no-session-persistence`, `--resume`, and `--continue` are invalid for an
+initial pair. The controller succeeds only when realtime returns the registered
+session UUID. Preserve the realtime config clone; the runtime
+`realtime-reviewer-handoff.json` binds the UUID, config directory, working
+directory, and whether the session is ready for remediation. The batch clone
+may persist its isolated copy of the same UUID, but that copy has no production
+continuity authority.
 
 The controller registers the pair before provider entry, launches the detached
 batch worker and detached finalizer, then runs realtime synchronously and
-returns its exact stdout and exit status to the caller. This ordering prevents
-a realtime-only attempt from becoming invisible in the denominator if the
-caller exits or the shadow later fails. The batch arm never changes the review
-returned to the workflow.
+returns its stdout; its exit status fails closed on a session mismatch. This
+ordering prevents a realtime-only attempt from becoming invisible in the
+denominator if the caller exits or the shadow later fails. The batch arm never
+changes the review returned to the workflow.
 
 Runtime evidence is written under
 `<campaign-root>/pairs/<pair-id>/runtime/`. The background worker records
@@ -90,15 +109,46 @@ automatic finalizer launch fails, the controller receipt explicitly marks
 `manual_finalization_required`. A missing or failed shadow remains a registered
 pair in the campaign denominator.
 
+## Production review-state isolation
+
+The paired inference call must not expose mutable production
+independent-review-state tools. Both arms execute the same command, so giving
+those tools to realtime would also let the batch shadow contend for or
+contaminate the authoritative review episode. Strict MCP loading therefore
+limits both paired arms to read-only repository evidence.
+
+When authority-bound review state is required, finish production bookkeeping
+after the paired call by resuming only the verified realtime session with its
+preserved config directory and the episode-bound Work Engine MCP. In that
+same-session call, the reviewer begins or reads the episode as applicable,
+records its already-returned initial result, and reads the resulting durable
+revision. This bookkeeping call is outside the calibration pair and may use a
+different MCP/tool configuration; never run it against the batch clone.
+
+Until that durable revision is independently observed, the review result is
+available but production review state remains incomplete. Do not cancel a
+scheduled native-Claude retry merely because realtime inference succeeded.
+Cancel it only after the realtime session ID is verified and the authoritative
+review state is durably recorded. If bookkeeping fails, preserve the realtime
+result and handoff, report incomplete operational state, and resume or replace
+the reviewer under the retained-review contract.
+
+A batch failure prevents that pair from becoming comparison-ready, but it does
+not invalidate otherwise valid realtime review evidence or its later durable
+production-state transition. Pair receipts report arm validity separately from
+aggregate comparison readiness.
+
 The lower-level `paired_review_evidence.py`, `claude_transport.py`, and
 `claude_batch_review.py` commands are recovery and diagnostic interfaces, not
 the normal calibration entry point. The current proxy cannot reattach after a
 process crash to a paid batch already submitted. Reconcile every recorded batch
 ID manually; never replay merely because the local worker stopped.
 
-Automatic finalization fails closed unless both arms share the subject, packet, command,
-initial config digest, model, Claude version, and routing attestation; use their
-expected beta settings; and retain successful output and complete batch
+Automatic finalization fails closed unless both arms share the
+controller-bound subject, packet, command, initial config digest, model, Claude
+version, and routing attestation;
+use their expected beta and state-isolation settings; return the registered
+session UUID; and retain successful output and complete batch
 request-to-terminal lineage. It copies the raw evidence into the pair artifact
 directory before producing `pair-receipt.json`.
 
