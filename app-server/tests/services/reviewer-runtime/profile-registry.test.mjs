@@ -1,0 +1,6 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { reviewerRuntimeDigest as digest, ReviewerProfileRegistry } from "../../../src/index.mjs";
+
+function profile(overrides={}) { const value={schemaVersion:1,profileId:"openrouter.codex.review-v1",enabled:true,requestedModel:"openai/gpt-5.2-codex",provider:"openrouter",reasoning:"high",capabilities:["structured_output","repository_read"],outputSchema:"work-engine.implementation-review.v1",effectiveInstructions:"Review exact subject.",isolatedHome:true,limitations:["variant may be unknown"],acceptingAuthority:"accepted-plan-v1",...overrides}; value.configurationDigest=digest(value); return value; }
+test("registry admits only enabled digest-bound closed profiles",()=>{ const registry=new ReviewerProfileRegistry({profiles:[profile()]}); assert.equal(registry.admit("openrouter.codex.review-v1").profile.requestedModel,"openai/gpt-5.2-codex"); assert.throws(()=>registry.admit("other"),/not admitted/); assert.throws(()=>new ReviewerProfileRegistry({profiles:[profile({configurationDigest:"0".repeat(64)})]}),/digest/); assert.throws(()=>new ReviewerProfileRegistry({profiles:[profile({enabled:false})]}).admit("openrouter.codex.review-v1"),/not admitted/); });

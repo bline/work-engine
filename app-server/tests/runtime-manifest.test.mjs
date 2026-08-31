@@ -107,6 +107,20 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   assert.equal(Object.isFrozen(first), true);
 });
 
+test("production manifest projects the canonical implementation reviewer with a read-only ceiling", async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const manifest = await loadRuntimeManifest(path.join(root, "app-server/runtime-manifest.yaml"));
+  const projection = manifest.projectRole("implementation-reviewer", "proof");
+  assert.equal(projection.role.threadOptions.sandbox, "read-only");
+  assert.deepEqual(projection.role.effects, []);
+  assert.equal(projection.role.continuity, "retained");
+  assert.deepEqual(projection.skills.map(({ name }) => name), ["repo-search"]);
+  assert.match(projection.role.developerInstructions, /does not create renewed freshness/);
+  assert.match(projection.role.developerInstructions, /cannot establish independence or acceptance authority/);
+  assert.match(projection.role.developerInstructions, /Catalog admission does not prove inference identity/);
+  assert.match(projection.role.developerInstructions, /raw evidence, authenticated projections, omissions/);
+});
+
 test("compiled slice-builder requirements admit one generic manifest role and reject excess before delivery", async () => {
   const root = path.resolve(new URL("../..", import.meta.url).pathname);
   const compiled = await compileSkill({

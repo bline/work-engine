@@ -52,6 +52,13 @@ export {
 } from "./services/implementation-review/contract.mjs";
 export * from "./services/implementation-review/service.mjs";
 export {
+  ReviewerRuntimeError, canonicalJson as reviewerRuntimeCanonicalJson,
+  digest as reviewerRuntimeDigest, validateCatalogProjection,
+  validateExecutionReceipt, validateRawEventPolicy, validateReviewerProfile,
+} from "./services/reviewer-runtime/contract.mjs";
+export * from "./services/reviewer-runtime/profile-registry.mjs";
+export * from "./services/reviewer-runtime/openrouter-codex-adapter.mjs";
+export {
   REVIEW_EPISODE_SCHEMA_VERSION, ReviewEpisodeError,
   digest as reviewEpisodeDigest, identityKey as reviewEpisodeIdentityKey,
   validateAuthority as validateReviewEpisodeAuthority,
@@ -72,5 +79,6 @@ export * from "./services/workspace-coordination/git-publisher.mjs";
 export * from "./services/workspace-coordination/runtime.mjs";
 export * from "../roles/slice-builder.mjs";
 export * from "../roles/slice-supervisor.mjs";
+export * from "../roles/implementation-reviewer.mjs";
 export * from "../roles/strategic-planner.mjs";
 export * from "../roles/strategic-planning-handoff.mjs";

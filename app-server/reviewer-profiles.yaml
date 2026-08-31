@@ -1,0 +1,18 @@
+schema_version: 1
+registry_id: work-engine.production-reviewers
+profiles:
+  - schemaVersion: 1
+    profileId: openrouter.codex.review-v1
+    enabled: true
+    requestedModel: openai/gpt-5.2-codex
+    provider: openrouter
+    reasoning: high
+    capabilities: [structured_output, repository_read]
+    outputSchema: work-engine.implementation-review.v1
+    effectiveInstructions: Perform one read-only exact-subject implementation review and return only the bound schema.
+    isolatedHome: true
+    limitations:
+      - Catalog presence does not prove inference admission or execution identity.
+      - Serving variant may remain unknown when the provider does not expose it.
+    acceptingAuthority: work-engine.s10.accepted-plan-v1
+    configurationDigest: 10cea7a6f710742aceb978ad2fb6d6556b7b033c989a0288e430c47d0bc6935a
