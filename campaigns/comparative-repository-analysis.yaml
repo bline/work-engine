@@ -85,10 +85,12 @@ evidence_semantics:
     - runtime_observed
     - production_evidenced
   confidence_scale: [low, medium, high]
-minimum_evidence_floor: >-
-  Every observation cites reopenable evidence; correspondence states remain
-  distinct; confirmed absence requires a bounded exhaustive scope and recorded
-  coverage limitations.
+minimum_evidence_floor:
+  frozen_commit_required: true
+  precise_locator_required: true
+  reciprocal_linkage_required: true
+  supported_claim_direct_evidence_required: true
+  confirmed_absence_requires_no_limitations: true
 
 work_engine_snapshot_policy:
   mode: fixed

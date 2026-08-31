@@ -202,7 +202,10 @@
     }
   ],
   "provenance": {
-    "provider": "fixture",
-    "coverage": "bounded source range"
+    "tier": "verify",
+    "index_generation": "fixture-generation-1",
+    "routes": [
+      "bounded fixture source range"
+    ]
   }
 }

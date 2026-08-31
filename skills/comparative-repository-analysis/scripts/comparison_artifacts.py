@@ -30,6 +30,14 @@ CORRESPONDENCE = (
 )
 DECISIONS = {"KEEP", "ADOPT", "BORROW", "AVOID", "INVESTIGATE"}
 PROFILE_FORBIDDEN = {"decision", "classification", "target_work_engine_boundary"}
+EVIDENCE_FLOOR_KEYS = {
+    "frozen_commit_required", "precise_locator_required", "reciprocal_linkage_required",
+    "supported_claim_direct_evidence_required", "confirmed_absence_requires_no_limitations",
+}
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+PATH_LOCATOR_PATTERN = re.compile(
+    r"(?:^|[\s,(])(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.[A-Za-z0-9]+(?:[:#][^\s;,]+)?"
+)
 
 
 class ArtifactError(ValueError):
@@ -142,7 +150,11 @@ def validate_contract(contract: Any) -> dict[str, Any]:
             "contract correspondence semantics must preserve the defined ordering")
     confidence = array(semantics["confidence_scale"], "confidence_scale")
     require(confidence == ["low", "medium", "high"], "confidence_scale must be low, medium, high")
-    for key in ("selection_bias", "minimum_evidence_floor", "work_engine_snapshot", "migration_policy"):
+    floor = obj(contract["minimum_evidence_floor"], "contract.minimum_evidence_floor")
+    exact_keys(floor, EVIDENCE_FLOOR_KEYS, set(), "contract.minimum_evidence_floor")
+    require(all(floor[key] is True for key in EVIDENCE_FLOOR_KEYS),
+            "contract minimum evidence floor must enable every closed semantic guarantee")
+    for key in ("selection_bias", "work_engine_snapshot", "migration_policy"):
         require(contract[key] not in (None, "", [], {}), f"contract.{key} must record an explicit value")
     array(contract["calibration_checks"], "contract.calibration_checks")
     validate_index_policy(contract["index_policy"])
@@ -339,14 +351,26 @@ def assert_compatible(expected: dict[str, Any], actual: dict[str, Any], path: st
                 f"{path}.{key} is incompatible: expected {expected.get(key)!r}, got {actual.get(key)!r}")
 
 
-def validate_evidence(item: Any, path: str) -> dict[str, Any]:
+def validate_evidence(item: Any, path: str, expected_commit: str) -> dict[str, Any]:
     item = obj(item, path)
     exact_keys(item, {"id", "mode", "locator", "supports", "limitations"},
-               {"symbol_or_section", "range", "commit", "configuration", "coverage"}, path)
+               {"symbol_or_section", "range", "commit", "content_sha256", "configuration", "coverage"}, path)
     text(item["id"], f"{path}.id")
     require(item["mode"] in {"source", "indexed_structure", "documentation", "test", "runtime", "external"},
             f"{path}.mode is invalid")
-    text(item["locator"], f"{path}.locator")
+    locator = text(item["locator"], f"{path}.locator")
+    require(item.get("commit") == expected_commit,
+            f"{path}.commit must equal the frozen repository revision")
+    if "content_sha256" in item:
+        require(bool(SHA256_PATTERN.fullmatch(text(item["content_sha256"], f"{path}.content_sha256"))),
+                f"{path}.content_sha256 must be a lowercase SHA-256 digest")
+    for key in ("symbol_or_section", "range"):
+        if key in item:
+            text(item[key], f"{path}.{key}")
+    precise = any(key in item for key in ("symbol_or_section", "range", "content_sha256"))
+    precise = precise or bool(PATH_LOCATOR_PATTERN.search(locator))
+    precise = precise or (item["mode"] == "indexed_structure" and "Codebase Memory" in locator)
+    require(precise, f"{path} requires a precise path, symbol or section, range, or content digest")
     supports = array(item["supports"], f"{path}.supports")
     require(bool(supports) and all(isinstance(value, str) and value for value in supports),
             f"{path}.supports must contain claim ids")
@@ -377,7 +401,7 @@ def validate_capability(item: Any, path: str) -> dict[str, Any]:
                       "confidence", "evidence_ids", "counterevidence_ids", "relationships"}, set(), path)
     for key in ("id", "name", "mechanism"):
         text(item[key], f"{path}.{key}")
-    require(item["enforcement"] in {"code", "prompt", "config", "mixed"}, f"{path}.enforcement is invalid")
+    require(item["enforcement"] in {"code", "prompt", "config", "mixed", "unknown"}, f"{path}.enforcement is invalid")
     correspondence = obj(item["correspondence"], f"{path}.correspondence")
     require(set(correspondence) == set(CORRESPONDENCE), f"{path}.correspondence must contain every state")
     for key, value in correspondence.items():
@@ -392,6 +416,29 @@ def validate_capability(item: Any, path: str) -> dict[str, Any]:
         require(all(isinstance(value, str) and value for value in array(relationships[key], f"{path}.relationships.{key}")),
                 f"{path}.relationships.{key} contains an invalid id")
     return item
+
+
+def validate_system_boundary(value: Any, path: str) -> dict[str, Any]:
+    boundary = obj(value, path)
+    exact_keys(boundary, {"included", "unavailable"}, set(), path)
+    for key in ("included", "unavailable"):
+        values = array(boundary[key], f"{path}.{key}")
+        require(all(isinstance(item, str) and item.strip() for item in values),
+                f"{path}.{key} must contain nonempty strings")
+    require(bool(boundary["included"]), f"{path}.included must name the analyzed boundary")
+    return boundary
+
+
+def validate_pass_provenance(value: Any, generation: str, path: str) -> dict[str, Any]:
+    provenance = obj(value, path)
+    exact_keys(provenance, {"tier", "index_generation", "routes"}, set(), path)
+    require(provenance["tier"] in {"scout", "verify", "auditor"}, f"{path}.tier is invalid")
+    require(provenance["index_generation"] == generation,
+            f"{path}.index_generation must match the bound index receipt")
+    routes = array(provenance["routes"], f"{path}.routes")
+    require(bool(routes) and all(isinstance(item, str) and item.strip() for item in routes),
+            f"{path}.routes must record at least one evidence route")
+    return provenance
 
 
 def validate_index_receipt(value: Any, contract: dict[str, Any], repository: dict[str, Any]) -> dict[str, Any]:
@@ -550,30 +597,50 @@ def validate_dimension_pass(pass_artifact: Any, contract: dict[str, Any]) -> dic
     allowed = set(contract["required_core_dimensions"]) | set(contract.get("adaptive_dimensions", []))
     require(dimension in allowed, f"pass.dimension '{dimension}' is outside the frozen ontology")
     require(pass_artifact["dimension_state"] in UNCERTAINTY_STATES | {"analyzed"}, "pass.dimension_state is invalid")
-    evidence = [validate_evidence(value, f"pass.evidence[{index}]") for index, value in enumerate(array(pass_artifact["evidence"], "pass.evidence"))]
+    evidence = [validate_evidence(value, f"pass.evidence[{index}]", repository["commit"])
+                for index, value in enumerate(array(pass_artifact["evidence"], "pass.evidence"))]
     claims = [validate_claim(value, f"pass.claims[{index}]") for index, value in enumerate(array(pass_artifact["claims"], "pass.claims"))]
     capabilities = [validate_capability(value, f"pass.capabilities[{index}]") for index, value in enumerate(array(pass_artifact["capabilities"], "pass.capabilities"))]
-    obj(pass_artifact["system_boundary"], "pass.system_boundary")
+    validate_system_boundary(pass_artifact["system_boundary"], "pass.system_boundary")
     array(pass_artifact["unknowns"], "pass.unknowns")
-    obj(pass_artifact["provenance"], "pass.provenance")
+    validate_pass_provenance(pass_artifact["provenance"], receipt["observed"]["generation"], "pass.provenance")
     evidence_ids, claim_ids, capability_ids = unique_ids(evidence, "pass.evidence"), unique_ids(claims, "pass.claims"), unique_ids(capabilities, "pass.capabilities")
     all_subjects = claim_ids | capability_ids
     for evidence_item in evidence:
         require(set(evidence_item["supports"]) <= claim_ids, f"evidence '{evidence_item['id']}' supports an unknown claim")
+        for claim_id in evidence_item["supports"]:
+            claim = next(value for value in claims if value["id"] == claim_id)
+            require(evidence_item["id"] in claim["evidence_ids"],
+                    f"evidence '{evidence_item['id']}' and claim '{claim_id}' are not linked bidirectionally")
     stages = {claim["id"]: claim["stage"] for claim in claims}
+    states = {claim["id"]: claim["state"] for claim in claims}
     for claim in claims:
         require(set(claim["evidence_ids"]) | set(claim["counterevidence_ids"]) <= evidence_ids,
                 f"claim '{claim['id']}' references unknown evidence")
+        for evidence_id in claim["evidence_ids"]:
+            evidence_item = next(value for value in evidence if value["id"] == evidence_id)
+            require(claim["id"] in evidence_item["supports"],
+                    f"claim '{claim['id']}' and evidence '{evidence_id}' are not linked bidirectionally")
         require(set(claim["parent_claim_ids"]) <= claim_ids, f"claim '{claim['id']}' references an unknown parent")
+        if claim["state"] == "supported":
+            require(bool(claim["evidence_ids"]), f"supported claim '{claim['id']}' requires direct evidence")
         if claim["stage"] == "observation":
             require(not claim["parent_claim_ids"], f"observation '{claim['id']}' must not depend on an interpretation")
             require(bool(claim["evidence_ids"]), f"observation '{claim['id']}' requires evidence")
         elif claim["stage"] == "interpretation":
             require(any(stages[parent] == "observation" for parent in claim["parent_claim_ids"]),
                     f"interpretation '{claim['id']}' must reference an observation")
+            if claim["state"] == "supported":
+                require(any(stages[parent] == "observation" and states[parent] == "supported"
+                            for parent in claim["parent_claim_ids"]),
+                        f"supported interpretation '{claim['id']}' requires a supported observation parent")
         else:
             require(any(stages[parent] == "interpretation" for parent in claim["parent_claim_ids"]),
                     f"comparison implication '{claim['id']}' must reference an interpretation")
+            if claim["state"] == "supported":
+                require(any(stages[parent] == "interpretation" and states[parent] == "supported"
+                            for parent in claim["parent_claim_ids"]),
+                        f"supported comparison implication '{claim['id']}' requires a supported interpretation parent")
         require(claim["subject_id"] in all_subjects or claim["subject_id"] == repository_id,
                 f"claim '{claim['id']}' has unknown subject '{claim['subject_id']}'")
     for capability in capabilities:
@@ -589,12 +656,29 @@ def validate_dimension_pass(pass_artifact: Any, contract: dict[str, Any]) -> dic
         require(isinstance(search["coverage_limitations"], list), "coverage_limitations must be an array")
         require(not search["coverage_limitations"],
                 "confirmed_absent requires all coverage limitations to be closed")
+        require(receipt["state"] == "ready" and "index_fallback_decision" not in pass_artifact,
+                "confirmed_absent requires a ready index without fallback")
+        coverage = receipt["coverage"]
+        require(not any(coverage[key] for key in ("parse_partial", "skipped", "not_indexed", "limitations"))
+                and not receipt["limitations"],
+                "confirmed_absent requires no receipt, parsing, scope, or coverage limitations")
+        scope = search["scope"].strip("/")
+        covered = any(candidate == "." or scope == candidate.strip("/")
+                      or scope.startswith(candidate.strip("/") + "/")
+                      for candidate in receipt["requested"]["scopes"])
+        require(covered, "confirmed_absent search scope is outside the receipt coverage scopes")
     return pass_artifact
 
 
 def find_forbidden(value: Any, path: str = "profile") -> list[str]:
     found: list[str] = []
     if isinstance(value, dict):
+        # A coverage-limited profile must retain its validated fallback
+        # provenance.  Its schema necessarily contains a field named
+        # ``decision``, but that operational indexing choice is not a
+        # repository comparison or adoption decision.
+        if value.get("artifact_type") == "index_fallback_decision_v1":
+            return found
         for key, child in value.items():
             if key in PROFILE_FORBIDDEN:
                 found.append(f"{path}.{key}")
@@ -617,6 +701,7 @@ def reconcile(contract: dict[str, Any], passes: list[dict[str, Any]], repository
     dimensions: dict[str, str] = {}
     dimension_values: dict[str, set[str]] = {}
     capabilities: dict[str, dict[str, Any]] = {}
+    capability_identities: dict[str, list[dict[str, Any]]] = {}
     claims: dict[str, dict[str, Any]] = {}
     evidence: dict[str, dict[str, Any]] = {}
     conflicts: list[dict[str, Any]] = []
@@ -635,7 +720,11 @@ def reconcile(contract: dict[str, Any], passes: list[dict[str, Any]], repository
             dimensions[dimension] = artifact["dimension_state"]
         boundary.append(artifact["system_boundary"])
         unknowns.extend(artifact["unknowns"])
-        provenance.append(artifact["provenance"])
+        provenance.append({
+            "dimension": dimension,
+            "sha256": artifact_digest(artifact),
+            "provenance": artifact["provenance"],
+        })
         for item in artifact["evidence"]:
             existing = evidence.get(item["id"])
             require(existing is None or existing == item, f"evidence id '{item['id']}' has conflicting definitions")
@@ -645,19 +734,15 @@ def reconcile(contract: dict[str, Any], passes: list[dict[str, Any]], repository
             require(existing is None or existing == item, f"claim id '{item['id']}' has conflicting definitions")
             claims[item["id"]] = item
         for item in artifact["capabilities"]:
+            immutable = ("name", "mechanism", "enforcement", "applicability")
+            identity = {key: item[key] for key in immutable}
+            identities = capability_identities.setdefault(item["id"], [])
+            if identity not in identities:
+                identities.append(identity)
             existing = capabilities.get(item["id"])
             if existing is None:
                 capabilities[item["id"]] = json.loads(json.dumps(item))
                 continue
-            immutable = ("name", "mechanism", "enforcement", "applicability")
-            if not all(existing[key] == item[key] for key in immutable):
-                conflicts.append({
-                    "kind": "capability_identity", "subject_id": item["id"],
-                    "definitions": [
-                        {key: existing[key] for key in immutable},
-                        {key: item[key] for key in immutable},
-                    ],
-                })
             for key in RELATIONSHIPS:
                 existing["relationships"][key] = sorted(set(existing["relationships"][key]) | set(item["relationships"][key]))
             for key in ("evidence_ids", "counterevidence_ids"):
@@ -666,6 +751,22 @@ def reconcile(contract: dict[str, Any], passes: list[dict[str, Any]], repository
                 if existing["correspondence"][key] != item["correspondence"][key]:
                     existing["correspondence"][key] = "unknown"
                     conflicts.append({"kind": "correspondence", "subject_id": item["id"], "field": key})
+    for capability_id, identities in capability_identities.items():
+        if len(identities) <= 1:
+            continue
+        conflicts.append({
+            "kind": "capability_identity",
+            "subject_id": capability_id,
+            "definitions": identities,
+        })
+        capability = capabilities[capability_id]
+        capability.update({
+            "name": "Unresolved capability identity",
+            "mechanism": "Competing capability definitions remain unresolved; inspect reconciliation conflicts.",
+            "enforcement": "unknown",
+            "applicability": "conflicting_evidence",
+            "confidence": "low",
+        })
     for required_dimension in contract["required_core_dimensions"]:
         dimensions.setdefault(required_dimension, "not_sought")
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
@@ -713,6 +814,8 @@ def validate_profile(profile: Any, contract: dict[str, Any]) -> dict[str, Any]:
     assert_compatible(contract["compatibility"], compatibility(profile.get("compatibility"), "profile.compatibility"),
                       "profile.compatibility")
     text(profile["repository_id"], "profile.repository_id")
+    repository = next((item for item in contract["repository_corpus"] if item["id"] == profile["repository_id"]), None)
+    require(repository is not None, "profile repository is outside the frozen corpus")
     dimension_states = obj(profile["dimension_states"], "profile.dimension_states")
     require(all(value in UNCERTAINTY_STATES | {"analyzed"} for value in dimension_states.values()),
             "profile.dimension_states contains an invalid state")
@@ -723,7 +826,7 @@ def validate_profile(profile: Any, contract: dict[str, Any]) -> dict[str, Any]:
             "profile contains dimensions outside the frozen ontology")
     claims = [validate_claim(value, f"profile.claims[{index}]")
               for index, value in enumerate(array(profile["claims"], "profile.claims"))]
-    evidence = [validate_evidence(value, f"profile.evidence[{index}]")
+    evidence = [validate_evidence(value, f"profile.evidence[{index}]", repository["commit"])
                 for index, value in enumerate(array(profile["evidence"], "profile.evidence"))]
     capabilities = [validate_capability(value, f"profile.capabilities[{index}]")
                     for index, value in enumerate(array(profile["capabilities"], "profile.capabilities"))]
@@ -731,23 +834,42 @@ def validate_profile(profile: Any, contract: dict[str, Any]) -> dict[str, Any]:
     evidence_ids = unique_ids(evidence, "profile.evidence")
     capability_ids = unique_ids(capabilities, "profile.capabilities")
     stages = {claim["id"]: claim["stage"] for claim in claims}
+    states = {claim["id"]: claim["state"] for claim in claims}
     for evidence_item in evidence:
         require(set(evidence_item["supports"]) <= claim_ids,
                 f"profile evidence '{evidence_item['id']}' supports an unknown claim")
+        for claim_id in evidence_item["supports"]:
+            claim = next(value for value in claims if value["id"] == claim_id)
+            require(evidence_item["id"] in claim["evidence_ids"],
+                    f"profile evidence '{evidence_item['id']}' and claim '{claim_id}' are not linked bidirectionally")
     for claim in claims:
         require(set(claim["evidence_ids"]) | set(claim["counterevidence_ids"]) <= evidence_ids,
                 f"profile claim '{claim['id']}' references unknown evidence")
+        for evidence_id in claim["evidence_ids"]:
+            evidence_item = next(value for value in evidence if value["id"] == evidence_id)
+            require(claim["id"] in evidence_item["supports"],
+                    f"profile claim '{claim['id']}' and evidence '{evidence_id}' are not linked bidirectionally")
         require(set(claim["parent_claim_ids"]) <= claim_ids,
                 f"profile claim '{claim['id']}' references an unknown parent")
+        if claim["state"] == "supported":
+            require(bool(claim["evidence_ids"]), f"supported profile claim '{claim['id']}' requires direct evidence")
         if claim["stage"] == "observation":
             require(not claim["parent_claim_ids"] and bool(claim["evidence_ids"]),
                     f"profile observation '{claim['id']}' requires evidence and no parent")
         elif claim["stage"] == "interpretation":
             require(any(stages[parent] == "observation" for parent in claim["parent_claim_ids"]),
                     f"profile interpretation '{claim['id']}' must reference an observation")
+            if claim["state"] == "supported":
+                require(any(stages[parent] == "observation" and states[parent] == "supported"
+                            for parent in claim["parent_claim_ids"]),
+                        f"supported profile interpretation '{claim['id']}' requires a supported observation parent")
         else:
             require(any(stages[parent] == "interpretation" for parent in claim["parent_claim_ids"]),
                     f"profile comparison implication '{claim['id']}' must reference an interpretation")
+            if claim["state"] == "supported":
+                require(any(stages[parent] == "interpretation" and states[parent] == "supported"
+                            for parent in claim["parent_claim_ids"]),
+                        f"supported profile comparison implication '{claim['id']}' requires a supported interpretation parent")
         require(claim["subject_id"] in claim_ids | capability_ids or claim["subject_id"] == profile["repository_id"],
                 f"profile claim '{claim['id']}' has an unknown subject")
     for capability in capabilities:
@@ -756,17 +878,52 @@ def validate_profile(profile: Any, contract: dict[str, Any]) -> dict[str, Any]:
         for relation, targets in capability["relationships"].items():
             require(set(targets) <= capability_ids,
                     f"profile capability '{capability['id']}' {relation} references unknown capability")
-    array(profile["system_boundary_observations"], "profile.system_boundary_observations")
-    obj(profile["reconciliation"], "profile.reconciliation")
+    boundaries = array(profile["system_boundary_observations"], "profile.system_boundary_observations")
+    for index, boundary in enumerate(boundaries):
+        validate_system_boundary(boundary, f"profile.system_boundary_observations[{index}]")
+    reconciliation = obj(profile["reconciliation"], "profile.reconciliation")
+    exact_keys(reconciliation, {"conflicts", "conflict_count"}, set(), "profile.reconciliation")
+    conflicts = array(reconciliation["conflicts"], "profile.reconciliation.conflicts")
+    require(reconciliation["conflict_count"] == len(conflicts),
+            "profile reconciliation conflict_count is incompatible")
+    identity_conflicts: set[str] = set()
+    for index, conflict in enumerate(conflicts):
+        conflict = obj(conflict, f"profile.reconciliation.conflicts[{index}]")
+        if conflict.get("kind") == "capability_identity":
+            capability_id = text(conflict.get("subject_id"),
+                                 f"profile.reconciliation.conflicts[{index}].subject_id")
+            require(capability_id in capability_ids, "capability identity conflict names an unknown capability")
+            require(len(array(conflict.get("definitions"),
+                              f"profile.reconciliation.conflicts[{index}].definitions")) >= 2,
+                    "capability identity conflict requires competing definitions")
+            identity_conflicts.add(capability_id)
+    for capability in capabilities:
+        if capability["id"] in identity_conflicts:
+            require(capability["enforcement"] == "unknown"
+                    and capability["applicability"] == "conflicting_evidence"
+                    and capability["confidence"] == "low",
+                    f"conflicting capability '{capability['id']}' must remain explicitly unresolved")
     array(profile["unknowns"], "profile.unknowns")
     provenance = obj(profile["provenance"], "profile.provenance")
     exact_keys(provenance, {"dimension_passes", "index_receipt", "index_receipt_sha256"}, {"index_fallback_decision"}, "profile.provenance")
-    array(provenance["dimension_passes"], "profile.provenance.dimension_passes")
-    repository = next((item for item in contract["repository_corpus"] if item["id"] == profile["repository_id"]), None)
-    require(repository is not None, "profile repository is outside the frozen corpus")
     validated_receipt = validate_index_receipt(provenance["index_receipt"], contract, repository)
     require(provenance["index_receipt_sha256"] == receipt_digest(validated_receipt),
             "profile index receipt digest is incompatible")
+    source_passes = array(provenance["dimension_passes"], "profile.provenance.dimension_passes")
+    require(bool(source_passes), "profile provenance requires source pass lineage")
+    lineage_digests: set[str] = set()
+    for index, source in enumerate(source_passes):
+        source = obj(source, f"profile.provenance.dimension_passes[{index}]")
+        exact_keys(source, {"dimension", "sha256", "provenance"}, set(),
+                   f"profile.provenance.dimension_passes[{index}]")
+        require(source["dimension"] in dimension_states,
+                f"profile source pass dimension '{source['dimension']}' is outside the profile")
+        digest = text(source["sha256"], f"profile.provenance.dimension_passes[{index}].sha256")
+        require(bool(SHA256_PATTERN.fullmatch(digest)), "profile source pass digest must be lowercase SHA-256")
+        require(digest not in lineage_digests, "profile source pass lineage contains a duplicate digest")
+        lineage_digests.add(digest)
+        validate_pass_provenance(source["provenance"], validated_receipt["observed"]["generation"],
+                                 f"profile.provenance.dimension_passes[{index}].provenance")
     if validated_receipt["state"] == "coverage_limited":
         require("index_fallback_decision" in provenance, "coverage-limited profile requires fallback decision")
         validate_index_fallback(provenance["index_fallback_decision"], contract, validated_receipt)
@@ -778,7 +935,8 @@ def validate_profile(profile: Any, contract: dict[str, Any]) -> dict[str, Any]:
 def validate_decision(decision: Any, contract: dict[str, Any], profiles: list[dict[str, Any]]) -> dict[str, Any]:
     decision = obj(decision, "decision")
     exact_keys(decision, {"artifact_type", "compatibility", "classification", "target_work_engine_boundary",
-                          "profile_claim_refs", "expected_value", "architectural_fit", "evidence_strength",
+                          "profile_claim_refs", "profile_claim_states", "profile_sha256",
+                          "expected_value", "architectural_fit", "evidence_strength",
                           "integration_cost", "migration_cost", "maintenance_burden", "constraints",
                           "reversibility_and_lock_in", "alternatives_considered", "assumptions",
                           "invalidation_triggers", "unresolved_questions"}, set(), "decision")
@@ -788,9 +946,38 @@ def validate_decision(decision: Any, contract: dict[str, Any], profiles: list[di
     require(decision["classification"] in DECISIONS, "decision.classification is invalid")
     text(decision["target_work_engine_boundary"], "decision.target_work_engine_boundary")
     checked_profiles = [validate_profile(profile, contract) for profile in profiles]
-    claims = {f"{profile['repository_id']}:{claim['id']}" for profile in checked_profiles for claim in profile["claims"]}
+    repository_ids = [profile["repository_id"] for profile in checked_profiles]
+    require(len(repository_ids) == len(set(repository_ids)), "decision profiles contain duplicate repository ids")
+    profile_hashes = obj(decision["profile_sha256"], "decision.profile_sha256")
+    require(set(profile_hashes) == set(repository_ids), "decision.profile_sha256 must bind every supplied profile")
+    for profile in checked_profiles:
+        digest = text(profile_hashes[profile["repository_id"]],
+                      f"decision.profile_sha256.{profile['repository_id']}")
+        require(digest == artifact_digest(profile),
+                f"decision profile digest for '{profile['repository_id']}' is incompatible")
+    claims = {
+        f"{profile['repository_id']}:{claim['id']}": (claim, profile)
+        for profile in checked_profiles for claim in profile["claims"]
+    }
     refs = array(decision["profile_claim_refs"], "decision.profile_claim_refs")
-    require(bool(refs) and set(refs) <= claims, "decision.profile_claim_refs contains an unknown or unqualified claim")
+    require(bool(refs) and len(refs) == len(set(refs)), "decision.profile_claim_refs must be nonempty and unique")
+    require(set(refs) <= set(claims), "decision.profile_claim_refs contains an unknown or unqualified claim")
+    acknowledged = obj(decision["profile_claim_states"], "decision.profile_claim_states")
+    require(set(acknowledged) == set(refs), "decision.profile_claim_states must acknowledge every referenced claim")
+    for ref in refs:
+        claim, profile = claims[ref]
+        require(acknowledged[ref] == claim["state"], f"decision claim-state acknowledgement for '{ref}' is stale")
+        require(claim["state"] != "superseded", f"decision cannot rely on superseded claim '{ref}'")
+        if decision["classification"] != "INVESTIGATE":
+            require(claim["state"] == "supported",
+                    f"{decision['classification']} decision requires supported claim '{ref}'")
+        conflicting_capabilities = {
+            item["subject_id"] for item in profile["reconciliation"].get("conflicts", [])
+            if item.get("kind") == "capability_identity"
+        }
+        if claim["subject_id"] in conflicting_capabilities:
+            require(decision["classification"] == "INVESTIGATE",
+                    f"decision cannot treat conflicting capability '{claim['subject_id']}' as settled")
     for key in ("alternatives_considered", "assumptions", "invalidation_triggers", "unresolved_questions"):
         array(decision[key], f"decision.{key}")
     return decision

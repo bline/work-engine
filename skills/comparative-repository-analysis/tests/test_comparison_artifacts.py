@@ -272,6 +272,69 @@ class ComparisonArtifactsTest(unittest.TestCase):
         identity = next(item for item in conflicts if item["kind"] == "capability_identity")
         self.assertEqual(identity["subject_id"], "route-revision")
         self.assertEqual(len(identity["definitions"]), 2)
+        capability = next(item for item in profile["capabilities"] if item["id"] == "route-revision")
+        self.assertEqual(capability["enforcement"], "unknown")
+        self.assertEqual(capability["applicability"], "conflicting_evidence")
+        self.assertEqual(capability["confidence"], "low")
+
+    def test_evidence_is_frozen_precise_and_bidirectionally_linked(self) -> None:
+        missing_commit = deepcopy(self.control)
+        del missing_commit["evidence"][0]["commit"]
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "frozen repository revision"):
+            ARTIFACTS.validate_dimension_pass(missing_commit, self.contract)
+
+        stale_commit = deepcopy(self.control)
+        stale_commit["evidence"][0]["commit"] = "stale"
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "frozen repository revision"):
+            ARTIFACTS.validate_dimension_pass(stale_commit, self.contract)
+
+        imprecise = deepcopy(self.control)
+        imprecise["evidence"][0]["locator"] = "somewhere in the implementation"
+        del imprecise["evidence"][0]["range"]
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "precise path"):
+            ARTIFACTS.validate_dimension_pass(imprecise, self.contract)
+
+        claim_only = deepcopy(self.control)
+        claim_only["evidence"][0]["supports"] = ["obs-control"]
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "bidirectionally"):
+            ARTIFACTS.validate_dimension_pass(claim_only, self.contract)
+
+        evidence_only = deepcopy(self.control)
+        evidence_only["claims"][1]["evidence_ids"] = []
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "bidirectionally"):
+            ARTIFACTS.validate_dimension_pass(evidence_only, self.contract)
+
+    def test_supported_claims_and_decisions_preserve_state_and_profile_lineage(self) -> None:
+        unsupported_interpretation = deepcopy(self.control)
+        unsupported_interpretation["claims"][1]["state"] = "supported"
+        unsupported_interpretation["claims"][1]["evidence_ids"] = []
+        unsupported_interpretation["evidence"][0]["supports"] = ["obs-control"]
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "requires direct evidence"):
+            ARTIFACTS.validate_dimension_pass(unsupported_interpretation, self.contract)
+
+        profile = ARTIFACTS.reconcile(self.contract, [self.control, self.review], "sample")
+        expected = {
+            ARTIFACTS.artifact_digest(self.control),
+            ARTIFACTS.artifact_digest(self.review),
+        }
+        self.assertEqual({item["sha256"] for item in profile["provenance"]["dimension_passes"]}, expected)
+        decision = load("decision.json")
+        ARTIFACTS.validate_decision(decision, self.contract, [profile])
+
+        stale_state = deepcopy(decision)
+        stale_state["profile_claim_states"]["sample:imp-control"] = "supported"
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "acknowledgement"):
+            ARTIFACTS.validate_decision(stale_state, self.contract, [profile])
+
+        stale_profile = deepcopy(decision)
+        stale_profile["profile_sha256"]["sample"] = "0" * 64
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "profile digest"):
+            ARTIFACTS.validate_decision(stale_profile, self.contract, [profile])
+
+        settled_verdict = deepcopy(decision)
+        settled_verdict["classification"] = "BORROW"
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "requires supported claim"):
+            ARTIFACTS.validate_decision(settled_verdict, self.contract, [profile])
 
     def test_freeze_contract_refuses_to_overwrite_frozen_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -296,6 +359,16 @@ class ComparisonArtifactsTest(unittest.TestCase):
         with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "dimension_state"):
             ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
 
+    def test_minimum_evidence_floor_is_closed_and_executable(self) -> None:
+        weakened = deepcopy(self.contract)
+        weakened["minimum_evidence_floor"]["reciprocal_linkage_required"] = False
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "minimum evidence floor"):
+            ARTIFACTS.validate_contract(weakened)
+        prose = deepcopy(self.contract)
+        prose["minimum_evidence_floor"] = "Every observation should have evidence."
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "must be an object"):
+            ARTIFACTS.validate_contract(prose)
+
     def test_confirmed_absent_requires_bounded_exhaustive_search(self) -> None:
         artifact = deepcopy(self.review)
         artifact["dimension_state"] = "confirmed_absent"
@@ -316,6 +389,10 @@ class ComparisonArtifactsTest(unittest.TestCase):
             ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
 
         artifact["negative_search"]["coverage_limitations"] = []
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "receipt, parsing, scope, or coverage limitations"):
+            ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
+        artifact["index_receipt"]["coverage"]["limitations"] = []
+        artifact["index_receipt"]["limitations"] = []
         ARTIFACTS.validate_dimension_pass(artifact, ARTIFACTS.validate_contract(self.contract))
 
     def test_interpretation_requires_observation_parent(self) -> None:
@@ -398,9 +475,11 @@ class ComparisonArtifactsTest(unittest.TestCase):
             "reason": "The skipped generated file is not relevant to this bounded pass."
         }
         ARTIFACTS.validate_dimension_pass(limited, self.contract)
+        limited_profile = ARTIFACTS.reconcile(self.contract, [limited], "sample")
+        ARTIFACTS.validate_profile(limited_profile, self.contract)
         other_generation = deepcopy(self.review)
         other_generation["index_receipt"]["observed"]["generation"] = "another-generation"
-        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "same complete index receipt"):
+        with self.assertRaisesRegex(ARTIFACTS.ArtifactError, "index_generation"):
             ARTIFACTS.reconcile(self.contract, [ready, other_generation], "sample")
 
     def test_index_receipt_coverage_action_digest_and_profile_binding_fail_closed(self) -> None:

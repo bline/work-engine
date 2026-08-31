@@ -4,6 +4,8 @@
   "classification": "INVESTIGATE",
   "target_work_engine_boundary": "route revision",
   "profile_claim_refs": ["sample:imp-control"],
+  "profile_claim_states": {"sample:imp-control": "unresolved"},
+  "profile_sha256": {"sample": "4095905b37c805649ac62f92a5f92f5e435c0dc1c8179a65eb8cbd43c05f958e"},
   "expected_value": "Determine whether the mechanism reduces recovery complexity.",
   "architectural_fit": "Potentially compatible.",
   "evidence_strength": "Source-backed but no runtime evidence.",

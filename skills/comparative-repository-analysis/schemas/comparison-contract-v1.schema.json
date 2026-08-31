@@ -24,6 +24,24 @@
     "compatibility": {
       "$ref": "#/$defs/compatibility"
     },
+    "minimum_evidence_floor": {
+      "type": "object",
+      "required": [
+        "frozen_commit_required",
+        "precise_locator_required",
+        "reciprocal_linkage_required",
+        "supported_claim_direct_evidence_required",
+        "confirmed_absence_requires_no_limitations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "frozen_commit_required": {"const": true},
+        "precise_locator_required": {"const": true},
+        "reciprocal_linkage_required": {"const": true},
+        "supported_claim_direct_evidence_required": {"const": true},
+        "confirmed_absence_requires_no_limitations": {"const": true}
+      }
+    },
     "index_policy": {
       "type": "object",
       "required": [

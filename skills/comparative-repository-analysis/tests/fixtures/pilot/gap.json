@@ -10,7 +10,7 @@
   "outside_active_ontology": true,
   "repository_id": "sample",
   "source_dimension": "control",
-  "source_pass_sha256": "13412cf4148f25aeb185d3a8b1ccec5a295e1659202289b46b03e1709ad4b854",
+  "source_pass_sha256": "a8889ad3779b895efcc30eff97cda98394b0dd84fe34af33e8021d968e2dc517",
   "claim_ids": [
     "obs-control"
   ],

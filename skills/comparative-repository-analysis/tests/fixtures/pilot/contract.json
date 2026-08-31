@@ -12,7 +12,13 @@
     "correspondence_states": ["documented", "present", "reachable", "default_enabled", "test_demonstrated", "runtime_observed", "production_evidenced"],
     "confidence_scale": ["low", "medium", "high"]
   },
-  "minimum_evidence_floor": "Every observation cites reopenable evidence; absence is typed.",
+  "minimum_evidence_floor": {
+    "frozen_commit_required": true,
+    "precise_locator_required": true,
+    "reciprocal_linkage_required": true,
+    "supported_claim_direct_evidence_required": true,
+    "confirmed_absence_requires_no_limitations": true
+  },
   "work_engine_snapshot": {"commit": "work-engine-pilot"},
   "calibration_checks": ["reopen one source reference"],
   "migration_policy": "Migrate without semantic change, selectively rerun, or quarantine."

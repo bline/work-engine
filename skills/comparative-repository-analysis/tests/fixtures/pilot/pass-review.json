@@ -89,6 +89,7 @@
       "id": "ev-review",
       "mode": "documentation",
       "locator": "README.md#review",
+      "commit": "abc123",
       "supports": [
         "obs-review"
       ],
@@ -104,7 +105,10 @@
     }
   ],
   "provenance": {
-    "provider": "fixture",
-    "coverage": "documentation only"
+    "tier": "verify",
+    "index_generation": "fixture-generation-1",
+    "routes": [
+      "bounded fixture documentation"
+    ]
   }
 }

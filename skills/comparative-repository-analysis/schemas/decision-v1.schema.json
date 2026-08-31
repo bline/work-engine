@@ -9,6 +9,8 @@
     "classification",
     "target_work_engine_boundary",
     "profile_claim_refs",
+    "profile_claim_states",
+    "profile_sha256",
     "assumptions",
     "invalidation_triggers",
     "unresolved_questions"
@@ -25,6 +27,19 @@
         "AVOID",
         "INVESTIGATE"
       ]
+    },
+    "profile_claim_states": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["supported", "disputed", "unresolved", "superseded"]
+      }
+    },
+    "profile_sha256": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
     }
   },
   "additionalProperties": true

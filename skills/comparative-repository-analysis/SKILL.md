@@ -42,11 +42,27 @@ Use `scripts/comparison_artifacts.py` as the deterministic artifact boundary. It
 validates comparison contracts and per-dimension findings, reconciles descriptive
 profiles, checks profile compatibility, and validates separate decision artifacts.
 
-Freeze the contract before accepting passes. Analysts may choose evidence routes
+Freeze the contract before accepting passes so artifacts from different corpus,
+snapshot, ontology, or policy identities cannot be mixed. Analysts may choose evidence routes
 and depth adaptively, but they must emit the typed states, claim stages,
 correspondence states, provenance, and mechanism relationships required by the
-contract. Never infer absence from omission, flatten conflicting claims, or put a
-KEEP/ADOPT/BORROW/AVOID/INVESTIGATE verdict in a repository profile.
+contract. Every evidence item must bind to the repository's frozen commit and a
+reopenable path, symbol or section, range, or content digest. Claim-to-evidence
+links are reciprocal so an existing but disconnected evidence ID cannot satisfy a
+claim. Every supported claim requires direct evidence. Supported interpretations
+and comparison implications also require a supported parent at the preceding
+claim stage; observations have no parents. Never infer absence from omission, flatten
+conflicting claims, or put a KEEP/ADOPT/BORROW/AVOID/INVESTIGATE verdict in a
+repository profile. `confirmed_absent` is valid only when the exact negative-search
+scope has no receipt, parse, exclusion, fallback, or declared search limitation.
+
+Reconciliation records the digest and evidence-route provenance of every source
+pass so a profile cannot lose or substitute its retained-pass lineage. A capability identity conflict remains explicitly unresolved in the profile;
+the first submitted definition does not become the retained truth. Every decision
+must bind the exact profile digests and acknowledge the current state of each
+referenced claim so a stale or substituted profile cannot silently support it. KEEP, ADOPT, BORROW, and AVOID may rely only on supported claims;
+INVESTIGATE may retain acknowledged disputed or unresolved claims. Superseded
+claims never support a decision.
 
 Open discovery outside the frozen ontology belongs in a separate
 `ontology_gap_proposal_v1`, conventionally stored beneath the run artifact root
