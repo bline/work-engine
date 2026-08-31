@@ -114,7 +114,23 @@ test("production manifest projects the canonical implementation reviewer with a 
   assert.equal(projection.role.threadOptions.sandbox, "read-only");
   assert.deepEqual(projection.role.effects, []);
   assert.equal(projection.role.continuity, "retained");
-  assert.deepEqual(projection.skills.map(({ name }) => name), ["repo-search"]);
+  assert.deepEqual(projection.skills.map(({ name }) => name), ["repo-search", "agent-instruction-review"]);
+  const specialist = projection.skills.find(({ name }) => name === "agent-instruction-review");
+  assert.deepEqual(specialist.capabilities, [
+    "capability.direct_source_observation", "capability.repository_evidence",
+  ]);
+  assert.deepEqual(specialist.effects, []);
+  const compiled = await compileSkill({
+    structureSource: await readFile(path.join(root, "app-server/migrations/skills/agent-instruction-review/structure.yaml"), "utf8"),
+    interfaceSource: await readFile(path.join(root, "app-server/migrations/skills/agent-instruction-review/interface.yaml"), "utf8"),
+    workspaceRoot: root,
+  });
+  const receipt = satisfyRuntimeRequirements({
+    manifest, roleId: "implementation-reviewer",
+    requirements: compiled.ir.runtime_requirements,
+    skillName: "agent-instruction-review",
+  });
+  assert.equal(receipt.compiled_skill_sha256, compiled.ir.output_sha256);
   assert.match(projection.role.developerInstructions, /does not create renewed freshness/);
   assert.match(projection.role.developerInstructions, /cannot establish independence or acceptance authority/);
   assert.match(projection.role.developerInstructions, /Catalog admission does not prove inference identity/);

@@ -1,0 +1,1 @@
+{"applicability":"applicable","generic_verdict":"remediation_required","finding_status":"open","finding_consequence":"missing_causal_exposure","limitations":["The fixture diagnoses causal exposure only; acceptance remains external."]}

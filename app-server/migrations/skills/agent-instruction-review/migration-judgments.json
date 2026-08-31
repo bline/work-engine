@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "producer": "S11 bounded agent-instruction-review specialist migration",
+  "judgments": [
+    {
+      "id": "s11-specialist-not-role",
+      "category": "ownership",
+      "subject": "structure.role_profile",
+      "conclusion": "Agent instruction review is a selected specialist contract composed into the canonical implementation-reviewer role, not a second reviewer role or a panel-selection owner.",
+      "evidence": ["skills/agent-instruction-review/SKILL.md", "app-server/runtime-manifest.yaml#implementation-reviewer"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s11-effective-loading",
+      "category": "causal_parent",
+      "subject": "structure.sections.diagnosis",
+      "conclusion": "The compiled contract preserves the corrected distinction between source traceability or reviewer reconstruction and causal material actually available at the governed agent's effective loading boundary.",
+      "evidence": ["skills/agent-instruction-review/SKILL.md#diagnose-the-instruction", "app-server/migrations/skills/instruction-review-regression-v1.json"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s11-result-owner",
+      "category": "ownership",
+      "subject": "structure.sections.result-and-remediation",
+      "conclusion": "The specialist owns applicability and finding meaning while generic Implementation Review remains the unchanged nested provider-neutral admission result and Review Episode remains lifecycle and lineage owner.",
+      "evidence": ["skills/agent-instruction-review/references/finding-contract.md", "app-server/src/services/implementation-review/contract.mjs", "app-server/src/services/review-episode/service.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s11-authority-ceiling",
+      "category": "authority",
+      "subject": "interface.boundaries.authority.advisory-only",
+      "conclusion": "Compilation and runtime composition confer no mutation, architecture, proposal, reviewer-selection, implementation-approval, self-certification, or human authority.",
+      "evidence": ["skills/agent-instruction-review/SKILL.md#agent-instruction-review"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

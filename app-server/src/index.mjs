@@ -52,6 +52,12 @@ export {
 } from "./services/implementation-review/contract.mjs";
 export * from "./services/implementation-review/service.mjs";
 export {
+  AgentInstructionReviewError, bindAgentInstructionReviewResult,
+  digest as agentInstructionReviewDigest, validateAgentInstructionReviewResult,
+  validateInstructionClosure,
+} from "./services/agent-instruction-review/contract.mjs";
+export * from "./services/agent-instruction-review/service.mjs";
+export {
   ReviewerRuntimeError, canonicalJson as reviewerRuntimeCanonicalJson,
   digest as reviewerRuntimeDigest, validateCatalogProjection,
   validateExecutionReceipt, validateRawEventPolicy, validateReviewerProfile,

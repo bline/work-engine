@@ -103,6 +103,16 @@ roles:
           - capability.repository_evidence
           - capability.direct_source_observation
         effects: []
+      - name: agent-instruction-review
+        path: ../skills/agent-instruction-review/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/agent-instruction-review/structure.yaml
+          interface: migrations/skills/agent-instruction-review/interface.yaml
+        compiled_skill_sha256: ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72
+        capabilities:
+          - capability.repository_evidence
+          - capability.direct_source_observation
+        effects: []
 
   strategic-planner:
     contract: ../skills/strategic-planner/SKILL.md
