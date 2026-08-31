@@ -264,6 +264,61 @@ test("publication reconciles unrelated branch advancement without touching a dir
   assert.equal(git(fixture.root, "show", "canonical:unrelated.txt"), "other");
 });
 
+test("publication uses the declared checkpoint baseline across equivalent non-ancestral histories", async (t) => {
+  const fixture = await repositoryFixture(t);
+  const coordination = createWorkspaceCoordinationService();
+  const worktrees = createGitWorktreeLifecycle({ coordination, runtimeRoot: fixture.runtime });
+
+  const task = worktrees.allocate({
+    repository: fixture.root, operationId: "private-lineage-task", holder: "builder",
+    intentId: "task", baselineCommit: fixture.base,
+  });
+  await writeFile(path.join(task.path, "task.txt"), "task\n");
+  git(task.path, "add", "task.txt"); git(task.path, "commit", "--quiet", "-m", "checkpoint");
+  const candidateCommit = git(task.path, "rev-parse", "HEAD");
+  const checkpointTree = git(task.path, "rev-parse", "HEAD^{tree}");
+  worktrees.cleanup(task);
+  const checkpoint = makeAcceptedCheckpoint(fixture.root, fixture.base, candidateCommit, checkpointTree);
+
+  const publicBaselineResult = spawnSync(
+    "git", ["-C", fixture.root, "commit-tree", `${fixture.base}^{tree}`],
+    { encoding: "utf8", input: "equivalent public baseline\n" },
+  );
+  assert.equal(publicBaselineResult.status, 0, publicBaselineResult.stderr);
+  const publicBaseline = publicBaselineResult.stdout.trim();
+  const advance = worktrees.allocate({
+    repository: fixture.root, operationId: "public-lineage-advance", holder: "other",
+    intentId: "other", baselineCommit: publicBaseline,
+  });
+  await writeFile(path.join(advance.path, "unrelated.txt"), "public lineage\n");
+  git(advance.path, "add", "unrelated.txt"); git(advance.path, "commit", "--quiet", "-m", "public advance");
+  const advanced = git(advance.path, "rev-parse", "HEAD");
+  worktrees.cleanup(advance);
+  git(fixture.root, "update-ref", "refs/heads/canonical", advanced, fixture.base);
+
+  const lease = coordination.acquire({
+    resource: { type: "git-ref", id: `${fixture.root}#refs/heads/canonical` },
+    holder: "publisher", intentId: "non-ancestral", ttlMs: 60_000,
+  }).lease;
+  const result = await createCanonicalGitPublisher({ coordination, worktrees }).publish({
+    repository: fixture.root, targetBranch: "canonical", expectedParent: advanced,
+    checkpoint,
+    manifest: [{ path: "task.txt", action: "include" }],
+    authorization: publicationAuthorization(checkpoint, "canonical", ["task.txt"]),
+    lease, operationId: "non-ancestral-publish", holder: "publisher",
+    validation: async ({ worktree, tree }) => {
+      assert.equal(await readFile(path.join(worktree, "task.txt"), "utf8"), "task\n");
+      assert.equal(await readFile(path.join(worktree, "unrelated.txt"), "utf8"), "public lineage\n");
+      return { status: "passed", tree, receiptDigest: "f".repeat(64) };
+    },
+    message: { subject: "publish across equivalent histories", body: "" },
+  });
+  assert.equal(result.status, "published");
+  assert.equal(result.parent, advanced);
+  assert.equal(git(fixture.root, "show", "canonical:task.txt"), "task");
+  assert.equal(git(fixture.root, "show", "canonical:unrelated.txt"), "public lineage");
+});
+
 test("publisher refuses checked-out targets, wrong-resource leases, and semantic conflicts", async (t) => {
   const fixture = await repositoryFixture(t);
   const coordination = createWorkspaceCoordinationService();

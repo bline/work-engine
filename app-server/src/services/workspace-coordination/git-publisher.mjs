@@ -131,7 +131,10 @@ export function createCanonicalGitPublisher({ coordination, worktrees, git = { t
         throw new Error("accepted checkpoint delta does not match the attributed manifest");
       }
 
-      const merge = git.run(repositoryRoot, ["merge-tree", "--write-tree", "--messages", expectedParent, checkpointCommit]);
+      const merge = git.run(repositoryRoot, [
+        "merge-tree", "--write-tree", "--messages", `--merge-base=${baselineCommit}`,
+        expectedParent, checkpointCommit,
+      ]);
       if (merge.status !== 0) return freeze({ status: "semantic_conflict", details: merge.stdout.trim() || merge.stderr.trim() });
       const integratedTree = merge.stdout.split("\n", 1)[0].trim(); oid(integratedTree, "integrated tree");
       const parentTree = git.text(repositoryRoot, ["rev-parse", `${expectedParent}^{tree}`]);
