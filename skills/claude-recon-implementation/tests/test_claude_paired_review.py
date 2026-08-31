@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -448,6 +449,60 @@ class ClaudePairedReviewTest(unittest.TestCase):
         while time.monotonic() < deadline and not batch_receipt.exists():
             time.sleep(0.02)
         self.assertTrue(batch_receipt.exists())
+
+    def test_finalizer_timeout_tracks_batch_activity_not_total_runtime(self) -> None:
+        runtime = self.campaign / "pairs/pair-01/runtime"
+        runtime.mkdir(parents=True, exist_ok=True)
+        realtime_result = runtime / "realtime-result.json"
+        realtime_receipt = runtime / "realtime-receipt.json"
+        batch_result = runtime / "batch-result.json"
+        batch_receipt = runtime / "batch-receipt.json"
+        batch_event_log = runtime / "batch-events.jsonl"
+        controller_receipt = runtime / "controller-receipt.json"
+        finalizer_receipt = runtime / "finalizer-receipt.json"
+        realtime_result.write_text("{}", encoding="utf-8")
+        realtime_receipt.write_text('{"result":"success"}', encoding="utf-8")
+        batch_result.write_text("{}", encoding="utf-8")
+        batch_receipt.write_text('{"status":"running"}', encoding="utf-8")
+        batch_event_log.write_text("", encoding="utf-8")
+        controller_receipt.write_text(
+            '{"realtime":{"status":"success"}}', encoding="utf-8"
+        )
+
+        def advance_batch() -> None:
+            for ordinal in range(4):
+                time.sleep(0.03)
+                with batch_event_log.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps({"event": "polled", "ordinal": ordinal}) + "\n")
+            batch_receipt.write_text('{"status":"success"}', encoding="utf-8")
+
+        original_run = MODULE.subprocess.run
+        MODULE.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 0, stdout="finalized\n", stderr=""
+        )
+        producer = threading.Thread(target=advance_batch)
+        producer.start()
+        try:
+            result = MODULE.finalize_worker(argparse.Namespace(
+                campaign_root=self.campaign,
+                pair_id="pair-01",
+                realtime_result=realtime_result,
+                realtime_receipt=realtime_receipt,
+                batch_result=batch_result,
+                batch_receipt=batch_receipt,
+                batch_event_log=batch_event_log,
+                controller_receipt=controller_receipt,
+                receipt=finalizer_receipt,
+                timeout_seconds=0.05,
+                poll_seconds=0.01,
+            ))
+        finally:
+            producer.join()
+            MODULE.subprocess.run = original_run
+
+        self.assertEqual(result, 0)
+        finalizer = json.loads(finalizer_receipt.read_text())
+        self.assertEqual(finalizer["status"], "finalized")
 
 
 if __name__ == "__main__":

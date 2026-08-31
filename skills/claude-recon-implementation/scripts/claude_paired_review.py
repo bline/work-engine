@@ -552,7 +552,18 @@ def finalize_worker(args: argparse.Namespace) -> int:
     }
     atomic_json(args.receipt, receipt)
     deadline = time.monotonic() + args.timeout_seconds
+    activity_signature: tuple[tuple[bool, int, int], ...] | None = None
     while time.monotonic() < deadline:
+        current_activity = tuple(
+            (path.exists(), path.stat().st_size, path.stat().st_mtime_ns)
+            if path.exists() else (False, 0, 0)
+            for path in (args.batch_receipt, args.batch_event_log)
+        )
+        if activity_signature is None:
+            activity_signature = current_activity
+        elif current_activity != activity_signature:
+            activity_signature = current_activity
+            deadline = time.monotonic() + args.timeout_seconds
         artifacts_ready = all(path.exists() for path in (
             args.realtime_result, args.realtime_receipt, args.batch_result,
             args.batch_receipt, args.batch_event_log, args.controller_receipt,
