@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "producer": "S12 bounded claim-backed review migration",
+  "judgments": [
+    {
+      "id": "s12-canonical-claim-owner",
+      "category": "ownership",
+      "subject": "interface.boundaries.claim.canonical-owner",
+      "conclusion": "The existing App Server claim service remains the sole owner of grants, stable identity, immutable revisions, lineage, reliance, SQLite persistence, freshness, completeness, and read projection mechanics.",
+      "evidence": ["skills/claim-evidence/references/claim-evidence-contract.md", "app-server/src/services/claim-evidence/service.mjs", "app-server/src/services/claim-evidence/sqlite-store.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s12-thin-reviewer-projection",
+      "category": "loading",
+      "subject": "structure.sections.operations-and-reliance",
+      "conclusion": "Reviewers receive only bounded relevant exact revisions, projection provenance, explicit limitations, and a zero-authority envelope. They do not receive grants, operation envelopes, the canonical store, or instructions to emulate the registry.",
+      "evidence": ["app-server/src/services/claim-evidence/reviewer-projection.mjs", "app-server/roles/implementation-reviewer.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s12-domain-judgment-owners",
+      "category": "authority",
+      "subject": "interface.boundaries.authority.no-review-verdict",
+      "conclusion": "Finding profile records do not decide applicability, verdict, synthesis, acceptance, campaign phase, or builder reliance; those remain with the specialist, Implementation Review, Review Episode, builder, and supervisor according to their existing contracts.",
+      "evidence": ["skills/claim-evidence/references/claim-evidence-contract.md", "app-server/src/services/slice-campaign/native-review-closure.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s12-recoverable-composition",
+      "category": "lifecycle",
+      "subject": "structure.sections.operations-and-reliance",
+      "conclusion": "Native review composition uses stable owner operation and transition identities, publishes exact owner state before campaign CAS binding, and recovers partial success without claiming a cross-store transaction or creating another store.",
+      "evidence": ["app-server/src/services/slice-campaign/native-review-closure.mjs", "app-server/src/services/slice-campaign/service.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

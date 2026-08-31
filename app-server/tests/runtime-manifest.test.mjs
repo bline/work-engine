@@ -114,12 +114,15 @@ test("production manifest projects the canonical implementation reviewer with a 
   assert.equal(projection.role.threadOptions.sandbox, "read-only");
   assert.deepEqual(projection.role.effects, []);
   assert.equal(projection.role.continuity, "retained");
-  assert.deepEqual(projection.skills.map(({ name }) => name), ["repo-search", "agent-instruction-review"]);
+  assert.deepEqual(projection.skills.map(({ name }) => name), ["repo-search", "claim-evidence", "agent-instruction-review"]);
   const specialist = projection.skills.find(({ name }) => name === "agent-instruction-review");
   assert.deepEqual(specialist.capabilities, [
     "capability.direct_source_observation", "capability.repository_evidence",
   ]);
   assert.deepEqual(specialist.effects, []);
+  const claimEvidence = projection.skills.find(({ name }) => name === "claim-evidence");
+  assert.deepEqual(claimEvidence.capabilities, []);
+  assert.deepEqual(claimEvidence.effects, []);
   const compiled = await compileSkill({
     structureSource: await readFile(path.join(root, "app-server/migrations/skills/agent-instruction-review/structure.yaml"), "utf8"),
     interfaceSource: await readFile(path.join(root, "app-server/migrations/skills/agent-instruction-review/interface.yaml"), "utf8"),
@@ -131,10 +134,23 @@ test("production manifest projects the canonical implementation reviewer with a 
     skillName: "agent-instruction-review",
   });
   assert.equal(receipt.compiled_skill_sha256, compiled.ir.output_sha256);
+  const compiledClaimEvidence = await compileSkill({
+    structureSource: await readFile(path.join(root, "app-server/migrations/skills/claim-evidence/structure.yaml"), "utf8"),
+    interfaceSource: await readFile(path.join(root, "app-server/migrations/skills/claim-evidence/interface.yaml"), "utf8"),
+    workspaceRoot: root,
+  });
+  const claimReceipt = satisfyRuntimeRequirements({
+    manifest, roleId: "implementation-reviewer",
+    requirements: compiledClaimEvidence.ir.runtime_requirements,
+    skillName: "claim-evidence",
+  });
+  assert.equal(claimReceipt.compiled_skill_sha256, compiledClaimEvidence.ir.output_sha256);
   assert.match(projection.role.developerInstructions, /does not create renewed freshness/);
   assert.match(projection.role.developerInstructions, /cannot establish independence or acceptance authority/);
   assert.match(projection.role.developerInstructions, /Catalog admission does not prove inference identity/);
   assert.match(projection.role.developerInstructions, /raw evidence, authenticated projections, omissions/);
+  assert.match(projection.role.developerInstructions, /authenticated zero-authority observation/);
+  assert.match(projection.role.developerInstructions, /Never infer applicability, materiality, verdict/);
 });
 
 test("compiled slice-builder requirements admit one generic manifest role and reject excess before delivery", async () => {

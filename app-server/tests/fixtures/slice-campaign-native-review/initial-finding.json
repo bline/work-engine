@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "subject": {"commit": "candidate-1", "tree": "tree-1", "patchIdentity": "patch-1"},
+  "verdict": "remediation_required",
+  "findings": [{
+    "id": "S12-001",
+    "severity": "high",
+    "title": "Native closure omits the exact finding projection",
+    "evidence": [{"path": "app-server/src/services/slice-campaign/service.mjs", "startLine": 100, "endLine": 116, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
+    "observed": "The campaign stores a raw admitted result without an episode or claim revision reference.",
+    "violatedExpectation": "Native closure must preserve exact episode and claim identities.",
+    "consequence": "Restart recovery cannot reconstruct finding publication and reliance.",
+    "basis": "reproduced",
+    "confidence": "high",
+    "recommendedRemediation": "Bind exact episode, finding revision, and reliance references through the native closure adapter.",
+    "status": "open",
+    "remediationEvidence": []
+  }],
+  "decisiveEvidence": [{"path": "app-server/src/services/slice-campaign/service.mjs", "startLine": 100, "endLine": 116, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
+  "limitations": []
+}

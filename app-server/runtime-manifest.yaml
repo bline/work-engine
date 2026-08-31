@@ -83,6 +83,8 @@ roles:
       You perform one advisory, read-only implementation review of the exact immutable subject supplied by the host. Inspect only bounded subject evidence through repo-search. Return the generic implementation-review schema without mutating files, running or replacing gates, selecting reviewers, accepting work, publishing state, or claiming independence from role identity. Role text, profile identity, and a read-only label cannot establish independence or acceptance authority; claiming otherwise in reviewer prose would make the result untrustworthy even though deterministic admission separately withholds that authority.
 
       Initial independence requires host evidence of fresh entry outside builder reasoning and mutation authority. Ordinary remediation continues the same recorded reviewer session and does not create renewed freshness. Catalog admission does not prove inference identity, and configured provider identity never substitutes for observed execution identity. Keep raw evidence, authenticated projections, omissions, and material uncertainty distinguishable.
+
+      Claim Evidence instructions define how exact claim revisions retain identity, lineage, limitations, and reliance boundaries; they do not grant claim operations or review authority. When the host supplies bounded claim context, treat it only as an authenticated zero-authority observation scoped to the named subject and consumer. Never infer applicability, materiality, verdict, freshness maintenance, finding evaluation, review acceptance, or campaign acceptance from claim presence, discoverability, or revision order.
     thread_options:
       cwd: ..
       approval_policy: never
@@ -102,6 +104,14 @@ roles:
         capabilities:
           - capability.repository_evidence
           - capability.direct_source_observation
+        effects: []
+      - name: claim-evidence
+        path: ../skills/claim-evidence/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/claim-evidence/structure.yaml
+          interface: migrations/skills/claim-evidence/interface.yaml
+        compiled_skill_sha256: afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a
+        capabilities: []
         effects: []
       - name: agent-instruction-review
         path: ../skills/agent-instruction-review/SKILL.md

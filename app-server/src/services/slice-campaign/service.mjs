@@ -1,6 +1,6 @@
 import {
   SLICE_CAMPAIGN_SCHEMA_VERSION, SLICE_PHASES, digest, freeze, identityKey,
-  normalizeIdentity, requireRecord, requireSha256, requireText,
+  normalizeIdentity, requireRecord, requireSha256, requireText, validateReviewSelection,
 } from "./contract.mjs";
 
 const NEXT_PHASE = new Map([["accepted", "implementing"], ["implementing", "gate_ready"], ["gate_ready", "review_ready"], ["review_ready", "terminal"]]);
@@ -23,7 +23,7 @@ export class InMemorySliceCampaignStore {
 
 export function createSliceCampaignService({
   store = new InMemorySliceCampaignStore(), reviewSubject, legacyReview,
-  implementationReview = null, receiptFinalizer, completionOffer = null,
+  implementationReview = null, nativeReview = null, receiptFinalizer, completionOffer = null,
 } = {}) {
   for (const [owner, methods] of [[reviewSubject, ["createCandidate", "createPhysicalProfile"]], [legacyReview, ["review"]], [receiptFinalizer, ["finalize"]]]) {
     if (!owner || methods.some((method) => typeof owner[method] !== "function")) throw new TypeError(`slice campaign requires composed owner ${methods.join("/")}`);
@@ -45,6 +45,8 @@ export function createSliceCampaignService({
     requireSha256(expectedRevision, "expected campaign revision");
     if (state.revision !== expectedRevision) throw new Error("slice campaign revision conflict");
   };
+  const nativeObligations = (state) => state.nativeReview?.obligations ?? {};
+  const nativeEnvelope = (obligations) => freeze({schemaVersion: 1, obligations: freeze({...obligations})});
 
   return Object.freeze({
     admit({ identity, workspace, acceptedBoundary, expectedImpact = null, baseline }) {
@@ -61,7 +63,7 @@ export function createSliceCampaignService({
         acceptedBoundary: freeze(structuredClone(acceptedBoundary)), expectedImpact: expectedImpact && freeze(structuredClone(expectedImpact)),
         baseline: freeze(structuredClone(baseline)), phase: "accepted", latestConsequence: null,
         candidateRequestDigest: null, candidate: null, physicalProfile: null,
-        review: null, implementationReview: null, terminal: null };
+        review: null, implementationReview: null, reviewSelection: null, nativeReview: null, terminal: null };
       const published = freeze({ ...initial, revision: digest(initial) });
       store.admit(key, workspace, published);
       return published;
@@ -90,7 +92,8 @@ export function createSliceCampaignService({
     },
     async runLegacyReview({ identity, expectedRevision, selectionPlan }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (state.phase !== "review_ready" || state.review || state.implementationReview) {
+      if (state.phase !== "review_ready" || state.review || state.implementationReview
+          || state.reviewSelection || state.nativeReview) {
         throw new Error("legacy review requires review-ready state without a prior review");
       }
       if (!state.candidate || !state.physicalProfile) throw new Error("legacy review requires an immutable candidate and physical profile");
@@ -99,7 +102,8 @@ export function createSliceCampaignService({
     },
     bindImplementationReview({ identity, expectedRevision, result }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (state.phase !== "review_ready" || state.review || state.implementationReview) {
+      if (state.phase !== "review_ready" || state.review || state.implementationReview
+          || state.reviewSelection || state.nativeReview) {
         throw new Error("implementation review requires review-ready state without a prior review");
       }
       if (!state.candidate || !state.physicalProfile) throw new Error("implementation review requires an immutable candidate and physical profile");
@@ -114,10 +118,100 @@ export function createSliceCampaignService({
       const admitted = implementationReview.admit({ result, expectedSubject: subject });
       return publish({ ...state, implementationReview: admitted }, state.revision);
     },
+    bindReviewSelection({ identity, expectedRevision, selection }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      if (state.phase !== "review_ready" || state.review || state.implementationReview || state.nativeReview) {
+        throw new Error("native review selection requires unused review-ready state");
+      }
+      if (!state.candidate || !state.physicalProfile) throw new Error("native review selection requires immutable candidate and profile");
+      const subject = {
+        commit: state.candidate.checkpoint_commit_oid ?? state.candidate.commit,
+        tree: state.candidate.checkpoint_tree_oid ?? state.candidate.tree,
+        patchIdentity: state.candidate.task_patch_digest ?? state.candidate.manifestSha256,
+      };
+      validateReviewSelection(selection, subject);
+      if (state.reviewSelection) {
+        if (digest(state.reviewSelection) === digest(selection)) return state;
+        throw new Error("native review selection conflicts with the bound disposition");
+      }
+      return publish({ ...state, reviewSelection: freeze(structuredClone(selection)) }, state.revision);
+    },
+    async runNativeReview({ identity, expectedRevision, request }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      if (state.phase !== "review_ready" || state.review || state.implementationReview) {
+        throw new Error("native review requires unused review-ready state");
+      }
+      if (!nativeReview?.executeInitial) throw new Error("native review closure service is unavailable");
+      const disposition = state.reviewSelection?.specialists.find(({obligationId}) => obligationId === request?.obligationId);
+      if (!disposition || disposition.selection !== "selected") throw new Error("native review obligation is not selected by the supervisor");
+      const requestDigest = digest(request);
+      const obligations = nativeObligations(state);
+      const currentObligation = obligations[request.obligationId] ?? null;
+      let prepared = state;
+      let allowProviderEntry = false;
+      if (currentObligation === null) {
+        prepared = publish({...state, nativeReview: nativeEnvelope({...obligations,
+          [request.obligationId]: freeze({schemaVersion: 1, obligationId: request.obligationId,
+            status: "executing", requestDigest})})}, state.revision);
+        allowProviderEntry = true;
+      } else if (currentObligation.status !== "executing"
+          || currentObligation.requestDigest !== requestDigest) {
+        throw new Error("native review request conflicts with durable execution admission");
+      }
+      const outcome = await nativeReview.executeInitial({...request, reviewSkill: disposition.skill, allowProviderEntry});
+      const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+        [request.obligationId]: outcome.binding})}, prepared.revision);
+      return freeze({campaign, builderContext: outcome.builderContext});
+    },
+    recordNativeFindingEvaluation({ identity, expectedRevision, request }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
+      if (state.phase !== "review_ready"
+          || !["awaiting_builder", "reported"].includes(currentObligation?.status)) {
+        throw new Error("native finding evaluation requires a review closure with an exact current finding revision");
+      }
+      if (!nativeReview?.recordBuilderEvaluation) throw new Error("native review closure service is unavailable");
+      const binding = nativeReview.recordBuilderEvaluation({binding: currentObligation, ...request});
+      return freeze({campaign: publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+        [request.obligationId]: binding})}, state.revision)});
+    },
+    async runNativeRemediation({ identity, expectedRevision, request }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
+      if (state.phase !== "review_ready"
+          || !["awaiting_builder", "remediation_executing"].includes(currentObligation?.status)) {
+        throw new Error("native remediation requires an awaiting-builder closure");
+      }
+      if (!nativeReview?.executeRemediation) throw new Error("native review closure service is unavailable");
+      const disposition = state.reviewSelection?.specialists.find(({obligationId}) => obligationId === request?.obligationId);
+      if (!disposition || disposition.selection !== "selected") throw new Error("native remediation obligation is not selected by the supervisor");
+      const requestDigest = digest(request);
+      let prepared = state;
+      let allowProviderEntry = false;
+      if (currentObligation.status === "awaiting_builder") {
+        prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+          [request.obligationId]: freeze({...currentObligation,
+            status: "remediation_executing", requestDigest})})}, state.revision);
+        allowProviderEntry = true;
+      } else if (currentObligation.requestDigest !== requestDigest) {
+        throw new Error("native remediation request conflicts with durable execution admission");
+      }
+      const outcome = await nativeReview.executeRemediation({binding: nativeObligations(prepared)[request.obligationId],
+        ...request, reviewSkill: disposition.skill, allowProviderEntry});
+      const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+        [request.obligationId]: outcome.binding})}, prepared.revision);
+      return freeze({campaign, builderContext: outcome.builderContext});
+    },
     async terminalize({ identity, expectedRevision, outcome, receipt }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (state.phase !== "review_ready" || (!state.review && !state.implementationReview)) {
-        throw new Error("terminalization requires completed compatibility or implementation review");
+      const selected = state.reviewSelection?.specialists.filter(({selection}) => selection === "selected") ?? [];
+      const obligations = nativeObligations(state);
+      const nativeComplete = state.reviewSelection !== null && selected.length > 0
+        && selected.every(({obligationId}) => obligations[obligationId]?.status === "reported")
+        && Object.keys(obligations).every((obligationId) => selected.some((item) => item.obligationId === obligationId));
+      const compatibilityComplete = state.review !== null && state.reviewSelection === null && state.nativeReview === null;
+      if (state.phase !== "review_ready" || (!compatibilityComplete && !nativeComplete)) {
+        throw new Error("terminalization requires completed native closure or compatibility review");
       }
       requireText(outcome, "terminal outcome"); requireRecord(receipt, "terminal receipt");
       const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome, receipt, candidate: state.candidate });

@@ -1,5 +1,6 @@
 import { ReviewerRuntimeError } from "../src/services/reviewer-runtime/contract.mjs";
 import { createAgentInstructionReviewService } from "../src/services/agent-instruction-review/service.mjs";
+import { renderReviewerClaimContext } from "../src/services/claim-evidence/reviewer-projection.mjs";
 
 export class ImplementationReviewerRuntime {
   constructor({ manifest, adapter, agentInstructionReview = createAgentInstructionReviewService() }) {
@@ -18,26 +19,32 @@ export class ImplementationReviewerRuntime {
     return projection;
   }
 
-  async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy, continuationSessionId = null }) {
+  async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy, continuationSessionId = null, claimContext = null }) {
     const projection = this.projection(instanceId);
+    const roleInstructions = claimContext === null
+      ? projection.role.developerInstructions
+      : `${projection.role.developerInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     return this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions: projection.role.developerInstructions,
+      continuationSessionId, roleInstructions,
     });
   }
 
   async reviewAgentInstructions({
     instanceId, profileId, subject, closure, catalogProjection, rawEventPolicy,
-    continuationSessionId = null,
+    continuationSessionId = null, claimContext = null,
   }) {
     const projection = this.projection(instanceId);
     const delivery = await this.agentInstructionReview.renderDelivery({
       reviewerRoleProjection: projection,
       closure,
     });
+    const roleInstructions = claimContext === null
+      ? delivery.roleInstructions
+      : `${delivery.roleInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     const execution = await this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions: delivery.roleInstructions,
+      continuationSessionId, roleInstructions,
     });
     if (execution.failure || !execution.result) return execution;
     const specialistReview = this.agentInstructionReview.admit({ result: execution.result, closure });

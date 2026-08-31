@@ -27,6 +27,7 @@ const loadFixture = async (name) => JSON.parse(await readFile(path.join(fixtureR
 async function declaredReferences() {
   const references = [
     ["repo-search.backend-capabilities", "skills/repo-search/references/backend-capabilities.md"],
+    ["claim-evidence.contract", "skills/claim-evidence/references/claim-evidence-contract.md"],
     ["agent-instruction-review.finding-contract", "skills/agent-instruction-review/references/finding-contract.md"],
   ];
   return Promise.all(references.map(async ([id, relativePath]) => ({
@@ -149,6 +150,9 @@ test("specialist closure binds effective manifest inputs, precedence, omissions,
   const service = createAgentInstructionReviewService();
   const manifest = await loadRuntimeManifest(path.join(root, "app-server/runtime-manifest.yaml"));
   const roleProjection = manifest.projectRole("implementation-reviewer", "closure-proof");
+  assert.deepEqual(roleProjection.skills.map(({ name }) => name), [
+    "repo-search", "claim-evidence", "agent-instruction-review",
+  ]);
   const requiredReferences = await declaredReferences();
   const subject = { commit: "candidate-1", tree: "tree-1", patchIdentity: "patch-1" };
   const reason = "Reason: the consumer cannot preserve an invariant it never receives.\nFailure: an opaque command creates logical discontinuity.\n";

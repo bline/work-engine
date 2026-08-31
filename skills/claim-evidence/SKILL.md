@@ -9,6 +9,8 @@ Use the shared claim-evidence capability when a role needs a durable, exact-revi
 
 The capability owns stable identity, immutable revisions, reference and lineage integrity, validation of admitted authority, reliance mechanics, and rebuildable query projections. The trusted launcher or another separately authorized lifecycle owner owns when grants are admitted. Proposal-research and review roles retain their domain judgments. A visible or discoverable candidate is not thereby true, current, applicable, sufficient, accepted, or authoritative.
 
+## Operations and exact-revision reliance
+
 Choose operations according to the task rather than following a fixed sequence:
 
 - discover with bounded subject, profile, producer, support, sensitivity, or consumer criteria;
@@ -20,6 +22,8 @@ Choose operations according to the task rather than following a fixed sequence:
 Never silently select the newest revision when several heads or branches may govern a decision. Keep candidate identity, evidence baseline, limitations, unresolved reference status, freshness, completeness, exclusions, and failures together. Record reliance only against an exact claim revision, consumer revision, and decision scope. The named consumer owns the reliance decision; a v1 reliance record is the admitted producer's attributed record of that decision, not proof that the consumer directly attested it or delegated to that producer.
 
 The deterministic mechanics are in `scripts/claim_evidence.py`. Read [the contract](references/claim-evidence-contract.md) before defining a domain publication, authority grant, lineage transition, or reliance. The schemas under `schemas/` define the closed v1 wire records.
+
+## Authority and lifecycle boundaries
 
 This phase does not nominate change impact, orchestrate refresh, advance canonical support, reopen downstream work, deliver obligations, monitor sources, accept proposals or reviews, or grant authority from possession of this skill.
 

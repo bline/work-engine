@@ -72,9 +72,14 @@ export {
 } from "./services/review-episode/contract.mjs";
 export * from "./services/review-episode/service.mjs";
 export * from "./services/review-episode/sqlite-store.mjs";
+export { readClaimEvidence } from "./services/claim-evidence/read-service.mjs";
+export { openSqliteClaimEvidenceStore } from "./services/claim-evidence/sqlite-store.mjs";
+export * from "./services/claim-evidence/review-finding-bridge.mjs";
+export * from "./services/claim-evidence/reviewer-projection.mjs";
 export * from "./services/product-development/claim-context-delivery.mjs";
 export * from "./services/slice-campaign/contract.mjs";
 export * from "./services/slice-campaign/legacy-review-adapter.mjs";
+export * from "./services/slice-campaign/native-review-closure.mjs";
 export * from "./services/slice-campaign/service.mjs";
 export * from "./services/slice-campaign/sqlite-store.mjs";
 export * from "./services/workspace-coordination/contract.mjs";

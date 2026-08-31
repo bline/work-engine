@@ -15,6 +15,14 @@ function profile(){const p={schemaVersion:1,profileId:"openrouter.codex.review-v
 const catalog={schemaVersion:1,catalogId:"fixture",observedAt:"2026-08-30T00:00:00Z",expiresAt:"2026-09-01T00:00:00Z",source:"fixture",sourceSha256:"a".repeat(64),models:[{slug:"openai/gpt-5.2-codex",provider:"openrouter",capabilities:["structured_output","repository_read"],routingConstraints:[]}]};
 const policy={classification:"confidential",access:"episode actors",retention:"bounded projection retained",exactRetentionAuthorized:false,redaction:"raw bodies omitted",tamperEvidence:"sha256 digest"};
 const ref=(owner,reference,revision,sha256)=>({owner,reference,revision,sha256,freshness:"exact immutable revision"});
+const claimContext={schema_version:1,context_kind:"reviewer_relevant_exact_claim_revisions",
+  consumer:{identity:"implementation-reviewer:episode",revision:"candidate",decision_scope:"review-scope"},
+  projection:{projection_schema_version:1,build_version:"fixture",projection_identity:"fixture",freshness:"exact",
+    completeness:"complete",actual_content_set:"fixture",excluded_inputs:[],failed_inputs:[],unresolved_references:[]},
+  relevant_exact_revisions:[{revision:{decision_scope:"review-scope"},selection_reason:"Exact prior finding"}],
+  limitations:["This context does not select, evaluate, or accept a finding."],
+  authority:{claimPublicationAuthorized:false,claimSelectionAuthorized:false,findingEvaluationAuthorized:false,
+    reviewAcceptanceAuthorized:false,campaignAcceptanceAuthorized:false,mutationAuthorized:false}};
 
 test("canonical reviewer role executes admitted profile through unchanged S9 admission and retained episode",async()=>{
   const manifest=projectRuntimeManifest({schema_version:1,manifest_id:"vertical",roles:{"implementation-reviewer":{contract:"../skills/repo-search/SKILL.md",developer_instructions:"Read-only exact-subject review.",thread_options:{cwd:".",approval_policy:"never",sandbox:"read-only"},continuity:"retained",capabilities:["capability.repository_evidence","capability.direct_source_observation"],effects:[],skills:[{name:"repo-search",path:"../skills/repo-search/SKILL.md"}]}}},{baseDirectory:new URL("..",import.meta.url).pathname});
@@ -35,9 +43,12 @@ test("canonical reviewer role executes admitted profile through unchanged S9 adm
   state=episode.transition({authority,expectedRevision:state.revision,transitionId:"initial",action:"record_result",payload:{result:initial.result,unresolvedQuestions:[]}});
   assert.equal(state.phase,"reported");
   state=episode.transition({authority,expectedRevision:state.revision,transitionId:"remediation",action:"record_remediation_subject",payload:{subject:ref("checkpoint","candidate-2","v2",digest(subject))}});
-  const continued=await reviewer.review({instanceId:"episode",profileId:"openrouter.codex.review-v1",subject,catalogProjection:catalog,rawEventPolicy:policy,continuationSessionId:"session-1"});
+  const continued=await reviewer.review({instanceId:"episode",profileId:"openrouter.codex.review-v1",subject,catalogProjection:catalog,rawEventPolicy:policy,continuationSessionId:"session-1",claimContext});
   assert.equal(continued.isolation.freshEntry,false); assert.equal(continued.isolation.continuation,true);
   assert.equal(homes[0],homes[1]);
+  assert.match(delivered[1],/WORK_ENGINE_REVIEWER_CLAIM_EVIDENCE_V1/);
+  assert.match(delivered[1],/"claimPublicationAuthorized":false/);
+  assert.doesNotMatch(delivered[1],/"permissions"|"operations"|"store"/);
   state=episode.transition({authority,expectedRevision:state.revision,transitionId:"reevaluate",action:"record_result",payload:{result:continued.result,unresolvedQuestions:[]}});
   assert.equal(state.continuity,"same_session"); assert.equal(state.phase,"reported");
   assert.equal(await reviewer.retire("episode"),true); await assert.rejects(access(homes[0]));
