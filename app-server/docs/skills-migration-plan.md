@@ -292,7 +292,9 @@ S1 + S3 + S5 + S7 --> S9 generic review contract and episode service
 S6 + S7 + S9 --> S10 reviewer role, profile registry, OpenRouter adapter
 S1 + S10 --> S11 instruction-review specialist composition
 S8 + S9 + S10 + S11 + claim-service evidence --> S12 native review closure
+S4 + S5 + S6 + S8P + S12 --> S12E run-scoped extension bundles
 S6 + S7 + S8 + S12 + accepted claim-maintenance proposal and implementation grant --> S12M claim-maintenance projection vertical
+S12E --> isolated research, analysis, and pilot workloads in S13-S16
 S9 through S12 --> S13 reviewer research and admission evidence
 S4 + S5 + S6 + S12 --> S14 product-development role imports
 S0 + S5 + S12 + service evidence --> S15 remaining service-backed imports
@@ -329,8 +331,13 @@ not depend on retained conversation context.
   instruction-review specialization, and native review closure. S12 completes
   the native review-loop cutover; it is not a prerequisite for beginning to
   realize the development-economics benefit after S8P.
+- S12E follows native review closure and supplies immutable run-scoped
+  extension bundles for isolated research, analysis, pilots, and other
+  non-core workloads. It does not globally install their skills, admit them as
+  production roles, or change the meaning of their owning protocols.
 - S13 through S17 remain the broader evidence, portfolio, ownership-cutover,
-  and legacy-retirement path. S8P must not silently absorb those semantics.
+  and legacy-retirement path. S8P and S12E must not silently absorb those
+  semantics.
 
 The S8P coordination boundary is deliberately precise:
 
@@ -375,6 +382,7 @@ published S8
     -> implement and accept S8P
     -> run the first multi-agent S9 campaign through App Server
     -> complete S9-S12 native review closure
+    -> add S12E run-scoped extension bundles for isolated non-core workloads
     -> finish S13-S17 portfolio cutover and legacy retirement
 ```
 
@@ -1024,6 +1032,66 @@ authority tests; and legacy outcome comparison.
 
 **Excluded:** Letting claims accept a review, automatic completion commits,
 silent campaign expansion, or treating the claims service as a reviewer role.
+
+### S12E — Run-scoped extension bundles for isolated non-core workloads
+
+**Objective:** Allow one admitted App Server run to attach an immutable,
+compiled extension bundle containing the skills and bounded capabilities
+needed by a research, repository-analysis, pilot, or other non-core workload
+without mutating the core runtime manifest or global skill catalog.
+
+**Independently valuable outcome:** The stable App Server core can host
+specialized work such as the linguistic-register pilot while keeping
+experimental protocols, dependencies, artifacts, and failure states isolated
+from production role machinery.
+
+**Required consequences:**
+
+- A bundle binds exact source revisions and digests for every skill,
+  instruction closure, role overlay, capability request, schema, fixture, and
+  adapter it carries. Ambient skill directories and conversational references
+  are not installation evidence.
+- Attachment stages the bundle into one private executable generation with an
+  explicit repository subject, checkout, artifact root, scratch root,
+  retention policy, credential policy, and namespaced operational resources.
+  Activation occurs only at the existing fenced generation boundary.
+- Admission validates compiler/runtime requirements, instruction precedence,
+  capability and effect ceilings, version conflicts, provider requirements,
+  and every host adapter requested by the bundle. A bundle may narrow an
+  admitted run but cannot grant itself filesystem, network, publication,
+  claims, review, human, or production-admission authority.
+- Bundle capabilities are resolved through a run-scoped server registry rather
+  than added to the hard-coded core catalog. Missing, stale, conflicting, or
+  unmediated capabilities fail closed.
+- The lifecycle is explicit and recoverable: requested, validated, admitted,
+  activated, executed, artifact-sealed, detached, and cleaned or retained by
+  policy. Every terminal receipt distinguishes semantic workload outcome from
+  transport success, artifact publication, and later production admission.
+- Dependencies use sealed local projections or declared caches when possible;
+  network installation is a separately authorized, receipted effect rather
+  than an implicit consequence of starting a run.
+- Research or pilot artifacts remain owned by their experiment package.
+  Promotion into canonical repository or product state still requires the
+  ordinary proposal, accepted-checkpoint, review, fencing, and publication
+  authorities.
+- `linguistic-register-pilot` is the first intended cross-domain proof, but
+  S12E only supplies its isolated execution environment. The pilot's own
+  protocol, profile-separability claims, stopping rules, and production
+  exclusions remain authoritative and must be admitted separately.
+
+**Acceptance evidence:** One sealed fixture bundle and one rejected bundle;
+compiler and instruction-closure verification; run-local capability admission
+and refusal tests; effect-ceiling and credential-isolation tests; fenced
+activation and restart recovery; dependency-cache and no-network fixtures;
+artifact sealing, detachment, cleanup, and retained-artifact receipts; proof
+that the core manifest and global catalog are unchanged; and one dry-run
+linguistic-pilot fixture that cannot publish or acquire production authority.
+
+**Excluded:** Global installation as a side effect of one run; arbitrary
+package-manager or network execution; loading unsealed local skills; allowing
+an extension to replace core semantic owners; treating successful execution as
+profile, reviewer, claim, or production admission; or making experimental
+packages prerequisites of ordinary coding roles.
 
 ### S12M — Conditional claim-maintenance projection vertical
 
