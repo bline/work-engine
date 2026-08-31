@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://work-engine.local/charter/founding/event-record-v1.schema.json",
+  "title": "Founding Event Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "sequence",
+    "event_type",
+    "recorded_at",
+    "actor",
+    "payload",
+    "references",
+    "limitations",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "founding-event-v1"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "event_type": {
+      "enum": [
+        "genesis_commitment",
+        "human_message",
+        "model_request",
+        "model_response",
+        "model_error",
+        "root_context_disclosed",
+        "artifact_proposed",
+        "seed_criticism",
+        "seed_successor_proposed",
+        "seed_successor_judgment",
+        "seed_successor_accepted",
+        "context_transition",
+        "decision",
+        "correction",
+        "witness_receipt",
+        "audit_finding",
+        "ratification",
+        "other"
+      ]
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "identifier"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "human",
+            "model",
+            "operator",
+            "router",
+            "provider",
+            "auditor",
+            "witness",
+            "system"
+          ]
+        },
+        "identifier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority_claim": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "payload": {
+      "$ref": "#/$defs/exactBytes"
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "returned_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "system_fingerprint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parameters": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "openrouter_metadata": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relation",
+          "sha256"
+        ],
+        "properties": {
+          "relation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonicalization",
+        "previous_event_sha256",
+        "event_sha256_rule"
+      ],
+      "properties": {
+        "canonicalization": {
+          "const": "RFC8785"
+        },
+        "previous_event_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "event_sha256_rule": {
+          "const": "sha256 of RFC8785-canonicalized complete event object"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "exactBytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_type",
+        "encoding",
+        "byte_length",
+        "sha256",
+        "base64"
+      ],
+      "properties": {
+        "media_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "encoding": {
+          "const": "base64"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "base64": {
+          "type": "string",
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

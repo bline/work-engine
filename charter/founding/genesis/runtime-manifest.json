@@ -1,0 +1,46 @@
+{
+  "schema_version": "founding-runtime-v1",
+  "status": "proposed_not_frozen",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "method": "POST",
+  "model": "openai/gpt-5.6-sol",
+  "messages": {
+    "system": {
+      "path": "charter/founding/bridge-agent-seed.md",
+      "transport": "exact_file_bytes_utf8"
+    },
+    "user": {
+      "path": "charter/founding/genesis/opening-question.txt",
+      "transport": "exact_file_bytes_utf8"
+    }
+  },
+  "provider": {
+    "only": [
+      "openai"
+    ],
+    "allow_fallbacks": false,
+    "require_parameters": true,
+    "data_collection": "deny",
+    "zdr": true
+  },
+  "reasoning": {
+    "effort": "max"
+  },
+  "max_completion_tokens": 32768,
+  "stream": false,
+  "tools": [],
+  "plugins": [],
+  "headers": {
+    "Content-Type": "application/json",
+    "X-OpenRouter-Metadata": "enabled"
+  },
+  "sampling_parameters": {
+    "temperature": "omitted_provider_default",
+    "top_p": "omitted_provider_default",
+    "seed": "omitted_provider_default"
+  },
+  "secrets": {
+    "authorization": "supplied_at_runtime_not_recorded"
+  },
+  "paid_execution_authorized": false
+}

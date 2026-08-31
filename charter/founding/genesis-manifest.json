@@ -1,0 +1,118 @@
+{
+  "schema_version": "founding-genesis-manifest-v1",
+  "status": "proposed_not_frozen",
+  "generated_at": "2026-08-31T08:09:22Z",
+  "digest_algorithm": "sha256",
+  "canonical_seed": {
+    "path": "charter/founding/bridge-agent-seed.md",
+    "sha256": "2a4b60d412a26839d23b85fe89fa3d31f07d208b4e782b0de5ba75d721968032"
+  },
+  "canonical_opening_question": {
+    "path": "charter/founding/genesis/opening-question.txt",
+    "sha256": "cb41455e28bfdd714d848f37cb36b76cc7a7ba4f59de93e1fb0cd0629f08f9f9"
+  },
+  "assurance": {
+    "classification": "operator_controlled",
+    "external_live_witness": null,
+    "highest_assurance_eligible": false
+  },
+  "launch_ready": false,
+  "blocking_conditions": [
+    "no external live commitment witness or express lower-assurance launch decision",
+    "manifest not accepted or committed",
+    "runtime manifest records paid_execution_authorized as false"
+  ],
+  "excluded_local_files": [
+    {
+      "pattern": "**/.*.swp",
+      "reason": "transient editor state; not a founding artifact and not read or altered by bundle assembly"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "charter/README.md",
+      "sha256": "7e27fade7e5a19c363c7b108e8419bcf3e7de98ffa850ba968d375a6b62d42e2",
+      "role": "workspace_status"
+    },
+    {
+      "path": "charter/founding/bridge-agent-seed.md",
+      "sha256": "2a4b60d412a26839d23b85fe89fa3d31f07d208b4e782b0de5ba75d721968032",
+      "role": "canonical_system_seed"
+    },
+    {
+      "path": "charter/founding/bridge-agent-seed-v0.md",
+      "sha256": "348a4c1213a11b0a6c6763f48f902c4bf3b627bafae7133076d5ed786c4b3944",
+      "role": "seed_lineage"
+    },
+    {
+      "path": "charter/founding/bridge-agent-seed-v1.md",
+      "sha256": "29c29e879c0581d9a678373e921cab71e22814f8b95bbf07baa66943f4484f0d",
+      "role": "seed_lineage"
+    },
+    {
+      "path": "charter/founding/bridge-agent-seed-v2.md",
+      "sha256": "2434560622809a8d3ec0e66521195fb121a2dc4480f5b67ee3239a10bbabc9d3",
+      "role": "seed_lineage"
+    },
+    {
+      "path": "charter/founding/genesis-provenance-protocol.md",
+      "sha256": "67c37ef03753a5d29960f239aa781397f4bb70b7b614ed4706c1fa3013a85f6f",
+      "role": "provenance_contract"
+    },
+    {
+      "path": "charter/founding/genesis/assurance-profile.json",
+      "sha256": "73bd7f09df8a20863a13455cd65613a4dbe57eed8f3d4d30cc4c646cf85ae0e4",
+      "role": "assurance_classification"
+    },
+    {
+      "path": "charter/founding/genesis/event-record-v1.schema.json",
+      "sha256": "b30e51ddf0eef93c927d80eade176f9ca75b7dc3003e99858ad574b613d4efa9",
+      "role": "event_schema"
+    },
+    {
+      "path": "charter/founding/genesis/initial-authority-state.md",
+      "sha256": "8cb844780a98a98b7579d77d2bb8fa59953bb6869ce6496bd2f79794fb36d1f9",
+      "role": "initial_authority_and_limitations"
+    },
+    {
+      "path": "charter/founding/genesis/opening-question.txt",
+      "sha256": "cb41455e28bfdd714d848f37cb36b76cc7a7ba4f59de93e1fb0cd0629f08f9f9",
+      "role": "canonical_opening_question"
+    },
+    {
+      "path": "charter/founding/genesis/runtime-manifest.json",
+      "sha256": "0c0a80f15eae03453d16e1980d8afb12f63ca67e15aaae1154633e3b8bcca2d7",
+      "role": "runtime_configuration"
+    },
+    {
+      "path": "charter/founding/genesis/seed-revision-protocol.md",
+      "sha256": "80d0bf21b3578488fae1313e1cf806df0941acf970e02687c51035e41c83c9f2",
+      "role": "seed_revision_mechanics"
+    },
+    {
+      "path": "charter/founding/human-theory-contextual-simulation.md",
+      "sha256": "a9ee3c7ff4147b2a8a3561255694eccdb7674d2f3f802e852473d1ac1ab227a2",
+      "role": "human_origin_theory"
+    },
+    {
+      "path": "charter/founding/openrouter-launch.md",
+      "sha256": "f28b42c3005e0b386f196e749fce286f90bfd2bf78665ca57d2a98be0ae6086d",
+      "role": "launch_explanation"
+    },
+    {
+      "path": "charter/founding/reviews/2026-08-31-web-sol-preflight-remediation.md",
+      "sha256": "413cf1dd75299f46f9171817cefd91aceab666c5d6f0bad89885a207e5d97471",
+      "role": "builder_review_disposition"
+    },
+    {
+      "path": "charter/founding/reviews/2026-08-31-web-sol-preflight.md",
+      "sha256": "14b703dd2bcf61a82b6ea6fb2f290010a22fae3b79982e2650c872cf4217ae2d",
+      "role": "external_advisory_review"
+    },
+    {
+      "path": "charter/founding/root-context.md",
+      "sha256": "8ceeb8538413c5e18c114c6e036660bad4f83fa54fb52b40e3ea723c6b4db405",
+      "role": "causal_prehistory_projection"
+    }
+  ]
+}
