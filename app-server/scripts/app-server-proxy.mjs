@@ -46,6 +46,7 @@ function parseArguments(argv) {
     generationState: null,
     developmentArtifactRoot: WORKSPACE_ROOT,
     codexCommand: process.env.WORK_ENGINE_CODEX ?? "codex",
+    canonicalBranches: [],
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -68,9 +69,13 @@ function parseArguments(argv) {
       options.developmentArtifactRoot = path.resolve(value());
     }
     else if (argument === "--codex") options.codexCommand = value();
+    else if (argument === "--canonical-branch") options.canonicalBranches.push(value());
     else throw new Error(`unknown App Server proxy option ${argument}`);
   }
   if (!options.socketPath) throw new Error("--socket PATH is required");
+  if (options.canonicalBranches.length === 0) {
+    throw new Error("at least one explicit --canonical-branch NAME is required");
+  }
   options.generationState ??= defaultGenerationState(options.socketPath);
   return options;
 }
@@ -142,7 +147,9 @@ async function main() {
       configuredProviderFeatures: options.tokenBudget ? ["token_budget"] : [],
       developmentArtifactRoot: options.developmentArtifactRoot,
       supervisorCampaignHostEffectRuntimeFactory: ({ workspaceRoot, stateRoot }) =>
-        createSupervisorCampaignCapabilityHostRuntime({ workspaceRoot, stateRoot }),
+        createSupervisorCampaignCapabilityHostRuntime({
+          workspaceRoot, stateRoot, canonicalBranches: options.canonicalBranches,
+        }),
     });
   } catch (error) {
     transport.close();

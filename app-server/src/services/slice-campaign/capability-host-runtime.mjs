@@ -11,6 +11,8 @@ import { createSupervisorCampaignHostEffectRuntime } from "./host-effect-runtime
 import { createLegacySupervisorControlAdapter } from "./legacy-control-adapter.mjs";
 import { createSliceCampaignService } from "./service.mjs";
 import { openSqliteSliceCampaignStore } from "./sqlite-store.mjs";
+import { openWorkspaceDevelopmentRuntime } from "../workspace-coordination/runtime.mjs";
+import { createCompletionPublicationService } from "./completion-publication.mjs";
 
 function wrap(generationId, capability, operation, result) {
   return {
@@ -23,16 +25,24 @@ function wrap(generationId, capability, operation, result) {
 }
 
 export async function createSupervisorCampaignCapabilityHostRuntime({
-  workspaceRoot, stateRoot, legacyAdapterFactory = createLegacySupervisorControlAdapter,
+  workspaceRoot, stateRoot, canonicalBranches,
+  legacyAdapterFactory = createLegacySupervisorControlAdapter,
 } = {}) {
   const legacy = await legacyAdapterFactory({ workspaceRoot });
   const store = await openSqliteSliceCampaignStore({
     filePath: path.join(path.resolve(stateRoot), "slice-campaign.sqlite3"),
   });
   let closed = false;
+  let workspace = null;
   try {
+    workspace = await openWorkspaceDevelopmentRuntime({
+      repository: workspaceRoot,
+      runtimeRoot: path.join(path.resolve(stateRoot), "workspace-development"),
+      canonicalBranches,
+    });
     const reviewSubject = createReviewSubjectService({ workspaceRoot });
     const implementationReview = createImplementationReviewService();
+    const completionPublication = createCompletionPublicationService({ workspace });
     const service = createSliceCampaignService({
       store,
       reviewSubject,
@@ -79,6 +89,44 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.completion_offer/expire": ({ input }) => legacy.offer("expire", input),
       "capability.resume/recover_active": ({ input }) => service.recover(input.identity),
       "capability.resume/recover_terminal": ({ input }) => legacy.resumeTerminal(input),
+      "capability.workspace_coordination/acquire": ({ input }) => workspace.acquireResource({
+        resource: input.resource, holder: input.holder, intentId: input.intent_id, ttlMs: input.ttl_ms,
+      }),
+      "capability.workspace_coordination/inspect": ({ input }) =>
+        workspace.inspectResource(input.resource),
+      "capability.workspace_coordination/release": ({ input }) => ({
+        released: workspace.releaseResource(input.lease),
+      }),
+      "capability.worktree_lifecycle/allocate": ({ input }) => workspace.allocateAgentWorktree({
+        operationId: input.operation_id, agentId: input.agent_id, intentId: input.intent_id,
+        baselineCommit: input.baseline_commit, ...(input.ttl_ms === undefined ? {} : { ttlMs: input.ttl_ms }),
+      }),
+      "capability.worktree_lifecycle/cleanup": ({ input }) =>
+        workspace.cleanupAgentWorktree(input.allocation),
+      "capability.canonical_publication/prepare": ({ input }) => workspace.preparePublication({
+        operationId: input.operation_id, targetBranch: input.target_branch,
+        expectedParent: input.expected_parent, checkpoint: input.checkpoint,
+        manifest: input.manifest, authorization: input.authorization, message: input.message,
+      }),
+      "capability.canonical_publication/seal_validation": ({ input }) =>
+        workspace.sealPublication({ operationId: input.operation_id,
+          preparationRevision: input.preparation_revision, validation: input.validation }),
+      "capability.canonical_publication/promote": ({ input }) =>
+        workspace.promotePublication({ operationId: input.operation_id,
+          preparedRevision: input.prepared_revision,
+          ...(input.publication_ttl_ms === undefined ? {} : { publicationTtlMs: input.publication_ttl_ms }) }),
+      "capability.canonical_publication/reconcile": ({ input }) =>
+        workspace.reconcilePublication({ operationId: input.operation_id,
+          preparedRevision: input.prepared_revision }),
+      "capability.completion_publication/prepare": ({ input }) =>
+        completionPublication.prepare({ offer: input.offer,
+          acceptedCheckpoint: input.accepted_checkpoint }),
+      "capability.completion_publication/complete": ({ input }) =>
+        completionPublication.complete({ offer: input.offer,
+          preparationRevision: input.preparation_revision, validation: input.validation }),
+      "capability.completion_publication/reconcile": ({ input }) =>
+        completionPublication.reconcile({ offer: input.offer,
+          preparationRevision: input.preparation_revision }),
     };
     const registrations = [];
     for (const [capability, operations] of Object.entries(supervisorCampaignCapabilityOperations)) {
@@ -110,6 +158,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         if (closed) return;
         closed = true;
         runtime.close();
+        workspace.close();
         store.close();
       },
       identity: Object.freeze({
@@ -117,10 +166,14 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         capabilities: Object.keys(supervisorCampaignCapabilityOperations).sort(),
         legacy: legacy.identity,
         state_path: store.filePath,
+        workspace: Object.freeze({
+          repository: workspace.repository,
+          canonical_branches: workspace.canonicalBranches,
+        }),
       }),
     });
   } catch (error) {
-    if (!closed) store.close();
+    if (!closed) { try { workspace?.close(); } finally { store.close(); } }
     throw error;
   }
 }

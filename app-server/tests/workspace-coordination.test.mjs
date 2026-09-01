@@ -11,6 +11,8 @@ import {
   createWorkspaceCoordinationService, InMemoryWorkspaceCoordinationStore,
   openSqliteWorkspaceCoordinationStore, openWorkspaceDevelopmentRuntime,
 } from "../src/index.mjs";
+import { createCompletionPublicationService } from "../src/services/slice-campaign/completion-publication.mjs";
+import { canonicalJson, digest as workspaceDigest } from "../src/services/workspace-coordination/contract.mjs";
 
 function git(repository, ...args) {
   return execFileSync("git", ["-C", repository, ...args], { encoding: "utf8" }).trim();
@@ -66,6 +68,85 @@ function publicationAuthorization(checkpoint, targetBranch, paths) {
     decision: "create", reference: "user:test", paths,
     checkpointCommitOid: checkpoint.commitOid, checkpointTreeOid: checkpoint.treeOid, targetBranch,
   };
+}
+
+function makeAcceptedLifecycleCheckpoint(repository, compact, runId) {
+  const paths = [{
+    path: "task.txt", action: "include", attribution: "task_owned",
+    content_digest: createHash("sha256").update(git(repository, "show", `${compact.commitOid}:task.txt`)).digest("hex"),
+  }];
+  const manifestDigest = workspaceDigest(paths);
+  const candidateCheckpointId = sha256ForTest(`candidate:${runId}`);
+  const metadata = {
+    work_engine_checkpoint: 1, kind: "accepted", candidate_checkpoint_id: candidateCheckpointId,
+    run_id: runId, slice_number: 1, candidate_attempt: 1, tree: compact.treeOid,
+    task_patch_digest: compact.taskPatchDigest, manifest_digest: manifestDigest,
+    gate_receipt_digest: compact.gateReceiptDigest, plan_version: compact.planVersion,
+    scope_revision: compact.scopeRevision,
+  };
+  const commit = spawnSync("git", ["-C", repository, "commit-tree", compact.treeOid, "-p", compact.commitOid], {
+    encoding: "utf8", input: `${JSON.stringify(metadata)}\n`,
+  });
+  assert.equal(commit.status, 0, commit.stderr);
+  const commitOid = commit.stdout.trim();
+  const ref = `refs/work-engine/checkpoints/${runId}/slice-1/accepted`;
+  git(repository, "update-ref", ref, commitOid);
+  return {
+    schema_version: 1, checkpoint_id: workspaceDigest(metadata), checkpoint_kind: "accepted",
+    repository, run_id: runId, slice_number: 1, candidate_attempt: 1,
+    baseline_commit_oid: compact.baselineCommitOid,
+    baseline_tree_oid: git(repository, "rev-parse", `${compact.baselineCommitOid}^{tree}`),
+    checkpoint_commit_oid: commitOid, checkpoint_tree_oid: compact.treeOid,
+    parent_checkpoint_commit_oid: compact.commitOid, plan_version: compact.planVersion,
+    scope_revision: compact.scopeRevision, gate_receipt_digest: compact.gateReceiptDigest,
+    task_patch_digest: compact.taskPatchDigest, paths, ref, manifest_digest: manifestDigest,
+    created_at: "2026-09-01T11:30:00-06:00", limitations: [],
+    candidate_checkpoint_id: candidateCheckpointId,
+  };
+}
+
+function sha256ForTest(value) { return createHash("sha256").update(value).digest("hex"); }
+
+function writeBlob(repository, value) {
+  const result = spawnSync("git", ["-C", repository, "hash-object", "-w", "--stdin"], {
+    encoding: "utf8", input: canonicalJson(value),
+  });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim();
+}
+
+function createAuthorizedOffer(repository, checkpoint, {
+  branch = "human", expectedParent, runId = "completion-a3b", sliceNumber = 1,
+} = {}) {
+  const proposal = {
+    schema_version: 2, subject: "publish accepted completion", body: "through the native host",
+    paths: ["task.txt"], checkpoint_commit_oid: checkpoint.checkpoint_commit_oid,
+    checkpoint_tree_oid: checkpoint.checkpoint_tree_oid, task_patch_digest: checkpoint.task_patch_digest,
+    provenance: { schema_version: 1, producer: "test-supervisor", evidence: [
+      { kind: "accepted-checkpoint", digest: checkpoint.gate_receipt_digest },
+    ] },
+  };
+  const request = {
+    repository, run_id: runId, slice_number: sliceNumber,
+    expected_branch: branch, expected_head_oid: expectedParent,
+    accepted_paths: [{ path: "task.txt", action: "include" }], proposal,
+  };
+  const offerId = workspaceDigest(request);
+  const opened = {
+    schema_version: 2, offer_id: offerId, state: "open", request,
+    result: null, reason: null, prior_oid: null, decision: null,
+  };
+  const priorOid = writeBlob(repository, opened);
+  const authorized = {
+    ...opened, state: "create_authorized", prior_oid: priorOid,
+    decision: { decision: "create", authority: {
+      kind: "human", reference: "user:a3b-test", observed_at: "2026-09-01T11:30:00-06:00",
+    } },
+  };
+  const artifactOid = writeBlob(repository, authorized);
+  const ref = `refs/work-engine/completion-offers/${runId}/slice-${sliceNumber}`;
+  git(repository, "update-ref", ref, artifactOid);
+  return { ...authorized, artifact_oid: artifactOid, ref };
 }
 
 test("SQLite coordination persists generations and rejects stale mutation admission", async (t) => {
@@ -191,6 +272,267 @@ test("App Server runtime assigns worktrees and confines publication to configure
   assert.equal(result.acceptedCheckpoint.commitOid, checkpoint.commitOid);
   assert.deepEqual(result.observedBranchGeneration, { resourceGeneration: 1, tip: result.commit });
   assert.equal(git(fixture.root, "rev-parse", "canonical"), result.commit);
+});
+
+test("prepared publication survives restart and requires an explicit checked-out-branch transition", async (t) => {
+  const fixture = await repositoryFixture(t);
+  git(fixture.root, "branch", "recovery", fixture.base);
+  const taskRuntime = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  const task = taskRuntime.allocateAgentWorktree({
+    operationId: "prepared-task", agentId: "builder", intentId: "prepared-task",
+    baselineCommit: fixture.base,
+  });
+  await writeFile(path.join(task.path, "task.txt"), "accepted\n");
+  git(task.path, "add", "task.txt"); git(task.path, "commit", "--quiet", "-m", "checkpoint");
+  const candidateCommit = git(task.path, "rev-parse", "HEAD");
+  const checkpointTree = git(task.path, "rev-parse", "HEAD^{tree}");
+  taskRuntime.cleanupAgentWorktree(task);
+  const checkpoint = makeAcceptedCheckpoint(fixture.root, fixture.base, candidateCommit, checkpointTree);
+
+  await writeFile(path.join(fixture.root, "staged.txt"), "staged human work\n");
+  git(fixture.root, "add", "staged.txt");
+  await writeFile(path.join(fixture.root, "base.txt"), "unstaged human work\n");
+  await writeFile(path.join(fixture.root, "untracked.txt"), "untracked human work\n");
+  const before = {
+    head: git(fixture.root, "rev-parse", "HEAD"),
+    symbolic: git(fixture.root, "symbolic-ref", "HEAD"),
+    index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+    base: await readFile(path.join(fixture.root, "base.txt"), "utf8"),
+    staged: await readFile(path.join(fixture.root, "staged.txt"), "utf8"),
+    untracked: await readFile(path.join(fixture.root, "untracked.txt"), "utf8"),
+  };
+  const request = {
+    operationId: "prepared-publish", targetBranch: "human", expectedParent: fixture.base,
+    checkpoint, manifest: [{ path: "task.txt", action: "include" }],
+    authorization: publicationAuthorization(checkpoint, "human", ["task.txt"]),
+    message: { subject: "prepared publication", body: "preserve human checkout" },
+  };
+  const prepared = taskRuntime.preparePublication(request);
+  assert.equal(prepared.record.status, "prepared");
+  assert.throws(() => taskRuntime.preparePublication({
+    ...request, message: { subject: "different operation bytes", body: "" },
+  }), /conflicts with its durable request binding/);
+  const wrong = {
+    schemaVersion: 1, status: "passed", tree: "0".repeat(40), profile: "test",
+    requirements: ["integrated_tree"], gateResult: { status: "passed" },
+  };
+  await assert.rejects(async () => taskRuntime.sealPublication({
+    operationId: request.operationId, preparationRevision: prepared.revision,
+    validation: { ...wrong, receiptDigest: workspaceDigest(wrong) },
+  }), /prepared tree/);
+  const validation = {
+    schemaVersion: 1, status: "passed", tree: prepared.record.tree, profile: "test",
+    requirements: ["integrated_tree"], gateResult: { status: "passed", checks: 1 },
+  };
+  const sealed = taskRuntime.sealPublication({
+    operationId: request.operationId, preparationRevision: prepared.revision,
+    validation: { ...validation, receiptDigest: workspaceDigest(validation) },
+  });
+  assert.equal(sealed.record.status, "sealed");
+  const blocked = taskRuntime.promotePublication({
+    operationId: request.operationId, preparedRevision: sealed.revision,
+  });
+  assert.equal(blocked.status, "checkout_transition_required");
+  assert.deepEqual(blocked.checkedOut, [fixture.root]);
+  taskRuntime.close();
+
+  let restarted = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  t.after(() => restarted.close());
+  assert.equal(restarted.reconcilePublication({
+    operationId: request.operationId, preparedRevision: sealed.revision,
+  }).status, "checkout_transition_required");
+  assert.deepEqual({
+    head: git(fixture.root, "rev-parse", "HEAD"),
+    symbolic: git(fixture.root, "symbolic-ref", "HEAD"),
+    index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+    base: await readFile(path.join(fixture.root, "base.txt"), "utf8"),
+    staged: await readFile(path.join(fixture.root, "staged.txt"), "utf8"),
+    untracked: await readFile(path.join(fixture.root, "untracked.txt"), "utf8"),
+  }, before);
+
+  git(fixture.root, "switch", "--detach", fixture.base);
+  const transitioned = {
+    head: git(fixture.root, "rev-parse", "HEAD"), index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  };
+  const published = restarted.promotePublication({
+    operationId: request.operationId, preparedRevision: sealed.revision,
+  });
+  assert.equal(published.record.status, "published");
+  assert.equal(git(fixture.root, "rev-parse", "human"), sealed.record.commit);
+  assert.deepEqual({
+    head: git(fixture.root, "rev-parse", "HEAD"), index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  }, transitioned);
+  assert.equal((await readFile(path.join(fixture.root, "base.txt"), "utf8")), before.base);
+  assert.equal((await readFile(path.join(fixture.root, "staged.txt"), "utf8")), before.staged);
+  assert.equal((await readFile(path.join(fixture.root, "untracked.txt"), "utf8")), before.untracked);
+
+  const recoveryRequest = {
+    ...request, operationId: "crash-recovery-publish", targetBranch: "recovery",
+    authorization: publicationAuthorization(checkpoint, "recovery", ["task.txt"]),
+  };
+  const recoveryPrepared = restarted.preparePublication(recoveryRequest);
+  const recoveryValidation = {
+    ...validation, tree: recoveryPrepared.record.tree,
+  };
+  const recoverySealed = restarted.sealPublication({
+    operationId: recoveryRequest.operationId,
+    preparationRevision: recoveryPrepared.revision,
+    validation: { ...recoveryValidation, receiptDigest: workspaceDigest(recoveryValidation) },
+  });
+  git(fixture.root, "update-ref", "refs/heads/recovery", recoverySealed.record.commit, fixture.base);
+  const recovered = restarted.reconcilePublication({
+    operationId: recoveryRequest.operationId, preparedRevision: recoverySealed.revision,
+  });
+  assert.equal(recovered.record.status, "published");
+  assert.equal(recovered.record.publication.status, "published_unconfirmed");
+  assert.equal(recovered.record.publication.fencingToken, undefined);
+  restarted.close();
+  restarted = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  assert.equal(restarted.inspectPublication(recoveryRequest.operationId).revision, recovered.revision);
+});
+
+test("completion publication consumes exact durable human authority without widening the offer", async (t) => {
+  const fixture = await repositoryFixture(t);
+  git(fixture.root, "branch", "recovery", fixture.base);
+  let runtime = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  t.after(() => runtime.close());
+  const task = runtime.allocateAgentWorktree({
+    operationId: "completion-task", agentId: "builder", intentId: "completion-task",
+    baselineCommit: fixture.base,
+  });
+  await writeFile(path.join(task.path, "task.txt"), "completion accepted\n");
+  git(task.path, "add", "task.txt"); git(task.path, "commit", "--quiet", "-m", "completion checkpoint");
+  const candidateCommit = git(task.path, "rev-parse", "HEAD");
+  const checkpointTree = git(task.path, "rev-parse", "HEAD^{tree}");
+  runtime.cleanupAgentWorktree(task);
+  const checkpoint = makeAcceptedCheckpoint(fixture.root, fixture.base, candidateCommit, checkpointTree);
+  const acceptedCheckpoint = makeAcceptedLifecycleCheckpoint(fixture.root, checkpoint, "completion-authority");
+  const offer = createAuthorizedOffer(fixture.root, acceptedCheckpoint, { expectedParent: fixture.base });
+  const offerBytes = git(fixture.root, "cat-file", "blob", offer.artifact_oid);
+
+  await writeFile(path.join(fixture.root, "staged.txt"), "human staged\n");
+  git(fixture.root, "add", "staged.txt");
+  await writeFile(path.join(fixture.root, "base.txt"), "human unstaged\n");
+  await writeFile(path.join(fixture.root, "untracked.txt"), "human untracked\n");
+  const before = {
+    head: git(fixture.root, "rev-parse", "HEAD"),
+    symbolic: git(fixture.root, "symbolic-ref", "HEAD"),
+    index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  };
+  let completion = createCompletionPublicationService({ workspace: runtime });
+  assert.throws(() => completion.prepare({
+    offer, acceptedCheckpoint: { ...acceptedCheckpoint, checkpoint_tree_oid: "0".repeat(40) },
+  }), /does not match|lineage is invalid/);
+  assert.throws(() => completion.prepare({
+    offer: { ...offer, decision: { ...offer.decision, authority: {
+      ...offer.decision.authority, reference: "caller-substitution",
+    } } }, acceptedCheckpoint,
+  }), /artifact bytes/);
+  const prepared = completion.prepare({ offer, acceptedCheckpoint });
+  assert.equal(prepared.status, "prepared");
+  assert.equal(prepared.vocabulary, "private_prepared_publication");
+  assert.match(prepared.preparationRevision, /^[0-9a-f]{64}$/);
+  assert.match(prepared.privateRef, /^refs\/work-engine\/workspaces\//);
+  const validation = {
+    schemaVersion: 1, status: "passed", tree: prepared.integratedTree,
+    profile: "completion-a3b", requirements: ["exact_integrated_tree"],
+    gateResult: { status: "passed", checks: ["tree", "authority"] },
+  };
+  validation.receiptDigest = workspaceDigest(validation);
+  const transition = completion.complete({
+    offer, preparationRevision: prepared.preparationRevision, validation,
+  });
+  assert.equal(transition.status, "checkout_transition_required");
+  assert.throws(() => completion.complete({
+    offer, preparationRevision: prepared.preparationRevision,
+    validation: { ...validation, profile: "caller-substitution" },
+  }), /validation conflicts/);
+  runtime.close();
+
+  runtime = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  completion = createCompletionPublicationService({ workspace: runtime });
+  assert.equal(completion.reconcile({
+    offer, preparationRevision: prepared.preparationRevision,
+  }).status, "checkout_transition_required");
+  assert.deepEqual({
+    head: git(fixture.root, "rev-parse", "HEAD"),
+    symbolic: git(fixture.root, "symbolic-ref", "HEAD"),
+    index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  }, before);
+
+  git(fixture.root, "switch", "--detach", fixture.base);
+  const transitioned = {
+    head: git(fixture.root, "rev-parse", "HEAD"), index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  };
+  const published = completion.complete({
+    offer, preparationRevision: prepared.preparationRevision, validation,
+  });
+  assert.equal(published.status, "published");
+  assert.equal(published.vocabulary, "human_visible_ref_observed");
+  assert.equal(published.offerBinding.artifactOid, offer.artifact_oid);
+  assert.equal(published.fencingProvenance, "confirmed");
+  assert.equal(git(fixture.root, "rev-parse", "human"), published.publication.commit);
+  assert.deepEqual({
+    head: git(fixture.root, "rev-parse", "HEAD"), index: git(fixture.root, "write-tree"),
+    status: git(fixture.root, "status", "--porcelain=v2", "--untracked-files=all"),
+  }, transitioned);
+  assert.equal(git(fixture.root, "rev-parse", offer.ref), offer.artifact_oid);
+  assert.equal(git(fixture.root, "cat-file", "blob", offer.artifact_oid), offerBytes);
+  runtime.close();
+
+  runtime = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["human", "recovery"],
+  });
+  completion = createCompletionPublicationService({ workspace: runtime });
+  const recovered = completion.reconcile({
+    offer, preparationRevision: prepared.preparationRevision,
+  });
+  assert.equal(recovered.status, "published");
+  assert.equal(recovered.recordDigest, published.recordDigest);
+
+  const crashOffer = createAuthorizedOffer(fixture.root, acceptedCheckpoint, {
+    branch: "recovery", expectedParent: fixture.base, runId: "completion-crash", sliceNumber: 2,
+  });
+  const crashPrepared = completion.prepare({ offer: crashOffer, acceptedCheckpoint });
+  const crashValidation = {
+    schemaVersion: 1, status: "passed", tree: crashPrepared.integratedTree,
+    profile: "completion-crash", requirements: validation.requirements,
+    gateResult: validation.gateResult,
+  };
+  crashValidation.receiptDigest = workspaceDigest(crashValidation);
+  const crashSealed = runtime.sealPublication({
+    operationId: `completion-${crashOffer.offer_id}`,
+    preparationRevision: crashPrepared.workspacePublicationRevision,
+    validation: crashValidation,
+  });
+  git(fixture.root, "update-ref", "refs/heads/recovery", crashSealed.record.commit, fixture.base);
+  const crashRecovered = completion.reconcile({
+    offer: crashOffer, preparationRevision: crashPrepared.preparationRevision,
+  });
+  assert.equal(crashRecovered.status, "published_unconfirmed");
+  assert.equal(crashRecovered.fencingProvenance, "unconfirmed");
+  assert.equal(crashRecovered.publication.fencingToken, undefined);
+  assert.equal(git(fixture.root, "rev-parse", "recovery"), crashSealed.record.commit);
+  assert.equal(completion.reconcile({
+    offer: crashOffer, preparationRevision: crashPrepared.preparationRevision,
+  }).recordDigest, crashRecovered.recordDigest);
 });
 
 test("canonical publisher integrates, validates, fences, and preserves the checked-out human branch", async (t) => {
@@ -341,7 +683,7 @@ test("publisher refuses checked-out targets, wrong-resource leases, and semantic
   assert.equal((await publisher.publish({
     ...common, targetBranch: "human", lease: humanLease,
     authorization: publicationAuthorization(checkpoint, "human", ["base.txt"]),
-  })).status, "target_checked_out");
+  })).status, "checkout_transition_required");
 
   const canonicalLease = coordination.acquire({ resource: { type: "git-ref", id: `${fixture.root}#refs/heads/canonical` }, holder: "publisher", intentId: "canonical", ttlMs: 60_000 }).lease;
   const candidateOnly = { ...checkpoint, commitOid: candidateCommit, ref: "refs/work-engine/checkpoints/test-candidate/slice-1/candidate-1" };

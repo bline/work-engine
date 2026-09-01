@@ -11,6 +11,12 @@ const CAPABILITIES = Object.freeze({
     "open", "load", "resolve", "reconcile", "expire",
   ]),
   "capability.resume": Object.freeze(["recover_active", "recover_terminal"]),
+  "capability.workspace_coordination": Object.freeze(["acquire", "inspect", "release"]),
+  "capability.worktree_lifecycle": Object.freeze(["allocate", "cleanup"]),
+  "capability.canonical_publication": Object.freeze([
+    "prepare", "seal_validation", "promote", "reconcile",
+  ]),
+  "capability.completion_publication": Object.freeze(["prepare", "complete", "reconcile"]),
 });
 
 const TOOL_NAMES = Object.freeze({
@@ -20,6 +26,10 @@ const TOOL_NAMES = Object.freeze({
   "capability.checkpoint_lifecycle": "checkpoint_lifecycle",
   "capability.completion_offer": "completion_offer",
   "capability.resume": "resume",
+  "capability.workspace_coordination": "workspace_coordination",
+  "capability.worktree_lifecycle": "worktree_lifecycle",
+  "capability.canonical_publication": "canonical_publication",
+  "capability.completion_publication": "completion_publication",
 });
 
 const INPUT_FIELDS = Object.freeze({
@@ -64,6 +74,36 @@ const INPUT_FIELDS = Object.freeze({
   "capability.resume/recover_active": [new Set(["identity"]), new Set()],
   "capability.resume/recover_terminal": [
     new Set(["campaign_preflight", "run_id"]), new Set(),
+  ],
+  "capability.workspace_coordination/acquire": [
+    new Set(["resource", "holder", "intent_id", "ttl_ms"]), new Set(),
+  ],
+  "capability.workspace_coordination/inspect": [new Set(["resource"]), new Set()],
+  "capability.workspace_coordination/release": [new Set(["lease"]), new Set()],
+  "capability.worktree_lifecycle/allocate": [
+    new Set(["operation_id", "agent_id", "intent_id", "baseline_commit"]), new Set(["ttl_ms"]),
+  ],
+  "capability.worktree_lifecycle/cleanup": [new Set(["allocation"]), new Set()],
+  "capability.canonical_publication/prepare": [
+    new Set(["operation_id", "target_branch", "expected_parent", "checkpoint", "manifest", "authorization", "message"]), new Set(),
+  ],
+  "capability.canonical_publication/seal_validation": [
+    new Set(["operation_id", "preparation_revision", "validation"]), new Set(),
+  ],
+  "capability.canonical_publication/promote": [
+    new Set(["operation_id", "prepared_revision"]), new Set(["publication_ttl_ms"]),
+  ],
+  "capability.canonical_publication/reconcile": [
+    new Set(["operation_id", "prepared_revision"]), new Set(),
+  ],
+  "capability.completion_publication/prepare": [
+    new Set(["offer", "accepted_checkpoint"]), new Set(),
+  ],
+  "capability.completion_publication/complete": [
+    new Set(["offer", "preparation_revision", "validation"]), new Set(),
+  ],
+  "capability.completion_publication/reconcile": [
+    new Set(["offer", "preparation_revision"]), new Set(),
   ],
 });
 
@@ -130,6 +170,44 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
   }
   if (capability === "capability.resume" && operation === "recover_terminal") {
     requireText(value.run_id, "campaign run id");
+  }
+  if (capability === "capability.workspace_coordination" && operation !== "release") {
+    requireRecord(value.resource, "workspace resource");
+    exactFields(value.resource, new Set(["type", "id"]), new Set(), "workspace resource");
+    requireText(value.resource.type, "workspace resource type");
+    requireText(value.resource.id, "workspace resource id");
+  }
+  if (capability === "capability.workspace_coordination" && operation === "acquire") {
+    requireText(value.holder, "workspace resource holder");
+    requireText(value.intent_id, "workspace resource intent");
+    if (!Number.isSafeInteger(value.ttl_ms) || value.ttl_ms < 1) throw new TypeError("workspace resource ttl_ms must be positive");
+  }
+  if (capability === "capability.worktree_lifecycle" && operation === "allocate") {
+    for (const [field, label] of [["operation_id", "worktree operation"], ["agent_id", "worktree agent"], ["intent_id", "worktree intent"], ["baseline_commit", "worktree baseline"]]) requireText(value[field], label);
+    if (value.ttl_ms !== undefined && (!Number.isSafeInteger(value.ttl_ms) || value.ttl_ms < 1)) throw new TypeError("worktree ttl_ms must be positive");
+  }
+  if (capability === "capability.canonical_publication") {
+    requireText(value.operation_id, "publication operation");
+    if (operation === "prepare") {
+      requireText(value.target_branch, "publication target branch");
+      requireText(value.expected_parent, "publication expected parent");
+      requireRecord(value.checkpoint, "publication checkpoint");
+      if (!Array.isArray(value.manifest)) throw new TypeError("publication manifest must be an array");
+      requireRecord(value.authorization, "publication authorization");
+      requireRecord(value.message, "publication message");
+    } else {
+      requireText(value[operation === "seal_validation" ? "preparation_revision" : "prepared_revision"], "publication revision");
+      if (operation === "seal_validation") requireRecord(value.validation, "publication validation");
+      if (value.publication_ttl_ms !== undefined && (!Number.isSafeInteger(value.publication_ttl_ms) || value.publication_ttl_ms < 1)) throw new TypeError("publication ttl must be positive");
+    }
+  }
+  if (capability === "capability.completion_publication") {
+    requireRecord(value.offer, "completion publication offer");
+    if (operation === "prepare") requireRecord(value.accepted_checkpoint, "completion publication accepted checkpoint");
+    else {
+      requireText(value.preparation_revision, "completion publication preparation revision");
+      if (operation === "complete") requireRecord(value.validation, "completion publication validation");
+    }
   }
   return structuredClone(value);
 }

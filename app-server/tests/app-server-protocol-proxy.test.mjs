@@ -98,7 +98,7 @@ test("proxy entry composes the stable supervisor campaign capability host", asyn
   const source = await readFile(PROXY_ENTRY, "utf8");
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
   assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot, stateRoot \}\)\s*=>/);
-  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{ workspaceRoot, stateRoot \}\)/);
+  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{[\s\S]*workspaceRoot, stateRoot, canonicalBranches: options\.canonicalBranches/);
 });
 
 async function fixture(t) {
@@ -198,6 +198,7 @@ test("proxy rejects a mismatched selected Codex executable before opening its so
     "app-server/scripts/app-server-proxy.mjs",
     "--socket", socketPath,
     "--codex", executable,
+    "--canonical-branch", "main",
   ]);
 
   assert.equal(result.code, 1);
@@ -218,6 +219,7 @@ test("proxy rejects an unavailable selected Codex executable before opening its 
     "app-server/scripts/app-server-proxy.mjs",
     "--socket", socketPath,
     "--codex", missingExecutable,
+    "--canonical-branch", "main",
   ]);
 
   assert.equal(result.code, 1);

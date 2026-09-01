@@ -73,6 +73,38 @@ export class SqliteWorkspaceCoordinationStore {
       return result;
     });
   }
+  inspectAdmission(operationId) {
+    const row = this.database.prepare(`SELECT resource_key, fencing_token, lease_id,
+      admitted_at, result_json FROM workspace_mutation_admission WHERE operation_id = ?`).get(operationId);
+    return row ? {
+      operationId, resourceKey: row.resource_key, fencingToken: row.fencing_token,
+      leaseId: row.lease_id, admittedAt: row.admitted_at, result: JSON.parse(row.result_json),
+    } : null;
+  }
+  loadPublication(operationId) {
+    const row = this.database.prepare(`SELECT revision, record_json
+      FROM workspace_prepared_publication WHERE operation_id = ?`).get(operationId);
+    return row ? { revision: row.revision, record: JSON.parse(row.record_json) } : null;
+  }
+  savePublication({ operationId, expectedRevision, revision, record }) {
+    return this.#transaction(() => {
+      const current = this.loadPublication(operationId);
+      if (current?.revision === revision) return current;
+      if ((current?.revision ?? null) !== expectedRevision) {
+        throw new Error("prepared publication revision conflict");
+      }
+      if (current) {
+        this.database.prepare(`UPDATE workspace_prepared_publication
+          SET revision = ?, record_json = ? WHERE operation_id = ? AND revision = ?`)
+          .run(revision, JSON.stringify(record), operationId, expectedRevision);
+      } else {
+        this.database.prepare(`INSERT INTO workspace_prepared_publication
+          (operation_id, revision, record_json) VALUES(?,?,?)`)
+          .run(operationId, revision, JSON.stringify(record));
+      }
+      return { revision, record };
+    });
+  }
   close() { if (!this.closed) { this.closed = true; this.database.close(); } }
 }
 
@@ -91,6 +123,9 @@ export async function openSqliteWorkspaceCoordinationStore({ filePath, busyTimeo
     database.exec(`CREATE TABLE IF NOT EXISTS workspace_mutation_admission (
       operation_id TEXT PRIMARY KEY, resource_key TEXT NOT NULL, fencing_token INTEGER NOT NULL,
       lease_id TEXT NOT NULL, admitted_at TEXT NOT NULL, result_json TEXT NOT NULL
+    ) STRICT`);
+    database.exec(`CREATE TABLE IF NOT EXISTS workspace_prepared_publication (
+      operation_id TEXT PRIMARY KEY, revision TEXT NOT NULL, record_json TEXT NOT NULL
     ) STRICT`);
     return new SqliteWorkspaceCoordinationStore(database, resolved);
   } catch (error) { database.close(); throw error; }
