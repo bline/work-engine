@@ -328,7 +328,7 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
   const reconciledState = await new FileExecutableGenerationStore(
     path.join(stateRoot, "generation-state.json"),
   ).read();
-  assert.equal(reconciledState.schemaVersion, 2);
+  assert.equal(reconciledState.schemaVersion, 3);
   assert.equal(reconciledState.startupReconciliations.length, 1);
   assert.equal(
     reconciledState.startupReconciliations[0].successorGenerationId,
@@ -388,6 +388,64 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
     path.join(stateRoot, "generation-state.json"),
   ).read();
   assert.equal(preservedState.activeGeneration.generationId, reconciledGenerationId);
+});
+
+test("bootstrap binds one sealed extension to generation identity and recovers it on restart", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-extension-bootstrap-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const workspaceRoot = path.join(root, "workspace");
+  const stateRoot = path.join(root, "state");
+  for (const relative of [
+    "app-server/src/default-executable-generation-worker.mjs",
+    "app-server/src/executable-generation-worker-runtime.mjs",
+    "app-server/migrations/skills/repo-search/structure.yaml",
+    "app-server/migrations/skills/repo-search/interface.yaml",
+  ]) {
+    await mkdir(path.dirname(path.join(workspaceRoot, relative)), { recursive: true });
+    await copyFile(path.resolve(relative), path.join(workspaceRoot, relative));
+  }
+  const bundle = JSON.parse(await readFile(
+    "app-server/tests/fixtures/run-extension-bundle/sealed-bundle.json", "utf8",
+  ));
+  const delegate = { onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
+    async request(method) { return { method }; } };
+  const first = await createExecutableGenerationBootstrap({
+    workspaceRoot, stateRoot, transport: delegate, workerRequestTimeoutMs: 2_000,
+    extensionHostPolicy: {
+      repositoryRevision: "2af529971c1b5660de4caad7092cd270dcd162eb",
+      allowedCapabilities: ["product-development.intake.read-source"],
+      allowedAdapters: ["product-development.intake.read-source"], allowedProviders: ["local"],
+    },
+  });
+  let staged;
+  await first.manager.runAdmission({ kind: "turn", id: "attach" }, async () => {
+    staged = await first.manager.requestReload({ requestedByTurnId: "attach", source: { extensionBundle: bundle } });
+  });
+  const activated = await staged.completion;
+  assert.match(activated.generationId, /^generation-[0-9a-f]{64}$/);
+  assert.equal(first.manager.activeGeneration.extensionAttachment.bundle_id, "fixture-research");
+  const active = (await new FileExecutableGenerationStore(first.statePath).read()).activeGeneration;
+  assert.match(active.extensionAttachment.sha256, /^[0-9a-f]{64}$/);
+  await first.close();
+
+  const restarted = await createExecutableGenerationBootstrap({
+    workspaceRoot, stateRoot, transport: delegate, workerRequestTimeoutMs: 2_000,
+  });
+  assert.equal(restarted.startupSelection.outcome, "durable_active_current");
+  assert.equal(restarted.manager.snapshot().activeGeneration.generationId, active.generationId);
+  await restarted.close();
+
+  const rebound = await createExecutableGenerationBootstrap({
+    workspaceRoot, stateRoot, transport: delegate, workerRequestTimeoutMs: 2_000,
+    bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-extension-reconcile-v2",
+  });
+  assert.equal(rebound.startupSelection.outcome, "bootstrap_restart_completed");
+  const reboundActive = (await new FileExecutableGenerationStore(rebound.statePath).read())
+    .activeGeneration;
+  assert.equal(reboundActive.extensionAttachment.sha256, active.extensionAttachment.sha256);
+  assert.equal(rebound.manager.activeGeneration.extensionAttachment.sha256,
+    active.extensionAttachment.sha256);
+  await rebound.close();
 });
 
 test("bootstrap refuses a workspace edit that changes the environment fingerprint", async (t) => {

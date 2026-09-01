@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const SCHEMA_VERSION = 2;
+import { assertExtensionTransition, extensionReceipt } from "./run-extension-bundle-contract.mjs";
+
+const SCHEMA_VERSION = 3;
 
 const TRANSITIONS = new Map([
   ["requested", new Set(["draining"])],
@@ -40,8 +42,9 @@ function blankState() {
 
 function migrateState(value) {
   if (value?.schemaVersion === 1) {
-    return { ...value, schemaVersion: SCHEMA_VERSION, startupReconciliations: [] };
+    value = { ...value, schemaVersion: 2, startupReconciliations: [] };
   }
+  if (value?.schemaVersion === 2) return { ...value, schemaVersion: SCHEMA_VERSION };
   return value;
 }
 
@@ -223,6 +226,7 @@ export class FileExecutableGenerationStore {
         acceptedTurnId: null,
         producedEffects: [],
         predecessorRetirement: null,
+        extension: null,
         history: [{ status: "requested", recordedAt, details: {} }],
       };
       await this.#writeState({
@@ -231,6 +235,27 @@ export class FileExecutableGenerationStore {
         reloads: { ...state.reloads, [reloadId]: reload },
       });
       return clone(reload);
+    });
+  }
+
+  bindExtension({ reloadId, attachment, baseSourceDigest }) {
+    text(attachment?.sha256, "extension attachment digest");
+    text(baseSourceDigest, "extension base source digest");
+    return this.#write(async () => {
+      const state = await this.#readState();
+      const reload = state.reloads[reloadId];
+      if (!reload || reload.status !== "snapshotting" || reload.extension !== null) {
+        throw new ExecutableGenerationConflictError("reload cannot bind extension attachment");
+      }
+      const recordedAt = this.now();
+      const extension = {
+        attachment: clone(attachment), baseSourceDigest, state: "admitted",
+        history: [{ state: "admitted", recordedAt, details: {} }],
+        receipt: extensionReceipt(attachment, "admitted"),
+      };
+      await this.#writeState({ ...state, revision: state.revision + 1,
+        reloads: { ...state.reloads, [reloadId]: { ...reload, extension, updatedAt: recordedAt } } });
+      return clone(extension);
     });
   }
 
@@ -281,6 +306,15 @@ export class FileExecutableGenerationStore {
         activatedByReloadId: reloadId,
         activatedAt: recordedAt,
       };
+      if (reload.extension) {
+        assertExtensionTransition(reload.extension.state, "activated");
+        const extension = { ...reload.extension, state: "activated",
+          history: [...reload.extension.history, { state: "activated", recordedAt, details: {} }],
+          receipt: extensionReceipt(reload.extension.attachment, "activated") };
+        activeGeneration.extensionAttachment = clone(extension.attachment);
+        activeGeneration.baseSourceDigest = reload.extension.baseSourceDigest;
+        reload.extension = extension;
+      }
       const nextReload = {
         ...reload,
         successorGenerationId: successor.generationId,
@@ -300,6 +334,29 @@ export class FileExecutableGenerationStore {
         reloads: { ...state.reloads, [reloadId]: nextReload },
       });
       return clone(nextReload);
+    });
+  }
+
+  transitionExtension({ generationId, state: nextState, details = {} }) {
+    return this.#write(async () => {
+      const state = await this.#readState();
+      if (state.activeGeneration?.generationId !== generationId) {
+        throw new ExecutableGenerationConflictError("extension generation is not active");
+      }
+      const reloadId = state.activeGeneration.activatedByReloadId;
+      const reload = state.reloads[reloadId];
+      if (!reload?.extension) throw new ExecutableGenerationConflictError("active extension is missing");
+      if (nextState === "executed" && reload.status !== "active_exercised") {
+        throw new ExecutableGenerationConflictError("extension generation has not been exercised");
+      }
+      assertExtensionTransition(reload.extension.state, nextState);
+      const recordedAt = this.now();
+      const extension = { ...reload.extension, state: nextState,
+        history: [...reload.extension.history, { state: nextState, recordedAt, details: clone(details) }],
+        receipt: extensionReceipt(reload.extension.attachment, nextState, details) };
+      await this.#writeState({ ...state, revision: state.revision + 1,
+        reloads: { ...state.reloads, [reloadId]: { ...reload, extension, updatedAt: recordedAt } } });
+      return clone(extension.receipt);
     });
   }
 

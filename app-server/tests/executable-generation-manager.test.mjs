@@ -47,6 +47,41 @@ async function managerFixture(t, { candidate = generation("g2"), arbiter = null 
   return { manager, store, substrateArbiter };
 }
 
+test("extension attachment shares generation lifecycle, store, admission, and terminal receipts", async (t) => {
+  const attachment = {
+    schema_version: 1, bundle_id: "fixture", sha256: "a".repeat(64),
+    run: { retention: "retain" }, registry: [],
+  };
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-extension-manager-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = new FileExecutableGenerationStore(path.join(root, "generations.json"));
+  const manager = await ExecutableGenerationManager.create({
+    activeGeneration: generation("g1"), store,
+    substrateArbiter: new InMemoryReplaceableSubstrateArbiter(),
+    snapshotter: async () => ({ snapshotId: "g2", sourceDigest: "source-g2",
+      extensionAttachment: attachment, baseSourceDigest: "source-g1" }),
+    candidateBuilder: async () => generation("g2"), reloadIdFactory: () => "reload-extension",
+  });
+  let staged;
+  await manager.runAdmission({ kind: "turn", id: "trigger" }, async () => {
+    staged = await manager.requestReload({ requestedByTurnId: "trigger", source: { extensionBundle: {} } });
+  });
+  assert.equal((await staged.completion).status, "active_unexercised");
+  await manager.runAdmission({ kind: "turn", id: "extension-run" }, async () => {
+    for (const state of ["executed", "artifact_sealed", "detached", "retained"]) {
+      const receipt = await manager.recordExtensionTransition({ admissionId: "extension-run", state,
+        details: state === "executed" ? { workload: "succeeded", transport: "succeeded" }
+          : state === "artifact_sealed" ? { artifact: "sealed" } : {} });
+      assert.equal(receipt.production_admission, false);
+    }
+  });
+  const durable = await store.read();
+  assert.equal(durable.activeGeneration.extensionAttachment.sha256, attachment.sha256);
+  assert.equal(durable.reloads["reload-extension"].extension.state, "retained");
+  await assert.rejects(manager.recordExtensionTransition({ admissionId: "missing", state: "cleaned" }),
+    /active generation-bound admission/);
+});
+
 test("fences new admissions synchronously and swaps generations only after global quiescence", async (t) => {
   const events = [];
   const candidate = generation("g2", {
@@ -208,7 +243,7 @@ test("migrates version-1 state and atomically records startup reconciliation", a
   });
 
   const migrated = await store.read();
-  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.schemaVersion, 3);
   assert.deepEqual(migrated.startupReconciliations, []);
   const receipt = await store.activateStartupCandidate({
     expectedActiveGenerationId: "g1",
@@ -219,7 +254,7 @@ test("migrates version-1 state and atomically records startup reconciliation", a
   assert.equal(receipt.successorGenerationId, "g2");
 
   const state = await store.read();
-  assert.equal(state.schemaVersion, 2);
+  assert.equal(state.schemaVersion, 3);
   assert.equal(state.activeGeneration.generationId, "g2");
   assert.equal(state.startupReconciliations.length, 1);
   const restarted = await store.activateStartupCandidate({

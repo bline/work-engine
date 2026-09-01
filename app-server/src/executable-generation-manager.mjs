@@ -29,6 +29,10 @@ function generationRecord(generation) {
       generation?.bootstrapFingerprint,
       "generation bootstrap fingerprint",
     ),
+    ...(generation?.extensionAttachment ? {
+      extensionAttachment: structuredClone(generation.extensionAttachment),
+      baseSourceDigest: text(generation.baseSourceDigest, "generation base source digest"),
+    } : {}),
   };
 }
 
@@ -372,6 +376,13 @@ export class ExecutableGenerationManager {
     } catch (error) {
       return this.#fail(context, "snapshotting", "snapshot_invalid", error);
     }
+    if (snapshot.extensionAttachment) {
+      await this.store.bindExtension({
+        reloadId: context.reloadId,
+        attachment: snapshot.extensionAttachment,
+        baseSourceDigest: snapshot.baseSourceDigest,
+      });
+    }
     await this.store.transition({
       reloadId: context.reloadId,
       expectedStatus: "snapshotting",
@@ -449,7 +460,13 @@ export class ExecutableGenerationManager {
       await this.store.activate({
         reloadId: context.reloadId,
         expectedActiveGenerationId: predecessor.generationId,
-        successor: { ...successor, sourceDigest: snapshot.sourceDigest },
+        successor: {
+          ...successor, sourceDigest: snapshot.sourceDigest,
+          ...(snapshot.extensionAttachment ? {
+            extensionAttachment: snapshot.extensionAttachment,
+            baseSourceDigest: snapshot.baseSourceDigest,
+          } : {}),
+        },
         details: { sourceDigest: snapshot.sourceDigest },
       });
     } catch (error) {
@@ -459,6 +476,10 @@ export class ExecutableGenerationManager {
     this.activeGeneration = runtimeGeneration(candidate, {
       ...successor,
       sourceDigest: snapshot.sourceDigest,
+      ...(snapshot.extensionAttachment ? {
+        extensionAttachment: snapshot.extensionAttachment,
+        baseSourceDigest: snapshot.baseSourceDigest,
+      } : {}),
     }, context.reloadId);
     const result = {
       status: "active_unexercised",
@@ -495,6 +516,24 @@ export class ExecutableGenerationManager {
 
   async recordEffect({ generationId, effectId }) {
     return this.store.recordEffect({ generationId, effectId });
+  }
+
+  async recordExtensionTransition({ admissionId, state, details = {} }) {
+    const admission = this.admissions.get(admissionId);
+    if (!admission || admission.generationId !== this.activeGeneration.generationId) {
+      throw new ExecutableGenerationAdmissionError(
+        "extension_transition_outside_admission",
+        "extension transition requires active generation-bound admission",
+      );
+    }
+    if (!this.activeGeneration.extensionAttachment) {
+      throw new ExecutableGenerationAdmissionError(
+        "extension_not_active", "active generation has no extension attachment",
+      );
+    }
+    return this.store.transitionExtension({
+      generationId: admission.generationId, state, details,
+    });
   }
 
   async close({ abandonActiveWork = false } = {}) {

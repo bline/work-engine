@@ -13,6 +13,7 @@ import {
   projectRuntimeManifest,
 } from "./runtime-manifest.mjs";
 import { loadSemanticContextRuntimeProfile } from "./semantic-context-runtime-profile.mjs";
+import { compileRunExtensionBundle } from "./run-extension-bundle-compiler.mjs";
 
 export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/default-executable-generation-worker.mjs",
@@ -43,6 +44,8 @@ export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/context-pressure-recovery.mjs",
   "app-server/src/context-transition-lease.mjs",
   "app-server/src/dynamic-tool-bridge.mjs",
+  "app-server/src/run-extension-bundle-contract.mjs",
+  "app-server/src/run-extension-registry.mjs",
   "app-server/src/continuation-state.mjs",
   "app-server/src/human-interaction-evaluation.mjs",
   "app-server/src/local-semantic-shadow-host.mjs",
@@ -91,6 +94,10 @@ function record(snapshot, { environmentFingerprint, bootstrapFingerprint }) {
     sourceDigest: snapshot.sourceDigest,
     environmentFingerprint,
     bootstrapFingerprint,
+    ...(snapshot.extensionAttachment ? {
+      extensionAttachment: structuredClone(snapshot.extensionAttachment),
+      baseSourceDigest: snapshot.baseSourceDigest,
+    } : {}),
   };
 }
 
@@ -114,6 +121,10 @@ function generationFromWorker(worker) {
     sourceDigest: worker.sourceDigest,
     environmentFingerprint: worker.environmentFingerprint,
     bootstrapFingerprint: worker.bootstrapFingerprint,
+    ...(worker.extensionAttachment ? {
+      extensionAttachment: structuredClone(worker.extensionAttachment),
+      baseSourceDigest: worker.baseSourceDigest,
+    } : {}),
   };
 }
 
@@ -236,6 +247,7 @@ export async function createExecutableGenerationBootstrap({
   substrateArbiter = new InMemoryReplaceableSubstrateArbiter(),
   workerRequestTimeoutMs = 10_000,
   workerDispatchTimeoutMs = 30 * 60_000,
+  extensionHostPolicy = {},
 } = {}) {
   if (!transport) throw new TypeError("executable generation bootstrap requires a transport");
   const source = runtimeManifestPath === null
@@ -274,13 +286,47 @@ export async function createExecutableGenerationBootstrap({
     );
   }
   const workspaceDiffers = Boolean(stored.activeGeneration)
-    && !sameSnapshotIdentity(currentSnapshot, stored.activeGeneration);
+    && !sameSnapshotIdentity(currentSnapshot, stored.activeGeneration)
+    && !(stored.activeGeneration.extensionAttachment
+      && stored.activeGeneration.baseSourceDigest === currentSnapshot.sourceDigest);
   const bootstrapDiffers = Boolean(stored.activeGeneration)
     && stored.activeGeneration.bootstrapFingerprint !== bootstrapFingerprint;
   const reconcileStartup = workspaceDiffers || bootstrapDiffers;
-  const activeSnapshot = reconcileStartup || !stored.activeGeneration
-    ? currentSnapshot
-    : snapshotFromStored(generationsRoot, stored.activeGeneration);
+  if (workspaceDiffers && stored.activeGeneration?.extensionAttachment) {
+    throw startupError(
+      "extension_reconciliation_required",
+      "active extension attachment cannot be rebound across executable source reconciliation",
+      stored,
+      currentSnapshot,
+      {
+        attachmentSha256: stored.activeGeneration.extensionAttachment.sha256,
+        workspaceDiffers,
+        bootstrapDiffers,
+      },
+    );
+  }
+  let activeSnapshot;
+  if (bootstrapDiffers && stored.activeGeneration?.extensionAttachment) {
+    const extensionPath = "app-server/generated/run-extension-attachment.json";
+    const rebound = await captureExecutableGenerationSnapshot({
+      workspaceRoot,
+      generationsRoot,
+      files: source.files,
+      generatedFiles: {
+        ...source.generatedFiles,
+        [extensionPath]: `${JSON.stringify(stored.activeGeneration.extensionAttachment, null, 2)}\n`,
+      },
+    });
+    activeSnapshot = {
+      ...rebound,
+      extensionAttachment: structuredClone(stored.activeGeneration.extensionAttachment),
+      baseSourceDigest: currentSnapshot.sourceDigest,
+    };
+  } else {
+    activeSnapshot = reconcileStartup || !stored.activeGeneration
+      ? currentSnapshot
+      : snapshotFromStored(generationsRoot, stored.activeGeneration);
+  }
 
   const spawnSnapshot = async (snapshot, generationRecord = record(snapshot, {
     environmentFingerprint,
@@ -292,7 +338,7 @@ export async function createExecutableGenerationBootstrap({
       await access(roleConfigPath);
       roleEnvironment = true;
     } catch {}
-    return ForkedExecutableGenerationWorker.spawn({
+    const worker = await ForkedExecutableGenerationWorker.spawn({
       entryPath: path.join(snapshot.directory, ...entryRelativePath.split("/")),
       cwd: workerCwd,
       requestTimeoutMs: workerRequestTimeoutMs,
@@ -311,9 +357,19 @@ export async function createExecutableGenerationBootstrap({
           WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES: JSON.stringify(configuredProviderFeatures),
           WORK_ENGINE_LIVE_REPOSITORY_ROOT: path.resolve(workspaceRoot),
           WORK_ENGINE_DEVELOPMENT_ARTIFACT_ROOT: path.resolve(developmentArtifactRoot),
+          ...(generationRecord.extensionAttachment ? {
+            WORK_ENGINE_RUN_EXTENSION_ATTACHMENT_PATH: path.join(
+              snapshot.directory, "app-server/generated/run-extension-attachment.json",
+            ),
+          } : {}),
         } : {}),
       },
     });
+    if (generationRecord.extensionAttachment) {
+      worker.extensionAttachment = structuredClone(generationRecord.extensionAttachment);
+      worker.baseSourceDigest = generationRecord.baseSourceDigest;
+    }
+    return worker;
   };
 
   const activeRecord = reconcileStartup || !stored.activeGeneration
@@ -365,12 +421,25 @@ export async function createExecutableGenerationBootstrap({
       activeGeneration: activeWorker,
       store,
       substrateArbiter,
-      snapshotter: async () => captureExecutableGenerationSnapshot({
-        workspaceRoot,
-        generationsRoot,
-        files: source.files,
-        generatedFiles: source.generatedFiles,
-      }),
+      snapshotter: async (reloadSource = {}) => {
+        if (!reloadSource.extensionBundle) return captureExecutableGenerationSnapshot({
+          workspaceRoot, generationsRoot, files: source.files, generatedFiles: source.generatedFiles,
+        });
+        const base = await captureExecutableGenerationSnapshot({
+          workspaceRoot, generationsRoot, files: source.files, generatedFiles: source.generatedFiles,
+        });
+        const attachment = await compileRunExtensionBundle(reloadSource.extensionBundle, {
+          workspaceRoot, ...extensionHostPolicy,
+        });
+        const extensionPath = "app-server/generated/run-extension-attachment.json";
+        const snapshot = await captureExecutableGenerationSnapshot({
+          workspaceRoot, generationsRoot,
+          files: source.files,
+          generatedFiles: { ...source.generatedFiles,
+            [extensionPath]: `${JSON.stringify(attachment, null, 2)}\n` },
+        });
+        return { ...snapshot, extensionAttachment: attachment, baseSourceDigest: base.sourceDigest };
+      },
       candidateBuilder: async (snapshot) => spawnSnapshot(snapshot),
     });
     const dispatchHost = new ExecutableGenerationDispatchHost(manager);

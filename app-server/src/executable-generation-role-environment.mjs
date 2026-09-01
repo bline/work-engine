@@ -253,6 +253,7 @@ export async function createExecutableGenerationRoleEnvironment({
   dynamicTools = [],
   roleToolBridgeResolver = null,
   productDevelopmentEnvironmentIdentity = null,
+  extensionRegistryIdentity = null,
   now = () => Date.now(),
 } = {}) {
   const root = path.resolve(requireText(snapshotRoot, "generation snapshot root"));
@@ -353,6 +354,7 @@ export async function createExecutableGenerationRoleEnvironment({
         semanticContextProfileSha256: config.semanticContext?.profile?.source?.sha256 ?? null,
         toolSpecification: dynamicTools,
         productDevelopmentEnvironmentIdentity,
+        extensionRegistryIdentity,
       })).digest("hex")}`;
     },
 

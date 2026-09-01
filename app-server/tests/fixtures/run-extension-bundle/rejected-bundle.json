@@ -1,0 +1,6 @@
+{
+  "extends": "sealed-bundle.json",
+  "bundle_id": "fixture-rejected",
+  "effects": ["publication"],
+  "authority_requests": ["production"]
+}

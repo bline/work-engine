@@ -1,0 +1,11 @@
+{
+  "extends": "sealed-bundle.json",
+  "bundle_id": "linguistic-register-dry-run",
+  "run": {
+    "retention": "clean",
+    "namespace": "linguistic-dry-run",
+    "artifact_root": "linguistic-dry-run/artifacts",
+    "scratch_root": "linguistic-dry-run/scratch"
+  },
+  "authority_requests": []
+}

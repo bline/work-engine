@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 import { runExecutableGenerationWorker } from "./executable-generation-worker-runtime.mjs";
 
@@ -29,7 +30,9 @@ function withEnvironmentTools(params) {
   if (existing.some((tool) => tool?.name === "environment")) {
     throw new Error("environment dynamic tool namespace is already declared");
   }
-  return { ...params, dynamicTools: [...existing, ...ENVIRONMENT_TOOLS] };
+  return { ...params, dynamicTools: [
+    ...existing, ...ENVIRONMENT_TOOLS, ...(roleEnvironment?.extensionRegistry?.specs ?? []),
+  ] };
 }
 
 function forwardedRequest(payload) {
@@ -54,6 +57,7 @@ function forwardedRequest(payload) {
 const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === "1"
   ? await (async () => {
     const { DynamicToolBridge } = await import("./dynamic-tool-bridge.mjs");
+    const { createRunExtensionRegistry } = await import("./run-extension-registry.mjs");
     const { ProductDevelopmentArtifactRoot } = await import(
       "./services/product-development/artifact-root.mjs"
     );
@@ -82,6 +86,16 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
         handler: definition.name === "read_intake" ? proposal.readIntake : proposal.publish,
       }]),
     ]);
+    const attachmentPath = process.env.WORK_ENGINE_RUN_EXTENSION_ATTACHMENT_PATH;
+    const extensionAttachment = attachmentPath
+      ? JSON.parse(await readFile(attachmentPath, "utf8")) : null;
+    const extensionRegistry = extensionAttachment
+      ? createRunExtensionRegistry(extensionAttachment, new Map(
+        [...catalog.entries()].map(([id, definition]) => [id,
+          definition.name === "read_source" ? intake.readSource
+            : definition.name === "read_intake" ? proposal.readIntake
+              : definition.name === "publish_intake" ? intake.publish : proposal.publish]),
+      )) : null;
     const roleToolBridgeResolver = (capabilityIds) => {
       if (!Array.isArray(capabilityIds)) throw new TypeError("role capabilities must be an array");
       const registrations = capabilityIds.map((id) => {
@@ -91,7 +105,7 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       });
       return registrations.length === 0 ? null : new DynamicToolBridge(registrations);
     };
-    return createExecutableGenerationRoleEnvironment({
+    const environment = await createExecutableGenerationRoleEnvironment({
       snapshotRoot: process.env.WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT,
       bindingsPath: process.env.WORK_ENGINE_ROLE_BINDINGS_PATH,
       attachmentPath: process.env.WORK_ENGINE_SWITCHBOARD_ATTACHMENT_PATH,
@@ -102,7 +116,9 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       dynamicTools: ENVIRONMENT_TOOLS,
       roleToolBridgeResolver,
       productDevelopmentEnvironmentIdentity: artifacts.environmentIdentity(),
+      extensionRegistryIdentity: extensionRegistry?.attachment_sha256 ?? null,
     });
+    return Object.freeze({ ...environment, extensionRegistry });
   })()
   : null;
 
@@ -130,6 +146,14 @@ runExecutableGenerationWorker({
         if (payload.params.tool === "reload") {
           return { disposition: "control", control: "environment.reload" };
         }
+      }
+      if (roleEnvironment?.extensionRegistry
+          && payload?.method === "item/tool/call"
+          && payload.params?.namespace === roleEnvironment.extensionRegistry.specs[0]?.name) {
+        return {
+          disposition: "respond",
+          result: await roleEnvironment.extensionRegistry.bridge.dispatch(payload.params),
+        };
       }
       if (roleEnvironment) return roleEnvironment.handleServerRequest(payload);
       return { disposition: "forward" };
