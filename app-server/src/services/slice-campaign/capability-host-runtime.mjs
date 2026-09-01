@@ -13,6 +13,7 @@ import { createSliceCampaignService } from "./service.mjs";
 import { openSqliteSliceCampaignStore } from "./sqlite-store.mjs";
 import { openWorkspaceDevelopmentRuntime } from "../workspace-coordination/runtime.mjs";
 import { createCompletionPublicationService } from "./completion-publication.mjs";
+import { createStrategicReconciliationHost } from "./strategic-reconciliation.mjs";
 
 function wrap(generationId, capability, operation, result) {
   return {
@@ -43,6 +44,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
     const reviewSubject = createReviewSubjectService({ workspaceRoot });
     const implementationReview = createImplementationReviewService();
     const completionPublication = createCompletionPublicationService({ workspace });
+    const strategicReconciliation = createStrategicReconciliationHost();
     const service = createSliceCampaignService({
       store,
       reviewSubject,
@@ -131,6 +133,20 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
     const registrations = [];
     for (const [capability, operations] of Object.entries(supervisorCampaignCapabilityOperations)) {
       for (const operation of operations) {
+        if (capability === "capability.strategic_reconciliation" && operation === "reconcile") {
+          registrations.push({
+            capability, operation,
+            validateInput: strategicReconciliation.validateInput,
+            async handler({ generationId, input }) {
+              return wrap(generationId, capability, operation,
+                await strategicReconciliation.handle({ generationId, input }));
+            },
+            validateOutput(value) {
+              return validateSupervisorCapabilityOutput(capability, operation, value);
+            },
+          });
+          continue;
+        }
         const handler = handlers[`${capability}/${operation}`];
         if (typeof handler !== "function") {
           throw new Error(`missing real supervisor capability handler ${capability}/${operation}`);
@@ -158,6 +174,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         if (closed) return;
         closed = true;
         runtime.close();
+        strategicReconciliation.close();
         workspace.close();
         store.close();
       },

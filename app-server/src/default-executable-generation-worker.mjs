@@ -79,12 +79,18 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
     const intake = createIntakeDelivery({ repositoryRoot, snapshotRoot, artifacts });
     const proposal = createProposalDelivery({ repositoryRoot, artifactRoot, snapshotRoot, artifacts });
     const supervisorEffects = new AsyncLocalStorage();
+    let environment = null;
     const supervisor = createSupervisorCampaignCapabilityDefinitions(async (request) => {
       const effect = supervisorEffects.getStore();
       if (typeof effect !== "function") {
         throw new Error("supervisor capability call is outside an admitted generation dispatch");
       }
       return effect(request);
+    }, {
+      executeStrategicReconciliation(input) {
+        if (!environment) throw new Error("strategic reconciliation environment is unavailable");
+        return environment.executeStrategicReconciliation(input);
+      },
     });
     const catalog = new Map([
       ...Object.entries(intakeCapabilityDefinitions).map(([id, definition]) => [id, {
@@ -113,7 +119,7 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       });
       return registrations.length === 0 ? null : new DynamicToolBridge(registrations);
     };
-    const environment = await createExecutableGenerationRoleEnvironment({
+    environment = await createExecutableGenerationRoleEnvironment({
       snapshotRoot: process.env.WORK_ENGINE_EXECUTABLE_SNAPSHOT_ROOT,
       bindingsPath: process.env.WORK_ENGINE_ROLE_BINDINGS_PATH,
       attachmentPath: process.env.WORK_ENGINE_SWITCHBOARD_ATTACHMENT_PATH,
@@ -166,7 +172,7 @@ runExecutableGenerationWorker({
       if (roleEnvironment) {
         return roleEnvironment.supervisorEffects.run(
           effect,
-          () => roleEnvironment.handleServerRequest(payload),
+          () => roleEnvironment.handleServerRequest(payload, effect),
         );
       }
       return { disposition: "forward" };

@@ -28,6 +28,8 @@ import {
   createSupervisorCampaignHostEffectRuntime,
   SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
 } from "../src/services/slice-campaign/host-effect-runtime.mjs";
+import { createSupervisorCampaignCapabilityHostRuntime } from
+  "../src/services/slice-campaign/capability-host-runtime.mjs";
 
 const ENTRY = path.resolve(
   "app-server/tests/fixtures/executable-generation-worker-fixture.mjs",
@@ -38,6 +40,8 @@ test("role generations pin product-development services and deterministic valida
     "app-server/src/services/product-development/artifact-root.mjs",
     "app-server/src/services/product-development/intake-delivery.mjs",
     "app-server/src/services/product-development/proposal-delivery.mjs",
+    "app-server/roles/strategic-planner.mjs",
+    "app-server/roles/strategic-planning-handoff.mjs",
     "skills/idea-intake/scripts/idea_intake.py",
     "skills/idea-intake/schemas/intake-record-v1.schema.json",
     "skills/proposal-packets/scripts/proposal_packets.py",
@@ -46,6 +50,7 @@ test("role generations pin product-development services and deterministic valida
   for (const expected of [
     "app-server/src/services/slice-campaign/capability-contract.mjs",
     "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
+    "app-server/src/services/slice-campaign/strategic-reconciliation.mjs",
   ]) assert.equal(DEFAULT_EXECUTABLE_GENERATION_FILES.includes(expected), true, expected);
 });
 
@@ -128,6 +133,11 @@ test("worker effects exist only inside their admitted dispatch", async (t) => {
   await worker.activate();
   const effects = [];
 
+  assert.throws(
+    () => worker.dispatch("effect", { method: "thread/start" }, {}),
+    /generation dispatch effect must be a function or null/,
+  );
+
   assert.deepEqual(await worker.dispatch("effect", { method: "thread/start" }, async (payload) => {
     effects.push(payload);
     return { thread: { id: "thread-role" } };
@@ -136,6 +146,20 @@ test("worker effects exist only inside their admitted dispatch", async (t) => {
     result: { thread: { id: "thread-role" } },
   });
   assert.deepEqual(effects, [{ method: "thread/start" }]);
+  await assert.rejects(
+    worker.dispatch("effect", { method: "thread/start" }, async () => {
+      throw new Error("bounded fixture effect failure");
+    }),
+    (error) => error instanceof ExecutableGenerationWorkerError
+      && error.code === "worker_request_failed"
+      && error.details.diagnosticCode === "effect_failed",
+  );
+  assert.deepEqual(await worker.dispatch("effect", { method: "thread/start" }, async () => ({
+    thread: { id: "thread-after-failure" },
+  })), {
+    disposition: "respond",
+    result: { thread: { id: "thread-after-failure" } },
+  });
   await assert.rejects(
     worker.dispatch("effect", { method: "thread/start" }),
     (error) => error instanceof ExecutableGenerationWorkerError
@@ -875,8 +899,28 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   const syntheticCompletionWaiters = [];
   const syntheticStarts = [];
   const syntheticStartWaiters = [];
-  const roleStatus = deferred();
+  const strategicToolResult = deferred();
+  const nestedPlannerObserved = deferred();
   const roleTurnRelease = deferred();
+  let roleThreadCount = 0;
+  let outerStrategicToolPending = false;
+  const strategicInput = {
+    instance_id: "main",
+    client_user_message_id: "strategic-nested-1",
+    strategic_objective: "Keep the exact production worker probe aligned",
+    evidence_cutoff: {
+      roadmap_revision: "roadmap-1",
+      repository_revision: "repository-1",
+      campaign_terminals: [],
+    },
+    canonical_references: [{
+      owner: "slice-supervisor",
+      reference: "accepted-plan.json",
+      revision: "revision-1",
+      freshness_rule: "immutable test fixture",
+    }],
+    continuity: "initialized",
+  };
   const delegate = {
     notificationHandler: null,
     serverRequestHandler: null,
@@ -890,7 +934,9 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
       if (method === "thread/start") {
         if (params.ephemeral === true) return { thread: { id: "thread-inference" } };
         const role = typeof params.developerInstructions === "string";
-        const threadId = role ? "thread-role" : "thread-shell";
+        const threadId = role
+          ? (++roleThreadCount === 1 ? "thread-role" : "thread-strategic")
+          : "thread-shell";
         if (role) this.notificationHandler({
           method: "thread/started",
           params: { thread: { id: threadId } },
@@ -919,24 +965,73 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
           }));
           return { turn: { id: "turn-inference" } };
         }
+        if (params.threadId === "thread-strategic") {
+          assert.equal(outerStrategicToolPending, true);
+          nestedPlannerObserved.resolve();
+          setImmediate(() => this.notificationHandler({
+            method: "turn/completed",
+            params: {
+              threadId: "thread-strategic",
+              turn: {
+                id: "turn-strategic",
+                status: "completed",
+                items: [{
+                  type: "agentMessage",
+                  id: "agent-strategic",
+                  text: JSON.stringify({
+                    schema_version: 1,
+                    strategic_objective: strategicInput.strategic_objective,
+                    evidence_cutoff: strategicInput.evidence_cutoff,
+                    continuity: strategicInput.continuity,
+                    verdict: "continue",
+                    current_rationale: "The no-op probe changes no durable strategy.",
+                    assumptions: { confirmed: [], changed: [], invalidated: [] },
+                    route_changes: {
+                      priorities: [], dependencies: [], newly_important: [], deferred: [],
+                    },
+                    recommended_campaign: {
+                      disposition: "continue_current",
+                      objective: null,
+                      work_source: null,
+                      reason: "No campaign change is supported.",
+                    },
+                    open_uncertainties: [], authority_required: [], revisit_when: [],
+                  }),
+                  phase: "final_answer",
+                  memoryCitation: null,
+                  delivery: null,
+                }],
+                itemsView: "full",
+                error: null,
+                startedAt: 3,
+                completedAt: 4,
+                durationMs: 1,
+              },
+            },
+          }));
+          return { turn: { id: "turn-strategic", status: "inProgress" } };
+        }
         assert.equal(params.threadId, "thread-role");
         setImmediate(async () => {
           await roleTurnRelease.promise;
+          outerStrategicToolPending = true;
           try {
-            roleStatus.resolve(await this.serverRequestHandler({
+            strategicToolResult.resolve(await this.serverRequestHandler({
               id: 91,
               method: "item/tool/call",
               params: {
                 threadId: "thread-role",
                 turnId: "turn-role",
-                callId: "call-role-status",
-                namespace: "environment",
-                tool: "status",
-                arguments: {},
+                callId: "call-strategic-reconciliation",
+                namespace: "campaign",
+                tool: "strategic_reconciliation",
+                arguments: { operation: "reconcile", input: strategicInput },
               },
             }));
           } catch (error) {
-            roleStatus.resolve({ error });
+            strategicToolResult.resolve({ error });
+          } finally {
+            outerStrategicToolPending = false;
           }
           this.notificationHandler({
             method: "thread/tokenUsage/updated",
@@ -1016,6 +1111,10 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     roleBindingsPath: path.join(root, "bindings.json"),
     workerRequestTimeoutMs: 2_000,
     workerDispatchTimeoutMs: 2_000,
+    supervisorCampaignHostEffectRuntimeFactory: ({ workspaceRoot, stateRoot }) =>
+      createSupervisorCampaignCapabilityHostRuntime({
+        workspaceRoot, stateRoot, canonicalBranches: ["main"],
+      }),
   });
   t.after(() => bootstrap.close({ abandonActiveWork: true }));
   const generationConfig = JSON.parse(await readFile(path.join(
@@ -1028,6 +1127,7 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   const transportedBuilderRequirements = generationConfig.manifest.runtimeRequirementsByRole[
     "slice-builder"
   ];
+  assert.equal(generationConfig.manifest.requirementsBaseDirectory, path.resolve("."));
   assert.equal(transportedBuilderRequirements.schema_version, 1);
   assert.equal(transportedBuilderRequirements.verified_sources, true);
   assert.equal(
@@ -1080,7 +1180,7 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   const attached = await stage("attach", bootstrap.transport.request("turn/start", {
     threadId: "thread-shell",
     clientUserMessageId: "shell-command-1",
-    input: [{ type: "text", text: ":we attach strategic-planner:main", text_elements: [] }],
+    input: [{ type: "text", text: ":we attach slice-supervisor:main", text_elements: [] }],
   }));
   assert.equal(attached.turn.status, "inProgress");
   assert.deepEqual(attached.turn.items, []);
@@ -1112,6 +1212,18 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   await waitForSyntheticStart();
   assert.deepEqual(forwardedNotifications.map((item) => item.method), ["turn/started"]);
   roleTurnRelease.resolve();
+  const nestedOutcome = await Promise.race([
+    nestedPlannerObserved.promise.then(() => "started"),
+    strategicToolResult.promise.then((value) => ({ toolResult: value })),
+    new Promise((_, reject) => setTimeout(() => reject(new Error(
+      `nested strategic planner turn did not start; requests=${JSON.stringify(
+        requests.map(({ method, params }) => [method, params?.threadId]),
+      )}`,
+    )), 1_000)),
+  ]);
+  if (nestedOutcome !== "started") {
+    throw new Error(`strategic tool returned before nested planner: ${JSON.stringify(nestedOutcome)}`);
+  }
   const deliveredCompletion = await waitForSyntheticCompletion();
   assert.equal(Number.isInteger(deliveredCompletion.params.turn.startedAt), true);
   assert.equal(Number.isInteger(deliveredCompletion.params.turn.completedAt), true);
@@ -1125,27 +1237,35 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     "turn/completed",
   ]);
   const deliveredText = forwardedNotifications.at(-1).params.turn.items[0].text;
-  const status = await roleStatus.promise;
-  assert.equal(status.success, true, status.error?.stack);
-  assert.equal(JSON.parse(status.contentItems[0].text).activeGeneration.generationId,
+  const toolResult = await strategicToolResult.promise;
+  assert.equal(toolResult.success, true, toolResult.error?.stack);
+  const strategicResult = JSON.parse(toolResult.contentItems[0].text);
+  assert.equal(strategicResult.generation_id,
     bootstrap.manager.snapshot().activeGeneration.generationId);
+  assert.equal(strategicResult.result.status, "completed");
+  assert.equal(strategicResult.result.handoff.strategic_objective,
+    strategicInput.strategic_objective);
+  assert.equal(strategicResult.result.handoff.verdict, "continue");
   const roleTurnRequests = requests.filter((request) => request.method === "turn/start");
-  assert.equal(roleTurnRequests.length, 2);
+  assert.equal(roleTurnRequests.length, 3);
   assert.equal(requests.some((request) =>
     request.method === "thread/start" && request.params.ephemeral === true
   ), true);
-  const roleThreadStart = requests.filter((request) => request.method === "thread/start")[1];
+  const roleThreadStart = requests.find((request) => request.method === "thread/start"
+    && request.params.dynamicTools?.some((tool) => tool.name === "campaign"));
   assert.deepEqual(roleThreadStart.params.dynamicTools.map((tool) => tool.name), [
+    "campaign",
     "environment",
   ]);
-  assert.equal(requests.find((request) => request.method === "turn/start").params.threadId,
-    "thread-role");
+  assert.deepEqual(roleTurnRequests.map((request) => request.params.threadId), [
+    "thread-role", "thread-strategic", "thread-inference",
+  ]);
   assert.deepEqual(bootstrap.manager.snapshot().admissions, []);
   const lifecycleStore = await openSqliteAppServerStateStore({
     filePath: path.join(root, "semantic-context.sqlite3"),
   });
   t.after(() => lifecycleStore.close());
-  const receipts = lifecycleStore.receipts({ logicalRoleInstanceId: "strategic-planner:main" });
+  const receipts = lifecycleStore.receipts({ logicalRoleInstanceId: "slice-supervisor:main" });
   assert.equal(receipts.length, 1);
   assert.equal(receipts[0].pressure.disposition, "replacement_candidate");
   assert.equal(receipts[0].inference.status, "failed");
@@ -1196,6 +1316,9 @@ test("executable role snapshots refuse missing, corrupt, or excessive transporte
       async request() { return {}; },
     },
     runtimeManifestPath: path.resolve("app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.resolve(
+      "app-server/tests/fixtures/semantic-context-host-inspection-profile.yaml",
+    ),
     workerRequestTimeoutMs: 2_000,
     workerDispatchTimeoutMs: 2_000,
   });
@@ -1213,6 +1336,8 @@ test("executable role snapshots refuse missing, corrupt, or excessive transporte
   const original = JSON.parse(await readFile(configPath, "utf8"));
 
   for (const [label, mutate, expected] of [
+    ["missing-base", (config) => { delete config.manifest.requirementsBaseDirectory; }, /manifest requirements base directory must be a non-empty string/],
+    ["wrong-base", (config) => { config.manifest.requirementsBaseDirectory = path.resolve("app-server"); }, /contract differs from compiled requirements/],
     ["missing", (config) => { delete config.manifest.runtimeRequirementsByRole["slice-builder"]; }, /no verified compiled requirements/],
     ["corrupt", (config) => { config.manifest.runtimeRequirementsByRole["slice-builder"].sha256 = "0".repeat(64); }, /runtime requirements digest mismatch/],
     ["excessive", (config) => { config.manifest.document.roles["slice-builder"].capabilities.push("capability.uncompiled"); }, /exceeds capability ceiling/],
@@ -1222,11 +1347,18 @@ test("executable role snapshots refuse missing, corrupt, or excessive transporte
     await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
     const attachmentPath = path.join(root, `${label}-attachment.json`);
     await writeFile(attachmentPath, `${JSON.stringify({ roleId: "slice-builder", instanceId: "main" })}\n`);
-    const environment = await createExecutableGenerationRoleEnvironment({
-      snapshotRoot,
-      bindingsPath: path.join(root, `${label}-bindings.json`),
-      attachmentPath,
-    });
+    let environment;
+    try {
+      environment = await createExecutableGenerationRoleEnvironment({
+        snapshotRoot,
+        bindingsPath: path.join(root, `${label}-bindings.json`),
+        attachmentPath,
+        semanticContextStatePath: path.join(root, `${label}-semantic-context.sqlite3`),
+      });
+    } catch (error) {
+      assert.match(error.message, expected, label);
+      continue;
+    }
     t.after(() => environment.close());
     let adapterDeliveries = 0;
     await environment.handleRequest({ method: "thread/start", params: {} }, async () => ({

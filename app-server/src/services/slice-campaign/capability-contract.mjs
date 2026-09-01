@@ -1,5 +1,44 @@
 import { SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL } from "./host-effect-runtime.mjs";
 
+const STRATEGIC_CONTINUITY = Object.freeze(["initialized", "retained", "reconstructed"]);
+const NON_EMPTY_TEXT_SCHEMA = Object.freeze({ type: "string", pattern: ".*\\S.*" });
+const strategicReconciliationToolDescription =
+  "Reconcile durable campaign evidence through the host-owned strategic planner. "
+  + "Use operation=reconcile with exact input fields instance_id, client_user_message_id, "
+  + "strategic_objective, evidence_cutoff, canonical_references, and continuity; the schema "
+  + "defines their required nested fields and rejects unknown fields. This advisory boundary "
+  + "does not create a campaign or grant checkpoint, publication, pilot, or Git authority.";
+
+function strategicReconciliationRequestInputSchema() {
+  const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
+  return {
+    type: "object",
+    required: ["instance_id", "client_user_message_id", "strategic_objective",
+      "evidence_cutoff", "canonical_references", "continuity"],
+    properties: {
+      instance_id: text(), client_user_message_id: text(), strategic_objective: text(),
+      evidence_cutoff: {
+        type: "object", required: ["roadmap_revision", "repository_revision"],
+        properties: {
+          roadmap_revision: text(), repository_revision: text(),
+          campaign_terminals: { type: "array", items: {
+            type: "object", required: ["run_id", "slice_number", "status"],
+            properties: { run_id: text(), slice_number: { type: "integer", minimum: 0 },
+              status: text() }, additionalProperties: false,
+          } },
+        }, additionalProperties: false,
+      },
+      canonical_references: { type: "array", minItems: 1, items: {
+        type: "object", required: ["owner", "reference", "revision", "freshness_rule"],
+        properties: { owner: text(), reference: text(), revision: text(), freshness_rule: text(),
+          integrity_sha256: { type: "string", pattern: "^[0-9a-f]{64}$" } },
+        additionalProperties: false,
+      } },
+      continuity: { type: "string", enum: [...STRATEGIC_CONTINUITY] },
+    }, additionalProperties: false,
+  };
+}
+
 const CAPABILITIES = Object.freeze({
   "capability.preflight": Object.freeze(["run"]),
   "capability.lifecycle_control": Object.freeze([
@@ -17,6 +56,7 @@ const CAPABILITIES = Object.freeze({
     "prepare", "seal_validation", "promote", "reconcile",
   ]),
   "capability.completion_publication": Object.freeze(["prepare", "complete", "reconcile"]),
+  "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
 });
 
 const TOOL_NAMES = Object.freeze({
@@ -30,6 +70,7 @@ const TOOL_NAMES = Object.freeze({
   "capability.worktree_lifecycle": "worktree_lifecycle",
   "capability.canonical_publication": "canonical_publication",
   "capability.completion_publication": "completion_publication",
+  "capability.strategic_reconciliation": "strategic_reconciliation",
 });
 
 const INPUT_FIELDS = Object.freeze({
@@ -104,6 +145,10 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.completion_publication/reconcile": [
     new Set(["offer", "preparation_revision"]), new Set(),
+  ],
+  "capability.strategic_reconciliation/reconcile": [
+    new Set(["instance_id", "client_user_message_id", "strategic_objective",
+      "evidence_cutoff", "canonical_references", "continuity"]), new Set(),
   ],
 });
 
@@ -229,27 +274,34 @@ export function validateSupervisorCapabilityOutput(capability, operation, value)
   return structuredClone(value);
 }
 
-function inputSchema(operations) {
+function inputSchema(capability, operations) {
   return {
     type: "object",
     required: ["operation", "input"],
     properties: {
       operation: { type: "string", enum: operations },
-      input: { type: "object" },
+      input: capability === "capability.strategic_reconciliation"
+        ? strategicReconciliationRequestInputSchema()
+        : { type: "object" },
     },
     additionalProperties: false,
   };
 }
 
-export function createSupervisorCampaignCapabilityDefinitions(invokeHostEffect) {
+export function createSupervisorCampaignCapabilityDefinitions(
+  invokeHostEffect,
+  { executeStrategicReconciliation = null } = {},
+) {
   if (typeof invokeHostEffect !== "function") {
     throw new TypeError("supervisor campaign capability definitions require a host effect client");
   }
   return new Map(Object.entries(CAPABILITIES).map(([capability, operations]) => [capability, {
     namespace: "campaign",
     name: TOOL_NAMES[capability],
-    description: `Invoke the host-owned ${capability} boundary. The host validates exact operation identity, authority, and durable state.`,
-    inputSchema: inputSchema(operations),
+    description: capability === "capability.strategic_reconciliation"
+      ? strategicReconciliationToolDescription
+      : `Invoke the host-owned ${capability} boundary. The host validates exact operation identity, authority, and durable state.`,
+    inputSchema: inputSchema(capability, operations),
     async handler(argumentsValue) {
       requireRecord(argumentsValue, `${capability} tool arguments`);
       exactFields(
@@ -260,6 +312,26 @@ export function createSupervisorCampaignCapabilityDefinitions(invokeHostEffect) 
       );
       const operation = requireText(argumentsValue.operation, `${capability} operation`);
       const input = validateSupervisorCapabilityInput(capability, operation, argumentsValue.input);
+      if (capability === "capability.strategic_reconciliation") {
+        if (typeof executeStrategicReconciliation !== "function") {
+          throw new Error("strategic reconciliation executor is unavailable in this generation");
+        }
+        const admitted = validateSupervisorCapabilityOutput(capability, operation,
+          await invokeHostEffect({
+            protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+            capability, operation, input: { phase: "admit", request: input },
+          }));
+        const execution = await executeStrategicReconciliation(input);
+        return validateSupervisorCapabilityOutput(capability, operation,
+          await invokeHostEffect({
+            protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+            capability, operation,
+            input: {
+              phase: "complete", admission: admitted.result.admission,
+              output_text: execution.completion.outputText,
+            },
+          }));
+      }
       const result = await invokeHostEffect({
         protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
         capability,

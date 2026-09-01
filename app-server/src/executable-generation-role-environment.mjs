@@ -10,6 +10,8 @@ import { InMemoryContextTransitionLeaseGate } from "./context-transition-lease.m
 import { FileRoleBindingRegistry } from "./role-binding-registry.mjs";
 import { ManifestRoleRuntime, projectRuntimeManifest } from "./runtime-manifest.mjs";
 import { ExactSkillResolver } from "./skill-resolver.mjs";
+import { StrategicPlannerRuntime } from "../roles/strategic-planner.mjs";
+import { strategicPlannerRequest } from "./services/slice-campaign/strategic-reconciliation.mjs";
 import {
   OperatorSwitchboard,
   renderOperatorSwitchboardResult,
@@ -265,6 +267,10 @@ export async function createExecutableGenerationRoleEnvironment({
   const manifest = projectRuntimeManifest(config.manifest.document, {
     baseDirectory: path.dirname(manifestPath),
     identityBaseDirectory: config.manifest.identityBaseDirectory,
+    requirementsBaseDirectory: requireText(
+      config.manifest.requirementsBaseDirectory,
+      "manifest requirements base directory",
+    ),
     sourcePath: manifestPath,
     sourceSha256: config.manifest.sha256,
     runtimeRequirementsByRole: config.manifest.runtimeRequirementsByRole ?? {},
@@ -305,6 +311,7 @@ export async function createExecutableGenerationRoleEnvironment({
       });
     })();
   const runtime = semanticHost?.runtime ?? new ManifestRoleRuntime({ adapter, manifest });
+  const strategicPlanner = new StrategicPlannerRuntime({ adapter, manifest });
   const inputCustody = semanticHost === null
     ? null
     : semanticHost.inputCustody
@@ -346,6 +353,9 @@ export async function createExecutableGenerationRoleEnvironment({
   };
 
   return Object.freeze({
+    executeStrategicReconciliation(input) {
+      return strategicPlanner.requestReview(strategicPlannerRequest(input));
+    },
     environmentFingerprint() {
       return `sha256:${createHash("sha256").update(canonicalJson({
         manifestSha256: config.manifest.sha256,
@@ -454,13 +464,20 @@ export async function createExecutableGenerationRoleEnvironment({
       });
     },
 
-    async handleServerRequest(request) {
+    async handleServerRequest(request, effect) {
       if (!transport.roleThreadIds.has(request?.params?.threadId)) {
         return { disposition: "forward" };
       }
+      if (typeof effect !== "function") {
+        throw new TypeError("owned role server request requires its generation dispatch effect");
+      }
+      const handled = await transport.run(
+        effect,
+        () => transport.handleServerRequest(request),
+      );
       return {
         disposition: "respond",
-        result: await transport.handleServerRequest(request),
+        result: handled.result,
       };
     },
 

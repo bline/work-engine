@@ -5,6 +5,7 @@ import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { stringify as stringifyYaml } from "yaml";
 
 import {
   createSupervisorCampaignCapabilityDefinitions,
@@ -14,6 +15,7 @@ import {
 } from "../src/services/slice-campaign/capability-host-runtime.mjs";
 import { createLegacySupervisorControlAdapter } from "../src/services/slice-campaign/legacy-control-adapter.mjs";
 import { SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL } from "../src/services/slice-campaign/host-effect-runtime.mjs";
+import { validateStrategicReconciliationRequest } from "../src/services/slice-campaign/strategic-reconciliation.mjs";
 import { canonicalJson, digest as workspaceDigest } from "../src/services/workspace-coordination/contract.mjs";
 
 const root = path.resolve(new URL("../..", import.meta.url).pathname);
@@ -106,7 +108,7 @@ async function completionFixture(t) {
   return { repository, stateRoot, checkpoint, offer: { ...authorized, artifact_oid: artifactOid, ref } };
 }
 
-test("ten thin clients bind exact operations and never infer human authority", async () => {
+test("eleven thin clients bind exact operations and never infer human authority", async () => {
   const calls = [];
   const definitions = createSupervisorCampaignCapabilityDefinitions(async (request) => {
     calls.push(request);
@@ -127,6 +129,7 @@ test("ten thin clients bind exact operations and never infer human authority", a
     "capability.preflight",
     "capability.receipt_finalization",
     "capability.resume",
+    "capability.strategic_reconciliation",
     "capability.workspace_coordination",
     "capability.worktree_lifecycle",
   ]);
@@ -198,10 +201,7 @@ test("stable host executes preflight and native lifecycle across reconstruction"
   });
   assert.equal(recovered.generation_id, "generation-b");
   assert.equal(recovered.result.revision, campaign.revision);
-  for (const capability of [
-    "capability.completion_publication",
-    "capability.strategic_reconciliation",
-  ]) {
+  for (const capability of ["capability.completion_publication"]) {
     await assert.rejects(runtime.dispatch({
       generationId: "generation-b",
       effect: effect(capability, "unavailable", {}),
@@ -316,7 +316,198 @@ test("stable host executes real workspace, worktree, and completion capability r
   await assert.rejects(runtime.dispatch({
     generationId: "generation-a3a",
     effect: effect("capability.strategic_reconciliation", "reconcile", {}),
-  }), /unavailable/);
+  }), /phase/);
+});
+
+function strategicRequest() {
+  return {
+    instance_id: "a4-probe",
+    client_user_message_id: "a4-strategic-1",
+    strategic_objective: "Keep the isolated A4 probe aligned",
+    evidence_cutoff: {
+      roadmap_revision: "roadmap-a4",
+      repository_revision: "tree-a4",
+      campaign_terminals: [{ run_id: "a4-probe", slice_number: 4, status: "accepted" }],
+    },
+    canonical_references: [{
+      owner: "a4-probe", reference: "fixture:a4", revision: "revision-a4",
+      freshness_rule: "exact_fixture_revision",
+    }],
+    continuity: "initialized",
+  };
+}
+
+function strategicOutput(request, objective = request.strategic_objective) {
+  return stringifyYaml({
+    schema_version: 1,
+    strategic_objective: objective,
+    evidence_cutoff: request.evidence_cutoff,
+    continuity: request.continuity,
+    verdict: "continue",
+    current_rationale: "The isolated evidence supports the current route.",
+    recommended_campaign: {
+      disposition: "continue_current", objective: null, work_source: null,
+      reason: "No strategic change is supported.",
+    },
+    open_uncertainties: [], authority_required: [], revisit_when: [],
+  });
+}
+
+function matchesSchema(schema, value) {
+  if (schema.enum && !schema.enum.includes(value)) return false;
+  if (schema.type === "string") {
+    return typeof value === "string" && (!schema.pattern || new RegExp(schema.pattern).test(value));
+  }
+  if (schema.type === "integer") {
+    return Number.isInteger(value) && (schema.minimum === undefined || value >= schema.minimum);
+  }
+  if (schema.type === "array") {
+    return Array.isArray(value)
+      && (schema.minItems === undefined || value.length >= schema.minItems)
+      && value.every((item) => matchesSchema(schema.items, item));
+  }
+  if (schema.type === "object") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const properties = schema.properties ?? {};
+    if ((schema.required ?? []).some((field) => !Object.hasOwn(value, field))) return false;
+    if (schema.additionalProperties === false
+        && Object.keys(value).some((field) => !Object.hasOwn(properties, field))) return false;
+    return Object.entries(value).every(([field, child]) =>
+      !Object.hasOwn(properties, field) || matchesSchema(properties[field], child));
+  }
+  throw new TypeError(`unsupported test schema keyword set ${JSON.stringify(schema)}`);
+}
+
+test("strategic reconciliation tool prospectively exposes the exact admission contract", () => {
+  const definition = createSupervisorCampaignCapabilityDefinitions(async () => {
+    throw new Error("schema test must not dispatch");
+  }).get("capability.strategic_reconciliation");
+  assert.match(definition.description, /exact input fields instance_id/);
+  assert.match(definition.description, /does not create a campaign/);
+  assert.deepEqual(definition.inputSchema.properties.operation.enum, ["reconcile"]);
+  const input = definition.inputSchema.properties.input;
+  assert.deepEqual(input.required, [
+    "instance_id", "client_user_message_id", "strategic_objective", "evidence_cutoff",
+    "canonical_references", "continuity",
+  ]);
+  assert.equal(input.additionalProperties, false);
+  assert.deepEqual(input.properties.evidence_cutoff.required,
+    ["roadmap_revision", "repository_revision"]);
+  assert.equal(input.properties.evidence_cutoff.additionalProperties, false);
+  assert.deepEqual(input.properties.evidence_cutoff.properties.campaign_terminals.items.required,
+    ["run_id", "slice_number", "status"]);
+  assert.equal(input.properties.evidence_cutoff.properties.campaign_terminals.items
+    .properties.slice_number.minimum, 0);
+  assert.equal(input.properties.canonical_references.minItems, 1);
+  assert.deepEqual(input.properties.canonical_references.items.required,
+    ["owner", "reference", "revision", "freshness_rule"]);
+  assert.equal(input.properties.canonical_references.items.additionalProperties, false);
+  assert.equal(input.properties.canonical_references.items.properties.integrity_sha256.pattern,
+    "^[0-9a-f]{64}$");
+  assert.deepEqual(input.properties.continuity.enum,
+    ["initialized", "retained", "reconstructed"]);
+
+  const request = strategicRequest();
+  assert.equal(matchesSchema(definition.inputSchema, { operation: "reconcile", input: request }), true);
+  const invalid = [
+    { ...request, unauthorized: true },
+    { ...request, instance_id: "   " },
+    { ...request, evidence_cutoff: { ...request.evidence_cutoff, unexpected: true } },
+    { ...request, evidence_cutoff: { ...request.evidence_cutoff,
+      campaign_terminals: [{ run_id: "a4", slice_number: -1, status: "failed" }] } },
+    { ...request, canonical_references: [] },
+    { ...request, canonical_references: [{ ...request.canonical_references[0],
+      integrity_sha256: "not-a-digest" }] },
+    { ...request, continuity: "invented" },
+  ];
+  for (const value of invalid) {
+    assert.equal(matchesSchema(definition.inputSchema, { operation: "reconcile", input: value }), false);
+    assert.throws(() => validateStrategicReconciliationRequest(value));
+  }
+});
+
+test("eleventh capability fences active-generation planner execution and validates its handoff", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "work-engine-a4-strategic-"));
+  t.after(() => rm(stateRoot, { recursive: true, force: true }));
+  const legacy = {
+    identity: {}, preflight() {}, finalize() {}, validateReceipt(value) { return value; },
+    checkpoint() {}, offer() {}, resumeTerminal() {},
+  };
+  let runtime = await createSupervisorCampaignCapabilityHostRuntime({
+    workspaceRoot: root, stateRoot, canonicalBranches: ["main"],
+    legacyAdapterFactory: async () => legacy,
+  });
+  t.after(() => runtime.close());
+  const request = strategicRequest();
+  const definitions = createSupervisorCampaignCapabilityDefinitions(
+    (hostEffect) => runtime.dispatch({ generationId: "generation-a4", effect: hostEffect }),
+    { executeStrategicReconciliation: async (input) => ({
+      completion: { outputText: strategicOutput(input) },
+    }) },
+  );
+  const result = await definitions.get("capability.strategic_reconciliation").handler({
+    operation: "reconcile", input: request,
+  });
+  assert.equal(result.generation_id, "generation-a4");
+  assert.equal(result.result.status, "completed");
+  assert.equal(result.result.handoff.strategic_objective, request.strategic_objective);
+
+  let malformedExecutions = 0;
+  const rejectingDefinitions = createSupervisorCampaignCapabilityDefinitions(
+    (hostEffect) => runtime.dispatch({ generationId: "generation-a4", effect: hostEffect }),
+    { executeStrategicReconciliation: async () => {
+      malformedExecutions += 1;
+      return { completion: { outputText: strategicOutput(request, "stale objective") } };
+    } },
+  );
+  await assert.rejects(rejectingDefinitions.get("capability.strategic_reconciliation").handler({
+    operation: "reconcile", input: { ...request, unauthorized: true },
+  }), /unsupported field unauthorized/);
+  assert.equal(malformedExecutions, 0);
+  await assert.rejects(rejectingDefinitions.get("capability.strategic_reconciliation").handler({
+    operation: "reconcile", input: request,
+  }), /does not match the requested objective/);
+  assert.equal(malformedExecutions, 1);
+
+  const admitted = await runtime.dispatch({
+    generationId: "generation-a4",
+    effect: effect("capability.strategic_reconciliation", "reconcile", {
+      phase: "admit", request,
+    }),
+  });
+  await assert.rejects(runtime.dispatch({
+    generationId: "generation-new",
+    effect: effect("capability.strategic_reconciliation", "reconcile", {
+      phase: "complete", admission: admitted.result.admission,
+      output_text: strategicOutput(request),
+    }),
+  }), /another executable generation/);
+  await assert.rejects(runtime.dispatch({
+    generationId: "generation-a4",
+    effect: effect("capability.strategic_reconciliation", "reconcile", {
+      phase: "complete", admission: admitted.result.admission,
+      output_text: strategicOutput(request),
+    }),
+  }), /stale or unavailable/);
+
+  const stale = await runtime.dispatch({
+    generationId: "generation-a4",
+    effect: effect("capability.strategic_reconciliation", "reconcile", {
+      phase: "admit", request,
+    }),
+  });
+  runtime.close();
+  runtime = await createSupervisorCampaignCapabilityHostRuntime({
+    workspaceRoot: root, stateRoot, canonicalBranches: ["main"],
+    legacyAdapterFactory: async () => legacy,
+  });
+  await assert.rejects(runtime.dispatch({
+    generationId: "generation-a4",
+    effect: effect("capability.strategic_reconciliation", "reconcile", {
+      phase: "complete", admission: stale.result.admission,
+      output_text: strategicOutput(request),
+    }),
+  }), /stale or unavailable/);
 });
 
 test("stable host completes exact offer authority only after explicit checkout transition", async (t) => {

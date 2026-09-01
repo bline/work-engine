@@ -94,11 +94,13 @@ function deferred() {
   return { promise, resolve };
 }
 
-test("proxy entry composes the stable supervisor campaign capability host", async () => {
+test("proxy entry composes the stable all-eleven supervisor capability host", async () => {
   const source = await readFile(PROXY_ENTRY, "utf8");
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
   assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot, stateRoot \}\)\s*=>/);
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{[\s\S]*workspaceRoot, stateRoot, canonicalBranches: options\.canonicalBranches/);
+  assert.doesNotMatch(source, /strategic[_-]reconciliation|strategic[_-]planner/,
+    "proxy composition must not bypass the stable host with a special strategic route");
 });
 
 async function fixture(t) {

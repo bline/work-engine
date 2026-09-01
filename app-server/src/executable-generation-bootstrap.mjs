@@ -20,6 +20,7 @@ export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/executable-generation-worker-runtime.mjs",
   "app-server/src/services/slice-campaign/capability-contract.mjs",
   "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
+  "app-server/src/services/slice-campaign/strategic-reconciliation.mjs",
 ]);
 
 export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
@@ -30,6 +31,8 @@ export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/request-context-input.mjs",
   "app-server/src/role-binding-registry.mjs",
   "app-server/src/runtime-manifest.mjs",
+  "app-server/roles/strategic-planner.mjs",
+  "app-server/roles/strategic-planning-handoff.mjs",
   "app-server/roles/implementation-reviewer.mjs",
   "app-server/src/services/reviewer-runtime/contract.mjs",
   "app-server/src/services/reviewer-runtime/profile-registry.mjs",
@@ -160,6 +163,7 @@ async function roleEnvironmentSource({
   });
   const projected = projectRuntimeManifest(loaded.document, {
     baseDirectory: path.dirname(loaded.sourcePath),
+    requirementsBaseDirectory: workspaceRoot,
     sourcePath: loaded.sourcePath,
     sourceSha256: loaded.sourceSha256,
     runtimeRequirementsByRole,
@@ -219,6 +223,7 @@ async function roleEnvironmentSource({
         manifest: {
           document: loaded.document,
           identityBaseDirectory: path.dirname(loaded.sourcePath),
+          requirementsBaseDirectory: workspaceRoot,
           relativePath: manifestRelativePath,
           sha256: loaded.sourceSha256,
           runtimeRequirementsByRole,
