@@ -19,7 +19,10 @@ import {
   createExecutableGenerationBootstrap,
   openSqliteAppServerStateStore,
 } from "../src/index.mjs";
-import { DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES } from "../src/executable-generation-bootstrap.mjs";
+import {
+  DEFAULT_EXECUTABLE_GENERATION_FILES,
+  DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES,
+} from "../src/executable-generation-bootstrap.mjs";
 import { createExecutableGenerationRoleEnvironment } from "../src/executable-generation-role-environment.mjs";
 import {
   createSupervisorCampaignHostEffectRuntime,
@@ -40,6 +43,10 @@ test("role generations pin product-development services and deterministic valida
     "skills/proposal-packets/scripts/proposal_packets.py",
     "skills/proposal-packets/schemas/proposal-packet-v1.schema.json",
   ]) assert.equal(DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES.includes(expected), true, expected);
+  for (const expected of [
+    "app-server/src/services/slice-campaign/capability-contract.mjs",
+    "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
+  ]) assert.equal(DEFAULT_EXECUTABLE_GENERATION_FILES.includes(expected), true, expected);
 });
 
 function record(generationId) {
@@ -67,6 +74,14 @@ function spawnWorker(generationId, overrides = {}) {
       ...overrides,
     },
   });
+}
+
+async function copyDefaultExecutableGenerationFiles(workspaceRoot) {
+  for (const relative of DEFAULT_EXECUTABLE_GENERATION_FILES) {
+    const target = path.join(workspaceRoot, relative);
+    await mkdir(path.dirname(target), { recursive: true });
+    await copyFile(path.resolve(relative), target);
+  }
 }
 
 test("forked generation worker enforces validation and activation before dispatch", async (t) => {
@@ -386,15 +401,8 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
   t.after(() => rm(root, { recursive: true, force: true }));
   const workspaceRoot = path.join(root, "workspace");
   const stateRoot = path.join(root, "state");
-  const sourceRoot = path.resolve("app-server/src");
   const targetRoot = path.join(workspaceRoot, "app-server", "src");
-  await mkdir(targetRoot, { recursive: true });
-  for (const name of [
-    "default-executable-generation-worker.mjs",
-    "executable-generation-worker-runtime.mjs",
-  ]) {
-    await copyFile(path.join(sourceRoot, name), path.join(targetRoot, name));
-  }
+  await copyDefaultExecutableGenerationFiles(workspaceRoot);
   const delegate = {
     onServerRequest() {},
     onNotification() {},
@@ -521,13 +529,7 @@ test("bootstrap owns one stable supervisor campaign host runtime across reload a
   t.after(() => rm(root, { recursive: true, force: true }));
   const workspaceRoot = path.join(root, "workspace");
   const targetRoot = path.join(workspaceRoot, "app-server", "src");
-  await mkdir(targetRoot, { recursive: true });
-  for (const name of [
-    "default-executable-generation-worker.mjs",
-    "executable-generation-worker-runtime.mjs",
-  ]) {
-    await copyFile(path.resolve("app-server/src", name), path.join(targetRoot, name));
-  }
+  await copyDefaultExecutableGenerationFiles(workspaceRoot);
   const delegate = {
     onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
     async request(method) { return { method }; },
@@ -610,9 +612,8 @@ test("bootstrap binds one sealed extension to generation identity and recovers i
   t.after(() => rm(root, { recursive: true, force: true }));
   const workspaceRoot = path.join(root, "workspace");
   const stateRoot = path.join(root, "state");
+  await copyDefaultExecutableGenerationFiles(workspaceRoot);
   for (const relative of [
-    "app-server/src/default-executable-generation-worker.mjs",
-    "app-server/src/executable-generation-worker-runtime.mjs",
     "app-server/migrations/skills/repo-search/structure.yaml",
     "app-server/migrations/skills/repo-search/interface.yaml",
   ]) {
@@ -668,15 +669,8 @@ test("bootstrap refuses a workspace edit that changes the environment fingerprin
   t.after(() => rm(root, { recursive: true, force: true }));
   const workspaceRoot = path.join(root, "workspace");
   const stateRoot = path.join(root, "state");
-  const sourceRoot = path.resolve("app-server/src");
   const targetRoot = path.join(workspaceRoot, "app-server", "src");
-  await mkdir(targetRoot, { recursive: true });
-  for (const name of [
-    "default-executable-generation-worker.mjs",
-    "executable-generation-worker-runtime.mjs",
-  ]) {
-    await copyFile(path.join(sourceRoot, name), path.join(targetRoot, name));
-  }
+  await copyDefaultExecutableGenerationFiles(workspaceRoot);
   const delegate = {
     onServerRequest() {},
     onNotification() {},
@@ -746,13 +740,7 @@ test("environment tools bind a reload to the provider turn and activate after tu
   t.after(() => rm(root, { recursive: true, force: true }));
   const workspaceRoot = path.join(root, "workspace");
   const targetRoot = path.join(workspaceRoot, "app-server", "src");
-  await mkdir(targetRoot, { recursive: true });
-  for (const name of [
-    "default-executable-generation-worker.mjs",
-    "executable-generation-worker-runtime.mjs",
-  ]) {
-    await copyFile(path.resolve("app-server/src", name), path.join(targetRoot, name));
-  }
+  await copyDefaultExecutableGenerationFiles(workspaceRoot);
   const requests = [];
   const delegate = {
     serverRequestHandler: null,

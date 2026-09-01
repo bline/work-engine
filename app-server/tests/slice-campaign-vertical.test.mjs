@@ -165,7 +165,9 @@ test("campaign vertical preserves owners, exclusive admission, expected/actual i
       calls.push("legacy-review"); return { status: "passed", subjectCommit: subject.commit };
     } }),
     receiptFinalizer: { async finalize(value) { calls.push("receipt"); return { digest: sha(JSON.stringify(value)) }; } },
-    completionOffer: { async offer() { calls.push("offer"); return { status: "open", publicationAuthorized: false }; } },
+    completionOffer: { async open({ request }) { calls.push("offer"); return {
+      status: "open", publicationAuthorized: false, request,
+    }; } },
   });
   let state = service.admit({ identity, workspace: "/workspace", acceptedBoundary: { reference: "plan:s8", sha256: sha("plan") },
     expectedImpact: { reference: "impact:prospective", sha256: sha("expected") },
@@ -182,9 +184,22 @@ test("campaign vertical preserves owners, exclusive admission, expected/actual i
   state = await service.runLegacyReview({ identity, expectedRevision: state.revision, selectionPlan: { owner: "slice-supervisor", selections: [] } });
   await assert.rejects(service.runLegacyReview({ identity, expectedRevision: state.revision, selectionPlan: {} }), /without a prior review/);
   state = await service.terminalize({ identity, expectedRevision: state.revision, outcome: "accepted", receipt: { status: "accepted" } });
+  assert.equal(state.terminal.completionOffer, null);
+  assert.equal((await service.terminalize({ identity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: { status: "accepted" } })).revision, state.revision);
+  await assert.rejects(service.terminalize({ identity, expectedRevision: state.revision,
+    outcome: "stopped", receipt: { status: "stopped" } }), /conflicts/);
+  const terminalRevision = state.revision;
+  state = await service.openCompletionOffer({ identity, expectedRevision: state.revision,
+    request: { proposal: "exact-proposal" } });
+  assert.equal(state.terminal.completionOffer.publicationAuthorized, false);
+  assert.equal((await service.openCompletionOffer({ identity, expectedRevision: state.revision,
+    request: { proposal: "exact-proposal" } })).revision, state.revision);
+  await assert.rejects(service.openCompletionOffer({ identity, expectedRevision: state.revision,
+    request: { proposal: "different" } }), /conflicts/);
+  assert.notEqual(state.revision, terminalRevision);
   await assert.rejects(service.runLegacyReview({ identity, expectedRevision: state.revision, selectionPlan: {} }), /review-ready/);
   assert.equal(service.recover(identity).revision, state.revision);
-  assert.equal(state.terminal.completionOffer.publicationAuthorized, false);
   assert.deepEqual(calls, ["candidate", "profile", "legacy-review", "receipt", "offer"]);
 });
 

@@ -31,6 +31,16 @@ ASSEMBLER_TESTS = load("vertical_offer_assembler", Path(__file__).with_name("tes
 
 
 class CompletionOfferLifecycleTest(unittest.TestCase):
+    def decision(self, value: str, reference: str = "user-message-1"):
+        return {
+            "decision": value,
+            "authority": {
+                "kind": "human",
+                "reference": reference,
+                "observed_at": "2026-09-01T09:00:00-06:00",
+            },
+        }
+
     def accepted(self, directory: str):
         fixture = COMPLETION_TESTS.CompletionCommitTest()
         repository, head = fixture.repository(directory)
@@ -91,34 +101,38 @@ class CompletionOfferLifecycleTest(unittest.TestCase):
             self.assertTrue(resumed["resumable"])
             self.assertEqual(accepted["checkpoint_commit_oid"], resumed["baseline_checkpoint"]["checkpoint_commit_oid"])
             self.assertEqual(opened["offer_id"], resumed["completion_offer"]["offer_id"])
-            declined = OFFER.resolve(resumed["completion_offer"], "decline")
+            decision = self.decision("decline")
+            declined = OFFER.resolve(resumed["completion_offer"], decision)
             self.assertEqual("declined", declined["state"])
             self.assertEqual(terminal_bytes, metrics.read_bytes())
-            self.assertEqual(declined, OFFER.resolve(declined, "decline"))
+            self.assertEqual(decision, declined["decision"])
+            self.assertEqual(declined, OFFER.resolve(declined, decision))
+            with self.assertRaisesRegex(ValueError, "conflicts"):
+                OFFER.resolve(declined, self.decision("create", "user-message-2"))
 
-    def test_publication_crash_reconciles_created_without_replaying_mutation(self) -> None:
+    def test_create_decision_is_durable_before_later_publication_and_reconciliation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository, request, accepted, metrics, _terminal, preflight = self.accepted(directory)
             terminal_bytes = metrics.read_bytes()
             opened = OFFER.open_offer(request)
-            published = []
+            before = COMPLETION_TESTS.run(repository, "rev-parse", "HEAD")
+            decision = self.decision("create")
+            authorized = OFFER.resolve(opened, decision)
+            self.assertEqual("create_authorized", authorized["state"])
+            self.assertEqual(before, COMPLETION_TESTS.run(repository, "rev-parse", "HEAD"))
+            self.assertIsNone(OFFER.reconcile(authorized))
 
-            def crash(commit_oid: str) -> None:
-                published.append(commit_oid)
-                raise SystemExit("injected crash after publication")
-
-            with self.assertRaises(SystemExit):
-                OFFER.resolve(opened, "create", after_publish=crash)
-            self.assertEqual(published[0], COMPLETION_TESTS.run(repository, "rev-parse", "HEAD"))
-            self.assertEqual("open", OFFER.load(repository, "test-run", 1)["state"])
-
-            recovered_open = RESUME.resume(metrics, preflight, "test-run")["completion_offer"]
-            # Even a contrary delayed decision must reconcile the prior publication first.
-            reconciled = OFFER.resolve(recovered_open, "decline")
+            # This direct adapter call stands in for the later, separately mediated
+            # completion_publication capability. Offer resolution never performs it.
+            publication = OFFER.ADAPTER.decide(request, "create")
+            self.assertEqual("created", publication["state"])
+            recovered = RESUME.resume(metrics, preflight, "test-run")["completion_offer"]
+            self.assertEqual("create_authorized", recovered["state"])
+            reconciled = OFFER.reconcile(recovered)
             self.assertIsNotNone(reconciled)
             self.assertEqual("created", reconciled["state"])
-            self.assertEqual(published[0], reconciled["result"]["commit_oid"])
-            self.assertEqual(published[0], COMPLETION_TESTS.run(repository, "rev-parse", "HEAD"))
+            self.assertEqual(publication["commit_oid"], reconciled["result"]["commit_oid"])
+            self.assertEqual(decision, reconciled["decision"])
             self.assertEqual(terminal_bytes, metrics.read_bytes())
             resumed = RESUME.resume(metrics, preflight, "test-run")
             self.assertEqual("created", resumed["completion_offer"]["state"])
@@ -128,6 +142,7 @@ class CompletionOfferLifecycleTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repository, request, _accepted, _metrics, _terminal, _preflight = self.accepted(directory)
             opened = OFFER.open_offer(request)
+            authorized = OFFER.resolve(opened, self.decision("create"))
             unrelated = COMPLETION_TESTS.run(
                 repository, "commit-tree", request["proposal"]["checkpoint_tree_oid"],
                 "-p", request["expected_head_oid"], "-m", "unrelated publication",
@@ -137,7 +152,20 @@ class CompletionOfferLifecycleTest(unittest.TestCase):
                 request["expected_head_oid"],
             )
             with self.assertRaisesRegex(ValueError, "ambiguous"):
-                OFFER.expire(opened, "offer no longer available")
+                OFFER.expire(authorized, "offer no longer available")
+            self.assertEqual("create_authorized", OFFER.load(repository, "test-run", 1)["state"])
+
+    def test_open_offer_never_implies_human_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted, _metrics, _terminal, _preflight = self.accepted(directory)
+            opened = OFFER.open_offer(request)
+            self.assertEqual(2, opened["schema_version"])
+            self.assertIsNone(opened["decision"])
+            with self.assertRaisesRegex(ValueError, "exact human authority"):
+                OFFER.resolve(opened, {
+                    "decision": "create",
+                    "authority": {"kind": "agent", "reference": "guess", "observed_at": "now"},
+                })
             self.assertEqual("open", OFFER.load(repository, "test-run", 1)["state"])
 
 

@@ -25,8 +25,15 @@ export function createSliceCampaignService({
   store = new InMemorySliceCampaignStore(), reviewSubject, legacyReview,
   implementationReview = null, nativeReview = null, receiptFinalizer, completionOffer = null,
 } = {}) {
-  for (const [owner, methods] of [[reviewSubject, ["createCandidate", "createPhysicalProfile"]], [legacyReview, ["review"]], [receiptFinalizer, ["finalize"]]]) {
+  for (const [owner, methods] of [[reviewSubject, ["createCandidate", "createPhysicalProfile"]], [receiptFinalizer, ["finalize"]]]) {
     if (!owner || methods.some((method) => typeof owner[method] !== "function")) throw new TypeError(`slice campaign requires composed owner ${methods.join("/")}`);
+  }
+  if (legacyReview !== undefined && legacyReview !== null
+      && typeof legacyReview.review !== "function") {
+    throw new TypeError("slice campaign legacy review owner requires review");
+  }
+  if (completionOffer !== null && typeof completionOffer.open !== "function") {
+    throw new TypeError("slice campaign completion-offer owner requires open");
   }
 
   const publish = (state, expectedRevision, options = {}) => {
@@ -96,6 +103,7 @@ export function createSliceCampaignService({
           || state.reviewSelection || state.nativeReview) {
         throw new Error("legacy review requires review-ready state without a prior review");
       }
+      if (!legacyReview) throw new Error("legacy review compatibility owner is unavailable");
       if (!state.candidate || !state.physicalProfile) throw new Error("legacy review requires an immutable candidate and physical profile");
       const review = await legacyReview.review({ subject: state.candidate, profile: state.physicalProfile, selectionPlan });
       return publish({ ...state, review }, state.revision);
@@ -204,6 +212,11 @@ export function createSliceCampaignService({
     },
     async terminalize({ identity, expectedRevision, outcome, receipt }) {
       const state = current(identity); requireRevision(state, expectedRevision);
+      const terminalRequestDigest = digest({ outcome, receipt, candidate: state.candidate });
+      if (state.phase === "terminal") {
+        if (state.terminal?.requestDigest === terminalRequestDigest) return state;
+        throw new Error("terminal campaign request conflicts with durable terminal state");
+      }
       const selected = state.reviewSelection?.specialists.filter(({selection}) => selection === "selected") ?? [];
       const obligations = nativeObligations(state);
       const nativeComplete = state.reviewSelection !== null && selected.length > 0
@@ -215,8 +228,34 @@ export function createSliceCampaignService({
       }
       requireText(outcome, "terminal outcome"); requireRecord(receipt, "terminal receipt");
       const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome, receipt, candidate: state.candidate });
-      const offer = completionOffer ? await completionOffer.offer({ identity: state.identity, outcome, candidate: state.candidate }) : null;
-      return publish({ ...state, phase: "terminal", terminal: freeze({ outcome, finalizedReceipt, completionOffer: offer }) }, state.revision, { releaseWorkspace: state.workspace });
+      return publish({ ...state, phase: "terminal", terminal: freeze({
+        outcome, finalizedReceipt, completionOffer: null,
+        completionOfferRequestDigest: null, requestDigest: terminalRequestDigest,
+      }) }, state.revision, { releaseWorkspace: state.workspace });
+    },
+    async openCompletionOffer({ identity, expectedRevision, request }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      if (state.phase !== "terminal") {
+        throw new Error("completion offer requires terminal campaign state");
+      }
+      if (!completionOffer) throw new Error("completion-offer owner is unavailable");
+      requireRecord(request, "completion offer request");
+      const requestDigest = digest(request);
+      if (state.terminal.completionOffer !== null) {
+        if (state.terminal.completionOfferRequestDigest === requestDigest) return state;
+        throw new Error("completion offer request conflicts with durable terminal state");
+      }
+      const offer = await completionOffer.open({
+        identity: state.identity,
+        outcome: state.terminal.outcome,
+        candidate: state.candidate,
+        request,
+      });
+      return publish({ ...state, terminal: freeze({
+        ...state.terminal,
+        completionOffer: freeze(structuredClone(offer)),
+        completionOfferRequestDigest: requestDigest,
+      }) }, state.revision);
     },
   });
 }

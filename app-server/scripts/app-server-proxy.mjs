@@ -16,6 +16,7 @@ import {
   createExecutableGenerationBootstrap,
   formatAppServerProtocolEvent,
 } from "../src/index.mjs";
+import { createSupervisorCampaignCapabilityHostRuntime } from "../src/services/slice-campaign/capability-host-runtime.mjs";
 
 const WORKSPACE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const execFileAsync = promisify(execFile);
@@ -140,6 +141,8 @@ async function main() {
       roleBindingsPath: options.bindingsPath,
       configuredProviderFeatures: options.tokenBudget ? ["token_budget"] : [],
       developmentArtifactRoot: options.developmentArtifactRoot,
+      supervisorCampaignHostEffectRuntimeFactory: ({ workspaceRoot, stateRoot }) =>
+        createSupervisorCampaignCapabilityHostRuntime({ workspaceRoot, stateRoot }),
     });
   } catch (error) {
     transport.close();

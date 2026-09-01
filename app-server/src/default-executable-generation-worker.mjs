@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 import { runExecutableGenerationWorker } from "./executable-generation-worker-runtime.mjs";
+import { createSupervisorCampaignCapabilityDefinitions } from "./services/slice-campaign/capability-contract.mjs";
 
 const ENVIRONMENT_TOOLS = Object.freeze([{
   type: "namespace",
@@ -76,6 +78,14 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
     const artifacts = new ProductDevelopmentArtifactRoot({ repositoryRoot, artifactRoot });
     const intake = createIntakeDelivery({ repositoryRoot, snapshotRoot, artifacts });
     const proposal = createProposalDelivery({ repositoryRoot, artifactRoot, snapshotRoot, artifacts });
+    const supervisorEffects = new AsyncLocalStorage();
+    const supervisor = createSupervisorCampaignCapabilityDefinitions(async (request) => {
+      const effect = supervisorEffects.getStore();
+      if (typeof effect !== "function") {
+        throw new Error("supervisor capability call is outside an admitted generation dispatch");
+      }
+      return effect(request);
+    });
     const catalog = new Map([
       ...Object.entries(intakeCapabilityDefinitions).map(([id, definition]) => [id, {
         ...definition,
@@ -85,16 +95,14 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
         ...definition,
         handler: definition.name === "read_intake" ? proposal.readIntake : proposal.publish,
       }]),
+      ...supervisor,
     ]);
     const attachmentPath = process.env.WORK_ENGINE_RUN_EXTENSION_ATTACHMENT_PATH;
     const extensionAttachment = attachmentPath
       ? JSON.parse(await readFile(attachmentPath, "utf8")) : null;
     const extensionRegistry = extensionAttachment
       ? createRunExtensionRegistry(extensionAttachment, new Map(
-        [...catalog.entries()].map(([id, definition]) => [id,
-          definition.name === "read_source" ? intake.readSource
-            : definition.name === "read_intake" ? proposal.readIntake
-              : definition.name === "publish_intake" ? intake.publish : proposal.publish]),
+        [...catalog.entries()].map(([id, definition]) => [id, definition.handler]),
       )) : null;
     const roleToolBridgeResolver = (capabilityIds) => {
       if (!Array.isArray(capabilityIds)) throw new TypeError("role capabilities must be an array");
@@ -118,7 +126,7 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       productDevelopmentEnvironmentIdentity: artifacts.environmentIdentity(),
       extensionRegistryIdentity: extensionRegistry?.attachment_sha256 ?? null,
     });
-    return Object.freeze({ ...environment, extensionRegistry });
+    return Object.freeze({ ...environment, extensionRegistry, supervisorEffects });
   })()
   : null;
 
@@ -155,7 +163,12 @@ runExecutableGenerationWorker({
           result: await roleEnvironment.extensionRegistry.bridge.dispatch(payload.params),
         };
       }
-      if (roleEnvironment) return roleEnvironment.handleServerRequest(payload);
+      if (roleEnvironment) {
+        return roleEnvironment.supervisorEffects.run(
+          effect,
+          () => roleEnvironment.handleServerRequest(payload),
+        );
+      }
       return { disposition: "forward" };
     }
     if (operation === "app_server.notification") {

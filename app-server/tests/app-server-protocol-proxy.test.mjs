@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { chmod, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -8,6 +8,8 @@ import test from "node:test";
 import { WebSocket } from "ws";
 
 import { AppServerProtocolProxy } from "../src/index.mjs";
+
+const PROXY_ENTRY = path.resolve("app-server/scripts/app-server-proxy.mjs");
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
@@ -91,6 +93,13 @@ function deferred() {
   const promise = new Promise((settle) => { resolve = settle; });
   return { promise, resolve };
 }
+
+test("proxy entry composes the stable supervisor campaign capability host", async () => {
+  const source = await readFile(PROXY_ENTRY, "utf8");
+  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
+  assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot, stateRoot \}\)\s*=>/);
+  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{ workspaceRoot, stateRoot \}\)/);
+});
 
 async function fixture(t) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy."));

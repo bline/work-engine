@@ -18,6 +18,8 @@ import { compileRunExtensionBundle } from "./run-extension-bundle-compiler.mjs";
 export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/default-executable-generation-worker.mjs",
   "app-server/src/executable-generation-worker-runtime.mjs",
+  "app-server/src/services/slice-campaign/capability-contract.mjs",
+  "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
 ]);
 
 export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
