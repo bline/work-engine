@@ -383,8 +383,112 @@ published S8
     -> run the first multi-agent S9 campaign through App Server
     -> complete S9-S12 native review closure
     -> add S12E run-scoped extension bundles for isolated non-core workloads
+    -> close the post-S12E production-supervisor inhabitation gap
     -> finish S13-S17 portfolio cutover and legacy retirement
 ```
+
+## Post-S12E operational inhabitation correction
+
+This section is the durable continuation owner for a migration correction
+accepted on 2026-09-01 after the first manual attempt to inhabit the migrated
+environment. It preserves the scoped acceptance of S12 and S12E while closing
+an operational inference that their original acceptance evidence did not
+establish.
+
+S12 completed its scoped native review-loop closure, and S12E completed its
+scoped sealed run-extension machinery. Neither slice owned or tested the full
+production route from the pinned Codex TUI, through the proxy and executable
+generation, into a normal `slice-supervisor` domain turn with every capability
+required by that role backed by a real stable-host owner. Their accepted
+component evidence therefore remains valid, but it was insufficient evidence
+that the migrated environment was ready to host ordinary supervisor-led
+development or an isolated pilot. Do not reinterpret component acceptance as
+operational inhabitation evidence.
+
+The attempted linguistic-register pilot exposed the missing route before real
+pilot execution. A newer ambient Codex CLI was initially selected instead of
+the repository-pinned `0.149.1` client; generation-worker failures lost useful
+bounded provenance; and, after the client mismatch was removed, operator
+commands could enumerate roles while a normal turn still failed in generation
+dispatch. The production `slice-supervisor` manifest requires eleven host
+capabilities, but the executable generation registered none of their real host
+owners. Continuing S13 without closing that boundary would make successful
+fixtures stand in for the production route and could strand campaign state or
+authority behind tools that the role cannot invoke.
+
+The immediate proxy and worker reliability repair is published as
+`4ddb44664697843439874ffc43560894247f7a39`. The remaining correction is a
+bounded A1-through-A4 compatibility closure:
+
+1. **A1 — stable supervisor host-effect seam.** Define a closed, validated,
+   generation-bound protocol from replaceable executable-generation workers to
+   a stable host-owned runtime. Reject malformed lookalikes without falling
+   through to another effect route, preserve bounded diagnostics, and dispose
+   the worker before its stable runtime. A1 intentionally registers zero of
+   the eleven supervisor capabilities. Its independently reviewed accepted
+   checkpoint is
+   `refs/work-engine/checkpoints/proxy-supervisor-repair-20260901/slice-2/accepted`,
+   tree `cdecce3e4968a1b2c8241e81330a61db20d19e01`.
+2. **A2 — six campaign and control capabilities.** Implement real stable-host
+   owners for `preflight`, `lifecycle_control`, `receipt_finalization`,
+   `checkpoint_lifecycle`, `completion_offer`, and `resume`, with closed
+   operation envelopes and thin generation-pinned clients. Human completion
+   decisions remain exact durable inputs: `completion_offer` may record a
+   human `create` decision as `create_authorized`, but it cannot publish Git;
+   `completion_publication` owns that later mutation. A2 does not emulate the
+   other five capabilities or claim first-turn readiness.
+3. **A3 — workspace and publication capabilities.** Implement
+   `workspace_coordination`, `worktree_lifecycle`, `canonical_publication`, and
+   `completion_publication` through isolated worktrees and authoritative
+   mutation admission. This slice must close the observed transitional gap in
+   which the legacy completion adapter refuses a dirty human checkout while
+   the canonical publisher cannot move its currently checked-out branch.
+   Accepted work must be publishable without staging, absorbing, moving, or
+   deleting unrelated human files, and stale parent or fencing state must fail
+   closed.
+4. **A4 — strategic composition and inhabitation proof.** Implement
+   `strategic_reconciliation`, compose all eleven real capabilities into the
+   production supervisor environment, and run the pinned proxy/TUI vertical.
+   This is the first slice allowed to claim that the migrated supervisor is
+   operationally inhabitable.
+
+At this amendment's 2026-09-01 evidence cutoff, A1 is privately accepted and
+A2 is implementation-ready but not checkpointed, independently reviewed, or
+accepted. Its implementation and deterministic-gate receipts are
+`.git/work-engine/app-server-development/proxy-supervisor-repair-20260901/a2-implementation-ready-v1.json`
+and `a2-deterministic-gate-v1.json`, with SHA-256 digests
+`8ce62bad981b835f6e237ae81d459552d7fa16b75618aa0926f25515ce573a8d`
+and `9a34d3c2bbae877397cde98258596dccde1bee3f4976783165cbbedb6b621240`.
+A3 and A4 have not started. Later evidence may advance this status but must not
+rewrite these recorded facts.
+
+The A1-A4 labels describe this corrective compatibility closure; they do not
+renumber the canonical migration slices, widen S12/S12E ownership, or absorb
+S13 research semantics. Each accepted sub-slice remains an immutable handoff
+to the next. Missing capability registrations, no-op adapters, generic command
+execution, caller-selected backend paths, or fixture-only composition cannot
+satisfy the closure.
+
+The operational-inhabitation gate requires evidence that the repository-pinned
+Codex `0.149.1` client can initialize through the production proxy, attach the
+production `slice-supervisor`, and complete its first normal domain turn under
+the active executable generation; all eleven required capabilities resolve to
+their named real owners; generation reload and proxy restart preserve or
+truthfully recover stable state; malformed, stale, unauthorized, and
+unavailable operations fail closed with bounded diagnostics; and the user's
+ordinary checkout, index, unrelated files, and network authority remain
+untouched. Operator-only commands such as role enumeration, isolated service
+tests, or a turn that never reaches supervisor capability use are insufficient
+substitutes.
+
+S13 remains paused until that gate passes. Its first implementation
+responsibility is preserved at immutable candidate
+`refs/work-engine/checkpoints/skills-migration-app-server-s9-20260830/slice-6/candidate-1`,
+commit `1711a951805b26b492a69192ef2f29a9d9f5cb02`; it resumes at review and
+acceptance rather than being rebuilt. Real linguistic-register pilot execution
+remains separately governed by its pilot protocol and human approval after the
+sealed bundle and end-to-end dry run succeed. Neither the corrective closure
+nor successful inhabitation grants pilot execution or production authority.
 
 ## Candidate slices
 
