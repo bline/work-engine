@@ -10,8 +10,13 @@ runExecutableGenerationWorker({
     if (operation === "echo") {
       return { disposition: "respond", result: { generationId: generation.generationId, payload } };
     }
-    if (operation === "effect") {
+    if (["effect", "supervisor_campaign_effect"].includes(operation)) {
       return { disposition: "respond", result: await effect(payload) };
+    }
+    if (operation === "app_server.server_request"
+        && payload?.method === "item/tool/call"
+        && payload.params?.tool === "fixture_supervisor_campaign_effect") {
+      return { disposition: "respond", result: await effect(payload.params.arguments) };
     }
     if (["app_server.request", "app_server.notification"].includes(operation)) {
       return { disposition: "forward" };

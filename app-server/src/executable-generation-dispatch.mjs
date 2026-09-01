@@ -1,3 +1,8 @@
+import {
+  isSupervisorCampaignHostEffectCandidate,
+  SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+} from "./services/slice-campaign/host-effect-runtime.mjs";
+
 function text(value, label) {
   if (typeof value !== "string" || value.length === 0) {
     throw new TypeError(`${label} must be a non-empty string`);
@@ -153,7 +158,9 @@ export class ExecutableGenerationDispatchHost {
 }
 
 export class GenerationBoundAppServerTransport {
-  constructor({ transport, dispatchHost, idFactory = null }) {
+  constructor({
+    transport, dispatchHost, idFactory = null, supervisorCampaignHostEffectRuntime = null,
+  }) {
     if (!transport || typeof transport.request !== "function"
         || typeof transport.notify !== "function") {
       throw new TypeError("generation-bound App Server transport requires a delegate transport");
@@ -166,6 +173,11 @@ export class GenerationBoundAppServerTransport {
     this.sequence = 0;
     this.dispatchTail = Promise.resolve();
     this.idFactory = idFactory ?? ((kind) => `${kind}-${++this.sequence}`);
+    if (supervisorCampaignHostEffectRuntime !== null
+        && typeof supervisorCampaignHostEffectRuntime?.dispatch !== "function") {
+      throw new TypeError("generation-bound transport requires a supervisor campaign host-effect runtime");
+    }
+    this.supervisorCampaignHostEffectRuntime = supervisorCampaignHostEffectRuntime;
     this.serverRequestHandler = null;
     this.notificationHandlers = new Set();
     this.lifecycleErrorHandlers = new Set();
@@ -203,7 +215,7 @@ export class GenerationBoundAppServerTransport {
       }, (_generation, forwardedRequest) => {
         if (!this.serverRequestHandler) throw new Error("no App Server client request handler");
         return this.serverRequestHandler(forwardedRequest);
-      });
+      }, (generation, effectPayload) => this.#performGenerationEffect(generation, effectPayload));
     }
     return this.dispatchHost.runCallback({
       kind: "app_server_callback",
@@ -213,7 +225,7 @@ export class GenerationBoundAppServerTransport {
     }, (_generation, forwardedRequest) => {
       if (!this.serverRequestHandler) throw new Error("no App Server client request handler");
       return this.serverRequestHandler(forwardedRequest);
-    });
+    }, (generation, effectPayload) => this.#performGenerationEffect(generation, effectPayload));
   }
 
   async #handleNotification(notification) {
@@ -230,8 +242,8 @@ export class GenerationBoundAppServerTransport {
             subjectId: turnId,
             operation: "app_server.backend_notification",
             payload: notification,
-          }, () => { forwardNotification = true; }, (_generation, effectPayload) =>
-            this.#performGenerationEffect(effectPayload));
+          }, () => { forwardNotification = true; }, (generation, effectPayload) =>
+            this.#performGenerationEffect(generation, effectPayload));
           this.turnAdmissions.delete(turnId);
           reloadCompletion = this.dispatchHost.manager.closeAdmission(admission);
         } else {
@@ -248,8 +260,8 @@ export class GenerationBoundAppServerTransport {
         id: text(this.idFactory("notification"), "generation callback admission id"),
         operation: "app_server.backend_notification",
         payload: notification,
-      }, () => { forwardNotification = true; }, (_generation, effectPayload) =>
-        this.#performGenerationEffect(effectPayload));
+      }, () => { forwardNotification = true; }, (generation, effectPayload) =>
+        this.#performGenerationEffect(generation, effectPayload));
     }
     if (reloadCompletion) await reloadCompletion;
     if (forwardNotification) {
@@ -284,7 +296,19 @@ export class GenerationBoundAppServerTransport {
     return response;
   }
 
-  async #performGenerationEffect(payload) {
+  async #performGenerationEffect(generation, payload) {
+    if (payload?.protocol === SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL) {
+      if (!this.supervisorCampaignHostEffectRuntime) {
+        throw new Error("supervisor campaign host-effect runtime is unavailable");
+      }
+      return this.supervisorCampaignHostEffectRuntime.dispatch({
+        generationId: text(generation?.generationId, "effect generation identity"),
+        effect: structuredClone(payload),
+      });
+    }
+    if (isSupervisorCampaignHostEffectCandidate(payload)) {
+      throw new TypeError("generation supervisor campaign effect is malformed");
+    }
     if (!payload || typeof payload.method !== "string") {
       throw new TypeError("generation App Server effect requires a method");
     }

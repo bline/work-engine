@@ -248,8 +248,18 @@ export async function createExecutableGenerationBootstrap({
   workerRequestTimeoutMs = 10_000,
   workerDispatchTimeoutMs = 30 * 60_000,
   extensionHostPolicy = {},
+  supervisorCampaignHostEffectRuntime = null,
+  supervisorCampaignHostEffectRuntimeFactory = null,
 } = {}) {
   if (!transport) throw new TypeError("executable generation bootstrap requires a transport");
+  if (supervisorCampaignHostEffectRuntime !== null
+      && supervisorCampaignHostEffectRuntimeFactory !== null) {
+    throw new TypeError("supervisor campaign host-effect runtime and factory are mutually exclusive");
+  }
+  if (supervisorCampaignHostEffectRuntimeFactory !== null
+      && typeof supervisorCampaignHostEffectRuntimeFactory !== "function") {
+    throw new TypeError("supervisor campaign host-effect runtime factory must be a function");
+  }
   const source = runtimeManifestPath === null
     ? { files, generatedFiles: {} }
     : await roleEnvironmentSource({
@@ -379,6 +389,7 @@ export async function createExecutableGenerationBootstrap({
     })
     : stored.activeGeneration;
   let activeWorker;
+  let campaignHostEffectRuntime = null;
   try {
     activeWorker = await spawnSnapshot(activeSnapshot, activeRecord);
   } catch (error) {
@@ -417,6 +428,17 @@ export async function createExecutableGenerationBootstrap({
         successor: generationFromWorker(activeWorker),
       })
       : null;
+    campaignHostEffectRuntime = supervisorCampaignHostEffectRuntimeFactory
+      ? await supervisorCampaignHostEffectRuntimeFactory(Object.freeze({
+        workspaceRoot: path.resolve(workspaceRoot),
+        stateRoot: path.resolve(stateRoot),
+      }))
+      : supervisorCampaignHostEffectRuntime;
+    if (campaignHostEffectRuntime !== null
+        && (typeof campaignHostEffectRuntime?.dispatch !== "function"
+          || typeof campaignHostEffectRuntime?.close !== "function")) {
+      throw new TypeError("supervisor campaign host-effect runtime requires dispatch and close");
+    }
     const manager = await ExecutableGenerationManager.create({
       activeGeneration: activeWorker,
       store,
@@ -446,7 +468,10 @@ export async function createExecutableGenerationBootstrap({
     return Object.freeze({
       manager,
       dispatchHost,
-      transport: new GenerationBoundAppServerTransport({ transport, dispatchHost }),
+      transport: new GenerationBoundAppServerTransport({
+        transport, dispatchHost,
+        supervisorCampaignHostEffectRuntime: campaignHostEffectRuntime,
+      }),
       currentSnapshot,
       currentSnapshotFailureType,
       startupSelection: Object.freeze({
@@ -459,10 +484,14 @@ export async function createExecutableGenerationBootstrap({
         reconciliationId: startupReconciliation?.reconciliationId ?? null,
       }),
       statePath: store.filePath,
-      close: (options) => manager.close(options),
+      close: async (options) => {
+        await manager.close(options);
+        await campaignHostEffectRuntime?.close();
+      },
     });
   } catch (error) {
     await activeWorker.dispose();
+    await campaignHostEffectRuntime?.close();
     if (error instanceof ExecutableGenerationStartupError) throw error;
     throw startupError(
       "candidate_invalid",

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { ChildProcess } from "node:child_process";
 import {
   appendFile, copyFile, mkdir, mkdtemp, readFile, rm, unlink, writeFile,
 } from "node:fs/promises";
@@ -20,6 +21,10 @@ import {
 } from "../src/index.mjs";
 import { DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES } from "../src/executable-generation-bootstrap.mjs";
 import { createExecutableGenerationRoleEnvironment } from "../src/executable-generation-role-environment.mjs";
+import {
+  createSupervisorCampaignHostEffectRuntime,
+  SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+} from "../src/services/slice-campaign/host-effect-runtime.mjs";
 
 const ENTRY = path.resolve(
   "app-server/tests/fixtures/executable-generation-worker-fixture.mjs",
@@ -121,6 +126,71 @@ test("worker effects exist only inside their admitted dispatch", async (t) => {
     (error) => error instanceof ExecutableGenerationWorkerError
       && error.code === "invalid_worker_effect",
   );
+});
+
+test("a fixture tool call reaches only the typed stable supervisor campaign host runtime", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-supervisor-host-effect-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const worker = await spawnWorker("generation-host-bound");
+  await worker.validate();
+  await worker.activate();
+  const manager = await ExecutableGenerationManager.create({
+    activeGeneration: worker,
+    store: new FileExecutableGenerationStore(path.join(root, "generations.json")),
+    substrateArbiter: new InMemoryReplaceableSubstrateArbiter(),
+    snapshotter: async () => {}, candidateBuilder: async () => {},
+  });
+  const calls = [];
+  const runtime = createSupervisorCampaignHostEffectRuntime({ registrations: [{
+    capability: "capability.preflight", operation: "validate",
+    validateInput(value) {
+      assert.deepEqual(Object.keys(value).sort(), ["campaign"]);
+      assert.deepEqual(Object.keys(value.campaign).sort(), ["identity"]);
+      return value;
+    },
+    async handler(value) {
+      calls.push(value);
+      return { schema_version: 1, status: "valid", identity: value.input.campaign.identity };
+    },
+    validateOutput(value) {
+      assert.deepEqual(Object.keys(value).sort(), ["identity", "schema_version", "status"]);
+      return value;
+    },
+  }] });
+  let serverRequest;
+  const delegate = {
+    onServerRequest(handler) { serverRequest = handler; }, onNotification() {}, onClosed() {},
+    async request() { throw new Error("supervisor effect must not reach App Server transport"); },
+    async notify() {},
+  };
+  new GenerationBoundAppServerTransport({
+    transport: delegate,
+    dispatchHost: new ExecutableGenerationDispatchHost(manager),
+    supervisorCampaignHostEffectRuntime: runtime,
+  });
+  const envelope = {
+    protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+    capability: "capability.preflight", operation: "validate",
+    input: { campaign: { identity: "campaign-worker-vertical" } },
+  };
+  assert.deepEqual(await serverRequest({
+    method: "item/tool/call",
+    params: { tool: "fixture_supervisor_campaign_effect", arguments: envelope },
+  }), { schema_version: 1, status: "valid", identity: "campaign-worker-vertical" });
+  assert.deepEqual(calls, [{
+    generationId: "generation-host-bound",
+    input: { campaign: { identity: "campaign-worker-vertical" } },
+  }]);
+
+  await assert.rejects(serverRequest({ method: "item/tool/call", params: {
+    tool: "fixture_supervisor_campaign_effect",
+    arguments: { ...envelope, operation: "unknown" },
+  }}), (error) => error instanceof ExecutableGenerationWorkerError
+      && error.details.diagnosticCode === "effect_failed");
+  assert.equal(calls.length, 1);
+  await manager.close();
+  runtime.close();
+  runtime.close();
 });
 
 test("dispatch and effect failures preserve only bounded diagnostics", async (t) => {
@@ -444,6 +514,95 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
     path.join(stateRoot, "generation-state.json"),
   ).read();
   assert.equal(preservedState.activeGeneration.generationId, reconciledGenerationId);
+});
+
+test("bootstrap owns one stable supervisor campaign host runtime across reload and shutdown", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-host-runtime-bootstrap-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const workspaceRoot = path.join(root, "workspace");
+  const targetRoot = path.join(workspaceRoot, "app-server", "src");
+  await mkdir(targetRoot, { recursive: true });
+  for (const name of [
+    "default-executable-generation-worker.mjs",
+    "executable-generation-worker-runtime.mjs",
+  ]) {
+    await copyFile(path.resolve("app-server/src", name), path.join(targetRoot, name));
+  }
+  const delegate = {
+    onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
+    async request(method) { return { method }; },
+  };
+  const runtime = { async dispatch() {}, async close() {} };
+
+  await assert.rejects(createExecutableGenerationBootstrap({
+    workspaceRoot,
+    stateRoot: path.join(root, "mutually-exclusive-state"),
+    transport: delegate,
+    supervisorCampaignHostEffectRuntime: runtime,
+    supervisorCampaignHostEffectRuntimeFactory: async () => runtime,
+  }), /runtime and factory are mutually exclusive/);
+
+  let factoryWorker;
+  const childrenBeforeFailure = new Set(
+    process._getActiveHandles().filter((handle) => handle instanceof ChildProcess),
+  );
+  await assert.rejects(createExecutableGenerationBootstrap({
+    workspaceRoot,
+    stateRoot: path.join(root, "factory-failure-state"),
+    transport: delegate,
+    workerRequestTimeoutMs: 2_000,
+    supervisorCampaignHostEffectRuntimeFactory: async () => {
+      factoryWorker = process._getActiveHandles().find((handle) =>
+        handle instanceof ChildProcess && !childrenBeforeFailure.has(handle));
+      throw new Error("fixture host runtime factory failure");
+    },
+  }), (error) => error instanceof ExecutableGenerationStartupError
+      && error.code === "candidate_invalid"
+      && error.details.failureType === "Error");
+  assert.equal(factoryWorker instanceof ChildProcess, true);
+  assert.equal(factoryWorker.connected, false);
+
+  const events = [];
+  let factoryCalls = 0;
+  let bootstrap;
+  bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot,
+    stateRoot: path.join(root, "stable-runtime-state"),
+    transport: delegate,
+    workerRequestTimeoutMs: 2_000,
+    supervisorCampaignHostEffectRuntimeFactory: async ({ workspaceRoot: ownerWorkspaceRoot,
+      stateRoot: ownerStateRoot }) => {
+      factoryCalls += 1;
+      assert.equal(ownerWorkspaceRoot, path.resolve(workspaceRoot));
+      assert.equal(ownerStateRoot, path.resolve(root, "stable-runtime-state"));
+      return {
+        async dispatch() {},
+        async close() {
+          await assert.rejects(
+            bootstrap.manager.activeGeneration.dispatch("echo", {}),
+            (error) => error instanceof ExecutableGenerationWorkerError
+              && error.code === "worker_unavailable",
+          );
+          events.push("runtime:worker-unavailable");
+        },
+      };
+    },
+  });
+  assert.equal(factoryCalls, 1);
+
+  await appendFile(path.join(targetRoot, "default-executable-generation-worker.mjs"), "\n");
+  let staged;
+  await bootstrap.manager.runAdmission({ kind: "turn", id: "reload-stable-runtime" }, async () => {
+    staged = await bootstrap.manager.requestReload({
+      requestedByTurnId: "reload-stable-runtime",
+      source: {},
+    });
+  });
+  await staged.completion;
+  assert.equal(factoryCalls, 1);
+
+  await bootstrap.close();
+  assert.deepEqual(events, ["runtime:worker-unavailable"]);
 });
 
 test("bootstrap binds one sealed extension to generation identity and recovers it on restart", async (t) => {
