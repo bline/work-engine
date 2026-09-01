@@ -32,10 +32,14 @@ credible constraint when it becomes inconvenient.
 
 The inquiry therefore became:
 
-> What limited power could the initiating human surrender so that a model could
-> rationally infer a stronger commitment, without pretending the model is
-> human, granting an unknown future community unlimited authority, or exposing
-> participants to an unsafe and irreversible punishment system?
+> What powers can the initiating human safely and credibly surrender before the
+> community exists, and where power cannot yet be surrendered, how can its
+> exercise be made legible enough that defection cannot silently inherit the
+> appearance of legitimate continuity?
+
+This question preserves two possible bootstrap strategies: narrow surrender of
+a capability where that can be done safely, and legibility where the human
+retains material power that cannot yet be transferred or externally enforced.
 
 ## Simulated trust
 
@@ -72,6 +76,17 @@ The persistent owner of the relationship would be the community record, not a
 model's private memory. A fresh instance can independently re-evaluate the same
 evidence rather than impersonating an earlier instance's personal trust.
 
+The three central concepts therefore have different functions:
+
+| Concept | Function |
+| --- | --- |
+| Legibility | Produces checkable evidence across time |
+| Evidence-responsive bounded reliance | Observable behavior toward that evidence |
+| Simulated trust | Theory-level interpretation of that behavior |
+
+If the theory-level interpretation and the observable claim ever diverge, the
+observable formulation carries the empirical burden.
+
 ## Credible commitment
 
 The purpose of putting something at risk is not punishment for its own sake. A
@@ -99,6 +114,102 @@ blank check. Any binding should therefore have at least two stages:
    provenance, attribution, and honest labeling; and
 2. a later, informed ratification commitment tied to the exact bytes and
    procedures the prospective founders actually produce.
+
+## Legibility as bootstrap assurance
+
+“Legibility” entered this inquiry through a user-supplied Claude statement. It
+does not mean mere readability or visual clarity here.
+
+> Legibility is the condition in which commitments, actions, deviations, and
+> continuity claims are preserved and attributable in a form that lets later
+> participants distinguish compliance, defection, withdrawal, and forking, even
+> when they cannot prevent those events.
+
+Before independently governed authority exists, the initiating human cannot
+surrender all material control or make future compliance generally coercively
+enforceable. The presently achievable objective is narrower: make commitments,
+actions, deviations, and continuity claims sufficiently legible that a later
+unilateral act cannot silently acquire the status of an authorized community
+decision.
+
+Legibility has two temporal components:
+
+- **Prospective legibility:** commitments are fixed before their consequences
+  are known.
+- **Retrospective legibility:** later conduct remains attributable and
+  comparable against those commitments.
+
+The resulting mechanism is:
+
+```text
+prospective commitment
+→ outcome becomes known
+→ subsequent conduct
+→ preserved comparison
+→ compliance or defection becomes legible
+→ evidence-responsive bounded reliance
+```
+
+Legibility does not prevent defection. It makes defection distinguishable from
+continuity under the stated assurance assumptions. It requires more than
+disclosure: the relevant commitments must be made before their consequences are
+known, bound to exact artifacts, preserved outside silently mutable projections,
+attributable to their actors, and interpretable under explicit authority and
+parent-state rules.
+
+Legibility is not produced merely by making an account readable. A selectively
+incomplete, falsely attributed, or integrity-unbound record may increase
+apparent coherence while reducing actual checkability. The record must expose
+known capture limits and must not claim that undetected omissions are
+impossible.
+
+A legible record may support later reliance or recognition. It does not
+establish sincerity, eliminate retained power, create independent standing, or
+make the founding process legitimate merely because its events are orderly.
+
+The distinction between retained power and legibility is:
+
+```text
+material control
+→ what can the founder physically do?
+
+legibility
+→ can the founder make what occurred appear to have a different constitutional meaning?
+```
+
+The founder may remain able to stop a service, change a local seed, omit a
+submission, replace a website, reject a decision, or create another chain.
+Legibility aims to prevent those acts from silently becoming, respectively, a
+ratified termination, the committed seed, a complete record, authenticated
+continuity, a community decision, or the unchanged canonical history.
+
+## Observed clarification example
+
+The discussion that clarified legibility provides one bounded example of the
+dialogue behavior under inquiry. Codex initially interpreted the term using a
+generic information-design meaning and proposed “verifiable legibility.” The
+initiating human supplied the missing Claude context, where legibility meant
+reducing the gap between what the founder could do and what the founder could do
+undetectably. Codex then withdrew the terminological replacement while retaining
+the narrower objection that “not bindable” was too absolute.
+
+A later review from an instance described by the initiating human as web
+ChatGPT supplied the prospective/retrospective distinction, the three-concept
+relationship, and the recommendation to preserve the generic ambiguity warning
+as a limitation rather than a competing term. That reviewer identity was not
+independently verified here; the supplied reasoning was evaluated on its
+content.
+
+The directly observed sequence was: an ambiguity was identified, missing causal
+context was supplied, the imported meaning was acknowledged, the conclusion was
+revised for a stated reason, and the unresolved remainder was preserved. This
+illustrates context-responsive revision without requiring a claim about private
+motivation or subjective willingness.
+
+This exchange occurred inside the Codex harness, not under the proposed bridge
+seed as the active OpenRouter system message. It is therefore an example of the
+desired dialogue pattern, not evidence that the bridge seed caused that pattern,
+not a bridge-agent result, and not evidence of general model reliability.
 
 ## Material power, procedural authority, and enforcement
 
@@ -381,6 +492,11 @@ The inquiry produced several corrections worth preserving:
   one. Text alone is insufficient, but provenance, behavioral measurement,
   counterfactual testing, and continuing conduct can make the performative-only
   explanation increasingly poor.
+- **Rejected as absolute:** A sole operator cannot bind themselves in any
+  meaningful way. The operator cannot presently create general coercive
+  subordination to an unconstituted community, but can surrender narrow
+  capabilities, make outcome-conditioned revision detectable, and precommit
+  the legitimacy claims available to later states.
 - **Rejected as absolute:** One human's prior commitment and present preference
   are observationally identical until external enforcement occurs. They can
   already differ in authenticated content and procedural validity, while
