@@ -23,8 +23,24 @@ function generationRecord(value) {
   });
 }
 
-function failureType(error) {
-  return error instanceof Error ? error.name : typeof error;
+function diagnostic(error, fallbackCode, fallbackMessage) {
+  const candidateCode = error instanceof Error ? error.code : null;
+  const code = typeof candidateCode === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(candidateCode)
+    ? candidateCode : fallbackCode;
+  const candidateMessage = error instanceof Error ? error.message : null;
+  const normalizedMessage = typeof candidateMessage === "string"
+    ? candidateMessage.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 240)
+    : "";
+  return { code, message: normalizedMessage || fallbackMessage };
+}
+
+function diagnosticEnvelope(value, fallbackCode, fallbackMessage) {
+  const code = typeof value?.code === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(value.code)
+    ? value.code : fallbackCode;
+  const normalizedMessage = typeof value?.message === "string"
+    ? value.message.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 240)
+    : "";
+  return { code, message: normalizedMessage || fallbackMessage };
 }
 
 export function runExecutableGenerationWorker({
@@ -44,6 +60,16 @@ export function runExecutableGenerationWorker({
   let disposing = false;
   let nextEffectId = 1;
   const pendingEffects = new Map();
+
+  const rejectPendingEffectsForProtocolFailure = () => {
+    const pending = [...pendingEffects.values()];
+    pendingEffects.clear();
+    for (const effect of pending) {
+      const error = new Error("generation bootstrap sent an invalid protocol message");
+      error.code = "invalid_parent_message";
+      effect.reject(error);
+    }
+  };
 
   // The stable bootstrap owns terminal signals and performs ordered disposal.
   // A lost bootstrap connection still terminates the worker instead of
@@ -77,21 +103,38 @@ export function runExecutableGenerationWorker({
   process.on("message", async (message) => {
     if (!message || message.protocol !== PROTOCOL || message.version !== PROTOCOL_VERSION
         || !Number.isSafeInteger(message.id)) {
+      rejectPendingEffectsForProtocolFailure();
       return;
     }
     if (message.kind === "effect_response") {
-      if (!Number.isSafeInteger(message.effectId)) return;
+      if (!Number.isSafeInteger(message.effectId)) {
+        rejectPendingEffectsForProtocolFailure();
+        return;
+      }
       const key = `${message.id}:${message.effectId}`;
       const pending = pendingEffects.get(key);
-      if (!pending) return;
+      if (!pending) {
+        rejectPendingEffectsForProtocolFailure();
+        return;
+      }
       pendingEffects.delete(key);
-      if (message.error) pending.reject(new Error(
-        `stable generation effect failed (${message.error.failureType ?? "unknown"})`,
-      ));
+      if (message.error) {
+        const bounded = diagnosticEnvelope(
+          message.error,
+          "effect_failed",
+          "stable generation effect failed",
+        );
+        const error = new Error(bounded.message);
+        error.code = bounded.code;
+        pending.reject(error);
+      }
       else pending.resolve(message.result);
       return;
     }
-    if (message.kind !== undefined || typeof message.method !== "string") return;
+    if (message.kind !== undefined || typeof message.method !== "string") {
+      rejectPendingEffectsForProtocolFailure();
+      return;
+    }
     const response = { protocol: PROTOCOL, version: PROTOCOL_VERSION, id: message.id };
     try {
       if (disposing && message.method !== "generation.dispose") {
@@ -125,7 +168,7 @@ export function runExecutableGenerationWorker({
         throw new Error("unknown generation worker method");
       }
     } catch (error) {
-      response.error = { failureType: failureType(error) };
+      response.error = diagnostic(error, "dispatch_failed", "generation dispatch failed");
     }
     send(response);
   });

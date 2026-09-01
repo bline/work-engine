@@ -40,6 +40,22 @@ export const PINNED_PROVIDER_RUNTIME = Object.freeze({
 
 export class CapabilityError extends Error {}
 
+export function codexCliVersionFromOutput(output) {
+  if (typeof output !== "string") return null;
+  const match = /^codex-cli\s+(\S+)\s*$/.exec(output);
+  return match?.[1] ?? null;
+}
+
+export function assertCompatibleCodexCliOutput(output, protocol = PINNED_PROTOCOL) {
+  const actualVersion = codexCliVersionFromOutput(output);
+  if (actualVersion !== protocol.codexCliVersion) {
+    throw new CapabilityError(
+      `codex CLI ${actualVersion ?? "unknown"} does not match pinned ${protocol.codexCliVersion}`,
+    );
+  }
+  return actualVersion;
+}
+
 function normalizedNames(values, label) {
   if (!Array.isArray(values)) throw new CapabilityError(`${label} must be an array`);
   const names = new Set();

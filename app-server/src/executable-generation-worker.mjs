@@ -31,6 +31,26 @@ function failureType(error) {
   return error instanceof Error ? error.name : typeof error;
 }
 
+function diagnostic(error, fallbackCode, fallbackMessage) {
+  const candidateCode = error instanceof Error ? error.code : null;
+  const code = typeof candidateCode === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(candidateCode)
+    ? candidateCode : fallbackCode;
+  const candidateMessage = error instanceof Error ? error.message : null;
+  const normalizedMessage = typeof candidateMessage === "string"
+    ? candidateMessage.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 240)
+    : "";
+  return { code, message: normalizedMessage || fallbackMessage };
+}
+
+function diagnosticEnvelope(value, fallbackCode, fallbackMessage) {
+  const code = typeof value?.code === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(value.code)
+    ? value.code : fallbackCode;
+  const normalizedMessage = typeof value?.message === "string"
+    ? value.message.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 240)
+    : "";
+  return { code, message: normalizedMessage || fallbackMessage };
+}
+
 function protocolMessage(message) {
   return message && message.protocol === PROTOCOL && message.version === PROTOCOL_VERSION
     && Number.isSafeInteger(message.id);
@@ -140,10 +160,15 @@ export class ForkedExecutableGenerationWorker extends EventEmitter {
     this.pending.delete(message.id);
     clearTimeout(pending.timeout);
     if (message.error) {
+      const bounded = diagnosticEnvelope(
+        message.error,
+        "worker_request_failed",
+        `generation worker ${pending.method} failed`,
+      );
       pending.reject(new ExecutableGenerationWorkerError(
         "worker_request_failed",
-        `generation worker ${pending.method} failed (${message.error.failureType ?? "unknown"})`,
-        { failureType: message.error.failureType },
+        bounded.message,
+        { diagnosticCode: bounded.code },
       ));
     } else {
       pending.resolve(message.result);
@@ -168,7 +193,7 @@ export class ForkedExecutableGenerationWorker extends EventEmitter {
     try {
       response.result = await pending.effect(structuredClone(message.payload));
     } catch (error) {
-      response.error = { failureType: failureType(error) };
+      response.error = diagnostic(error, "effect_failed", "stable generation effect failed");
     }
     if (this.closed || !this.child.connected) return;
     this.child.send(response, (error) => {

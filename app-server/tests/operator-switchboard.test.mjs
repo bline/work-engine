@@ -127,6 +127,11 @@ test("administrative commands never reach the role runtime or create bindings", 
     command: "agents",
     roles: ["alpha", "beta"],
   });
+  assert.deepEqual(await switchboard.handleLine(":we help"), {
+    kind: "command",
+    command: "help",
+    commands: ["help", "agents", "attach role:instance", "detach", "status", "threads"],
+  });
   const attached = await switchboard.handleLine(":we attach alpha:main");
   assert.deepEqual(attached.attachment, { roleId: "alpha", instanceId: "main" });
   assert.equal(attached.binding, null);

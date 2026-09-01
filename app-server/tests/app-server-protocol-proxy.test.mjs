@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, stat } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { chmod, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -7,6 +8,18 @@ import test from "node:test";
 import { WebSocket } from "ws";
 
 import { AppServerProtocolProxy } from "../src/index.mjs";
+
+function run(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.once("error", reject);
+    child.once("exit", (code, signal) => resolve({ code, signal, stdout, stderr }));
+  });
+}
 
 class DelegateTransport {
   constructor() {
@@ -34,6 +47,12 @@ class DelegateTransport {
   async request(method, params) {
     this.requests.push({ method, params });
     if (method === "fail") throw new Error("bounded failure");
+    if (method === "diagnostic-fail") {
+      const error = new Error("bounded diagnostic");
+      error.code = "worker_request_failed";
+      error.details = { secret: "must-not-reach-client" };
+      throw error;
+    }
     return { method, accepted: true };
   }
 
@@ -151,6 +170,53 @@ test("invalid input and backend failures become bounded JSON-RPC errors", async 
     id: 9,
     error: { code: -32000, message: "bounded failure" },
   });
+  peer.send(JSON.stringify({ id: 10, method: "diagnostic-fail", params: {} }));
+  assert.deepEqual(await nextMessage(), {
+    id: 10,
+    error: { code: -32000, message: "bounded diagnostic" },
+  });
+});
+
+test("proxy rejects a mismatched selected Codex executable before opening its socket", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy-preflight."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const executable = path.join(directory, "fake-codex");
+  const socketPath = path.join(directory, "must-not-open.sock");
+  await writeFile(executable, "#!/bin/sh\nprintf 'codex-cli 9.9.9\\n'\n", "utf8");
+  await chmod(executable, 0o700);
+
+  const result = await run(process.execPath, [
+    "app-server/scripts/app-server-proxy.mjs",
+    "--socket", socketPath,
+    "--codex", executable,
+  ]);
+
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /selected Codex executable/);
+  assert.match(result.stderr, /9\.9\.9 does not match pinned 0\.149\.1/);
+  assert.match(result.stderr, /--codex PATH/);
+  await assert.rejects(stat(socketPath), { code: "ENOENT" });
+});
+
+test("proxy rejects an unavailable selected Codex executable before opening its socket", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy-unavailable."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const socketPath = path.join(directory, "must-not-open.sock");
+  const missingExecutable = path.join(directory, "missing-codex");
+
+  const result = await run(process.execPath, [
+    "app-server/scripts/app-server-proxy.mjs",
+    "--socket", socketPath,
+    "--codex", missingExecutable,
+  ]);
+
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /selected Codex executable/);
+  assert.match(result.stderr, /select codex-cli 0\.149\.1 with --codex PATH/);
+  assert.match(result.stderr, /ENOENT/);
+  await assert.rejects(stat(socketPath), { code: "ENOENT" });
 });
 
 test("a late backend response is discarded after its remote client disconnects", async (t) => {

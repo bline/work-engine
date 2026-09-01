@@ -50,6 +50,15 @@ function observationView(observer) {
   };
 }
 
+const OPERATOR_COMMANDS = Object.freeze([
+  "help",
+  "agents",
+  "attach role:instance",
+  "detach",
+  "status",
+  "threads",
+]);
+
 export class OperatorSwitchboard {
   #tail = Promise.resolve();
 
@@ -243,6 +252,10 @@ export class OperatorSwitchboard {
     const match = /^:we\s+([a-z]+)(?:\s+(.+))?$/.exec(line);
     if (!match) throw new Error("invalid switchboard command syntax");
     const [, command, argument = null] = match;
+    if (command === "help") {
+      withoutArguments(argument, command);
+      return freeze({ kind: "command", command, commands: [...OPERATOR_COMMANDS] });
+    }
     if (command === "agents") {
       withoutArguments(argument, command);
       return freeze({ kind: "command", command, roles: [...this.manifest.roleIds] });

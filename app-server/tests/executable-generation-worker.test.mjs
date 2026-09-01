@@ -123,6 +123,62 @@ test("worker effects exist only inside their admitted dispatch", async (t) => {
   );
 });
 
+test("dispatch and effect failures preserve only bounded diagnostics", async (t) => {
+  const worker = await spawnWorker("g1");
+  t.after(() => worker.dispose());
+  await worker.validate();
+  await worker.activate();
+
+  await assert.rejects(
+    worker.dispatch("effect", { method: "thread/start" }, async () => {
+      const error = new Error("bounded effect failed\nwithout a stack");
+      error.code = "capability_unavailable";
+      error.details = { secret: "must-not-cross-ipc" };
+      throw error;
+    }),
+    (error) => error instanceof ExecutableGenerationWorkerError
+      && error.code === "worker_request_failed"
+      && error.message === "bounded effect failed without a stack"
+      && error.details.diagnosticCode === "capability_unavailable"
+      && !JSON.stringify(error).includes("must-not-cross-ipc")
+      && !JSON.stringify(error).includes("stack"),
+  );
+
+  await assert.rejects(
+    worker.dispatch("unsupported", {}),
+    (error) => error instanceof ExecutableGenerationWorkerError
+      && error.message === "unsupported fixture operation"
+      && error.details.diagnosticCode === "dispatch_failed",
+  );
+});
+
+test("malformed parent IPC fails an in-flight worker effect promptly and safely", async (t) => {
+  const worker = await spawnWorker("g1");
+  t.after(() => worker.dispose());
+  await worker.validate();
+  await worker.activate();
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    worker.dispatch("effect", { method: "thread/start" }, async () => new Promise((_, reject) => {
+      worker.child.send({
+        protocol: "not-the-generation-protocol",
+        version: 1,
+        id: 4,
+        secret: "must-not-cross-ipc-diagnostic",
+      }, (error) => {
+        if (error) reject(error);
+      });
+    })),
+    (error) => error instanceof ExecutableGenerationWorkerError
+      && error.code === "worker_request_failed"
+      && error.message === "generation bootstrap sent an invalid protocol message"
+      && error.details.diagnosticCode === "invalid_parent_message"
+      && !JSON.stringify(error).includes("must-not-cross-ipc-diagnostic"),
+  );
+  assert.ok(Date.now() - startedAt < 1_000);
+});
+
 test("stable transport keeps in-flight work on its predecessor and routes later work to successor", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-swap-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -969,7 +1025,7 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     const forwardedBefore = requests.filter((request) => request.method === method).length;
     await assert.rejects(
       bootstrap.transport.request(method, params),
-      /generation worker generation\.dispatch failed/,
+      /role-owned threads accept domain input only through the Work Engine switchboard/,
     );
     assert.equal(
       requests.filter((request) => request.method === method).length,

@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import {
   AppServerProtocolProxy,
   ObservableAppServerTransport,
+  PINNED_PROTOCOL,
   StdioJsonRpcTransport,
+  assertCompatibleCodexCliOutput,
   createExecutableGenerationBootstrap,
   formatAppServerProtocolEvent,
 } from "../src/index.mjs";
 
 const WORKSPACE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const execFileAsync = promisify(execFile);
 
 function defaultGenerationState(socketPath) {
   const socketIdentity = createHash("sha256").update(socketPath).digest("hex").slice(0, 16);
@@ -39,6 +44,7 @@ function parseArguments(argv) {
     tokenBudget: false,
     generationState: null,
     developmentArtifactRoot: WORKSPACE_ROOT,
+    codexCommand: process.env.WORK_ENGINE_CODEX ?? "codex",
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -60,6 +66,7 @@ function parseArguments(argv) {
     else if (argument === "--development-artifact-root") {
       options.developmentArtifactRoot = path.resolve(value());
     }
+    else if (argument === "--codex") options.codexCommand = value();
     else throw new Error(`unknown App Server proxy option ${argument}`);
   }
   if (!options.socketPath) throw new Error("--socket PATH is required");
@@ -77,13 +84,32 @@ function formatStartupFailure(error) {
 
 async function main() {
   const options = parseArguments(process.argv.slice(2));
+  let versionOutput;
+  try {
+    ({ stdout: versionOutput } = await execFileAsync(options.codexCommand, ["--version"], {
+      encoding: "utf8",
+      maxBuffer: 64 * 1024,
+    }));
+    assertCompatibleCodexCliOutput(versionOutput);
+  } catch (error) {
+    throw new Error(
+      `selected Codex executable ${JSON.stringify(options.codexCommand)} is unavailable or incompatible; `
+      + `select codex-cli ${PINNED_PROTOCOL.codexCliVersion} with --codex PATH: `
+      + `${error?.message ?? "version check failed"}`,
+      { cause: error },
+    );
+  }
   process.stderr.write(`[host] state=${options.generationState}\n`);
   const delegate = StdioJsonRpcTransport.spawn({
+    command: options.codexCommand,
     cwd: options.cwd,
     ...(options.tokenBudget
       ? { args: ["app-server", "--stdio", "--enable", "token_budget"] }
       : {}),
   });
+  if (options.trace) {
+    delegate.on("stderr", (chunk) => process.stderr.write(`[app-server-child] ${chunk}`));
+  }
   process.stderr.write("[startup] app-server-child=starting\n");
   await delegate.ready();
   process.stderr.write("[startup] app-server-child=spawned generation=validating\n");
