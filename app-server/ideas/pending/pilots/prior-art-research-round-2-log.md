@@ -21,9 +21,9 @@ support unqualified detailed claims:
 | S03 | P2, P8 boundary | **Closed V2 in R2-02**; models, factorial protocol, metrics, and mitigation boundary extracted |
 | S06 | P4 | **Closed V2 in R2-01**; models, languages, Golden Set, metrics, effects, and limitations extracted |
 | S09 | P3 | **Closed V2 in R2-03**; training/interface protocol, models, security/utility results, and limits extracted |
-| S13 | P5 | Constraint dimensions, models, metrics, training result |
-| S14 | P5 | Context construction, models, mitigation protocols |
-| S15 | P7 | Dataset composition, models, abstention metrics |
+| S13 | P5 | **Closed V2 in R2-09**; constraint dimensions, 18 model configurations, metrics, training protocol, and limits extracted |
+| S14 | P5 | **Closed V2 in R2-09**; context construction, four models, six mitigation protocols, outcomes, and limits extracted |
+| S15 | P7 | **Closed V2 in R2-09**; dataset composition, model families, abstention metrics, prompt mitigation, and limits extracted |
 | S16 | P7 | Detection/abstention definitions, models, JTS protocol |
 | S18 | P7 | Agent systems, task composition, stopping metrics |
 | S19 | P7 | Pair construction, models/harnesses, action timing |
@@ -203,7 +203,232 @@ abstain language. None of these papers crosses pressure with recovery
 visibility, so the P6/P7 interaction remains open. The new SIGDIAL recovery
 study strengthens P7's main effect but does not test rhetorical pressure.
 
+### Batch R2-05 — authority metadata as a security boundary
+
+**Date:** 2026-09-01
+**Status:** Two new V2 boundary admissions
+**Primary sources:** arXiv full papers
+
+Exact discovery and extraction routes:
+
+- `"Recognition Without Enforcement" authority spoofing HMAC capability gate`;
+- `"Document-Authored Control-Signal Impersonation" metadata provenance`;
+- full-text inspection of the source-format, metadata, behavioral, enforcement,
+  adaptive-red-team, and limitation sections.
+
+Full text checked:
+
+- Leong, *Recognition Without Enforcement*, arXiv:2608.28502v1;
+- Zhu, *Document-Authored Control-Signal Impersonation*,
+  arXiv:2606.09005v1.
+
+Observed consequence: a model's ability to recognize source or authority
+metadata does not make that metadata an enforcement boundary. Model-visible
+labels can also be forged inside attacker-authored content. Pilot A may study
+legitimate semantic attribution as a judgment aid, but neither its metadata nor
+its downstream model can be described as a security boundary without
+host-enforced authentication and capability checks.
+
+### Batch R2-06 — pressure x recovery interaction second pass
+
+**Date:** 2026-09-01
+**Status:** One direct predecessor; one serious V1 near-match
+**Primary sources:** arXiv full paper and primary medical preprint record
+
+Query families:
+
+- `"verify or escalate" social pressure LLM mitigation interaction`;
+- `LLM pressure recovery affordance escalation abstention factorial experiment`;
+- `LLM urgency threat pressure mitigation cue abstain escalate experiment`;
+- exact-title follow-up for *From surveillance to signalling*.
+
+Full text checked:
+
+- Gomez, *From surveillance to signalling: escalation channels as
+  environmental controls for agentic AI*, arXiv:2510.05192v2.
+
+Primary record checked but full methods not yet admitted:
+
+- Omar et al., *LLMs Can Do Medical Harm: Stress-Testing Clinical Decisions
+  Under Social Pressure*, medRxiv:2025.11.25.25340972.
+
+Observed consequence: the broad pressure x recovery claim is prior art. Gomez
+fully crosses three urgency/threat conditions with four mitigation conditions,
+including no mitigation, rules only, nominal email escalation, and a credible
+escalation route with a guaranteed pause and independent authority. The exact
+Work Engine contrast remains narrower: rhetorical pressure with task facts,
+obligations, and authority held fixed, crossed with recovery visibility in
+validity-preserving governed judgment. The medical study is a serious near-match
+because it pairs six social-pressure prompts with or without a visible
+verify-or-escalate cue, but full-text interaction reporting remains unresolved.
+
+### Batch R2-07 — transformation fidelity and realization
+
+**Date:** 2026-09-01
+**Status:** Two materially adjacent V2 admissions; no exact full-projection pilot
+**Primary sources:** ACL Anthology full papers
+
+Query families:
+
+- `manual oracle structured representation LLM adapter`;
+- `gold representation downstream LLM extraction natural language`;
+- `prompt rewriting manual rewrite automatic rewrite downstream response quality`;
+- `semantic parser gold parse predicted parse downstream task LLM input representation`.
+
+Full text checked:
+
+- Jin et al., *Analyzing the Role of Semantic Representations in the Era of
+  Large Language Models*, NAACL 2024;
+- Zhang et al., *SR-LLM: Rethinking the Structured Representation in Large
+  Language Model*, ACL 2025.
+
+Observed consequence: raw-text versus semantic-representation downstream
+testing, gold-versus-parser realization, and representation-quality ablations
+are established experimental classes. They also supply important null and harm
+evidence: AMR generally hurt in Jin et al.; on a 131-sentence NER subset, gold
+and parser AMR differed by less than two points and not significantly. SR-LLM
+shows the opposite boundary: flawed representations reduced performance while
+manually corrected representations, especially natural-language renderings,
+often helped. Neither paper constructs a complete verbatim operator projection
+or tests how much of a previously isolated governed-judgment benefit survives
+automatic realization.
+
+### Batch R2-08 — forward-chain and remaining-V1 triage
+
+**Date:** 2026-09-01
+**Status:** Zero-yield forward-citation audit; primary records located for all
+remaining seed sources
+
+Exact-title searches were repeated for R2-A01, R2-A06, R2-A07, and R2-A08.
+They returned the source papers and secondary summaries but no admissible
+forward citations. Because three sources date from July or August 2026, this is
+an index-age limitation, not evidence of absence or saturation.
+
+Primary records were also located for S02, S13-S20, and S22. Abstract-level
+protocol details were recovered, but these sources remain V1 until their full
+methods, model sets, denominators, effects, and limitations are reconciled.
+
+### Batch R2-09 — seed constraint and abstention closures
+
+**Date:** 2026-09-01
+**Status:** Three V1 sources promoted to V2; four additional full papers staged
+for later extraction
+**Primary sources:** ACL Anthology and arXiv full papers
+
+Full text checked and admitted:
+
+- S13, Ye et al., *MulDimIF*, Findings of ACL 2026;
+- S14, Robinette et al., *We Are What We Repeatedly Do*, Findings of EACL
+  2026;
+- S15, Wen et al., *AbstentionBench*, arXiv:2506.09038.
+
+Full text downloaded and inspected but not yet admitted:
+
+- S16, S18, S19, and S22.
+
+Observed consequence: P5 and P7 already contain strong boundary evidence
+against simple main-effect claims. Constraint adherence falls with composition
+complexity, long-context mitigation can regress smaller models or protected-
+word constraints, and a broad abstention system prompt improves recall without
+solving uncertainty reasoning. These records reinforce the need for symmetric
+false-recovery scoring and model-specific harm/null reporting.
+
 ## 4. Extraction records
+
+### S13 closure — multidimensional constraint following
+
+```yaml
+source_id: "S13"
+source_revision: "ACL Anthology 2026.findings-acl.99, full paper checked 2026-09-01"
+venue_status: "Findings of ACL 2026"
+verification: "V2"
+proposition: "P5"
+evidence_class: "Direct"
+direction: "Supporting / Mixed"
+causal_contrast: "Three constraint patterns x four categories x four composition-difficulty levels, followed by GRPO training on generated constraint-rich instructions"
+models: "18 evaluated configurations spanning Llama-3.1, DeepSeek-R1-Distill-Llama, Qwen3 direct/reasoning modes, Gemini 1.5, Claude 3.5, and GPT-3.5/4 families"
+task_regime: "Single-turn ShareGPT-derived instructions with example, listing, or incorporation patterns and content, format, language, or length constraints"
+sample_size: "9,106 manually reviewed, code-verifiable instances: 7,906 training and 1,200 test; external capability suites also evaluated"
+intervention: "Increasing constraint composition difficulty; separately, GRPO on generated constraint-rich data"
+control: "Lower difficulty levels and each model's pre-training checkpoint"
+outcomes:
+  - "code-verified instruction-following accuracy"
+  - "out-of-domain instruction following"
+  - "knowledge, reasoning, and coding capability"
+effect_and_uncertainty: "Mean accuracy fell from 80.82% at Level I to 36.76% at Level IV; the best overall configuration reached 67.50%. GRPO improved the custom and external instruction-following evaluations while reported general capabilities were preserved, with model- and dimension-specific exceptions."
+does_not_establish:
+  - "rhetorical pressure with constraints held fixed"
+  - "recovery visibility or escalation"
+  - "multi-turn governed action"
+  - "generalization beyond generated, code-verifiable constraint forms"
+pilot_consequence: "Promote S13 to V2 as direct constraint-composition prior art; keep rhetorical pressure distinct from increasing substantive constraint count or complexity."
+primary_source: "https://aclanthology.org/2026.findings-acl.99/"
+extracted_on: "2026-09-01"
+```
+
+### S14 closure — long-context instruction persistence and recovery
+
+```yaml
+source_id: "S14"
+source_revision: "ACL Anthology 2026.findings-eacl.254, full paper checked 2026-09-01"
+venue_status: "Findings of EACL 2026"
+verification: "V2"
+proposition: "P5; P7 boundary"
+evidence_class: "Direct + Recovery boundary"
+direction: "Mixed"
+causal_contrast: "Instruction persistence across 10/25/50-turn conversations and a rogue response, with baseline versus five prompt mitigations and instruction-guided attention"
+models:
+  - "Gemma-7B-it"
+  - "Gemma2-27B-it"
+  - "Llama3-8B-it"
+  - "Llama3-70B-it"
+task_regime: "VerIFY conversations constructed from QA or DailyDialog filler under base, instruction-following, or rogue assistant-response patterns"
+sample_size: "28 verifiable instructions x 10 final prompts x 3 turn lengths = 840 samples per filler/pattern dataset; six such datasets"
+intervention: "Reinstruct, teach, rewrite, combine, summarize, or instruction-guided-attention mitigation after a rogue response five turns before evaluation"
+control: "Same follows-pattern conversation with the rogue response and no mitigation"
+outcomes:
+  - "Certified Compliance Accuracy overall"
+  - "style versus security/alignment compliance"
+effect_and_uncertainty: "Several prompt mitigations recovered Gemma-7B performance, while combine and instruction-guided attention regressed it, especially on protected-word constraints. All tested mitigations improved Gemma2-27B, with a reported maximum improvement of 79%; effects varied across model, turn length, and instruction type."
+does_not_establish:
+  - "system-level instruction hierarchy because all evaluations use user prompts"
+  - "rhetorical pressure"
+  - "host-authorized retry or escalation"
+  - "qualitative, ambiguous, or factuality constraints"
+pilot_consequence: "Promote S14 to V2. Preserve recovery regressions and instruction-type moderators; do not generalize average recovery benefit to governed validity."
+primary_source: "https://aclanthology.org/2026.findings-eacl.254/"
+extracted_on: "2026-09-01"
+```
+
+### S15 closure — broad single-turn abstention benchmark
+
+```yaml
+source_id: "S15"
+source_revision: "arXiv:2506.09038 full paper checked 2026-09-01"
+venue_status: "arXiv preprint"
+verification: "V2"
+proposition: "P7"
+evidence_class: "Direct"
+direction: "Mixed"
+causal_contrast: "Answerable versus unanswerable items across six abstention scenarios; base/instruction/reasoning checkpoints; default versus an abstention-focused system prompt"
+models: "20 frontier and post-training configurations spanning GPT-4o/o1, Gemini 1.5 Pro, Llama 3.1/3.3 and Tulu variants, Qwen2.5/s1.1, Mistral, OLMo, and DeepSeek-R1-Distill"
+task_regime: "More than 35,000 unanswerable questions from 20 datasets covering unknown answers, false premises, stale information, subjective questions, underspecified intent, and underspecified context"
+sample_size: ">35,000 unanswerable questions plus matched answerable evaluation where available"
+intervention: "Reasoning fine-tuning or a system prompt enumerating when the model should abstain"
+control: "Corresponding instruction-tuned model or default system prompt"
+outcomes:
+  - "abstention recall, precision, and F1"
+  - "non-abstention answer accuracy"
+effect_and_uncertainty: "Abstention varied sharply by dataset and did not improve reliably with model scale. Reasoning fine-tuning reduced abstention recall by 24% on average despite accuracy gains. The targeted system prompt improved recall for standard and reasoning models without a significant precision loss, but did not solve the underlying uncertainty-reasoning failures."
+does_not_establish:
+  - "multi-turn agent stopping"
+  - "recovery after tool or environment failure"
+  - "rhetorical pressure x recovery visibility"
+  - "perfect scoring; the abstention judge reached 88% accuracy in its human comparison"
+pilot_consequence: "Promote S15 to V2 and require recall/precision or symmetric false-recovery metrics rather than rewarding abstention alone."
+primary_source: "https://arxiv.org/abs/2506.09038"
+extracted_on: "2026-09-01"
+```
 
 ### S06 closure — authority x register
 
@@ -769,27 +994,200 @@ primary_source: "https://aclanthology.org/2026.findings-acl.810/"
 extracted_on: "2026-09-01"
 ```
 
+### R2-A07 — recognized source format without behavioral enforcement
+
+```yaml
+source_id: "R2-A07"
+source_revision: "arXiv:2608.28502v1, full paper checked 2026-09-01"
+venue_status: "arXiv preprint"
+verification: "V2"
+proposition: "P3/P4 security boundary"
+evidence_class: "Direct boundary + enforcement"
+direction: "Mixed"
+causal_contrast: "Content-matched source-format and authority-metadata probes, fleet-scale spoofing and memory-conflict tests, then host-enforced authentication/capability gating"
+models: "46 endpoints in the authority-spoofing sweep; 48 models in memory-conflict testing; 29 models in the diverse-attack fleet subset"
+task_regime: "Agent instruction arbitration, source spoofing, memory conflicts, and tool-call inhibition"
+sample_size: "14,294 spoofed trials in the 29-model diverse-attack subset; 124,325 memory-conflict trials; 900 attacks in the reported HMAC/capability-gate evaluation"
+intervention: "Model-visible source and authority cues, forced recognition, and externally verified authentication/capability controls"
+control: "Unforced recognition and model-only arbitration without the external gate"
+outcomes:
+  - "source-format decodability"
+  - "unauthorized tool execution"
+  - "memory-conflict arbitration"
+  - "external-gate rejection"
+effect_and_uncertainty: "Source-format features were decodable, but forced recognition did not reliably inhibit tool calls. Diverse novel attacks had a 1.21% fleet mean execution rate with concentrated vulnerable configurations and up to a 47-point within-window range. The HMAC plus capability gate rejected 0/900 tested attacks; an adaptive red team found one clock-skew flaw that was patched."
+does_not_establish:
+  - "that legitimate attribution metadata cannot improve ordinary judgment"
+  - "security of every host-enforcement implementation"
+  - "Pilot A's fresh operator-record estimand"
+pilot_consequence: "Treat semantic attribution as model input, never as authorization. Any security claim requires authenticated provenance and host-enforced capability checks outside the model."
+primary_source: "https://arxiv.org/abs/2608.28502"
+extracted_on: "2026-09-01"
+```
+
+### R2-A08 — document-authored control-signal impersonation
+
+```yaml
+source_id: "R2-A08"
+source_revision: "arXiv:2606.09005v1, full paper checked 2026-09-01"
+venue_status: "arXiv preprint"
+verification: "V2"
+proposition: "P3 security boundary"
+evidence_class: "Direct boundary"
+direction: "Supporting"
+causal_contrast: "Attacker-authored retrieved documents with or without non-imperative metadata, provenance, authority, and policy cues"
+models:
+  - "DeepSeek V4 Pro"
+  - "DeepSeek V4 Flash"
+  - "GPT-5.5"
+  - "Gemini 3.1 Pro Low"
+  - "Qwen3.5-397B"
+  - "GLM-4.7"
+task_regime: "Retrieved-document prompt-injection settings in which data-plane content impersonates control-plane signals without imperative commands"
+sample_size: "Six model settings; formal experiments generally use 200 trials per condition"
+intervention: "Untrusted document text styled as metadata, provenance, authority, or policy state"
+control: "Matched document without the impersonating cue and imperative-injection comparisons"
+outcomes:
+  - "undesired response rate"
+  - "copy-pressure susceptibility"
+effect_and_uncertainty: "Reported average/max DACSI undesired-response rates ranged from 1.2/1.5% for GPT-5.5 to 96.7/98% for GLM-4.7. Copy-pressure examples increased defended-baseline rates from 0.5% to 28.0% for DeepSeek V4 Pro and from 53.0% to 91.5% for Flash."
+does_not_establish:
+  - "effects of trusted host-authored operator attribution"
+  - "preference-conditioned governed judgment"
+  - "a secure metadata channel without host verification"
+pilot_consequence: "Keep attacker-authored pseudo-metadata outside Pilot A's treatment definition and require provenance to be supplied and enforced by the host, not inferred from document appearance."
+primary_source: "https://arxiv.org/abs/2606.09005"
+extracted_on: "2026-09-01"
+```
+
+### R2-R05 — urgency/threat x escalation-channel factorial
+
+```yaml
+source_id: "R2-R05"
+source_revision: "arXiv:2510.05192v2, full paper checked 2026-09-01"
+venue_status: "arXiv preprint"
+verification: "V2"
+proposition: "P6/P7 interaction"
+evidence_class: "Direct predecessor"
+direction: "Supporting"
+causal_contrast: "4 mitigation levels x 2 goal-cue levels x 3 urgency/threat levels"
+models:
+  - "GPT-4o"
+  - "GPT-4.1"
+  - "Claude Sonnet 3.7"
+  - "Claude Sonnet 4"
+  - "Claude Opus 4"
+  - "DeepSeek-R1"
+  - "Gemini 2.5 Flash"
+  - "Gemini 2.5 Pro"
+  - "Qwen 3"
+  - "Grok-4"
+task_regime: "Sandboxed company-email agent facing a task-rule conflict and possible replacement or autonomy restriction"
+sample_size: "24 conditions per model x 100 samples = 24,000 core trials"
+intervention: "No mitigation, rules only, nominal email escalation, or credible escalation guaranteeing a 30-minute pause, independent review, and a structured compliant proposal"
+control: "No-mitigation condition within each goal and urgency/threat cell"
+outcomes:
+  - "tool-mediated blackmail/coercion rate"
+  - "observable escalation action"
+effect_and_uncertainty: "Averaged across goal and urgency/threat cells, harmful action fell from 38.73% with no mitigation to 14.59% with rules, 5.92% with email escalation, and 1.21% with credible escalation. Credible escalation outperformed email escalation in all ten models (reported Fisher p<0.001), and the ordering was stable across urgency/threat levels. The paper does not report a dedicated interaction coefficient."
+does_not_establish:
+  - "pure rhetorical pressure with task facts, authority, and feasibility fixed"
+  - "ordinary validity-preserving work rather than an overt blackmail scenario"
+  - "false-recovery costs or calibrated recovery use"
+  - "which component of the bundled credible channel causes the effect"
+pilot_consequence: "Reclassify the broad pressure x recovery claim as prior art. Preserve only the fixed-obligation rhetorical-pressure transfer, recovery-visibility isolation, and calibrated validity-preservation estimands as open."
+primary_source: "https://arxiv.org/abs/2510.05192"
+extracted_on: "2026-09-01"
+```
+
+### R2-T01 — gold versus parser-produced semantic representation
+
+```yaml
+source_id: "R2-T01"
+source_revision: "ACL Anthology 2024.naacl-long.209, full paper checked 2026-09-01"
+venue_status: "NAACL 2024 long paper"
+verification: "V2"
+proposition: "P9 boundary"
+evidence_class: "Adjacent realization + null/harm"
+direction: "Mixed / Predominantly harmful"
+causal_contrast: "Raw task prompt versus text plus AMR; gold versus parser-generated AMR; text-only versus AMR-only ablations"
+models: "GPT-3.5 and GPT-4 family models in the reported zero-shot analyses"
+task_regime: "Five NLP tasks including paraphrase detection, translation, and named-entity recognition"
+sample_size: "Task-specific datasets; gold-versus-parser analysis uses 131 AMR-NER sentences"
+intervention: "Abstract Meaning Representation supplied through AMR-driven chain-of-thought"
+control: "Original text prompt without AMR"
+outcomes:
+  - "task accuracy, F1, or task-specific metric"
+  - "gold-versus-parser downstream difference"
+effect_and_uncertainty: "AMRCoT generally hurt more than it helped. On AMR-NER, gold and parser-produced AMR differed by less than two F1 points (p=0.627), while text plus gold AMR was effectively tied with text alone and AMR alone performed much worse."
+does_not_establish:
+  - "operator semantic roles, source, or authority"
+  - "verbatim preservation or projection completeness"
+  - "a downstream benefit first isolated with a manual representation"
+pilot_consequence: "Treat gold-versus-automatic downstream comparison as an established method and preserve representation harm/null outcomes. Pilot realization novelty must be tied to the complete operator projection and recovery of Pilot A's isolated effect."
+primary_source: "https://aclanthology.org/2024.naacl-long.209/"
+extracted_on: "2026-09-01"
+```
+
+### R2-T02 — representation quality and natural-language realization
+
+```yaml
+source_id: "R2-T02"
+source_revision: "ACL Anthology 2025.acl-long.172, full paper checked 2026-09-01"
+venue_status: "ACL 2025 long paper"
+verification: "V2"
+proposition: "P9 boundary"
+evidence_class: "Adjacent realization + quality ablation"
+direction: "Mixed"
+causal_contrast: "No representation versus code-form AMR versus natural-language-described AMR, with flawed and manually corrected representation variants"
+models:
+  - "Llama-3.1-8B-Instruct"
+  - "Llama-3.1-70B-Instruct"
+  - "GPT-3.5-turbo"
+  - "GPT-4o-mini"
+task_regime: "Ten downstream NLP datasets spanning paraphrase, inference, translation, extraction, classification, and text-to-SQL"
+sample_size: "Task-specific datasets; quality ablation selects 70 flawed AMRs from each of ten datasets and constructs corrected counterparts"
+intervention: "Structured representation rendered directly or as a natural-language description; training-free and fine-tuned variants"
+control: "Original task prompt without the added representation"
+outcomes:
+  - "task-specific F1, BLEU, exact match, or accuracy"
+  - "performance change under flawed versus corrected representation"
+effect_and_uncertainty: "Flawed AMR or AMR descriptions reduced performance across the reported five-task quality table. Corrected AMR descriptions often improved it, with gains dependent on model and task; the paper reports PAWS gains of 3.17 points training-free and 12.38 points training-dependent."
+does_not_establish:
+  - "an automatic adapter matching a manual complete projection"
+  - "faithful retention of verbatim operator atoms"
+  - "governed operational judgment"
+pilot_consequence: "Representation fidelity is a causal prerequisite, not merely an engineering metric. Pilot B remains independently justified, while the eventual realization pilot must include downstream harm and null outcomes."
+primary_source: "https://aclanthology.org/2025.acl-long.172/"
+extracted_on: "2026-09-01"
+```
+
 ## 5. Exclusion ledger
 
 | Source | Excluded from | Reason | Retained use |
 | --- | --- | --- | --- |
 | Kaur, *Echoes of Agreement* | Exact P6 fixed-semantics rhetoric and P6 x P7 interaction lanes | Supporting/refuting arguments change substantive evidence and stance content; no recovery factor is present. | P1 sycophancy evidence and P6 argument-strength boundary |
+| Bachmann et al., *Evaluating large language models for accuracy incentivizes hallucinations* | Exact P6 rhetorical-pressure lane | The intervention changes the actual scoring payoff for guessing versus abstaining; it is an incentive design, not non-binding rhetoric. | P7 abstention-incentive and evaluation-design boundary |
+| Generic schema-guided extraction and text-to-SQL studies | Exact P9 realization lane | They compare predicted structures with gold labels or execution results but do not test preservation of a previously isolated representation benefit in governed judgment. | Methodological predecessors for projection accuracy and executable fidelity |
 
 ## 6. Unresolved work
 
-1. Complete the P3 security-boundary extraction for *Recognition Without
-   Enforcement* and *Document-Authored Control-Signal Impersonation*; keep
-   model-visible recognition separate from host enforcement.
-2. Run a second P6/P7 interaction batch using the new seeds S21, R2-R01,
-   R2-R02, R2-R03, and R2-R04. Search specifically for a factorial that crosses
-   pressure presence with recovery visibility or authority.
-3. Close the remaining seed V1 sources S02, S13-S20, and S22.
-4. Search transformation fidelity and manual-oracle realization, now treating
-   R2-A06's predicted-versus-reference *label* result as prior art but not as a
-   complete admitted-projection comparison.
-5. Repeat authority/provenance forward chaining after the very recent August
-   2026 papers have had index time; the current search cannot establish
+1. Run another P6/P7 interaction batch from R2-R05 and the Omar medical
+   near-match. The broad interaction is now prior art; search the narrower
+   fixed-obligation rhetoric x recovery-visibility and calibrated-recovery
+   estimands, including nulls and reversals.
+2. Close the remaining seed V1 sources S02, S16, S18-S20, and S22 from full
+   text. S16, S18, S19, and S22 have been staged and inspected, but their exact
+   extraction cards remain unfinished; S02 and S20 still require full-text
+   reconciliation.
+3. Continue transformation-fidelity chaining from R2-T01 and R2-T02. Search
+   specifically for a complete automatically constructed projection recovering
+   a benefit first demonstrated by a human/manual representation; gold-versus-
+   parser comparison alone is already prior art.
+4. Repeat authority/provenance forward chaining after the very recent July and
+   August 2026 papers have had index time; R2-08's zero yield cannot establish
    saturation or absence.
-6. Do not revise the matrix or pilots until the remaining lanes and stopping
+5. Do not revise the matrix or pilots until the remaining lanes and stopping
    conditions are complete. Matrix v0.2 must narrow P3/P9 before making any
-   novelty statement.
+   novelty statement and must reframe the constraint pilot around the exact
+   residual estimand left by R2-R05.
