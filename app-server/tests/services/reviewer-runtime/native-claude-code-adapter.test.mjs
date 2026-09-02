@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -75,6 +75,72 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   await assert.rejects(adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review.",
     continuationSessionId: "00000000-0000-4000-8000-000000000000"}), /pre-registered session/);
+});
+
+test("native Claude adapter refreshes isolated credentials only after exact retained authentication failure", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-auth-refresh-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const stateRoot = path.join(root, "state");
+  const credentialSourcePath = await credentials(root);
+  await writeFile(credentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
+  const adapter = new NativeClaudeCodeReviewerAdapter({registry: new ReviewerProfileRegistry({profiles: [profile()]}),
+    workspaceRoot: root, stateRoot, credentialSourcePath, catalogSource,
+    transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
+      const resumeFlag = request.args.indexOf("--resume");
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[resumeFlag + 1], model: "claude-sonnet-5", structured_output: result})};
+    }});
+
+  const prepare = async (instanceId, assistantMessages, {newerDecoy = false} = {}) => {
+    const session = adapter.runtimeSessionId(instanceId);
+    const instanceRoot = path.join(stateRoot, "native-claude", digest(instanceId));
+    const configRoot = path.join(instanceRoot, "config");
+    const sessionRoot = path.join(configRoot, "projects", "fixture");
+    await mkdir(sessionRoot, {recursive: true});
+    await writeFile(path.join(configRoot, ".credentials.json"), '{"fixture":"stale-subscription"}\n', {mode: 0o600});
+    const observedAt = new Date();
+    const receiptName = "failed.transport.json";
+    await writeFile(path.join(instanceRoot, receiptName), `${JSON.stringify({
+      request: {session_id: session}, result: "failed", attempts: [{duration_ms: 1_000}],
+    })}\n`);
+    await writeFile(path.join(instanceRoot, "latest-attempt.json"), `${JSON.stringify({
+      schemaVersion: 1, attemptId: "fixture-attempt", sessionId: session, transportReceipt: receiptName,
+    })}\n`);
+    const records = assistantMessages.map(({text, timestamp = observedAt.toISOString()}) => JSON.stringify({
+      type: "assistant", timestamp, message: {role: "assistant", content: [{type: "text", text}]},
+    }));
+    await writeFile(path.join(sessionRoot, `${session}.jsonl`), `${records.join("\n")}\n`);
+    if (newerDecoy) {
+      await writeFile(path.join(instanceRoot, "newer-decoy.transport.json"), `${JSON.stringify({
+        request: {session_id: session}, result: "success", attempts: [{duration_ms: 1}],
+      })}\n`);
+    }
+    return {session, configRoot};
+  };
+
+  const exact = await prepare("exact-auth-failure", [
+    {text: "Preparing authentication state."},
+    {text: "Not logged in · Please run /login"},
+    {text: "Authentication is required."},
+  ], {newerDecoy: true});
+  const refreshed = await adapter.execute({instanceId: "exact-auth-failure", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review.",
+    continuationSessionId: exact.session, refreshCredentials: true});
+  assert.equal(refreshed.failure, null);
+  assert.equal(await readFile(path.join(exact.configRoot, ".credentials.json"), "utf8"),
+    '{"fixture":"refreshed-subscription"}\n');
+
+  const other = await prepare("other-failure", [
+    {text: "Not logged in · Please run /login", timestamp: "2026-01-01T00:00:00.000Z"},
+    {text: "Quota unavailable"},
+  ]);
+  assert.equal(await adapter.recoverFailure("other-failure"), null);
+  const preserved = await adapter.execute({instanceId: "other-failure", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review.",
+    continuationSessionId: other.session});
+  assert.equal(preserved.failure, null);
+  assert.equal(await readFile(path.join(other.configRoot, ".credentials.json"), "utf8"),
+    '{"fixture":"stale-subscription"}\n');
 });
 
 test("native Claude adapter preserves transport failure and rejects subject or UUID drift", async (t) => {

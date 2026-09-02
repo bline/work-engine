@@ -289,8 +289,11 @@ test("restart reconstructs a contract-rejected result after provider success pre
       await mkdir(sessionDirectory, {recursive: true});
       sessions.push({session, resume: resumeIndex >= 0, prompt: request.args.at(-1)});
       if (sessions.length === 1) {
-        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "failed"}));
+        const timestamp = new Date().toISOString();
+        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "failed",
+          attempts: [{duration_ms: 10_000}]}));
         await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          timestamp,
           message: {role: "assistant", content: [{type: "text", text: "Not logged in · Please run /login"}]}})}\n`);
         return {exitCode: 1, stdout: "", stderr: "authentication required"};
       }
@@ -396,18 +399,23 @@ test("definite pre-provider authentication failure resumes the exact retained se
   let campaign = await seed(stateRoot);
   const reviewerCredentialSourcePath = await credentialSource(stateRoot);
   const sessions = [];
+  let isolatedConfigRoot = null;
   const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
     reviewerExecuteProcess: async (request) => {
       const freshIndex = request.args.indexOf("--session-id");
       const resumeIndex = request.args.indexOf("--resume");
       const session = request.args[freshIndex >= 0 ? freshIndex + 1 : resumeIndex + 1];
+      isolatedConfigRoot = request.env.CLAUDE_CONFIG_DIR;
       sessions.push({session, fresh: freshIndex >= 0, resume: resumeIndex >= 0});
       if (sessions.length === 1) {
         const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
         const sessionDirectory = path.join(request.env.CLAUDE_CONFIG_DIR, "projects", "fixture");
         await mkdir(sessionDirectory, {recursive: true});
-        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "failed"}));
+        const timestamp = new Date().toISOString();
+        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "failed",
+          attempts: [{duration_ms: 10_000}]}));
         await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          timestamp,
           message: {role: "assistant", content: [{type: "text", text: "Not logged in · Please run /login"}]}})}\n`);
         return {exitCode: 1, stdout: "", stderr: "authentication required"};
       }
@@ -426,6 +434,7 @@ test("definite pre-provider authentication failure resumes the exact retained se
   const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
   assert.equal(recovered.result.recovery.failureSignature, "authentication_required");
   assert.equal(recovered.result.recovery.sessionId, sessions[0].session);
+  await writeFile(reviewerCredentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
   dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: operationId}));
   assert.equal(dispatched.result.failure, null);
@@ -434,6 +443,8 @@ test("definite pre-provider authentication failure resumes the exact retained se
     {session: sessions[0].session, fresh: true, resume: false},
     {session: sessions[0].session, fresh: false, resume: true},
   ]);
+  assert.equal(await readFile(path.join(isolatedConfigRoot, ".credentials.json"), "utf8"),
+    '{"fixture":"refreshed-subscription"}\n');
 });
 
 test("credential repair retries the exact deterministic UUID when no process or session existed", async (t) => {

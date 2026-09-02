@@ -183,16 +183,19 @@ export class NativeClaudeCodeReviewerAdapter {
 
   runtimeSessionId(instanceId) { return sessionUuid(instanceId); }
 
-  async #seedCredentials(configRoot) {
+  async #seedCredentials(configRoot, {refresh = false} = {}) {
     const destination = path.join(configRoot, ".credentials.json");
-    try { await access(destination); await chmod(destination, 0o600); return false; }
-    catch (error) { if (error?.code !== "ENOENT") throw error; }
+    if (!refresh) {
+      try { await access(destination); await chmod(destination, 0o600); return false; }
+      catch (error) { if (error?.code !== "ENOENT") throw error; }
+    }
     try {
-      await copyFile(this.credentialSourcePath, destination, fsConstants.COPYFILE_EXCL);
+      await copyFile(this.credentialSourcePath, destination,
+        refresh ? 0 : fsConstants.COPYFILE_EXCL);
       await chmod(destination, 0o600);
       return true;
     } catch (error) {
-      if (error?.code === "EEXIST") { await chmod(destination, 0o600); return false; }
+      if (!refresh && error?.code === "EEXIST") { await chmod(destination, 0o600); return false; }
       throw new ReviewerRuntimeError("authentication",
         "native Claude subscription credentials are unavailable to the isolated reviewer");
     }
@@ -202,12 +205,19 @@ export class NativeClaudeCodeReviewerAdapter {
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const expectedSession = this.runtimeSessionId(instanceId);
     const files = await filesBelow(instanceRoot);
-    const receipts = [];
-    for (const file of files.filter((value) => value.endsWith(".transport.json"))) {
-      try { receipts.push({file, value: JSON.parse(await readFile(file, "utf8")), mtime: (await stat(file)).mtimeMs}); }
-      catch {}
-    }
-    const receipt = receipts.sort((left, right) => right.mtime - left.mtime)[0] ?? null;
+    let attempt;
+    try { attempt = JSON.parse(await readFile(path.join(instanceRoot, "latest-attempt.json"), "utf8")); }
+    catch { return null; }
+    if (attempt?.schemaVersion !== 1 || attempt.sessionId !== expectedSession
+        || typeof attempt.transportReceipt !== "string"
+        || path.basename(attempt.transportReceipt) !== attempt.transportReceipt
+        || !attempt.transportReceipt.endsWith(".transport.json")) return null;
+    const receiptFile = files.find((value) => path.basename(value) === attempt.transportReceipt);
+    if (!receiptFile) return null;
+    let receipt;
+    try { receipt = {file: receiptFile, value: JSON.parse(await readFile(receiptFile, "utf8")),
+      mtime: (await stat(receiptFile)).mtimeMs}; }
+    catch { return null; }
     if (!receipt || receipt.value?.request?.session_id !== expectedSession
         || receipt.value?.result !== "failed") return null;
     const sessionFile = files.find((value) => path.basename(value) === `${expectedSession}.jsonl`);
@@ -216,8 +226,16 @@ export class NativeClaudeCodeReviewerAdapter {
     const records = sessionBytes.toString("utf8").split("\n").filter(Boolean).flatMap((line) => {
       try { return [JSON.parse(line)]; } catch { return []; }
     });
-    const authenticationRequired = records.some((record) =>
-      assistantText(record).some((text) => text.trim() === "Not logged in · Please run /login"));
+    const attemptDuration = receipt.value?.attempts?.at(-1)?.duration_ms;
+    if (!Number.isFinite(attemptDuration) || attemptDuration < 0) return null;
+    const attemptStartedAt = receipt.mtime - attemptDuration - 1_000;
+    const attemptCompletedAt = receipt.mtime + 1_000;
+    const authenticationRequired = records.some((record) => {
+      const observedAt = Date.parse(record?.timestamp);
+      return Number.isFinite(observedAt) && observedAt >= attemptStartedAt
+        && observedAt <= attemptCompletedAt
+        && assistantText(record).some((text) => text.trim() === "Not logged in · Please run /login");
+    });
     if (!authenticationRequired) return null;
     return Object.freeze({schemaVersion: 1, failureSignature: "authentication_required",
       providerEntry: "not_entered", sessionAvailable: true, sessionId: expectedSession,
@@ -257,7 +275,8 @@ export class NativeClaudeCodeReviewerAdapter {
   }
 
   async execute({instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-    continuationSessionId = null, roleInstructions, resultCorrection = null}) {
+    continuationSessionId = null, roleInstructions, resultCorrection = null,
+    refreshCredentials = false}) {
     if (typeof instanceId !== "string" || !instanceId.trim()) throw new ReviewerRuntimeError("configuration", "native Claude instanceId is required");
     if (typeof roleInstructions !== "string" || !roleInstructions.trim()) throw new ReviewerRuntimeError("configuration", "canonical role instructions are required");
     const {profile, registryRevision} = this.registry.admit(profileId);
@@ -277,11 +296,15 @@ export class NativeClaudeCodeReviewerAdapter {
     if (continuationSessionId !== null && continuationSessionId !== expectedSession) {
       throw new ReviewerRuntimeError("continuity", "native Claude continuation differs from the pre-registered session");
     }
+    if (typeof refreshCredentials !== "boolean" || (refreshCredentials && continuationSessionId !== expectedSession)) {
+      throw new ReviewerRuntimeError("authentication",
+        "native Claude credential refresh requires the exact retained session");
+    }
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const configRoot = path.join(instanceRoot, "config");
     await mkdir(configRoot, {recursive: true, mode: 0o700});
     const attemptId = randomUUID();
-    try { await this.#seedCredentials(configRoot); }
+    try { await this.#seedCredentials(configRoot, {refresh: refreshCredentials}); }
     catch (error) {
       if (!(error instanceof ReviewerRuntimeError)) throw error;
       const recovery = Object.freeze({schemaVersion: 1,
@@ -311,6 +334,10 @@ export class NativeClaudeCodeReviewerAdapter {
     const args = [this.transportScript, "--transport", "anthropic", "--continuity", "retained",
       "--receipt", receiptPath, "--", this.claudeExecutable, ...claudeArgs];
     const env = {...directAnthropicEnvironment(this.baseEnvironment), CLAUDE_CONFIG_DIR: configRoot};
+    await writeFile(path.join(instanceRoot, "latest-attempt.json"), `${JSON.stringify({
+      schemaVersion: 1, attemptId, sessionId: expectedSession,
+      transportReceipt: path.basename(receiptPath),
+    })}\n`, {mode: 0o600});
     let transport;
     try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: this.workspaceRoot}); }
     catch (error) { throw new ReviewerRuntimeError("spawn", `native Claude process start failed: ${error.message}`); }

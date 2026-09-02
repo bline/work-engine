@@ -214,12 +214,15 @@ export function createSliceCampaignService({
           || (!retainedAuthentication && !preSpawnAuthentication)) {
         throw new Error("native review retry lacks exact definite pre-provider failure evidence");
       }
-      const requestDigest = digest(request);
+      const executionRequest = retainedAuthentication
+        ? freeze({...request, reviewerRequest: freeze({...request.reviewerRequest, refreshCredentials: true})})
+        : request;
+      const requestDigest = digest(executionRequest);
       const preparedObligation = freeze({...currentObligation, status: "retry_executing",
         requestDigest, recovery: freeze(structuredClone(recovery))});
       const prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
         [request.obligationId]: preparedObligation})}, state.revision);
-      const outcome = await nativeReview.executeInitial({...request, reviewSkill: disposition.skill,
+      const outcome = await nativeReview.executeInitial({...executionRequest, reviewSkill: disposition.skill,
         allowProviderEntry: true});
       if (outcome.failure) {
         const failed = failedNativeObligation({obligationId: request.obligationId,
