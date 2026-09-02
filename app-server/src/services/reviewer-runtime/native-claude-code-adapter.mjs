@@ -21,6 +21,10 @@ const TOOLS = [
 ].join(",");
 
 const SPECIALIST_MARKER = "WORK_ENGINE_AGENT_INSTRUCTION_REVIEW_V1";
+const AUTHENTICATION_FAILURE_MESSAGES = Object.freeze(new Set([
+  "Not logged in · Please run /login",
+  "Failed to authenticate: OAuth session expired and could not be refreshed",
+]));
 const CLOUD_ROUTE_ENVIRONMENT = Object.freeze([
   "CLAUDE_CODE_USE_BEDROCK",
   "CLAUDE_CODE_USE_VERTEX",
@@ -201,13 +205,36 @@ export class NativeClaudeCodeReviewerAdapter {
     }
   }
 
-  async recoverFailure(instanceId) {
+  async recoverFailure(instanceId, {recordedRecovery = null} = {}) {
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const expectedSession = this.runtimeSessionId(instanceId);
     const files = await filesBelow(instanceRoot);
     let attempt;
+    let reconstructLegacyPointer = false;
     try { attempt = JSON.parse(await readFile(path.join(instanceRoot, "latest-attempt.json"), "utf8")); }
-    catch { return null; }
+    catch {
+      const exactLegacyBinding = recordedRecovery?.schemaVersion === 1
+        && recordedRecovery.failureSignature === "authentication_required"
+        && recordedRecovery.providerEntry === "not_entered"
+        && recordedRecovery.sessionAvailable === true
+        && recordedRecovery.sessionId === expectedSession
+        && typeof recordedRecovery.transportReceiptDigest === "string"
+        && typeof recordedRecovery.sessionArtifactDigest === "string";
+      if (!exactLegacyBinding) return null;
+      const matchingReceipts = [];
+      for (const file of files.filter((value) => value.endsWith(".transport.json"))) {
+        try {
+          const value = JSON.parse(await readFile(file, "utf8"));
+          if (digest(value) === recordedRecovery.transportReceiptDigest) matchingReceipts.push(file);
+        } catch {}
+      }
+      if (matchingReceipts.length !== 1) return null;
+      reconstructLegacyPointer = true;
+      attempt = {schemaVersion: 1, sessionId: expectedSession,
+        transportReceipt: path.basename(matchingReceipts[0]),
+        legacyEvidence: {transportReceiptDigest: recordedRecovery.transportReceiptDigest,
+          sessionArtifactDigest: recordedRecovery.sessionArtifactDigest}};
+    }
     if (attempt?.schemaVersion !== 1 || attempt.sessionId !== expectedSession
         || typeof attempt.transportReceipt !== "string"
         || path.basename(attempt.transportReceipt) !== attempt.transportReceipt
@@ -223,6 +250,9 @@ export class NativeClaudeCodeReviewerAdapter {
     const sessionFile = files.find((value) => path.basename(value) === `${expectedSession}.jsonl`);
     if (!sessionFile) return null;
     const sessionBytes = await readFile(sessionFile);
+    const sessionArtifactDigest = createHash("sha256").update(sessionBytes).digest("hex");
+    if (attempt.legacyEvidence
+        && attempt.legacyEvidence.sessionArtifactDigest !== sessionArtifactDigest) return null;
     const records = sessionBytes.toString("utf8").split("\n").filter(Boolean).flatMap((line) => {
       try { return [JSON.parse(line)]; } catch { return []; }
     });
@@ -234,13 +264,23 @@ export class NativeClaudeCodeReviewerAdapter {
       const observedAt = Date.parse(record?.timestamp);
       return Number.isFinite(observedAt) && observedAt >= attemptStartedAt
         && observedAt <= attemptCompletedAt
-        && assistantText(record).some((text) => text.trim() === "Not logged in · Please run /login");
+        && assistantText(record).some((text) => AUTHENTICATION_FAILURE_MESSAGES.has(text.trim()));
     });
     if (!authenticationRequired) return null;
-    return Object.freeze({schemaVersion: 1, failureSignature: "authentication_required",
+    const recovery = Object.freeze({schemaVersion: 1, failureSignature: "authentication_required",
       providerEntry: "not_entered", sessionAvailable: true, sessionId: expectedSession,
       transportReceiptDigest: digest(receipt.value),
-      sessionArtifactDigest: createHash("sha256").update(sessionBytes).digest("hex")});
+      sessionArtifactDigest});
+    if (reconstructLegacyPointer) {
+      try {
+        await writeFile(path.join(instanceRoot, "latest-attempt.json"), `${JSON.stringify(attempt)}\n`,
+          {mode: 0o600, flag: "wx"});
+      } catch (error) {
+        if (error?.code === "EEXIST") return this.recoverFailure(instanceId);
+        throw error;
+      }
+    }
+    return recovery;
   }
 
   async recoverResult(instanceId, subject) {

@@ -44,6 +44,13 @@ function identityKey(identity) {
 function instanceId(identity, obligationId) {
   return `review-${episodeDigest({identity, obligationId}).slice(0, 32)}`;
 }
+function exactPreSpawnRecovery(recovery, expectedSession) {
+  return recovery?.schemaVersion === 1
+    && recovery.failureSignature === "authentication_unavailable"
+    && recovery.providerEntry === "not_entered"
+    && recovery.sessionAvailable === false
+    && recovery.sessionId === expectedSession ? recovery : null;
+}
 function lineCount(content) { return Math.max(1, content.split("\n").length - (content.endsWith("\n") ? 1 : 0)); }
 
 function gitBlob(workspaceRoot, commit, filePath) {
@@ -214,12 +221,15 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     async recover({identity, obligation_id}) {
       const campaign = campaignService.recover(identity);
       const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
+      const reviewInstance = instanceId(campaign.identity, obligation_id);
+      const recordedRecovery = obligation?.failure?.recovery ?? null;
       const recovery = obligation?.status === "correction_required"
-        ? obligation.failure?.recovery ?? null
+        ? recordedRecovery
         : obligation?.status === "retryable_failure"
-        ? obligation.failure?.recovery ?? null
+        ? exactPreSpawnRecovery(recordedRecovery, owners.adapter.runtimeSessionId(reviewInstance))
+          ?? await owners.adapter.recoverFailure(reviewInstance, {recordedRecovery})
         : obligation?.status === "executing"
-          ? await owners.adapter.recoverFailure(instanceId(campaign.identity, obligation_id))
+          ? await owners.adapter.recoverFailure(reviewInstance)
           : obligation?.status === "retry_executing"
             ? await recoverProviderResult(campaign, obligation_id)
             : obligation?.status === "correction_executing"
@@ -231,8 +241,10 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       const campaign = campaignService.recover(identity);
       const instance = instanceId(campaign.identity, obligation_id);
       const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
+      const recordedRecovery = obligation?.failure?.recovery ?? null;
       const recovery = obligation?.status === "retryable_failure"
-        ? obligation.failure?.recovery ?? null
+        ? exactPreSpawnRecovery(recordedRecovery, owners.adapter.runtimeSessionId(instance))
+          ?? await owners.adapter.recoverFailure(instance, {recordedRecovery})
         : await owners.adapter.recoverFailure(instance);
       if (!recovery) throw new Error("native review retry has no recoverable definite pre-provider failure");
       const {base, sessionId} = request(campaign, obligation_id, operation_id,

@@ -416,7 +416,7 @@ test("definite pre-provider authentication failure resumes the exact retained se
           attempts: [{duration_ms: 10_000}]}));
         await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
           timestamp,
-          message: {role: "assistant", content: [{type: "text", text: "Not logged in · Please run /login"}]}})}\n`);
+          message: {role: "assistant", content: [{type: "text", text: "Failed to authenticate: OAuth session expired and could not be refreshed"}]}})}\n`);
         return {exitCode: 1, stdout: "", stderr: "authentication required"};
       }
       return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
@@ -431,9 +431,12 @@ test("definite pre-provider authentication failure resumes the exact retained se
   campaign = dispatched.result.campaign;
   assert.equal(dispatched.result.failure.failureSignature, "authentication_required");
   assert.equal(campaign.nativeReview.obligations.generic.status, "retryable_failure");
+  await rm(path.join(path.dirname(isolatedConfigRoot), "latest-attempt.json"));
   const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
   assert.equal(recovered.result.recovery.failureSignature, "authentication_required");
   assert.equal(recovered.result.recovery.sessionId, sessions[0].session);
+  assert.equal(JSON.parse(await readFile(path.join(path.dirname(isolatedConfigRoot), "latest-attempt.json"), "utf8"))
+    .sessionId, sessions[0].session);
   await writeFile(reviewerCredentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
   dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: operationId}));

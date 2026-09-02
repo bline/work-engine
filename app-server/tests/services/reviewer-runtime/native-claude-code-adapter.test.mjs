@@ -130,6 +130,37 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
   assert.equal(await readFile(path.join(exact.configRoot, ".credentials.json"), "utf8"),
     '{"fixture":"refreshed-subscription"}\n');
 
+  const legacy = await prepare("legacy-auth-failure", [
+    {text: "Failed to authenticate: OAuth session expired and could not be refreshed"},
+  ]);
+  const recordedRecovery = await adapter.recoverFailure("legacy-auth-failure");
+  assert.equal(recordedRecovery.failureSignature, "authentication_required");
+  const legacyInstanceRoot = path.dirname(legacy.configRoot);
+  await rm(path.join(legacyInstanceRoot, "latest-attempt.json"));
+  assert.equal(await adapter.recoverFailure("legacy-auth-failure"), null);
+  assert.deepEqual(await adapter.recoverFailure("legacy-auth-failure", {recordedRecovery}), recordedRecovery);
+  const reconstructed = JSON.parse(await readFile(path.join(legacyInstanceRoot, "latest-attempt.json"), "utf8"));
+  assert.equal(reconstructed.sessionId, legacy.session);
+  assert.equal(reconstructed.transportReceipt, "failed.transport.json");
+  assert.deepEqual(reconstructed.legacyEvidence, {
+    transportReceiptDigest: recordedRecovery.transportReceiptDigest,
+    sessionArtifactDigest: recordedRecovery.sessionArtifactDigest,
+  });
+
+  await rm(path.join(legacyInstanceRoot, "latest-attempt.json"));
+  const concurrentRecoveries = await Promise.all([
+    adapter.recoverFailure("legacy-auth-failure", {recordedRecovery}),
+    adapter.recoverFailure("legacy-auth-failure", {recordedRecovery}),
+  ]);
+  assert.deepEqual(concurrentRecoveries, [recordedRecovery, recordedRecovery]);
+  assert.equal(JSON.parse(await readFile(path.join(legacyInstanceRoot, "latest-attempt.json"), "utf8"))
+    .transportReceipt, "failed.transport.json");
+
+  await rm(path.join(legacyInstanceRoot, "latest-attempt.json"));
+  assert.equal(await adapter.recoverFailure("legacy-auth-failure", {recordedRecovery: {
+    ...recordedRecovery, transportReceiptDigest: "0".repeat(64),
+  }}), null);
+
   const other = await prepare("other-failure", [
     {text: "Not logged in · Please run /login", timestamp: "2026-01-01T00:00:00.000Z"},
     {text: "Quota unavailable"},
