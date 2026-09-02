@@ -67,6 +67,7 @@ export {
 } from "./services/reviewer-runtime/contract.mjs";
 export * from "./services/reviewer-runtime/profile-registry.mjs";
 export * from "./services/reviewer-runtime/openrouter-codex-adapter.mjs";
+export * from "./services/reviewer-runtime/native-claude-code-adapter.mjs";
 export {
   REVIEW_EPISODE_SCHEMA_VERSION, ReviewEpisodeError,
   digest as reviewEpisodeDigest, identityKey as reviewEpisodeIdentityKey,
@@ -83,6 +84,7 @@ export * from "./services/product-development/claim-context-delivery.mjs";
 export * from "./services/slice-campaign/contract.mjs";
 export * from "./services/slice-campaign/legacy-review-adapter.mjs";
 export * from "./services/slice-campaign/native-review-closure.mjs";
+export * from "./services/slice-campaign/native-review-host.mjs";
 export * from "./services/slice-campaign/service.mjs";
 export * from "./services/slice-campaign/sqlite-store.mjs";
 export * from "./services/workspace-coordination/contract.mjs";

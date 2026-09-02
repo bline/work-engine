@@ -140,7 +140,14 @@ test("pinned slice-builder decomposition regenerates exact canonical bytes and A
   assert.ok(first.output.equals(expected));
   assert.ok(second.output.equals(first.output));
   assert.equal(first.ir.section_provenance.length, 9);
-  assert.equal(first.ir.output_sha256, "561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e");
+  assert.equal(first.ir.output_sha256, "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e");
+  const compiledText = first.output.toString("utf8");
+  assert.match(compiledText, /skills\/slice-supervisor\/scripts\/resume_active_slice\.py/);
+  assert.match(compiledText, /skills\/slice-supervisor\/scripts\/manage_active_slice\.py/);
+  for (const field of ["run_id", "slice_number", "attempt_id", "plan_version"]) {
+    assert.match(compiledText, new RegExp(`exactly[^.]+${field}|${field}[^.]+invalid`, "s"));
+  }
+  assert.match(compiledText, /camelCase keys[^.]+invalid/);
   assert.equal(first.ir.status, "experimental_non_authoritative");
   assert.match(first.ir.input_sha256.structure, /^[0-9a-f]{64}$/);
   assert.match(first.ir.input_sha256.interface, /^[0-9a-f]{64}$/);

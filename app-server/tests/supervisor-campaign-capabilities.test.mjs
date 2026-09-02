@@ -108,7 +108,7 @@ async function completionFixture(t) {
   return { repository, stateRoot, checkpoint, offer: { ...authorized, artifact_oid: artifactOid, ref } };
 }
 
-test("twelve thin clients bind exact operations and never infer human authority", async () => {
+test("thirteen thin clients bind exact operations and never infer human authority", async () => {
   const calls = [];
   const definitions = createSupervisorCampaignCapabilityDefinitions(async (request) => {
     calls.push(request);
@@ -131,6 +131,7 @@ test("twelve thin clients bind exact operations and never infer human authority"
     "capability.completion_offer",
     "capability.completion_publication",
     "capability.lifecycle_control",
+    "capability.native_review",
     "capability.operational_coordination",
     "capability.preflight",
     "capability.receipt_finalization",
@@ -145,6 +146,14 @@ test("twelve thin clients bind exact operations and never infer human authority"
       kind: "agent", reference: "inferred", observed_at: "2026-09-01T09:00:00-06:00",
     } },
   } }), /kind must be human/);
+  assert.equal(calls.length, 0);
+  const nativeReview = definitions.get("capability.native_review");
+  assert.match(nativeReview.description, /grants no shell, filesystem, credential, model-routing/);
+  await assert.rejects(nativeReview.handler({operation: "execute", input: {
+    identity: {runId: "r", sliceNumber: 1, attemptId: "a", planVersion: "p"},
+    expected_revision: "a".repeat(64), obligation_id: "generic", operation_id: "native:generic",
+    model: "caller-selected", command: "claude", path: "/caller-selected",
+  }}), /unsupported field/);
   assert.equal(calls.length, 0);
   const result = await offer.handler({ operation: "resolve", input: {
     offer: {}, decision: { decision: "create", authority: {

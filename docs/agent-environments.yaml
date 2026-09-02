@@ -167,6 +167,9 @@ entities:
     capability.operational_coordination:
       label: Host-mediated advisory cross-session coordination
       mechanism: MECH-CODEX-CHATBOARD
+    capability.native_review:
+      label: Host-mediated configured selected native review closure
+      mechanism: MECH-NATIVE-REVIEW-CLOSURE
     capability.reviewer_indexed_structure:
       label: Read-only indexed repository structure
       mechanism: MECH-REVIEW-PROVIDER
@@ -235,6 +238,7 @@ roles:
       - capability.resume
       - capability.strategic_reconciliation
       - capability.operational_coordination
+      - capability.native_review
     may_observe:
       - state.campaign_config
       - state.campaign_lifecycle
@@ -299,6 +303,8 @@ roles:
         mediated_by: capability.strategic_reconciliation
       - transition: cross-session operational coordination
         mediated_by: capability.operational_coordination
+      - transition: configured selected native review closure
+        mediated_by: capability.native_review
     forbidden_from:
       - inspecting repository implementation or diffs for domain judgment
       - implementing campaign work

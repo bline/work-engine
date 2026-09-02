@@ -153,15 +153,18 @@ test("production manifest projects the canonical implementation reviewer with a 
   assert.match(projection.role.developerInstructions, /Never infer applicability, materiality, verdict/);
 });
 
-test("production manifest grants operational coordination only to the read-only supervisor", async () => {
+test("production manifest grants coordination and native review only to the read-only supervisor", async () => {
   const root = path.resolve(new URL("../..", import.meta.url).pathname);
   const manifest = await loadRuntimeManifest(path.join(root, "app-server/runtime-manifest.yaml"));
   const supervisor = manifest.projectRole("slice-supervisor", "coordination").role;
   assert.equal(supervisor.threadOptions.sandbox, "read-only");
   assert.equal(supervisor.threadOptions.approvalPolicy, "never");
   assert.equal(supervisor.capabilities.includes("capability.operational_coordination"), true);
+  assert.equal(supervisor.capabilities.includes("capability.native_review"), true);
   assert.equal(manifest.projectRole("slice-builder", "coordination").role.capabilities
     .includes("capability.operational_coordination"), false);
+  assert.equal(manifest.projectRole("slice-builder", "coordination").role.capabilities
+    .includes("capability.native_review"), false);
 });
 
 test("compiled slice-builder requirements admit one generic manifest role and reject excess before delivery", async () => {

@@ -4,7 +4,7 @@ skill_id: slice-builder
 source:
   path: skills/slice-builder/SKILL.md
   repository_revision: 649d695a9c5479cc973f52a46bc3a05f9986e93f
-  sha256: 561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e
+  sha256: ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e
   producer: S2 bounded one-time legacy migration
 frontmatter:
   name: slice-builder
@@ -19,22 +19,22 @@ source_bindings:
   - id: authority.legacy-skill
     kind: canonical_authority
     path: skills/slice-builder/SKILL.md
-    sha256: 561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e
+    sha256: ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e
     role: canonical legacy skill and role contract
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
+    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
     path: docs/workflow-invariants.md
-    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
+    sha256: 124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 1c8f48f1a3b293942456a05f54342c8d8dc44213b1f9779eb36ba83b2529d394
+    sha256: 5373c424506133074233af000b049b0e96fe9690f13b530c70bd7f7157e2bca9
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.builder
@@ -44,7 +44,7 @@ role_profile:
   context_lifetime: one slice across planning, implementation, and gate phases
   projection:
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 1c8f48f1a3b293942456a05f54342c8d8dc44213b1f9779eb36ba83b2529d394
+    sha256: 5373c424506133074233af000b049b0e96fe9690f13b530c70bd7f7157e2bca9
   relations:
     bound_by:
       - INV-001
@@ -457,7 +457,7 @@ sections:
 
       review call and publish it through the active-slice mechanism as
 
-      `actor_binding.runtime_session_id` with `scripts/manage_active_slice.py
+      `actor_binding.runtime_session_id` with `skills/slice-supervisor/scripts/manage_active_slice.py
 
       bind-actor`, passing the exact current durable revision as `--expected-revision`
 
@@ -469,7 +469,7 @@ sections:
 
       After builder or supervisor context
 
-      replacement, recover the binding with `resume_active_slice.py` before issuing
+      replacement, recover the binding with `skills/slice-supervisor/scripts/resume_active_slice.py` before issuing
 
       the next reviewer call; resume that exact session rather than reconstructing
 
@@ -483,8 +483,8 @@ sections:
 
     source_span:
       start_byte: 7822
-      end_byte: 11022
-      sha256: bab72dae32c30e1c92c48ab2311f86dc2bc8eb7342f0bf4446a5a43834f3f381
+      end_byte: 11078
+      sha256: 39522e5fd1e0e6a061f49987043a0534cfbbc2c6eb04271a901795c1a8841c87
   - id: planning-turn
     kind: planning
     heading:
@@ -558,8 +558,8 @@ sections:
       - available reconnaissance statistics.
 
     source_span:
-      start_byte: 11022
-      end_byte: 13492
+      start_byte: 11078
+      end_byte: 13548
       sha256: 50129ea2c663a378e26b5e8c5e3a1a0e5aac9687ba1a9b7adcee7dfda3effde9
   - id: implementation-turn
     kind: implementation
@@ -618,6 +618,15 @@ sections:
       immediately before publication. Then invoke the CAS boundary directly:
 
 
+      Active-slice recovery and publication are owned only by the slice-supervisor
+
+      scripts. Do not look for copies under slice-builder or another skill. Pass
+
+      `--identity-json` an object with exactly `run_id`, `slice_number`, `attempt_id`,
+
+      and `plan_version`; camelCase keys and inferred alternate shapes are invalid.
+
+
       ```bash
 
       python3 skills/slice-supervisor/scripts/manage_active_slice.py \
@@ -638,9 +647,9 @@ sections:
       or returning the transient result as complete.
 
     source_span:
-      start_byte: 13492
-      end_byte: 16129
-      sha256: b3416731255d0be158a445a2f300af78f7432937d61355e1ce1c073d6addc301
+      start_byte: 13548
+      end_byte: 16497
+      sha256: dbf23eb40927e1ee5b5d57a3581d376c100f9b58dbbe059dd79a564ffb134c19
   - id: gate-turn
     kind: validation
     heading:
@@ -750,8 +759,8 @@ sections:
       phase accounting remain mandatory.
 
     source_span:
-      start_byte: 16129
-      end_byte: 19927
+      start_byte: 16497
+      end_byte: 20295
       sha256: cf435dd4d1dbaf011d293018b131e47e263bcfb23ad191ecbdef4f0b0eb5e782
   - id: reasoning-escalation
     kind: escalation
@@ -795,8 +804,8 @@ sections:
       workspace.
 
     source_span:
-      start_byte: 19927
-      end_byte: 21453
+      start_byte: 20295
+      end_byte: 21821
       sha256: dcac1ea499edcce10ee42c2ff22d2b1aee18e718b7216059c1b9e1862d8289b8
   - id: scope-enforcement
     kind: boundary
@@ -816,8 +825,8 @@ sections:
       distinction between pre-existing, task-owned, overlapping, and unowned changes.
 
     source_span:
-      start_byte: 21453
-      end_byte: 22052
+      start_byte: 21821
+      end_byte: 22420
       sha256: 2dbefb61e486e9289f38d20329709858d92951a0b65edb9099b3b9f860835d29
   - id: final-receipt
     kind: receipt
@@ -875,6 +884,6 @@ sections:
       findings, or when it returns a truthful stopped/failed receipt. Completion of edits alone is
       not success.
     source_span:
-      start_byte: 22052
-      end_byte: 24240
+      start_byte: 22420
+      end_byte: 24608
       sha256: d44cda9028095bc4dae46de47d9dcb950111137b77e38454bbb43bf6bace24e4

@@ -165,15 +165,15 @@ When `approval.uninterrupted_after_plan` is true, execution and gate may share o
 Model and provider sessions are runtime bindings, not durable owners of an
 active slice attempt. Before a configured planning or review obligation crosses
 a provider boundary, publish its attempt, phase, and pending obligation with
-`scripts/manage_active_slice.py begin`. When that capability is temporarily
-unavailable, preserve the same obligation with `scripts/manage_active_slice.py
+`skills/slice-supervisor/scripts/manage_active_slice.py begin`. When that capability is temporarily
+unavailable, preserve the same obligation with `skills/slice-supervisor/scripts/manage_active_slice.py
 wait` and the expected durable revision. Reconstruct that same attempt after
-context or session replacement with `scripts/resume_active_slice.py`; continue
+context or session replacement with `skills/slice-supervisor/scripts/resume_active_slice.py`; continue
 only the recovered pending phase.
 
 When the pending obligation is conclusively discharged, or the attempt reaches
 an authoritative terminal outcome already decided by its owner, record
-lifecycle closure with `scripts/manage_active_slice.py retire`. Terminal
+lifecycle closure with `skills/slice-supervisor/scripts/manage_active_slice.py retire`. Terminal
 outcomes include, without being limited to, accepted, stopped, and failed. The
 CLI records decisions already made by the model-driven supervisor; it does not
 decide discharge, acceptance, stopping, failure, provider choice, retry,
@@ -191,13 +191,13 @@ semantics remain unchanged.
 Implementation and gate completion can cross a builder return or mailbox
 boundary before the enclosing slice is terminal. Before that transient channel
 can become the only copy, require the builder-side workflow to publish the
-compact phase consequence with `scripts/manage_active_slice.py publish-phase`.
+compact phase consequence with `skills/slice-supervisor/scripts/manage_active_slice.py publish-phase`.
 Bind established consequences to integrity-identified implementation, artifact,
 or gate evidence. If interruption prevents completion from being established,
 publish an explicit uncertain consequence when recovery can do so safely; never
 infer completion from runtime liveness or remembered delivery.
 
-`scripts/resume_active_slice.py` returns the supervisor's compact recovery
+`skills/slice-supervisor/scripts/resume_active_slice.py` returns the supervisor's compact recovery
 projection: stable attempt identity, current phase, accepted boundary, pending
 obligation, latest phase consequence, authoritative references, lifecycle
 state, and durable provenance. Its `runtime_binding` is explicitly nonsemantic.
@@ -207,7 +207,7 @@ semantic consequence and its integrity-bound references.
 
 For a review provider that supports resumable sessions, assign the reviewer
 runtime session ID before the initial provider call and publish it in
-`actor_binding.runtime_session_id` through `scripts/manage_active_slice.py
+`actor_binding.runtime_session_id` through `skills/slice-supervisor/scripts/manage_active_slice.py
 bind-actor`, with the current durable revision as `--expected-revision` and a
 stable unique `--event-id`. The compare-and-swap and replay identity prevent a
 stale transition from replacing the intended reviewer binding; skipping this
@@ -215,11 +215,16 @@ route can make recovery lose the session or resume the wrong reviewer
 continuation. Require the builder to use that exact
 binding for the fresh-entry review and every ordinary remediation continuation.
 After supervisor-context replacement, recover the binding with
-`resume_active_slice.py` and resume the provider session instead of recreating
+`skills/slice-supervisor/scripts/resume_active_slice.py` and resume the provider session instead of recreating
 the review research. The reviewer remains a runtime binding, not the durable
 owner: if it is unavailable or model judgment requires a fresh perspective,
 record replacement provenance and the reset reason while preserving the same
 pending obligation and applicable findings.
+
+Active-slice recovery and publication are owned only by these slice-supervisor
+scripts; do not infer a copy under another skill. Every `--identity-json` value
+must be an object with exactly `run_id`, `slice_number`, `attempt_id`, and
+`plan_version`; camelCase keys and inferred alternate shapes are invalid.
 
 ## Accept and record a slice
 

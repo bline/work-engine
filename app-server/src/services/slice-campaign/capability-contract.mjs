@@ -13,6 +13,10 @@ const operationalCoordinationToolDescription =
   "Read, post, claim, or release advisory cross-session information through the canonical chatboard. "
   + "A chatboard claim grants no mutation or workflow authority and is not a fenced capability.workspace_coordination lease. "
   + "Treating it as a lease can admit conflicting or stale mutations; acquire the authoritative workspace lease and mutation admission separately whenever they are required.";
+const nativeReviewToolDescription =
+  "Execute or recover an exact supervisor-selected review obligation through the stable host-owned native Claude Code closure. "
+  + "The host derives reviewer authority, subject delivery, session identity, command, tools, provider route, durable episode, and finding state. "
+  + "This capability grants no shell, filesystem, credential, model-routing, reviewer-selection, finding-evaluation, review-acceptance, or campaign-acceptance authority.";
 
 function strategicReconciliationRequestInputSchema() {
   const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
@@ -64,6 +68,30 @@ function operationalCoordinationToolInputSchema() {
   }))};
 }
 
+function nativeReviewToolInputSchema() {
+  const text = () => ({...NON_EMPTY_TEXT_SCHEMA});
+  const identity = {type: "object", required: ["runId", "sliceNumber", "attemptId", "planVersion"],
+    properties: {runId: text(), sliceNumber: {type: "integer", minimum: 0}, attemptId: text(), planVersion: text()},
+    additionalProperties: false};
+  const common = {identity, expected_revision: {type: "string", pattern: "^[0-9a-f]{64}$"},
+    obligation_id: text(), operation_id: text()};
+  const inputs = {
+    execute: common,
+    recover: {identity, obligation_id: text()},
+    record_finding_evaluation: {...common, finding_id: text(), consumer_revision: text()},
+    execute_remediation: {...common, remediation_subject: {type: "object",
+      required: ["commit", "tree", "patchIdentity"], properties: {
+        commit: text(), tree: text(), patchIdentity: text(),
+      }, additionalProperties: false}},
+  };
+  return {oneOf: Object.entries(inputs).map(([operation, properties]) => ({
+    type: "object", required: ["operation", "input"], properties: {
+      operation: {type: "string", enum: [operation]}, input: {type: "object",
+        required: Object.keys(properties), properties, additionalProperties: false},
+    }, additionalProperties: false,
+  }))};
+}
+
 const CAPABILITIES = Object.freeze({
   "capability.preflight": Object.freeze(["run"]),
   "capability.lifecycle_control": Object.freeze([
@@ -83,6 +111,9 @@ const CAPABILITIES = Object.freeze({
   "capability.completion_publication": Object.freeze(["prepare", "complete", "reconcile"]),
   "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
   "capability.operational_coordination": Object.freeze(["read", "claim", "post", "release"]),
+  "capability.native_review": Object.freeze([
+    "execute", "recover", "record_finding_evaluation", "execute_remediation",
+  ]),
 });
 
 const TOOL_NAMES = Object.freeze({
@@ -98,6 +129,7 @@ const TOOL_NAMES = Object.freeze({
   "capability.completion_publication": "completion_publication",
   "capability.strategic_reconciliation": "strategic_reconciliation",
   "capability.operational_coordination": "operational_coordination",
+  "capability.native_review": "native_review",
 });
 
 const INPUT_FIELDS = Object.freeze({
@@ -186,6 +218,18 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.operational_coordination/release": [
     new Set(["resource", "session_id", "claim_id"]), new Set(),
+  ],
+  "capability.native_review/execute": [
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id"]), new Set(),
+  ],
+  "capability.native_review/recover": [
+    new Set(["identity", "obligation_id"]), new Set(),
+  ],
+  "capability.native_review/record_finding_evaluation": [
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id", "finding_id", "consumer_revision"]), new Set(),
+  ],
+  "capability.native_review/execute_remediation": [
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id", "remediation_subject"]), new Set(),
   ],
 });
 
@@ -326,6 +370,23 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
   if (capability === "capability.operational_coordination") {
     validateOperationalCoordination(operation, value);
   }
+  if (capability === "capability.native_review") {
+    requireRecord(value.identity, "native review campaign identity");
+    if (operation !== "recover") {
+      requireText(value.expected_revision, "native review expected revision");
+      requireText(value.operation_id, "native review operation identity");
+    }
+    requireText(value.obligation_id, "native review obligation identity");
+    if (operation === "record_finding_evaluation") {
+      requireText(value.finding_id, "native review finding identity");
+      requireText(value.consumer_revision, "native review consumer revision");
+    }
+    if (operation === "execute_remediation") {
+      requireRecord(value.remediation_subject, "native review remediation subject");
+      exactFields(value.remediation_subject, new Set(["commit", "tree", "patchIdentity"]), new Set(), "native review remediation subject");
+      for (const field of ["commit", "tree", "patchIdentity"]) requireText(value.remediation_subject[field], `native review remediation ${field}`);
+    }
+  }
   return structuredClone(value);
 }
 
@@ -350,6 +411,7 @@ function inputSchema(capability, operations) {
   if (capability === "capability.operational_coordination") {
     return operationalCoordinationToolInputSchema();
   }
+  if (capability === "capability.native_review") return nativeReviewToolInputSchema();
   return {
     type: "object",
     required: ["operation", "input"],
@@ -377,6 +439,8 @@ export function createSupervisorCampaignCapabilityDefinitions(
       ? strategicReconciliationToolDescription
       : capability === "capability.operational_coordination"
         ? operationalCoordinationToolDescription
+        : capability === "capability.native_review"
+          ? nativeReviewToolDescription
         : `Invoke the host-owned ${capability} boundary. The host validates exact operation identity, authority, and durable state.`,
     inputSchema: inputSchema(capability, operations),
     async handler(argumentsValue) {

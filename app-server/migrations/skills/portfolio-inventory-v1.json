@@ -4252,7 +4252,7 @@
       ],
       "source": {
         "path": "skills/slice-builder/SKILL.md",
-        "sha256": "561d9bc9234af444745f0eea2add061b8f154a07d837dea319aee24c855c383e"
+        "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e"
       },
       "artifacts": [
         {
@@ -4443,7 +4443,7 @@
       ],
       "source": {
         "path": "skills/slice-supervisor/SKILL.md",
-        "sha256": "cc0694a6a3658eb533b3f5eca3239201f7145104e0609c201d2b2fdd6b25d5c3"
+        "sha256": "60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542"
       },
       "artifacts": [
         {

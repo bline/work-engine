@@ -6,10 +6,10 @@ generated_by: skills/agent-environment-graph/scripts/agent_environment_graph.py
 source_inputs:
   invariant_catalog:
     path: ../workflow-invariants.md
-    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
+    sha256: 124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9
   role_environment:
     path: ../agent-environments.yaml
-    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
+    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
 environment_context:
   document_id: work-engine.agent-environments
   status: verified_baseline
@@ -120,6 +120,7 @@ role:
   - capability.resume
   - capability.strategic_reconciliation
   - capability.operational_coordination
+  - capability.native_review
   may_observe:
   - state.campaign_config
   - state.campaign_lifecycle
@@ -184,6 +185,8 @@ role:
     mediated_by: capability.strategic_reconciliation
   - transition: cross-session operational coordination
     mediated_by: capability.operational_coordination
+  - transition: configured selected native review closure
+    mediated_by: capability.native_review
   forbidden_from:
   - inspecting repository implementation or diffs for domain judgment
   - implementing campaign work
@@ -325,6 +328,9 @@ entities:
     capability.operational_coordination:
       label: Host-mediated advisory cross-session coordination
       mechanism: MECH-CODEX-CHATBOARD
+    capability.native_review:
+      label: Host-mediated configured selected native review closure
+      mechanism: MECH-NATIVE-REVIEW-CLOSURE
 invariants:
   INV-001:
     owner: user
@@ -1083,6 +1089,12 @@ mechanisms:
     affordance: Reconciles an accepted checkpoint in an isolated integration worktree, validates the integrated
       tree, and atomically admits the branch mutation.
     edges: realizes `INV-039`; refines `INV-028`
+  MECH-NATIVE-REVIEW-CLOSURE:
+    component: App Server stable-host native-review composition plus native Claude Code adapter
+    affordance: Executes only an exact configured and supervisor-selected immutable review obligation,
+      durably preserving provider-entry admission, episode continuity, admitted result, findings, and
+      reliance without granting the supervisor provider, mutation, finding-evaluation, or acceptance authority.
+    edges: realizes `INV-012`; supports `INV-014`, `INV-017`
   MECH-PREFLIGHT:
     component: '`campaign-preflight.mjs`'
     affordance: Resolves named campaigns, defaults, source digests, and transient capabilities; rejects

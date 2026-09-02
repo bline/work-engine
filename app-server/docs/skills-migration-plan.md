@@ -490,6 +490,30 @@ remains separately governed by its pilot protocol and human approval after the
 sealed bundle and end-to-end dry run succeed. Neither the corrective closure
 nor successful inhabitation grants pilot execution or production authority.
 
+After A1 through A4 were published and the pinned client completed a normal
+attached supervisor turn, recovery of the preserved S13 candidate exposed a
+second, narrower inhabitation gap. The read-only supervisor could recover the
+review-ready campaign and its selected obligations, but the stable host did not
+compose S12's accepted native-review service owners or expose a mediated review
+capability. The role therefore could not create the authority-bound reviewer
+session, enter the configured provider, or durably read the resulting episode,
+finding, and reliance state without an outer-session shell actor.
+
+The corrective `supervisor-native-review-hosting` slice closes only that host
+composition boundary. It adds a stable-host capability for an exact already
+selected immutable obligation; the host derives the subject, authority,
+provider profile, native Claude Code session, command, tools, and private
+SQLite locations. Provider-entry admission precedes launch, ambiguous admitted
+outcomes cannot replay automatically, and remediation resumes only the exact
+recorded session. The supervisor receives no shell, filesystem, credential,
+model-routing, reviewer-selection, finding-evaluation, review-acceptance, or
+campaign-acceptance authority. This production path uses direct Anthropic
+through the native Claude Code harness; OpenRouter, batch, paired calibration,
+and Codex/OpenRouter reviewer execution remain distinct routes and are excluded
+from this closure. S13's candidate and ten deterministic checks remain
+unchanged and resume at their existing review/acceptance boundary after this
+correction is accepted.
+
 ## Candidate slices
 
 ### S0 — Revision-bound portfolio inventory and migration ledger

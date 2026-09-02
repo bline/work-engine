@@ -4,7 +4,7 @@ skill_id: slice-supervisor
 source:
   path: skills/slice-supervisor/SKILL.md
   repository_revision: 2fcdd6cdddede6a694e84db79aab00e747121cee
-  sha256: cc0694a6a3658eb533b3f5eca3239201f7145104e0609c201d2b2fdd6b25d5c3
+  sha256: 60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542
   producer: S8 bounded legacy role migration
 frontmatter:
   name: slice-supervisor
@@ -20,22 +20,22 @@ source_bindings:
   - id: authority.legacy-skill
     kind: canonical_authority
     path: skills/slice-supervisor/SKILL.md
-    sha256: cc0694a6a3658eb533b3f5eca3239201f7145104e0609c201d2b2fdd6b25d5c3
+    sha256: 60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542
     role: canonical legacy supervisor role contract
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
+    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
     path: docs/workflow-invariants.md
-    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
+    sha256: 124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 879138f045db10ec921f084d19ba4e2adc12de4b2e76c9b0eb173b5f40ec269d
+    sha256: 00892545536651b319eba00c788ae7bd3137c37a14f855efb19a188bc263add1
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.supervisor
@@ -45,7 +45,7 @@ role_profile:
   context_lifetime: one campaign; compact lifecycle state across slices
   projection:
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 879138f045db10ec921f084d19ba4e2adc12de4b2e76c9b0eb173b5f40ec269d
+    sha256: 00892545536651b319eba00c788ae7bd3137c37a14f855efb19a188bc263add1
   relations:
     bound_by:
       - INV-001
@@ -101,6 +101,7 @@ role_profile:
       - capability.resume
       - capability.strategic_reconciliation
       - capability.operational_coordination
+      - capability.native_review
     may_observe:
       - state.campaign_config
       - state.campaign_lifecycle
@@ -165,6 +166,8 @@ role_profile:
         mediated_by: capability.strategic_reconciliation
       - transition: cross-session operational coordination
         mediated_by: capability.operational_coordination
+      - transition: configured selected native review closure
+        mediated_by: capability.native_review
     forbidden_from:
       - inspecting repository implementation or diffs for domain judgment
       - implementing campaign work
@@ -536,15 +539,15 @@ sections:
       Model and provider sessions are runtime bindings, not durable owners of an
       active slice attempt. Before a configured planning or review obligation crosses
       a provider boundary, publish its attempt, phase, and pending obligation with
-      `scripts/manage_active_slice.py begin`. When that capability is temporarily
-      unavailable, preserve the same obligation with `scripts/manage_active_slice.py
+      `skills/slice-supervisor/scripts/manage_active_slice.py begin`. When that capability is temporarily
+      unavailable, preserve the same obligation with `skills/slice-supervisor/scripts/manage_active_slice.py
       wait` and the expected durable revision. Reconstruct that same attempt after
-      context or session replacement with `scripts/resume_active_slice.py`; continue
+      context or session replacement with `skills/slice-supervisor/scripts/resume_active_slice.py`; continue
       only the recovered pending phase.
 
       When the pending obligation is conclusively discharged, or the attempt reaches
       an authoritative terminal outcome already decided by its owner, record
-      lifecycle closure with `scripts/manage_active_slice.py retire`. Terminal
+      lifecycle closure with `skills/slice-supervisor/scripts/manage_active_slice.py retire`. Terminal
       outcomes include, without being limited to, accepted, stopped, and failed. The
       CLI records decisions already made by the model-driven supervisor; it does not
       decide discharge, acceptance, stopping, failure, provider choice, retry,
@@ -562,13 +565,13 @@ sections:
       Implementation and gate completion can cross a builder return or mailbox
       boundary before the enclosing slice is terminal. Before that transient channel
       can become the only copy, require the builder-side workflow to publish the
-      compact phase consequence with `scripts/manage_active_slice.py publish-phase`.
+      compact phase consequence with `skills/slice-supervisor/scripts/manage_active_slice.py publish-phase`.
       Bind established consequences to integrity-identified implementation, artifact,
       or gate evidence. If interruption prevents completion from being established,
       publish an explicit uncertain consequence when recovery can do so safely; never
       infer completion from runtime liveness or remembered delivery.
 
-      `scripts/resume_active_slice.py` returns the supervisor's compact recovery
+      `skills/slice-supervisor/scripts/resume_active_slice.py` returns the supervisor's compact recovery
       projection: stable attempt identity, current phase, accepted boundary, pending
       obligation, latest phase consequence, authoritative references, lifecycle
       state, and durable provenance. Its `runtime_binding` is explicitly nonsemantic.
@@ -578,7 +581,7 @@ sections:
 
       For a review provider that supports resumable sessions, assign the reviewer
       runtime session ID before the initial provider call and publish it in
-      `actor_binding.runtime_session_id` through `scripts/manage_active_slice.py
+      `actor_binding.runtime_session_id` through `skills/slice-supervisor/scripts/manage_active_slice.py
       bind-actor`, with the current durable revision as `--expected-revision` and a
       stable unique `--event-id`. The compare-and-swap and replay identity prevent a
       stale transition from replacing the intended reviewer binding; skipping this
@@ -586,16 +589,21 @@ sections:
       continuation. Require the builder to use that exact
       binding for the fresh-entry review and every ordinary remediation continuation.
       After supervisor-context replacement, recover the binding with
-      `resume_active_slice.py` and resume the provider session instead of recreating
+      `skills/slice-supervisor/scripts/resume_active_slice.py` and resume the provider session instead of recreating
       the review research. The reviewer remains a runtime binding, not the durable
       owner: if it is unavailable or model judgment requires a fresh perspective,
       record replacement provenance and the reset reason while preserving the same
       pending obligation and applicable findings.
 
+      Active-slice recovery and publication are owned only by these slice-supervisor
+      scripts; do not infer a copy under another skill. Every `--identity-json` value
+      must be an object with exactly `run_id`, `slice_number`, `attempt_id`, and
+      `plan_version`; camelCase keys and inferred alternate shapes are invalid.
+
     source_span:
       start_byte: 12579
-      end_byte: 16416
-      sha256: a9e34857604cf9b19051a621c78ca4b2d2c13d36897a00e349c8d18c0f0cfaf2
+      end_byte: 16925
+      sha256: c088b3526c188ea0a11d294e4406279631ca757a1a98f34e7c583bf20abdb7fb
   - id: accept-and-record-a-slice
     kind: receipt
     heading:
@@ -808,8 +816,8 @@ sections:
       durable record was written.
 
     source_span:
-      start_byte: 16416
-      end_byte: 23624
+      start_byte: 16925
+      end_byte: 24133
       sha256: 006835251fde49ac5e7e3c9bab5c86720e176606021f540272551f4bcaa384fc
   - id: reconcile-strategy-when-execution-changes-the-map
     kind: operation
@@ -840,8 +848,8 @@ sections:
       on a roadmap known to be unreliable.
 
     source_span:
-      start_byte: 23624
-      end_byte: 24950
+      start_byte: 24133
+      end_byte: 25459
       sha256: c525224610abdec9b19a3d33692359046d05f7bd067257325f9d73c63b78ad49
   - id: decide-whether-to-continue
     kind: operation
@@ -914,8 +922,8 @@ sections:
       objective completion without evidence.
 
     source_span:
-      start_byte: 24950
-      end_byte: 27232
+      start_byte: 25459
+      end_byte: 27741
       sha256: f14fe76463f692d18e00e9883a44d4c965106389c5167c50c98ceba20a894f0c
   - id: notify-and-finish
     kind: operation
@@ -935,6 +943,6 @@ sections:
       improvements, and exact stop or completion reason. Missing metrics remain `null`; incomplete
       history must not imply precision.
     source_span:
-      start_byte: 27232
-      end_byte: 27878
+      start_byte: 27741
+      end_byte: 28387
       sha256: 500d700dc79d6d49c20f3900cf0e6faebfd64521db81b3e86899f4c92fa414cf

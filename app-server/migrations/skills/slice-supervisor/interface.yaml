@@ -15,6 +15,7 @@ runtime_requirements:
     - capability.resume
     - capability.strategic_reconciliation
     - capability.operational_coordination
+    - capability.native_review
   capability_ceiling:
     - capability.preflight
     - capability.lifecycle_control
@@ -28,6 +29,7 @@ runtime_requirements:
     - capability.resume
     - capability.strategic_reconciliation
     - capability.operational_coordination
+    - capability.native_review
   effect_ceiling:
     - state.campaign_lifecycle
     - state.durable_history

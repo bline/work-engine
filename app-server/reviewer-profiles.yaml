@@ -16,3 +16,18 @@ profiles:
       - Serving variant may remain unknown when the provider does not expose it.
     acceptingAuthority: work-engine.s10.accepted-plan-v1
     configurationDigest: 10cea7a6f710742aceb978ad2fb6d6556b7b033c989a0288e430c47d0bc6935a
+  - schemaVersion: 1
+    profileId: anthropic.claude-code.sonnet-review-v1
+    enabled: true
+    requestedModel: sonnet
+    provider: anthropic
+    reasoning: medium
+    capabilities: [structured_output, repository_read]
+    outputSchema: work-engine.implementation-review.v1
+    effectiveInstructions: Execute only the host-selected read-only exact-subject review obligation through native Claude Code, obey its bound schema, and infer no authority from this profile.
+    isolatedHome: true
+    limitations:
+      - Claude Code harness identity and direct Anthropic gateway are recorded separately from observed model identity.
+      - This profile does not authorize OpenRouter, batch, paired calibration, paid failover, mutation, or review acceptance.
+    acceptingAuthority: supervisor-native-review-hosting-plan-v1
+    configurationDigest: 66e0e4394de0dfad734c928b80bfc90ef6cf74393011ada9084eb91bf475366c

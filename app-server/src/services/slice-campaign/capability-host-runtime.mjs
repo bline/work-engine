@@ -15,6 +15,7 @@ import { openWorkspaceDevelopmentRuntime } from "../workspace-coordination/runti
 import { createCompletionPublicationService } from "./completion-publication.mjs";
 import { createStrategicReconciliationHost } from "./strategic-reconciliation.mjs";
 import { createChatboardAdapter } from "../operational-coordination/chatboard-adapter.mjs";
+import { createNativeReviewHost, createNativeReviewHostOwners } from "./native-review-host.mjs";
 
 function wrap(generationId, capability, operation, result) {
   return {
@@ -29,6 +30,7 @@ function wrap(generationId, capability, operation, result) {
 export async function createSupervisorCampaignCapabilityHostRuntime({
   workspaceRoot, stateRoot, canonicalBranches,
   legacyAdapterFactory = createLegacySupervisorControlAdapter,
+  nativeReviewOwnersFactory = createNativeReviewHostOwners,
 } = {}) {
   const legacy = await legacyAdapterFactory({ workspaceRoot });
   const store = await openSqliteSliceCampaignStore({
@@ -36,6 +38,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
   });
   let closed = false;
   let workspace = null;
+  let nativeReviewOwners = null;
   try {
     workspace = await openWorkspaceDevelopmentRuntime({
       repository: workspaceRoot,
@@ -47,10 +50,12 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
     const completionPublication = createCompletionPublicationService({ workspace });
     const strategicReconciliation = createStrategicReconciliationHost();
     const operationalCoordination = createChatboardAdapter({ workspaceRoot });
+    nativeReviewOwners = await nativeReviewOwnersFactory({workspaceRoot, stateRoot});
     const service = createSliceCampaignService({
       store,
       reviewSubject,
-      implementationReview,
+      implementationReview: nativeReviewOwners.implementationReview ?? implementationReview,
+      nativeReview: nativeReviewOwners.nativeReview,
       receiptFinalizer: {
         async finalize({ receipt }) { return legacy.validateReceipt(receipt); },
       },
@@ -58,6 +63,8 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         async open({ request }) { return legacy.offer("open", { request }); },
       },
     });
+    const nativeReview = createNativeReviewHost({workspaceRoot, campaignService: service,
+      owners: nativeReviewOwners});
 
     const handlers = {
       "capability.preflight/run": ({ input }) => legacy.preflight(input),
@@ -139,6 +146,12 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         operationalCoordination.execute("post", input),
       "capability.operational_coordination/release": ({ input }) =>
         operationalCoordination.execute("release", input),
+      "capability.native_review/execute": ({ input }) => nativeReview.execute(input),
+      "capability.native_review/recover": ({ input }) => nativeReview.recover(input),
+      "capability.native_review/record_finding_evaluation": ({ input }) =>
+        nativeReview.recordFindingEvaluation(input),
+      "capability.native_review/execute_remediation": ({ input }) =>
+        nativeReview.executeRemediation(input),
     };
     const registrations = [];
     for (const [capability, operations] of Object.entries(supervisorCampaignCapabilityOperations)) {
@@ -183,10 +196,14 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       close() {
         if (closed) return;
         closed = true;
-        runtime.close();
-        strategicReconciliation.close();
-        workspace.close();
-        store.close();
+        try { runtime.close(); }
+        finally {
+          try { strategicReconciliation.close(); }
+          finally {
+            try { nativeReviewOwners.close(); }
+            finally { try { workspace.close(); } finally { store.close(); } }
+          }
+        }
       },
       identity: Object.freeze({
         schema_version: 1,
@@ -198,10 +215,15 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
           canonical_branches: workspace.canonicalBranches,
         }),
         operational_coordination: operationalCoordination.identity,
+        native_review: Object.freeze({profile_id: "anthropic.claude-code.sonnet-review-v1",
+          harness: "claude-code", gateway: "anthropic"}),
       }),
     });
   } catch (error) {
-    if (!closed) { try { workspace?.close(); } finally { store.close(); } }
+    if (!closed) {
+      try { nativeReviewOwners?.close(); }
+      finally { try { workspace?.close(); } finally { store.close(); } }
+    }
     throw error;
   }
 }

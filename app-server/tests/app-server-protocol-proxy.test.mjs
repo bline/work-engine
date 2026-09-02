@@ -94,7 +94,7 @@ function deferred() {
   return { promise, resolve };
 }
 
-test("proxy entry composes the stable all-twelve supervisor capability host", async () => {
+test("proxy entry composes the stable all-thirteen supervisor capability host", async () => {
   const source = await readFile(PROXY_ENTRY, "utf8");
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
   assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot, stateRoot \}\)\s*=>/);
