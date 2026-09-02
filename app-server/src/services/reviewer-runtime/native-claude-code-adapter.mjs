@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { access, chmod, copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -64,6 +65,28 @@ function sessionUuid(instanceId) {
   value[12] = "4"; value[16] = ["8", "9", "a", "b"][parseInt(value[16], 16) % 4];
   const compact = value.join("");
   return `${compact.slice(0, 8)}-${compact.slice(8, 12)}-${compact.slice(12, 16)}-${compact.slice(16, 20)}-${compact.slice(20)}`;
+}
+
+async function filesBelow(root) {
+  const found = [];
+  const visit = async (directory) => {
+    for (const entry of await readdir(directory, {withFileTypes: true})) {
+      const current = path.join(directory, entry.name);
+      if (entry.isDirectory()) await visit(current);
+      else if (entry.isFile()) found.push(current);
+    }
+  };
+  try { await visit(root); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+  return found;
+}
+
+function assistantText(record) {
+  if (record?.type !== "assistant" || record?.message?.role !== "assistant") return [];
+  const content = record.message.content;
+  if (typeof content === "string") return [content];
+  if (!Array.isArray(content)) return [];
+  return content.filter((item) => item?.type === "text" && typeof item.text === "string")
+    .map((item) => item.text);
 }
 
 const string = {type: "string", minLength: 1};
@@ -136,17 +159,62 @@ export class NativeClaudeCodeReviewerAdapter {
   constructor({registry, workspaceRoot, stateRoot, executeProcess = execute,
     pythonExecutable = "python3", claudeExecutable = "claude",
     transportScript = "skills/claude-recon-implementation/scripts/claude_transport.py",
-    catalogSource = null, baseEnvironment = process.env} = {}) {
+    catalogSource = null, baseEnvironment = process.env, credentialSourcePath = null} = {}) {
     if (!registry?.admit) throw new TypeError("native Claude adapter requires a reviewer registry");
     if (!workspaceRoot || !stateRoot) throw new TypeError("native Claude adapter requires host-owned workspace and state roots");
     Object.assign(this, {registry, workspaceRoot: path.resolve(workspaceRoot), stateRoot: path.resolve(stateRoot),
       executeProcess, pythonExecutable, claudeExecutable,
       transportScript: path.resolve(workspaceRoot, transportScript),
       catalogSource: catalogSource === null ? null : Object.freeze(structuredClone(catalogSource)),
-      baseEnvironment: Object.freeze({...baseEnvironment})});
+      baseEnvironment: Object.freeze({...baseEnvironment}),
+      credentialSourcePath: path.resolve(credentialSourcePath
+        ?? path.join(baseEnvironment.CLAUDE_CONFIG_DIR
+          ?? path.join(baseEnvironment.HOME ?? "", ".claude"), ".credentials.json"))});
   }
 
   runtimeSessionId(instanceId) { return sessionUuid(instanceId); }
+
+  async #seedCredentials(configRoot) {
+    const destination = path.join(configRoot, ".credentials.json");
+    try { await access(destination); await chmod(destination, 0o600); return false; }
+    catch (error) { if (error?.code !== "ENOENT") throw error; }
+    try {
+      await copyFile(this.credentialSourcePath, destination, fsConstants.COPYFILE_EXCL);
+      await chmod(destination, 0o600);
+      return true;
+    } catch (error) {
+      if (error?.code === "EEXIST") { await chmod(destination, 0o600); return false; }
+      throw new ReviewerRuntimeError("authentication",
+        "native Claude subscription credentials are unavailable to the isolated reviewer");
+    }
+  }
+
+  async recoverFailure(instanceId) {
+    const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
+    const expectedSession = this.runtimeSessionId(instanceId);
+    const files = await filesBelow(instanceRoot);
+    const receipts = [];
+    for (const file of files.filter((value) => value.endsWith(".transport.json"))) {
+      try { receipts.push({file, value: JSON.parse(await readFile(file, "utf8")), mtime: (await stat(file)).mtimeMs}); }
+      catch {}
+    }
+    const receipt = receipts.sort((left, right) => right.mtime - left.mtime)[0] ?? null;
+    if (!receipt || receipt.value?.request?.session_id !== expectedSession
+        || receipt.value?.result !== "failed") return null;
+    const sessionFile = files.find((value) => path.basename(value) === `${expectedSession}.jsonl`);
+    if (!sessionFile) return null;
+    const sessionBytes = await readFile(sessionFile);
+    const records = sessionBytes.toString("utf8").split("\n").filter(Boolean).flatMap((line) => {
+      try { return [JSON.parse(line)]; } catch { return []; }
+    });
+    const authenticationRequired = records.some((record) =>
+      assistantText(record).some((text) => text.trim() === "Not logged in · Please run /login"));
+    if (!authenticationRequired) return null;
+    return Object.freeze({schemaVersion: 1, failureSignature: "authentication_required",
+      providerEntry: "not_entered", sessionAvailable: true, sessionId: expectedSession,
+      transportReceiptDigest: digest(receipt.value),
+      sessionArtifactDigest: createHash("sha256").update(sessionBytes).digest("hex")});
+  }
 
   async execute({instanceId, profileId, subject, catalogProjection, rawEventPolicy,
     continuationSessionId = null, roleInstructions}) {
@@ -172,6 +240,18 @@ export class NativeClaudeCodeReviewerAdapter {
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const configRoot = path.join(instanceRoot, "config");
     await mkdir(configRoot, {recursive: true, mode: 0o700});
+    const attemptId = randomUUID();
+    try { await this.#seedCredentials(configRoot); }
+    catch (error) {
+      if (!(error instanceof ReviewerRuntimeError)) throw error;
+      const recovery = Object.freeze({schemaVersion: 1,
+        failureSignature: "authentication_unavailable", providerEntry: "not_entered",
+        sessionAvailable: false, sessionId: expectedSession});
+      return Object.freeze({attemptId, failure: {kind: "authentication", message: error.message,
+        providerEntry: "not_entered", failureSignature: "authentication_unavailable",
+        sessionAvailable: false, recovery}, result: null, runtimeSessionId: expectedSession,
+        transportReceipt: null});
+    }
     const mcpPath = path.join(instanceRoot, "mcp.json");
     const receiptPath = path.join(instanceRoot, `${randomUUID()}.transport.json`);
     await writeFile(mcpPath, `${JSON.stringify({mcpServers: {"codebase-memory-mcp": {
@@ -188,14 +268,18 @@ export class NativeClaudeCodeReviewerAdapter {
     const args = [this.transportScript, "--transport", "anthropic", "--continuity", "retained",
       "--receipt", receiptPath, "--", this.claudeExecutable, ...claudeArgs];
     const env = {...directAnthropicEnvironment(this.baseEnvironment), CLAUDE_CONFIG_DIR: configRoot};
-    const attemptId = randomUUID();
     let transport;
     try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: this.workspaceRoot}); }
     catch (error) { throw new ReviewerRuntimeError("spawn", `native Claude process start failed: ${error.message}`); }
     let transportReceipt = null;
     try { transportReceipt = JSON.parse(await readFile(receiptPath, "utf8")); } catch {}
     if (transport.exitCode !== 0) {
-      return Object.freeze({attemptId, failure: {kind: "transport", message: `native Claude exited ${transport.exitCode}`}, result: null,
+      const recovery = await this.recoverFailure(instanceId);
+      return Object.freeze({attemptId, failure: {kind: "transport", message: `native Claude exited ${transport.exitCode}`,
+        providerEntry: recovery?.providerEntry ?? "unknown",
+        failureSignature: recovery?.failureSignature ?? null,
+        sessionAvailable: recovery?.sessionAvailable ?? false,
+        ...(recovery ? {recovery} : {})}, result: null,
         runtimeSessionId: expectedSession, transportReceipt});
     }
     const {envelope, result} = parseResult(transport.stdout, expectedSession);

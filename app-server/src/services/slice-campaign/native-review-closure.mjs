@@ -50,7 +50,11 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       if (!episode.handledTransitions[resultTransitionId]) {
         if (!allowProviderEntry) throw new Error("native reviewer outcome is unavailable; provider replay is refused");
         const {execution, result} = await executeReviewer(reviewer, reviewSkill, reviewerRequest, null);
-        if (execution.failure || !result) throw new Error("native reviewer execution did not produce an admitted result");
+        if (execution.failure || !result) {
+          return Object.freeze({binding: null, builderContext: null,
+            failure: execution.failure ?? Object.freeze({kind: "output", message: "native reviewer produced no result",
+              providerEntry: "unknown", failureSignature: null, sessionAvailable: false}), execution});
+        }
         episode = reviewEpisode.transition({authority, expectedRevision: episode.revision,
           transitionId: resultTransitionId, action: "record_result", payload: {result, unresolvedQuestions: []}});
       }
@@ -58,7 +62,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       const findings = findingBridge.publishFindings({authority: findingAuthority, operationPrefix, episode, result: episode.currentResult});
       const nativeBinding = binding({obligationId, episode, findings});
       const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
-      return Object.freeze({binding: nativeBinding, builderContext});
+      return Object.freeze({binding: nativeBinding, builderContext, failure: null});
     },
     recordBuilderEvaluation({binding: current, authority, operationId, findingId, consumer, consumerRevision, decisionScope}) {
       const finding = current.findings.find((item) => item.findingId === findingId);
@@ -82,7 +86,11 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
           ...reviewerContextRequest({contextRequest, authority, reviewerRequest}), findings: current.findings,
         }) : null;
         const {execution, result} = await executeReviewer(reviewer, reviewSkill, reviewerRequest, reviewerContext);
-        if (execution.failure || !result) throw new Error("native remediation reviewer execution did not produce an admitted result");
+        if (execution.failure || !result) {
+          return Object.freeze({binding: null, builderContext: null,
+            failure: execution.failure ?? Object.freeze({kind: "output", message: "native remediation reviewer produced no result",
+              providerEntry: "unknown", failureSignature: null, sessionAvailable: false}), execution});
+        }
         episode = reviewEpisode.transition({authority, expectedRevision: episode.revision,
           transitionId: resultTransitionId, action: "record_result", payload: {result, unresolvedQuestions: []}});
       }
@@ -91,7 +99,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
         result: episode.currentResult, previousFindings: current.findings});
       const nativeBinding = binding({obligationId: current.obligationId, episode, findings, prior: current});
       const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
-      return Object.freeze({binding: nativeBinding, builderContext});
+      return Object.freeze({binding: nativeBinding, builderContext, failure: null});
     },
   });
 }

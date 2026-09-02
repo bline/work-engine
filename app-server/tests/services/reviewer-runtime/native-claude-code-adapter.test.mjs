@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -26,12 +26,20 @@ const catalogSource = {source: catalog.source, sourceSha256: catalog.sourceSha25
 const policy = {classification: "confidential", access: "episode actors", retention: "projection",
   exactRetentionAuthorized: false, redaction: "raw bodies omitted", tamperEvidence: "sha256"};
 
+async function credentials(root) {
+  const source = path.join(root, "fixture-credentials.json");
+  await writeFile(source, '{"fixture":"subscription"}\n', {mode: 0o600});
+  return source;
+}
+
 test("native Claude adapter constructs only direct-Anthropic retained commands and verifies UUID", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-"));
   t.after(() => rm(root, {recursive: true, force: true}));
   const calls = [];
+  const credentialSourcePath = await credentials(root);
   const adapter = new NativeClaudeCodeReviewerAdapter({registry: new ReviewerProfileRegistry({profiles: [profile()]}),
     workspaceRoot: root, stateRoot: path.join(root, "state"),
+    credentialSourcePath,
     catalogSource,
     transportScript: path.join(root, "transport.py"),
     executeProcess: async (request) => {
@@ -48,6 +56,9 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   assert.equal(initial.receipt.harness, "claude-code");
   assert.equal(initial.receipt.gateway, "anthropic");
   assert.equal(initial.receipt.continuity, "fresh_initial");
+  const isolatedCredentials = path.join(root, "state", "native-claude", digest("episode"), "config", ".credentials.json");
+  assert.equal(await readFile(isolatedCredentials, "utf8"), '{"fixture":"subscription"}\n');
+  assert.equal((await stat(isolatedCredentials)).mode & 0o777, 0o600);
   assert.equal(calls[0].args.includes("openrouter"), false);
   assert.deepEqual(calls[0].args.slice(1, 7), ["--transport", "anthropic", "--continuity", "retained", "--receipt", calls[0].args[6]]);
   assert.equal(calls[0].args.includes("--session-id"), true);
@@ -70,8 +81,10 @@ test("native Claude adapter preserves transport failure and rejects subject or U
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-refusal-"));
   t.after(() => rm(root, {recursive: true, force: true}));
   const registry = new ReviewerProfileRegistry({profiles: [profile()]});
+  const credentialSourcePath = await credentials(root);
   let mode = "transport";
   const adapter = new NativeClaudeCodeReviewerAdapter({registry, workspaceRoot: root, stateRoot: path.join(root, "state"),
+    credentialSourcePath,
     catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
       if (mode === "transport") return {exitCode: 1, stdout: "", stderr: "quota"};
@@ -96,10 +109,12 @@ test("native Claude adapter fails closed on catalog provenance drift and inherit
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-route-"));
   t.after(() => rm(root, {recursive: true, force: true}));
   let calls = 0;
+  const credentialSourcePath = await credentials(root);
   const create = (baseEnvironment = {}) => new NativeClaudeCodeReviewerAdapter({
     registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
     stateRoot: path.join(root, "state"), transportScript: path.join(root, "transport.py"),
-    catalogSource, baseEnvironment, executeProcess: async () => { calls += 1; return {exitCode: 1, stdout: "", stderr: ""}; },
+    catalogSource, baseEnvironment, credentialSourcePath,
+    executeProcess: async () => { calls += 1; return {exitCode: 1, stdout: "", stderr: ""}; },
   });
   const request = {instanceId: "route", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."};
@@ -116,12 +131,14 @@ test("native Claude adapter replaces generic preamble for the agent-instruction 
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-specialist-"));
   t.after(() => rm(root, {recursive: true, force: true}));
   let prompt;
+  const credentialSourcePath = await credentials(root);
   const specialistSubject = subject;
   const specialistResult = {schemaVersion: 1, perspective: "agent-instruction-review", subject: specialistSubject,
     closureRevision: "d".repeat(64), applicability: "applicable", applicabilityReason: "Normative text is present.",
     result: {...result, subject: specialistSubject}, findingDetails: [], limitations: ["Fixture."]};
   const adapter = new NativeClaudeCodeReviewerAdapter({registry: new ReviewerProfileRegistry({profiles: [profile()]}),
     workspaceRoot: root, stateRoot: path.join(root, "state"), catalogSource,
+    credentialSourcePath,
     transportScript: path.join(root, "transport.py"), baseEnvironment: {}, executeProcess: async (request) => {
       prompt = request.args.at(-1); const sessionIndex = request.args.indexOf("--session-id");
       return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
@@ -135,4 +152,26 @@ test("native Claude adapter replaces generic preamble for the agent-instruction 
   assert.match(prompt, /one advisory, read-only agent-instruction specialist review/);
   assert.match(prompt, /generic implementation-review protocol and schema do not apply/);
   assert.match(prompt, /WORK_ENGINE_AGENT_INSTRUCTION_REVIEW_V1/);
+});
+
+test("native Claude adapter fails before process entry when isolated credentials are unavailable", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-no-auth-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  let calls = 0;
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), catalogSource,
+    credentialSourcePath: path.join(root, "missing-credentials.json"),
+    transportScript: path.join(root, "transport.py"),
+    executeProcess: async () => { calls += 1; throw new Error("must not run"); },
+  });
+  const execution = await adapter.execute({instanceId: "no-auth", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."});
+  assert.equal(calls, 0);
+  assert.equal(execution.failure.failureSignature, "authentication_unavailable");
+  assert.equal(execution.failure.providerEntry, "not_entered");
+  assert.equal(execution.failure.sessionAvailable, false);
+  assert.deepEqual(execution.failure.recovery, {schemaVersion: 1,
+    failureSignature: "authentication_unavailable", providerEntry: "not_entered",
+    sessionAvailable: false, sessionId: execution.runtimeSessionId});
 });

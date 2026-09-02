@@ -54,6 +54,18 @@ export function createSliceCampaignService({
   };
   const nativeObligations = (state) => state.nativeReview?.obligations ?? {};
   const nativeEnvelope = (obligations) => freeze({schemaVersion: 1, obligations: freeze({...obligations})});
+  const failedNativeObligation = ({obligationId, requestDigest, outcome, prior = null}) => {
+    const failure = freeze(structuredClone(outcome.failure));
+    return freeze({schemaVersion: 1, obligationId,
+      status: failure.providerEntry === "not_entered" ? "retryable_failure" : "executing",
+      requestDigest, failure,
+      attempt: freeze({attemptId: outcome.execution?.attemptId ?? null,
+        runtimeSessionId: outcome.execution?.runtimeSessionId ?? null,
+        transportReceiptDigest: outcome.execution?.transportReceipt
+          ? digest(outcome.execution.transportReceipt) : null}),
+      priorAttempts: freeze([...(prior?.priorAttempts ?? []),
+        ...(prior?.attempt ? [prior.attempt] : [])])});
+  };
 
   return Object.freeze({
     admit({ identity, workspace, acceptedBoundary, expectedImpact = null, baseline }) {
@@ -167,9 +179,55 @@ export function createSliceCampaignService({
         throw new Error("native review request conflicts with durable execution admission");
       }
       const outcome = await nativeReview.executeInitial({...request, reviewSkill: disposition.skill, allowProviderEntry});
+      if (outcome.failure) {
+        const failed = failedNativeObligation({obligationId: request.obligationId,
+          requestDigest, outcome, prior: currentObligation});
+        const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+          [request.obligationId]: failed})}, prepared.revision);
+        return freeze({campaign, builderContext: null, failure: failed.failure});
+      }
       const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
         [request.obligationId]: outcome.binding})}, prepared.revision);
-      return freeze({campaign, builderContext: outcome.builderContext});
+      return freeze({campaign, builderContext: outcome.builderContext, failure: null});
+    },
+    async retryNativeReview({ identity, expectedRevision, request, recovery }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
+      if (state.phase !== "review_ready" || !["executing", "retryable_failure"].includes(currentObligation?.status)) {
+        throw new Error("native review retry requires an unresolved admitted obligation");
+      }
+      if (!nativeReview?.executeInitial) throw new Error("native review closure service is unavailable");
+      const disposition = state.reviewSelection?.specialists.find(({obligationId}) => obligationId === request.obligationId);
+      if (!disposition || disposition.selection !== "selected") throw new Error("native review retry obligation is not selected by the supervisor");
+      requireRecord(recovery, "native review retry recovery");
+      const retainedAuthentication = recovery.failureSignature === "authentication_required"
+        && recovery.sessionAvailable === true
+        && recovery.sessionId === request.reviewerRequest?.continuationSessionId;
+      const preSpawnAuthentication = recovery.failureSignature === "authentication_unavailable"
+        && recovery.sessionAvailable === false
+        && recovery.sessionId === request.retrySessionId
+        && request.reviewerRequest?.continuationSessionId === undefined;
+      if (recovery.providerEntry !== "not_entered"
+          || (!retainedAuthentication && !preSpawnAuthentication)) {
+        throw new Error("native review retry lacks exact definite pre-provider failure evidence");
+      }
+      const requestDigest = digest(request);
+      const preparedObligation = freeze({...currentObligation, status: "retry_executing",
+        requestDigest, recovery: freeze(structuredClone(recovery))});
+      const prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+        [request.obligationId]: preparedObligation})}, state.revision);
+      const outcome = await nativeReview.executeInitial({...request, reviewSkill: disposition.skill,
+        allowProviderEntry: true});
+      if (outcome.failure) {
+        const failed = failedNativeObligation({obligationId: request.obligationId,
+          requestDigest, outcome, prior: preparedObligation});
+        const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+          [request.obligationId]: failed})}, prepared.revision);
+        return freeze({campaign, builderContext: null, failure: failed.failure});
+      }
+      const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+        [request.obligationId]: outcome.binding})}, prepared.revision);
+      return freeze({campaign, builderContext: outcome.builderContext, failure: null});
     },
     recordNativeFindingEvaluation({ identity, expectedRevision, request }) {
       const state = current(identity); requireRevision(state, expectedRevision);

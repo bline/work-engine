@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -22,6 +22,12 @@ const legacyFactory = async () => ({identity: {backend: "fixture"}, preflight() 
 const effect = (operation, input) => ({generationId: "generation-native", effect: {
   protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL, capability: "capability.native_review", operation, input,
 }});
+
+async function credentialSource(stateRoot) {
+  const source = path.join(stateRoot, "fixture-credentials.json");
+  await writeFile(source, '{"fixture":"subscription"}\n', {mode: 0o600});
+  return source;
+}
 
 async function seed(stateRoot, {candidate = {commit: subject.commit, tree: subject.tree, manifestSha256: subject.patchIdentity},
   specialists = [{obligationId: "generic", skill: "implementation-review", selection: "selected"}]} = {}) {
@@ -49,9 +55,11 @@ test("read-only supervisor executes one selected native review and recovers dura
   const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-hosting-"));
   t.after(() => rm(stateRoot, {recursive: true, force: true}));
   let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
   const calls = [];
   const ownersFactory = async (options) => {
-    const owners = await createNativeReviewHostOwners({...options, reviewerExecuteProcess: async (request) => {
+    const owners = await createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+      reviewerExecuteProcess: async (request) => {
     calls.push(request);
     assert.deepEqual(request.args.slice(1, 5), ["--transport", "anthropic", "--continuity", "retained"]);
     assert.equal(request.args.includes("openrouter"), false);
@@ -100,8 +108,10 @@ test("read-only supervisor executes the selected agent-instruction specialist wi
   let campaign = await seed(stateRoot, {candidate: {commit, tree, manifestSha256: specialistSubject.patchIdentity,
     paths: [{path: "app-server/migrations/skills/slice-supervisor/structure.yaml"}]},
   specialists: [{obligationId: "instructions", skill: "agent-instruction-review", selection: "selected"}]});
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
   let observedClosure = null;
-  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerExecuteProcess: async (request) => {
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
     const prompt = request.args.at(-1);
     assert.doesNotMatch(prompt, /You perform one advisory, read-only implementation review/);
     assert.doesNotMatch(prompt, /Return the generic implementation-review schema/);
@@ -143,14 +153,17 @@ test("admitted provider failure is durable and exact redelivery cannot replay in
   const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-ambiguous-"));
   t.after(() => rm(stateRoot, {recursive: true, force: true}));
   let campaign = await seed(stateRoot); let calls = 0;
-  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerExecuteProcess: async () => {
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async () => {
     calls += 1; return {exitCode: 1, stdout: "", stderr: "ambiguous transport failure"};
   }});
   const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
     canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
   t.after(() => host.close());
   const input = {identity, expected_revision: campaign.revision, obligation_id: "generic", operation_id: "ambiguous:initial"};
-  await assert.rejects(host.dispatch(effect("execute", input)), /did not produce an admitted result/);
+  const failed = await host.dispatch(effect("execute", input));
+  assert.equal(failed.result.failure.providerEntry, "unknown");
   assert.equal(calls, 1);
   campaign = (await host.dispatch({generationId: "generation-native", effect: {
     protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL, capability: "capability.lifecycle_control", operation: "recover", input: {identity},
@@ -158,4 +171,84 @@ test("admitted provider failure is durable and exact redelivery cannot replay in
   assert.equal(campaign.nativeReview.obligations.generic.status, "executing");
   await assert.rejects(host.dispatch(effect("execute", {...input, expected_revision: campaign.revision})), /provider replay is refused/);
   assert.equal(calls, 1);
+});
+
+test("definite pre-provider authentication failure resumes the exact retained session only through retry", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-auth-retry-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const sessions = [];
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const freshIndex = request.args.indexOf("--session-id");
+      const resumeIndex = request.args.indexOf("--resume");
+      const session = request.args[freshIndex >= 0 ? freshIndex + 1 : resumeIndex + 1];
+      sessions.push({session, fresh: freshIndex >= 0, resume: resumeIndex >= 0});
+      if (sessions.length === 1) {
+        const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+        const sessionDirectory = path.join(request.env.CLAUDE_CONFIG_DIR, "projects", "fixture");
+        await mkdir(sessionDirectory, {recursive: true});
+        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "failed"}));
+        await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          message: {role: "assistant", content: [{type: "text", text: "Not logged in · Please run /login"}]}})}\n`);
+        return {exitCode: 1, stdout: "", stderr: "authentication required"};
+      }
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5", structured_output: result})};
+    }});
+  const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const operationId = "auth-retry:initial";
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: operationId}));
+  campaign = dispatched.result.campaign;
+  assert.equal(dispatched.result.failure.failureSignature, "authentication_required");
+  assert.equal(campaign.nativeReview.obligations.generic.status, "retryable_failure");
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.recovery.failureSignature, "authentication_required");
+  assert.equal(recovered.result.recovery.sessionId, sessions[0].session);
+  dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: operationId}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(sessions, [
+    {session: sessions[0].session, fresh: true, resume: false},
+    {session: sessions[0].session, fresh: false, resume: true},
+  ]);
+});
+
+test("credential repair retries the exact deterministic UUID when no process or session existed", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-auth-pre-spawn-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = path.join(stateRoot, "initially-missing-credentials.json");
+  const sessions = [];
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const freshIndex = request.args.indexOf("--session-id");
+      const resumeIndex = request.args.indexOf("--resume");
+      sessions.push({session: request.args[freshIndex + 1], fresh: freshIndex >= 0, resume: resumeIndex >= 0});
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[freshIndex + 1], model: "claude-sonnet-5", structured_output: result})};
+    }});
+  const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const operationId = "pre-spawn-auth-retry:initial";
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: operationId}));
+  campaign = dispatched.result.campaign;
+  assert.equal(sessions.length, 0);
+  assert.equal(dispatched.result.failure.failureSignature, "authentication_unavailable");
+  assert.equal(campaign.nativeReview.obligations.generic.status, "retryable_failure");
+  await writeFile(reviewerCredentialSourcePath, '{"fixture":"subscription"}\n', {mode: 0o600});
+  dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: operationId}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(sessions.length, 1);
+  assert.deepEqual(sessions[0], {session: dispatched.result.campaign.nativeReview.obligations.generic.runtimeSessionRef.reference,
+    fresh: true, resume: false});
 });

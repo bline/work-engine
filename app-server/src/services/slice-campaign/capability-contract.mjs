@@ -14,8 +14,9 @@ const operationalCoordinationToolDescription =
   + "A chatboard claim grants no mutation or workflow authority and is not a fenced capability.workspace_coordination lease. "
   + "Treating it as a lease can admit conflicting or stale mutations; acquire the authoritative workspace lease and mutation admission separately whenever they are required.";
 const nativeReviewToolDescription =
-  "Execute or recover an exact supervisor-selected review obligation through the stable host-owned native Claude Code closure. "
+  "Execute, recover, or explicitly retry an exact supervisor-selected review obligation through the stable host-owned native Claude Code closure. "
   + "The host derives reviewer authority, subject delivery, session identity, command, tools, provider route, durable episode, and finding state. "
+  + "Retry is admitted only from host-verified definite pre-provider authentication failure: it resumes an existing exact retained session, or reuses the exact deterministic UUID when failure occurred before any process or session existed; ambiguous outcomes remain non-replayable. "
   + "This capability grants no shell, filesystem, credential, model-routing, reviewer-selection, finding-evaluation, review-acceptance, or campaign-acceptance authority.";
 
 function strategicReconciliationRequestInputSchema() {
@@ -78,6 +79,7 @@ function nativeReviewToolInputSchema() {
   const inputs = {
     execute: common,
     recover: {identity, obligation_id: text()},
+    retry: common,
     record_finding_evaluation: {...common, finding_id: text(), consumer_revision: text()},
     execute_remediation: {...common, remediation_subject: {type: "object",
       required: ["commit", "tree", "patchIdentity"], properties: {
@@ -112,7 +114,7 @@ const CAPABILITIES = Object.freeze({
   "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
   "capability.operational_coordination": Object.freeze(["read", "claim", "post", "release"]),
   "capability.native_review": Object.freeze([
-    "execute", "recover", "record_finding_evaluation", "execute_remediation",
+    "execute", "recover", "retry", "record_finding_evaluation", "execute_remediation",
   ]),
 });
 
@@ -224,6 +226,9 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.native_review/recover": [
     new Set(["identity", "obligation_id"]), new Set(),
+  ],
+  "capability.native_review/retry": [
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id"]), new Set(),
   ],
   "capability.native_review/record_finding_evaluation": [
     new Set(["identity", "expected_revision", "obligation_id", "operation_id", "finding_id", "consumer_revision"]), new Set(),

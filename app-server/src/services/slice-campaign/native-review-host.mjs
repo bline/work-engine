@@ -89,6 +89,7 @@ async function openClaims(filePath, authority) {
 
 export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   reviewerExecuteProcess, claudeExecutable = "claude", pythonExecutable = "python3",
+  reviewerCredentialSourcePath = null,
   runtimeSourceRoot = new URL("../../../../", import.meta.url).pathname} = {}) {
   const manifestPath = path.join(runtimeSourceRoot, "app-server/runtime-manifest.yaml");
   const loadedManifest = await loadRuntimeManifestDocument(manifestPath);
@@ -105,6 +106,7 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   const adapter = new NativeClaudeCodeReviewerAdapter({registry, workspaceRoot,
     stateRoot: path.join(stateRoot, "reviewer-runtime"), executeProcess: reviewerExecuteProcess,
     claudeExecutable, pythonExecutable,
+    credentialSourcePath: reviewerCredentialSourcePath,
     transportScript: path.join(runtimeSourceRoot, "skills/claude-recon-implementation/scripts/claude_transport.py"),
     catalogSource});
   const reviewer = new ImplementationReviewerRuntime({manifest, adapter});
@@ -120,8 +122,10 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
 }
 
 export function createNativeReviewHost({workspaceRoot, campaignService, owners} = {}) {
-  if (!campaignService?.recover || !campaignService?.runNativeReview) throw new TypeError("native review host requires Slice Campaign");
-  const request = (campaign, obligationId, operationId, {remediationSubject = null} = {}) => {
+  if (!campaignService?.recover || !campaignService?.runNativeReview
+      || !campaignService?.retryNativeReview) throw new TypeError("native review host requires Slice Campaign");
+  const request = (campaign, obligationId, operationId,
+    {remediationSubject = null, continuationSessionId = null} = {}) => {
     const disposition = campaign.reviewSelection?.specialists.find(({obligationId: value}) => value === obligationId);
     if (!disposition || disposition.selection !== "selected") throw new Error("native review obligation is not selected by the supervisor");
     const subject = remediationSubject ?? subjectOf(campaign);
@@ -145,7 +149,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         capabilities: ["structured_output", "repository_read"], routingConstraints: ["direct-anthropic-only"]}]};
     const reviewerRequest = {instanceId: instance, profileId: PROFILE_ID, subject,
       catalogProjection, rawEventPolicy: POLICY,
-      ...(remediationSubject ? {continuationSessionId: sessionId} : {}),
+      ...(remediationSubject || continuationSessionId ? {continuationSessionId: sessionId} : {}),
       ...(disposition.skill === "agent-instruction-review" ? {
         closure: instructionClosure({workspaceRoot, campaign, subject, obligationId}),
       } : {})};
@@ -163,12 +167,35 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       const {base} = request(campaign, obligation_id, operation_id);
       const outcome = await campaignService.runNativeReview({identity, expectedRevision: expected_revision,
         request: {...base, beginTransitionId: `${operation_id}:begin`, resultTransitionId: `${operation_id}:result`}});
-      return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext});
+      return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext,
+        failure: outcome.failure ?? null});
     },
-    recover({identity, obligation_id}) {
+    async recover({identity, obligation_id}) {
       const campaign = campaignService.recover(identity);
+      const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
+      const recovery = obligation?.status === "retryable_failure"
+        ? obligation.failure?.recovery ?? null
+        : obligation?.status === "executing"
+          ? await owners.adapter.recoverFailure(instanceId(campaign.identity, obligation_id)) : null;
       return Object.freeze({campaign_revision: campaign.revision,
-        obligation: campaign.nativeReview?.obligations?.[obligation_id] ?? null});
+        obligation, recovery});
+    },
+    async retry({identity, expected_revision, obligation_id, operation_id}) {
+      const campaign = campaignService.recover(identity);
+      const instance = instanceId(campaign.identity, obligation_id);
+      const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
+      const recovery = obligation?.status === "retryable_failure"
+        ? obligation.failure?.recovery ?? null
+        : await owners.adapter.recoverFailure(instance);
+      if (!recovery) throw new Error("native review retry has no recoverable definite pre-provider failure");
+      const {base, sessionId} = request(campaign, obligation_id, operation_id,
+        recovery.sessionAvailable ? {continuationSessionId: recovery.sessionId} : {});
+      const outcome = await campaignService.retryNativeReview({identity,
+        expectedRevision: expected_revision, recovery,
+        request: {...base, beginTransitionId: `${operation_id}:begin`,
+          resultTransitionId: `${operation_id}:result`, retrySessionId: sessionId}});
+      return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext,
+        failure: outcome.failure ?? null});
     },
     recordFindingEvaluation({identity, expected_revision, obligation_id, operation_id,
       finding_id, consumer_revision}) {
