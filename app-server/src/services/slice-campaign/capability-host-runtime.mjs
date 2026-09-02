@@ -14,6 +14,7 @@ import { openSqliteSliceCampaignStore } from "./sqlite-store.mjs";
 import { openWorkspaceDevelopmentRuntime } from "../workspace-coordination/runtime.mjs";
 import { createCompletionPublicationService } from "./completion-publication.mjs";
 import { createStrategicReconciliationHost } from "./strategic-reconciliation.mjs";
+import { createChatboardAdapter } from "../operational-coordination/chatboard-adapter.mjs";
 
 function wrap(generationId, capability, operation, result) {
   return {
@@ -45,6 +46,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
     const implementationReview = createImplementationReviewService();
     const completionPublication = createCompletionPublicationService({ workspace });
     const strategicReconciliation = createStrategicReconciliationHost();
+    const operationalCoordination = createChatboardAdapter({ workspaceRoot });
     const service = createSliceCampaignService({
       store,
       reviewSubject,
@@ -129,6 +131,14 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.completion_publication/reconcile": ({ input }) =>
         completionPublication.reconcile({ offer: input.offer,
           preparationRevision: input.preparation_revision }),
+      "capability.operational_coordination/read": ({ input }) =>
+        operationalCoordination.execute("read", input),
+      "capability.operational_coordination/claim": ({ input }) =>
+        operationalCoordination.execute("claim", input),
+      "capability.operational_coordination/post": ({ input }) =>
+        operationalCoordination.execute("post", input),
+      "capability.operational_coordination/release": ({ input }) =>
+        operationalCoordination.execute("release", input),
     };
     const registrations = [];
     for (const [capability, operations] of Object.entries(supervisorCampaignCapabilityOperations)) {
@@ -187,6 +197,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
           repository: workspace.repository,
           canonical_branches: workspace.canonicalBranches,
         }),
+        operational_coordination: operationalCoordination.identity,
       }),
     });
   } catch (error) {

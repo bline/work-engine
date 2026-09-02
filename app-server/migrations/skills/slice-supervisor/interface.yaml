@@ -14,6 +14,7 @@ runtime_requirements:
     - capability.canonical_publication
     - capability.resume
     - capability.strategic_reconciliation
+    - capability.operational_coordination
   capability_ceiling:
     - capability.preflight
     - capability.lifecycle_control
@@ -26,6 +27,7 @@ runtime_requirements:
     - capability.canonical_publication
     - capability.resume
     - capability.strategic_reconciliation
+    - capability.operational_coordination
   effect_ceiling:
     - state.campaign_lifecycle
     - state.durable_history

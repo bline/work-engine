@@ -25,17 +25,17 @@ source_bindings:
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
+    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
     path: docs/workflow-invariants.md
-    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
+    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 909903de245e19782487a18059434d92cdc9553fdebe260abb2fd9cf730073c7
+    sha256: 879138f045db10ec921f084d19ba4e2adc12de4b2e76c9b0eb173b5f40ec269d
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.supervisor
@@ -45,7 +45,7 @@ role_profile:
   context_lifetime: one campaign; compact lifecycle state across slices
   projection:
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 909903de245e19782487a18059434d92cdc9553fdebe260abb2fd9cf730073c7
+    sha256: 879138f045db10ec921f084d19ba4e2adc12de4b2e76c9b0eb173b5f40ec269d
   relations:
     bound_by:
       - INV-001
@@ -100,6 +100,7 @@ role_profile:
       - capability.canonical_publication
       - capability.resume
       - capability.strategic_reconciliation
+      - capability.operational_coordination
     may_observe:
       - state.campaign_config
       - state.campaign_lifecycle
@@ -162,6 +163,8 @@ role_profile:
         mediated_by: capability.canonical_publication
       - transition: strategic recommendation
         mediated_by: capability.strategic_reconciliation
+      - transition: cross-session operational coordination
+        mediated_by: capability.operational_coordination
     forbidden_from:
       - inspecting repository implementation or diffs for domain judgment
       - implementing campaign work

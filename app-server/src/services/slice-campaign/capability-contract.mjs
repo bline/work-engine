@@ -2,12 +2,17 @@ import { SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL } from "./host-effect-runtime.
 
 const STRATEGIC_CONTINUITY = Object.freeze(["initialized", "retained", "reconstructed"]);
 const NON_EMPTY_TEXT_SCHEMA = Object.freeze({ type: "string", pattern: ".*\\S.*" });
+const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const strategicReconciliationToolDescription =
   "Reconcile durable campaign evidence through the host-owned strategic planner. "
   + "Use operation=reconcile with exact input fields instance_id, client_user_message_id, "
   + "strategic_objective, evidence_cutoff, canonical_references, and continuity; the schema "
   + "defines their required nested fields and rejects unknown fields. This advisory boundary "
   + "does not create a campaign or grant checkpoint, publication, pilot, or Git authority.";
+const operationalCoordinationToolDescription =
+  "Read, post, claim, or release advisory cross-session information through the canonical chatboard. "
+  + "A chatboard claim grants no mutation or workflow authority and is not a fenced capability.workspace_coordination lease. "
+  + "Treating it as a lease can admit conflicting or stale mutations; acquire the authoritative workspace lease and mutation admission separately whenever they are required.";
 
 function strategicReconciliationRequestInputSchema() {
   const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
@@ -39,6 +44,26 @@ function strategicReconciliationRequestInputSchema() {
   };
 }
 
+function operationalCoordinationToolInputSchema() {
+  const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
+  const uuid = () => ({type: "string", pattern: CANONICAL_UUID.source});
+  const inputs = {
+    read: {since: {type: "integer", minimum: 0}, limit: {type: "integer", minimum: 1, maximum: 500}},
+    claim: {resource: text(), author: text(), session_id: uuid(), claim_id: uuid(),
+      ttl_seconds: {type: "integer", minimum: 1}, note: text()},
+    post: {author: text(), session_id: uuid(), topic: text(), body: text(),
+      references: {type: "array", items: text()}, message_id: uuid()},
+    release: {resource: text(), session_id: uuid(), claim_id: uuid()},
+  };
+  return {oneOf: Object.entries(inputs).map(([operation, properties]) => ({
+    type: "object", required: ["operation", "input"], properties: {
+      operation: {type: "string", enum: [operation]},
+      input: {type: "object", required: Object.keys(properties), properties,
+        additionalProperties: false},
+    }, additionalProperties: false,
+  }))};
+}
+
 const CAPABILITIES = Object.freeze({
   "capability.preflight": Object.freeze(["run"]),
   "capability.lifecycle_control": Object.freeze([
@@ -57,6 +82,7 @@ const CAPABILITIES = Object.freeze({
   ]),
   "capability.completion_publication": Object.freeze(["prepare", "complete", "reconcile"]),
   "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
+  "capability.operational_coordination": Object.freeze(["read", "claim", "post", "release"]),
 });
 
 const TOOL_NAMES = Object.freeze({
@@ -71,6 +97,7 @@ const TOOL_NAMES = Object.freeze({
   "capability.canonical_publication": "canonical_publication",
   "capability.completion_publication": "completion_publication",
   "capability.strategic_reconciliation": "strategic_reconciliation",
+  "capability.operational_coordination": "operational_coordination",
 });
 
 const INPUT_FIELDS = Object.freeze({
@@ -150,6 +177,16 @@ const INPUT_FIELDS = Object.freeze({
     new Set(["instance_id", "client_user_message_id", "strategic_objective",
       "evidence_cutoff", "canonical_references", "continuity"]), new Set(),
   ],
+  "capability.operational_coordination/read": [new Set(["since", "limit"]), new Set()],
+  "capability.operational_coordination/claim": [
+    new Set(["resource", "author", "session_id", "claim_id", "ttl_seconds", "note"]), new Set(),
+  ],
+  "capability.operational_coordination/post": [
+    new Set(["author", "session_id", "topic", "body", "references", "message_id"]), new Set(),
+  ],
+  "capability.operational_coordination/release": [
+    new Set(["resource", "session_id", "claim_id"]), new Set(),
+  ],
 });
 
 function requireRecord(value, label) {
@@ -194,6 +231,38 @@ function validateDecision(value) {
   requireText(value.authority.reference, "completion offer decision authority reference");
   requireText(value.authority.observed_at, "completion offer decision authority observed_at");
   return value;
+}
+
+function validateOperationalCoordination(operation, value) {
+  if (operation === "read") {
+    if (!Number.isSafeInteger(value.since) || value.since < 0) {
+      throw new TypeError("operational coordination since must be a nonnegative safe integer");
+    }
+    if (!Number.isSafeInteger(value.limit) || value.limit < 1 || value.limit > 500) {
+      throw new TypeError("operational coordination limit must be a safe integer from 1 to 500");
+    }
+    return;
+  }
+  const textFields = operation === "claim"
+    ? ["resource", "author", "session_id", "claim_id", "note"]
+    : operation === "post"
+      ? ["author", "session_id", "topic", "body", "message_id"]
+      : ["resource", "session_id", "claim_id"];
+  for (const field of textFields) requireText(value[field], `operational coordination ${field}`);
+  for (const field of ["session_id", operation === "post" ? "message_id" : "claim_id"]) {
+    if (!CANONICAL_UUID.test(value[field])) {
+      throw new TypeError(`operational coordination ${field} must use canonical lowercase UUID syntax`);
+    }
+  }
+  if (operation === "claim"
+      && (!Number.isSafeInteger(value.ttl_seconds) || value.ttl_seconds < 1)) {
+    throw new TypeError("operational coordination ttl_seconds must be a positive safe integer");
+  }
+  if (operation === "post"
+      && (!Array.isArray(value.references)
+        || value.references.some((reference) => typeof reference !== "string" || !reference.trim()))) {
+    throw new TypeError("operational coordination references must be an array of nonempty strings");
+  }
 }
 
 export function validateSupervisorCapabilityInput(capability, operation, value) {
@@ -254,6 +323,9 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
       if (operation === "complete") requireRecord(value.validation, "completion publication validation");
     }
   }
+  if (capability === "capability.operational_coordination") {
+    validateOperationalCoordination(operation, value);
+  }
   return structuredClone(value);
 }
 
@@ -275,6 +347,9 @@ export function validateSupervisorCapabilityOutput(capability, operation, value)
 }
 
 function inputSchema(capability, operations) {
+  if (capability === "capability.operational_coordination") {
+    return operationalCoordinationToolInputSchema();
+  }
   return {
     type: "object",
     required: ["operation", "input"],
@@ -300,7 +375,9 @@ export function createSupervisorCampaignCapabilityDefinitions(
     name: TOOL_NAMES[capability],
     description: capability === "capability.strategic_reconciliation"
       ? strategicReconciliationToolDescription
-      : `Invoke the host-owned ${capability} boundary. The host validates exact operation identity, authority, and durable state.`,
+      : capability === "capability.operational_coordination"
+        ? operationalCoordinationToolDescription
+        : `Invoke the host-owned ${capability} boundary. The host validates exact operation identity, authority, and durable state.`,
     inputSchema: inputSchema(capability, operations),
     async handler(argumentsValue) {
       requireRecord(argumentsValue, `${capability} tool arguments`);

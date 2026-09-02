@@ -108,7 +108,7 @@ async function completionFixture(t) {
   return { repository, stateRoot, checkpoint, offer: { ...authorized, artifact_oid: artifactOid, ref } };
 }
 
-test("eleven thin clients bind exact operations and never infer human authority", async () => {
+test("twelve thin clients bind exact operations and never infer human authority", async () => {
   const calls = [];
   const definitions = createSupervisorCampaignCapabilityDefinitions(async (request) => {
     calls.push(request);
@@ -120,12 +120,18 @@ test("eleven thin clients bind exact operations and never infer human authority"
       result: { state: "accepted" },
     };
   });
+  const operational = definitions.get("capability.operational_coordination");
+  assert.match(operational.description, /grants no mutation or workflow authority/);
+  assert.match(operational.description, /not a fenced capability\.workspace_coordination lease/);
+  assert.match(operational.description, /conflicting or stale mutations/);
+  assert.match(operational.description, /acquire the authoritative workspace lease and mutation admission separately/);
   assert.deepEqual([...definitions.keys()].sort(), [
     "capability.canonical_publication",
     "capability.checkpoint_lifecycle",
     "capability.completion_offer",
     "capability.completion_publication",
     "capability.lifecycle_control",
+    "capability.operational_coordination",
     "capability.preflight",
     "capability.receipt_finalization",
     "capability.resume",
@@ -148,6 +154,32 @@ test("eleven thin clients bind exact operations and never infer human authority"
   assert.equal(result.generation_id, "generation-six");
   assert.equal(calls[0].capability, "capability.completion_offer");
   assert.equal(calls[0].operation, "resolve");
+});
+
+test("operational coordination client validates exact advisory inputs before host dispatch", async () => {
+  const calls = [];
+  const definitions = createSupervisorCampaignCapabilityDefinitions(async (request) => {
+    calls.push(request);
+    return {schema_version: 1, generation_id: "generation-coordination",
+      capability: request.capability, operation: request.operation,
+      result: {revision: null, messages: [], claims: {}}};
+  });
+  const capability = definitions.get("capability.operational_coordination");
+  assert.deepEqual(capability.inputSchema.oneOf.map((entry) => entry.properties.operation.enum[0]),
+    ["read", "claim", "post", "release"]);
+  assert.equal(capability.inputSchema.oneOf.every((entry) =>
+    entry.properties.input.additionalProperties === false), true);
+  await assert.rejects(capability.handler({operation: "read", input: {
+    since: 0, limit: 100, repository: "/caller/chosen",
+  }}), /unsupported field repository/);
+  await assert.rejects(capability.handler({operation: "claim", input: {
+    resource: "campaign:test", author: "supervisor", session_id: "not-a-uuid",
+    claim_id: "22222222-2222-4222-8222-222222222222", ttl_seconds: 60, note: "test",
+  }}), /canonical lowercase UUID/);
+  assert.equal(calls.length, 0);
+  const result = await capability.handler({operation: "read", input: {since: 0, limit: 100}});
+  assert.equal(result.result.revision, null);
+  assert.equal(calls.length, 1);
 });
 
 test("stable host executes preflight and native lifecycle across reconstruction", async (t) => {
@@ -426,7 +458,7 @@ test("strategic reconciliation tool prospectively exposes the exact admission co
   }
 });
 
-test("eleventh capability fences active-generation planner execution and validates its handoff", async (t) => {
+test("strategic capability fences active-generation planner execution and validates its handoff", async (t) => {
   const stateRoot = await mkdtemp(path.join(os.tmpdir(), "work-engine-a4-strategic-"));
   t.after(() => rm(stateRoot, { recursive: true, force: true }));
   const legacy = {

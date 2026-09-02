@@ -24,17 +24,17 @@ source_bindings:
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
+    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
     path: docs/workflow-invariants.md
-    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
+    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
     role: canonical workflow invariant catalog
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 1782f55587c09e45bad6dc1dc59b0f7571d65a837db3f42b6c6ecfaace577e77
+    sha256: 1c8f48f1a3b293942456a05f54342c8d8dc44213b1f9779eb36ba83b2529d394
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.builder
@@ -44,7 +44,7 @@ role_profile:
   context_lifetime: one slice across planning, implementation, and gate phases
   projection:
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 1782f55587c09e45bad6dc1dc59b0f7571d65a837db3f42b6c6ecfaace577e77
+    sha256: 1c8f48f1a3b293942456a05f54342c8d8dc44213b1f9779eb36ba83b2529d394
   relations:
     bound_by:
       - INV-001

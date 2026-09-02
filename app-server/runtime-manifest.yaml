@@ -31,6 +31,7 @@ roles:
       - capability.canonical_publication
       - capability.resume
       - capability.strategic_reconciliation
+      - capability.operational_coordination
     effects:
       - state.campaign_lifecycle
       - state.durable_history

@@ -6,10 +6,10 @@ generated_by: skills/agent-environment-graph/scripts/agent_environment_graph.py
 source_inputs:
   invariant_catalog:
     path: ../workflow-invariants.md
-    sha256: 69e875a67edfb7bd58df263194de9c0f7b7133beae25eacc3c9ab6584b388ee2
+    sha256: dacc72e1b3f7884df8ef9b13d036b0767d2ac805db2a615606859479aa7a8353
   role_environment:
     path: ../agent-environments.yaml
-    sha256: e5f941c889988a12960686f003df0705d856914017346ae38db25b7bb3bc9f48
+    sha256: 1ec58b413155e69880de44a4ae7936dc27b59e9e222eca635199ffde75bc0051
 environment_context:
   document_id: work-engine.agent-environments
   status: verified_baseline
@@ -119,6 +119,7 @@ role:
   - capability.canonical_publication
   - capability.resume
   - capability.strategic_reconciliation
+  - capability.operational_coordination
   may_observe:
   - state.campaign_config
   - state.campaign_lifecycle
@@ -181,6 +182,8 @@ role:
     mediated_by: capability.canonical_publication
   - transition: strategic recommendation
     mediated_by: capability.strategic_reconciliation
+  - transition: cross-session operational coordination
+    mediated_by: capability.operational_coordination
   forbidden_from:
   - inspecting repository implementation or diffs for domain judgment
   - implementing campaign work
@@ -319,6 +322,9 @@ entities:
     capability.strategic_reconciliation:
       label: Strategic reconciliation
       mechanism: MECH-STRATEGIC-PLANNER
+    capability.operational_coordination:
+      label: Host-mediated advisory cross-session coordination
+      mechanism: MECH-CODEX-CHATBOARD
 invariants:
   INV-001:
     owner: user
@@ -1050,6 +1056,11 @@ mechanisms:
     component: '`checkpoint_lifecycle.py`'
     affordance: Validates exact review/gate binding and creates accepted/stopped private lifecycle identities.
     edges: realizes `INV-025`
+  MECH-CODEX-CHATBOARD:
+    component: App Server operational-coordination adapter plus canonical Codex chatboard
+    affordance: Provides advisory read, claim, message, and release mechanics without granting mutation
+      admission or workflow authority.
+    edges: supports `INV-002`, `INV-036`
   MECH-COMPLETION:
     component: '`slice-completion-commit` adapter'
     affordance: Verifies and atomically publishes an explicitly approved commit.
