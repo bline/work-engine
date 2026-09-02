@@ -149,6 +149,8 @@ test("thirteen thin clients bind exact operations and never infer human authorit
   assert.equal(calls.length, 0);
   const nativeReview = definitions.get("capability.native_review");
   assert.match(nativeReview.description, /grants no shell, filesystem, credential, model-routing/);
+  assert.deepEqual(nativeReview.inputSchema.oneOf.map((entry) => entry.properties.operation.enum[0]),
+    ["execute", "recover", "retry", "correct_result", "record_finding_evaluation", "execute_remediation"]);
   await assert.rejects(nativeReview.handler({operation: "execute", input: {
     identity: {runId: "r", sliceNumber: 1, attemptId: "a", planVersion: "p"},
     expected_revision: "a".repeat(64), obligation_id: "generic", operation_id: "native:generic",

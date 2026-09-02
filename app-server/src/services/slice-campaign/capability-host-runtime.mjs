@@ -149,6 +149,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.native_review/execute": ({ input }) => nativeReview.execute(input),
       "capability.native_review/recover": ({ input }) => nativeReview.recover(input),
       "capability.native_review/retry": ({ input }) => nativeReview.retry(input),
+      "capability.native_review/correct_result": ({ input }) => nativeReview.correctResult(input),
       "capability.native_review/record_finding_evaluation": ({ input }) =>
         nativeReview.recordFindingEvaluation(input),
       "capability.native_review/execute_remediation": ({ input }) =>

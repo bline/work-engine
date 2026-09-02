@@ -56,8 +56,11 @@ export function createSliceCampaignService({
   const nativeEnvelope = (obligations) => freeze({schemaVersion: 1, obligations: freeze({...obligations})});
   const failedNativeObligation = ({obligationId, requestDigest, outcome, prior = null}) => {
     const failure = freeze(structuredClone(outcome.failure));
+    const status = failure.failureSignature === "result_contract_rejected"
+      ? "correction_required"
+      : failure.providerEntry === "not_entered" ? "retryable_failure" : "executing";
     return freeze({schemaVersion: 1, obligationId,
-      status: failure.providerEntry === "not_entered" ? "retryable_failure" : "executing",
+      status,
       requestDigest, failure,
       attempt: freeze({attemptId: outcome.execution?.attemptId ?? null,
         runtimeSessionId: outcome.execution?.runtimeSessionId ?? null,
@@ -218,6 +221,70 @@ export function createSliceCampaignService({
         [request.obligationId]: preparedObligation})}, state.revision);
       const outcome = await nativeReview.executeInitial({...request, reviewSkill: disposition.skill,
         allowProviderEntry: true});
+      if (outcome.failure) {
+        const failed = failedNativeObligation({obligationId: request.obligationId,
+          requestDigest, outcome, prior: preparedObligation});
+        const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+          [request.obligationId]: failed})}, prepared.revision);
+        return freeze({campaign, builderContext: null, failure: failed.failure});
+      }
+      const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
+        [request.obligationId]: outcome.binding})}, prepared.revision);
+      return freeze({campaign, builderContext: outcome.builderContext, failure: null});
+    },
+    async correctNativeReviewResult({ identity, expectedRevision, request, recovery }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
+      if (state.phase !== "review_ready"
+          || !["correction_required", "retry_executing", "correction_executing"].includes(currentObligation?.status)) {
+        throw new Error("native review result correction requires an admitted contract-rejected result");
+      }
+      if (!nativeReview?.executeCorrection || !nativeReview?.recoverCorrection) {
+        throw new Error("native review result correction service is unavailable");
+      }
+      const disposition = state.reviewSelection?.specialists.find(({obligationId}) => obligationId === request.obligationId);
+      if (!disposition || disposition.selection !== "selected") throw new Error("native review result correction obligation is not selected by the supervisor");
+      requireRecord(recovery, "native review result correction recovery");
+      requireSha256(recovery.transportReceiptDigest,
+        "native review result correction transport receipt digest");
+      const correcting = recovery.failureSignature === "result_contract_rejected";
+      const recovered = recovery.correctedResult ?? recovery.rejectedResult;
+      const recoveredImplementation = recovered?.result ?? recovered;
+      const expectedResultDigest = correcting
+        ? recovery.rejectedResultDigest : recovery.correctedResultDigest;
+      const expectedSubjectDigest = correcting
+        ? recovery.rejectedSubjectDigest : recovery.correctedSubjectDigest;
+      if (!["result_contract_rejected", "result_contract_corrected"].includes(recovery.failureSignature)
+          || recovery.providerEntry !== "entered" || recovery.sessionAvailable !== true
+          || recovery.sessionId !== request.reviewerRequest?.continuationSessionId
+          || digest(recovered) !== expectedResultDigest
+          || digest(recoveredImplementation?.subject) !== expectedSubjectDigest
+          || (!correcting && !["retry_executing", "correction_executing"].includes(currentObligation.status))) {
+        throw new Error("native review result correction lacks exact provider result and retained-session evidence");
+      }
+      const requestDigest = digest(request);
+      if (!correcting) {
+        const outcome = nativeReview.recoverCorrection({...request, binding: currentObligation,
+          recoveredResult: recoveredImplementation,
+          recoveredExecution: freeze({attemptId: null, runtimeSessionId: recovery.sessionId,
+            receipt: freeze({transportReceiptDigest: recovery.transportReceiptDigest})})});
+        if (outcome.failure) {
+          const failed = failedNativeObligation({obligationId: request.obligationId,
+            requestDigest, outcome, prior: currentObligation});
+          const campaign = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+            [request.obligationId]: failed})}, state.revision);
+          return freeze({campaign, builderContext: null, failure: failed.failure});
+        }
+        const campaign = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+          [request.obligationId]: outcome.binding})}, state.revision);
+        return freeze({campaign, builderContext: outcome.builderContext, failure: null});
+      }
+      const preparedObligation = freeze({...currentObligation, status: "correction_executing",
+        requestDigest, recovery: freeze(structuredClone(recovery))});
+      const prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+        [request.obligationId]: preparedObligation})}, state.revision);
+      const outcome = await nativeReview.executeCorrection({...request,
+        binding: preparedObligation, reviewSkill: disposition.skill, allowProviderEntry: true});
       if (outcome.failure) {
         const failed = failedNativeObligation({obligationId: request.obligationId,
           requestDigest, outcome, prior: preparedObligation});

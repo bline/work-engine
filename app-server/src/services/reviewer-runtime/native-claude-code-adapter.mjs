@@ -89,6 +89,15 @@ function assistantText(record) {
     .map((item) => item.text);
 }
 
+function structuredOutputs(record) {
+  if (record?.type !== "assistant" || record?.message?.role !== "assistant"
+      || !Array.isArray(record.message.content)) return [];
+  return record.message.content
+    .filter((item) => item?.type === "tool_use" && item.name === "StructuredOutput"
+      && item.input && typeof item.input === "object" && !Array.isArray(item.input))
+    .map((item) => item.input);
+}
+
 const string = {type: "string", minLength: 1};
 const subjectSchema = {type: "object", required: ["commit", "tree", "patchIdentity"], properties: {
   commit: string, tree: string, patchIdentity: string,
@@ -216,8 +225,39 @@ export class NativeClaudeCodeReviewerAdapter {
       sessionArtifactDigest: createHash("sha256").update(sessionBytes).digest("hex")});
   }
 
+  async recoverResult(instanceId, subject) {
+    const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
+    const expectedSession = this.runtimeSessionId(instanceId);
+    const files = await filesBelow(instanceRoot);
+    const receipts = [];
+    for (const file of files.filter((value) => value.endsWith(".transport.json"))) {
+      try { receipts.push({file, value: JSON.parse(await readFile(file, "utf8")), mtime: (await stat(file)).mtimeMs}); }
+      catch {}
+    }
+    const receipt = receipts.sort((left, right) => right.mtime - left.mtime)
+      .find(({value}) => value?.request?.session_id === expectedSession && value?.result === "success") ?? null;
+    if (!receipt) return null;
+    const sessionFile = files.find((value) => path.basename(value) === `${expectedSession}.jsonl`);
+    if (!sessionFile) return null;
+    const sessionBytes = await readFile(sessionFile);
+    const records = sessionBytes.toString("utf8").split("\n").filter(Boolean).flatMap((line) => {
+      try { return [JSON.parse(line)]; } catch { return []; }
+    });
+    const outputs = records.flatMap((record) => structuredOutputs(record).map((result) => ({
+      result, observedAt: Date.parse(record.timestamp),
+    }))).filter(({observedAt}) => Number.isFinite(observedAt) && observedAt <= receipt.mtime + 1_000);
+    const result = outputs.at(-1)?.result ?? null;
+    const implementationResult = result?.result ?? result;
+    if (!implementationResult?.subject || digest(implementationResult.subject) !== digest(subject)) return null;
+    return Object.freeze({schemaVersion: 1, providerEntry: "entered",
+      sessionAvailable: true, sessionId: expectedSession, result: Object.freeze(structuredClone(result)),
+      resultDigest: digest(result), subjectDigest: digest(implementationResult.subject),
+      transportReceiptDigest: digest(receipt.value),
+      sessionArtifactDigest: createHash("sha256").update(sessionBytes).digest("hex")});
+  }
+
   async execute({instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-    continuationSessionId = null, roleInstructions}) {
+    continuationSessionId = null, roleInstructions, resultCorrection = null}) {
     if (typeof instanceId !== "string" || !instanceId.trim()) throw new ReviewerRuntimeError("configuration", "native Claude instanceId is required");
     if (typeof roleInstructions !== "string" || !roleInstructions.trim()) throw new ReviewerRuntimeError("configuration", "canonical role instructions are required");
     const {profile, registryRevision} = this.registry.admit(profileId);
@@ -259,7 +299,10 @@ export class NativeClaudeCodeReviewerAdapter {
     }}}, null, 2)}\n`, {mode: 0o600});
     const specialist = roleInstructions.includes(SPECIALIST_MARKER);
     const selectedInstructions = obligationInstructions(roleInstructions);
-    const prompt = `${selectedInstructions}\n\nExecution-profile constraints are subordinate to the selected review obligation and its canonical instructions:\n${profile.effectiveInstructions}\n\nKnown execution limitations:\n${profile.limitations.length ? profile.limitations.map((limitation) => `- ${limitation}`).join("\n") : "- None declared."}\n\nReview only the immutable subject below. Return only the required structured result. Do not mutate files, run gates, select reviewers, accept work, or use network tools.\n\nSUBJECT\n${JSON.stringify(subject)}`;
+    const task = resultCorrection === null
+      ? `Review only the immutable subject below. Return only the required structured result. Do not mutate files, run gates, select reviewers, accept work, or use network tools.\n\nSUBJECT\n${JSON.stringify(subject)}`
+      : `This is a same-session correction of your previously returned structured result, not a new review. Do not repeat repository reconnaissance or invoke tools. Preserve the exact subject, findings, and evidence unless the stated contract rejection itself requires a semantic correction. Reconcile your own verdict, findings, decisive evidence, and limitations, then return only one corrected structured result. The host will apply the unchanged canonical validator; the host is not choosing or rewriting your judgment.\n\nCONTRACT REJECTION\n${resultCorrection.message}\n\nPREVIOUS STRUCTURED RESULT\n${JSON.stringify(resultCorrection.rejectedResult)}\n\nSUBJECT\n${JSON.stringify(subject)}`;
+    const prompt = `${selectedInstructions}\n\nExecution-profile constraints are subordinate to the selected review obligation and its canonical instructions:\n${profile.effectiveInstructions}\n\nKnown execution limitations:\n${profile.limitations.length ? profile.limitations.map((limitation) => `- ${limitation}`).join("\n") : "- None declared."}\n\n${task}`;
     const claudeArgs = ["-p", "--effort", profile.reasoning, "--model", profile.requestedModel,
       ...(continuationSessionId === null ? ["--session-id", expectedSession] : ["--resume", expectedSession]),
       "--strict-mcp-config", "--mcp-config", mcpPath, "--tools", TOOLS,

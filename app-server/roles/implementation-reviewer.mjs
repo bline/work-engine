@@ -1,5 +1,7 @@
 import { ReviewerRuntimeError } from "../src/services/reviewer-runtime/contract.mjs";
 import { createAgentInstructionReviewService } from "../src/services/agent-instruction-review/service.mjs";
+import { AgentInstructionReviewError } from "../src/services/agent-instruction-review/contract.mjs";
+import { ImplementationReviewError } from "../src/services/implementation-review/contract.mjs";
 import { renderReviewerClaimContext } from "../src/services/claim-evidence/reviewer-projection.mjs";
 
 export class ImplementationReviewerRuntime {
@@ -19,20 +21,22 @@ export class ImplementationReviewerRuntime {
     return projection;
   }
 
-  async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy, continuationSessionId = null, claimContext = null }) {
+  async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy,
+    continuationSessionId = null, claimContext = null, resultCorrection = null }) {
     const projection = this.projection(instanceId);
     const roleInstructions = claimContext === null
       ? projection.role.developerInstructions
       : `${projection.role.developerInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     return this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions,
+      continuationSessionId, roleInstructions, resultCorrection,
     });
   }
 
   async reviewAgentInstructions({
     instanceId, profileId, subject, closure, catalogProjection, rawEventPolicy,
     continuationSessionId = null, claimContext = null,
+    resultCorrection = null,
   }) {
     const projection = this.projection(instanceId);
     const delivery = await this.agentInstructionReview.renderDelivery({
@@ -44,10 +48,16 @@ export class ImplementationReviewerRuntime {
       : `${delivery.roleInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     const execution = await this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions,
+      continuationSessionId, roleInstructions, resultCorrection,
     });
     if (execution.failure || !execution.result) return execution;
-    const specialistReview = this.agentInstructionReview.admit({ result: execution.result, closure });
+    let specialistReview;
+    try { specialistReview = this.agentInstructionReview.admit({ result: execution.result, closure }); }
+    catch (error) {
+      if (!(error instanceof AgentInstructionReviewError)
+          && !(error instanceof ImplementationReviewError)) throw error;
+      return Object.freeze({...execution, specialistReview: null, contractError: error});
+    }
     return Object.freeze({ ...execution, specialistReview, deliveryRevision: delivery.deliveryRevision });
   }
 
