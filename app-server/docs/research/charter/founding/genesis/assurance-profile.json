@@ -1,0 +1,19 @@
+{
+  "schema_version": "founding-assurance-v1",
+  "status": "operator_controlled",
+  "live_commitment_witness": null,
+  "external_witness_selected": false,
+  "highest_assurance_eligible": false,
+  "independent_pre_ratification_auditor": null,
+  "launch_readiness": "blocked_pending_witness_decision_and_genesis_freeze",
+  "claims_permitted": [
+    "local artifact byte identity after local commitment",
+    "operator-recorded provenance with disclosed limitations"
+  ],
+  "claims_not_permitted": [
+    "independently witnessed genesis",
+    "highest-assurance provenance",
+    "absence of omitted or fabricated operator-controlled events",
+    "community constitution or legitimacy"
+  ]
+}
