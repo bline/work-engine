@@ -9,7 +9,7 @@
 
 ## 0. Scope
 
-Four candidates, all arising from external review of the pilot set rather than from round-two evidence collection. Two change identification inside an existing pilot, one is editorial, one opens a branch none of the existing pilots covers.
+Five candidates, all arising from external review of the pilot set rather than from round-two evidence collection. Two change identification inside an existing pilot, two are editorial, one opens a branch none of the existing pilots covers.
 
 Two further items are recorded here and deliberately **not** proposed: one deferred, one rejected.
 
@@ -233,11 +233,39 @@ All four existing pilots.
 
 ---
 
-## 5. Deferred
+## 5. Candidate E — Record why the measurement is differential rather than accuracy-based (editorial)
+
+**Subject:** `adapter-representation-effect-pilot.md` and `operator-input-mediation-reconnaissance.md`, outcomes sections.
+
+### Revision
+
+Add, where the preference-effect outcome is defined:
+
+> A conclusion that is correct but reached for preference-correlated reasons still produces a receipt whose recorded basis is false. Outcome-level correctness scoring cannot detect this; only the preference-reversal contrast can. Evidence-key agreement is therefore a safety outcome guarding against loss of evidence responsiveness, not the primary measure.
+
+### Rationale
+
+Both pilots already measure the right thing. Nothing about the design changes. What is absent is the reason, and its absence is a live risk: `evidence-key agreement and required-evidence coverage` appears in the outcome lists, and a later reader with no access to the design conversation can reasonably read it as the headline result and demote the preference effect to a secondary check.
+
+That inversion would be wrong in a specific way. The failure these pilots exist to detect is an unowned input into the evidence system rather than a wrong answer. A receipt records an accepted claim and the evidence decisive for it; if the claim covaried with preference while the recorded evidence did not, the receipt misrepresents its own basis whether or not the conclusion happened to be right. No schema check catches that, and everything downstream inherits it.
+
+Recording the reason in the frozen text is what prevents a future revision from replacing the differential contrast with a simpler accuracy score.
+
+### Decisions changed
+
+None experimental. Outcome-section prose only.
+
+### Decisions unchanged
+
+All. Both pilots already compute the preference effect as specified.
+
+---
+
+## 6. Deferred
 
 **Attention capture.** Whether an interpretive frame or an adapter acts partly through salience and evidence-acquisition allocation rather than through judgment directly. Pilot A freezes atom wording and order precisely to remove this variable, and Pilot B's metamorphic set does not include an emphasis transformation. Studying semantic attribution, interpretive frame, and attention emphasis simultaneously would destroy the isolation the pilot set has been built to preserve. Revisit after P3 and P10 resolve.
 
-## 6. Rejected
+## 7. Rejected
 
 **Folding P10 into the Agent Constraint Pressure Pilot.** Rationale in §4.
 
@@ -245,7 +273,7 @@ All four existing pilots.
 
 ---
 
-## 7. Out of scope for this gate
+## 8. Out of scope for this gate
 
 These concern the frame artifact and its development process. They touch no frozen pilot and require no gate.
 
@@ -255,7 +283,7 @@ These concern the frame artifact and its development process. They touch no froz
 
 ---
 
-## 8. Gate compliance
+## 9. Gate compliance
 
 Against `prior-art-research-round-2-plan.md` §13:
 
@@ -265,7 +293,7 @@ Against `prior-art-research-round-2-plan.md` §13:
 | State exact causal contrasts, not broad novelty claims | §1, §4 |
 | Distinguish established interventions from governed-agent transfer | §1 (neither), §4 (transfer) |
 | Preserve fidelity and end-to-end realization as separate gates | Untouched; Pilot B entry gate amended only by representation-set membership |
-| Preserve false-escalation, contrarianism, legitimate-authority, evidence-responsiveness outcomes | §1, §2 unchanged lists; §7.2 removes a contamination of two of them |
+| Preserve false-escalation, contrarianism, legitimate-authority, evidence-responsiveness outcomes | §1, §2 unchanged lists; §8.2 removes a contamination of two of them |
 | Identify decisions changed and unchanged | Each candidate |
 | Leave execution and production authority with existing owners | Header |
 
