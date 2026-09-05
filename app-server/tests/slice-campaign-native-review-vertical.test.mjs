@@ -240,6 +240,81 @@ test("native closure refuses stale campaign CAS, raw-result terminalization, and
   await assert.rejects(service.runNativeReview({identity: refusalIdentity, expectedRevision: state.revision, request: {obligationId: "unselected"}}), /not selected/);
 });
 
+test("native remediation can cycle through a newly bound immutable candidate", async () => {
+  const [initialResult, remediatedResult] = await Promise.all([
+    load("initial-finding"), load("remediated-finding"),
+  ]);
+  const implementationReview = createImplementationReviewService();
+  const service = createSliceCampaignService({implementationReview,
+    nativeReview: {
+      async executeInitial({obligationId}) {
+        return {binding: {schemaVersion: 1, obligationId,
+          status: obligationId === "generic" ? "awaiting_builder" : "reported",
+          findings: obligationId === "generic" ? [{findingId: "S12-001"}] : []}, builderContext: {}};
+      },
+      recoverRemediation() { return {providerEntry: "not_entered"}; },
+      async executeRemediation({binding}) {
+        return {binding: {...binding, status: "reported"}, builderContext: null, failure: null};
+      },
+    },
+    reviewSubject: {
+      async createCandidate(request) { return request; },
+      async createPhysicalProfile({subject: value}) { return {subject: value}; },
+    },
+    legacyReview: {async review() { return {status: "passed"}; }},
+    receiptFinalizer: {async finalize(value) { return value; }},
+  });
+  const remediationIdentity = {...identity, attemptId: "candidate-cycle"};
+  let state = service.admit({identity: remediationIdentity, workspace: "/s12-candidate-cycle",
+    acceptedBoundary: {reference: "plan:s12", sha256: "1".repeat(64)},
+    baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+  state = service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "implementing", consequence: {}});
+  state = service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}});
+  state = await service.bindCandidate({identity: remediationIdentity, expectedRevision: state.revision,
+    request: candidate(initialResult)});
+  state = service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  assert.throws(() => service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}}), /phase transition is invalid/);
+  state = service.bindReviewSelection({identity: remediationIdentity, expectedRevision: state.revision,
+    selection: {...selection(initialResult), specialists: [
+      {obligationId: "generic", skill: "implementation-review", selection: "selected"},
+      {obligationId: "instructions", skill: "agent-instruction-review", selection: "selected"},
+    ]}});
+  state = (await service.runNativeReview({identity: remediationIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic", authority: {}, beginTransitionId: "unused",
+      resultTransitionId: "unused", reviewerRequest: {subject: initialResult.subject}}})).campaign;
+  state = (await service.runNativeReview({identity: remediationIdentity, expectedRevision: state.revision,
+    request: {obligationId: "instructions", authority: {}, beginTransitionId: "unused-instructions",
+      resultTransitionId: "unused-instructions", reviewerRequest: {subject: initialResult.subject}}})).campaign;
+  const preservedSelection = state.reviewSelection;
+  state = service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {gate: "remediation-passed"}});
+  state = await service.bindCandidate({identity: remediationIdentity, expectedRevision: state.revision,
+    request: candidate(remediatedResult)});
+  assert.deepEqual(state.candidate, candidate(remediatedResult));
+  assert.deepEqual(state.physicalProfile.subject.checkpoint, candidate(remediatedResult));
+  assert.deepEqual(state.reviewSelection, preservedSelection);
+  assert.equal(state.nativeReview.obligations.generic.status, "awaiting_builder");
+  assert.equal(state.nativeReview.obligations.instructions.status, "awaiting_builder");
+  state = service.advance({identity: remediationIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {candidate: "remediation-bound"}});
+  assert.equal(state.phase, "review_ready");
+  await assert.rejects(service.terminalize({identity: remediationIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {}}), /completed native closure/);
+  state = (await service.runNativeRemediation({identity: remediationIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic"}})).campaign;
+  await assert.rejects(service.terminalize({identity: remediationIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {}}), /completed native closure/);
+  state = (await service.runNativeRemediation({identity: remediationIdentity, expectedRevision: state.revision,
+    request: {obligationId: "instructions"}})).campaign;
+  state = await service.terminalize({identity: remediationIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {status: "accepted"}});
+  assert.equal(state.phase, "terminal");
+});
+
 test("native closure recovers post-result claim failure without replaying provider entry", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "s12-native-recovery."));
   t.after(() => rm(directory, {recursive: true, force: true}));

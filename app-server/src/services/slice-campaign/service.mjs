@@ -53,7 +53,25 @@ export function createSliceCampaignService({
     if (state.revision !== expectedRevision) throw new Error("slice campaign revision conflict");
   };
   const nativeObligations = (state) => state.nativeReview?.obligations ?? {};
+  const nativeRemediationReady = (state) => {
+    const selected = state.reviewSelection?.specialists
+      ?.filter(({selection}) => selection === "selected")
+      .map(({obligationId}) => nativeObligations(state)[obligationId]) ?? [];
+    return selected.length > 0
+      && selected.some((obligation) => obligation?.status === "awaiting_builder")
+      && selected.every((obligation) => ["awaiting_builder", "reported"].includes(obligation?.status));
+  };
   const nativeEnvelope = (obligations) => freeze({schemaVersion: 1, obligations: freeze({...obligations})});
+  const replacementNativeEnvelope = (state) => {
+    const selected = new Set(state.reviewSelection.specialists
+      .filter(({selection}) => selection === "selected").map(({obligationId}) => obligationId));
+    return nativeEnvelope(Object.fromEntries(Object.entries(nativeObligations(state)).map(
+      ([obligationId, obligation]) => [obligationId,
+        selected.has(obligationId) && obligation.status === "reported"
+          ? freeze({...obligation, status: "awaiting_builder"})
+          : obligation],
+    )));
+  };
   const failedNativeObligation = ({obligationId, requestDigest, outcome, prior = null}) => {
     const failure = freeze(structuredClone(outcome.failure));
     const status = failure.failureSignature === "result_contract_rejected"
@@ -93,7 +111,11 @@ export function createSliceCampaignService({
     recover(identity) { return current(identity); },
     advance({ identity, expectedRevision, phase, consequence }) {
       const state = current(identity); requireRevision(state, expectedRevision);
-      if (!SLICE_PHASES.includes(phase) || NEXT_PHASE.get(state.phase) !== phase) throw new Error("slice campaign phase transition is invalid");
+      const remediationCycle = state.phase === "review_ready" && phase === "gate_ready"
+        && nativeRemediationReady(state);
+      if (!SLICE_PHASES.includes(phase) || (NEXT_PHASE.get(state.phase) !== phase && !remediationCycle)) {
+        throw new Error("slice campaign phase transition is invalid");
+      }
       requireRecord(consequence, "phase consequence");
       return publish({ ...state, phase, latestConsequence: freeze(structuredClone(consequence)) }, state.revision);
     },
@@ -101,9 +123,19 @@ export function createSliceCampaignService({
       const state = current(identity); requireRevision(state, expectedRevision);
       if (state.phase !== "gate_ready") throw new Error("candidate requires gate-ready campaign state");
       const requestDigest = digest(request);
-      if (state.candidateRequestDigest && state.candidateRequestDigest !== requestDigest) throw new Error("candidate request conflicts with bound candidate");
-      const candidate = state.candidate ?? await reviewSubject.createCandidate(request);
-      const candidateState = state.candidate ? state : publish({ ...state, candidateRequestDigest: requestDigest, candidate }, state.revision);
+      const replacement = state.candidateRequestDigest !== null
+        && state.candidateRequestDigest !== requestDigest
+        && nativeRemediationReady(state);
+      if (state.candidateRequestDigest && state.candidateRequestDigest !== requestDigest && !replacement) {
+        throw new Error("candidate request conflicts with bound candidate");
+      }
+      const candidate = state.candidate && !replacement
+        ? state.candidate
+        : await reviewSubject.createCandidate(request);
+      const candidateState = state.candidate && !replacement ? state : publish({
+        ...state, candidateRequestDigest: requestDigest, candidate, physicalProfile: null,
+        ...(replacement ? {nativeReview: replacementNativeEnvelope(state)} : {}),
+      }, state.revision);
       const physicalProfile = await reviewSubject.createPhysicalProfile({ subject: {
         schema_version: 2,
         construction_method: "slice_checkpoint_candidate_receipt",
