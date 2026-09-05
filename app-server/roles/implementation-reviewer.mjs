@@ -23,21 +23,21 @@ export class ImplementationReviewerRuntime {
 
   async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy,
     continuationSessionId = null, claimContext = null, resultCorrection = null,
-    refreshCredentials = false }) {
+    refreshCredentials = false, reviewBoundary }) {
     const projection = this.projection(instanceId);
     const roleInstructions = claimContext === null
       ? projection.role.developerInstructions
       : `${projection.role.developerInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     return this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials,
+      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, reviewBoundary,
     });
   }
 
   async reviewAgentInstructions({
     instanceId, profileId, subject, closure, catalogProjection, rawEventPolicy,
     continuationSessionId = null, claimContext = null,
-    resultCorrection = null, refreshCredentials = false,
+    resultCorrection = null, refreshCredentials = false, reviewBoundary,
   }) {
     const projection = this.projection(instanceId);
     const delivery = await this.agentInstructionReview.renderDelivery({
@@ -49,7 +49,7 @@ export class ImplementationReviewerRuntime {
       : `${delivery.roleInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     const execution = await this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials,
+      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, reviewBoundary,
     });
     if (execution.failure || !execution.result) return execution;
     let specialistReview;

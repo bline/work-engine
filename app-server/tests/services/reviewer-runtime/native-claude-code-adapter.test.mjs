@@ -11,6 +11,10 @@ import { digest } from "../../../src/services/reviewer-runtime/contract.mjs";
 const subject = {commit: "candidate", tree: "tree", patchIdentity: "patch"};
 const result = {schemaVersion: 1, subject, verdict: "acceptable_as_is", findings: [],
   decisiveEvidence: [{path: "app-server/src/index.mjs", startLine: 1, endLine: 1, sha256: "a".repeat(64)}], limitations: []};
+const reviewBoundary = {schemaVersion: 1, baselineCommit: "b".repeat(40), candidateCommit: subject.commit,
+  candidateTree: subject.tree, taskPatchDigest: subject.patchIdentity, gateReceiptDigest: "d".repeat(64),
+  paths: [{path: "app-server/src/index.mjs", action: "modify"}], evidenceCatalog: result.decisiveEvidence,
+  baselineEvidenceCatalog: [], changeDiff: "diff --git a/app-server/src/index.mjs b/app-server/src/index.mjs\n"};
 function profile() {
   const value = {schemaVersion: 1, profileId: "anthropic.claude-code.sonnet-review-v1", enabled: true,
     requestedModel: "sonnet", provider: "anthropic", reasoning: "medium",
@@ -51,7 +55,7 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
         session_id: session, model: "claude-sonnet-5", structured_output: result})};
     }});
   const initial = await adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review."});
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review."});
   assert.equal(initial.failure, null);
   assert.equal(initial.receipt.harness, "claude-code");
   assert.equal(initial.receipt.gateway, "anthropic");
@@ -68,13 +72,49 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   assert.match(prompt, /Execution-profile constraints are subordinate to the selected review obligation/);
   assert.match(prompt, /Review exact subject\./);
   const continued = await adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review.",
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review.",
     continuationSessionId: initial.runtimeSessionId});
   assert.equal(continued.receipt.continuity, "same_session_resume");
   assert.equal(calls[1].args.includes("--resume"), true);
   await assert.rejects(adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review.",
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review.",
     continuationSessionId: "00000000-0000-4000-8000-000000000000"}), /pre-registered session/);
+});
+
+test("native Claude adapter validates evidence by fields rather than provider property order", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-evidence-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const credentialSourcePath = await credentials(root);
+  const executeWithEvidence = (evidence) => new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, `state-${evidence.sha256.slice(0, 8)}`), credentialSourcePath,
+    catalogSource, transportScript: path.join(root, "transport.py"),
+    executeProcess: async (request) => {
+      const sessionIndex = request.args.indexOf("--session-id");
+      const resumeIndex = request.args.indexOf("--resume");
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[(sessionIndex >= 0 ? sessionIndex : resumeIndex) + 1], structured_output: {...result,
+          decisiveEvidence: [evidence]}})};
+    },
+  });
+  const reordered = {sha256: "a".repeat(64), endLine: 1,
+    path: "app-server/src/index.mjs", startLine: 1};
+  const accepted = await executeWithEvidence(reordered).execute({instanceId: "reordered-evidence",
+    profileId: profile().profileId, subject, catalogProjection: catalog,
+    rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
+  assert.equal(accepted.failure, null);
+
+  const forged = {...reordered, sha256: "f".repeat(64)};
+  await assert.rejects(executeWithEvidence(forged).execute({instanceId: "forged-evidence",
+    profileId: profile().profileId, subject, catalogProjection: catalog,
+    rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."}),
+  /outside the host-computed review catalog/);
+  const remediationAdapter = executeWithEvidence(forged);
+  const remediationSession = remediationAdapter.runtimeSessionId("forged-remediation-evidence");
+  await assert.rejects(remediationAdapter.execute({instanceId: "forged-remediation-evidence",
+    profileId: profile().profileId, subject, catalogProjection: catalog,
+    rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
+    continuationSessionId: remediationSession}), /outside the host-computed review catalog/);
 });
 
 test("native Claude correction prompt states immutable finding and result closure contracts", async (t) => {
@@ -101,7 +141,7 @@ test("native Claude correction prompt states immutable finding and result closur
   });
   const session = adapter.runtimeSessionId("correction");
   await adapter.execute({instanceId: "correction", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review.",
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review.",
     continuationSessionId: session, resultCorrection: {message: "contract rejected",
       rejectedResult: {...result, limitations: ["Cannot accept."]},
       requiredPriorResult: {...result, verdict: "remediation_required", findings: [priorFinding]}}});
@@ -160,7 +200,7 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
     {text: "Authentication is required."},
   ], {newerDecoy: true});
   const refreshed = await adapter.execute({instanceId: "exact-auth-failure", profileId: profile().profileId,
-    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review.",
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
     continuationSessionId: exact.session, refreshCredentials: true});
   assert.equal(refreshed.failure, null);
   assert.equal(await readFile(path.join(exact.configRoot, ".credentials.json"), "utf8"),
@@ -203,7 +243,7 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
   ]);
   assert.equal(await adapter.recoverFailure("other-failure"), null);
   const preserved = await adapter.execute({instanceId: "other-failure", profileId: profile().profileId,
-    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review.",
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
     continuationSessionId: other.session});
   assert.equal(preserved.failure, null);
   assert.equal(await readFile(path.join(other.configRoot, ".credentials.json"), "utf8"),
@@ -224,17 +264,19 @@ test("native Claude adapter preserves transport failure and rejects subject or U
       const index = request.args.indexOf("--session-id"); const session = request.args[index + 1];
       return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
         session_id: mode === "uuid" ? "00000000-0000-4000-8000-000000000000" : session,
-        structured_output: {...result, subject: {...subject, tree: "drift"}}})};
+        structured_output: {...result, subject: {...subject, tree: "drift"},
+          ...(mode === "subject" ? {decisiveEvidence: [{...result.decisiveEvidence[0],
+            sha256: "f".repeat(64)}]} : {})}})};
     }});
   const failed = await adapter.execute({instanceId: "failure", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."});
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
   assert.equal(failed.failure.kind, "transport");
   mode = "uuid";
   await assert.rejects(adapter.execute({instanceId: "uuid", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."}), /different session UUID/);
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."}), /different session UUID/);
   mode = "subject";
   const drift = await adapter.execute({instanceId: "subject", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."});
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
   assert.equal(drift.failure.kind, "subject_drift");
 });
 
@@ -250,7 +292,7 @@ test("native Claude adapter fails closed on catalog provenance drift and inherit
     executeProcess: async () => { calls += 1; return {exitCode: 1, stdout: "", stderr: ""}; },
   });
   const request = {instanceId: "route", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."};
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."};
   await assert.rejects(create().execute({...request,
     catalogProjection: {...catalog, sourceSha256: "c".repeat(64)}}), /catalog provenance differs/);
   for (const name of ["CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY",
@@ -278,7 +320,7 @@ test("native Claude adapter replaces generic preamble for the agent-instruction 
         session_id: request.args[sessionIndex + 1], structured_output: specialistResult})};
     }});
   await adapter.execute({instanceId: "specialist", profileId: profile().profileId, subject,
-    catalogProjection: catalog, rawEventPolicy: policy,
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
     roleInstructions: "You perform one advisory generic implementation review. Return the generic implementation-review schema.\n\nWORK_ENGINE_AGENT_INSTRUCTION_REVIEW_V1\n{}"});
   assert.doesNotMatch(prompt, /You perform one advisory generic implementation review/);
   assert.doesNotMatch(prompt, /Return the generic implementation-review schema/);
@@ -299,7 +341,7 @@ test("native Claude adapter fails before process entry when isolated credentials
     executeProcess: async () => { calls += 1; throw new Error("must not run"); },
   });
   const execution = await adapter.execute({instanceId: "no-auth", profileId: profile().profileId,
-    subject, catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Review."});
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
   assert.equal(calls, 0);
   assert.equal(execution.failure.failureSignature, "authentication_unavailable");
   assert.equal(execution.failure.providerEntry, "not_entered");

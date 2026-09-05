@@ -168,6 +168,53 @@ function parseResult(stdout, expectedSession) {
   return {envelope, result: envelope.structured_output};
 }
 
+export function validateReviewBoundary(value, subject) {
+  const invalid = !value || typeof value !== "object" || Array.isArray(value) ? "record"
+    : value.schemaVersion !== 1 ? "schemaVersion"
+    : typeof value.baselineCommit !== "string" || !/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(value.baselineCommit)
+      ? "baselineCommit"
+    : value.candidateCommit !== subject.commit ? "candidateCommit"
+    : value.candidateTree !== subject.tree ? "candidateTree"
+    : value.taskPatchDigest !== subject.patchIdentity ? "taskPatchDigest"
+    : !/^[0-9a-f]{64}$/.test(value.gateReceiptDigest) ? "gateReceiptDigest"
+    : !Array.isArray(value.paths) || !value.paths.length ? "paths"
+    : !Array.isArray(value.evidenceCatalog) ? "evidenceCatalog"
+    : !Array.isArray(value.baselineEvidenceCatalog) ? "baselineEvidenceCatalog"
+    : typeof value.changeDiff !== "string" || !value.changeDiff ? "changeDiff" : null;
+  if (invalid) throw new ReviewerRuntimeError("configuration",
+    `native Claude review boundary is invalid: ${invalid}`);
+  const validateCatalog = (catalog) => catalog.every((item) => item
+    && typeof item.path === "string" && item.path
+    && Number.isInteger(item.startLine) && item.startLine > 0
+    && Number.isInteger(item.endLine) && item.endLine >= item.startLine
+    && typeof item.sha256 === "string" && /^[0-9a-f]{64}$/.test(item.sha256));
+  if (!validateCatalog(value.evidenceCatalog) || !validateCatalog(value.baselineEvidenceCatalog)
+      || !value.paths.every((item) => item && typeof item.path === "string" && item.path
+        && ["add", "modify", "delete"].includes(item.action))) {
+    throw new ReviewerRuntimeError("configuration", "native Claude review boundary catalog is invalid");
+  }
+  return value;
+}
+
+function validateInitialEvidence(result, boundary) {
+  const evidenceKey = ({path: filePath, startLine, endLine, sha256} = {}) =>
+    `${filePath ?? ""}\0${startLine ?? ""}\0${endLine ?? ""}\0${sha256 ?? ""}`;
+  const implementationResult = result.result ?? result;
+  const deleted = new Set(boundary.paths.filter(({action}) => action === "delete")
+    .map(({path: filePath}) => filePath));
+  const allowed = new Set(boundary.evidenceCatalog
+    .concat(boundary.baselineEvidenceCatalog.filter(({path: filePath}) => deleted.has(filePath)))
+    .map(evidenceKey));
+  const citations = [...(implementationResult.decisiveEvidence ?? []),
+    ...(implementationResult.findings ?? []).flatMap((finding) => [
+      ...(finding.evidence ?? []), ...(finding.remediationEvidence ?? []),
+    ])];
+  if (!citations.every((item) => allowed.has(evidenceKey(item)))) {
+    throw new ReviewerRuntimeError("evidence",
+      "native Claude result cites evidence outside the host-computed review catalog");
+  }
+}
+
 export class NativeClaudeCodeReviewerAdapter {
   constructor({registry, workspaceRoot, stateRoot, executeProcess = execute,
     pythonExecutable = "python3", claudeExecutable = "claude",
@@ -317,7 +364,7 @@ export class NativeClaudeCodeReviewerAdapter {
   }
 
   async execute({instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-    continuationSessionId = null, roleInstructions, resultCorrection = null,
+    continuationSessionId = null, roleInstructions, resultCorrection = null, reviewBoundary,
     refreshCredentials = false}) {
     if (typeof instanceId !== "string" || !instanceId.trim()) throw new ReviewerRuntimeError("configuration", "native Claude instanceId is required");
     if (typeof roleInstructions !== "string" || !roleInstructions.trim()) throw new ReviewerRuntimeError("configuration", "canonical role instructions are required");
@@ -326,6 +373,7 @@ export class NativeClaudeCodeReviewerAdapter {
       throw new ReviewerRuntimeError("configuration", "native Claude adapter admits only the direct Anthropic sonnet profile");
     }
     validateCatalogProjection(catalogProjection); validateRawEventPolicy(rawEventPolicy);
+    const admittedReviewBoundary = validateReviewBoundary(reviewBoundary, subject);
     if (this.catalogSource !== null
         && (catalogProjection.source !== this.catalogSource.source
           || catalogProjection.sourceSha256 !== this.catalogSource.sourceSha256)) {
@@ -366,7 +414,7 @@ export class NativeClaudeCodeReviewerAdapter {
     const selectedInstructions = obligationInstructions(roleInstructions);
     const requiredPriorResult = resultCorrection?.requiredPriorResult ?? null;
     const task = resultCorrection === null
-      ? `Review only the immutable subject below. The host has mounted that exact commit as your working directory. Use working-directory files for all exact file evidence; Codebase Memory may supply structural context but does not replace the mounted subject bytes. Return only the required structured result. Do not mutate files, run gates, select reviewers, accept work, or use network tools.\n\nSUBJECT\n${JSON.stringify(subject)}`
+      ? `Review only the immutable subject and exact change boundary below. The host has mounted that exact candidate commit as your working directory. Inspect only the declared changed paths. Use the host-computed EXACT CHANGE DIFF for comparison to the declared baseline; do not use commit ancestry as the review boundary because checkpoint ancestry may contain unrelated work. Use working-directory files for exact candidate content and Codebase Memory only for structural context. For every candidate-side evidence citation, copy the host-computed whole-file range and SHA-256 from EVIDENCE CATALOG exactly. For a deleted path only, cite its exact BASELINE EVIDENCE CATALOG entry. The host rejects any other citation; do not fabricate, approximate, or replace a digest. Deterministic gates are separately owned supervisor evidence: do not run them, and do not report the deliberate absence of gate-running authority as a limitation. You must still disclose any other material limitation, including inability to verify a behavior that static review and the supplied gate evidence do not establish. Return only the required structured result. Do not mutate files, select reviewers, accept work, or use network tools.\n\nREVIEW BOUNDARY\n${JSON.stringify({...admittedReviewBoundary, changeDiff: undefined})}\n\nEXACT CHANGE DIFF\n${admittedReviewBoundary.changeDiff}\n\nEVIDENCE CATALOG\n${JSON.stringify(admittedReviewBoundary.evidenceCatalog)}\n\nBASELINE EVIDENCE CATALOG\n${JSON.stringify(admittedReviewBoundary.baselineEvidenceCatalog)}\n\nSUBJECT\n${JSON.stringify(subject)}`
       : `This is a same-session correction of your previously returned structured result, not a new review. Do not repeat repository reconnaissance or invoke tools. Preserve the exact current subject. Reconcile your own verdict, findings, decisive evidence, and limitations, then return only one corrected structured result. The host will apply the unchanged canonical validator; the host is not choosing or rewriting your judgment.${requiredPriorResult === null ? "" : ` The authoritative prior result below is part of the episode lineage. Every prior finding must remain present by exact id. For each prior finding, copy these immutable fields exactly, without paraphrase or correction: id, severity, title, evidence, observed, violatedExpectation, consequence, basis, confidence, recommendedRemediation. You may change only status and remediationEvidence on those retained findings. Do not repair an old citation, replace old evidence with current-subject evidence, or rewrite old subject-specific attribution; use remediationEvidence to cite current-subject closure. Findings absent from the authoritative prior result may be added when justified.`} Apply the result closure rules exactly to the implementation-review result payload: this is the top-level result for a generic review and the nested result field for a specialist review. In that payload, acceptable_as_is requires non-empty decisiveEvidence, an empty limitations array, and no unresolved finding; remediation_required requires at least one unresolved finding; incomplete requires at least one explicit limitation. Never combine acceptable_as_is with a limitation or unresolved finding.\n\nCONTRACT REJECTION\n${resultCorrection.message}\n\nPREVIOUS STRUCTURED RESULT\n${JSON.stringify(resultCorrection.rejectedResult)}${requiredPriorResult === null ? "" : `\n\nAUTHORITATIVE PRIOR EPISODE RESULT\n${JSON.stringify(requiredPriorResult)}`}\n\nSUBJECT\n${JSON.stringify(subject)}`;
     const prompt = `${selectedInstructions}\n\nExecution-profile constraints are subordinate to the selected review obligation and its canonical instructions:\n${profile.effectiveInstructions}\n\nKnown execution limitations:\n${profile.limitations.length ? profile.limitations.map((limitation) => `- ${limitation}`).join("\n") : "- None declared."}\n\n${task}`;
     const claudeArgs = ["-p", "--effort", profile.reasoning, "--model", profile.requestedModel,
@@ -402,6 +450,9 @@ export class NativeClaudeCodeReviewerAdapter {
     if (digest(result.subject) !== digest(subject)) {
       return Object.freeze({attemptId, failure: {kind: "subject_drift", message: "native Claude result subject differs"}, result: null,
         runtimeSessionId: expectedSession, transportReceipt});
+    }
+    if (resultCorrection === null) {
+      validateInitialEvidence(result, admittedReviewBoundary);
     }
     return Object.freeze({attemptId, failure: null, result, runtimeSessionId: expectedSession,
       receipt: Object.freeze({schemaVersion: 1, attemptId, profileId,

@@ -11,6 +11,7 @@ import { digest as episodeDigest } from "../src/services/review-episode/contract
 import { createReviewEpisodeService } from "../src/services/review-episode/service.mjs";
 import { openSqliteReviewEpisodeStore } from "../src/services/review-episode/sqlite-store.mjs";
 import {
+  createReviewBoundary,
   createNativeReviewHostOwners as createProductionNativeReviewHostOwners,
   materializeImmutableSubjectWorkspace,
 } from "../src/services/slice-campaign/native-review-host.mjs";
@@ -34,7 +35,14 @@ const effect = (operation, input) => ({generationId: "generation-native", effect
 
 function createNativeReviewHostOwners(options) {
   return createProductionNativeReviewHostOwners({...options,
-    reviewerSubjectWorkspaceFactory: async () => repository});
+    reviewerSubjectWorkspaceFactory: async () => repository,
+    reviewBoundaryFactory: ({subject: reviewedSubject}) => ({schemaVersion: 1, baselineCommit: "b".repeat(40),
+      candidateCommit: reviewedSubject.commit, candidateTree: reviewedSubject.tree,
+      taskPatchDigest: reviewedSubject.patchIdentity, gateReceiptDigest: "d".repeat(64),
+      paths: [{path: "app-server/src/index.mjs", action: "modify"}],
+      evidenceCatalog: result.decisiveEvidence, baselineEvidenceCatalog: [],
+      changeDiff: "diff --git a/app-server/src/index.mjs b/app-server/src/index.mjs\n"}),
+  });
 }
 
 test("native review materializes a clean local checkout of the exact immutable subject", async (t) => {
@@ -50,6 +58,94 @@ test("native review materializes a clean local checkout of the exact immutable s
   assert.equal(execFileSync("git", ["-C", workspace, "status", "--porcelain=v1"], {encoding: "utf8"}), "");
   assert.equal(await materializeImmutableSubjectWorkspace({workspaceRoot: repository, stateRoot,
     subject: {commit, tree, patchIdentity: "fixture"}}), workspace);
+});
+
+test("native review boundary binds the baseline, exact path set, and host-computed evidence digests", async (t) => {
+  const fixture = await mkdtemp(path.join(os.tmpdir(), "native-review-boundary-"));
+  t.after(() => rm(fixture, {recursive: true, force: true}));
+  execFileSync("git", ["-C", fixture, "init", "--quiet"]);
+  const filePath = "subject.mjs";
+  await writeFile(path.join(fixture, filePath), "export const value = 1;\n");
+  execFileSync("git", ["-C", fixture, "add", filePath]);
+  execFileSync("git", ["-C", fixture, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+    "commit", "--quiet", "-m", "baseline"]);
+  const baseline = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD"], {encoding: "utf8"}).trim();
+  await writeFile(path.join(fixture, filePath), "export const value = 2;\n");
+  execFileSync("git", ["-C", fixture, "add", filePath]);
+  execFileSync("git", ["-C", fixture, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+    "commit", "--quiet", "-m", "candidate"]);
+  const commit = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD"], {encoding: "utf8"}).trim();
+  const tree = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD^{tree}"], {encoding: "utf8"}).trim();
+  const patchIdentity = createHash("sha256").update(execFileSync("git", ["-C", fixture,
+    "diff-tree", "--binary", "--no-renames", "--no-ext-diff", `${baseline}^{tree}`, tree],
+  {encoding: null})).digest("hex");
+  const content = await readFile(path.join(fixture, filePath), "utf8");
+  const stateRoot = path.join(fixture, "state");
+  const owners = await createProductionNativeReviewHostOwners({workspaceRoot: fixture, stateRoot,
+    runtimeSourceRoot: repository});
+  t.after(() => owners.close());
+  const boundary = owners.reviewBoundaryFactory({workspaceRoot: fixture,
+    campaign: {candidate: {baseline_commit_oid: baseline, gate_receipt_digest: "e".repeat(64),
+      paths: [{path: filePath, action: "include"}]}},
+    subject: {commit, tree, patchIdentity}});
+  assert.equal(boundary.baselineCommit, baseline);
+  assert.deepEqual(boundary.paths, [{path: filePath, action: "modify"}]);
+  assert.deepEqual(boundary.evidenceCatalog, [{path: filePath, startLine: 1,
+    endLine: Math.max(1, content.split("\n").length - (content.endsWith("\n") ? 1 : 0)),
+    sha256: createHash("sha256").update(content).digest("hex")}]);
+  assert.equal(boundary.baselineEvidenceCatalog.length, 1);
+  assert.notEqual(boundary.baselineEvidenceCatalog[0].sha256, boundary.evidenceCatalog[0].sha256);
+  assert.ok(boundary.changeDiff.startsWith("diff --git "));
+  assert.equal(boundary.candidateTree, tree);
+  assert.equal(boundary.taskPatchDigest, patchIdentity);
+  assert.throws(() => createReviewBoundary({workspaceRoot: fixture,
+    campaign: {candidate: {baseline_commit_oid: baseline, gate_receipt_digest: "e".repeat(64),
+      paths: [{path: filePath, action: "include"}]}},
+    subject: {commit, tree, patchIdentity: "f".repeat(64)}}), /patch identity differs/);
+});
+
+test("supervisor dispatch uses the production review boundary against the real campaign subject", async (t) => {
+  const fixture = await mkdtemp(path.join(os.tmpdir(), "native-review-production-boundary-"));
+  const stateRoot = path.join(fixture, "state");
+  t.after(() => rm(fixture, {recursive: true, force: true}));
+  execFileSync("git", ["-C", fixture, "init", "--quiet"]);
+  const filePath = "subject.mjs";
+  await writeFile(path.join(fixture, filePath), "export const value = 1;\n");
+  execFileSync("git", ["-C", fixture, "add", filePath]);
+  execFileSync("git", ["-C", fixture, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+    "commit", "--quiet", "-m", "baseline"]);
+  const baseline = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD"], {encoding: "utf8"}).trim();
+  await writeFile(path.join(fixture, filePath), "export const value = 2;\n");
+  execFileSync("git", ["-C", fixture, "add", filePath]);
+  execFileSync("git", ["-C", fixture, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+    "commit", "--quiet", "-m", "candidate"]);
+  const commit = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD"], {encoding: "utf8"}).trim();
+  const tree = execFileSync("git", ["-C", fixture, "rev-parse", "HEAD^{tree}"], {encoding: "utf8"}).trim();
+  const patchIdentity = createHash("sha256").update(execFileSync("git", ["-C", fixture,
+    "diff-tree", "--binary", "--no-renames", "--no-ext-diff", `${baseline}^{tree}`, tree],
+  {encoding: null})).digest("hex");
+  const candidate = {commit, tree, manifestSha256: patchIdentity, baseline_commit_oid: baseline,
+    gate_receipt_digest: "e".repeat(64), paths: [{path: filePath, action: "include"}]};
+  let campaign = await seed(stateRoot, {candidate});
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const evidence = {path: filePath, startLine: 1, endLine: 1,
+    sha256: createHash("sha256").update("export const value = 2;\n").digest("hex")};
+  const ownersFactory = (options) => createProductionNativeReviewHostOwners({...options,
+    reviewerCredentialSourcePath, reviewerExecuteProcess: async (request) => {
+      const sessionIndex = request.args.indexOf("--session-id");
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5",
+        structured_output: {schemaVersion: 1, subject: {commit, tree, patchIdentity},
+          verdict: "acceptable_as_is", findings: [], decisiveEvidence: [evidence], limitations: []}})};
+    }});
+  const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: fixture, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory,
+    nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const executed = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "native-host:production-boundary:initial"}));
+  campaign = executed.result.campaign;
+  assert.equal(campaign.nativeReview.obligations.generic.status, "reported");
 });
 
 async function credentialSource(stateRoot) {
@@ -94,6 +190,13 @@ test("read-only supervisor executes one selected native review and recovers dura
     assert.equal(request.args.includes("openrouter"), false);
     assert.equal(request.args.some((value) => /--model-override|--mcp-config=.*caller/.test(value)), false);
     const sessionIndex = request.args.indexOf("--session-id");
+    const prompt = request.args.at(-1);
+    assert.match(prompt, /checkpoint ancestry may contain unrelated work/);
+    assert.match(prompt, /For every candidate-side evidence citation, copy the host-computed whole-file range and SHA-256/);
+    assert.match(prompt, /deliberate absence of gate-running authority/);
+    assert.match(prompt, /REVIEW BOUNDARY/);
+    assert.match(prompt, /EXACT CHANGE DIFF/);
+    assert.match(prompt, /EVIDENCE CATALOG/);
     return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
       session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5", structured_output: result})};
     }});

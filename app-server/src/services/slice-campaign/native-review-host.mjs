@@ -17,6 +17,7 @@ import { createReviewEpisodeService, ReviewEpisodeResultError } from "../review-
 import { digest as episodeDigest } from "../review-episode/contract.mjs";
 import { openSqliteReviewEpisodeStore } from "../review-episode/sqlite-store.mjs";
 import { NativeClaudeCodeReviewerAdapter } from "../reviewer-runtime/native-claude-code-adapter.mjs";
+import { ReviewerRuntimeError } from "../reviewer-runtime/contract.mjs";
 import { ReviewerProfileRegistry } from "../reviewer-runtime/profile-registry.mjs";
 import { createNativeReviewClosureService } from "./native-review-closure.mjs";
 
@@ -105,6 +106,75 @@ function gitBlob(workspaceRoot, commit, filePath) {
   return execFileSync("git", ["-C", workspaceRoot, "show", `${commit}:${filePath}`], {encoding: "utf8"});
 }
 
+export function createReviewBoundary({workspaceRoot, campaign, subject}) {
+  const candidate = campaign.candidate;
+  const baselineCommit = execFileSync("git", ["-C", workspaceRoot, "rev-parse",
+    `${candidate.baseline_commit_oid}^{commit}`], {encoding: "utf8"}).trim();
+  const candidateCommit = execFileSync("git", ["-C", workspaceRoot, "rev-parse",
+    `${subject.commit}^{commit}`], {encoding: "utf8"}).trim();
+  const candidateTree = execFileSync("git", ["-C", workspaceRoot, "rev-parse",
+    `${candidateCommit}^{tree}`], {encoding: "utf8"}).trim();
+  if (candidateCommit !== subject.commit || candidateTree !== subject.tree) {
+    throw new ReviewerRuntimeError("configuration",
+      "native review candidate identity differs from the immutable subject");
+  }
+  const patch = execFileSync("git", ["-C", workspaceRoot, "diff-tree", "--binary",
+    "--no-renames", "--no-ext-diff", `${baselineCommit}^{tree}`, candidateTree], {
+    encoding: null, maxBuffer: 16 * 1024 * 1024,
+  });
+  const taskPatchDigest = createHash("sha256").update(patch).digest("hex");
+  if (taskPatchDigest !== subject.patchIdentity) {
+    throw new ReviewerRuntimeError("configuration",
+      "native review patch identity differs from the immutable subject");
+  }
+  const declared = new Set((candidate.paths ?? []).map(({path: filePath}) => filePath));
+  const changed = execFileSync("git", ["-C", workspaceRoot, "diff", "--no-ext-diff",
+    "--no-renames", "--name-status", "-z", baselineCommit, candidateCommit], {
+    encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
+  }).split("\0").filter(Boolean);
+  const paths = [];
+  for (let index = 0; index < changed.length; index += 2) {
+    const status = changed[index];
+    const filePath = changed[index + 1];
+    if (!filePath || !declared.has(filePath) || !["A", "M", "D"].includes(status)) {
+      throw new ReviewerRuntimeError("configuration",
+        "native review boundary differs from the declared candidate path set");
+    }
+    paths.push(Object.freeze({path: filePath,
+      action: Object.freeze({A: "add", M: "modify", D: "delete"})[status]}));
+  }
+  const entry = (commit, filePath) => {
+    const content = gitBlob(workspaceRoot, commit, filePath);
+    return Object.freeze({
+      path: filePath,
+      startLine: 1,
+      endLine: lineCount(content),
+      sha256: createHash("sha256").update(content).digest("hex"),
+    });
+  };
+  const evidenceCatalog = paths.filter(({action}) => action !== "delete")
+    .map(({path: filePath}) => entry(candidateCommit, filePath));
+  const baselineEvidenceCatalog = paths.filter(({action}) => action !== "add")
+    .map(({path: filePath}) => entry(baselineCommit, filePath));
+  const changeDiff = execFileSync("git", ["-C", workspaceRoot, "diff", "--no-ext-diff",
+    "--no-renames", "--unified=80", baselineCommit, candidateCommit, "--",
+    ...paths.map(({path: filePath}) => filePath)], {
+    encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
+  });
+  return Object.freeze({
+    schemaVersion: 1,
+    baselineCommit,
+    candidateCommit,
+    candidateTree,
+    taskPatchDigest,
+    gateReceiptDigest: candidate.gate_receipt_digest,
+    paths: Object.freeze(paths),
+    evidenceCatalog: Object.freeze(evidenceCatalog),
+    baselineEvidenceCatalog: Object.freeze(baselineEvidenceCatalog),
+    changeDiff,
+  });
+}
+
 function instructionClosure({workspaceRoot, campaign, subject, obligationId}) {
   const candidate = campaign.candidate;
   const paths = (candidate.paths ?? []).map(({path: value}) => value)
@@ -147,6 +217,7 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   reviewerExecuteProcess, claudeExecutable = "claude", pythonExecutable = "python3",
   reviewerCredentialSourcePath = null,
   reviewerSubjectWorkspaceFactory = materializeImmutableSubjectWorkspace,
+  reviewBoundaryFactory = createReviewBoundary,
   runtimeSourceRoot = new URL("../../../../", import.meta.url).pathname} = {}) {
   const manifestPath = path.join(runtimeSourceRoot, "app-server/runtime-manifest.yaml");
   const loadedManifest = await loadRuntimeManifestDocument(manifestPath);
@@ -177,6 +248,7 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer,
     findingBridge: createReviewFindingBridge({store: claimStore})});
   return Object.freeze({implementationReview, agentInstructionReview, nativeReview, adapter, authority, catalogSource,
+    reviewBoundaryFactory,
     close() { episodeStore.close(); claimStore.close(); }});
 }
 
@@ -219,6 +291,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       models: [{slug: "sonnet", provider: "anthropic",
         capabilities: ["structured_output", "repository_read"], routingConstraints: ["direct-anthropic-only"]}]};
     const reviewerRequest = {instanceId: instance, profileId: PROFILE_ID, subject,
+      reviewBoundary: owners.reviewBoundaryFactory({workspaceRoot, campaign, subject}),
       catalogProjection, rawEventPolicy: POLICY,
       ...(remediationSubject || continuationSessionId ? {continuationSessionId: sessionId} : {}),
       ...(resultCorrection ? {resultCorrection} : {}),
