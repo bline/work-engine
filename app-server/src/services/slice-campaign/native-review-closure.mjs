@@ -1,4 +1,5 @@
 import { digest as episodeDigest } from "../review-episode/contract.mjs";
+import { ReviewEpisodeResultError } from "../review-episode/service.mjs";
 import { ImplementationReviewError } from "../implementation-review/contract.mjs";
 import { AgentInstructionReviewError } from "../agent-instruction-review/contract.mjs";
 
@@ -40,7 +41,8 @@ async function executeReviewer(reviewer, reviewSkill, reviewerRequest, claimCont
 
 function resultContractFailure(error, result, execution) {
   if (!(error instanceof ImplementationReviewError)
-      && !(error instanceof AgentInstructionReviewError)) throw error;
+      && !(error instanceof AgentInstructionReviewError)
+      && !(error instanceof ReviewEpisodeResultError)) throw error;
   const rejectedResult = Object.freeze(structuredClone(result));
   const implementationResult = rejectedResult.result ?? rejectedResult;
   const recovery = Object.freeze({schemaVersion: 1,
@@ -79,6 +81,29 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
   if (!reviewer?.review) throw new TypeError("native review closure requires canonical reviewer runtime");
   if (!findingBridge?.publishFindings || !findingBridge?.recordReliance || !findingBridge?.project) throw new TypeError("native review closure requires review finding bridge");
   return Object.freeze({
+    validateRecoveredResult({binding: current, authority, result}) {
+      const bound = reviewEpisode.read({identity: authority.identity,
+        revision: current.episodeRef.revision});
+      if (!bound) throw new Error("native review episode binding is unavailable");
+      const episode = reviewEpisode.recover(authority.identity);
+      if (!episode) throw new Error("native review episode binding is unavailable");
+      return reviewEpisode.validateResult({authority,
+        expectedRevision: episode.revision, result});
+    },
+    recoverRemediation({binding: current, authority, subjectTransitionId, resultTransitionId}) {
+      const episode = reviewEpisode.recover(authority.identity);
+      if (!episode) throw new Error("native review episode binding is unavailable");
+      const subjectRecorded = Boolean(episode.handledTransitions[subjectTransitionId]);
+      const resultRecorded = Boolean(episode.handledTransitions[resultTransitionId]);
+      if (episode.revision !== current.episodeRef.revision && !subjectRecorded) {
+        throw new Error("native review episode binding is stale");
+      }
+      return Object.freeze({
+        providerEntry: resultRecorded ? "entered" : subjectRecorded ? "unknown" : "not_entered",
+        subjectRecorded,
+        resultRecorded,
+      });
+    },
     async executeInitial({obligationId, reviewSkill, authority, beginTransitionId, resultTransitionId, reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true}) {
       let episode = reviewEpisode.begin({authority, transitionId: beginTransitionId});
       if (!episode.handledTransitions[resultTransitionId]) {
@@ -108,12 +133,20 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       resultTransitionId, reviewerRequest, findingAuthority, operationPrefix, contextRequest,
       allowProviderEntry = true}) {
       const episode = reviewEpisode.recover(authority.identity);
-      if (!episode || episode.currentResult) {
+      const remediationCorrection = episode?.phase === "re_evaluation"
+        && episode.currentResult !== null;
+      if (!episode || (episode.currentResult && !remediationCorrection)) {
         throw new Error("native review result correction requires an unresolved review episode");
       }
       if (!allowProviderEntry) throw new Error("native review result correction outcome is unavailable; provider replay is refused");
+      const correctionRequest = remediationCorrection && reviewerRequest.resultCorrection
+        ? Object.freeze({...reviewerRequest, resultCorrection: Object.freeze({
+          ...reviewerRequest.resultCorrection,
+          requiredPriorResult: episode.currentResult,
+        })})
+        : reviewerRequest;
       const {execution, result, contractError, rejectedResult} = await executeReviewer(
-        reviewer, reviewSkill, reviewerRequest, null);
+        reviewer, reviewSkill, correctionRequest, null);
       if (contractError) return Object.freeze({binding: null, builderContext: null,
         failure: resultContractFailure(contractError, rejectedResult, execution), execution});
       if (execution.failure || !result) {
@@ -127,7 +160,8 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       if (recorded.failure) return Object.freeze({binding: null, builderContext: null,
         failure: recorded.failure, execution});
       const findings = findingBridge.publishFindings({authority: findingAuthority,
-        operationPrefix, episode: recorded.episode, result: recorded.episode.currentResult});
+        operationPrefix, episode: recorded.episode, result: recorded.episode.currentResult,
+        ...(remediationCorrection ? {previousFindings: current.findings} : {})});
       const nativeBinding = binding({obligationId, episode: recorded.episode, findings, prior: current});
       const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
       return Object.freeze({binding: nativeBinding, builderContext, failure: null});
@@ -135,7 +169,9 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     recoverCorrection({binding: current, obligationId, authority, resultTransitionId,
       recoveredResult, recoveredExecution, findingAuthority, operationPrefix, contextRequest}) {
       const episode = reviewEpisode.recover(authority.identity);
-      if (!episode || episode.currentResult) {
+      const remediationRecovery = episode?.phase === "re_evaluation"
+        && episode.currentResult !== null;
+      if (!episode || (episode.currentResult && !remediationRecovery)) {
         throw new Error("native review corrected-result recovery requires an unresolved review episode");
       }
       const recorded = recordResult({reviewEpisode, authority, episode,
@@ -143,7 +179,8 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       if (recorded.failure) return Object.freeze({binding: null, builderContext: null,
         failure: recorded.failure, execution: recoveredExecution});
       const findings = findingBridge.publishFindings({authority: findingAuthority,
-        operationPrefix, episode: recorded.episode, result: recorded.episode.currentResult});
+        operationPrefix, episode: recorded.episode, result: recorded.episode.currentResult,
+        ...(remediationRecovery ? {previousFindings: current.findings} : {})});
       const nativeBinding = binding({obligationId, episode: recorded.episode, findings, prior: current});
       const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
       return Object.freeze({binding: nativeBinding, builderContext, failure: null});

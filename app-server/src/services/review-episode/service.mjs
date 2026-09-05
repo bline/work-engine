@@ -2,6 +2,8 @@ import {
   digest, freeze, identityKey, sha256, text, validateAuthority, validateReference, validateState,
 } from "./contract.mjs";
 
+export class ReviewEpisodeResultError extends Error {}
+
 export class InMemoryReviewEpisodeStore {
   constructor() { this.episodes = new Map(); this.revisions = new Map(); }
   get(key) { return this.episodes.get(key) ?? null; }
@@ -26,9 +28,11 @@ function preserveFindingLineage(previous, next) {
   const updated = new Map(next.map((finding) => [finding.id, finding]));
   for (const [id, prior] of current) {
     const finding = updated.get(id);
-    if (!finding) throw new Error("review episode findings cannot be deleted");
+    if (!finding) throw new ReviewEpisodeResultError("review episode findings cannot be deleted");
     for (const field of ["id", "severity", "title", "evidence", "observed", "violatedExpectation", "consequence", "basis", "confidence", "recommendedRemediation"]) {
-      if (digest(finding[field]) !== digest(prior[field])) throw new Error("review episode finding attribution or evidence cannot be rewritten");
+      if (digest(finding[field]) !== digest(prior[field])) {
+        throw new ReviewEpisodeResultError("review episode finding attribution or evidence cannot be rewritten");
+      }
     }
   }
 }
@@ -41,6 +45,26 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
     const published = freeze({ ...state, revision: digest(state) });
     store.put(identityKey(state.identity), published, expectedRevision);
     return published;
+  };
+  const validateResult = ({ authority, expectedRevision, result }) => {
+    validateAuthority(authority);
+    const current = recover(authority.identity);
+    if (!current || current.revision !== expectedRevision) {
+      throw new Error("review episode expected revision does not match current state");
+    }
+    if (digest(current.authority) !== digest(authorityBinding(authority))
+        || digest(current.writer) !== digest(authority.writer)) {
+      throw new Error("review episode authority does not match current writer generation");
+    }
+    if (current.status !== "active" || !["initial_review", "re_evaluation"].includes(current.phase)) {
+      throw new Error("review episode result transition is invalid");
+    }
+    const admitted = implementationReview.admit({ result, expectedSubject: result.subject });
+    if (digest(admitted.result.subject) !== current.subject.sha256) {
+      throw new ReviewEpisodeResultError("review episode result does not match exact subject");
+    }
+    if (current.currentResult) preserveFindingLineage(current.currentResult.findings, admitted.result.findings);
+    return admitted.result;
   };
   const transition = ({ authority, expectedRevision, transitionId, action, payload }) => {
     validateAuthority(authority); text(transitionId, "review episode transitionId");
@@ -67,13 +91,10 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
         throw new Error("review episode authority does not match current writer generation");
       }
       if (action === "record_result") {
-        if (current.status !== "active" || !["initial_review", "re_evaluation"].includes(current.phase)) throw new Error("review episode result transition is invalid");
-        const admitted = implementationReview.admit({ result: payload.result, expectedSubject: payload.result.subject });
-        if (digest(admitted.result.subject) !== current.subject.sha256) throw new Error("review episode result does not match exact subject");
-        if (current.currentResult) preserveFindingLineage(current.currentResult.findings, admitted.result.findings);
+        const admittedResult = validateResult({ authority, expectedRevision, result: payload.result });
         if (!Array.isArray(payload.unresolvedQuestions)) throw new Error("review episode unresolvedQuestions must be an array");
-        const pending = admitted.result.verdict !== "acceptable_as_is" || payload.unresolvedQuestions.length > 0;
-        updated = { ...semantic(current), currentResult: admitted.result,
+        const pending = admittedResult.verdict !== "acceptable_as_is" || payload.unresolvedQuestions.length > 0;
+        updated = { ...semantic(current), currentResult: admittedResult,
           unresolvedQuestions: payload.unresolvedQuestions, phase: pending ? "remediation" : "reported",
           pendingAction: pending ? "await_remediation" : "return_review_result_to_builder", continuity: "same_session" };
       } else if (action === "record_remediation_subject") {
@@ -111,6 +132,7 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
         uncertainty: null, retirement: null }, null);
     },
     transition,
+    validateResult,
     recover,
     read({ identity, revision = null }) {
       const values = store.history(identityKey(identity));

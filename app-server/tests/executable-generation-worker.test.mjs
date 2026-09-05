@@ -934,7 +934,8 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
       if (method === "thread/start") {
         if (params.ephemeral === true) return { thread: { id: "thread-inference" } };
         const role = typeof params.developerInstructions === "string";
-        const threadId = role
+        const builder = params.developerInstructions?.includes("accepted implementation slice");
+        const threadId = builder ? "thread-builder" : role
           ? (++roleThreadCount === 1 ? "thread-role" : "thread-strategic")
           : "thread-shell";
         if (role) this.notificationHandler({
@@ -944,6 +945,32 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
         return { thread: { id: threadId } };
       }
       if (method === "turn/start") {
+        if (params.threadId === "thread-builder") {
+          setImmediate(() => this.notificationHandler({
+            method: "turn/completed",
+            params: {
+              threadId: "thread-builder",
+              turn: {
+                id: "turn-builder",
+                status: "completed",
+                items: [{
+                  type: "agentMessage",
+                  id: "agent-builder",
+                  text: "builder-owned response",
+                  phase: "final_answer",
+                  memoryCitation: null,
+                  delivery: null,
+                }],
+                itemsView: "full",
+                error: null,
+                startedAt: 5,
+                completedAt: 6,
+                durationMs: 1,
+              },
+            },
+          }));
+          return { turn: { id: "turn-builder", status: "inProgress" } };
+        }
         if (params.threadId === "thread-inference") {
           setImmediate(() => this.notificationHandler({
             method: "turn/completed",
@@ -1303,6 +1330,38 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     "turn/steer", "thread/inject_items", "thread/compact/start",
     "thread/realtime/appendText",
   ].includes(request.method)), false);
+
+  forwardedNotifications.length = 0;
+  await stage("attach builder", bootstrap.transport.request("turn/start", {
+    threadId: "thread-shell",
+    clientUserMessageId: "shell-command-builder",
+    input: [{ type: "text", text: ":we attach slice-builder:root", text_elements: [] }],
+  }));
+  await waitForSyntheticStart();
+  await waitForSyntheticCompletion();
+  forwardedNotifications.length = 0;
+  await stage("builder delivery", bootstrap.transport.request("turn/start", {
+    threadId: "thread-shell",
+    clientUserMessageId: "shell-message-builder",
+    input: [{ type: "text", text: "Implement the accepted slice.", text_elements: [] }],
+  }));
+  await waitForSyntheticStart();
+  const builderCompletion = await waitForSyntheticCompletion();
+  assert.equal(builderCompletion.params.turn.status, "completed");
+  const builderThreadStart = requests.find((request) =>
+    request.method === "thread/start" && request.params.developerInstructions
+      ?.includes("accepted implementation slice"));
+  assert.equal(builderThreadStart.params.approvalPolicy, "never");
+  assert.equal(builderThreadStart.params.sandbox, "danger-full-access");
+  assert.equal(builderThreadStart.params.model, "gpt-5.6-sol");
+  assert.equal("effort" in builderThreadStart.params, false);
+  const builderTurnStart = requests.find((request) =>
+    request.method === "turn/start" && request.params.threadId === "thread-builder");
+  assert.equal(builderTurnStart.params.effort, "low");
+  assert.deepEqual(builderThreadStart.params.dynamicTools.map(({ name }) => name), [
+    "campaign",
+    "environment",
+  ]);
 });
 
 test("executable role snapshots refuse missing, corrupt, or excessive transported requirements before adapter delivery", async (t) => {

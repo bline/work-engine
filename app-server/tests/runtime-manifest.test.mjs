@@ -16,6 +16,7 @@ import {
   satisfyRuntimeRequirements,
 } from "../src/index.mjs";
 import { compileSkill } from "../src/skill-compiler.mjs";
+import { hydrateRuntimeRequirements } from "../src/runtime-manifest.mjs";
 
 class ManifestTransport {
   constructor() {
@@ -80,6 +81,8 @@ roles:
       cwd: .
       approval_policy: on-request
       sandbox: workspace-write
+      model: gpt-5.6-sol
+      reasoning_effort: low
     capabilities:
       - fixture.lookup
     skills:
@@ -105,6 +108,9 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   assert.match(first.manifest.sha256, /^[a-f0-9]{64}$/);
   assert.equal(first.manifest.path, manifestPath);
   assert.equal(Object.isFrozen(first), true);
+  const beta = manifest.projectRole("beta", "options");
+  assert.equal(beta.role.threadOptions.model, "gpt-5.6-sol");
+  assert.equal(beta.role.threadOptions.effort, "low");
 });
 
 test("production manifest projects the canonical implementation reviewer with a read-only ceiling", async () => {
@@ -159,6 +165,20 @@ test("production manifest grants coordination and native review only to the read
   const supervisor = manifest.projectRole("slice-supervisor", "coordination").role;
   assert.equal(supervisor.threadOptions.sandbox, "read-only");
   assert.equal(supervisor.threadOptions.approvalPolicy, "never");
+  assert.equal(supervisor.threadOptions.model, "gpt-5.6-sol");
+  assert.equal(supervisor.threadOptions.effort, "low");
+
+  for (const roleId of [
+    "slice-builder",
+    "implementation-reviewer",
+    "strategic-planner",
+    "idea-intake",
+    "proposal-former",
+  ]) {
+    const role = manifest.projectRole(roleId, `model-pin-${roleId}`).role;
+    assert.equal(role.threadOptions.model, "gpt-5.6-sol");
+    assert.equal(role.threadOptions.effort, "low");
+  }
   assert.equal(supervisor.capabilities.includes("capability.operational_coordination"), true);
   assert.equal(supervisor.capabilities.includes("capability.native_review"), true);
   assert.equal(manifest.projectRole("slice-builder", "coordination").role.capabilities
@@ -270,6 +290,39 @@ test("snapshot delivery paths do not change canonical role environment identity"
 
   assert.equal(first.role.runtimeEnvironmentRevision, second.role.runtimeEnvironmentRevision);
   assert.notEqual(first.skills[0].path, second.skills[0].path);
+  assert.equal(first.skills[0].identityPath, path.join(directory, "skills/alpha/SKILL.md"));
+  assert.equal(second.skills[0].identityPath, first.skills[0].identityPath);
+});
+
+test("snapshot secondary skills satisfy source identity while retaining sealed delivery paths", async (t) => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const loaded = await loadRuntimeManifestDocument(path.join(root, "app-server/runtime-manifest.yaml"));
+  const runtimeRequirementsByRole = await hydrateRuntimeRequirements(loaded.document, {
+    baseDirectory: path.dirname(loaded.sourcePath),
+    workspaceRoot: root,
+  });
+  const snapshotRoot = await mkdtemp(path.join(os.tmpdir(), "work-engine-manifest-generation."));
+  t.after(() => rm(snapshotRoot, { recursive: true, force: true }));
+  const manifest = projectRuntimeManifest(loaded.document, {
+    baseDirectory: path.join(snapshotRoot, "app-server"),
+    identityBaseDirectory: path.dirname(loaded.sourcePath),
+    requirementsBaseDirectory: root,
+    sourcePath: path.join(snapshotRoot, "app-server/runtime-manifest.yaml"),
+    sourceSha256: loaded.sourceSha256,
+    runtimeRequirementsByRole,
+  });
+  const projection = manifest.projectRole("slice-builder", "snapshot-secondary");
+  const skill = projection.skills.find(({ name }) => name === "repo-search");
+
+  assert.equal(skill.path, path.join(snapshotRoot, "skills/repo-search/SKILL.md"));
+  assert.equal(skill.identityPath, path.join(root, "skills/repo-search/SKILL.md"));
+  const receipt = satisfyRuntimeRequirements({
+    manifest,
+    roleId: "slice-builder",
+    skillName: "repo-search",
+    requirements: skill.runtimeRequirements,
+  });
+  assert.equal(receipt.skill_id, "repo-search");
 });
 
 test("manifest role runtime delivers projected roles through the shared adapter", async (t) => {
@@ -309,8 +362,11 @@ test("manifest role runtime delivers projected roles through the shared adapter"
   const start = transport.requests.find(({ method }) => method === "thread/start");
   assert.equal(start.params.developerInstructions, "Keep beta isolated.");
   assert.equal(start.params.approvalPolicy, "on-request");
+  assert.equal(start.params.model, "gpt-5.6-sol");
+  assert.equal("effort" in start.params, false);
   assert.deepEqual(start.params.dynamicTools.map(({ name }) => name), ["fixture"]);
   const turn = transport.requests.find(({ method }) => method === "turn/start");
+  assert.equal(turn.params.effort, "low");
   assert.equal(turn.params.input[0].type, "skill");
   assert.equal(turn.params.input[0].name, "shared");
   assert.equal(turn.params.input[1].text.startsWith("WORK_ENGINE_REQUEST_CONTEXT_V1\n"), true);

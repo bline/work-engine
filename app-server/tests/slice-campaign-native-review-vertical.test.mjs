@@ -88,7 +88,15 @@ test("native campaign closes one claim-backed finding through remediation and re
   }};
   const reviewEpisode = createReviewEpisodeService({store: owners.episodeStore, implementationReview: owners.implementationReview});
   const findingBridge = createReviewFindingBridge({store: owners.claimStore});
-  const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge});
+  const closure = createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge});
+  let interruptBeforeRemediationTransition = true;
+  const nativeReview = {...closure, async executeRemediation(request) {
+    if (interruptBeforeRemediationTransition) {
+      interruptBeforeRemediationTransition = false;
+      throw new Error("simulated host loss before remediation subject transition");
+    }
+    return closure.executeRemediation(request);
+  }};
   const service = createSliceCampaignService({
     store: owners.campaignStore, implementationReview: owners.implementationReview, nativeReview,
     reviewSubject: {async createCandidate(request) { return request; }, async createPhysicalProfile({subject: value}) { return {subject: value}; }},
@@ -133,23 +141,48 @@ test("native campaign closes one claim-backed finding through remediation and re
   assert.equal(readClaimEvidence(owners.claimStore, {schema_version: 1, request_id: "reliance", operation: "query_reverse_reliance",
     parameters: {consumer: "slice-builder:s12", limit: 10, cursor: null}}).result.reliances.length, 1);
 
-  delivered = remediatedResult;
+  const lineageOmittingResult = structuredClone(remediatedResult);
+  lineageOmittingResult.findings = [];
+  delivered = lineageOmittingResult;
   let reviewerConsumer = null;
   reviewer.review = async ({subject: expected, claimContext = null}) => {
     assert.deepEqual(expected, subject(delivered));
-    reviewerConsumer = claimContext?.consumer ?? null;
-    return {attemptId: `attempt:${delivered.subject.commit}`, result: structuredClone(delivered)};
+    if (claimContext !== null) reviewerConsumer = claimContext.consumer;
+    return {attemptId: `attempt:${delivered.subject.commit}`, result: structuredClone(delivered),
+      runtimeSessionId: "session-1", receipt: {transportReceiptDigest: "f".repeat(64)}};
   };
-  outcome = await service.runNativeRemediation({identity, expectedRevision: state.revision, request: {
+  const remediationRequest = {
     obligationId: "generic", authority, subjectTransitionId: "episode:candidate-2",
-    resultTransitionId: "episode:remediated", remediationSubject: episodeReference(
-      "checkpoint", remediatedResult.subject.commit, remediatedResult.subject.tree, reviewEpisodeDigest(remediatedResult.subject),
-    ), reviewerRequest: {subject: remediatedResult.subject, continuationSessionId: "session-1"},
+    resultTransitionId: "episode:remediated", remediationSubject: remediatedResult.subject,
+    reviewerRequest: {subject: remediatedResult.subject, continuationSessionId: "session-1"},
     findingAuthority: owners.authority, operationPrefix: "s12:remediated",
     contextRequest: {requestId: "s12:builder:remediated", consumer: {
       identity: "slice-builder:s12", revision: remediatedResult.subject.tree, decision_scope: "s12-native-review"},
       limitations: ["Claims are evidence records, not review acceptance."]},
-  }});
+  };
+  const remediationSubjectReference = episodeReference(
+    "checkpoint", remediatedResult.subject.commit, remediatedResult.subject.tree,
+    reviewEpisodeDigest(remediatedResult.subject),
+  );
+  await assert.rejects(service.runNativeRemediation({identity, expectedRevision: state.revision,
+    request: remediationRequest, remediationSubjectReference}),
+  /simulated host loss before remediation subject transition/);
+  state = service.recover(identity);
+  assert.equal(state.nativeReview.obligations.generic.status, "remediation_executing");
+  assert.equal(closure.recoverRemediation({binding: state.nativeReview.obligations.generic,
+    authority, subjectTransitionId: remediationRequest.subjectTransitionId,
+    resultTransitionId: remediationRequest.resultTransitionId}).providerEntry, "not_entered");
+  outcome = await service.runNativeRemediation({identity, expectedRevision: state.revision,
+    request: remediationRequest, remediationSubjectReference});
+  state = outcome.campaign;
+  assert.equal(outcome.failure.failureSignature, "result_contract_rejected");
+  assert.equal(state.nativeReview.obligations.generic.status, "correction_required");
+  assert.equal(state.nativeReview.obligations.generic.failure.recovery.rejectedResult.findings.length, 0);
+  assert.equal(state.nativeReview.obligations.generic.findings[0].findingId, "S12-001");
+  delivered = remediatedResult;
+  outcome = await service.correctNativeReviewResult({identity, expectedRevision: state.revision,
+    request: {...remediationRequest, resultTransitionId: "episode:remediated:corrected"},
+    recovery: state.nativeReview.obligations.generic.failure.recovery});
   state = outcome.campaign;
   assert.deepEqual(reviewerConsumer, {identity: "reviewer", revision: remediatedResult.subject.tree,
     decision_scope: "s12-native-review"});

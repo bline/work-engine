@@ -16,6 +16,7 @@ const THREAD_OPTION_FIELDS = new Map([
   ["approval_policy", "approvalPolicy"],
   ["sandbox", "sandbox"],
   ["model", "model"],
+  ["reasoning_effort", "effort"],
   ["service_tier", "serviceTier"],
   ["personality", "personality"],
 ]);
@@ -229,9 +230,15 @@ export function projectRuntimeManifest(document, {
       throw new TypeError(`role ${roleId} contract must be present in its exact skill inputs`);
     }
     const identityRoleContract = { path: contractPath };
-    const projectedSkills = skills.map((skill) => {
+    const projectedSkills = skills.map((skill, index) => {
       const runtimeRequirements = runtimeRequirementsByRole[`${roleId}:${skill.name}`];
-      return runtimeRequirements == null ? skill : { ...skill, runtimeRequirements };
+      const projected = {
+        ...skill,
+        identityPath: identitySkills[index].path,
+      };
+      return runtimeRequirements == null
+        ? projected
+        : { ...projected, runtimeRequirements };
     });
     const roleTemplate = {
       roleContract: {
@@ -410,7 +417,7 @@ export function satisfyRuntimeRequirements({ manifest, roleId, requirements, ski
     }
   } else {
     if (requirements.contract.kind !== "skill") throw new Error(`compiled skill ${skillName} requirements must identify a secondary skill`);
-    if (activatedSkill.path !== requiredPath) throw new Error(`runtime role ${roleId} compiled skill ${skillName} path differs from requirements`);
+    if (activatedSkill.identityPath !== requiredPath) throw new Error(`runtime role ${roleId} compiled skill ${skillName} path differs from requirements`);
   }
   const receipt = {
     schema_version: 1,

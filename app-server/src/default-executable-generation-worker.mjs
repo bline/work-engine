@@ -5,6 +5,14 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { runExecutableGenerationWorker } from "./executable-generation-worker-runtime.mjs";
 import { createSupervisorCampaignCapabilityDefinitions } from "./services/slice-campaign/capability-contract.mjs";
 
+const AMBIENT_ROLE_CAPABILITIES = new Set([
+  "capability.repository_evidence",
+  "capability.direct_source_observation",
+  "capability.repository_mutation",
+  "capability.deterministic_gate",
+  "capability.independent_review",
+]);
+
 const ENVIRONMENT_TOOLS = Object.freeze([{
   type: "namespace",
   name: "environment",
@@ -112,10 +120,11 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       )) : null;
     const roleToolBridgeResolver = (capabilityIds) => {
       if (!Array.isArray(capabilityIds)) throw new TypeError("role capabilities must be an array");
-      const registrations = capabilityIds.map((id) => {
+      const registrations = capabilityIds.flatMap((id) => {
         const registration = catalog.get(id);
-        if (!registration) throw new Error(`runtime role declares unknown capability ${id}`);
-        return registration;
+        if (registration) return [registration];
+        if (AMBIENT_ROLE_CAPABILITIES.has(id)) return [];
+        throw new Error(`runtime role declares unknown capability ${id}`);
       });
       return registrations.length === 0 ? null : new DynamicToolBridge(registrations);
     };

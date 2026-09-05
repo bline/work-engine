@@ -386,6 +386,14 @@ function checkedThreadOptions(role) {
   return options;
 }
 
+function partitionRoleOptions(options) {
+  const { effort, ...threadOptions } = options;
+  return {
+    threadOptions,
+    turnOptions: effort == null ? {} : { effort },
+  };
+}
+
 export class CodexAppServerAdapter {
   constructor({
     transport,
@@ -637,6 +645,7 @@ export class CodexAppServerAdapter {
     this.#requireCapability("turn_start");
     this.#requireCapability("client_message_id");
     const options = checkedThreadOptions({ threadOptions });
+    const partitioned = partitionRoleOptions(options);
     const tokenUsageByTurn = new Map();
     let threadId = null;
     const detach = this.onNotification((notification) => {
@@ -647,7 +656,7 @@ export class CodexAppServerAdapter {
     });
     try {
       const threadResponse = await this.transport.request("thread/start", {
-        ...options,
+        ...partitioned.threadOptions,
         developerInstructions,
         ephemeral: true,
       });
@@ -655,6 +664,7 @@ export class CodexAppServerAdapter {
       const turnResponse = await this.transport.request("turn/start", {
         threadId,
         clientUserMessageId,
+        ...partitioned.turnOptions,
         input: [{ type: "text", text, text_elements: [] }],
       });
       const turnId = turnResponse?.turn?.id;
@@ -768,7 +778,8 @@ export class CodexAppServerAdapter {
     if (skills.length > 0) this.#requireCapability("exact_skill_input");
     const dynamicTools = toolBridge?.specs() ?? [];
     if (dynamicTools.length > 0) this.#requireCapability("thread_scoped_dynamic_tools");
-    const threadOptions = checkedThreadOptions(role);
+    const roleOptions = checkedThreadOptions(role);
+    const { threadOptions, turnOptions } = partitionRoleOptions(roleOptions);
     let binding = await this.registry.get(role.logicalRoleInstanceId);
     if (boundControlTurn && !binding) {
       throw new Error("retirement control turn requires an existing runtime binding");
@@ -780,7 +791,7 @@ export class CodexAppServerAdapter {
       dynamicTools: environmentDynamicTools,
       providerCapabilities: this.negotiated.provider,
       role,
-      threadOptions,
+      threadOptions: roleOptions,
     });
 
     const skillItems = await this.skillResolver.resolve(skills);
@@ -792,7 +803,7 @@ export class CodexAppServerAdapter {
       requestContextInput: requestContextItem?.text ?? null,
       developerInstructions: role.developerInstructions ?? null,
       runtimeEnvironmentRevision: role.runtimeEnvironmentRevision ?? null,
-      threadOptions,
+      threadOptions: roleOptions,
       environmentFingerprint: bindingFingerprint,
     })).digest("hex");
     let createdThread = false;
@@ -886,6 +897,7 @@ export class CodexAppServerAdapter {
     const response = await this.transport.request("turn/start", {
       threadId,
       clientUserMessageId,
+      ...turnOptions,
       input: [
         ...skillItems,
         ...(requestContextItem ? [requestContextItem] : []),

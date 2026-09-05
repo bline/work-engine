@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -6,7 +7,10 @@ import path from "node:path";
 import test from "node:test";
 
 import { createImplementationReviewService } from "../src/services/implementation-review/service.mjs";
-import { createNativeReviewHostOwners } from "../src/services/slice-campaign/native-review-host.mjs";
+import {
+  createNativeReviewHostOwners as createProductionNativeReviewHostOwners,
+  materializeImmutableSubjectWorkspace,
+} from "../src/services/slice-campaign/native-review-host.mjs";
 import { createSupervisorCampaignCapabilityHostRuntime } from "../src/services/slice-campaign/capability-host-runtime.mjs";
 import { SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL } from "../src/services/slice-campaign/host-effect-runtime.mjs";
 import { createSliceCampaignService } from "../src/services/slice-campaign/service.mjs";
@@ -24,6 +28,26 @@ const legacyFactory = async () => ({identity: {backend: "fixture"}, preflight() 
 const effect = (operation, input) => ({generationId: "generation-native", effect: {
   protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL, capability: "capability.native_review", operation, input,
 }});
+
+function createNativeReviewHostOwners(options) {
+  return createProductionNativeReviewHostOwners({...options,
+    reviewerSubjectWorkspaceFactory: async () => repository});
+}
+
+test("native review materializes a clean local checkout of the exact immutable subject", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-subject-workspace-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  const commit = execFileSync("git", ["-C", repository, "rev-parse", "HEAD"], {encoding: "utf8"}).trim();
+  const tree = execFileSync("git", ["-C", repository, "rev-parse", "HEAD^{tree}"], {encoding: "utf8"}).trim();
+  const workspace = await materializeImmutableSubjectWorkspace({workspaceRoot: repository, stateRoot,
+    subject: {commit, tree, patchIdentity: "fixture"}});
+  assert.notEqual(workspace, repository);
+  assert.equal(execFileSync("git", ["-C", workspace, "rev-parse", "HEAD"], {encoding: "utf8"}).trim(), commit);
+  assert.equal(execFileSync("git", ["-C", workspace, "rev-parse", "HEAD^{tree}"], {encoding: "utf8"}).trim(), tree);
+  assert.equal(execFileSync("git", ["-C", workspace, "status", "--porcelain=v1"], {encoding: "utf8"}), "");
+  assert.equal(await materializeImmutableSubjectWorkspace({workspaceRoot: repository, stateRoot,
+    subject: {commit, tree, patchIdentity: "fixture"}}), workspace);
+});
 
 async function credentialSource(stateRoot) {
   const source = path.join(stateRoot, "fixture-credentials.json");
@@ -99,6 +123,179 @@ test("read-only supervisor executes one selected native review and recovers dura
   await assert.rejects(host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
     obligation_id: "unselected", operation_id: "native-host:unselected"})), /revision conflict|not selected/);
   assert.equal(calls.length, 1);
+});
+
+test("native remediation keeps the public subject identity while recording an episode reference", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-remediation-subject-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const calls = [];
+  const finding = {id: "subject-shape", severity: "high", title: "Episode subject shape is invalid",
+    evidence: result.decisiveEvidence, observed: "The episode received a raw public subject.",
+    violatedExpectation: "The episode requires an exact provenance reference.",
+    consequence: "Same-session remediation cannot begin.", basis: "reproduced", confidence: "high",
+    recommendedRemediation: "Translate the subject at the host boundary.", status: "open",
+    remediationEvidence: []};
+  const initialResult = {...result, verdict: "remediation_required", findings: [finding]};
+  const remediatedResult = {...result, findings: [{...finding, status: "verified_resolved",
+    remediationEvidence: result.decisiveEvidence}]};
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const sessionFlag = request.args.includes("--session-id") ? "--session-id" : "--resume";
+      const session = request.args[request.args.indexOf(sessionFlag) + 1];
+      calls.push({sessionFlag, session, prompt: request.args.at(-1)});
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5",
+        structured_output: calls.length === 1 ? initialResult : remediatedResult})};
+    }});
+  const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "native-host:remediation:initial"}));
+  campaign = dispatched.result.campaign;
+  dispatched = await host.dispatch(effect("execute_remediation", {identity,
+    expected_revision: campaign.revision, obligation_id: "generic",
+    operation_id: "native-host:remediation:continued", remediation_subject: subject}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(calls.map(({sessionFlag}) => sessionFlag), ["--session-id", "--resume"]);
+  assert.equal(calls[1].session, calls[0].session);
+  assert.match(calls[1].prompt, /Ordinary remediation continues the same recorded reviewer session/);
+});
+
+test("restart recovers a lineage-invalid remediation result and corrects it in the retained session", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-remediation-recovery-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const calls = [];
+  const finding = {id: "retained-finding", severity: "medium", title: "Retained finding",
+    evidence: result.decisiveEvidence, observed: "The initial review found a bounded defect.",
+    violatedExpectation: "Remediation must preserve finding lineage.",
+    consequence: "A later result could silently erase review history.", basis: "reproduced",
+    confidence: "high", recommendedRemediation: "Carry the finding through re-evaluation.",
+    status: "open", remediationEvidence: []};
+  const initialResult = {...result, verdict: "remediation_required", findings: [finding]};
+  const omittedResult = {...result, verdict: "acceptable_as_is", findings: []};
+  const correctedResult = {...result, findings: [{...finding, status: "verified_resolved",
+    remediationEvidence: result.decisiveEvidence}]};
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options,
+    reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const sessionIndex = Math.max(request.args.indexOf("--session-id"), request.args.indexOf("--resume"));
+      const session = request.args[sessionIndex + 1];
+      const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+      calls.push({session, resume: request.args.includes("--resume"), prompt: request.args.at(-1)});
+      if (calls.length === 2) {
+        const sessionDirectory = path.join(request.env.CLAUDE_CONFIG_DIR, "projects", "fixture");
+        await mkdir(sessionDirectory, {recursive: true});
+        await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          timestamp: new Date().toISOString(), sessionId: session,
+          message: {role: "assistant", content: [{type: "tool_use",
+            name: "StructuredOutput", input: omittedResult}]}})}\n`, {flag: "a"});
+        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "success"}));
+        return {exitCode: 0, stdout: "host-lost-the-remediation-envelope", stderr: ""};
+      }
+      await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "success"}));
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5",
+        structured_output: calls.length === 1 ? initialResult : correctedResult})};
+    }});
+  let host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "stranded-remediation:initial"}));
+  campaign = dispatched.result.campaign;
+  await assert.rejects(host.dispatch(effect("execute_remediation", {identity,
+    expected_revision: campaign.revision, obligation_id: "generic",
+    operation_id: "stranded-remediation:continued", remediation_subject: subject})), /malformed JSON/);
+  host.close();
+
+  host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.obligation.status, "remediation_executing");
+  assert.equal(recovered.result.recovery.failureSignature, "result_contract_rejected");
+  assert.match(recovered.result.recovery.message, /findings cannot be deleted/);
+  dispatched = await host.dispatch(effect("correct_result", {identity,
+    expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
+    operation_id: "stranded-remediation:continued"}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(calls.length, 3);
+  assert.equal(calls[2].session, calls[0].session);
+  assert.equal(calls[2].resume, true);
+  assert.match(calls[2].prompt, /same-session correction/);
+  assert.match(calls[2].prompt, /AUTHORITATIVE PRIOR EPISODE RESULT/);
+  assert.match(calls[2].prompt, /retained-finding/);
+  assert.match(calls[2].prompt, /every one of its findings must remain present by exact id/);
+});
+
+test("restart admits an already-returned valid remediation result without replaying the reviewer", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-remediation-admission-recovery-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const calls = [];
+  const finding = {id: "retained-finding", severity: "medium", title: "Retained finding",
+    evidence: result.decisiveEvidence, observed: "The initial review found a bounded defect.",
+    violatedExpectation: "Remediation must preserve finding lineage.",
+    consequence: "A later result could silently erase review history.", basis: "reproduced",
+    confidence: "high", recommendedRemediation: "Carry the finding through re-evaluation.",
+    status: "open", remediationEvidence: []};
+  const initialResult = {...result, verdict: "remediation_required", findings: [finding]};
+  const remediatedResult = {...result, findings: [{...finding, status: "verified_resolved",
+    remediationEvidence: result.decisiveEvidence}]};
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options,
+    reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const sessionIndex = Math.max(request.args.indexOf("--session-id"), request.args.indexOf("--resume"));
+      const session = request.args[sessionIndex + 1];
+      const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+      calls.push({session, resume: request.args.includes("--resume")});
+      if (calls.length === 2) {
+        const sessionDirectory = path.join(request.env.CLAUDE_CONFIG_DIR, "projects", "fixture");
+        await mkdir(sessionDirectory, {recursive: true});
+        await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          timestamp: new Date().toISOString(), sessionId: session,
+          message: {role: "assistant", content: [{type: "tool_use",
+            name: "StructuredOutput", input: remediatedResult}]}})}\n`, {flag: "a"});
+        await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "success"}));
+        return {exitCode: 0, stdout: "host-lost-the-valid-remediation-envelope", stderr: ""};
+      }
+      await writeFile(receiptPath, JSON.stringify({request: {session_id: session}, result: "success"}));
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5", structured_output: initialResult})};
+    }});
+  let host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "valid-remediation-recovery:initial"}));
+  campaign = dispatched.result.campaign;
+  await assert.rejects(host.dispatch(effect("execute_remediation", {identity,
+    expected_revision: campaign.revision, obligation_id: "generic",
+    operation_id: "valid-remediation-recovery:continued", remediation_subject: subject})), /malformed JSON/);
+  host.close();
+
+  host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.obligation.status, "remediation_executing");
+  assert.equal(recovered.result.recovery.failureSignature, "result_contract_corrected");
+  dispatched = await host.dispatch(effect("correct_result", {identity,
+    expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
+    operation_id: "valid-remediation-recovery:admit"}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.findings[0].outcome,
+    "verified_resolved");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].session, calls[0].session);
+  assert.equal(calls[1].resume, true);
 });
 
 test("read-only supervisor executes the selected agent-instruction specialist with an immutable closure", async (t) => {

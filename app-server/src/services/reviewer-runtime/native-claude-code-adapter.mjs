@@ -172,7 +172,8 @@ export class NativeClaudeCodeReviewerAdapter {
   constructor({registry, workspaceRoot, stateRoot, executeProcess = execute,
     pythonExecutable = "python3", claudeExecutable = "claude",
     transportScript = "skills/claude-recon-implementation/scripts/claude_transport.py",
-    catalogSource = null, baseEnvironment = process.env, credentialSourcePath = null} = {}) {
+    catalogSource = null, baseEnvironment = process.env, credentialSourcePath = null,
+    subjectWorkspaceFactory = async ({workspaceRoot: root}) => root} = {}) {
     if (!registry?.admit) throw new TypeError("native Claude adapter requires a reviewer registry");
     if (!workspaceRoot || !stateRoot) throw new TypeError("native Claude adapter requires host-owned workspace and state roots");
     Object.assign(this, {registry, workspaceRoot: path.resolve(workspaceRoot), stateRoot: path.resolve(stateRoot),
@@ -180,6 +181,7 @@ export class NativeClaudeCodeReviewerAdapter {
       transportScript: path.resolve(workspaceRoot, transportScript),
       catalogSource: catalogSource === null ? null : Object.freeze(structuredClone(catalogSource)),
       baseEnvironment: Object.freeze({...baseEnvironment}),
+      subjectWorkspaceFactory,
       credentialSourcePath: path.resolve(credentialSourcePath
         ?? path.join(baseEnvironment.CLAUDE_CONFIG_DIR
           ?? path.join(baseEnvironment.HOME ?? "", ".claude"), ".credentials.json"))});
@@ -362,9 +364,10 @@ export class NativeClaudeCodeReviewerAdapter {
     }}}, null, 2)}\n`, {mode: 0o600});
     const specialist = roleInstructions.includes(SPECIALIST_MARKER);
     const selectedInstructions = obligationInstructions(roleInstructions);
+    const requiredPriorResult = resultCorrection?.requiredPriorResult ?? null;
     const task = resultCorrection === null
-      ? `Review only the immutable subject below. Return only the required structured result. Do not mutate files, run gates, select reviewers, accept work, or use network tools.\n\nSUBJECT\n${JSON.stringify(subject)}`
-      : `This is a same-session correction of your previously returned structured result, not a new review. Do not repeat repository reconnaissance or invoke tools. Preserve the exact subject, findings, and evidence unless the stated contract rejection itself requires a semantic correction. Reconcile your own verdict, findings, decisive evidence, and limitations, then return only one corrected structured result. The host will apply the unchanged canonical validator; the host is not choosing or rewriting your judgment.\n\nCONTRACT REJECTION\n${resultCorrection.message}\n\nPREVIOUS STRUCTURED RESULT\n${JSON.stringify(resultCorrection.rejectedResult)}\n\nSUBJECT\n${JSON.stringify(subject)}`;
+      ? `Review only the immutable subject below. The host has mounted that exact commit as your working directory. Use working-directory files for all exact file evidence; Codebase Memory may supply structural context but does not replace the mounted subject bytes. Return only the required structured result. Do not mutate files, run gates, select reviewers, accept work, or use network tools.\n\nSUBJECT\n${JSON.stringify(subject)}`
+      : `This is a same-session correction of your previously returned structured result, not a new review. Do not repeat repository reconnaissance or invoke tools. Preserve the exact subject, findings, and evidence unless the stated contract rejection itself requires a semantic correction. Reconcile your own verdict, findings, decisive evidence, and limitations, then return only one corrected structured result. The host will apply the unchanged canonical validator; the host is not choosing or rewriting your judgment.${requiredPriorResult === null ? "" : " The authoritative prior result below is part of the episode lineage: every one of its findings must remain present by exact id, with a valid current status, in the corrected result."}\n\nCONTRACT REJECTION\n${resultCorrection.message}\n\nPREVIOUS STRUCTURED RESULT\n${JSON.stringify(resultCorrection.rejectedResult)}${requiredPriorResult === null ? "" : `\n\nAUTHORITATIVE PRIOR EPISODE RESULT\n${JSON.stringify(requiredPriorResult)}`}\n\nSUBJECT\n${JSON.stringify(subject)}`;
     const prompt = `${selectedInstructions}\n\nExecution-profile constraints are subordinate to the selected review obligation and its canonical instructions:\n${profile.effectiveInstructions}\n\nKnown execution limitations:\n${profile.limitations.length ? profile.limitations.map((limitation) => `- ${limitation}`).join("\n") : "- None declared."}\n\n${task}`;
     const claudeArgs = ["-p", "--effort", profile.reasoning, "--model", profile.requestedModel,
       ...(continuationSessionId === null ? ["--session-id", expectedSession] : ["--resume", expectedSession]),
@@ -378,8 +381,11 @@ export class NativeClaudeCodeReviewerAdapter {
       schemaVersion: 1, attemptId, sessionId: expectedSession,
       transportReceipt: path.basename(receiptPath),
     })}\n`, {mode: 0o600});
+    const subjectWorkspace = path.resolve(await this.subjectWorkspaceFactory({
+      workspaceRoot: this.workspaceRoot, stateRoot: this.stateRoot, instanceId, subject,
+    }));
     let transport;
-    try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: this.workspaceRoot}); }
+    try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: subjectWorkspace}); }
     catch (error) { throw new ReviewerRuntimeError("spawn", `native Claude process start failed: ${error.message}`); }
     let transportReceipt = null;
     try { transportReceipt = JSON.parse(await readFile(receiptPath, "utf8")); } catch {}

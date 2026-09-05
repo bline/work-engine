@@ -1,7 +1,8 @@
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { access, readFile } from "node:fs/promises";
+import { execFile, execFileSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
+import { access, mkdir, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import { parse as parseYaml } from "yaml";
 
 import { projectRuntimeManifest, loadRuntimeManifestDocument } from "../../runtime-manifest.mjs";
@@ -12,7 +13,7 @@ import { createReviewFindingBridge } from "../claim-evidence/review-finding-brid
 import { openSqliteClaimEvidenceStore } from "../claim-evidence/sqlite-store.mjs";
 import { createImplementationReviewService } from "../implementation-review/service.mjs";
 import { ImplementationReviewError } from "../implementation-review/contract.mjs";
-import { createReviewEpisodeService } from "../review-episode/service.mjs";
+import { createReviewEpisodeService, ReviewEpisodeResultError } from "../review-episode/service.mjs";
 import { digest as episodeDigest } from "../review-episode/contract.mjs";
 import { openSqliteReviewEpisodeStore } from "../review-episode/sqlite-store.mjs";
 import { NativeClaudeCodeReviewerAdapter } from "../reviewer-runtime/native-claude-code-adapter.mjs";
@@ -20,6 +21,7 @@ import { ReviewerProfileRegistry } from "../reviewer-runtime/profile-registry.mj
 import { createNativeReviewClosureService } from "./native-review-closure.mjs";
 
 const PROFILE_ID = "anthropic.claude-code.sonnet-review-v1";
+const run = promisify(execFile);
 const POLICY = Object.freeze({classification: "confidential", access: "episode actors",
   retention: "bounded projection retained", exactRetentionAuthorized: false,
   redaction: "raw bodies omitted", tamperEvidence: "sha256 digest"});
@@ -52,6 +54,52 @@ function exactPreSpawnRecovery(recovery, expectedSession) {
     && recovery.sessionId === expectedSession ? recovery : null;
 }
 function lineCount(content) { return Math.max(1, content.split("\n").length - (content.endsWith("\n") ? 1 : 0)); }
+
+async function inspectSubjectWorkspace(directory, subject) {
+  const identity = await run("git", ["-C", directory, "rev-parse", "HEAD", "HEAD^{tree}"], {
+    encoding: "utf8",
+  });
+  const [commit, tree] = identity.stdout.trim().split(/\s+/);
+  if (commit !== subject.commit || tree !== subject.tree) {
+    throw new Error("native review subject workspace differs from the immutable subject");
+  }
+  const status = await run("git", ["-C", directory, "status", "--porcelain=v1"], {encoding: "utf8"});
+  if (status.stdout.trim()) throw new Error("native review subject workspace is not clean");
+  return path.resolve(directory);
+}
+
+export async function materializeImmutableSubjectWorkspace({workspaceRoot, stateRoot, subject}) {
+  const source = path.resolve(workspaceRoot);
+  const root = path.join(path.resolve(stateRoot), "review-subject-workspaces");
+  const target = path.join(root, subject.tree);
+  const sourceIdentity = await run("git", ["-C", source, "rev-parse",
+    `${subject.commit}^{commit}`, `${subject.commit}^{tree}`], {encoding: "utf8"});
+  const [commit, tree] = sourceIdentity.stdout.trim().split(/\s+/);
+  if (commit !== subject.commit || tree !== subject.tree) {
+    throw new Error("native review subject identity is unavailable from the host repository");
+  }
+  try {
+    await access(target);
+    return await inspectSubjectWorkspace(target, subject);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  await mkdir(root, {recursive: true, mode: 0o700});
+  const temporary = path.join(root, `.${subject.tree}.${randomUUID()}.tmp`);
+  try {
+    await run("git", ["clone", "--shared", "--no-checkout", "--quiet", "--", source, temporary]);
+    await run("git", ["-C", temporary, "checkout", "--detach", "--quiet", subject.commit]);
+    await inspectSubjectWorkspace(temporary, subject);
+    try { await rename(temporary, target); }
+    catch (error) {
+      if (!["EEXIST", "ENOTEMPTY"].includes(error?.code)) throw error;
+      await inspectSubjectWorkspace(target, subject);
+    }
+    return await inspectSubjectWorkspace(target, subject);
+  } finally {
+    await rm(temporary, {recursive: true, force: true});
+  }
+}
 
 function gitBlob(workspaceRoot, commit, filePath) {
   return execFileSync("git", ["-C", workspaceRoot, "show", `${commit}:${filePath}`], {encoding: "utf8"});
@@ -98,6 +146,7 @@ async function openClaims(filePath, authority) {
 export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   reviewerExecuteProcess, claudeExecutable = "claude", pythonExecutable = "python3",
   reviewerCredentialSourcePath = null,
+  reviewerSubjectWorkspaceFactory = materializeImmutableSubjectWorkspace,
   runtimeSourceRoot = new URL("../../../../", import.meta.url).pathname} = {}) {
   const manifestPath = path.join(runtimeSourceRoot, "app-server/runtime-manifest.yaml");
   const loadedManifest = await loadRuntimeManifestDocument(manifestPath);
@@ -115,6 +164,7 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
     stateRoot: path.join(stateRoot, "reviewer-runtime"), executeProcess: reviewerExecuteProcess,
     claudeExecutable, pythonExecutable,
     credentialSourcePath: reviewerCredentialSourcePath,
+    subjectWorkspaceFactory: reviewerSubjectWorkspaceFactory,
     transportScript: path.join(runtimeSourceRoot, "skills/claude-recon-implementation/scripts/claude_transport.py"),
     catalogSource});
   const agentInstructionReview = createAgentInstructionReviewService();
@@ -180,6 +230,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
   const recoverProviderResult = async (campaign, obligationId) => {
     const recovered = await owners.adapter.recoverResult(instanceId(campaign.identity, obligationId), subjectOf(campaign));
     if (!recovered) return null;
+    const obligation = campaign.nativeReview?.obligations?.[obligationId] ?? null;
     const disposition = campaign.reviewSelection?.specialists
       .find(({obligationId: value}) => value === obligationId);
     let implementationResult = recovered.result;
@@ -191,6 +242,11 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       }
       owners.implementationReview.admit({result: implementationResult,
         expectedSubject: subjectOf(campaign)});
+      if (obligation?.status === "remediation_executing") {
+        const {base} = request(campaign, obligationId, "recover-provider-result");
+        owners.nativeReview.validateRecoveredResult({binding: obligation,
+          authority: base.authority, result: implementationResult});
+      }
       return Object.freeze({schemaVersion: 1, failureSignature: "result_contract_corrected",
         providerEntry: "entered", sessionAvailable: true, sessionId: recovered.sessionId,
         correctedResult: recovered.result, correctedResultDigest: recovered.resultDigest,
@@ -199,7 +255,8 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         sessionArtifactDigest: recovered.sessionArtifactDigest});
     } catch (error) {
       if (!(error instanceof ImplementationReviewError)
-          && !(error instanceof AgentInstructionReviewError)) throw error;
+          && !(error instanceof AgentInstructionReviewError)
+          && !(error instanceof ReviewEpisodeResultError)) throw error;
       return Object.freeze({schemaVersion: 1, failureSignature: "result_contract_rejected",
         providerEntry: "entered", sessionAvailable: true, sessionId: recovered.sessionId,
         message: error.message, rejectedResult: recovered.result,
@@ -233,7 +290,9 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
           : obligation?.status === "retry_executing"
             ? await recoverProviderResult(campaign, obligation_id)
             : obligation?.status === "correction_executing"
-              ? await recoverProviderResult(campaign, obligation_id) : null;
+              ? await recoverProviderResult(campaign, obligation_id)
+              : obligation?.status === "remediation_executing"
+                ? await recoverProviderResult(campaign, obligation_id) : null;
       return Object.freeze({campaign_revision: campaign.revision,
         obligation, recovery});
     },
@@ -261,7 +320,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
       const recovery = obligation?.status === "correction_required"
         ? obligation.failure?.recovery ?? null
-        : ["retry_executing", "correction_executing"].includes(obligation?.status)
+        : ["retry_executing", "correction_executing", "remediation_executing"].includes(obligation?.status)
           ? await recoverProviderResult(campaign, obligation_id) : null;
       if (!recovery) throw new Error("native review result correction has no exact provider result evidence");
       const {base} = request(campaign, obligation_id, operation_id, {
@@ -290,10 +349,13 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       remediation_subject}) {
       const campaign = campaignService.recover(identity);
       const {base} = request(campaign, obligation_id, operation_id, {remediationSubject: remediation_subject});
+      const remediationSubjectReference = ref("checkpoint", remediation_subject.commit,
+        remediation_subject.tree, episodeDigest(remediation_subject));
       const outcome = await campaignService.runNativeRemediation({identity, expectedRevision: expected_revision,
         request: {...base, subjectTransitionId: `${operation_id}:subject`, resultTransitionId: `${operation_id}:result`,
-          remediationSubject: remediation_subject}});
-      return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext});
+          remediationSubject: remediation_subject}, remediationSubjectReference});
+      return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext,
+        failure: outcome.failure ?? null});
     },
   });
 }
