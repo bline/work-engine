@@ -10,6 +10,15 @@ function episodeRef(state) {
   return reference("review-episode", `review-episode@${episodeDigest(state.identity)}`, state.revision, state);
 }
 function status(episode) { return episode.phase === "reported" ? "reported" : "awaiting_builder"; }
+function relianceComplete(findings) {
+  return findings.length > 0
+    && findings.every((item) => item.outcome === "verified_resolved" && item.relianceRef !== null);
+}
+function withRelianceStatus(current, findings) {
+  return Object.freeze({...current,
+    status: current.status === "awaiting_builder" && relianceComplete(findings) ? "reported" : current.status,
+    findings});
+}
 function binding({obligationId, episode, findings, prior = null}) {
   return Object.freeze({
     schemaVersion: 1, obligationId, status: status(episode),
@@ -198,14 +207,14 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     recordBuilderEvaluation({binding: current, authority, operationId, findingId, consumer, consumerRevision, decisionScope}) {
       const finding = current.findings.find((item) => item.findingId === findingId);
       if (!finding) throw new Error("native review finding evaluation names an unknown finding");
-      if (finding.relianceRef !== null) throw new Error("native review finding already has builder reliance");
+      if (finding.relianceRef !== null) {
+        const reconciled = withRelianceStatus(current, current.findings);
+        if (reconciled.status !== current.status) return reconciled;
+        throw new Error("native review finding already has builder reliance");
+      }
       const evaluated = findingBridge.recordReliance({authority, operationId, finding, consumer, consumerRevision, decisionScope});
       const findings = current.findings.map((item) => item.findingId === findingId ? evaluated : item);
-      const relianceComplete = findings.length > 0
-        && findings.every((item) => item.outcome === "verified_resolved" && item.relianceRef !== null);
-      return Object.freeze({...current,
-        status: current.status === "awaiting_builder" && relianceComplete ? "reported" : current.status,
-        findings});
+      return withRelianceStatus(current, findings);
     },
     async executeRemediation({binding: current, reviewSkill, authority, subjectTransitionId, resultTransitionId, remediationSubject, reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true}) {
       let episode = reviewEpisode.recover(authority.identity);

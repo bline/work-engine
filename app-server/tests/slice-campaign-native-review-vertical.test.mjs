@@ -98,6 +98,12 @@ test("resolved native findings become reported only after every exact builder re
     operationId: "rely:F2", findingId: "F2"});
   assert.equal(binding.status, "reported");
 
+  const stranded = {...binding, status: "awaiting_builder"};
+  binding = closure.recordBuilderEvaluation({...request, binding: stranded,
+    operationId: "rely:F1", findingId: "F1"});
+  assert.equal(binding.status, "reported");
+  assert.deepEqual(binding.findings, stranded.findings);
+
   const open = {...resolved("F3"), outcome: "open"};
   binding = closure.recordBuilderEvaluation({...request,
     binding: {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder", findings: [open]},
