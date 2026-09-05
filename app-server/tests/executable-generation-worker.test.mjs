@@ -854,6 +854,17 @@ test("environment tools bind a reload to the provider turn and activate after tu
     },
   }), /reload requesting turn id must be a non-empty string/);
   await assert.rejects(delegate.invokeServerRequest({
+    id: 31,
+    method: "item/tool/call",
+    params: {
+      turnId: "turn-2",
+      callId: "call-reload-explicit-turn-without-thread",
+      namespace: "environment",
+      tool: "reload",
+      arguments: {},
+    },
+  }), /reload requesting turn id must be a non-empty string/);
+  await assert.rejects(delegate.invokeServerRequest({
     id: 4,
     method: "item/tool/call",
     params: {
@@ -903,6 +914,39 @@ test("environment tools bind a reload to the provider turn and activate after tu
   assert.equal((await completed.promise).method, "turn/completed");
   assert.notEqual(bootstrap.manager.snapshot().activeGeneration.generationId, predecessorId);
   assert.equal(bootstrap.manager.snapshot().reload, null);
+
+  await bootstrap.transport.request("thread/start", { cwd: workspaceRoot });
+  await bootstrap.transport.request("turn/start", {
+    threadId: "thread-2",
+    input: [{ type: "text", text: "nested role reload" }],
+  });
+  await appendFile(path.join(targetRoot, "default-executable-generation-worker.mjs"), "\n");
+  const nestedReload = await delegate.invokeServerRequest({
+    id: 6,
+    method: "item/tool/call",
+    params: {
+      threadId: "inner-role-thread",
+      turnId: "inner-role-turn",
+      callId: "call-nested-reload",
+      namespace: "environment",
+      tool: "reload",
+      arguments: {},
+    },
+  });
+  assert.equal(JSON.parse(nestedReload.contentItems[0].text).status, "staged");
+  const nestedPredecessorId = bootstrap.manager.snapshot().activeGeneration.generationId;
+  const nestedCompleted = deferred();
+  bootstrap.transport.onNotification((notification) => nestedCompleted.resolve(notification));
+  delegate.emitNotification({
+    method: "turn/completed",
+    params: { threadId: "thread-2", turn: { id: "turn-3", status: "completed", items: [] } },
+  });
+  await nestedCompleted.promise;
+  assert.notEqual(
+    bootstrap.manager.snapshot().activeGeneration.generationId,
+    nestedPredecessorId,
+  );
+  assert.equal(bootstrap.manager.snapshot().reload, null);
 });
 
 test("turn-completion lifecycle failures are surfaced without an unhandled rejection", async (t) => {
@@ -933,6 +977,7 @@ test("turn-completion lifecycle failures are surfaced without an unhandled rejec
   });
   transport.onLifecycleError((error) => lifecycleFailure.resolve(error));
   transport.turnAdmissions.set("turn-1", { id: "provider-turn:turn-1" });
+  transport.turnThreads.set("turn-1", "thread-1");
 
   delegate.notificationHandler({
     method: "turn/completed",
@@ -940,6 +985,8 @@ test("turn-completion lifecycle failures are surfaced without an unhandled rejec
   });
 
   assert.equal((await lifecycleFailure.promise).message, "durable close failed");
+  assert.equal(transport.turnAdmissions.has("turn-1"), true);
+  assert.equal(transport.turnThreads.get("turn-1"), "thread-1");
 });
 
 test("manifest generation intercepts commands and routes ordinary shell turns to one role", async (t) => {

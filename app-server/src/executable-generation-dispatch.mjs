@@ -103,8 +103,14 @@ export class ExecutableGenerationDispatchHost {
       if (result.control === "environment.status") {
         return toolResponse(this.manager.snapshot());
       }
+      const activeTurnAdmissions = this.manager.snapshot().admissions.filter(
+        (admission) => admission.kind === "turn",
+      );
+      const reloadTurnId = requestedByTurnId ?? (
+        activeTurnAdmissions.length === 1 ? activeTurnAdmissions[0].subjectId : null
+      );
       const staged = await this.manager.requestReload({
-        requestedByTurnId: text(requestedByTurnId, "reload requesting turn id"),
+        requestedByTurnId: text(reloadTurnId, "reload requesting turn id"),
         source: { source: "configured_executable_inventory" },
       });
       return toolResponse({
@@ -209,8 +215,8 @@ export class GenerationBoundAppServerTransport {
     const explicitTurnId = request?.params?.turnId;
     const requestThreadId = request?.params?.threadId;
     const turnId = typeof explicitTurnId === "string"
-      ? (typeof requestThreadId !== "string"
-          || this.turnThreads.get(explicitTurnId) === requestThreadId
+      ? (typeof requestThreadId === "string"
+          && this.turnThreads.get(explicitTurnId) === requestThreadId
         ? explicitTurnId
         : null)
       : this.#activeTurnForThread(request?.params?.threadId);
@@ -244,7 +250,6 @@ export class GenerationBoundAppServerTransport {
       const turnId = notification.params?.turn?.id;
       if (typeof turnId === "string") {
         const admission = this.turnAdmissions.get(turnId);
-        this.turnThreads.delete(turnId);
         if (admission) {
           generationResult = await this.dispatchHost.runInAdmission({
             kind: "turn",
@@ -253,9 +258,11 @@ export class GenerationBoundAppServerTransport {
             payload: notification,
           }, () => { forwardNotification = true; }, (generation, effectPayload) =>
             this.#performGenerationEffect(generation, effectPayload));
-          this.turnAdmissions.delete(turnId);
           reloadCompletion = this.dispatchHost.manager.closeAdmission(admission);
+          this.turnAdmissions.delete(turnId);
+          this.turnThreads.delete(turnId);
         } else {
+          this.turnThreads.delete(turnId);
           this.completedBeforeAdmission.add(turnId);
           if (this.completedBeforeAdmission.size > 256) {
             this.completedBeforeAdmission.delete(this.completedBeforeAdmission.values().next().value);
