@@ -75,6 +75,94 @@ async function stores(t, directory, {bootstrap = false} = {}) {
   return {implementationReview, episodeStore, campaignStore, claimStore, authority};
 }
 
+test("resolved native findings become reported only after every exact builder reliance", () => {
+  const reliance = (finding) => Object.freeze({...finding, relianceRef: episodeReference(
+    "claim-evidence", `reliance:${finding.findingId}`, `reliance:${finding.findingId}`, "f".repeat(64),
+  )});
+  const closure = createNativeReviewClosureService({
+    reviewEpisode: {begin() {}, transition() {}, recover() {}, read() {}},
+    reviewer: {review() {}},
+    findingBridge: {publishFindings() {}, project() {}, recordReliance: ({finding}) => reliance(finding)},
+  });
+  const resolved = (findingId) => ({findingId, outcome: "verified_resolved",
+    revisionRef: episodeReference("claim-evidence", `finding:${findingId}`, `revision:${findingId}`, "e".repeat(64)),
+    relianceRef: null});
+  const request = {authority: {}, consumer: "slice-builder:test", consumerRevision: "candidate-tree",
+    decisionScope: "slice-campaign-native-review"};
+  let binding = {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder",
+    findings: [resolved("F1"), resolved("F2")]};
+  binding = closure.recordBuilderEvaluation({...request, binding,
+    operationId: "rely:F1", findingId: "F1"});
+  assert.equal(binding.status, "awaiting_builder");
+  binding = closure.recordBuilderEvaluation({...request, binding,
+    operationId: "rely:F2", findingId: "F2"});
+  assert.equal(binding.status, "reported");
+
+  const open = {...resolved("F3"), outcome: "open"};
+  binding = closure.recordBuilderEvaluation({...request,
+    binding: {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder", findings: [open]},
+    operationId: "rely:F3", findingId: "F3"});
+  assert.equal(binding.status, "awaiting_builder");
+});
+
+test("campaign terminalization admits a reliance-complete resolved native closure", async () => {
+  const initialResult = await load("initial-finding");
+  const reliance = (finding) => Object.freeze({...finding, relianceRef: episodeReference(
+    "claim-evidence", `reliance:${finding.findingId}`, `reliance:${finding.findingId}`, "f".repeat(64),
+  )});
+  const closure = createNativeReviewClosureService({
+    reviewEpisode: {begin() {}, transition() {}, recover() {}, read() {}},
+    reviewer: {review() {}},
+    findingBridge: {publishFindings() {}, project() {}, recordReliance: ({finding}) => reliance(finding)},
+  });
+  const resolved = (findingId) => ({findingId, outcome: "verified_resolved",
+    revisionRef: episodeReference("claim-evidence", `finding:${findingId}`, `revision:${findingId}`, "e".repeat(64)),
+    relianceRef: null});
+  const nativeReview = {
+    async executeInitial({obligationId}) {
+      return {binding: {schemaVersion: 1, obligationId, status: "awaiting_builder",
+        findings: [resolved("F1"), resolved("F2")]}, builderContext: {}};
+    },
+    recordBuilderEvaluation: (request) => closure.recordBuilderEvaluation(request),
+  };
+  const campaignIdentity = {...identity, attemptId: "reliance-complete"};
+  const service = createSliceCampaignService({nativeReview,
+    reviewSubject: {async createCandidate(request) { return request; },
+      async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+    receiptFinalizer: {async finalize(value) { return value; }},
+  });
+  let state = service.admit({identity: campaignIdentity, workspace: "/s12-reliance-complete",
+    acceptedBoundary: {reference: "plan:s12", sha256: "1".repeat(64)},
+    baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "implementing", consequence: {}});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}});
+  state = await service.bindCandidate({identity: campaignIdentity, expectedRevision: state.revision,
+    request: candidate(initialResult)});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  state = service.bindReviewSelection({identity: campaignIdentity, expectedRevision: state.revision,
+    selection: selection(initialResult)});
+  state = (await service.runNativeReview({identity: campaignIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic"}})).campaign;
+  state = service.recordNativeFindingEvaluation({identity: campaignIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic", authority: {}, operationId: "rely:F1", findingId: "F1",
+      consumer: "slice-builder:test", consumerRevision: initialResult.subject.tree,
+      decisionScope: "slice-campaign-native-review"}}).campaign;
+  assert.equal(state.nativeReview.obligations.generic.status, "awaiting_builder");
+  await assert.rejects(service.terminalize({identity: campaignIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {}}), /completed native closure/);
+  state = service.recordNativeFindingEvaluation({identity: campaignIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic", authority: {}, operationId: "rely:F2", findingId: "F2",
+      consumer: "slice-builder:test", consumerRevision: initialResult.subject.tree,
+      decisionScope: "slice-campaign-native-review"}}).campaign;
+  assert.equal(state.nativeReview.obligations.generic.status, "reported");
+  state = await service.terminalize({identity: campaignIdentity, expectedRevision: state.revision,
+    outcome: "accepted", receipt: {status: "accepted"}});
+  assert.equal(state.phase, "terminal");
+});
+
 test("native campaign closes one claim-backed finding through remediation and restart", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "s12-native-review."));
   t.after(() => rm(directory, {recursive: true, force: true}));

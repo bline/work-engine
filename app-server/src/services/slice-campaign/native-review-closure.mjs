@@ -201,7 +201,11 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       if (finding.relianceRef !== null) throw new Error("native review finding already has builder reliance");
       const evaluated = findingBridge.recordReliance({authority, operationId, finding, consumer, consumerRevision, decisionScope});
       const findings = current.findings.map((item) => item.findingId === findingId ? evaluated : item);
-      return Object.freeze({...current, findings});
+      const relianceComplete = findings.length > 0
+        && findings.every((item) => item.outcome === "verified_resolved" && item.relianceRef !== null);
+      return Object.freeze({...current,
+        status: current.status === "awaiting_builder" && relianceComplete ? "reported" : current.status,
+        findings});
     },
     async executeRemediation({binding: current, reviewSkill, authority, subjectTransitionId, resultTransitionId, remediationSubject, reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true}) {
       let episode = reviewEpisode.recover(authority.identity);
