@@ -327,7 +327,8 @@ test("restart recovers a lineage-invalid remediation result and corrects it in t
   assert.match(calls[2].prompt, /same-session correction/);
   assert.match(calls[2].prompt, /AUTHORITATIVE PRIOR EPISODE RESULT/);
   assert.match(calls[2].prompt, /retained-finding/);
-  assert.match(calls[2].prompt, /every one of its findings must remain present by exact id/);
+  assert.match(calls[2].prompt, /Every prior finding must remain present by exact id/);
+  assert.match(calls[2].prompt, /copy these immutable fields exactly, without paraphrase or correction/);
 });
 
 test("restart admits an already-returned valid remediation result without replaying the reviewer", async (t) => {
@@ -495,6 +496,7 @@ test("agent-instruction specialist contract rejection preserves its outer result
   assert.equal(calls[1].session, calls[0].session);
   assert.match(calls[1].prompt, /PREVIOUS STRUCTURED RESULT/);
   assert.match(calls[1].prompt, /agent-instruction-review/);
+  assert.match(calls[1].prompt, /nested result field for a specialist review/);
 });
 
 test("admitted provider failure is durable and exact redelivery cannot replay inference", async (t) => {
@@ -562,7 +564,9 @@ test("provider-entered contract rejection is durable and only the exact retained
   assert.equal(calls[1].session, calls[0].session);
   assert.equal(calls[1].resume, true);
   assert.match(calls[1].prompt, /same-session correction/);
-  assert.match(calls[1].prompt, /acceptable_as_is requires decisive evidence and no limitation/);
+  assert.match(calls[1].prompt, /acceptable_as_is requires non-empty decisiveEvidence, an empty limitations array/);
+  assert.doesNotMatch(calls[1].prompt, /AUTHORITATIVE PRIOR EPISODE RESULT/);
+  assert.doesNotMatch(calls[1].prompt, /copy these immutable fields exactly/);
   assert.doesNotMatch(calls[0].prompt, /same-session correction/);
 });
 

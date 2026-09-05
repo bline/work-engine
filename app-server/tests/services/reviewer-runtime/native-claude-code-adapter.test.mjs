@@ -77,6 +77,42 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
     continuationSessionId: "00000000-0000-4000-8000-000000000000"}), /pre-registered session/);
 });
 
+test("native Claude correction prompt states immutable finding and result closure contracts", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-correction-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const credentialSourcePath = await credentials(root);
+  let prompt;
+  const priorFinding = {id: "prior", severity: "medium", title: "Prior title",
+    evidence: result.decisiveEvidence, observed: "Prior observation.",
+    violatedExpectation: "Prior expectation.", consequence: "Prior consequence.",
+    basis: "reproduced", confidence: "high", recommendedRemediation: "Prior remediation.",
+    status: "open", remediationEvidence: []};
+  const corrected = {...result, findings: [{...priorFinding, status: "verified_resolved",
+    remediationEvidence: result.decisiveEvidence}]};
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath, catalogSource,
+    transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
+      prompt = request.args.at(-1);
+      const resumeIndex = request.args.indexOf("--resume");
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[resumeIndex + 1], structured_output: corrected})};
+    },
+  });
+  const session = adapter.runtimeSessionId("correction");
+  await adapter.execute({instanceId: "correction", profileId: profile().profileId, subject,
+    catalogProjection: catalog, rawEventPolicy: policy, roleInstructions: "Read-only review.",
+    continuationSessionId: session, resultCorrection: {message: "contract rejected",
+      rejectedResult: {...result, limitations: ["Cannot accept."]},
+      requiredPriorResult: {...result, verdict: "remediation_required", findings: [priorFinding]}}});
+  assert.match(prompt, /copy these immutable fields exactly, without paraphrase or correction/);
+  assert.match(prompt, /You may change only status and remediationEvidence/);
+  assert.match(prompt, /Do not repair an old citation, replace old evidence with current-subject evidence/);
+  assert.match(prompt, /top-level result for a generic review and the nested result field for a specialist review/);
+  assert.match(prompt, /acceptable_as_is requires non-empty decisiveEvidence, an empty limitations array/);
+  assert.match(prompt, /Never combine acceptable_as_is with a limitation or unresolved finding/);
+});
+
 test("native Claude adapter refreshes isolated credentials only after exact retained authentication failure", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-auth-refresh-"));
   t.after(() => rm(root, {recursive: true, force: true}));
