@@ -315,6 +315,69 @@ test("native remediation can cycle through a newly bound immutable candidate", a
   assert.equal(state.phase, "terminal");
 });
 
+test("legacy remediation admission correction refuses uncertain provider entry", async () => {
+  const [initialResult, remediatedResult] = await Promise.all([
+    load("initial-finding"), load("remediated-finding"),
+  ]);
+  let remediationEntries = 0;
+  const nativeReview = {
+    async executeInitial({obligationId}) {
+      return {binding: {schemaVersion: 1, obligationId, status: "awaiting_builder",
+        findings: [{findingId: "S12-001"}]}, builderContext: {}};
+    },
+    recoverRemediation() { return {providerEntry: "unknown"}; },
+    async executeRemediation() {
+      remediationEntries += 1;
+      throw new Error("fixture interruption before remediation subject transition");
+    },
+  };
+  const service = createSliceCampaignService({implementationReview: createImplementationReviewService(), nativeReview,
+    reviewSubject: {async createCandidate(request) { return request; },
+      async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+    legacyReview: {async review() { return {status: "passed"}; }},
+    receiptFinalizer: {async finalize(value) { return value; }}});
+  const recoveryIdentity = {...identity, attemptId: "legacy-authority-uncertain"};
+  let state = service.admit({identity: recoveryIdentity, workspace: "/s12-legacy-authority-uncertain",
+    acceptedBoundary: {reference: "plan:s12", sha256: "1".repeat(64)},
+    baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+  state = service.advance({identity: recoveryIdentity, expectedRevision: state.revision,
+    phase: "implementing", consequence: {}});
+  state = service.advance({identity: recoveryIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}});
+  state = await service.bindCandidate({identity: recoveryIdentity, expectedRevision: state.revision,
+    request: candidate(initialResult)});
+  state = service.advance({identity: recoveryIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  state = service.bindReviewSelection({identity: recoveryIdentity, expectedRevision: state.revision,
+    selection: selection(initialResult)});
+  state = (await service.runNativeReview({identity: recoveryIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic", authority: {initialSubject: initialResult.subject},
+      beginTransitionId: "legacy-authority:begin", resultTransitionId: "legacy-authority:result",
+      reviewerRequest: {subject: initialResult.subject}}})).campaign;
+  state = service.advance({identity: recoveryIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}});
+  state = await service.bindCandidate({identity: recoveryIdentity, expectedRevision: state.revision,
+    request: candidate(remediatedResult)});
+  state = service.advance({identity: recoveryIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  const remediationSubjectReference = episodeReference("checkpoint", remediatedResult.subject.commit,
+    remediatedResult.subject.tree, reviewEpisodeDigest(remediatedResult.subject));
+  const correctedRequest = {obligationId: "generic", authority: {initialSubject: episodeReference(
+    "checkpoint", initialResult.subject.commit, initialResult.subject.tree, reviewEpisodeDigest(initialResult.subject))},
+  subjectTransitionId: "legacy-authority:subject", resultTransitionId: "legacy-authority:remediated",
+  remediationSubject: remediatedResult.subject, reviewerRequest: {subject: remediatedResult.subject}};
+  const legacyAdmittedRequest = {...correctedRequest,
+    authority: {...correctedRequest.authority, initialSubject: remediationSubjectReference}};
+  await assert.rejects(service.runNativeRemediation({identity: recoveryIdentity,
+    expectedRevision: state.revision, request: legacyAdmittedRequest, remediationSubjectReference}),
+  /fixture interruption before remediation subject transition/);
+  state = service.recover(recoveryIdentity);
+  await assert.rejects(service.runNativeRemediation({identity: recoveryIdentity,
+    expectedRevision: state.revision, request: correctedRequest, remediationSubjectReference,
+    legacyAdmittedRequest}), /durable execution admission/);
+  assert.equal(remediationEntries, 1);
+});
+
 test("native closure recovers post-result claim failure without replaying provider entry", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "s12-native-recovery."));
   t.after(() => rm(directory, {recursive: true, force: true}));

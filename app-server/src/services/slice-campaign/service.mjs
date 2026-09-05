@@ -345,7 +345,8 @@ export function createSliceCampaignService({
       return freeze({campaign: publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
         [request.obligationId]: binding})}, state.revision)});
     },
-    async runNativeRemediation({ identity, expectedRevision, request, remediationSubjectReference = null }) {
+    async runNativeRemediation({ identity, expectedRevision, request, remediationSubjectReference = null,
+      legacyAdmittedRequest = null }) {
       const state = current(identity); requireRevision(state, expectedRevision);
       const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
       if (state.phase !== "review_ready"
@@ -365,16 +366,41 @@ export function createSliceCampaignService({
           [request.obligationId]: freeze({...currentObligation,
             status: "remediation_executing", requestDigest})})}, state.revision);
         allowProviderEntry = true;
-      } else if (currentObligation.requestDigest !== requestDigest) {
-        throw new Error("native remediation request conflicts with durable execution admission");
       } else {
-        const recovery = nativeReview.recoverRemediation({
+        const recoveryRequest = {
           binding: currentObligation,
           authority: request.authority,
           subjectTransitionId: request.subjectTransitionId,
           resultTransitionId: request.resultTransitionId,
-        });
-        if (recovery.providerEntry === "not_entered") allowProviderEntry = true;
+        };
+        if (currentObligation.requestDigest !== requestDigest) {
+          const legacyAuthority = legacyAdmittedRequest?.authority;
+          const reconstructed = legacyAuthority && request.authority ? {
+            ...legacyAdmittedRequest,
+            authority: {...legacyAuthority, initialSubject: request.authority.initialSubject},
+          } : null;
+          const exactLegacyAuthorityDefect = Boolean(legacyAdmittedRequest !== null
+            && legacyAuthority?.initialSubject
+            && digest(legacyAdmittedRequest) === currentObligation.requestDigest
+            && digest(reconstructed) === requestDigest
+            && digest(legacyAuthority.initialSubject) === digest(remediationSubjectReference));
+          if (!exactLegacyAuthorityDefect) {
+            throw new Error("native remediation request conflicts with durable execution admission");
+          }
+          const recovery = nativeReview.recoverRemediation(recoveryRequest);
+          if (recovery.providerEntry !== "not_entered") {
+            throw new Error("native remediation request conflicts with durable execution admission");
+          }
+          prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
+            [request.obligationId]: freeze({...currentObligation, requestDigest,
+              admissionCorrection: freeze({schemaVersion: 1,
+                reason: "legacy_authority_initial_subject_reconstructed_pre_provider",
+                previousRequestDigest: currentObligation.requestDigest})})})}, state.revision);
+          allowProviderEntry = true;
+        } else {
+          const recovery = nativeReview.recoverRemediation(recoveryRequest);
+          if (recovery.providerEntry === "not_entered") allowProviderEntry = true;
+        }
       }
       const outcome = await nativeReview.executeRemediation({binding: nativeObligations(prepared)[request.obligationId],
         ...request,

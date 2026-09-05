@@ -77,10 +77,20 @@ function reviewerContextRequest({contextRequest, authority, reviewerRequest}) {
 }
 
 export function createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge} = {}) {
-  if (!reviewEpisode?.begin || !reviewEpisode?.transition || !reviewEpisode?.recover) throw new TypeError("native review closure requires Review Episode");
+  if (!reviewEpisode?.begin || !reviewEpisode?.transition || !reviewEpisode?.recover
+      || !reviewEpisode?.read) throw new TypeError("native review closure requires Review Episode");
   if (!reviewer?.review) throw new TypeError("native review closure requires canonical reviewer runtime");
   if (!findingBridge?.publishFindings || !findingBridge?.recordReliance || !findingBridge?.project) throw new TypeError("native review closure requires review finding bridge");
   return Object.freeze({
+    recoverInitialSubject({binding: current, identity}) {
+      const reference = current?.initialEpisodeRef;
+      if (!reference) throw new Error("native review initial episode binding is unavailable");
+      const initial = reviewEpisode.read({identity, revision: reference.revision});
+      if (!initial || episodeDigest(episodeRef(initial)) !== episodeDigest(reference)) {
+        throw new Error("native review initial episode binding is invalid");
+      }
+      return initial.subject;
+    },
     validateRecoveredResult({binding: current, authority, result}) {
       const bound = reviewEpisode.read({identity: authority.identity,
         revision: current.episodeRef.revision});

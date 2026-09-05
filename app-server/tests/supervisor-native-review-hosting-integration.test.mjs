@@ -7,6 +7,9 @@ import path from "node:path";
 import test from "node:test";
 
 import { createImplementationReviewService } from "../src/services/implementation-review/service.mjs";
+import { digest as episodeDigest } from "../src/services/review-episode/contract.mjs";
+import { createReviewEpisodeService } from "../src/services/review-episode/service.mjs";
+import { openSqliteReviewEpisodeStore } from "../src/services/review-episode/sqlite-store.mjs";
 import {
   createNativeReviewHostOwners as createProductionNativeReviewHostOwners,
   materializeImmutableSubjectWorkspace,
@@ -163,6 +166,99 @@ test("native remediation keeps the public subject identity while recording an ep
   assert.deepEqual(calls.map(({sessionFlag}) => sessionFlag), ["--session-id", "--resume"]);
   assert.equal(calls[1].session, calls[0].session);
   assert.match(calls[1].prompt, /Ordinary remediation continues the same recorded reviewer session/);
+});
+
+test("restart repairs the exact legacy remediation authority admission before provider entry", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-authority-admission-recovery-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  const remediatedSubject = {commit: "immutable-candidate-2", tree: "immutable-tree-2",
+    patchIdentity: "d".repeat(64)};
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const finding = {id: "authority-subject", severity: "high", title: "Authority subject drifted",
+    evidence: result.decisiveEvidence, observed: "Remediation rewrote the authority's initial subject.",
+    violatedExpectation: "Retained review authority must preserve its initial subject.",
+    consequence: "The retained review episode cannot admit the remediation transition.",
+    basis: "reproduced", confidence: "high",
+    recommendedRemediation: "Recover the initial subject from the durable episode.", status: "open",
+    remediationEvidence: []};
+  const initialResult = {...result, verdict: "remediation_required", findings: [finding]};
+  const remediatedResult = {...result, subject: remediatedSubject,
+    findings: [{...finding, status: "verified_resolved", remediationEvidence: result.decisiveEvidence}]};
+  const calls = [];
+  let emulateLegacyHost = true;
+  const ownersFactory = async (options) => {
+    const owners = await createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+      reviewerExecuteProcess: async (request) => {
+        const sessionFlag = request.args.includes("--session-id") ? "--session-id" : "--resume";
+        const session = request.args[request.args.indexOf(sessionFlag) + 1];
+        calls.push({sessionFlag, session});
+        return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+          session_id: session, model: "claude-sonnet-5",
+          structured_output: calls.length === 1 ? initialResult : remediatedResult})};
+      }});
+    if (!emulateLegacyHost) return owners;
+    return Object.freeze({...owners, nativeReview: Object.freeze({...owners.nativeReview,
+      recoverInitialSubject() {
+        return Object.freeze({owner: "checkpoint", reference: remediatedSubject.commit,
+          revision: remediatedSubject.tree, sha256: episodeDigest(remediatedSubject),
+          freshness: "exact immutable revision"});
+      },
+      async executeRemediation() {
+        throw new Error("fixture interruption before remediation subject transition");
+      },
+    })});
+  };
+  let host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "authority-recovery:initial"}));
+  campaign = dispatched.result.campaign;
+  campaign = (await openSqliteSliceCampaignStore({filePath: path.join(stateRoot, "slice-campaign.sqlite3")})
+    .then((store) => {
+      const service = createSliceCampaignService({store, implementationReview: createImplementationReviewService(),
+        reviewSubject: {async createCandidate(request) { return request; }, async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+        receiptFinalizer: {async finalize({receipt}) { return receipt; }}});
+      let state = service.advance({identity, expectedRevision: campaign.revision, phase: "gate_ready", consequence: {}});
+      return service.bindCandidate({identity, expectedRevision: state.revision,
+        request: {commit: remediatedSubject.commit, tree: remediatedSubject.tree,
+          manifestSha256: remediatedSubject.patchIdentity}}).then((bound) => {
+        state = service.advance({identity, expectedRevision: bound.revision, phase: "review_ready", consequence: {}});
+        store.close(); return state;
+      });
+    }));
+  await assert.rejects(host.dispatch(effect("execute_remediation", {identity,
+    expected_revision: campaign.revision, obligation_id: "generic",
+    operation_id: "authority-recovery:continued", remediation_subject: remediatedSubject})),
+  /fixture interruption before remediation subject transition/);
+  host.close();
+
+  emulateLegacyHost = false;
+  host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.obligation.status, "remediation_executing");
+  dispatched = await host.dispatch(effect("execute_remediation", {identity,
+    expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
+    operation_id: "authority-recovery:continued", remediation_subject: remediatedSubject}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(calls.map(({sessionFlag}) => sessionFlag), ["--session-id", "--resume"]);
+  assert.equal(calls[1].session, calls[0].session);
+  const episodeStore = await openSqliteReviewEpisodeStore({filePath: path.join(stateRoot, "review-episodes.sqlite3")});
+  const episodes = createReviewEpisodeService({store: episodeStore,
+    implementationReview: createImplementationReviewService()}).history({identity: {
+      ...identity, reviewObligationId: "generic",
+      reviewEpisodeId: episodeDigest({identity, obligationId: "generic"}).slice(0, 32),
+    }});
+  episodeStore.close();
+  assert.equal(episodes[0].subject.reference, subject.commit);
+  assert.equal(episodes[0].subject.revision, subject.tree);
+  assert.equal(episodes.at(-1).subject.reference, remediatedSubject.commit);
+  assert.equal(episodes.at(-1).subject.revision, remediatedSubject.tree);
+  assert.deepEqual(episodes.at(-1).authority, episodes[0].authority);
+  assert.deepEqual(episodes.at(-1).writer, episodes[0].writer);
 });
 
 test("restart recovers a lineage-invalid remediation result and corrects it in the retained session", async (t) => {

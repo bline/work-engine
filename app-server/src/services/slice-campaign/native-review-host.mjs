@@ -199,14 +199,20 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     const selectionRevision = episodeDigest(campaign.reviewSelection);
     const source = ref("slice-supervisor", campaign.reviewSelection.selectionId,
       selectionRevision, selectionRevision);
+    const episodeIdentity = {...campaign.identity, reviewObligationId: obligationId,
+      reviewEpisodeId: episodeDigest({identity: campaign.identity, obligationId}).slice(0, 32)};
+    const subjectReference = ref("checkpoint", subject.commit, subject.tree, episodeDigest(subject));
+    const existingBinding = campaign.nativeReview?.obligations?.[obligationId] ?? null;
+    const initialSubject = existingBinding?.initialEpisodeRef
+      ? owners.nativeReview.recoverInitialSubject({binding: existingBinding, identity: episodeIdentity})
+      : subjectReference;
     const authority = {schemaVersion: 1,
       grantId: `grant:native-review:${episodeDigest({identity: campaign.identity, obligationId})}`,
-      identity: {...campaign.identity, reviewObligationId: obligationId,
-        reviewEpisodeId: episodeDigest({identity: campaign.identity, obligationId}).slice(0, 32)},
+      identity: episodeIdentity,
       source, writer: {actorId: `implementation-reviewer:${obligationId}`, provider: "claude",
         generation: 1, runtimeSession: ref("reviewer-runtime", sessionId, "generation-1", episodeDigest(sessionId))},
       readers: ["reviewer", "builder", "supervisor"],
-      initialSubject: ref("checkpoint", subject.commit, subject.tree, episodeDigest(subject)), predecessorRevision: null};
+      initialSubject, predecessorRevision: null};
     const catalogProjection = {schemaVersion: 1, catalogId: "work-engine.native-claude.direct-anthropic-v1",
       observedAt: "2026-09-01T00:00:00Z", expiresAt: "2099-01-01T00:00:00Z",
       source: owners.catalogSource.source, sourceSha256: owners.catalogSource.sourceSha256,
@@ -351,9 +357,14 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       const {base} = request(campaign, obligation_id, operation_id, {remediationSubject: remediation_subject});
       const remediationSubjectReference = ref("checkpoint", remediation_subject.commit,
         remediation_subject.tree, episodeDigest(remediation_subject));
+      const executionRequest = {...base, subjectTransitionId: `${operation_id}:subject`,
+        resultTransitionId: `${operation_id}:result`, remediationSubject: remediation_subject};
+      const legacyAdmittedRequest = episodeDigest(base.authority.initialSubject)
+          === episodeDigest(remediationSubjectReference) ? null : {
+          ...executionRequest, authority: {...base.authority, initialSubject: remediationSubjectReference},
+        };
       const outcome = await campaignService.runNativeRemediation({identity, expectedRevision: expected_revision,
-        request: {...base, subjectTransitionId: `${operation_id}:subject`, resultTransitionId: `${operation_id}:result`,
-          remediationSubject: remediation_subject}, remediationSubjectReference});
+        request: executionRequest, remediationSubjectReference, legacyAdmittedRequest});
       return Object.freeze({campaign: outcome.campaign, builder_context: outcome.builderContext,
         failure: outcome.failure ?? null});
     },
