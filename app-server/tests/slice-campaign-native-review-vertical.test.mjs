@@ -109,6 +109,8 @@ test("resolved native findings become reported only after every exact builder re
     binding: {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder", findings: [open]},
     operationId: "rely:F3", findingId: "F3"});
   assert.equal(binding.status, "awaiting_builder");
+  assert.throws(() => closure.recordBuilderEvaluation({...request, binding,
+    operationId: "rely:F3:again", findingId: "F3"}), /already has builder reliance/);
 });
 
 test("campaign terminalization admits a reliance-complete resolved native closure", async () => {
