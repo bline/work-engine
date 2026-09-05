@@ -766,6 +766,8 @@ test("environment tools bind a reload to the provider turn and activate after tu
   const targetRoot = path.join(workspaceRoot, "app-server", "src");
   await copyDefaultExecutableGenerationFiles(workspaceRoot);
   const requests = [];
+  let threadCount = 0;
+  let turnCount = 0;
   const delegate = {
     serverRequestHandler: null,
     notificationHandler: null,
@@ -775,8 +777,8 @@ test("environment tools bind a reload to the provider turn and activate after tu
     notify() {},
     async request(method, params) {
       requests.push({ method, params });
-      if (method === "thread/start") return { thread: { id: "thread-1" } };
-      if (method === "turn/start") return { turn: { id: "turn-1" } };
+      if (method === "thread/start") return { thread: { id: `thread-${++threadCount}` } };
+      if (method === "turn/start") return { turn: { id: `turn-${++turnCount}` } };
       return { accepted: true };
     },
     emitNotification(notification) { this.notificationHandler(notification); },
@@ -799,6 +801,19 @@ test("environment tools bind a reload to the provider turn and activate after tu
     tool.type === "namespace" && tool.name === "environment"
   );
   assert.deepEqual(environment.tools.map((tool) => tool.name), ["status", "reload"]);
+
+  await assert.rejects(delegate.invokeServerRequest({
+    id: 2,
+    method: "item/tool/call",
+    params: {
+      threadId: "thread-1",
+      callId: "call-reload-without-turn",
+      namespace: "environment",
+      tool: "reload",
+      arguments: {},
+    },
+  }), /reload requesting turn id must be a non-empty string/);
+
   await bootstrap.transport.request("turn/start", {
     threadId: "thread-1",
     input: [{ type: "text", text: "test" }],
@@ -823,13 +838,41 @@ test("environment tools bind a reload to the provider turn and activate after tu
   assert.equal(JSON.parse(status.contentItems[0].text).activeGeneration.generationId,
     bootstrap.manager.snapshot().activeGeneration.generationId);
 
-  await appendFile(path.join(targetRoot, "default-executable-generation-worker.mjs"), "\n");
-  const reload = await delegate.invokeServerRequest({
-    id: 2,
+  await bootstrap.transport.request("turn/start", {
+    threadId: "thread-1",
+    input: [{ type: "text", text: "second concurrent turn" }],
+  });
+  await assert.rejects(delegate.invokeServerRequest({
+    id: 3,
     method: "item/tool/call",
     params: {
       threadId: "thread-1",
-      turnId: "turn-1",
+      callId: "call-reload-ambiguous",
+      namespace: "environment",
+      tool: "reload",
+      arguments: {},
+    },
+  }), /reload requesting turn id must be a non-empty string/);
+  await assert.rejects(delegate.invokeServerRequest({
+    id: 4,
+    method: "item/tool/call",
+    params: {
+      threadId: "different-thread",
+      turnId: "turn-2",
+      callId: "call-reload-mismatched-thread",
+      namespace: "environment",
+      tool: "reload",
+      arguments: {},
+    },
+  }), /reload requesting turn id must be a non-empty string/);
+
+  await appendFile(path.join(targetRoot, "default-executable-generation-worker.mjs"), "\n");
+  const reload = await delegate.invokeServerRequest({
+    id: 5,
+    method: "item/tool/call",
+    params: {
+      threadId: "thread-1",
+      turnId: "turn-2",
       callId: "call-reload",
       namespace: "environment",
       tool: "reload",
@@ -843,10 +886,19 @@ test("environment tools bind a reload to the provider turn and activate after tu
     (error) => error.code === "reload_fence_active");
 
   const completed = deferred();
-  bootstrap.transport.onNotification((notification) => completed.resolve(notification));
+  let completionCount = 0;
+  bootstrap.transport.onNotification((notification) => {
+    if (notification.method === "turn/completed" && ++completionCount === 2) {
+      completed.resolve(notification);
+    }
+  });
   delegate.emitNotification({
     method: "turn/completed",
     params: { threadId: "thread-1", turn: { id: "turn-1", status: "completed", items: [] } },
+  });
+  delegate.emitNotification({
+    method: "turn/completed",
+    params: { threadId: "thread-1", turn: { id: "turn-2", status: "completed", items: [] } },
   });
   assert.equal((await completed.promise).method, "turn/completed");
   assert.notEqual(bootstrap.manager.snapshot().activeGeneration.generationId, predecessorId);

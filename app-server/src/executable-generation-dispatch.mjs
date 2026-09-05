@@ -182,6 +182,7 @@ export class GenerationBoundAppServerTransport {
     this.notificationHandlers = new Set();
     this.lifecycleErrorHandlers = new Set();
     this.turnAdmissions = new Map();
+    this.turnThreads = new Map();
     this.completedBeforeAdmission = new Set();
     transport.onServerRequest((request) => this.#handleServerRequest(request));
     transport.onNotification((notification) => {
@@ -205,7 +206,14 @@ export class GenerationBoundAppServerTransport {
   onClosed(handler) { return this.transport.onClosed?.(handler); }
 
   async #handleServerRequest(request) {
-    const turnId = request?.params?.turnId;
+    const explicitTurnId = request?.params?.turnId;
+    const requestThreadId = request?.params?.threadId;
+    const turnId = typeof explicitTurnId === "string"
+      ? (typeof requestThreadId !== "string"
+          || this.turnThreads.get(explicitTurnId) === requestThreadId
+        ? explicitTurnId
+        : null)
+      : this.#activeTurnForThread(request?.params?.threadId);
     if (typeof turnId === "string" && this.turnAdmissions.has(turnId)) {
       return this.dispatchHost.runInAdmission({
         kind: "turn",
@@ -236,6 +244,7 @@ export class GenerationBoundAppServerTransport {
       const turnId = notification.params?.turn?.id;
       if (typeof turnId === "string") {
         const admission = this.turnAdmissions.get(turnId);
+        this.turnThreads.delete(turnId);
         if (admission) {
           generationResult = await this.dispatchHost.runInAdmission({
             kind: "turn",
@@ -271,7 +280,14 @@ export class GenerationBoundAppServerTransport {
     if (synthetic) this.#scheduleSyntheticNotifications(synthetic.notifications);
   }
 
-  async #retainTurn(response) {
+  #activeTurnForThread(threadId) {
+    if (typeof threadId !== "string" || threadId.length === 0) return null;
+    const matches = [...this.turnThreads.entries()]
+      .filter(([, candidateThreadId]) => candidateThreadId === threadId);
+    return matches.length === 1 ? matches[0][0] : null;
+  }
+
+  async #retainTurn(response, threadId = null) {
     const turnId = response?.turn?.id;
     if (typeof turnId !== "string" || turnId.length === 0) {
       throw new TypeError("turn/start response requires a turn id");
@@ -288,6 +304,9 @@ export class GenerationBoundAppServerTransport {
         this.dispatchHost.manager.closeAdmission(admission);
       } else {
         this.turnAdmissions.set(turnId, admission);
+        if (typeof threadId === "string" && threadId.length > 0) {
+          this.turnThreads.set(turnId, threadId);
+        }
       }
     } catch (error) {
       this.dispatchHost.manager.closeAdmission(admission);
@@ -313,7 +332,9 @@ export class GenerationBoundAppServerTransport {
       throw new TypeError("generation App Server effect requires a method");
     }
     const response = await this.transport.request(payload.method, payload.params);
-    return payload.method === "turn/start" ? this.#retainTurn(response) : response;
+    return payload.method === "turn/start"
+      ? this.#retainTurn(response, payload.params?.threadId)
+      : response;
   }
 
   #scheduleSyntheticNotifications(notifications) {
@@ -365,7 +386,7 @@ export class GenerationBoundAppServerTransport {
         const synthetic = syntheticResponse(response);
         const projected = synthetic ? synthetic.response : response;
         const retained = method === "turn/start"
-          ? await this.#retainTurn(projected)
+          ? await this.#retainTurn(projected, params?.threadId)
           : projected;
         if (synthetic) this.#scheduleSyntheticNotifications(synthetic.notifications);
         return retained;
