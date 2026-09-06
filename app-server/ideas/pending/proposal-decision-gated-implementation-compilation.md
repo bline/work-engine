@@ -14,6 +14,22 @@ proposal and implementation. It does not change proposal authority, authorize
 implementation, select a permanent model-routing policy, or require context
 replacement at any workflow boundary.
 
+## Related pending representation hypothesis
+
+[Structural Plan IR for Capability-Aware Multi-Model Execution](structural-plan-ir-for-capability-aware-multi-model-execution.md)
+explores a possible structural representation and executor-specific projection
+strategy for the implementation contract described here. It remains a distinct
+post-migration hypothesis focused on representation fidelity, capability
+compensation, and empirical validation. This proposal remains the candidate owner
+of the implementation-contract workflow, decision and authority boundaries, and
+plan-conformance consequences; the relationship does not accept or authorize
+either direction.
+
+The companion
+[Structural Plan IR Prior Art](structural-plan-ir-prior-art.md) note preserves
+the representation research without making its candidate identity, layering, or
+projection model part of this proposal.
+
 ## Candidate and consequence
 
 After a proposal has sufficiently stable meaning and placement, Work Engine
