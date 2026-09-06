@@ -92,21 +92,31 @@ async function validateExplicitOperationalState(options) {
   if (!options.operationalStateExplicit) return;
   const campaignStatePath = path.join(options.operationalState, "slice-campaign.sqlite3");
   let rootMetadata;
-  let campaignMetadata;
   try {
-    [rootMetadata, campaignMetadata] = await Promise.all([
-      stat(options.operationalState),
-      stat(campaignStatePath),
-    ]);
+    rootMetadata = await stat(options.operationalState);
   } catch (error) {
     throw new Error(
-      `explicit --operational-state must select an existing supervisor state root containing ${JSON.stringify("slice-campaign.sqlite3")}: ${options.operationalState}`,
+      `explicit --operational-state must select an existing supervisor state root: ${options.operationalState}`,
       { cause: error },
     );
   }
-  if (!rootMetadata.isDirectory() || !campaignMetadata.isFile()) {
+  if (!rootMetadata.isDirectory()) {
     throw new Error(
-      `explicit --operational-state must select a directory containing a regular ${JSON.stringify("slice-campaign.sqlite3")} file: ${options.operationalState}`,
+      `explicit --operational-state must select a directory: ${options.operationalState}`,
+    );
+  }
+  let campaignMetadata;
+  try {
+    campaignMetadata = await stat(campaignStatePath);
+  } catch (error) {
+    throw new Error(
+      `explicit --operational-state must contain an existing ${JSON.stringify("slice-campaign.sqlite3")} file: ${options.operationalState}`,
+      { cause: error },
+    );
+  }
+  if (!campaignMetadata.isFile()) {
+    throw new Error(
+      `explicit --operational-state must contain a regular ${JSON.stringify("slice-campaign.sqlite3")} file: ${options.operationalState}`,
     );
   }
   options.operationalState = await realpath(options.operationalState);

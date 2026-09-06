@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { ChildProcess } from "node:child_process";
 import {
-  appendFile, copyFile, mkdir, mkdtemp, readFile, rm, unlink, writeFile,
+  appendFile, copyFile, mkdir, mkdtemp, readFile, rm, stat, unlink, writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -24,12 +24,18 @@ import {
   DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES,
 } from "../src/executable-generation-bootstrap.mjs";
 import { createExecutableGenerationRoleEnvironment } from "../src/executable-generation-role-environment.mjs";
+import { createImplementationReviewService } from "../src/services/implementation-review/service.mjs";
+import { openSqliteReviewEpisodeStore } from "../src/services/review-episode/sqlite-store.mjs";
 import {
   createSupervisorCampaignHostEffectRuntime,
   SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
 } from "../src/services/slice-campaign/host-effect-runtime.mjs";
 import { createSupervisorCampaignCapabilityHostRuntime } from
   "../src/services/slice-campaign/capability-host-runtime.mjs";
+import { createNativeReviewHostOwners } from
+  "../src/services/slice-campaign/native-review-host.mjs";
+import { createSliceCampaignService } from "../src/services/slice-campaign/service.mjs";
+import { openSqliteSliceCampaignStore } from "../src/services/slice-campaign/sqlite-store.mjs";
 
 const ENTRY = path.resolve(
   "app-server/tests/fixtures/executable-generation-worker-fixture.mjs",
@@ -662,6 +668,30 @@ test("fresh executable-generation roots can retain one supervisor operational st
     path.join(root, "generation-b"),
   ];
   const workspaceRoot = path.resolve(".");
+  const subject = {
+    commit: "immutable-candidate",
+    tree: "immutable-tree",
+    patchIdentity: "c".repeat(64),
+  };
+  const candidate = {
+    commit: subject.commit,
+    tree: subject.tree,
+    manifestSha256: subject.patchIdentity,
+  };
+  const decisiveEvidence = [{
+    path: "app-server/scripts/app-server-proxy.mjs",
+    startLine: 1,
+    endLine: 1,
+    sha256: "b".repeat(64),
+  }];
+  const reviewResult = {
+    schemaVersion: 1,
+    subject,
+    verdict: "acceptable_as_is",
+    findings: [],
+    decisiveEvidence,
+    limitations: [],
+  };
   const delegate = {
     onServerRequest() {},
     onNotification() {},
@@ -670,13 +700,50 @@ test("fresh executable-generation roots can retain one supervisor operational st
     async request(method) { return { method }; },
   };
   let hostRuntime;
+  let reviewerCalls = 0;
   const factoryStateRoots = [];
+  const reviewerCredentialSourcePath = path.join(operationalStateRoot, "fixture-credentials.json");
+  await mkdir(operationalStateRoot, { recursive: true });
+  await writeFile(reviewerCredentialSourcePath, '{"fixture":"subscription"}\n', { mode: 0o600 });
+  const nativeReviewOwnersFactory = (options) => createNativeReviewHostOwners({
+    ...options,
+    reviewerCredentialSourcePath,
+    reviewerSubjectWorkspaceFactory: async () => workspaceRoot,
+    reviewBoundaryFactory: ({ subject: reviewedSubject }) => ({
+      schemaVersion: 1,
+      baselineCommit: "a".repeat(40),
+      candidateCommit: reviewedSubject.commit,
+      candidateTree: reviewedSubject.tree,
+      taskPatchDigest: reviewedSubject.patchIdentity,
+      gateReceiptDigest: "d".repeat(64),
+      paths: [{ path: decisiveEvidence[0].path, action: "modify" }],
+      evidenceCatalog: decisiveEvidence,
+      baselineEvidenceCatalog: [],
+      changeDiff: "diff --git a/app-server/scripts/app-server-proxy.mjs b/app-server/scripts/app-server-proxy.mjs\n",
+    }),
+    reviewerExecuteProcess: async (request) => {
+      reviewerCalls += 1;
+      const sessionIndex = request.args.indexOf("--session-id");
+      return {
+        exitCode: 0,
+        stderr: "",
+        stdout: JSON.stringify({
+          type: "result",
+          subtype: "success",
+          session_id: request.args[sessionIndex + 1],
+          model: "claude-sonnet-5",
+          structured_output: reviewResult,
+        }),
+      };
+    },
+  });
   const factory = async ({ workspaceRoot: ownerWorkspaceRoot, stateRoot }) => {
     factoryStateRoots.push(stateRoot);
     hostRuntime = await createSupervisorCampaignCapabilityHostRuntime({
       workspaceRoot: ownerWorkspaceRoot,
       stateRoot: operationalStateRoot,
       canonicalBranches: ["main"],
+      nativeReviewOwnersFactory,
     });
     return hostRuntime;
   };
@@ -695,6 +762,48 @@ test("fresh executable-generation roots can retain one supervisor operational st
     attemptId: "attempt-1",
     planVersion: "plan-1",
   };
+  const campaignStore = await openSqliteSliceCampaignStore({
+    filePath: path.join(operationalStateRoot, "slice-campaign.sqlite3"),
+  });
+  const campaignService = createSliceCampaignService({
+    store: campaignStore,
+    implementationReview: createImplementationReviewService(),
+    reviewSubject: {
+      async createCandidate(request) { return request; },
+      async createPhysicalProfile({ subject: value }) { return { subject: value }; },
+    },
+    receiptFinalizer: { async finalize({ receipt }) { return receipt; } },
+  });
+  let campaign = campaignService.admit({
+    identity,
+    workspace: "/private/workspace-a",
+    acceptedBoundary: { reference: "plan:continuity", sha256: "a".repeat(64) },
+    baseline: { acceptedCommit: "baseline", acceptedTree: "tree", interSliceCommit: "inter" },
+  });
+  campaign = campaignService.advance({
+    identity, expectedRevision: campaign.revision, phase: "implementing", consequence: {},
+  });
+  campaign = campaignService.advance({
+    identity, expectedRevision: campaign.revision, phase: "gate_ready", consequence: {},
+  });
+  campaign = await campaignService.bindCandidate({
+    identity, expectedRevision: campaign.revision, request: candidate,
+  });
+  campaign = campaignService.advance({
+    identity, expectedRevision: campaign.revision, phase: "review_ready", consequence: {},
+  });
+  campaign = campaignService.bindReviewSelection({
+    identity,
+    expectedRevision: campaign.revision,
+    selection: {
+      schemaVersion: 1,
+      owner: "slice-supervisor",
+      selectionId: "selection:generation-state-continuity:v1",
+      subject,
+      specialists: [{ obligationId: "generic", skill: "implementation-review", selection: "selected" }],
+    },
+  });
+  campaignStore.close();
 
   const first = await createExecutableGenerationBootstrap({
     workspaceRoot,
@@ -703,17 +812,19 @@ test("fresh executable-generation roots can retain one supervisor operational st
     workerRequestTimeoutMs: 2_000,
     supervisorCampaignHostEffectRuntimeFactory: factory,
   });
-  const admitted = (await hostRuntime.dispatch(effect(
+  t.after(() => first.close());
+  const reviewed = await hostRuntime.dispatch(effect(
     first.startupSelection.selectedGenerationId,
-    "capability.lifecycle_control",
-    "admit",
-    {
-      identity,
-      workspace: "/private/workspace-a",
-      acceptedBoundary: { reference: "plan:continuity", sha256: "a".repeat(64) },
-      baseline: { acceptedCommit: "baseline", acceptedTree: "tree", interSliceCommit: "inter" },
-    },
-  ))).result;
+    "capability.native_review",
+    "execute",
+    { identity, expected_revision: campaign.revision, obligation_id: "generic",
+      operation_id: "generation-state-continuity:generic:initial" },
+  ));
+  const reviewRevision = reviewed.result.campaign.revision;
+  const episodeReference = reviewed.result.campaign.nativeReview.obligations.generic.episodeRef.reference;
+  assert.equal(reviewed.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(reviewerCalls, 1);
+  await stat(path.join(operationalStateRoot, "review-episodes.sqlite3"));
   assert.equal(hostRuntime.identity.state_root, path.resolve(operationalStateRoot));
   await first.close();
 
@@ -727,15 +838,27 @@ test("fresh executable-generation roots can retain one supervisor operational st
   t.after(() => second.close());
   const recovered = await hostRuntime.dispatch(effect(
     second.startupSelection.selectedGenerationId,
-    "capability.resume",
-    "recover_active",
-    { identity },
+    "capability.native_review",
+    "recover",
+    { identity, obligation_id: "generic" },
   ));
 
   assert.deepEqual(factoryStateRoots, generationStateRoots.map((entry) => path.resolve(entry)));
   assert.equal(first.startupSelection.outcome, "initialized_current");
   assert.equal(second.startupSelection.outcome, "initialized_current");
-  assert.equal(recovered.result.revision, admitted.revision);
+  assert.equal(recovered.result.campaign_revision, reviewRevision);
+  assert.equal(recovered.result.obligation.status, "reported");
+  assert.equal(recovered.result.obligation.episodeRef.reference, episodeReference);
+  assert.equal(reviewerCalls, 1);
+  const recoveredEpisodeStore = await openSqliteReviewEpisodeStore({
+    filePath: path.join(operationalStateRoot, "review-episodes.sqlite3"),
+  });
+  const recoveredEpisode = recoveredEpisodeStore.get(
+    episodeReference.slice("review-episode@".length),
+  );
+  recoveredEpisodeStore.close();
+  assert.equal(recoveredEpisode.revision, recovered.result.obligation.episodeRef.revision);
+  assert.deepEqual(recoveredEpisode.currentResult, reviewResult);
   assert.equal(hostRuntime.identity.state_root, path.resolve(operationalStateRoot));
 });
 

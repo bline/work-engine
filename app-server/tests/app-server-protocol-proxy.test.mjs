@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -353,8 +353,34 @@ test("proxy rejects a missing explicit operational state before opening its sock
   assert.equal(result.code, 1);
   assert.equal(result.stdout, "");
   assert.match(result.stderr, /explicit --operational-state must select an existing supervisor state root/);
-  assert.match(result.stderr, /slice-campaign\.sqlite3/);
   await assert.rejects(stat(socketPath), { code: "ENOENT" });
+});
+
+test("proxy rejects wrong-type explicit operational state before opening its socket", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy-operational-type."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const rootFile = path.join(directory, "state-file");
+  const rootWithDirectoryDatabase = path.join(directory, "state-with-directory-database");
+  await writeFile(rootFile, "not a state directory\n", "utf8");
+  await mkdir(path.join(rootWithDirectoryDatabase, "slice-campaign.sqlite3"), { recursive: true });
+  const cases = [
+    { root: rootFile, expected: /must select a directory/ },
+    { root: rootWithDirectoryDatabase, expected: /must contain a regular "slice-campaign\.sqlite3" file/ },
+  ];
+
+  for (const [index, fixture] of cases.entries()) {
+    const socketPath = path.join(directory, `must-not-open-${index}.sock`);
+    const result = await run(process.execPath, [
+      "app-server/scripts/app-server-proxy.mjs",
+      "--socket", socketPath,
+      "--operational-state", fixture.root,
+      "--canonical-branch", "main",
+    ]);
+    assert.equal(result.code, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, fixture.expected);
+    await assert.rejects(stat(socketPath), { code: "ENOENT" });
+  }
 });
 
 test("a late backend response is discarded after its remote client disconnects", async (t) => {
