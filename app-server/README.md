@@ -219,7 +219,15 @@ feature to the private App Server. The proxy also starts one validated
 executable-generation worker from an immutable source snapshot. Use
 `--generation-state PATH` to isolate its snapshots and durable generation
 receipt during testing; otherwise state is scoped by the socket identity under
-the user's local state directory.
+the user's local state directory. Supervisor campaign, review, and development
+state uses the same root by default. When executable-environment migration
+requires a fresh generation root, pass the retained supervisor root explicitly
+with `--operational-state PATH`; this rebinds the new executable generation to
+the existing operational state without copying its SQLite databases or review
+artifacts. An explicit operational root must already exist and contain its
+`slice-campaign.sqlite3`; a missing or mistyped retained root fails before the
+App Server starts. Startup logs print both resolved roots so the binding is
+observable.
 
 Hosted manifest-role turns pass through the semantic lifecycle in shadow mode
 by default. The proxy loads `semantic-context-profile.yaml`; use

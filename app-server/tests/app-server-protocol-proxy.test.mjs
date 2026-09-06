@@ -123,8 +123,10 @@ function controlRequest(socketPath, payload, requestPath = "/work-engine/control
 test("proxy entry composes the stable all-thirteen supervisor capability host", async () => {
   const source = await readFile(PROXY_ENTRY, "utf8");
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
-  assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot, stateRoot \}\)\s*=>/);
-  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{[\s\S]*workspaceRoot, stateRoot, canonicalBranches: options\.canonicalBranches/);
+  assert.match(source, /supervisorCampaignHostEffectRuntimeFactory:\s*\(\{ workspaceRoot \}\)\s*=>/);
+  assert.match(source, /createSupervisorCampaignCapabilityHostRuntime\(\{[\s\S]*workspaceRoot,[\s\S]*stateRoot: options\.operationalState,[\s\S]*canonicalBranches: options\.canonicalBranches/);
+  assert.match(source, /options\.operationalState \?\?= options\.generationState/);
+  assert.match(source, /generation-state=\$\{options\.generationState\} operational-state=\$\{options\.operationalState\}/);
   assert.doesNotMatch(source, /strategic[_-]reconciliation|strategic[_-]planner/,
     "proxy composition must not bypass the stable host with a special strategic route");
 });
@@ -333,6 +335,25 @@ test("proxy rejects an unavailable selected Codex executable before opening its 
   assert.match(result.stderr, /selected Codex executable/);
   assert.match(result.stderr, /select codex-cli 0\.149\.1 with --codex PATH/);
   assert.match(result.stderr, /ENOENT/);
+  await assert.rejects(stat(socketPath), { code: "ENOENT" });
+});
+
+test("proxy rejects a missing explicit operational state before opening its socket", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy-operational-state."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const socketPath = path.join(directory, "must-not-open.sock");
+
+  const result = await run(process.execPath, [
+    "app-server/scripts/app-server-proxy.mjs",
+    "--socket", socketPath,
+    "--operational-state", path.join(directory, "missing-state"),
+    "--canonical-branch", "main",
+  ]);
+
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /explicit --operational-state must select an existing supervisor state root/);
+  assert.match(result.stderr, /slice-campaign\.sqlite3/);
   await assert.rejects(stat(socketPath), { code: "ENOENT" });
 });
 

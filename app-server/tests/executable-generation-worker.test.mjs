@@ -653,6 +653,92 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
   assert.equal(preservedState.activeGeneration.generationId, reconciledGenerationId);
 });
 
+test("fresh executable-generation roots can retain one supervisor operational state", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-operational-state-continuity-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const operationalStateRoot = path.join(root, "supervisor-state");
+  const generationStateRoots = [
+    path.join(root, "generation-a"),
+    path.join(root, "generation-b"),
+  ];
+  const workspaceRoot = path.resolve(".");
+  const delegate = {
+    onServerRequest() {},
+    onNotification() {},
+    onClosed() {},
+    notify() {},
+    async request(method) { return { method }; },
+  };
+  let hostRuntime;
+  const factoryStateRoots = [];
+  const factory = async ({ workspaceRoot: ownerWorkspaceRoot, stateRoot }) => {
+    factoryStateRoots.push(stateRoot);
+    hostRuntime = await createSupervisorCampaignCapabilityHostRuntime({
+      workspaceRoot: ownerWorkspaceRoot,
+      stateRoot: operationalStateRoot,
+      canonicalBranches: ["main"],
+    });
+    return hostRuntime;
+  };
+  const effect = (generationId, capability, operation, input) => ({
+    generationId,
+    effect: {
+      protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL,
+      capability,
+      operation,
+      input,
+    },
+  });
+  const identity = {
+    runId: "generation-state-continuity",
+    sliceNumber: 1,
+    attemptId: "attempt-1",
+    planVersion: "plan-1",
+  };
+
+  const first = await createExecutableGenerationBootstrap({
+    workspaceRoot,
+    stateRoot: generationStateRoots[0],
+    transport: delegate,
+    workerRequestTimeoutMs: 2_000,
+    supervisorCampaignHostEffectRuntimeFactory: factory,
+  });
+  const admitted = (await hostRuntime.dispatch(effect(
+    first.startupSelection.selectedGenerationId,
+    "capability.lifecycle_control",
+    "admit",
+    {
+      identity,
+      workspace: "/private/workspace-a",
+      acceptedBoundary: { reference: "plan:continuity", sha256: "a".repeat(64) },
+      baseline: { acceptedCommit: "baseline", acceptedTree: "tree", interSliceCommit: "inter" },
+    },
+  ))).result;
+  assert.equal(hostRuntime.identity.state_root, path.resolve(operationalStateRoot));
+  await first.close();
+
+  const second = await createExecutableGenerationBootstrap({
+    workspaceRoot,
+    stateRoot: generationStateRoots[1],
+    transport: delegate,
+    workerRequestTimeoutMs: 2_000,
+    supervisorCampaignHostEffectRuntimeFactory: factory,
+  });
+  t.after(() => second.close());
+  const recovered = await hostRuntime.dispatch(effect(
+    second.startupSelection.selectedGenerationId,
+    "capability.resume",
+    "recover_active",
+    { identity },
+  ));
+
+  assert.deepEqual(factoryStateRoots, generationStateRoots.map((entry) => path.resolve(entry)));
+  assert.equal(first.startupSelection.outcome, "initialized_current");
+  assert.equal(second.startupSelection.outcome, "initialized_current");
+  assert.equal(recovered.result.revision, admitted.revision);
+  assert.equal(hostRuntime.identity.state_root, path.resolve(operationalStateRoot));
+});
+
 test("bootstrap owns one stable supervisor campaign host runtime across reload and shutdown", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "work-engine-host-runtime-bootstrap-"));
   t.after(() => rm(root, { recursive: true, force: true }));

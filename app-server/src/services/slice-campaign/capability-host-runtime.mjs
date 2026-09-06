@@ -211,6 +211,7 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         schema_version: 1,
         capabilities: Object.keys(supervisorCampaignCapabilityOperations).sort(),
         legacy: legacy.identity,
+        state_root: path.resolve(stateRoot),
         state_path: store.filePath,
         workspace: Object.freeze({
           repository: workspace.repository,

@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
+import { realpath, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -44,6 +45,8 @@ function parseArguments(argv) {
     trace: false,
     tokenBudget: false,
     generationState: null,
+    operationalState: null,
+    operationalStateExplicit: false,
     developmentArtifactRoot: WORKSPACE_ROOT,
     codexCommand: process.env.WORK_ENGINE_CODEX ?? "codex",
     canonicalBranches: [],
@@ -65,6 +68,10 @@ function parseArguments(argv) {
     else if (argument === "--trace") options.trace = true;
     else if (argument === "--enable-token-budget") options.tokenBudget = true;
     else if (argument === "--generation-state") options.generationState = path.resolve(value());
+    else if (argument === "--operational-state") {
+      options.operationalState = path.resolve(value());
+      options.operationalStateExplicit = true;
+    }
     else if (argument === "--development-artifact-root") {
       options.developmentArtifactRoot = path.resolve(value());
     }
@@ -77,7 +84,32 @@ function parseArguments(argv) {
     throw new Error("at least one explicit --canonical-branch NAME is required");
   }
   options.generationState ??= defaultGenerationState(options.socketPath);
+  options.operationalState ??= options.generationState;
   return options;
+}
+
+async function validateExplicitOperationalState(options) {
+  if (!options.operationalStateExplicit) return;
+  const campaignStatePath = path.join(options.operationalState, "slice-campaign.sqlite3");
+  let rootMetadata;
+  let campaignMetadata;
+  try {
+    [rootMetadata, campaignMetadata] = await Promise.all([
+      stat(options.operationalState),
+      stat(campaignStatePath),
+    ]);
+  } catch (error) {
+    throw new Error(
+      `explicit --operational-state must select an existing supervisor state root containing ${JSON.stringify("slice-campaign.sqlite3")}: ${options.operationalState}`,
+      { cause: error },
+    );
+  }
+  if (!rootMetadata.isDirectory() || !campaignMetadata.isFile()) {
+    throw new Error(
+      `explicit --operational-state must select a directory containing a regular ${JSON.stringify("slice-campaign.sqlite3")} file: ${options.operationalState}`,
+    );
+  }
+  options.operationalState = await realpath(options.operationalState);
 }
 
 function formatStartupFailure(error) {
@@ -90,6 +122,7 @@ function formatStartupFailure(error) {
 
 async function main() {
   const options = parseArguments(process.argv.slice(2));
+  await validateExplicitOperationalState(options);
   let versionOutput;
   try {
     ({ stdout: versionOutput } = await execFileAsync(options.codexCommand, ["--version"], {
@@ -105,7 +138,9 @@ async function main() {
       { cause: error },
     );
   }
-  process.stderr.write(`[host] state=${options.generationState}\n`);
+  process.stderr.write(
+    `[host] generation-state=${options.generationState} operational-state=${options.operationalState}\n`,
+  );
   const delegate = StdioJsonRpcTransport.spawn({
     command: options.codexCommand,
     cwd: options.cwd,
@@ -146,9 +181,11 @@ async function main() {
       roleBindingsPath: options.bindingsPath,
       configuredProviderFeatures: options.tokenBudget ? ["token_budget"] : [],
       developmentArtifactRoot: options.developmentArtifactRoot,
-      supervisorCampaignHostEffectRuntimeFactory: ({ workspaceRoot, stateRoot }) =>
+      supervisorCampaignHostEffectRuntimeFactory: ({ workspaceRoot }) =>
         createSupervisorCampaignCapabilityHostRuntime({
-          workspaceRoot, stateRoot, canonicalBranches: options.canonicalBranches,
+          workspaceRoot,
+          stateRoot: options.operationalState,
+          canonicalBranches: options.canonicalBranches,
         }),
     });
   } catch (error) {
