@@ -349,6 +349,111 @@ test("stable transport keeps in-flight work on its predecessor and routes later 
   ]);
 });
 
+test("semantic interruption bypasses blocked dispatch and resolves a projected turn alias", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-control-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const heldDispatchEntered = deferred();
+  const heldDispatchRelease = deferred();
+  const delegateRequests = [];
+  const active = {
+    ...record("g-control"),
+    async dispatch(operation, payload, effect) {
+      if (operation === "app_server.backend_notification") return { disposition: "forward" };
+      assert.equal(operation, "app_server.request");
+      if (payload.method === "turn/start") {
+        const roleTurn = await effect({
+          method: "turn/start",
+          params: { threadId: "thread-role", input: [{ type: "text", text: "work" }] },
+        });
+        assert.equal(roleTurn.turn.id, "turn-role");
+        return {
+          disposition: "respond",
+          result: { turn: { id: "turn-shell", status: "inProgress" } },
+          notifications: [],
+        };
+      }
+      if (payload.method === "held") {
+        heldDispatchEntered.resolve();
+        await heldDispatchRelease.promise;
+      }
+      return { disposition: "forward" };
+    },
+  };
+  const manager = await ExecutableGenerationManager.create({
+    activeGeneration: active,
+    store: new FileExecutableGenerationStore(path.join(root, "generations.json")),
+    substrateArbiter: new InMemoryReplaceableSubstrateArbiter(),
+    snapshotter: async () => {},
+    candidateBuilder: async () => {},
+  });
+  t.after(() => manager.close({ abandonActiveWork: true }));
+  let notificationHandler;
+  const delegate = {
+    onServerRequest() {},
+    onNotification(handler) { notificationHandler = handler; },
+    onClosed() {},
+    notify() {},
+    async request(method, params) {
+      delegateRequests.push({ method, params });
+      if (method === "turn/start") {
+        return { turn: { id: "turn-role", status: "inProgress" } };
+      }
+      return { accepted: true };
+    },
+  };
+  const transport = new GenerationBoundAppServerTransport({
+    transport: delegate,
+    dispatchHost: new ExecutableGenerationDispatchHost(manager),
+  });
+
+  assert.deepEqual(await transport.request("turn/start", { threadId: "thread-shell" }), {
+    turn: { id: "turn-shell", status: "inProgress" },
+  });
+  assert.deepEqual(transport.operatorControl().status().activeTurns, [{
+    threadId: "thread-role",
+    turnId: "turn-role",
+    aliases: [{ threadId: "thread-shell", turnId: "turn-shell" }],
+    interruptRequested: false,
+  }]);
+
+  const heldRequest = transport.request("held", {});
+  await heldDispatchEntered.promise;
+  const firstInterrupt = transport.request("turn/interrupt", {
+    threadId: "thread-shell",
+    turnId: "turn-shell",
+  });
+  const repeatedInterrupt = transport.operatorControl().interrupt({ turnId: "turn-shell" });
+  assert.deepEqual(await firstInterrupt, { accepted: true });
+  assert.equal((await repeatedInterrupt).status, "interrupt_requested");
+  assert.equal(delegateRequests.filter(({ method }) => method === "turn/interrupt").length, 1);
+  assert.deepEqual(delegateRequests.at(-1), {
+    method: "turn/interrupt",
+    params: { threadId: "thread-role", turnId: "turn-role" },
+  });
+
+  const rawCompletionForwarded = deferred();
+  transport.onNotification((notification) => rawCompletionForwarded.resolve(notification));
+  notificationHandler({
+    method: "turn/completed",
+    params: { threadId: "thread-role", turn: { id: "turn-role", status: "interrupted" } },
+  });
+  await rawCompletionForwarded.promise;
+  assert.deepEqual(transport.operatorControl().status().activeTurns, []);
+  let missingInterrupt;
+  assert.doesNotThrow(() => {
+    missingInterrupt = transport.request("turn/interrupt", {});
+  });
+  await assert.rejects(missingInterrupt, (error) => error.code === "no_active_turn");
+  let malformedInterrupt;
+  assert.doesNotThrow(() => {
+    malformedInterrupt = transport.operatorControl().interrupt({ unknown: true });
+  });
+  await assert.rejects(malformedInterrupt, /operator interrupt target must be an object/);
+
+  heldDispatchRelease.resolve();
+  assert.deepEqual(await heldRequest, { accepted: true });
+});
+
 test("a generation can respond locally without invoking the stable App Server effect", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-response-"));
   t.after(() => rm(root, { recursive: true, force: true }));

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,6 +11,7 @@ import { WebSocket } from "ws";
 import { AppServerProtocolProxy } from "../src/index.mjs";
 
 const PROXY_ENTRY = path.resolve("app-server/scripts/app-server-proxy.mjs");
+const CONTROL_ENTRY = path.resolve("app-server/scripts/app-server-control.mjs");
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
@@ -94,6 +96,30 @@ function deferred() {
   return { promise, resolve };
 }
 
+function controlRequest(socketPath, payload, requestPath = "/work-engine/control") {
+  const body = Buffer.from(JSON.stringify(payload), "utf8");
+  return new Promise((resolve, reject) => {
+    const request = http.request({
+      socketPath,
+      path: requestPath,
+      method: "POST",
+      headers: { "Content-Length": String(body.length), "Content-Type": "application/json" },
+    }, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.once("error", reject);
+      response.once("end", () => resolve({
+        statusCode: response.statusCode,
+        body: Buffer.concat(chunks).length > 0
+          ? JSON.parse(Buffer.concat(chunks).toString("utf8"))
+          : null,
+      }));
+    });
+    request.once("error", reject);
+    request.end(body);
+  });
+}
+
 test("proxy entry composes the stable all-thirteen supervisor capability host", async () => {
   const source = await readFile(PROXY_ENTRY, "utf8");
   assert.match(source, /createSupervisorCampaignCapabilityHostRuntime/);
@@ -103,11 +129,11 @@ test("proxy entry composes the stable all-thirteen supervisor capability host", 
     "proxy composition must not bypass the stable host with a special strategic route");
 });
 
-async function fixture(t) {
+async function fixture(t, { operatorControl = null } = {}) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy."));
   const socketPath = path.join(directory, "app-server.sock");
   const transport = new DelegateTransport();
-  const proxy = new AppServerProtocolProxy({ transport, socketPath });
+  const proxy = new AppServerProtocolProxy({ transport, operatorControl, socketPath });
   await proxy.listen();
   t.after(async () => {
     await proxy.close();
@@ -121,6 +147,84 @@ async function fixture(t) {
   t.after(() => peer.close());
   return { proxy, transport, peer, nextMessage: inbox(peer), socketPath };
 }
+
+test("operator control stays reachable while a client request is in flight", async (t) => {
+  const entered = deferred();
+  const release = deferred();
+  const interrupts = [];
+  const operatorControl = {
+    status: () => ({ schemaVersion: 1, generationId: "g1", activeTurns: [{
+      threadId: "thread-role", turnId: "turn-role", aliases: [], interruptRequested: false,
+    }] }),
+    async interrupt(target) {
+      interrupts.push(target);
+      return { schemaVersion: 1, status: "interrupt_requested", target };
+    },
+  };
+  const { transport, peer, nextMessage, socketPath } = await fixture(t, { operatorControl });
+  transport.request = async (method) => {
+    if (method === "slow") {
+      entered.resolve();
+      await release.promise;
+    }
+    return { method, accepted: true };
+  };
+
+  peer.send(JSON.stringify({ id: 12, method: "slow", params: {} }));
+  await entered.promise;
+  const response = await controlRequest(socketPath, {
+    command: "interrupt",
+    target: { threadId: "thread-role", turnId: "turn-role" },
+  });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, { ok: true, result: {
+    schemaVersion: 1,
+    status: "interrupt_requested",
+    target: { threadId: "thread-role", turnId: "turn-role" },
+  } });
+  assert.deepEqual(interrupts, [{ threadId: "thread-role", turnId: "turn-role" }]);
+
+  release.resolve();
+  assert.deepEqual(await nextMessage(), {
+    id: 12,
+    result: { method: "slow", accepted: true },
+  });
+});
+
+test("operator disconnect detaches the client without stopping the proxy", async (t) => {
+  const operatorControl = {
+    status: () => ({ schemaVersion: 1, generationId: "g1", activeTurns: [] }),
+    async interrupt() { throw new Error("not expected"); },
+  };
+  const { peer, socketPath } = await fixture(t, { operatorControl });
+  const closed = new Promise((resolve) => peer.once("close", resolve));
+  const response = await controlRequest(socketPath, { command: "disconnect" });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.result.status, "disconnect_requested");
+  await closed;
+
+  const status = await controlRequest(socketPath, { command: "status" });
+  assert.equal(status.statusCode, 200);
+  assert.equal(status.body.result.clientConnected, false);
+  assert.equal(status.body.result.generationId, "g1");
+});
+
+test("the recovery CLI sends bounded semantic control commands", async (t) => {
+  const operatorControl = {
+    status: () => ({ schemaVersion: 1, generationId: "g-cli", activeTurns: [] }),
+    async interrupt() { throw new Error("not expected"); },
+  };
+  const { socketPath } = await fixture(t, { operatorControl });
+  const result = await run(process.execPath, [CONTROL_ENTRY, "--socket", socketPath, "status"]);
+  assert.equal(result.code, 0);
+  assert.equal(result.stderr, "");
+  assert.deepEqual(JSON.parse(result.stdout), {
+    schemaVersion: 1,
+    generationId: "g-cli",
+    activeTurns: [],
+    clientConnected: true,
+  });
+});
 
 test("Unix WebSocket endpoint forwards client JSON-RPC requests and notifications", async (t) => {
   const { transport, peer, nextMessage, socketPath } = await fixture(t);

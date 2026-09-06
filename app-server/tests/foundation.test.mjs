@@ -144,6 +144,25 @@ test("runtime capability pin matches the generated-binding lock", async () => {
   assert.equal(negotiated.initializeCapabilities.experimentalApi, lock.experimental);
 });
 
+test("pinned protocol closure carries the exact turn interruption contract", async () => {
+  const lock = JSON.parse(await readFile(
+    new URL("../protocol-bindings.lock.json", import.meta.url),
+    "utf8",
+  ));
+  assert.equal(lock.codexCliVersion, "0.149.1");
+  assert.equal(lock.roots.includes("v2/TurnInterruptParams.ts"), true);
+  assert.equal(lock.roots.includes("v2/TurnInterruptResponse.ts"), true);
+  const generatedRoot = new URL("../generated/codex-cli-0.149.1/v2/", import.meta.url);
+  assert.match(
+    await readFile(new URL("TurnInterruptParams.ts", generatedRoot), "utf8"),
+    /TurnInterruptParams = \{ threadId: string, turnId: string, \}/,
+  );
+  assert.match(
+    await readFile(new URL("TurnInterruptResponse.ts", generatedRoot), "utf8"),
+    /TurnInterruptResponse = Record<string, never>/,
+  );
+});
+
 test("model context replacement requires the pinned target-model feature gate", () => {
   assert.throws(
     () => negotiateProviderCapabilities({

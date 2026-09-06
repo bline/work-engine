@@ -10,6 +10,22 @@ function text(value, label) {
   return value;
 }
 
+function optionalText(value, label) {
+  if (value === undefined || value === null) return null;
+  return text(value, label);
+}
+
+function controlError(code, message, details = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.details = Object.freeze({ ...details });
+  return error;
+}
+
+function turnTargetKey({ threadId, turnId }) {
+  return `${threadId}\u0000${turnId}`;
+}
+
 const SYNTHETIC_APP_SERVER_RESPONSE = "work-engine.synthetic-app-server-response.v1";
 
 function notification(value) {
@@ -189,6 +205,8 @@ export class GenerationBoundAppServerTransport {
     this.lifecycleErrorHandlers = new Set();
     this.turnAdmissions = new Map();
     this.turnThreads = new Map();
+    this.turnControls = new Map();
+    this.interruptRequests = new Map();
     this.completedBeforeAdmission = new Set();
     transport.onServerRequest((request) => this.#handleServerRequest(request));
     transport.onNotification((notification) => {
@@ -210,6 +228,14 @@ export class GenerationBoundAppServerTransport {
     return () => this.lifecycleErrorHandlers.delete(handler);
   }
   onClosed(handler) { return this.transport.onClosed?.(handler); }
+
+  operatorControl() {
+    return Object.freeze({
+      status: () => this.#controlSnapshot(),
+      interrupt: (target = {}) => this.#interrupt(target).then(({ response: _response, ...result }) =>
+        Object.freeze(result)),
+    });
+  }
 
   async #handleServerRequest(request) {
     const explicitTurnId = request?.params?.turnId;
@@ -261,11 +287,28 @@ export class GenerationBoundAppServerTransport {
           reloadCompletion = this.dispatchHost.manager.closeAdmission(admission);
           this.turnAdmissions.delete(turnId);
           this.turnThreads.delete(turnId);
+          const control = this.turnControls.get(turnId);
+          this.turnControls.delete(turnId);
+          if (control) this.interruptRequests.delete(turnTargetKey(control.target));
         } else {
           this.turnThreads.delete(turnId);
-          this.completedBeforeAdmission.add(turnId);
-          if (this.completedBeforeAdmission.size > 256) {
-            this.completedBeforeAdmission.delete(this.completedBeforeAdmission.values().next().value);
+          this.turnControls.delete(turnId);
+          let projectedTargetCompleted = false;
+          for (const [aliasTurnId, control] of this.turnControls.entries()) {
+            if (control.target.turnId === turnId
+                && control.target.threadId === notification.params?.threadId) {
+              projectedTargetCompleted = true;
+              this.turnControls.delete(aliasTurnId);
+              this.interruptRequests.delete(turnTargetKey(control.target));
+            }
+          }
+          if (!projectedTargetCompleted) {
+            this.completedBeforeAdmission.add(turnId);
+            if (this.completedBeforeAdmission.size > 256) {
+              this.completedBeforeAdmission.delete(
+                this.completedBeforeAdmission.values().next().value,
+              );
+            }
           }
         }
       }
@@ -294,7 +337,88 @@ export class GenerationBoundAppServerTransport {
     return matches.length === 1 ? matches[0][0] : null;
   }
 
-  async #retainTurn(response, threadId = null) {
+  #controlSnapshot() {
+    const targets = new Map();
+    for (const [admissionTurnId, control] of this.turnControls.entries()) {
+      if (!this.turnAdmissions.has(admissionTurnId)) continue;
+      const key = turnTargetKey(control.target);
+      const current = targets.get(key) ?? {
+        threadId: control.target.threadId,
+        turnId: control.target.turnId,
+        aliases: [],
+        interruptRequested: this.interruptRequests.has(key),
+      };
+      if (!current.aliases.some((alias) => alias.threadId === control.alias.threadId
+          && alias.turnId === control.alias.turnId)) {
+        current.aliases.push({ ...control.alias });
+      }
+      targets.set(key, current);
+    }
+    return Object.freeze({
+      schemaVersion: 1,
+      generationId: this.dispatchHost.snapshot().activeGeneration?.generationId ?? null,
+      activeTurns: Object.freeze([...targets.values()].map((target) => Object.freeze({
+        ...target,
+        aliases: Object.freeze(target.aliases.map((alias) => Object.freeze(alias))),
+      }))),
+    });
+  }
+
+  #resolveInterruptTarget(input) {
+    if (!input || typeof input !== "object" || Array.isArray(input)
+        || Object.keys(input).some((key) => !["threadId", "turnId"].includes(key))) {
+      throw new TypeError("operator interrupt target must be an object with threadId and/or turnId");
+    }
+    const threadId = optionalText(input.threadId, "operator interrupt thread id");
+    const turnId = optionalText(input.turnId, "operator interrupt turn id");
+    let candidates = this.#controlSnapshot().activeTurns;
+    if (threadId !== null) {
+      candidates = candidates.filter((candidate) => candidate.threadId === threadId
+        || candidate.aliases.some((alias) => alias.threadId === threadId));
+    }
+    if (turnId !== null) {
+      candidates = candidates.filter((candidate) => candidate.turnId === turnId
+        || candidate.aliases.some((alias) => alias.turnId === turnId));
+    }
+    if (candidates.length === 0) {
+      throw controlError("no_active_turn", "no active interruptible turn matches the target", {
+        threadId, turnId,
+      });
+    }
+    if (candidates.length !== 1) {
+      throw controlError(
+        "ambiguous_active_turn",
+        "operator interrupt target matches more than one active turn",
+        { threadId, turnId, matches: candidates.length },
+      );
+    }
+    return candidates[0];
+  }
+
+  async #interrupt(input) {
+    const resolved = this.#resolveInterruptTarget(input);
+    const target = { threadId: resolved.threadId, turnId: resolved.turnId };
+    const key = turnTargetKey(target);
+    const existing = this.interruptRequests.get(key);
+    if (existing) return existing;
+    const completion = Promise.resolve(this.transport.request("turn/interrupt", target)).then(
+      (response) => Object.freeze({
+        schemaVersion: 1,
+        status: "interrupt_requested",
+        target: Object.freeze(target),
+        aliases: resolved.aliases,
+        response,
+      }),
+      (error) => {
+        this.interruptRequests.delete(key);
+        throw error;
+      },
+    );
+    this.interruptRequests.set(key, completion);
+    return completion;
+  }
+
+  async #retainTurn(response, threadId = null, interruptTarget = null) {
     const turnId = response?.turn?.id;
     if (typeof turnId !== "string" || turnId.length === 0) {
       throw new TypeError("turn/start response requires a turn id");
@@ -313,6 +437,14 @@ export class GenerationBoundAppServerTransport {
         this.turnAdmissions.set(turnId, admission);
         if (typeof threadId === "string" && threadId.length > 0) {
           this.turnThreads.set(turnId, threadId);
+          const target = interruptTarget ?? { threadId, turnId };
+          if (typeof target.threadId === "string" && target.threadId.length > 0
+              && typeof target.turnId === "string" && target.turnId.length > 0) {
+            this.turnControls.set(turnId, Object.freeze({
+              alias: Object.freeze({ threadId, turnId }),
+              target: Object.freeze({ threadId: target.threadId, turnId: target.turnId }),
+            }));
+          }
         }
       }
     } catch (error) {
@@ -322,7 +454,7 @@ export class GenerationBoundAppServerTransport {
     return response;
   }
 
-  async #performGenerationEffect(generation, payload) {
+  async #performGenerationEffect(generation, payload, startedTurns = null) {
     if (payload?.protocol === SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL) {
       if (!this.supervisorCampaignHostEffectRuntime) {
         throw new Error("supervisor campaign host-effect runtime is unavailable");
@@ -339,9 +471,14 @@ export class GenerationBoundAppServerTransport {
       throw new TypeError("generation App Server effect requires a method");
     }
     const response = await this.transport.request(payload.method, payload.params);
-    return payload.method === "turn/start"
-      ? this.#retainTurn(response, payload.params?.threadId)
-      : response;
+    if (payload.method !== "turn/start") return response;
+    if (Array.isArray(startedTurns)) {
+      if (!["completed", "interrupted", "failed"].includes(response?.turn?.status)) {
+        startedTurns.push({ threadId: payload.params?.threadId, turnId: response?.turn?.id });
+      }
+      return response;
+    }
+    return this.#retainTurn(response, payload.params?.threadId);
   }
 
   #scheduleSyntheticNotifications(notifications) {
@@ -378,7 +515,11 @@ export class GenerationBoundAppServerTransport {
   }
 
   request(method, params) {
+    if (method === "turn/interrupt") {
+      return this.#interrupt(params ?? {}).then(({ response }) => response);
+    }
     return this.#schedule((markSent) => {
+      const startedTurns = [];
       const completion = this.dispatchHost.run({
         kind: "app_server_request",
         id: text(this.idFactory("request"), "generation request admission id"),
@@ -388,12 +529,24 @@ export class GenerationBoundAppServerTransport {
         const forwardedCompletion = this.transport.request(forwarded.method, forwarded.params);
         markSent();
         return forwardedCompletion;
+      }, (generation, effectPayload) => {
+        const effectCompletion = this.#performGenerationEffect(
+          generation,
+          effectPayload,
+          startedTurns,
+        );
+        markSent();
+        return effectCompletion;
       });
       return completion.then(async (response) => {
         const synthetic = syntheticResponse(response);
         const projected = synthetic ? synthetic.response : response;
         const retained = method === "turn/start"
-          ? await this.#retainTurn(projected, params?.threadId)
+          ? await this.#retainTurn(
+              projected,
+              params?.threadId,
+              synthetic && startedTurns.length === 1 ? startedTurns[0] : null,
+            )
           : projected;
         if (synthetic) this.#scheduleSyntheticNotifications(synthetic.notifications);
         return retained;

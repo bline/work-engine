@@ -162,6 +162,7 @@ async function main() {
   process.stderr.write("[startup] generation=active proxy-socket=opening\n");
   const proxy = new AppServerProtocolProxy({
     transport: generationBootstrap.transport,
+    operatorControl: generationBootstrap.transport.operatorControl(),
     socketPath: options.socketPath,
   });
   proxy.on("protocolError", (error) => {
@@ -169,6 +170,9 @@ async function main() {
   });
   proxy.on("requestError", ({ method, error }) => {
     process.stderr.write(`App Server proxy request failed (${method}): ${error.stack ?? error.message}\n`);
+  });
+  proxy.on("controlError", (error) => {
+    process.stderr.write(`App Server operator control failed: ${error.message}\n`);
   });
   if (options.trace) {
     proxy.on("clientRequest", ({ id, method }) => {
@@ -181,6 +185,12 @@ async function main() {
         turnStatus ? `status=${turnStatus}` : null,
       ].filter(Boolean).join(" ");
       process.stderr.write(`[proxy-client] response id=${id} method=${method}${subject ? ` ${subject}` : ""}\n`);
+    });
+    proxy.on("controlRequest", ({ command }) => {
+      process.stderr.write(`[operator-control] request command=${command}\n`);
+    });
+    proxy.on("controlResponse", ({ command, status }) => {
+      process.stderr.write(`[operator-control] response command=${command} status=${status}\n`);
     });
   }
   try {

@@ -192,6 +192,25 @@ npm run app-server:proxy -- --socket /tmp/work-engine-app-server.sock --trace
 codex --remote unix:///tmp/work-engine-app-server.sock
 ```
 
+The same Unix socket exposes a process-independent operator control lane. It
+remains reachable when the TUI is wedged behind an in-flight request:
+
+```bash
+npm run app-server:control -- --socket /tmp/work-engine-app-server.sock status
+npm run app-server:control -- --socket /tmp/work-engine-app-server.sock interrupt
+npm run app-server:control -- --socket /tmp/work-engine-app-server.sock \
+  interrupt --thread THREAD_ID --turn TURN_ID
+npm run app-server:control -- --socket /tmp/work-engine-app-server.sock disconnect
+```
+
+Native Codex `turn/interrupt` requests and the recovery CLI use the same
+generation-bound turn identity, but interruption bypasses the ordinary
+generation dispatch queue and reaches the frozen Codex transport directly.
+Repeated requests for the same active turn coalesce. `disconnect` closes only
+the current remote UI connection: it does not cancel an active turn, stop the
+proxy, end a workflow, or perform the role-level `:we detach` command. Stop the
+host explicitly in its own terminal when host shutdown is intended.
+
 It relays the complete bidirectional App Server JSON-RPC protocol between one
 remote client and a private observable stdio App Server. The socket is created
 with owner-only permissions, an existing path fails closed, and `/rpc` is the

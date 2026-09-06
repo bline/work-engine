@@ -5,6 +5,8 @@ import http from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
 const RPC_PATH = "/rpc";
+const CONTROL_PATH = "/work-engine/control";
+const CONTROL_BODY_LIMIT = 16 * 1024;
 
 function protocolId(value) {
   if (typeof value === "string" || Number.isSafeInteger(value)) return value;
@@ -16,6 +18,37 @@ function responseError(error) {
     code: -32000,
     message: error instanceof Error ? error.message : "App Server request failed",
   };
+}
+
+function sendHttpJson(response, statusCode, value) {
+  const body = Buffer.from(`${JSON.stringify(value)}\n`, "utf8");
+  response.writeHead(statusCode, {
+    Connection: "close",
+    "Content-Length": String(body.length),
+    "Content-Type": "application/json; charset=utf-8",
+  });
+  response.end(body);
+}
+
+async function readHttpJson(request) {
+  const chunks = [];
+  let length = 0;
+  for await (const chunk of request) {
+    length += chunk.length;
+    if (length > CONTROL_BODY_LIMIT) {
+      const error = new Error("operator control request body exceeds 16 KiB");
+      error.code = "control_body_too_large";
+      throw error;
+    }
+    chunks.push(chunk);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    const error = new Error("operator control request body must be valid JSON");
+    error.code = "invalid_control_json";
+    throw error;
+  }
 }
 
 function sendJson(peer, message) {
@@ -43,7 +76,13 @@ async function sameSocket(pathname, identity) {
 }
 
 export class AppServerProtocolProxy extends EventEmitter {
-  constructor({ transport, socketPath, rpcPath = RPC_PATH }) {
+  constructor({
+    transport,
+    socketPath,
+    rpcPath = RPC_PATH,
+    controlPath = CONTROL_PATH,
+    operatorControl = null,
+  }) {
     super();
     if (!transport || typeof transport.request !== "function"
         || typeof transport.notify !== "function"
@@ -57,16 +96,43 @@ export class AppServerProtocolProxy extends EventEmitter {
     if (typeof rpcPath !== "string" || !rpcPath.startsWith("/")) {
       throw new TypeError("App Server protocol proxy RPC path must begin with /");
     }
+    if (typeof controlPath !== "string" || !controlPath.startsWith("/")
+        || controlPath === rpcPath) {
+      throw new TypeError("App Server protocol proxy control path must be distinct and begin with /");
+    }
+    if (operatorControl !== null
+        && (typeof operatorControl.status !== "function"
+          || typeof operatorControl.interrupt !== "function")) {
+      throw new TypeError("App Server protocol proxy operator control is incompatible");
+    }
     this.transport = transport;
+    this.operatorControl = operatorControl;
     this.socketPath = socketPath;
     this.rpcPath = rpcPath;
+    this.controlPath = controlPath;
     this.peer = null;
     this.pendingServerRequests = new Map();
     this.socketIdentity = null;
     this.closing = false;
     this.httpServer = http.createServer((request, response) => {
-      response.writeHead(426, { Connection: "close", "Content-Length": "0" });
-      response.end();
+      this.#receiveHttp(request, response).catch((error) => {
+        if (response.headersSent) {
+          response.destroy();
+          return;
+        }
+        const clientError = error instanceof TypeError
+          || ["control_body_too_large", "invalid_control_json"].includes(error?.code);
+        const conflict = ["ambiguous_active_turn", "no_active_turn"]
+          .includes(error?.code);
+        sendHttpJson(response, clientError ? 400 : conflict ? 409 : 500, {
+          ok: false,
+          error: {
+            code: typeof error?.code === "string" ? error.code : "operator_control_failed",
+            message: error instanceof Error ? error.message : "operator control failed",
+          },
+        });
+        this.emit("controlError", error);
+      });
     });
     this.webSocketServer = new WebSocketServer({ noServer: true });
 
@@ -139,6 +205,58 @@ export class AppServerProtocolProxy extends EventEmitter {
     });
     peer.on("error", (error) => this.emit("protocolError", error));
     this.emit("clientConnected");
+  }
+
+  async #receiveHttp(request, response) {
+    if (request.url !== this.controlPath) {
+      response.writeHead(426, { Connection: "close", "Content-Length": "0" });
+      response.end();
+      return;
+    }
+    if (request.method !== "POST") {
+      response.writeHead(405, {
+        Allow: "POST",
+        Connection: "close",
+        "Content-Length": "0",
+      });
+      response.end();
+      return;
+    }
+    const input = await readHttpJson(request);
+    if (!input || typeof input !== "object" || Array.isArray(input)
+        || typeof input.command !== "string"
+        || Object.keys(input).some((key) => !["command", "target"].includes(key))) {
+      throw new TypeError("operator control request must contain only command and optional target");
+    }
+    this.emit("controlRequest", { command: input.command });
+    let result;
+    if (input.command === "status") {
+      if (input.target !== undefined) {
+        throw new TypeError("operator status does not accept a target");
+      }
+      result = {
+        ...this.operatorControl?.status(),
+        clientConnected: Boolean(this.peer && this.peer.readyState === WebSocket.OPEN),
+      };
+    } else if (input.command === "interrupt") {
+      if (!this.operatorControl) {
+        const error = new Error("operator interruption is unavailable");
+        error.code = "operator_control_unavailable";
+        throw error;
+      }
+      result = await this.operatorControl.interrupt(input.target ?? {});
+    } else if (input.command === "disconnect") {
+      if (input.target !== undefined) {
+        throw new TypeError("operator disconnect does not accept a target");
+      }
+      const connected = Boolean(this.peer && this.peer.readyState === WebSocket.OPEN);
+      if (connected) this.peer.close(1000, "Detached by Work Engine operator control");
+      result = { schemaVersion: 1, status: connected ? "disconnect_requested" : "disconnected" };
+    } else {
+      throw new TypeError(`unknown operator control command ${input.command}`);
+    }
+    sendHttpJson(response, 200, { ok: true, result });
+    this.emit("controlResponse", { command: input.command, status: result?.status ?? "ok" });
   }
 
   async #receive(peer, text) {

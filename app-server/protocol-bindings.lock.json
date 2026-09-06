@@ -20,6 +20,8 @@
     "v2/ThreadStartResponse.ts",
     "v2/ThreadTokenUsageUpdatedNotification.ts",
     "v2/TurnCompletedNotification.ts",
+    "v2/TurnInterruptParams.ts",
+    "v2/TurnInterruptResponse.ts",
     "v2/TurnStartParams.ts",
     "v2/TurnStartResponse.ts",
     "v2/UserInput.ts"

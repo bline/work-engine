@@ -15,6 +15,8 @@ export type * from "./v2/ThreadStartParams";
 export type * from "./v2/ThreadStartResponse";
 export type * from "./v2/ThreadTokenUsageUpdatedNotification";
 export type * from "./v2/TurnCompletedNotification";
+export type * from "./v2/TurnInterruptParams";
+export type * from "./v2/TurnInterruptResponse";
 export type * from "./v2/TurnStartParams";
 export type * from "./v2/TurnStartResponse";
 export type * from "./v2/UserInput";
