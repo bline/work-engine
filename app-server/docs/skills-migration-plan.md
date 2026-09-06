@@ -514,6 +514,54 @@ from this closure. S13's candidate and ten deterministic checks remain
 unchanged and resume at their existing review/acceptance boundary after this
 correction is accepted.
 
+### Post-inhabitation runtime binding and progress residuals
+
+The 2026-09-06 S13 recovery attempt exposed two operator-facing residuals that
+do not invalidate the accepted A-series or native-review-hosting closures.
+They remain explicit follow-up work rather than hidden assumptions of S13.
+
+First, executable-generation state and supervisor operational state have
+different continuity. The reviewed repair published at `911c9ace471e8287d75a138918d3a9e85635250d`
+allows a fresh executable-generation root to mount an explicitly retained
+operational root. Its restart vertical proves that the campaign and exact
+native-review episode/result survive without another reviewer invocation.
+Runtime thread bindings are not part of that retained semantic state: they are
+bound to an exact role-environment fingerprint. Reusing the old binding file
+under a changed environment correctly fails before `thread/resume`.
+
+Until a mediated replacement command exists, an environment-migrated host
+must use a fresh binding registry while mounting the retained operational
+state. The intended successor is an explicit operator command such as
+`:we replace <role>:<instance>`, owned by the stable control plane. Replacement
+must bind the expected prior binding revision and environment fingerprint,
+interrupt or reconcile in-flight delivery, preserve the displaced binding as
+history, start a successor thread under the current fingerprint, and surface
+the resulting lifecycle state. It must not delete the old thread, reinterpret
+workflow state, replay provider work, or grant campaign, review, mutation, or
+publication authority. `:we detach` is not a substitute: it changes only the
+operator's current projection and does not alter the durable runtime binding.
+
+Second, the current Codex TUI projection can leave the operator with only a
+generic `Working...` indication until the final role response. That is
+insufficient causal observability for long supervisor turns. The
+`OperatorProjection` successor should stream bounded, attributed progress
+events when available, including admitted phase, provider or harness activity,
+tool-activity summaries, elapsed time and heartbeat, lifecycle transitions,
+recoverable waits, and blockers requiring judgment. A provider- or
+harness-supplied reasoning summary may be projected when its contract permits;
+raw hidden reasoning is neither required nor an appropriate substitute.
+Progress projection must remain observational: it cannot become canonical
+workflow state, inference evidence, or authority, and high-volume event detail
+should remain outside model context unless it changes the agent's judgment.
+
+These residuals should be closed after S13 recovery unless a new failure makes
+one a direct prerequisite. Their acceptance evidence is: environment-changing
+replacement works through the operator interface without manual binding-file
+edits or semantic-state loss; and a long-running supervisor vertical exposes
+ordered progress, tool/lifecycle activity, interruption, and terminal outcome
+through provider-neutral events while preserving the exact underlying raw
+evidence and authority boundaries.
+
 ## Candidate slices
 
 ### S0 — Revision-bound portfolio inventory and migration ledger
