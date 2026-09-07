@@ -230,11 +230,13 @@ App Server starts. Startup logs print both resolved roots so the binding is
 observable.
 
 Hosted manifest-role turns pass through the semantic lifecycle in shadow mode
-by default. The proxy loads `semantic-context-profile.yaml`; use
-`--semantic-profile PATH` to select another closed profile. The checked-in
-`semantic-context-live-profile.yaml` selects the live host and must be paired
-with `--enable-token-budget`; use it only after the gated live transition test
-passes on the installed Codex version. Completed role
+when provider-managed context replacement is not enabled. When the proxy is
+started with `--enable-token-budget`, it selects the checked-in
+`semantic-context-live-profile.yaml` by default so the model-side `new_context`
+actuator is not armed under an observe-only lifecycle. Use
+`--semantic-profile PATH` to select another closed profile explicitly. Live
+operation must still follow a successful gated transition test on the installed
+Codex version. Completed role
 turns are joined only to token telemetry carrying the same turn ID, and their
 episodes are stored at `semantic-context.sqlite3` under the proxy's stable
 state directory. The SQLite path therefore survives executable-generation

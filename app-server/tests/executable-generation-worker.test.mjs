@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   appendFile, copyFile, mkdir, mkdtemp, readFile, rm, stat, unlink, writeFile,
 } from "node:fs/promises";
@@ -724,7 +725,7 @@ test("fresh executable-generation roots can retain one supervisor operational st
     reviewerExecuteProcess: async (request) => {
       reviewerCalls += 1;
       const sessionIndex = request.args.indexOf("--session-id");
-      return {
+      const completed = {
         exitCode: 0,
         stderr: "",
         stdout: JSON.stringify({
@@ -735,6 +736,21 @@ test("fresh executable-generation roots can retain one supervisor operational st
           structured_output: reviewResult,
         }),
       };
+      const command = request.args.slice(request.args.indexOf("--") + 1);
+      const modelIndex = command.indexOf("--model");
+      const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+      await writeFile(receiptPath, `${JSON.stringify({schema_version: 1, request: {
+        transport: "anthropic", continuity: "retained",
+        command_sha256: createHash("sha256").update(JSON.stringify(command)).digest("hex"),
+        session_mode: "new", session_id: request.args[sessionIndex + 1],
+        paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false},
+      attempts: [{transport: "anthropic", gateway: "anthropic",
+        requested_model: command[modelIndex + 1], requested_upstream_provider: null,
+        observed_models: ["claude-sonnet-5"], returncode: 0, duration_ms: 1}],
+      selected_transport: "anthropic", failover: {attempted: false, allowed: false,
+        reason: null, continuity_claim: null}, upstream_provider_observed: false,
+      result: "success"})}\n`);
+      return completed;
     },
   });
   const factory = async ({ workspaceRoot: ownerWorkspaceRoot, stateRoot }) => {

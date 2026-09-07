@@ -46,6 +46,63 @@ function directAnthropicEnvironment(environment) {
   return env;
 }
 
+const DIRECT_ANTHROPIC_ROUTING_CONSTRAINTS = new Set(["direct", "direct-anthropic-only"]);
+const LEGACY_NATIVE_PROFILE_ID = "anthropic.claude-code.sonnet-review-v1";
+
+function directAnthropicCatalogModel(profile, catalog, now) {
+  validateCatalogProjection(catalog);
+  if (profile.provider !== "anthropic") {
+    throw new ReviewerRuntimeError("configuration", "native Claude adapter requires an Anthropic reviewer profile");
+  }
+  if (Date.parse(catalog.observedAt) > now || Date.parse(catalog.expiresAt) <= now) {
+    throw new ReviewerRuntimeError("catalog", "native Claude catalog is not fresh");
+  }
+  const model = catalog.models.find(({slug, provider}) =>
+    slug === profile.requestedModel && provider === profile.provider);
+  if (!model) throw new ReviewerRuntimeError("catalog", "native Claude profile is absent from the bound catalog");
+  for (const capability of profile.capabilities) {
+    if (!model.capabilities.includes(capability)) {
+      throw new ReviewerRuntimeError("catalog", `native Claude catalog is missing capability ${capability}`);
+    }
+  }
+  if (!model.routingConstraints.length
+      || model.routingConstraints.some((constraint) => !DIRECT_ANTHROPIC_ROUTING_CONSTRAINTS.has(constraint))) {
+    throw new ReviewerRuntimeError("catalog", "native Claude catalog does not authorize direct Anthropic routing");
+  }
+  return model;
+}
+
+function validateTransportReceipt(value, {commandDigest, requestedModel, sessionId, sessionMode, exitCode}) {
+  const attempt = value?.attempts?.[0];
+  const valid = value?.schema_version === 1
+    && value?.request?.transport === "anthropic"
+    && value?.request?.continuity === "retained"
+    && value?.request?.command_sha256 === commandDigest
+    && value?.request?.session_id === sessionId
+    && value?.request?.session_mode === sessionMode
+    && value?.request?.paid_failover_explicitly_allowed === false
+    && value?.request?.batch_route_explicitly_allowed === false
+    && Array.isArray(value?.attempts) && value.attempts.length === 1
+    && attempt?.transport === "anthropic"
+    && attempt?.gateway === "anthropic"
+    && attempt?.requested_model === requestedModel
+    && attempt?.requested_upstream_provider === null
+    && attempt?.returncode === exitCode
+    && Array.isArray(attempt?.observed_models)
+    && attempt.observed_models.length > 0
+    && attempt.observed_models.every((model) => typeof model === "string" && model.trim())
+    && value?.failover?.attempted === false
+    && value?.failover?.allowed === false
+    && value?.upstream_provider_observed === false
+    && value?.selected_transport === (exitCode === 0 ? "anthropic" : null)
+    && value?.result === (exitCode === 0 ? "success" : "failed");
+  if (!valid) {
+    throw new ReviewerRuntimeError("provenance",
+      "native Claude transport receipt does not preserve the exact direct-Anthropic attempt binding");
+  }
+  return attempt.observed_models;
+}
+
 function obligationInstructions(roleInstructions) {
   const specialistIndex = roleInstructions.indexOf(SPECIALIST_MARKER);
   if (specialistIndex === -1) return roleInstructions.trim();
@@ -220,7 +277,8 @@ export class NativeClaudeCodeReviewerAdapter {
     pythonExecutable = "python3", claudeExecutable = "claude",
     transportScript = "skills/claude-recon-implementation/scripts/claude_transport.py",
     catalogSource = null, baseEnvironment = process.env, credentialSourcePath = null,
-    subjectWorkspaceFactory = async ({workspaceRoot: root}) => root} = {}) {
+    subjectWorkspaceFactory = async ({workspaceRoot: root}) => root,
+    now = () => Date.now()} = {}) {
     if (!registry?.admit) throw new TypeError("native Claude adapter requires a reviewer registry");
     if (!workspaceRoot || !stateRoot) throw new TypeError("native Claude adapter requires host-owned workspace and state roots");
     Object.assign(this, {registry, workspaceRoot: path.resolve(workspaceRoot), stateRoot: path.resolve(stateRoot),
@@ -228,13 +286,55 @@ export class NativeClaudeCodeReviewerAdapter {
       transportScript: path.resolve(workspaceRoot, transportScript),
       catalogSource: catalogSource === null ? null : Object.freeze(structuredClone(catalogSource)),
       baseEnvironment: Object.freeze({...baseEnvironment}),
-      subjectWorkspaceFactory,
+      subjectWorkspaceFactory, now,
       credentialSourcePath: path.resolve(credentialSourcePath
         ?? path.join(baseEnvironment.CLAUDE_CONFIG_DIR
           ?? path.join(baseEnvironment.HOME ?? "", ".claude"), ".credentials.json"))});
   }
 
   runtimeSessionId(instanceId) { return sessionUuid(instanceId); }
+
+  async #bindSession(instanceRoot, {profile, registryRevision, sessionId, continuation}) {
+    const file = path.join(instanceRoot, "session-binding.json");
+    const expected = {schemaVersion: 1, profileId: profile.profileId,
+      profileConfigurationDigest: profile.configurationDigest, registryRevision,
+      requestedModel: profile.requestedModel, provider: profile.provider, sessionId};
+    if (!continuation) {
+      try { await writeFile(file, `${JSON.stringify(expected)}\n`, {mode: 0o600, flag: "wx"}); }
+      catch (error) {
+        if (error?.code === "EEXIST") {
+          let existing;
+          try { existing = JSON.parse(await readFile(file, "utf8")); } catch {}
+          let attemptExists = true;
+          try { await access(path.join(instanceRoot, "latest-attempt.json")); }
+          catch (accessError) { if (accessError?.code === "ENOENT") attemptExists = false; else throw accessError; }
+          if (!attemptExists && digest(existing) === digest(expected)) return Object.freeze(existing);
+          throw new ReviewerRuntimeError("continuity", "native Claude fresh session already has a binding");
+        }
+        throw error;
+      }
+      return Object.freeze(expected);
+    }
+    let existing;
+    try { existing = JSON.parse(await readFile(file, "utf8")); }
+    catch (error) {
+      if (error?.code !== "ENOENT" || profile.profileId !== LEGACY_NATIVE_PROFILE_ID
+          || profile.requestedModel !== "sonnet" || profile.provider !== "anthropic") {
+        throw new ReviewerRuntimeError("continuity", "native Claude continuation has no compatible session binding");
+      }
+      try { await writeFile(file, `${JSON.stringify(expected)}\n`, {mode: 0o600, flag: "wx"}); }
+      catch (writeError) {
+        if (writeError?.code !== "EEXIST") throw writeError;
+        existing = JSON.parse(await readFile(file, "utf8"));
+      }
+      if (existing === undefined) return Object.freeze(expected);
+    }
+    if (digest(existing) !== digest(expected)) {
+      throw new ReviewerRuntimeError("continuity",
+        "native Claude continuation differs from the immutable profile and model binding");
+    }
+    return Object.freeze(existing);
+  }
 
   async #seedCredentials(configRoot, {refresh = false} = {}) {
     const destination = path.join(configRoot, ".credentials.json");
@@ -369,19 +469,14 @@ export class NativeClaudeCodeReviewerAdapter {
     if (typeof instanceId !== "string" || !instanceId.trim()) throw new ReviewerRuntimeError("configuration", "native Claude instanceId is required");
     if (typeof roleInstructions !== "string" || !roleInstructions.trim()) throw new ReviewerRuntimeError("configuration", "canonical role instructions are required");
     const {profile, registryRevision} = this.registry.admit(profileId);
-    if (profile.provider !== "anthropic" || profile.requestedModel !== "sonnet") {
-      throw new ReviewerRuntimeError("configuration", "native Claude adapter admits only the direct Anthropic sonnet profile");
-    }
-    validateCatalogProjection(catalogProjection); validateRawEventPolicy(rawEventPolicy);
+    validateRawEventPolicy(rawEventPolicy);
     const admittedReviewBoundary = validateReviewBoundary(reviewBoundary, subject);
+    directAnthropicCatalogModel(profile, catalogProjection, this.now());
     if (this.catalogSource !== null
         && (catalogProjection.source !== this.catalogSource.source
           || catalogProjection.sourceSha256 !== this.catalogSource.sourceSha256)) {
       throw new ReviewerRuntimeError("catalog", "native Claude catalog provenance differs from the admitted reviewer profile source");
     }
-    const catalogModel = catalogProjection.models.find(({slug, provider}) =>
-      slug === profile.requestedModel && provider === profile.provider);
-    if (!catalogModel) throw new ReviewerRuntimeError("catalog", "native Claude profile is absent from the bound catalog");
     const expectedSession = this.runtimeSessionId(instanceId);
     if (continuationSessionId !== null && continuationSessionId !== expectedSession) {
       throw new ReviewerRuntimeError("continuity", "native Claude continuation differs from the pre-registered session");
@@ -390,9 +485,12 @@ export class NativeClaudeCodeReviewerAdapter {
       throw new ReviewerRuntimeError("authentication",
         "native Claude credential refresh requires the exact retained session");
     }
+    const env = {...directAnthropicEnvironment(this.baseEnvironment)};
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const configRoot = path.join(instanceRoot, "config");
     await mkdir(configRoot, {recursive: true, mode: 0o700});
+    const sessionBinding = await this.#bindSession(instanceRoot, {profile, registryRevision,
+      sessionId: expectedSession, continuation: continuationSessionId !== null});
     const attemptId = randomUUID();
     try { await this.#seedCredentials(configRoot, {refresh: refreshCredentials}); }
     catch (error) {
@@ -422,11 +520,14 @@ export class NativeClaudeCodeReviewerAdapter {
       "--strict-mcp-config", "--mcp-config", mcpPath, "--tools", TOOLS,
       "--output-format", "json", "--json-schema", JSON.stringify(outputSchema(specialist)),
       "--dangerously-skip-permissions", prompt];
+    const commandDigest = digest([this.claudeExecutable, ...claudeArgs]);
     const args = [this.transportScript, "--transport", "anthropic", "--continuity", "retained",
       "--receipt", receiptPath, "--", this.claudeExecutable, ...claudeArgs];
-    const env = {...directAnthropicEnvironment(this.baseEnvironment), CLAUDE_CONFIG_DIR: configRoot};
+    env.CLAUDE_CONFIG_DIR = configRoot;
     await writeFile(path.join(instanceRoot, "latest-attempt.json"), `${JSON.stringify({
       schemaVersion: 1, attemptId, sessionId: expectedSession,
+      sessionBindingDigest: digest(sessionBinding), commandDigest,
+      catalogDigest: digest(catalogProjection), subjectDigest: digest(subject),
       transportReceipt: path.basename(receiptPath),
     })}\n`, {mode: 0o600});
     const subjectWorkspace = path.resolve(await this.subjectWorkspaceFactory({
@@ -435,8 +536,12 @@ export class NativeClaudeCodeReviewerAdapter {
     let transport;
     try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: subjectWorkspace}); }
     catch (error) { throw new ReviewerRuntimeError("spawn", `native Claude process start failed: ${error.message}`); }
-    let transportReceipt = null;
-    try { transportReceipt = JSON.parse(await readFile(receiptPath, "utf8")); } catch {}
+    let transportReceipt;
+    try { transportReceipt = JSON.parse(await readFile(receiptPath, "utf8")); }
+    catch { throw new ReviewerRuntimeError("provenance", "native Claude transport receipt is unavailable"); }
+    const observedModels = validateTransportReceipt(transportReceipt, {commandDigest,
+      requestedModel: profile.requestedModel, sessionId: expectedSession,
+      sessionMode: continuationSessionId === null ? "new" : "resume", exitCode: transport.exitCode});
     if (transport.exitCode !== 0) {
       const recovery = await this.recoverFailure(instanceId);
       return Object.freeze({attemptId, failure: {kind: "transport", message: `native Claude exited ${transport.exitCode}`,
@@ -447,6 +552,11 @@ export class NativeClaudeCodeReviewerAdapter {
         runtimeSessionId: expectedSession, transportReceipt});
     }
     const {envelope, result} = parseResult(transport.stdout, expectedSession);
+    const observedModel = envelope.model ?? Object.keys(envelope.modelUsage ?? {})[0] ?? "unknown";
+    if (observedModel !== "unknown" && !observedModels.includes(observedModel)) {
+      throw new ReviewerRuntimeError("provenance",
+        "native Claude result model differs from the exact transport provenance");
+    }
     if (digest(result.subject) !== digest(subject)) {
       return Object.freeze({attemptId, failure: {kind: "subject_drift", message: "native Claude result subject differs"}, result: null,
         runtimeSessionId: expectedSession, transportReceipt});
@@ -458,7 +568,7 @@ export class NativeClaudeCodeReviewerAdapter {
       receipt: Object.freeze({schemaVersion: 1, attemptId, profileId,
         profileConfigurationDigest: profile.configurationDigest, registryRevision,
         harness: "claude-code", gateway: "anthropic", requestedModel: profile.requestedModel,
-        observedModel: envelope.model ?? Object.keys(envelope.modelUsage ?? {})[0] ?? "unknown",
+        observedModel,
         claudeVersion: transportReceipt?.claude_version ?? "unknown", sessionId: expectedSession,
         continuity: continuationSessionId === null ? "fresh_initial" : "same_session_resume",
         mutationAuthorized: false, transportReceiptDigest: transportReceipt ? digest(transportReceipt) : null}),

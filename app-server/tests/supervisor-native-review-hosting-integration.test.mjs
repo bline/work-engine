@@ -33,8 +33,56 @@ const effect = (operation, input) => ({generationId: "generation-native", effect
   protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL, capability: "capability.native_review", operation, input,
 }});
 
+async function ensureTransportReceipt(request, result) {
+  const receiptIndex = request.args.indexOf("--receipt");
+  const commandIndex = request.args.indexOf("--");
+  if (receiptIndex < 0 || commandIndex < 0) return;
+  const receiptPath = request.args[receiptIndex + 1];
+  const command = request.args.slice(commandIndex + 1);
+  const modelIndex = command.indexOf("--model");
+  const requestedModel = command[modelIndex + 1];
+  const sessionFlag = command.includes("--session-id") ? "--session-id" : "--resume";
+  const sessionIndex = command.indexOf(sessionFlag);
+  let observedModel = requestedModel;
+  try {
+    const envelope = JSON.parse(result.stdout || "null");
+    observedModel = envelope?.model ?? Object.keys(envelope?.modelUsage ?? {})[0] ?? requestedModel;
+  } catch {}
+  let existing = {};
+  try { existing = JSON.parse(await readFile(receiptPath, "utf8")); } catch {}
+  const baseAttempt = {transport: "anthropic", gateway: "anthropic",
+    requested_model: requestedModel, requested_upstream_provider: null,
+    observed_models: [observedModel], returncode: result.exitCode,
+    duration_ms: 1};
+  const existingAttempts = Array.isArray(existing.attempts) && existing.attempts.length
+    ? existing.attempts : [baseAttempt];
+  const receipt = {...existing, schema_version: 1,
+    request: {...existing.request, transport: "anthropic", continuity: "retained",
+      command_sha256: createHash("sha256").update(JSON.stringify(command)).digest("hex"),
+      session_mode: sessionFlag === "--session-id" ? "new" : "resume",
+      session_id: command[sessionIndex + 1], paid_failover_explicitly_allowed: false,
+      batch_route_explicitly_allowed: false},
+    attempts: existingAttempts.map((attempt, index) => index === 0 ? {...baseAttempt, ...attempt,
+      transport: "anthropic", gateway: "anthropic", requested_model: requestedModel,
+      requested_upstream_provider: null, observed_models: [observedModel],
+      returncode: result.exitCode} : attempt),
+    selected_transport: result.exitCode === 0 ? "anthropic" : null,
+    failover: {attempted: false, allowed: false, reason: null, continuity_claim: null},
+    upstream_provider_observed: false, result: result.exitCode === 0 ? "success" : "failed"};
+  await writeFile(receiptPath, `${JSON.stringify(receipt)}\n`);
+}
+
+const withTransportReceipt = (executeProcess) => async (request) => {
+  const completed = await executeProcess(request);
+  await ensureTransportReceipt(request, completed);
+  return completed;
+};
+
 function createNativeReviewHostOwners(options) {
   return createProductionNativeReviewHostOwners({...options,
+    ...(options.reviewerExecuteProcess ? {
+      reviewerExecuteProcess: withTransportReceipt(options.reviewerExecuteProcess),
+    } : {}),
     reviewerSubjectWorkspaceFactory: async () => repository,
     reviewBoundaryFactory: ({subject: reviewedSubject}) => ({schemaVersion: 1, baselineCommit: "b".repeat(40),
       candidateCommit: reviewedSubject.commit, candidateTree: reviewedSubject.tree,
@@ -131,13 +179,13 @@ test("supervisor dispatch uses the production review boundary against the real c
   const evidence = {path: filePath, startLine: 1, endLine: 1,
     sha256: createHash("sha256").update("export const value = 2;\n").digest("hex")};
   const ownersFactory = (options) => createProductionNativeReviewHostOwners({...options,
-    reviewerCredentialSourcePath, reviewerExecuteProcess: async (request) => {
+    reviewerCredentialSourcePath, reviewerExecuteProcess: withTransportReceipt(async (request) => {
       const sessionIndex = request.args.indexOf("--session-id");
       return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
         session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5",
         structured_output: {schemaVersion: 1, subject: {commit, tree, patchIdentity},
           verdict: "acceptable_as_is", findings: [], decisiveEvidence: [evidence], limitations: []}})};
-    }});
+    })});
   const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: fixture, stateRoot,
     canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory,
     nativeReviewOwnersFactory: ownersFactory});

@@ -131,6 +131,14 @@ test("proxy entry composes the stable all-thirteen supervisor capability host", 
     "proxy composition must not bypass the stable host with a special strategic route");
 });
 
+test("proxy couples token-budget activation to the live semantic lifecycle profile", async () => {
+  const source = await readFile(PROXY_ENTRY, "utf8");
+  assert.match(source, /semanticProfilePath:\s*null/);
+  assert.match(source, /options\.semanticProfilePath \?\?= path\.join\([\s\S]*options\.tokenBudget[\s\S]*semantic-context-live-profile\.yaml[\s\S]*semantic-context-profile\.yaml/);
+  assert.match(source, /--semantic-profile/,
+    "an explicit profile remains available for bounded shadow and test operation");
+});
+
 async function fixture(t, { operatorControl = null } = {}) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy."));
   const socketPath = path.join(directory, "app-server.sock");

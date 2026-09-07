@@ -39,7 +39,7 @@ function parseArguments(argv) {
     socketPath: null,
     cwd: process.cwd(),
     manifestPath: path.join(WORKSPACE_ROOT, "app-server/runtime-manifest.yaml"),
-    semanticProfilePath: path.join(WORKSPACE_ROOT, "app-server/semantic-context-profile.yaml"),
+    semanticProfilePath: null,
     bindingsPath: process.env.WORK_ENGINE_APP_SERVER_BINDINGS
       ?? path.join(os.homedir(), ".local/state/work-engine/app-server-role-bindings.json"),
     trace: false,
@@ -83,6 +83,12 @@ function parseArguments(argv) {
   if (options.canonicalBranches.length === 0) {
     throw new Error("at least one explicit --canonical-branch NAME is required");
   }
+  options.semanticProfilePath ??= path.join(
+    WORKSPACE_ROOT,
+    options.tokenBudget
+      ? "app-server/semantic-context-live-profile.yaml"
+      : "app-server/semantic-context-profile.yaml",
+  );
   options.generationState ??= defaultGenerationState(options.socketPath);
   options.operationalState ??= options.generationState;
   return options;

@@ -15,12 +15,12 @@ const reviewBoundary = {schemaVersion: 1, baselineCommit: "b".repeat(40), candid
   candidateTree: subject.tree, taskPatchDigest: subject.patchIdentity, gateReceiptDigest: "d".repeat(64),
   paths: [{path: "app-server/src/index.mjs", action: "modify"}], evidenceCatalog: result.decisiveEvidence,
   baselineEvidenceCatalog: [], changeDiff: "diff --git a/app-server/src/index.mjs b/app-server/src/index.mjs\n"};
-function profile() {
+function profile(overrides = {}) {
   const value = {schemaVersion: 1, profileId: "anthropic.claude-code.sonnet-review-v1", enabled: true,
     requestedModel: "sonnet", provider: "anthropic", reasoning: "medium",
     capabilities: ["structured_output", "repository_read"], outputSchema: "work-engine.implementation-review.v1",
     effectiveInstructions: "Review exact subject.", isolatedHome: true,
-    limitations: ["Direct Anthropic only."], acceptingAuthority: "accepted-plan"};
+    limitations: ["Direct Anthropic only."], acceptingAuthority: "accepted-plan", ...overrides};
   value.configurationDigest = digest(value); return value;
 }
 const catalog = {schemaVersion: 1, catalogId: "native", observedAt: "2026-09-01T00:00:00Z",
@@ -34,6 +34,35 @@ async function credentials(root) {
   const source = path.join(root, "fixture-credentials.json");
   await writeFile(source, '{"fixture":"subscription"}\n', {mode: 0o600});
   return source;
+}
+
+async function transportResult(request, envelope = null, {exitCode = 0, stderr = "",
+  observedModels = null, receiptOverrides = {}} = {}) {
+  const receiptIndex = request.args.indexOf("--receipt");
+  const commandIndex = request.args.indexOf("--");
+  const command = request.args.slice(commandIndex + 1);
+  const modelIndex = command.indexOf("--model");
+  const sessionFlag = command.includes("--session-id") ? "--session-id" : "--resume";
+  const sessionIndex = command.indexOf(sessionFlag);
+  const requestedModel = command[modelIndex + 1];
+  const observed = envelope?.model ?? Object.keys(envelope?.modelUsage ?? {})[0] ?? null;
+  const base = {schema_version: 1, request: {transport: "anthropic", continuity: "retained",
+    command_sha256: digest(command), session_mode: sessionFlag === "--session-id" ? "new" : "resume",
+    paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false,
+    session_id: command[sessionIndex + 1]}, attempts: [{transport: "anthropic", harness: "claude-code",
+    gateway: "anthropic", requested_model: requestedModel, requested_upstream_provider: null,
+    observed_models: observedModels ?? [observed ?? requestedModel], returncode: exitCode, duration_ms: 1,
+    stdout_sha256: "a".repeat(64), stderr_sha256: "b".repeat(64), quota_signature: null}],
+  selected_transport: exitCode === 0 ? "anthropic" : null,
+  failover: {attempted: false, allowed: false, reason: null, continuity_claim: null},
+  upstream_provider_observed: false,
+  result: exitCode === 0 ? "success" : "failed"};
+  const receipt = {...base, ...receiptOverrides,
+    request: {...base.request, ...(receiptOverrides.request ?? {})},
+    failover: {...base.failover, ...(receiptOverrides.failover ?? {})},
+    attempts: receiptOverrides.attempts ?? base.attempts};
+  await writeFile(request.args[receiptIndex + 1], `${JSON.stringify(receipt)}\n`);
+  return {exitCode, stderr, stdout: envelope === null ? "" : JSON.stringify(envelope)};
 }
 
 test("native Claude adapter constructs only direct-Anthropic retained commands and verifies UUID", async (t) => {
@@ -51,8 +80,8 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
       const sessionFlag = request.args.indexOf("--session-id");
       const resumeFlag = request.args.indexOf("--resume");
       const session = request.args[sessionFlag >= 0 ? sessionFlag + 1 : resumeFlag + 1];
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
-        session_id: session, model: "claude-sonnet-5", structured_output: result})};
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5", structured_output: result});
     }});
   const initial = await adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review."});
@@ -68,6 +97,12 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   assert.equal(calls[0].args.includes("--session-id"), true);
   assert.equal(calls[0].args.includes("--strict-mcp-config"), true);
   assert.equal(calls[0].args.some((value) => /Write|Edit|Bash/.test(value)), false);
+  const latestAttempt = JSON.parse(await readFile(path.join(root, "state", "native-claude",
+    digest("episode"), "latest-attempt.json"), "utf8"));
+  assert.match(latestAttempt.sessionBindingDigest, /^[0-9a-f]{64}$/);
+  assert.match(latestAttempt.commandDigest, /^[0-9a-f]{64}$/);
+  assert.equal(latestAttempt.catalogDigest, digest(catalog));
+  assert.equal(latestAttempt.subjectDigest, digest(subject));
   const prompt = calls[0].args.at(-1);
   assert.match(prompt, /Execution-profile constraints are subordinate to the selected review obligation/);
   assert.match(prompt, /Review exact subject\./);
@@ -81,6 +116,127 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
     continuationSessionId: "00000000-0000-4000-8000-000000000000"}), /pre-registered session/);
 });
 
+test("native Claude adapter uses the exact profile/catalog-authorized Anthropic model", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-opus-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const opus = profile({profileId: "anthropic.claude-code.opus-review-v1",
+    requestedModel: "opus", reasoning: "high"});
+  const opusCatalog = {...catalog, models: [{...catalog.models[0], slug: "opus",
+    routingConstraints: ["direct-anthropic-only"]}]};
+  const calls = [];
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [opus]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath: await credentials(root),
+    catalogSource, transportScript: path.join(root, "transport.py"),
+    now: () => Date.parse("2026-09-06T12:00:00Z"), executeProcess: async (request) => {
+      calls.push(request);
+      const sessionIndex = request.args.indexOf("--session-id");
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: request.args[sessionIndex + 1], model: "claude-opus", structured_output: result});
+    },
+  });
+  const completed = await adapter.execute({instanceId: "opus", profileId: opus.profileId, subject,
+    catalogProjection: opusCatalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Read-only review."});
+  assert.equal(completed.receipt.requestedModel, "opus");
+  assert.equal(completed.receipt.observedModel, "claude-opus");
+  assert.equal(completed.transportReceipt.attempts[0].requested_model, "opus");
+  assert.deepEqual(completed.transportReceipt.attempts[0].observed_models, ["claude-opus"]);
+  assert.deepEqual(completed.transportReceipt.failover, {attempted: false, allowed: false,
+    reason: null, continuity_claim: null});
+  assert.deepEqual(calls[0].args.slice(calls[0].args.indexOf("--model"),
+    calls[0].args.indexOf("--model") + 2), ["--model", "opus"]);
+});
+
+test("native Claude adapter fails closed on profile/catalog authorization mismatches", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-catalog-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const request = async ({candidate = profile(), projection = catalog, now = "2026-09-06T12:00:00Z"}, id) => {
+    const adapter = new NativeClaudeCodeReviewerAdapter({
+      registry: new ReviewerProfileRegistry({profiles: [candidate]}), workspaceRoot: root,
+      stateRoot: path.join(root, `state-${id}`), credentialSourcePath: await credentials(root),
+      catalogSource, transportScript: path.join(root, "transport.py"),
+      now: () => Date.parse(now), executeProcess: async () => { throw new Error("provider entry is forbidden"); },
+    });
+    return adapter.execute({instanceId: id, profileId: candidate.profileId, subject,
+      catalogProjection: projection, rawEventPolicy: policy, reviewBoundary,
+      roleInstructions: "Read-only review."});
+  };
+  await assert.rejects(request({candidate: profile({provider: "openrouter"})}, "provider"),
+    /requires an Anthropic reviewer profile/);
+  await assert.rejects(request({projection: {...catalog, models: [{...catalog.models[0], slug: "opus"}]}}, "model"),
+    /absent from the bound catalog/);
+  await assert.rejects(request({projection: {...catalog, models: [{...catalog.models[0], capabilities: ["structured_output"]}]}}, "capability"),
+    /missing capability repository_read/);
+  await assert.rejects(request({projection: {...catalog, models: [{...catalog.models[0], routingConstraints: ["openrouter"]}]}}, "routing"),
+    /does not authorize direct Anthropic routing/);
+  await assert.rejects(request({projection: {...catalog, models: [{...catalog.models[0], routingConstraints: []}]}}, "routing-empty"),
+    /does not authorize direct Anthropic routing/);
+  await assert.rejects(request({projection: {...catalog, expiresAt: "2026-09-05T00:00:00Z"}}, "stale"),
+    /catalog is not fresh/);
+});
+
+test("native Claude model choice cannot drift within a retained session or reuse a fresh binding", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-binding-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const sonnet = profile();
+  const opus = profile({profileId: "anthropic.claude-code.opus-review-v1",
+    requestedModel: "opus", reasoning: "high"});
+  let calls = 0;
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [sonnet, opus]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath: await credentials(root),
+    catalogSource, transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
+      calls += 1;
+      const command = request.args.slice(request.args.indexOf("--") + 1);
+      const flag = command.includes("--session-id") ? "--session-id" : "--resume";
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: command[command.indexOf(flag) + 1], model: "claude-sonnet-5",
+        structured_output: result});
+    },
+  });
+  const initial = await adapter.execute({instanceId: "bound", profileId: sonnet.profileId, subject,
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
+  await assert.rejects(adapter.execute({instanceId: "bound", profileId: opus.profileId, subject,
+    catalogProjection: {...catalog, models: [{...catalog.models[0], slug: "opus"}]},
+    rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
+    continuationSessionId: initial.runtimeSessionId}), /immutable profile and model binding/);
+  await assert.rejects(adapter.execute({instanceId: "bound", profileId: sonnet.profileId, subject,
+    catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."}),
+  /fresh session already has a binding/);
+  assert.equal(calls, 1);
+});
+
+test("native Claude success requires exact transport model provenance and no fallback", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-provenance-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const create = async (id, executeProcess) => new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, `state-${id}`), credentialSourcePath: await credentials(root),
+    catalogSource, transportScript: path.join(root, "transport.py"), executeProcess,
+  });
+  const execute = (adapter, id) => adapter.execute({instanceId: id, profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Review."});
+  const envelope = (request) => {
+    const command = request.args.slice(request.args.indexOf("--") + 1);
+    return {type: "result", subtype: "success",
+      session_id: command[command.indexOf("--session-id") + 1], model: "claude-sonnet-5",
+      structured_output: result};
+  };
+  await assert.rejects(execute(await create("missing", async (request) => ({exitCode: 0, stderr: "",
+    stdout: JSON.stringify(envelope(request))})), "missing"), /transport receipt is unavailable/);
+  await assert.rejects(execute(await create("fallback", async (request) => transportResult(request,
+    envelope(request), {receiptOverrides: {failover: {attempted: true, allowed: true}}})), "fallback"),
+  /exact direct-Anthropic attempt binding/);
+  await assert.rejects(execute(await create("unobserved", async (request) => transportResult(request,
+    envelope(request), {observedModels: []})), "unobserved"),
+  /exact direct-Anthropic attempt binding/);
+  await assert.rejects(execute(await create("model", async (request) => transportResult(request,
+    envelope(request), {observedModels: ["claude-opus"]})), "model"),
+  /result model differs from the exact transport provenance/);
+});
+
 test("native Claude adapter validates evidence by fields rather than provider property order", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-evidence-"));
   t.after(() => rm(root, {recursive: true, force: true}));
@@ -92,9 +248,9 @@ test("native Claude adapter validates evidence by fields rather than provider pr
     executeProcess: async (request) => {
       const sessionIndex = request.args.indexOf("--session-id");
       const resumeIndex = request.args.indexOf("--resume");
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+      return transportResult(request, {type: "result", subtype: "success",
         session_id: request.args[(sessionIndex >= 0 ? sessionIndex : resumeIndex) + 1], structured_output: {...result,
-          decisiveEvidence: [evidence]}})};
+          decisiveEvidence: [evidence]}});
     },
   });
   const reordered = {sha256: "a".repeat(64), endLine: 1,
@@ -135,8 +291,8 @@ test("native Claude correction prompt states immutable finding and result closur
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
       prompt = request.args.at(-1);
       const resumeIndex = request.args.indexOf("--resume");
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
-        session_id: request.args[resumeIndex + 1], structured_output: corrected})};
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: request.args[resumeIndex + 1], structured_output: corrected});
     },
   });
   const session = adapter.runtimeSessionId("correction");
@@ -163,8 +319,8 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
     workspaceRoot: root, stateRoot, credentialSourcePath, catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
       const resumeFlag = request.args.indexOf("--resume");
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
-        session_id: request.args[resumeFlag + 1], model: "claude-sonnet-5", structured_output: result})};
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: request.args[resumeFlag + 1], model: "claude-sonnet-5", structured_output: result});
     }});
 
   const prepare = async (instanceId, assistantMessages, {newerDecoy = false} = {}) => {
@@ -260,13 +416,13 @@ test("native Claude adapter preserves transport failure and rejects subject or U
     credentialSourcePath,
     catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
-      if (mode === "transport") return {exitCode: 1, stdout: "", stderr: "quota"};
+      if (mode === "transport") return transportResult(request, null, {exitCode: 1, stderr: "quota"});
       const index = request.args.indexOf("--session-id"); const session = request.args[index + 1];
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+      return transportResult(request, {type: "result", subtype: "success",
         session_id: mode === "uuid" ? "00000000-0000-4000-8000-000000000000" : session,
         structured_output: {...result, subject: {...subject, tree: "drift"},
           ...(mode === "subject" ? {decisiveEvidence: [{...result.decisiveEvidence[0],
-            sha256: "f".repeat(64)}]} : {})}})};
+            sha256: "f".repeat(64)}]} : {})}});
     }});
   const failed = await adapter.execute({instanceId: "failure", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."});
@@ -289,7 +445,7 @@ test("native Claude adapter fails closed on catalog provenance drift and inherit
     registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
     stateRoot: path.join(root, "state"), transportScript: path.join(root, "transport.py"),
     catalogSource, baseEnvironment, credentialSourcePath,
-    executeProcess: async () => { calls += 1; return {exitCode: 1, stdout: "", stderr: ""}; },
+    executeProcess: async (request) => { calls += 1; return transportResult(request, null, {exitCode: 1}); },
   });
   const request = {instanceId: "route", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."};
@@ -316,8 +472,8 @@ test("native Claude adapter replaces generic preamble for the agent-instruction 
     credentialSourcePath,
     transportScript: path.join(root, "transport.py"), baseEnvironment: {}, executeProcess: async (request) => {
       prompt = request.args.at(-1); const sessionIndex = request.args.indexOf("--session-id");
-      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
-        session_id: request.args[sessionIndex + 1], structured_output: specialistResult})};
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: request.args[sessionIndex + 1], structured_output: specialistResult});
     }});
   await adapter.execute({instanceId: "specialist", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
