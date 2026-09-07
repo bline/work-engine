@@ -496,11 +496,16 @@ export class InMemoryContextTransitionLeaseGate {
       throw new TypeError("context transition admission closer must be a function or null");
     }
     return this.#withRoleLock(logicalRoleInstanceId, async () => {
-      if (this.states.has(logicalRoleInstanceId)) {
+      const existing = this.states.get(logicalRoleInstanceId);
+      if (existing && existing.phase !== "preparation_failed") {
         throw new ContextTransitionLeaseError(
           "preparation_conflict",
           "a context transition subject already exists for this role",
         );
+      }
+      if (existing) {
+        this.states.delete(logicalRoleInstanceId);
+        this.threadRoles.delete(existing.preparation.subject.threadId);
       }
       const body = {
         schemaVersion: CONTEXT_TRANSITION_PREPARATION_SCHEMA_VERSION,
@@ -687,6 +692,32 @@ export class InMemoryContextTransitionLeaseGate {
       delivery: state.delivery,
       rehydration: state.rehydration,
       revocationReason: state.revocationReason,
+      preparationFailure: state.preparationFailure ?? null,
+    });
+  }
+
+  abortPreparation({ preparation, error = null }) {
+    if (!verifyContextTransitionPreparation(preparation)) {
+      throw new TypeError("preparation abort requires an integrity-valid preparation");
+    }
+    return this.#withRoleLock(preparation.subject.logicalRoleInstanceId, () => {
+      const state = this.states.get(preparation.subject.logicalRoleInstanceId);
+      if (!state || state.preparation?.preparationRevision !== preparation.preparationRevision) {
+        return freeze({ status: "not_aborted", reason: "preparation_not_active" });
+      }
+      if (!["preparing", "identity_delivering", "identity_requested", "identity_attested", "preparation_failed"].includes(state.phase)) {
+        return freeze({ status: "not_aborted", reason: "preparation_already_promoted" });
+      }
+      const message = error instanceof Error
+        ? error.message
+        : "context transition preparation was aborted";
+      state.phase = "preparation_failed";
+      state.preparationFailure = freeze({ message });
+      return freeze({
+        status: "aborted",
+        preparationRevision: preparation.preparationRevision,
+        failure: state.preparationFailure,
+      });
     });
   }
 
@@ -1183,13 +1214,16 @@ export class InMemoryContextTransitionLeaseGate {
 
 export class ContextTransitionLeaseRuntime {
   constructor({ gate, adapter, inputCustody = null }) {
-    if (!gate || typeof gate.acquire !== "function" || typeof gate.runTurnAdmission !== "function") {
+    if (!gate || typeof gate.acquire !== "function"
+        || typeof gate.abortPreparation !== "function"
+        || typeof gate.runTurnAdmission !== "function") {
       throw new TypeError("context transition runtime requires a transition lease gate");
     }
     if (!adapter || typeof adapter.deliverTurn !== "function") {
       throw new TypeError("context transition runtime requires an App Server adapter");
     }
     if (inputCustody !== null && (typeof inputCustody.closeAdmission !== "function"
+        || typeof inputCustody.abortPreparation !== "function"
         || typeof inputCustody.admission !== "function"
         || typeof inputCustody.releaseAfterReconciliation !== "function")) {
       throw new TypeError("context transition runtime input custody is incomplete");
@@ -1212,6 +1246,21 @@ export class ContextTransitionLeaseRuntime {
         transitionRevision: preparation.preparationRevision,
       }),
     });
+  }
+
+  async abortPreparation({ preparation, error = null }) {
+    if (!verifyContextTransitionPreparation(preparation)) {
+      throw new TypeError("preparation abort requires an integrity-valid preparation");
+    }
+    const transition = await this.gate.abortPreparation({ preparation, error });
+    if (transition.status !== "aborted" || this.inputCustody === null) {
+      return freeze({ transition, admission: null });
+    }
+    const admission = await this.inputCustody.abortPreparation({
+      logicalRoleInstanceId: preparation.subject.logicalRoleInstanceId,
+      transitionRevision: preparation.preparationRevision,
+    });
+    return freeze({ transition, admission });
   }
 
   async attestContextWindow({ role, preparation, clientUserMessageId, signal }) {
@@ -1384,7 +1433,6 @@ export class ContextTransitionLeaseRuntime {
             text: queuedInput.text,
             clientUserMessageId: queuedInput.clientUserMessageId,
             skills,
-            toolBridge: null,
             requestContext: null,
           });
           await this.adapter.waitForTurnCompletion({ ...delivery, signal });

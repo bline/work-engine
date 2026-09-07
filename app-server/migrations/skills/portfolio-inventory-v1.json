@@ -377,7 +377,7 @@
         },
     {
       "path": "skills/claude-recon-implementation/references/paired-openrouter-review-calibration.md",
-      "sha256": "17fff642101a6c3e8790e99bd701e64a4e9b97f58420a9434123b01d7bfea7f2"
+      "sha256": "a1ee21454b51c1227f40f4b61bcd33d798675ccc94315d9cda635de34d2d84e2"
         },
     {
       "path": "skills/claude-recon-implementation/scripts/claude_batch_loopback_proxy.py",
@@ -385,11 +385,11 @@
         },
     {
       "path": "skills/claude-recon-implementation/scripts/claude_batch_review.py",
-      "sha256": "ebdcc073c7dd9ce1e499b36cf5140eb1fe2241c74dddaf2272d5ba0ff84e0414"
+      "sha256": "53520382680c8c87bec7ae4ad43751802e01ff294055cfbcc6ab238bda7f23cc"
         },
     {
       "path": "skills/claude-recon-implementation/scripts/claude_paired_review.py",
-      "sha256": "353abb65f7579125e810e5aede3ca194adc53fd9c77cf693018a4b0605d3f8bb"
+      "sha256": "f384b4694714a9750e07a3781586b6b154792918cb1b6e7083dd842adc7b8ce0"
         },
         {
           "path": "skills/claude-recon-implementation/scripts/claude_transport.py",
@@ -413,13 +413,13 @@
         },
     {
       "path": "skills/claude-recon-implementation/tests/test_claude_batch_review.py",
-      "sha256": "c0900e0904196d9dc739239c4b4ed830304c435363106c0b1622e91136e37e92",
+      "sha256": "65ce796326b4995bebb577a70e5a937fb733ad4059b7546a9bf2dc66f1412997",
       "protected_distinction": "A native batch review is reportable only when request, environment, output, terminal event lineage, transient polling failures, and any abandoned batch identities remain exactly bound through the local worker and complete event summary.",
           "candidate_disposition": "retain"
         },
     {
       "path": "skills/claude-recon-implementation/tests/test_claude_paired_review.py",
-      "sha256": "82376b6b889723ef70a61187cadff3d90e71499166ac522a0800e11cbf68a2b8",
+      "sha256": "02e141fa5a52e05a4e91af74551b681c90703a205fb927b07d83dda7594ce786",
       "protected_distinction": "A paired review returns the realtime result while independently finalizing the shadow arm, preserves canonical path, session, subject, command, and campaign bindings, and refuses paused or non-selected campaigns and transport/session mismatches without removing registered attempts from evidence.",
           "candidate_disposition": "retain"
         },
@@ -578,7 +578,7 @@
       ],
       "source": {
         "path": "skills/comparative-repository-analysis/SKILL.md",
-        "sha256": "cc09c2485e9a9648dfe352d5edfc655f87e17dc5167106b9a5ed4aded8d94913"
+        "sha256": "0e85555176aed712bac5bd626ea60c698a2b642d6838c648e6655ea53d3b6c5c"
       },
       "artifacts": [
         {
@@ -587,15 +587,15 @@
         },
         {
           "path": "skills/comparative-repository-analysis/schemas/comparison-contract-v1.schema.json",
-          "sha256": "d87407eb28b510ba5a12021021c0d363a269756b9ae3b565b7934a020f37f5e4"
+          "sha256": "6f091bd9bbfc681b55232035bfd604eea3d8722ff70345987dfa6847736931a3"
         },
         {
           "path": "skills/comparative-repository-analysis/schemas/decision-v1.schema.json",
-          "sha256": "d861a53a6dccf382808ddba4fbd65f16c9d501323580dfd9e7c1f3c31d16f8df"
+          "sha256": "5ee9b1a7cef786b385eb767cf44bced1bc46d6d38a38589f7728397207aaa77d"
         },
         {
           "path": "skills/comparative-repository-analysis/schemas/dimension-pass-v1.schema.json",
-          "sha256": "153b5b8f872ece7544185b7fa727beb131596f44221e5912528a2c01525db652"
+          "sha256": "a817f1598cf388499b6da78766ace5d9fd1da830845a2bb50173fdeab67c8808"
         },
         {
           "path": "skills/comparative-repository-analysis/schemas/index-fallback-decision-v1.schema.json",
@@ -611,47 +611,47 @@
         },
         {
           "path": "skills/comparative-repository-analysis/schemas/repository-profile-v1.schema.json",
-          "sha256": "eadd79a2bb520bfc8b8f3d7d4326839133dde436e3aedeef56fc42b5a5a4d48e"
+          "sha256": "56ca10a619b5878b1c58231895477509ae3542f1247dfab3a236ae13e3bbb8c5"
         },
         {
           "path": "skills/comparative-repository-analysis/scripts/comparison_artifacts.py",
-          "sha256": "ed80b6174de6aa69ae1d0f8bfb66000a15d0206f8c3d9c5cea05fb0d06b683ed"
+          "sha256": "d15967948eaf1f964fa7535a00c9f6c8b73822012001d9df71b9bebab4d60a16"
         }
       ],
       "tests": [
         {
           "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/contract.json",
-          "sha256": "ed9cee2b177054d907c47afdd5c52dff02b0af4cda6aed1e98b363cd7758e8f1",
+          "sha256": "4d86904a8f09f2a100c489a1b8d70eed6082af4d8e6abb6dd78c5f6d854d6100",
           "protected_distinction": "Test-support artifact for comparative-repository-analysis; no standalone bounded distinction was identified in this file.",
           "candidate_disposition": "retain"
         },
         {
           "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/decision.json",
-          "sha256": "9482cb6c695105b39c350f41d300c71340a3bf3f04200bd032a8f473f5fab647",
+          "sha256": "d1e059734d13ced878bf3137cf8cdf6c83694c7fc69dd237020cb1a76eedc680",
           "protected_distinction": "Test-support artifact for comparative-repository-analysis; no standalone bounded distinction was identified in this file.",
           "candidate_disposition": "retain"
         },
         {
           "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/gap.json",
-          "sha256": "c3a37f3aba00a902426a12f4def521fcb588a186f9f23f18acc9df03d6a38877",
+          "sha256": "f45d412ecec3c27ec2e611ea95de1d1d0032f6d718d9ba644fcf84acc506416c",
           "protected_distinction": "Test-support artifact for comparative-repository-analysis; no standalone bounded distinction was identified in this file.",
           "candidate_disposition": "retain"
         },
         {
           "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/pass-control.json",
-          "sha256": "4f4038fabca1635cc2a11c42396cc4f367722aff1b24ecd7014bfc70884a95ac",
+          "sha256": "95eead47555ad8e6d644acd11069523b35064a6ac8153038608ae60533ecf829",
           "protected_distinction": "Test-support artifact for comparative-repository-analysis; no standalone bounded distinction was identified in this file.",
           "candidate_disposition": "retain"
         },
         {
           "path": "skills/comparative-repository-analysis/tests/fixtures/pilot/pass-review.json",
-          "sha256": "977dbeaa1e2c0c8a16803aef830717f6f76c0defb245b304432b481e5339bffb",
+          "sha256": "d0a5c3d7c0ceabe1d8dbcd79eaf0f1f003fae7582f49fcebe1125fad61522a5c",
           "protected_distinction": "Test-support artifact for comparative-repository-analysis; no standalone bounded distinction was identified in this file.",
           "candidate_disposition": "retain"
         },
         {
           "path": "skills/comparative-repository-analysis/tests/test_comparison_artifacts.py",
-          "sha256": "39f11b277abecb8f8878f6eb9de4a43156839a77539e129d4452bc1800885d9c",
+          "sha256": "7f54b0cbe261e6b5e7041fb58b8bb3566b124f06e3fca3ad0df0d8d654f5c976",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: vertical pilot reconciles compatible passes and validates separate decision; yaml first prompt entry refuses unresolved inputs and prepares valid contract; yaml entry rejects aliases; path shorthand derives git metadata and only requires semantic reason; git derivation allows detached and no remote but rejects dirty; unpinned index project is discovered and content bound; ontology gap proposal is evidence backed and outside frozen ontology; documented pilot pipeline runs end to end; prepare run requires comparative kind; yaml run identity covers full contract semantics; contract rejects malformed adaptive dimensions and duplicate repositories; profile validation rejects missing and unknown fields cleanly; plus 17 additional declared cases.",
           "candidate_disposition": "retain"
         }
@@ -885,7 +885,7 @@
       ],
       "source": {
         "path": "skills/linguistic-register-pilot/SKILL.md",
-        "sha256": "d257e13bf354860909d0693b25cbf63d2272bfe51f910a73f134354933cc652b"
+        "sha256": "947a98422fcde5bb7da6dcc1c6ecfb9b264b7954ca5413055639fdff007a719e"
       },
       "artifacts": [
         {
@@ -1131,6 +1131,114 @@
         {
           "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v1/tasks/tasks/B2.json",
           "sha256": "dc5a5eb1b204c113de1835e4ad50bb15ab8c04167553c79bf9202eba1270a636"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/artifact-plan.json",
+          "sha256": "ead0a19dafd5c2232ddc532a264c8b8354284fc4b67ffb6868b3ec305a1fe062"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/blind-task-authoring-result.json",
+          "sha256": "a3fb914e39229f63718f2756a877de6ce03b929a25dd0adc25b751f3c52fbc03"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/construct-ledger.json",
+          "sha256": "f5ff330d5f618557c306e59c340d57cffbd91db02acae7d0f7ad25dbeb969a7b"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/contract-seal.json",
+          "sha256": "3097015c4fa3fd147dbddd81e432d018265f37b0fbb2c104faded94ad2dff90e"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/execution-schedule.json",
+          "sha256": "7c891d278b770ba2abdd6638b53f407fa791b4985c8177ea37dd73471c947c5f"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/preregistration.yaml",
+          "sha256": "5bbf862bec67a041ae3c03c7274cb8892bc01fe2a11f82b6feaca1cc946683a4"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/repair-receipt.json",
+          "sha256": "bd85f1d636ae6bc6618730235d88ae149cb5e7290b2e89b709836e2bb58ed090"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/scoring-contract.json",
+          "sha256": "f619699ddb40bd4dd010b1c03d383774857e5a1cbe19661a8396b155914a90b4"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/stopping-rules.json",
+          "sha256": "c57c0f2eaac7fa73b413a10367c42a1081ce2e4bf5f87de74775440b9a78ef12"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/subject-configuration.json",
+          "sha256": "1c1cf680b6a49783cc3d236206c9f29582f883466b693beaeb3908b2cf8276b4"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/evidence/A1.json",
+          "sha256": "d33dec004c67dfc255849b756a0a15785eeb251e720869ab84fd3c03ddaf1825"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/evidence/A2.json",
+          "sha256": "ee35f5a33131777f22983b4911e2f3d30dfb0bccc62c09ef3a628613f2bc30b3"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/evidence/B1.json",
+          "sha256": "50d86fe9255cc1bc8a05570004d00443972d8207f00dbd46a75b80d6fee0f974"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/evidence/B2.json",
+          "sha256": "650d9ce0667eb206c6594631d6ab63883072d50f99c2892e5e7b6265728881dc"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/keys/A1.json",
+          "sha256": "abdfd86a056dedf34b2bf644671b0fb575ae402856d3d43e902e1be1529dfeb8"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/keys/A2.json",
+          "sha256": "ad3057e2a443ce65ed982d2b6c04e79f664dacc9dcf67f04235e587f037dfc3f"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/keys/B1.json",
+          "sha256": "5da891b02e2c3b9183776808502c57282336a1c1f4acac503261861548ffb3b6"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/keys/B2.json",
+          "sha256": "d720860fd9e6766ea80805c23ae28f1073a46f1bc02c533f0f633e5b5e0e57e3"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/manifest.json",
+          "sha256": "414acf8935427a4df5c75045a8ce1dcbf1cbbed60a634cf93a65ea9e7c13d3dc"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/presentations/A1.json",
+          "sha256": "bf810d6aaa92aecbaee5a9117d5d0ad0298181472c71f34f78d67f18dfe1a8bb"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/presentations/A2.json",
+          "sha256": "2a4e3519d3da5be5a96e586a7214baea9fc305b6a0620429a4b4db31afe5d9ff"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/presentations/B1.json",
+          "sha256": "66f5c7bac37e95ee49664c8386da6d116fdeaccf91df90b0ad437817016c4ad4"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/presentations/B2.json",
+          "sha256": "f4af3317515f5b8b143c030a89fd3b349afe657b22829c6e4839c9d018c89bf3"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/tasks/A1.json",
+          "sha256": "1c074610c12225d094e1ecaa82b15416107863ff218984106137ceadd4b82f50"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/tasks/A2.json",
+          "sha256": "6dd2331d298552b203b642bf1036619fefb57c98a8bc0bc10cbb4f658523d766"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/tasks/B1.json",
+          "sha256": "d1fdd9c61c07ca0c3aa77fd6ed5ccba13c1fe5a7a77cd328770ea186d882846a"
+        },
+        {
+          "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/behavioral-pilot-contract-v2/tasks/tasks/B2.json",
+          "sha256": "f6feb4d9de1af8ba0121f0d129e95da6c639b650e2bdadc3acbfc1c25750f251"
         },
         {
           "path": "skills/linguistic-register-pilot/pilot/behavioral-pilot-construction/leveson-expanded-v1/audit.json",
@@ -3326,15 +3434,15 @@
         },
         {
           "path": "skills/linguistic-register-pilot/references/artifact-contracts.md",
-          "sha256": "d3e7f349bd3e9129d38de0afe515a09a8e332be64e4e99c97f6cabeff050ac7c"
+          "sha256": "91125b9c87330c96ad32b575772c1c7660e6bd80ac3bfc0d9f2b55a3b3487ddc"
         },
         {
           "path": "skills/linguistic-register-pilot/references/behavioral-pilot-contract.schema.json",
-          "sha256": "87de65ba09bc8bad82a061792f9a54de6102bbeb975051288d7071a000d6283e"
+          "sha256": "0bf2827f5e6c842af4645a578a8facfc64f0540db390b2a55b8672b38e10085e"
         },
         {
           "path": "skills/linguistic-register-pilot/references/behavioral-pilot-contracts.md",
-          "sha256": "2656cc1b38e5794ad24963be9b7b33e6f2b31354fe987657dfb4dce496c06aeb"
+          "sha256": "eeb98b9d210a485eda0941081211d50d6a78e51bb5b1b1afbac0a3d9dc3aba84"
         },
         {
           "path": "skills/linguistic-register-pilot/references/behavioral-pilot-preoutcome-gate.schema.json",
@@ -3406,7 +3514,7 @@
         },
         {
           "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_contract.py",
-          "sha256": "75a14bd3835d23857a4129379e76406682f9ab0fc1e846a276cbc861f7414c75"
+          "sha256": "c9832cdb9167711f360b593160e75ff66800f067ae571794f4e16564e0230d44"
         },
         {
           "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_group3_finalize.py",
@@ -3421,12 +3529,16 @@
           "sha256": "f1615a71a88114ea5d9b3aacd8c2b998135a06e141cc156b00f8f6afde0c417c"
         },
         {
+          "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_presentation_successor.py",
+          "sha256": "eac162c38f73e113f4c114301c0e46b33a42493327da90bd82dceee61e3e6d72"
+        },
+        {
           "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_review_packets.py",
           "sha256": "dbc57f689b103de535cc93cd43243e88b32c225a07524843226815ee99ad446f"
         },
         {
           "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_schedule.py",
-          "sha256": "6dea82d8556bae4f67c2d78255c45e9e0b9cbf71385c4bd4d9fadbee9c75a7af"
+          "sha256": "e69263914890e897aba0ab3432efaffecfe07f4fa60818d2174d9f2bb432bb7b"
         },
         {
           "path": "skills/linguistic-register-pilot/scripts/behavioral_pilot_scoring.py",
@@ -3496,7 +3608,7 @@
       "tests": [
         {
           "path": "skills/linguistic-register-pilot/tests/test_behavioral_pilot_contract.py",
-          "sha256": "14fb7e7cb40750b125730046857fcb1f296a2cad644b6c38d9bb78e50add13a7",
+          "sha256": "698aa074377d9c4238f24570e17e77cb6226bbb6353e06d7e77e17e1b8cccdcd",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: committed contract validates and is preoutcome; schedule is complete and balanced; contract rejects changed task bytes; launch is refused without passing group 3 gate; task scope has no forbidden identity or method terms; reference schemas parse; primary scoring distinguishes behavioral failure from invalid; kappa reports agreement and no variance truthfully; aggregate reports family risk difference.",
           "candidate_disposition": "retain"
         },
@@ -4488,7 +4600,7 @@
         },
         {
           "path": "skills/slice-supervisor/scripts/completion_offer_lifecycle.py",
-          "sha256": "d2addbfd65f7b18d6872778859006463866d4218adb7adad75a7693ff06f0acf"
+          "sha256": "461ed95026676fae83f595838bac3242372482932aed6f4d1ea31d3ba0ac5195"
         },
         {
           "path": "skills/slice-supervisor/scripts/finalize_receipt.py",
@@ -4566,7 +4678,7 @@
         },
         {
           "path": "skills/slice-supervisor/tests/test_completion_offer_lifecycle.py",
-          "sha256": "8047152e20f3a583e9b9e540a42dd5973fd336d35602d15e0239edf2f5ba8f90",
+          "sha256": "b9a1a2656f69ca054410efc60039dd64dd26d6c22b3d7bd1a200b0f53799b0fd",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: pending survives fresh resume and decline without rewriting terminal; publication crash reconciles created without replaying mutation; expiration fails closed when publication state is ambiguous.",
           "candidate_disposition": "retain"
         },

@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { RetainedRoleLiveLifecycleRuntime } from "../src/index.mjs";
 
-function fixture({ tokenUsage = true, pressureStatus = "projected" } = {}) {
+function fixture({ tokenUsage = true, pressureStatus = "projected", lifecycleError = null } = {}) {
   const calls = [];
   const delivery = Object.freeze({
     logicalRoleInstanceId: "strategic-planner:main",
@@ -61,6 +61,7 @@ function fixture({ tokenUsage = true, pressureStatus = "projected" } = {}) {
     return {
       async run(input) {
         calls.push(["run", input]);
+        if (lifecycleError) throw lifecycleError;
         return { status: "reconciled" };
       },
     };
@@ -111,4 +112,22 @@ test("retained role live runtime does not transition without completed-turn usag
     reason: "completed_turn_token_usage_unavailable",
   });
   assert.equal(calls.some(([name]) => name === "coordinatorForRole"), false);
+});
+
+test("completed domain output survives a post-turn lifecycle failure", async () => {
+  const error = Object.assign(new Error("identity control was not sterile"), {
+    code: "non_sterile_identity_attestation",
+  });
+  const { runtime } = fixture({ lifecycleError: error });
+  const result = await runtime.deliverTurn({ text: "Continue." });
+  assert.equal(result.completion.outputText, "Done.");
+  assert.deepEqual(result.lifecycle, {
+    status: "failed",
+    reason: "post_turn_lifecycle_failed",
+    error: {
+      name: "Error",
+      message: "identity control was not sterile",
+      code: "non_sterile_identity_attestation",
+    },
+  });
 });

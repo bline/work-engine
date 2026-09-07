@@ -9,6 +9,18 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
+function lifecycleFailure(error) {
+  return freeze({
+    status: "failed",
+    reason: "post_turn_lifecycle_failed",
+    error: {
+      name: error instanceof Error ? error.name : "Error",
+      message: error instanceof Error ? error.message : "post-turn lifecycle processing failed",
+      ...(typeof error?.code === "string" ? { code: error.code } : {}),
+    },
+  });
+}
+
 export class RetainedRoleLiveLifecycleRuntime {
   constructor({
     roleRuntime,
@@ -59,49 +71,54 @@ export class RetainedRoleLiveLifecycleRuntime {
       replayedDelivery: delivery.replayedDelivery,
       signal: turn.signal,
     });
-    const lifecycleSnapshot = this.lifecycleEvidence.snapshot(delivery.threadId);
-    if (lifecycleSnapshot.latestTokenUsage?.turnId !== delivery.turnId) {
-      return freeze({
-        completion,
-        lifecycle: { status: "not_observed", reason: "completed_turn_token_usage_unavailable" },
+    let lifecycle;
+    try {
+      const lifecycleSnapshot = this.lifecycleEvidence.snapshot(delivery.threadId);
+      if (lifecycleSnapshot.latestTokenUsage?.turnId !== delivery.turnId) {
+        return freeze({
+          completion,
+          lifecycle: { status: "not_observed", reason: "completed_turn_token_usage_unavailable" },
+        });
+      }
+      const pressure = this.pressureProjector.project(lifecycleSnapshot);
+      if (pressure.status !== "projected") {
+        return freeze({ completion, lifecycle: pressure });
+      }
+      const pressureController = await this.pressureControllerForRole(
+        delivery.logicalRoleInstanceId,
+      );
+      if (!pressureController || typeof pressureController.observe !== "function") {
+        throw new TypeError("live pressure controller resolver must return a controller");
+      }
+      const pressureDecision = pressureController.observe(pressure.observation);
+      const coordinator = await this.coordinatorForRole(delivery.logicalRoleInstanceId);
+      if (!coordinator || typeof coordinator.run !== "function") {
+        throw new TypeError("live coordinator resolver must return a coordinator");
+      }
+      lifecycle = await coordinator.run({
+        episodeId:
+          `turn:${delivery.logicalRoleInstanceId}:${delivery.turnId}:${pressure.observation.sequence}`,
+        subject: {
+          logicalRoleInstanceId: delivery.logicalRoleInstanceId,
+          threadId: delivery.threadId,
+          bindingRevision: delivery.binding.bindingRevision,
+        },
+        pressureDisposition: pressureDecision.disposition,
+        role: delivery.roleProjection.role,
+        skills: delivery.roleProjection.skills,
+        projectionContext: {
+          turn,
+          delivery,
+          completion,
+          lifecycleSnapshot,
+          pressure,
+          pressureDecision,
+        },
+        signal: turn.signal,
       });
+    } catch (error) {
+      lifecycle = lifecycleFailure(error);
     }
-    const pressure = this.pressureProjector.project(lifecycleSnapshot);
-    if (pressure.status !== "projected") {
-      return freeze({ completion, lifecycle: pressure });
-    }
-    const pressureController = await this.pressureControllerForRole(
-      delivery.logicalRoleInstanceId,
-    );
-    if (!pressureController || typeof pressureController.observe !== "function") {
-      throw new TypeError("live pressure controller resolver must return a controller");
-    }
-    const pressureDecision = pressureController.observe(pressure.observation);
-    const coordinator = await this.coordinatorForRole(delivery.logicalRoleInstanceId);
-    if (!coordinator || typeof coordinator.run !== "function") {
-      throw new TypeError("live coordinator resolver must return a coordinator");
-    }
-    const lifecycle = await coordinator.run({
-      episodeId:
-        `turn:${delivery.logicalRoleInstanceId}:${delivery.turnId}:${pressure.observation.sequence}`,
-      subject: {
-        logicalRoleInstanceId: delivery.logicalRoleInstanceId,
-        threadId: delivery.threadId,
-        bindingRevision: delivery.binding.bindingRevision,
-      },
-      pressureDisposition: pressureDecision.disposition,
-      role: delivery.roleProjection.role,
-      skills: delivery.roleProjection.skills,
-      projectionContext: {
-        turn,
-        delivery,
-        completion,
-        lifecycleSnapshot,
-        pressure,
-        pressureDecision,
-      },
-      signal: turn.signal,
-    });
     return freeze({ completion, lifecycle });
   }
 }

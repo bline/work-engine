@@ -624,6 +624,58 @@ class SqliteAppServerStateStore {
     });
   }
 
+  abortContextInputAdmission({
+    logicalRoleInstanceId,
+    transitionRevision,
+    reopenedAt = new Date().toISOString(),
+  }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "context input admission role");
+    text(transitionRevision, "context input admission transition revision");
+    text(reopenedAt, "context input admission abort timestamp");
+    if (Number.isNaN(Date.parse(reopenedAt))) {
+      throw new TypeError("context input admission abort timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(logicalRoleInstanceId);
+      if (!admission || admission.transitionRevision !== transitionRevision) {
+        return rejected("transition_mismatch", admission);
+      }
+      if (admission.status === "open") {
+        if (admission.reconciliationRevision !== null) {
+          return rejected("already_reconciled", admission);
+        }
+        return freeze({ status: "replayed", admission });
+      }
+      if (admission.status !== "closed" || admission.reconciliationRevision !== null) {
+        return rejected("transition_release_started", admission);
+      }
+      const pending = Number(this.database.prepare(`
+        SELECT COUNT(*) AS count FROM context_input_queue
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status != 'released'
+      `).get(logicalRoleInstanceId, transitionRevision).count);
+      if (pending !== 0) {
+        return freeze({
+          status: "recovery_required",
+          reason: "queued_inputs_preserved",
+          pendingInputCount: pending,
+          admission,
+        });
+      }
+      this.database.prepare(`
+        UPDATE context_input_admissions
+        SET status = 'open', reconciliation_revision = NULL, reopened_at = ?
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status = 'closed' AND reconciliation_revision IS NULL
+      `).run(reopenedAt, logicalRoleInstanceId, transitionRevision);
+      return freeze({
+        status: "aborted",
+        admission: this.contextInputAdmission(logicalRoleInstanceId),
+      });
+    });
+  }
+
   queueContextInput(value, { queuedAt = new Date().toISOString() } = {}) {
     this.#assertOpen();
     const input = normalizeContextTransitionInput(value);

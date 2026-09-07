@@ -21,7 +21,9 @@ Two deeper concerns should remain explicit post-migration proposal candidates:
 1. recovery when the provider reaches its own emergency token-budget boundary
    before the Work Engine lifecycle completes an authorized transition; and
 2. a writable, atomic operator-ingress route for retained roles when the Codex
-   proxy cannot provide the required access.
+   proxy cannot provide the required access; and
+3. policy-conditioned tool projection so a role is not offered operations that
+   its fixed approval and sandbox policy can never admit.
 
 These concerns interacted during migration, but they should not be made one
 implementation obligation merely because they appeared in the same incident.
@@ -53,6 +55,18 @@ as independent operator turns.
 The supervisor role exhibited the same provider-side emergency replacement
 pattern. Its runtime was observing the shadow lifecycle rather than executing
 the live lifecycle, so those replacements were not Work Engine decisions.
+
+After live lifecycle recovery, the intentionally read-only supervisor tried to
+run validation in the builder worktree. When temporary-resource restrictions
+blocked the command, the model submitted an `exec` request with
+`sandbox_permissions: "require_escalated"` and a human approval question. The
+role was configured with `approval_policy: "never"`, so Codex correctly rejected
+the request before command entry with `approval policy is Never; reject
+command`. The denial preserved the policy boundary, but the model had still
+been offered an impossible escalation control and spent a turn selecting it.
+The same episode also exposed a routing problem: validation that required the
+builder's execution environment should have been returned to the builder or a
+host-owned gate runner rather than attempted through supervisor escalation.
 
 ## Candidate A: provider-emergency context recovery
 
@@ -103,17 +117,44 @@ Proposal formation should consider:
 - preservation of the distinction between access to a writable builder and
   authority to expand its accepted implementation scope.
 
+## Candidate C: policy-conditioned tool affordances
+
+A role with a fixed `approval_policy: "never"` cannot successfully request
+approval escalation. Advertising `require_escalated` in that role's tool schema
+creates an invalid apparent action even though runtime enforcement remains
+fail-closed.
+
+Proposal formation should consider:
+
+- whether tool schemas can omit escalation arguments and approval-question
+  fields when the effective policy can never admit them;
+- whether sandbox and approval policy should be projected as explicit
+  machine-readable capability constraints rather than left for repeated model
+  inference;
+- how a rejected impossible request is attributed and surfaced without
+  misclassifying it as command execution or user denial;
+- when a blocked operation should nominate another role or a host-owned
+  capability rather than suggest policy escape; and
+- tests proving that `approval_policy: "never"` roles cannot construct an
+  escalation request while write-capable roles can execute already-admitted
+  operations without asking for escalation.
+
+This candidate does not imply that the runtime denial was faulty. The observed
+failure is the mismatch between the advertised action space and the effective
+policy, plus the absence of a direct route to the correct execution owner.
+
 ## Relationship and sequencing
 
 The immediate migration repair is a prerequisite operational correction: run
 retained roles through the existing live lifecycle whenever `token_budget` is
 enabled. It should not wait for either post-migration candidate above.
 
-Candidate A and Candidate B may later become separate proposals. Emergency
-recovery concerns context-transition correctness. Writable atomic ingress
-concerns operator access and message custody. They share incident evidence and
-should cross-reference each other, but neither should silently absorb the
-other's scope or authority.
+Candidates A, B, and C may later become separate proposals. Emergency recovery
+concerns context-transition correctness. Writable atomic ingress concerns
+operator access and message custody. Policy-conditioned affordances concern the
+accuracy of the model-visible action space. They share incident evidence and
+should cross-reference each other, but none should silently absorb another's
+scope or authority.
 
 ## Non-goals
 
@@ -123,6 +164,7 @@ This idea does not:
 - conclude that the existing live lifecycle is correct in every emergency;
 - authorize provider calls, process restarts, or runtime replacement;
 - authorize direct mutation of retained role or campaign databases;
+- authorize widening the supervisor sandbox or changing its approval policy;
 - treat terminal presentation as canonical lifecycle state; or
 - accept either candidate as a proposal.
 

@@ -36,6 +36,7 @@ export class LiveContextLifecycleCoordinator {
   }) {
     if (!transitionRuntime || typeof transitionRuntime.beginPreparation !== "function"
         || typeof transitionRuntime.attestContextWindow !== "function"
+        || typeof transitionRuntime.abortPreparation !== "function"
         || typeof transitionRuntime.promotePreparation !== "function"
         || typeof transitionRuntime.retireAndReconcile !== "function") {
       throw new TypeError("live lifecycle coordinator requires a complete transition runtime");
@@ -105,80 +106,115 @@ export class LiveContextLifecycleCoordinator {
     }
     signal?.throwIfAborted();
     const prepared = await this.transitionRuntime.beginPreparation(subject);
-    const attestation = await this.transitionRuntime.attestContextWindow({
-      role,
+    let promoted = null;
+    const abort = (error) => this.transitionRuntime.abortPreparation({
       preparation: prepared.preparation,
-      clientUserMessageId: lifecycleIdentity(episodeId, "identity"),
-      signal,
+      error,
     });
-    if (attestation.validation.status !== "accepted") {
-      return freeze({
-        status: "stopped",
-        phase: "identity_attestation",
+    let attestation;
+    let projected;
+    let inspection;
+    let publication;
+    try {
+      attestation = await this.transitionRuntime.attestContextWindow({
+        role,
+        preparation: prepared.preparation,
+        clientUserMessageId: lifecycleIdentity(episodeId, "identity"),
+        signal,
+      });
+      if (attestation.validation.status !== "accepted") {
+        const preparationRecovery = await abort(
+          new Error("context-window identity attestation was unresolved"),
+        );
+        return freeze({
+          status: "stopped",
+          phase: "identity_attestation",
+          episodeId,
+          preparation: prepared.preparation,
+          preparationRecovery,
+          attestation,
+        });
+      }
+      projected = await this.projectionForPreparation({
         episodeId,
+        subject: freeze({ ...subject }),
+        role,
+        skills,
         preparation: prepared.preparation,
         attestation,
+        projectionContext,
+        signal,
       });
-    }
-    const projected = await this.projectionForPreparation({
-      episodeId,
-      subject: freeze({ ...subject }),
-      role,
-      skills,
-      preparation: prepared.preparation,
-      attestation,
-      projectionContext,
-      signal,
-    });
-    record(projected, "live lifecycle projection result");
-    record(projected.projection, "live lifecycle projection");
-    if (!Array.isArray(projected.sourceMaterials)) {
-      throw new TypeError("live lifecycle projection source materials must be an array");
-    }
-    const inspection = await this.inferenceRuntime.inspect({
-      projection: projected.projection,
-      sourceMaterials: projected.sourceMaterials,
-      signal,
-    });
-    if (inspection.verification?.disposition !== "accepted") {
-      return freeze({
-        status: "stopped",
-        phase: "semantic_verification",
-        episodeId,
+      record(projected, "live lifecycle projection result");
+      record(projected.projection, "live lifecycle projection");
+      if (!Array.isArray(projected.sourceMaterials)) {
+        throw new TypeError("live lifecycle projection source materials must be an array");
+      }
+      inspection = await this.inferenceRuntime.inspect({
+        projection: projected.projection,
+        sourceMaterials: projected.sourceMaterials,
+        signal,
+      });
+      if (inspection.verification?.disposition !== "accepted") {
+        const preparationRecovery = await abort(
+          new Error("semantic context verification was unresolved"),
+        );
+        return freeze({
+          status: "stopped",
+          phase: "semantic_verification",
+          episodeId,
+          preparation: prepared.preparation,
+          preparationRecovery,
+          attestation,
+          inspection,
+        });
+      }
+      publication = await this.checkpointPublisher.publish({
+        projection: projected.projection,
+        candidate: inspection.candidate,
+        verification: inspection.verification,
+        expectedPublicationRevision: projected.expectedPublicationRevision ?? null,
+        previousLedgerEntry: projected.previousLedgerEntry ?? null,
+      });
+      if (publication.status !== "published") {
+        const preparationRecovery = await abort(
+          new Error(`checkpoint publication stopped as ${publication.status}`),
+        );
+        return freeze({
+          status: "stopped",
+          phase: "checkpoint_publication",
+          episodeId,
+          preparation: prepared.preparation,
+          preparationRecovery,
+          attestation,
+          inspection,
+          publication,
+        });
+      }
+      promoted = await this.transitionRuntime.promotePreparation({
         preparation: prepared.preparation,
-        attestation,
-        inspection,
+        publication: publication.publication,
+        ledgerEntry: publication.ledgerEntry,
+        previousLedgerEntry: projected.previousLedgerEntry ?? null,
+        expectedFence: {
+          ...publication.currentFence,
+          predecessorContextWindowId:
+            attestation.validation.receipt.current_context_window_id,
+        },
       });
+    } catch (error) {
+      if (promoted === null) {
+        try {
+          await abort(error);
+        } catch (recoveryError) {
+          throw new AggregateError(
+            [error, recoveryError],
+            "live lifecycle preparation and admission recovery both failed",
+          );
+        }
+      }
+      throw error;
     }
-    const publication = await this.checkpointPublisher.publish({
-      projection: projected.projection,
-      candidate: inspection.candidate,
-      verification: inspection.verification,
-      expectedPublicationRevision: projected.expectedPublicationRevision ?? null,
-      previousLedgerEntry: projected.previousLedgerEntry ?? null,
-    });
-    if (publication.status !== "published") {
-      return freeze({
-        status: "stopped",
-        phase: "checkpoint_publication",
-        episodeId,
-        preparation: prepared.preparation,
-        attestation,
-        inspection,
-        publication,
-      });
-    }
-    const promoted = await this.transitionRuntime.promotePreparation({
-      preparation: prepared.preparation,
-      publication: publication.publication,
-      ledgerEntry: publication.ledgerEntry,
-      previousLedgerEntry: projected.previousLedgerEntry ?? null,
-      expectedFence: {
-        ...publication.currentFence,
-        predecessorContextWindowId:
-          attestation.validation.receipt.current_context_window_id,
-      },
-    });
     const transition = await this.transitionRuntime.retireAndReconcile({
       role,
       lease: promoted.lease,

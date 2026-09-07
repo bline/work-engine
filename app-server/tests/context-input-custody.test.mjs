@@ -108,6 +108,49 @@ test("accepted reconciliation releases queued input in order and reopens only af
   assert.equal(replay.status, "replayed");
 });
 
+test("failed preparation reopens only an empty admission without recording reconciliation", async (t) => {
+  const { filePath, store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  const aborted = await controller.abortPreparation({
+    logicalRoleInstanceId: "strategic-planner:main",
+    transitionRevision,
+  });
+  assert.equal(aborted.status, "aborted");
+  assert.equal(aborted.admission.status, "open");
+  assert.equal(aborted.admission.reconciliationRevision, null);
+
+  store.close();
+  const recovered = await openSqliteAppServerStateStore({ filePath });
+  t.after(() => recovered.close());
+  const admission = recovered.contextInputAdmission("strategic-planner:main");
+  assert.equal(admission.status, "open");
+  assert.equal(admission.reconciliationRevision, null);
+});
+
+test("failed preparation preserves a closed admission when attributed input is queued", async (t) => {
+  const { store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  await controller.queueIfClosed(input(1));
+  const recovery = await controller.abortPreparation({
+    logicalRoleInstanceId: "strategic-planner:main",
+    transitionRevision,
+  });
+  assert.deepEqual({
+    status: recovery.status,
+    reason: recovery.reason,
+    pendingInputCount: recovery.pendingInputCount,
+  }, {
+    status: "recovery_required",
+    reason: "queued_inputs_preserved",
+    pendingInputCount: 1,
+  });
+  assert.equal(store.contextInputAdmission("strategic-planner:main").status, "closed");
+  assert.deepEqual(store.pendingContextInputs({
+    logicalRoleInstanceId: "strategic-planner:main",
+    transitionRevision,
+  }).map((item) => item.input.text), ["queued input 1"]);
+});
+
 test("failed delivery keeps admission closed and restart resumes from the first unreceipted input", async (t) => {
   const { filePath, store, controller } = await harness(t);
   await controller.closeAdmission(fence());

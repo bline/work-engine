@@ -47,6 +47,13 @@ function fixture({ verificationDisposition = "accepted", publicationStatus = "pu
       calls.push(["attestContextWindow", input]);
       return attestation;
     },
+    async abortPreparation(input) {
+      calls.push(["abortPreparation", input]);
+      return {
+        transition: { status: "aborted" },
+        admission: { status: "aborted" },
+      };
+    },
     async promotePreparation(input) {
       calls.push(["promotePreparation", input]);
       return { lease };
@@ -141,7 +148,32 @@ test("live lifecycle fails closed before publication when semantic verification 
     "attestContextWindow",
     "projectionForPreparation",
     "inspect",
+    "abortPreparation",
   ]);
+  assert.equal(result.preparationRecovery.admission.status, "aborted");
+});
+
+test("live lifecycle aborts preparation when attestation delivery throws", async () => {
+  const { coordinator, calls } = fixture();
+  coordinator.transitionRuntime.attestContextWindow = async () => {
+    calls.push(["attestContextWindow", null]);
+    throw new Error("identity delivery failed");
+  };
+  await assert.rejects(coordinator.run({
+    episodeId: "episode-attestation-failure",
+    subject: SUBJECT,
+    role: ROLE,
+    pressureDisposition: "critical",
+  }), /identity delivery failed/);
+  assert.deepEqual(calls.map(([name]) => name), [
+    "beginPreparation",
+    "attestContextWindow",
+    "abortPreparation",
+  ]);
+  assert.match(
+    calls.find(([name]) => name === "abortPreparation")[1].error.message,
+    /identity delivery failed/,
+  );
 });
 
 test("live lifecycle deduplicates concurrent execution of one episode", async () => {

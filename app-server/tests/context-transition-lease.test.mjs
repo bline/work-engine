@@ -494,23 +494,34 @@ async function harness({ publicationOptions } = {}) {
   return { ...subject, fixture, acquired };
 }
 
-async function preparationHarness({ inputCustody = null, initialToolBridge = true } = {}) {
+async function preparationHarness({
+  inputCustody = null,
+  initialToolBridge = true,
+  resolveRoleToolBridge = false,
+} = {}) {
   const transport = new LeaseTransport();
   const registry = new MemoryRegistry();
   const gate = new InMemoryContextTransitionLeaseGate({
     now: () => "2026-08-25T20:00:02.000Z",
   });
+  const counter = { count: 0 };
+  const bridge = toolBridge(counter);
+  const resolverCalls = [];
   const adapter = new CodexAppServerAdapter({
     transport,
     registry,
     skillResolver: { resolve: async () => [] },
     configuredProviderFeatures: ["token_budget"],
     transitionGate: gate,
+    roleToolBridgeResolver: resolveRoleToolBridge
+      ? (capabilities, role) => {
+        resolverCalls.push({ capabilities, role });
+        return bridge;
+      }
+      : null,
     rolloutSnapshotReader: async (_path, { threadId }) => transport.rolloutSnapshot(threadId),
   });
   await adapter.initialize({ requiredProviderCapabilities: ["model_context_replacement"] });
-  const counter = { count: 0 };
-  const bridge = toolBridge(counter);
   await adapter.deliverTurn({
     role: ROLE,
     text: "Initial domain turn",
@@ -518,7 +529,7 @@ async function preparationHarness({ inputCustody = null, initialToolBridge = tru
     ...(initialToolBridge ? { toolBridge: bridge } : {}),
   });
   const runtime = new ContextTransitionLeaseRuntime({ gate, adapter, inputCustody });
-  return { adapter, bridge, counter, gate, runtime, transport };
+  return { adapter, bridge, counter, gate, resolverCalls, runtime, transport };
 }
 
 async function fileRegistryHarness(t) {
@@ -653,6 +664,80 @@ test("preparation fence attests exact target-model identity before lease promoti
   assert.equal(promoted.status, "acquired");
   assert.equal(promoted.lease.subject.predecessorContextWindowId, "window-predecessor");
   assert.equal(gate.snapshot(ROLE.logicalRoleInstanceId).phase, "ready");
+});
+
+test("explicit null keeps identity control sterile when the role normally resolves tools", async () => {
+  const { gate, resolverCalls, runtime, transport } = await preparationHarness({
+    initialToolBridge: false,
+    resolveRoleToolBridge: true,
+  });
+  assert.equal(resolverCalls.length, 1);
+  const prepared = await runtime.beginPreparation({
+    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    threadId: "thread-1",
+    bindingRevision: 1,
+  });
+  transport.deferNextTurn();
+  const attestationPromise = runtime.attestContextWindow({
+    role: ROLE,
+    preparation: prepared.preparation,
+    clientUserMessageId: "resolved-tools-identity",
+  });
+  await transport.turnStarted;
+  transport.emitNotification(completedTurnNotification("turn-2", [{
+    type: "agentMessage",
+    phase: "final_answer",
+    text: identityReceipt(prepared.preparation),
+  }]));
+  transport.releaseTurn();
+  const attestation = await attestationPromise;
+  assert.equal(attestation.validation.status, "accepted");
+  assert.equal(gate.snapshot(ROLE.logicalRoleInstanceId).phase, "identity_attested");
+  assert.equal(resolverCalls.length, 1);
+});
+
+test("failed identity preparation durably reopens empty admission and permits a fresh preparation", async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "work-engine-preparation-abort-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const store = await openSqliteAppServerStateStore({
+    filePath: path.join(directory, "state.sqlite3"),
+  });
+  t.after(() => store.close());
+  const inputCustody = new ContextInputCustodyController({ store });
+  const { gate, runtime, transport } = await preparationHarness({ inputCustody });
+  const prepared = await runtime.beginPreparation({
+    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    threadId: "thread-1",
+    bindingRevision: 1,
+  });
+  assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).status, "closed");
+  transport.failNextTurn = true;
+  let deliveryError;
+  await assert.rejects(runtime.attestContextWindow({
+    role: ROLE,
+    preparation: prepared.preparation,
+    clientUserMessageId: "failed-preparation-identity",
+  }), (error) => {
+    deliveryError = error;
+    return /synthetic turn delivery failure/.test(error.message);
+  });
+  const recovery = await runtime.abortPreparation({
+    preparation: prepared.preparation,
+    error: deliveryError,
+  });
+  assert.equal(recovery.transition.status, "aborted");
+  assert.equal(recovery.admission.status, "aborted");
+  assert.equal(recovery.admission.admission.reconciliationRevision, null);
+  assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).status, "open");
+  assert.equal(gate.snapshot(ROLE.logicalRoleInstanceId).phase, "preparation_failed");
+
+  const retry = await runtime.beginPreparation({
+    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    threadId: "thread-1",
+    bindingRevision: 1,
+  });
+  assert.equal(retry.status, "preparing");
+  assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).status, "closed");
 });
 
 test("preparation validation and promotion fail closed on stale or invented identity", async () => {
@@ -938,9 +1023,10 @@ test("accepted reconciliation releases durable post-fence input through idempote
   });
   t.after(() => store.close());
   const inputCustody = new ContextInputCustodyController({ store });
-  const { adapter, gate, runtime, transport } = await preparationHarness({
+  const { adapter, gate, resolverCalls, runtime, transport } = await preparationHarness({
     inputCustody,
     initialToolBridge: false,
+    resolveRoleToolBridge: true,
   });
   const fixture = publicationFixture();
   const acquired = await runtime.acquire({
@@ -1020,6 +1106,7 @@ test("accepted reconciliation releases durable post-fence input through idempote
     text: "Preserve and deliver this input after reconciliation.",
     text_elements: [],
   }]);
+  assert.equal(resolverCalls.length, 2);
   const replay = await adapter.deliverTurn({
     role: ROLE,
     text: "Preserve and deliver this input after reconciliation.",
@@ -1027,6 +1114,7 @@ test("accepted reconciliation releases durable post-fence input through idempote
   });
   assert.equal(replay.replayedDelivery, true);
   assert.equal(replay.turnId, "turn-4");
+  assert.equal(resolverCalls.length, 3);
 });
 
 test("receipt validation fails closed on predecessor mismatch or uncertainty", async () => {

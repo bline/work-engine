@@ -9,6 +9,7 @@ import {
 function fixture() {
   const transitionGate = {
     beginPreparation() {},
+    abortPreparation() {},
     acquire() {},
     runTurnAdmission() {},
     admitToolEffect() {},
@@ -42,6 +43,7 @@ function fixture() {
     transitionGate,
     inputCustody: {
       closeAdmission() {},
+      abortPreparation() {},
       admission() {},
       releaseAfterReconciliation() {},
     },
@@ -90,6 +92,7 @@ test("retained role live host refuses a gate not installed on its adapter", () =
     episodeStore: { receipts: () => [] },
     transitionGate: {
       beginPreparation() {},
+      abortPreparation() {},
       acquire() {},
       runTurnAdmission() {},
     },

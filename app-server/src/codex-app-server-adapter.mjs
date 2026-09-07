@@ -724,15 +724,15 @@ export class CodexAppServerAdapter {
     text,
     clientUserMessageId,
     skills = [],
-    toolBridge = null,
+    toolBridge = undefined,
     requestContext = null,
     transitionLease = null,
     transitionPreparation = null,
   }) {
     requireText(role?.logicalRoleInstanceId, "logical role instance id");
-    const resolvedToolBridge = toolBridge
-      ?? this.roleToolBridgeResolver?.(role.capabilities ?? [], role)
-      ?? null;
+    const resolvedToolBridge = toolBridge === undefined
+      ? (this.roleToolBridgeResolver?.(role.capabilities ?? [], role) ?? null)
+      : toolBridge;
     if (transitionLease || transitionPreparation) {
       this.requireProviderCapability("model_context_replacement");
     }

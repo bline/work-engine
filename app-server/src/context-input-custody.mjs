@@ -83,6 +83,7 @@ export function normalizeContextTransitionInput(value) {
 export class ContextInputCustodyController {
   constructor({ store }) {
     if (!store || typeof store.queueContextInput !== "function"
+        || typeof store.abortContextInputAdmission !== "function"
         || typeof store.nextContextInputForRelease !== "function") {
       throw new TypeError("context input custody requires a durable queue store");
     }
@@ -116,6 +117,17 @@ export class ContextInputCustodyController {
   admission(logicalRoleInstanceId) {
     text(logicalRoleInstanceId, "context input admission role");
     return this.store.contextInputAdmission(logicalRoleInstanceId);
+  }
+
+  abortPreparation({ logicalRoleInstanceId, transitionRevision }) {
+    text(logicalRoleInstanceId, "context input admission role");
+    text(transitionRevision, "context input admission transition revision");
+    return this.#serialize(logicalRoleInstanceId, () =>
+      this.store.abortContextInputAdmission({
+        logicalRoleInstanceId,
+        transitionRevision,
+      })
+    );
   }
 
   queueIfClosed(input) {
