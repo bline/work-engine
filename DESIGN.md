@@ -45,6 +45,17 @@ A useful route-invariance test is:
 
 If not, the proposed requirement is likely about process, preference, or evidence strategy rather than invariant product structure.
 
+Some required properties depend on the production path, including its
+sequence, capability grant, realization, custody, or evidence history. When an
+independently required claim quantifies over those facts, they are part of the
+resulting state. Two runs producing identical artifacts may therefore differ in
+validity.
+
+"Independently required" means that the claim is required by an authority or
+semantic owner other than the local constraint being justified, and that the
+failure caused by a violating path can be described without referring merely
+to violation of that constraint.
+
 ### 1.2 Consequences
 
 Consequences describe what successful work must accomplish or what a decision must preserve, without prescribing the method used to accomplish it. Prefer terminal or externally observable properties of success and failure over intermediate activities. An activity belongs here only when performing it is itself causally necessary to establish the protected outcome; when possible, state that outcome instead.
@@ -355,11 +366,106 @@ Before adding or retaining imperative language, ask all of the following:
 4. Does the command encode only structure, authority, or an irreducible interface contract?
 5. Has mutable data, current knowledge, a heuristic, or a preferred route leaked into the command?
 6. Could a different method preserve every required consequence? If so, is the command unnecessarily prescribing that method?
-7. Is any required sequencing actually causal?
+7. Does any required sequencing preserve an observable outcome or the truth of
+   an independently required production-path claim? If only attribution is
+   required, could the route remain open while the actual sequence is recorded?
 8. Is the command paired with enough explanation for the model to understand why the boundary exists?
 9. Would the command remain valid if tools, repository structure, models, or evidence changed while the product contract stayed the same?
 
 If the answer reveals that the statement is not structural, convert it into a consequence, affordance, observation, or default route instead of a command.
+
+### 3.9 Independently required production-path claims
+
+Most contracts concern the resulting state or consequence. When multiple
+production paths can establish the same required result, path selection remains
+model judgment.
+
+Some required claims instead quantify over how a result was produced. Their
+subjects may include:
+
+- execution sequence;
+- capability and mutation boundaries;
+- provider, harness, or runtime realization;
+- evidence and input custody;
+- context or reviewer isolation;
+- treatment exposure;
+- effect identity and duplication; or
+- the attributable route actually taken.
+
+For example, an acceptance certificate may require review independent of the
+reasoning being evaluated; a confirmatory research claim may require that its
+specification was frozen before outcomes were visible; an external effect may
+be required to occur at most once; and a receipt may require the actual
+evidence fallback to remain attributable. These are claims about production
+history, not preferences about method.
+
+A Work Engine-authored production-path constraint is structural only when both
+conditions hold:
+
+1. An already-required claim quantifies over the relevant production-path
+   facts.
+2. That claim is required by an authority or semantic owner other than the
+   local constraint being justified, and the failure caused by a violating path
+   can be named without referring merely to violation of the constraint.
+
+The second condition prevents circular authorization. A local mechanism,
+projection, or instruction cannot make its preferred route mandatory by
+creating a claim whose only consumer is itself.
+
+Production-path requirements have two different forms.
+
+#### Path truth
+
+The required claim can be true only if the production path preserves a
+particular property. Independence, preregistration, non-contamination, and
+at-most-once external effects are examples. Constrain only the sequence,
+capabilities, realization, custody, or other path facts necessary to keep the
+claim true.
+
+Context or reviewer freshness is not independently structural. It may be one
+mechanism for establishing independence or another required property. Do not
+generalize a bounded freshness need into compulsory context or reviewer
+replacement.
+
+#### Path attribution
+
+The route remains valid, but the required claim cannot be supported unless the
+actual path is recorded. Fallback provenance is the standard example: the
+fallback is permitted, while the audit record must identify it.
+
+Recording is the default when attribution is sufficient. Do not constrain path
+selection when truthful evidence about the selected path establishes the
+required claim.
+
+The governing test is:
+
+> **Does an independently required claim depend on the production path, and is
+> that claim owned outside the local constraint seeking justification?**
+
+If not, the proposed requirement is procedural. If so, apply the least
+restrictive form that preserves the claim: constrain the path only when needed
+to keep the claim true; otherwise record the path needed for attribution.
+
+This test governs whether Work Engine's own doctrine, runtime projections, or
+mechanisms may promote a route choice into product structure. It does not limit
+an operator's authority, when granted by the owning contract, to impose an
+explicit route or route-sensitive acceptance condition. Such a requirement
+derives authority from the operator, although its implementation should still
+constrain no more than the requirement entails.
+
+Applied to common cases:
+
+- validate before publication is structural when publication would otherwise
+  make an unvalidated artifact authoritative;
+- independent review constrains only the exposure, capabilities, and custody
+  needed by the owning independence claim;
+- preregistration constrains specification ordering when a confirmatory claim
+  depends on the specification preceding outcome visibility;
+- fallback provenance records the actual fallback without prohibiting it;
+- search before reading remains a procedural preference when no external owner
+  or consequence requires that order; and
+- context or reviewer freshness remains a possible independence mechanism
+  rather than a general requirement.
 
 ---
 
