@@ -171,6 +171,114 @@ test("campaign terminalization admits a reliance-complete resolved native closur
   assert.equal(state.phase, "terminal");
 });
 
+test("a retained corrected incomplete result with no findings reports no builder action", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "s12-native-zero-findings."));
+  t.after(() => rm(directory, {recursive: true, force: true}));
+  const acceptable = await load("remediated-finding");
+  const rejected = {...structuredClone(acceptable), findings: [],
+    limitations: ["The reviewer could not establish full acceptance evidence."]};
+  const corrected = {...structuredClone(rejected), verdict: "incomplete"};
+  const reevaluated = {...structuredClone(corrected), verdict: "acceptable_as_is",
+    decisiveEvidence: structuredClone(acceptable.decisiveEvidence), limitations: []};
+  const owners = await stores(t, directory, {bootstrap: true});
+  const calls = [];
+  let admitReevaluation;
+  let finishReevaluation;
+  const reevaluationAdmitted = new Promise((resolve) => { admitReevaluation = resolve; });
+  const reevaluationFinished = new Promise((resolve) => { finishReevaluation = resolve; });
+  const reviewer = {async review(request) {
+    calls.push(request);
+    if (calls.length === 3) {
+      admitReevaluation();
+      await reevaluationFinished;
+    }
+    return {attemptId: `zero-findings:${calls.length}`,
+      result: structuredClone(calls.length === 1 ? rejected : calls.length === 2 ? corrected : reevaluated),
+      runtimeSessionId: "session-1", receipt: {transportReceiptDigest: "f".repeat(64)}};
+  }};
+  const reviewEpisode = createReviewEpisodeService({store: owners.episodeStore,
+    implementationReview: owners.implementationReview});
+  const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer,
+    findingBridge: createReviewFindingBridge({store: owners.claimStore})});
+  const service = createSliceCampaignService({store: owners.campaignStore, nativeReview,
+    implementationReview: owners.implementationReview,
+    reviewSubject: {async createCandidate(request) { return request; },
+      async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+    legacyReview: {async review() { throw new Error("legacy review must not close native review"); }},
+    receiptFinalizer: {async finalize(value) { return value; }}});
+  const campaignIdentity = {...identity, attemptId: "zero-findings"};
+  let state = service.admit({identity: campaignIdentity, workspace: directory,
+    acceptedBoundary: {reference: "plan:s12", sha256: "1".repeat(64)},
+    baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "implementing", consequence: {}});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "gate_ready", consequence: {}});
+  state = await service.bindCandidate({identity: campaignIdentity, expectedRevision: state.revision,
+    request: candidate(acceptable)});
+  state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  state = service.bindReviewSelection({identity: campaignIdentity, expectedRevision: state.revision,
+    selection: selection(acceptable)});
+  const authority = episodeAuthority(acceptable, {campaignIdentity, episodeId: "episode-zero-findings"});
+  const request = {obligationId: "generic", authority,
+    beginTransitionId: "zero-findings:begin", resultTransitionId: "zero-findings:rejected",
+    reviewerRequest: {subject: acceptable.subject}, findingAuthority: owners.authority,
+    operationPrefix: "s12:zero-findings", contextRequest: {requestId: "s12:zero-findings:context",
+      consumer: {identity: "slice-builder:s12", revision: acceptable.subject.tree,
+        decision_scope: "s12-native-review"},
+      limitations: ["Claims are evidence records, not review acceptance."]}};
+  let outcome = await service.runNativeReview({identity: campaignIdentity,
+    expectedRevision: state.revision, request});
+  state = outcome.campaign;
+  assert.equal(outcome.failure.failureSignature, "result_contract_rejected");
+  assert.equal(state.nativeReview.obligations.generic.status, "correction_required");
+  const admittedEpisode = reviewEpisode.recover(authority.identity);
+  assert.equal(admittedEpisode.currentResult, null);
+
+  outcome = await service.correctNativeReviewResult({identity: campaignIdentity,
+    expectedRevision: state.revision,
+    request: {...request, resultTransitionId: "zero-findings:corrected",
+      reviewerRequest: {...request.reviewerRequest, continuationSessionId: "session-1"}},
+    recovery: state.nativeReview.obligations.generic.failure.recovery});
+  state = outcome.campaign;
+  const correctedEpisode = reviewEpisode.recover(authority.identity);
+  assert.equal(state.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(state.nativeReview.obligations.generic.findings, []);
+  assert.equal(outcome.builderContext, null);
+  assert.deepEqual(correctedEpisode.identity, admittedEpisode.identity);
+  assert.deepEqual(correctedEpisode.writer, admittedEpisode.writer);
+  assert.deepEqual(correctedEpisode.subject, admittedEpisode.subject);
+  assert.deepEqual(correctedEpisode.currentResult, corrected);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].continuationSessionId, "session-1");
+  assert.deepEqual(calls.map(() => "session-1"), ["session-1", "session-1"]);
+
+  const pendingReevaluation = service.runNativeRemediation({identity: campaignIdentity,
+    expectedRevision: state.revision, request: {...request,
+      subjectTransitionId: "zero-findings:reevaluation-subject",
+      resultTransitionId: "zero-findings:reevaluation-result",
+      remediationSubject: acceptable.subject,
+      reviewerRequest: {...request.reviewerRequest, continuationSessionId: "session-1"}},
+    remediationSubjectReference: episodeReference("checkpoint", acceptable.subject.commit,
+      acceptable.subject.tree, reviewEpisodeDigest(acceptable.subject))});
+  await reevaluationAdmitted;
+  const inFlight = service.recover(campaignIdentity);
+  assert.equal(inFlight.nativeReview.obligations.generic.status, "reported");
+  await assert.rejects(service.terminalize({identity: campaignIdentity,
+    expectedRevision: inFlight.revision, outcome: "accepted", receipt: {}}),
+  /completed native closure/);
+  finishReevaluation();
+  outcome = await pendingReevaluation;
+  state = outcome.campaign;
+  assert.equal(outcome.failure, null);
+  assert.equal(state.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(state.nativeReview.obligations.generic.findings, []);
+  assert.equal(reviewEpisode.recover(authority.identity).currentResult.verdict, "acceptable_as_is");
+  assert.equal(calls.length, 3);
+  assert.equal(calls[2].continuationSessionId, "session-1");
+});
+
 test("native campaign closes one claim-backed finding through remediation and restart", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "s12-native-review."));
   t.after(() => rm(directory, {recursive: true, force: true}));

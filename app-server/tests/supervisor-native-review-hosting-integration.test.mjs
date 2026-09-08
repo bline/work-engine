@@ -642,7 +642,7 @@ test("agent-instruction specialist contract rejection preserves its outer result
   dispatched = await host.dispatch(effect("correct_result", {identity, expected_revision: campaign.revision,
     obligation_id: "instructions", operation_id: "specialist-correction:correct"}));
   assert.equal(dispatched.result.failure, null);
-  assert.equal(dispatched.result.campaign.nativeReview.obligations.instructions.status, "awaiting_builder");
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.instructions.status, "reported");
   assert.equal(calls.length, 2);
   assert.equal(calls[1].session, calls[0].session);
   assert.match(calls[1].prompt, /PREVIOUS STRUCTURED RESULT/);
@@ -710,7 +710,7 @@ test("provider-entered contract rejection is durable and only the exact retained
   dispatched = await host.dispatch(effect("correct_result", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: "result-correction:correct"}));
   assert.equal(dispatched.result.failure, null);
-  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "awaiting_builder");
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
   assert.equal(calls.length, 2);
   assert.equal(calls[1].session, calls[0].session);
   assert.equal(calls[1].resume, true);
@@ -780,7 +780,7 @@ test("restart reconstructs a contract-rejected result after provider success pre
     expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
     operation_id: "orphaned-result:correct"}));
   assert.equal(dispatched.result.failure, null);
-  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "awaiting_builder");
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
   assert.equal(sessions.length, 3);
   assert.equal(sessions[2].session, sessions[0].session);
   assert.equal(sessions[2].resume, true);
@@ -835,7 +835,7 @@ test("restart admits an already-returned corrected result without replaying the 
     expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
     operation_id: "orphaned-correction:recover"}));
   assert.equal(dispatched.result.failure, null);
-  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "awaiting_builder");
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
   assert.equal(calls.length, 2);
   assert.equal(calls[1].session, calls[0].session);
   assert.equal(calls[1].resume, true);

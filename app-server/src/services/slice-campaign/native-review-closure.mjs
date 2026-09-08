@@ -9,7 +9,9 @@ function reference(owner, reference, revision, value) {
 function episodeRef(state) {
   return reference("review-episode", `review-episode@${episodeDigest(state.identity)}`, state.revision, state);
 }
-function status(episode) { return episode.phase === "reported" ? "reported" : "awaiting_builder"; }
+function status(episode, findings) {
+  return episode.phase === "reported" || findings.length === 0 ? "reported" : "awaiting_builder";
+}
 function relianceComplete(findings) {
   return findings.length > 0
     && findings.every((item) => item.outcome === "verified_resolved" && item.relianceRef !== null);
@@ -21,7 +23,7 @@ function withRelianceStatus(current, findings) {
 }
 function binding({obligationId, episode, findings, prior = null}) {
   return Object.freeze({
-    schemaVersion: 1, obligationId, status: status(episode),
+    schemaVersion: 1, obligationId, status: status(episode, findings),
     episodeRef: episodeRef(episode), runtimeSessionRef: episode.writer.runtimeSession, findings,
     initialEpisodeRef: prior?.initialEpisodeRef ?? episodeRef(episode),
     authority: Object.freeze({reviewerSelectionAuthorized: false, findingEvaluationAuthorized: false,

@@ -53,6 +53,12 @@ export function createSliceCampaignService({
     if (state.revision !== expectedRevision) throw new Error("slice campaign revision conflict");
   };
   const nativeObligations = (state) => state.nativeReview?.obligations ?? {};
+  const reportedZeroFindingClosure = (obligation) => obligation?.status === "reported"
+    && Array.isArray(obligation.findings) && obligation.findings.length === 0;
+  const completedNativeRemediationBinding = (value) => {
+    const {remediationExecuting: _remediationExecuting, ...binding} = value;
+    return freeze(binding);
+  };
   const nativeRemediationReady = (state) => {
     const selected = state.reviewSelection?.specialists
       ?.filter(({selection}) => selection === "selected")
@@ -350,8 +356,9 @@ export function createSliceCampaignService({
       const state = current(identity); requireRevision(state, expectedRevision);
       const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
       if (state.phase !== "review_ready"
-          || !["awaiting_builder", "remediation_executing"].includes(currentObligation?.status)) {
-        throw new Error("native remediation requires an awaiting-builder closure");
+          || (!["awaiting_builder", "remediation_executing"].includes(currentObligation?.status)
+            && !reportedZeroFindingClosure(currentObligation))) {
+        throw new Error("native remediation requires an awaiting-builder or reported zero-finding closure");
       }
       if (!nativeReview?.executeRemediation || !nativeReview?.recoverRemediation) {
         throw new Error("native review closure service is unavailable");
@@ -361,10 +368,14 @@ export function createSliceCampaignService({
       const requestDigest = digest(request);
       let prepared = state;
       let allowProviderEntry = false;
-      if (currentObligation.status === "awaiting_builder") {
+      if (currentObligation.status === "awaiting_builder"
+          || (reportedZeroFindingClosure(currentObligation)
+            && currentObligation.remediationExecuting !== true)) {
         prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
           [request.obligationId]: freeze({...currentObligation,
-            status: "remediation_executing", requestDigest})})}, state.revision);
+            ...(currentObligation.status === "awaiting_builder" ? {status: "remediation_executing"} : {}),
+            ...(currentObligation.status === "reported" ? {remediationExecuting: true} : {}),
+            requestDigest})})}, state.revision);
         allowProviderEntry = true;
       } else {
         const recoveryRequest = {
@@ -414,7 +425,7 @@ export function createSliceCampaignService({
         return freeze({campaign, builderContext: null, failure: failed.failure});
       }
       const campaign = publish({...prepared, nativeReview: nativeEnvelope({...nativeObligations(prepared),
-        [request.obligationId]: outcome.binding})}, prepared.revision);
+        [request.obligationId]: completedNativeRemediationBinding(outcome.binding)})}, prepared.revision);
       return freeze({campaign, builderContext: outcome.builderContext, failure: null});
     },
     async terminalize({ identity, expectedRevision, outcome, receipt }) {
@@ -427,7 +438,8 @@ export function createSliceCampaignService({
       const selected = state.reviewSelection?.specialists.filter(({selection}) => selection === "selected") ?? [];
       const obligations = nativeObligations(state);
       const nativeComplete = state.reviewSelection !== null && selected.length > 0
-        && selected.every(({obligationId}) => obligations[obligationId]?.status === "reported")
+        && selected.every(({obligationId}) => obligations[obligationId]?.status === "reported"
+          && obligations[obligationId].remediationExecuting !== true)
         && Object.keys(obligations).every((obligationId) => selected.some((item) => item.obligationId === obligationId));
       const compatibilityComplete = state.review !== null && state.reviewSelection === null && state.nativeReview === null;
       if (state.phase !== "review_ready" || (!compatibilityComplete && !nativeComplete)) {
