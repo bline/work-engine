@@ -1,0 +1,174 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: review-bench
+source:
+  path: skills/review-bench/SKILL.md
+  repository_revision: e47f0be083bbc8f617e9e29e0b3adc7c2024fa9c
+  sha256: cc23952c720643f7b66fb70064f896c716a67a0f3e112c2bbc23e600d13971e4
+  producer: S13 responsibility 1 attempt-9 canonical authority repair
+frontmatter:
+  name: review-bench
+  description: "Build and run evidence-calibrated comparisons of code-review providers, models, and harnesses using immutable or confidence-qualified repository cases. Use when evaluating review fallback quality or same-model harness diversity; do not use a benchmark score as production review approval."
+document:
+  line_ending: lf
+  final_newline: true
+source_bindings:
+  - id: authority.legacy-skill
+    kind: canonical_authority
+    path: skills/review-bench/SKILL.md
+    sha256: cc23952c720643f7b66fb70064f896c716a67a0f3e112c2bbc23e600d13971e4
+    role: canonical experimental Review Bench participation and authority boundary
+  - id: authority.artifact-contracts
+    kind: canonical_authority
+    path: skills/review-bench/references/artifact-contracts.md
+    sha256: 0446d2ba13bbc5b99908e9ba65739137e0fd6d5e5ca4334c43507132c75b64e2
+    role: artifact ownership, evidence-era, validation, and descriptive-report contract
+  - id: authority.experiment-v1-2
+    kind: canonical_authority
+    path: skills/review-bench/references/experiment-contract-v1.2.md
+    sha256: 0bad64e6b21f240f43eb5f6e377329f7a4a0a0240bbd6bf4b16038cbfb49d8f9
+    role: active protocol contract for new cases and attempts
+  - id: authority.claims-roadmap
+    kind: canonical_authority
+    path: skills/review-bench/references/claims-aware-evaluation-roadmap.md
+    sha256: 7812d3f23c7a5c29a242650ee7acfcac01d0979b1666b39b407adc0e845ee74f
+    role: staged evidence-era and future policy boundary
+sections:
+  - id: identity
+    kind: identity
+    heading: {level: 1, text: Review Bench}
+    content: |+
+
+      Compare reviewer behavior without treating disagreement, historical provider
+      claims, or aggregate call counts as ground truth.
+
+    source_span: {start_byte: 330, end_byte: 474, sha256: f76f33b86dbc97d56fa90fd7077c3703f349407a63ef05814114bf1600411257}
+  - id: boundaries
+    kind: boundary
+    heading: {level: 2, text: Boundaries}
+    content: |+
+
+      - Bind every case and result to one snapshot digest.
+      - Keep case artifacts separate from adjudicated truth.
+      - Give reviewers the contract and evidence, not prior findings or builder
+        rationale.
+      - Record provider, model, harness, inference family, fresh-context state, and
+        tool access separately.
+      - Treat reconstructed snapshots according to their recorded confidence and
+        limitations.
+      - Use human or executable adjudication to map reported findings to truth.
+      - Keep reports descriptive until sample size and calibration justify stronger
+        statistical claims.
+      - Never convert a bench result into acceptance of the reviewed production
+        slice.
+      - Preserve each sufficiently identified development slice as a baseline review
+        candidate when its exact checkpoint, contract, deterministic evidence, and
+        original review provenance are available. Candidate preservation does not
+        establish truth or require immediate benchmark execution.
+      - Keep pre-claims development evidence, later claim-aware reruns, and
+        post-build production evidence distinguishable. Do not pool them merely
+        because they concern the same repository or reviewer model.
+
+      Read [artifact-contracts.md](references/artifact-contracts.md) when authoring
+      or adjudicating corpus, truth, result, or scoring artifacts.
+      Read [experiment-contract-v1.2.md](references/experiment-contract-v1.2.md) when
+      selecting new cases or running new reviews. The frozen
+      [1.0](references/experiment-contract.md) and
+      [1.1](references/experiment-contract-v1.1.md) contracts remain authoritative
+      for results that identify those protocols. A contract change requires a new
+      protocol version; do not reinterpret existing reviewer outputs under revised
+      rules.
+      Read
+      [claims-aware-evaluation-roadmap.md](references/claims-aware-evaluation-roadmap.md)
+      when preserving slice candidates or planning comparisons that add proposal
+      packets, claim revisions, Codebase Memory projections, or production evidence.
+
+    source_span: {start_byte: 474, end_byte: 2434, sha256: cdb6ca424a5f22927e2f95e6fd8152f712ed1531d71475c2784938c6daf054ef}
+  - id: app-server-native-operation
+    kind: boundary
+    heading: {level: 2, text: App Server-native operation}
+    content: |+
+
+      In an App Server-native experimental generation, use the host-mediated
+      `research.review-bench.evaluate` interface for artifact validation, blinded
+      rendering, supplied-observation inventory, and descriptive comparison. The
+      stateless App Server Review Bench service owns those deterministic mechanics;
+      do not emulate them in model reasoning or substitute the legacy CLI for the
+      attached runtime interface. Keeping execution in the service preserves closed
+      artifact validation and makes the actual effect ceiling enforceable.
+
+      The attached interface cannot execute a provider, adjudicate or persist truth,
+      admit a reviewer profile, select a production route, or accept a review,
+      campaign, or production slice. Preserve those prohibitions: Review Bench
+      outputs are experimental evidence owned by their recorded artifact authorities,
+      and granting them operational authority would collapse evaluation evidence into
+      the production decision it is meant to measure.
+
+      The direct CLI modes below remain available when working with the legacy package
+      outside an attached App Server generation. They do not describe the execution
+      path or enlarge the authority of the host-mediated runtime interface.
+
+    source_span: {start_byte: 2434, end_byte: 3654, sha256: 33adb4966668f37d15973d4a2777f39643352af520e284a43f0011b15844068c}
+  - id: modes
+    kind: receipt
+    heading: {level: 2, text: Modes}
+    content: |+
+
+      ### Inventory historical candidates
+
+      Use `inventory-history` to find receipts with review or repair evidence and to
+      identify missing snapshot information. Session matches are forensic candidates,
+      not automatically valid cases.
+
+      During active system development, prefer capturing the current slice's
+      immutable candidate and accepted checkpoints at completion time rather than
+      depending on later transcript archaeology. Admission, truth adjudication, and
+      review attempts may happen later when the required comparison capability is
+      available.
+
+      ```bash
+      python3 skills/review-bench/scripts/review_bench.py inventory-history \
+        --metrics metrics/roadmap.jsonl metrics/work-engine-roadmap.jsonl \
+        --codex-sessions /home/bline/.codex/sessions
+      ```
+
+      ### Validate artifacts
+
+      ```bash
+      python3 skills/review-bench/scripts/review_bench.py validate \
+        --corpus <corpus.json> \
+        --truth <truth.json> \
+        --result <result.json> \
+        --scoring <scoring.json>
+      ```
+
+      ### Export a blinded manual-review packet
+
+      ```bash
+      python3 skills/review-bench/scripts/review_bench.py export-case \
+        --corpus <corpus.json> \
+        --case-id <case-id> \
+        --output-dir <packet-dir>
+      ```
+
+      For a committed snapshot, add `--repository-root <repo> --archive-git` to
+      produce an attachable `snapshot.tar.gz`. This is an explicit export; inspect
+      repository content and publication authority before sending it externally.
+
+      ### Compare adjudicated results
+
+      ```bash
+      python3 skills/review-bench/scripts/review_bench.py compare \
+        --corpus <corpus.json> \
+        --truth <truth.json> \
+        --results-dir <results-dir> \
+        --scoring-dir <scoring-dir> \
+        --output <report.json>
+      ```
+
+      Interpret pairwise complementarity as evidence about the tested cases, not as
+      proof of model independence. Compare complete configurations, including
+      reasoning effort, protocol, evidence access, pass count, and aggregation.
+      Prefer a route-class policy when results differ materially across deterministic,
+      cross-boundary, persistent-state, or novel/high-consequence changes.
+    source_span: {start_byte: 3654, end_byte: 5664, sha256: bc89cc1abb18f2c746291a8749c92abda7908fbd77c4836d2f2325185f1d12bf}

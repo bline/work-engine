@@ -45,6 +45,27 @@ Read
 when preserving slice candidates or planning comparisons that add proposal
 packets, claim revisions, Codebase Memory projections, or production evidence.
 
+## App Server-native operation
+
+In an App Server-native experimental generation, use the host-mediated
+`research.review-bench.evaluate` interface for artifact validation, blinded
+rendering, supplied-observation inventory, and descriptive comparison. The
+stateless App Server Review Bench service owns those deterministic mechanics;
+do not emulate them in model reasoning or substitute the legacy CLI for the
+attached runtime interface. Keeping execution in the service preserves closed
+artifact validation and makes the actual effect ceiling enforceable.
+
+The attached interface cannot execute a provider, adjudicate or persist truth,
+admit a reviewer profile, select a production route, or accept a review,
+campaign, or production slice. Preserve those prohibitions: Review Bench
+outputs are experimental evidence owned by their recorded artifact authorities,
+and granting them operational authority would collapse evaluation evidence into
+the production decision it is meant to measure.
+
+The direct CLI modes below remain available when working with the legacy package
+outside an attached App Server generation. They do not describe the execution
+path or enlarge the authority of the host-mediated runtime interface.
+
 ## Modes
 
 ### Inventory historical candidates

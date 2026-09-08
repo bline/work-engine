@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "producer": "S13 responsibility 1 attempt-9 canonical authority repair",
+  "judgments": [
+    {
+      "id": "s13-canonical-runtime-causality",
+      "category": "ownership",
+      "subject": "structure.sections.app-server-native-operation",
+      "conclusion": "The canonical Review Bench skill owns the App Server-native model-facing instruction to use the host-mediated evaluation interface, leave deterministic mechanics to the stateless service, and preserve the causal separation between experimental evidence and production authority; generated structure and interface artifacts bind and project that doctrine without becoming independent policy owners.",
+      "evidence": [
+        "skills/review-bench/SKILL.md",
+        "app-server/migrations/skills/review-bench/structure.yaml",
+        "app-server/migrations/skills/review-bench/interface.yaml",
+        "app-server/src/skill-compiler.mjs"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s13-stateless-server-owner",
+      "category": "ownership",
+      "subject": "interface.boundaries.evidence.descriptive-only",
+      "conclusion": "The App Server Review Bench service owns closed artifact validation, pure blinded rendering, supplied-observation inventory classification, and descriptive comparison; immutable artifact owners retain corpus, truth, results, scoring, and snapshot state.",
+      "evidence": ["skills/review-bench/references/artifact-contracts.md", "app-server/src/services/review-bench/contract.mjs", "app-server/src/services/review-bench/service.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s13-private-extension-lifecycle",
+      "category": "loading",
+      "subject": "structure.sections.modes",
+      "conclusion": "Review Bench is compiled below core and exposed only through a generation-local host-mediated adapter; executable-generation machinery remains the sole attachment lifecycle owner.",
+      "evidence": ["app-server/src/run-extension-bundle-compiler.mjs", "app-server/src/run-extension-registry.mjs", "app-server/tests/review-bench-extension-vertical.test.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
+      "id": "s13-research-not-admission",
+      "category": "authority",
+      "subject": "interface.boundaries.authority.no-production-approval",
+      "conclusion": "Validation and comparison outputs remain experimental descriptive evidence and cannot admit a reviewer profile, route production review, accept a reviewed slice, or establish model independence.",
+      "evidence": ["skills/review-bench/SKILL.md", "app-server/src/services/reviewer-runtime/profile-registry.mjs"],
+      "changes_contract": false,
+      "human_approval": null
+    }
+  ]
+}

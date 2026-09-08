@@ -68,6 +68,10 @@ export {
 export * from "./services/reviewer-runtime/profile-registry.mjs";
 export * from "./services/reviewer-runtime/openrouter-codex-adapter.mjs";
 export * from "./services/reviewer-runtime/native-claude-code-adapter.mjs";
+export * from "./services/review-bench/contract.mjs";
+export * from "./services/review-bench/comparison.mjs";
+export * from "./services/review-bench/service.mjs";
+export * from "./services/review-bench/experimental-adapter.mjs";
 export {
   REVIEW_EPISODE_SCHEMA_VERSION, ReviewEpisodeError,
   digest as reviewEpisodeDigest, identityKey as reviewEpisodeIdentityKey,

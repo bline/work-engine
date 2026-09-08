@@ -1,0 +1,34 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: review-bench
+runtime_requirements:
+  required_capabilities:
+    - research.review-bench.evaluate
+  capability_ceiling:
+    - research.review-bench.evaluate
+  effect_ceiling: []
+  prohibited_effects:
+    - state.provider_execution
+    - state.truth_adjudication
+    - state.reviewer_profile_admission
+    - state.review_routing
+    - state.review_acceptance
+    - state.campaign_acceptance
+    - state.production_review
+  continuity: ephemeral
+boundaries:
+  - id: evidence.descriptive-only
+    kind: interface
+    semantic_section: modes
+    authority_source: authority.artifact-contracts
+    enforcement: receipt_contract
+  - id: authority.no-production-approval
+    kind: prohibition
+    semantic_section: app-server-native-operation
+    authority_source: authority.legacy-skill
+    enforcement: denied
+  - id: authority.no-provider-execution
+    kind: prohibition
+    semantic_section: app-server-native-operation
+    authority_source: authority.legacy-skill
+    enforcement: denied
