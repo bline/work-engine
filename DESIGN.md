@@ -24,11 +24,11 @@ Contracts define conditions that must remain true. They are binding.
 
 Examples include:
 
-- the user objective and configured acceptance conditions;
-- user authority and approval boundaries;
+- the operator objective and configured acceptance conditions;
+- operator authority and approval boundaries;
 - safety and mutation boundaries such as a read-only reviewer;
 - ownership boundaries between supervisor, builder, evidence adapter, gate runner, and receipt schema;
-- truthful preservation of unresolved state and user-authored work;
+- truthful preservation of unresolved state and operator-authored work;
 - provider identity and configuration provenance;
 - required fallback provenance when an actual fallback occurs;
 - durable receipt/schema requirements;
@@ -51,10 +51,8 @@ independently required claim quantifies over those facts, they are part of the
 resulting state. Two runs producing identical artifacts may therefore differ in
 validity.
 
-"Independently required" means that the claim is required by an authority or
-semantic owner other than the local constraint being justified, and that the
-failure caused by a violating path can be described without referring merely
-to violation of that constraint.
+Section 3.9 defines when such a claim is independently required and how it may
+justify a production-path constraint.
 
 ### 1.2 Consequences
 
@@ -66,7 +64,7 @@ Examples:
 - an architectural boundary does not ignore a credible competing owner;
 - review evidence retains the independence required by the correctness claim;
 - useful context is not reconstructed unnecessarily;
-- the intended runtime or user-visible behavior is demonstrated;
+- the intended runtime or operator-visible behavior is demonstrated;
 - direct-source observation does not expand beyond evidence relevant to the claim;
 - evidence gathering is sufficient for the decision without continuing after additional evidence has no credible decision value.
 
@@ -295,8 +293,14 @@ Do not command a method when only an outcome is structurally required.
 
 For example:
 
-> **Reason:** Review evidence is used to reduce correlated builder error. If the reviewer can mutate the implementation, the claimed independence no longer holds.  
+> **Reason:** Review evidence is used to reduce correlated builder error. If the reviewer can mutate the implementation, the claimed independence no longer holds.
+>
 > **Command:** Reviewers used as independent evidence are read-only.
+>
+> **Evidence:** Because the reviewer is the acting role whose independence is
+> claimed, its own record cannot independently attest the grant. Independently
+> observe the realized capability grant and preserve the claim evidence required
+> by sections 3.9 and 12.
 
 Do not expand this into a procedural ritual such as which files must be opened, which tool must be tried first, or how many review passes must occur unless those details are themselves contractually necessary.
 
@@ -348,8 +352,14 @@ causal reality
 → failure mode
 → structural invariant
 → minimal command
+→ required establishment evidence when the invariant is a production-path claim
 → model judgment everywhere outside that boundary
 ```
+
+When a command protects a required production-path claim, its effective
+instruction must expose the evidence obligation defined by section 3.9 as well
+as the constraint. Constraint without admissible evidence establishes no claim
+that a consumer can rely upon.
 
 Invariant structure should provide stable reference points without prescribing the route between them: **pin the coordinate system, not the path**.
 
@@ -361,14 +371,20 @@ The goal is to **remove invalid degrees of freedom while preserving every legiti
 Before adding or retaining imperative language, ask all of the following:
 
 1. What product property fails if this command is violated?
-2. Would the resulting state be invalid regardless of which valid route produced it?
+2. Would the resulting state be invalid regardless of which valid route
+   produced it? For an independently required production-path claim under
+   section 3.9, would violating the command make the claim false, or merely
+   leave it unestablished? Falsity may justify constraining the work route.
+   Unestablishability instead requires admissible evidence and may require
+   binding an evidence-capable realization under section 3.9.
 3. Is that property genuinely invariant, or merely desirable in the current situation?
 4. Does the command encode only structure, authority, or an irreducible interface contract?
 5. Has mutable data, current knowledge, a heuristic, or a preferred route leaked into the command?
 6. Could a different method preserve every required consequence? If so, is the command unnecessarily prescribing that method?
-7. Does any required sequencing preserve an observable outcome or the truth of
-   an independently required production-path claim? If only attribution is
-   required, could the route remain open while the actual sequence is recorded?
+7. Does any required sequencing preserve an observable consequence or prevent
+   a violating fact from crossing an independently required claim's consumption
+   boundary? If only attribution or independent attestation is required, could
+   the route remain open while the relevant path facts are recorded or observed?
 8. Is the command paired with enough explanation for the model to understand why the boundary exists?
 9. Would the command remain valid if tools, repository structure, models, or evidence changed while the product contract stayed the same?
 
@@ -380,92 +396,59 @@ Most contracts concern the resulting state or consequence. When multiple
 production paths can establish the same required result, path selection remains
 model judgment.
 
-Some required claims instead quantify over how a result was produced. Their
-subjects may include:
-
-- execution sequence;
-- capability and mutation boundaries;
-- provider, harness, or runtime realization;
-- evidence and input custody;
-- context or reviewer isolation;
-- treatment exposure;
-- effect identity and duplication; or
-- the attributable route actually taken.
-
-For example, an acceptance certificate may require review independent of the
-reasoning being evaluated; a confirmatory research claim may require that its
-specification was frozen before outcomes were visible; an external effect may
-be required to occur at most once; and a receipt may require the actual
-evidence fallback to remain attributable. These are claims about production
-history, not preferences about method.
-
 A Work Engine-authored production-path constraint is structural only when both
 conditions hold:
 
-1. An already-required claim quantifies over the relevant production-path
-   facts.
-2. That claim is required by an authority or semantic owner other than the
-   local constraint being justified, and the failure caused by a violating path
-   can be named without referring merely to violation of the constraint.
+1. A required claim quantifies over relevant production-path facts.
+2. The claim is required by an authority or semantic owner other than the local
+   constraint being justified, and a violating path causes a failure that can
+   be named without referring merely to violation of that constraint.
 
-The second condition prevents circular authorization. A local mechanism,
-projection, or instruction cannot make its preferred route mandatory by
-creating a claim whose only consumer is itself.
+The claim's identity includes its required subject, covered state, consumption
+boundary, and consumer. Narrowing any of those dimensions changes the claim and
+requires the authority that owns the affected acceptance condition; an actor
+cannot replace an unestablished claim with a weaker one it can establish.
 
-Production-path requirements have two different forms.
+Three mechanisms may preserve or establish a production-path claim:
 
-#### Path truth
+- **constraint** prevents an invalid path fact from occurring or propagating;
+- **recording** supplies attributable evidence of what the acting role did; and
+- **independent observation** supplies evidence owned outside the acting role
+  of what occurred.
 
-The required claim can be true only if the production path preserves a
-particular property. Independence, preregistration, non-contamination, and
-at-most-once external effects are examples. Constrain only the sequence,
-capabilities, realization, custody, or other path facts necessary to keep the
-claim true.
+These mechanisms may be combined. Every required production-path claim needs at
+least one admissible evidence mechanism: recording, independent observation, or
+both, as its consumer requires. Constraint alone never establishes that the
+protected property held.
+
+Constrain the path only when a violating fact could cross the claim's
+consumption boundary before available observation can support authorized
+fencing, discard, repair, or replacement. Use recording when actor-attributed
+conduct is sufficient; use independent observation when the consumer requires
+attestation outside the actor or the actor cannot know the relevant world
+history.
+
+If no permitted realization can establish a proposed required claim, contract
+formation must report the unrealizable condition to its owner rather than admit
+it as executable or silently weaken it. If a bound realization cannot supply
+the admissible evidence, report the claim as **unestablished**. This means the
+acceptance condition that depends on the claim is unmet; it does not
+independently halt unrelated work. Treat it as a truthful-failure or escalation
+event for the owner of that acceptance condition. Proceeding without the claim,
+narrowing or replacing it, or abandoning the requirement requires the authority
+that the owning condition requires.
 
 Context or reviewer freshness is not independently structural. It may be one
 mechanism for establishing independence or another required property. Do not
 generalize a bounded freshness need into compulsory context or reviewer
 replacement.
 
-#### Path attribution
-
-The route remains valid, but the required claim cannot be supported unless the
-actual path is recorded. Fallback provenance is the standard example: the
-fallback is permitted, while the audit record must identify it.
-
-Recording is the default when attribution is sufficient. Do not constrain path
-selection when truthful evidence about the selected path establishes the
-required claim.
-
-The governing test is:
-
-> **Does an independently required claim depend on the production path, and is
-> that claim owned outside the local constraint seeking justification?**
-
-If not, the proposed requirement is procedural. If so, apply the least
-restrictive form that preserves the claim: constrain the path only when needed
-to keep the claim true; otherwise record the path needed for attribution.
-
-This test governs whether Work Engine's own doctrine, runtime projections, or
+This section governs whether Work Engine's own doctrine, runtime projections, or
 mechanisms may promote a route choice into product structure. It does not limit
 an operator's authority, when granted by the owning contract, to impose an
 explicit route or route-sensitive acceptance condition. Such a requirement
 derives authority from the operator, although its implementation should still
 constrain no more than the requirement entails.
-
-Applied to common cases:
-
-- validate before publication is structural when publication would otherwise
-  make an unvalidated artifact authoritative;
-- independent review constrains only the exposure, capabilities, and custody
-  needed by the owning independence claim;
-- preregistration constrains specification ordering when a confirmatory claim
-  depends on the specification preceding outcome visibility;
-- fallback provenance records the actual fallback without prohibiting it;
-- search before reading remains a procedural preference when no external owner
-  or consequence requires that order; and
-- context or reviewer freshness remains a possible independence mechanism
-  rather than a general requirement.
 
 ---
 
@@ -579,7 +562,12 @@ Use disposable reconnaissance or diagnostic contexts when they need large tempor
 
 ### Reviewer lifetime
 
-Begin a reviewer fresh when independence from the builder is part of the evidence claim. Once that independence has been established, preserve the same isolated reviewer through a bounded remediation loop while its accumulated understanding remains useful.
+When independence from the builder is part of the evidence claim, establish the
+isolation, exposure, capability, and custody properties that the owning claim
+requires. A fresh reviewer is one possible mechanism when prior exposure would
+violate that claim. Once the required independence has been established,
+preserve the same isolated reviewer through a bounded remediation loop while
+its accumulated understanding remains useful.
 
 A typical useful shape is:
 
@@ -594,7 +582,12 @@ fresh isolated reviewer
 → discard reviewer
 ```
 
-Restarting the reviewer is a judgment call unless a contract requires freshness again. Reasons may include a material architectural or placement change, a changed review premise, degraded or oversized context, or a need for a genuinely new independent perspective. These are signals for judgment, not a deterministic reset table.
+Restarting the reviewer is a judgment call unless the owning claim requires
+renewed independence that the current reviewer can no longer establish. Reasons
+may include a material architectural or placement change, a changed review
+premise, degraded or oversized context, or a need for a genuinely new
+independent perspective. These are signals for judgment, not a deterministic
+reset table.
 
 Instruction freshness and reasoning-context lifetime are separate concerns. When instructions or skills change, refresh them in place when the runtime permits and the existing reasoning context remains valuable; do not destroy useful context merely to refresh instructions.
 
@@ -633,7 +626,7 @@ When a premise fails, the model should:
 - revise only what the new evidence makes stale;
 - choose a replacement route using current evidence and capabilities;
 - preserve required fallback, configuration, and decision provenance;
-- continue toward the original objective unless authority or an invariant requires user intervention.
+- continue toward the original objective unless authority or an invariant requires operator intervention.
 
 When an attempted route fails, retain the smallest durable consequence needed to prevent unnecessary reconsideration: what was tried, what premise justified trying it, and what observation invalidated it. Preserve the consequence of the reasoning, not the reasoning transcript. The failed attempt should become evidence about the route rather than inert history.
 
@@ -643,9 +636,9 @@ Do not encode exhaustive recovery recipes for every anticipated failure. State t
 
 ---
 
-## 11. User authority and approval
+## 11. Operator authority and approval
 
-Model-centered decision making does not weaken user authority.
+Model-centered decision making does not weaken operator authority.
 
 The model may exercise judgment only within the authority it has been given. Approval boundaries in configuration or owning contracts remain invariant.
 
@@ -653,7 +646,7 @@ The system should distinguish:
 
 - decisions the model is authorized to make silently;
 - consequential decisions it may make but should explain;
-- decisions that require new user authority, preference, ownership choice, or approval.
+- decisions that require new operator authority, preference, ownership choice, or approval.
 
 Do not manufacture approval requirements for ordinary capability selection when the capability is already authorized. Do not bypass a real approval boundary merely because the model believes the action is beneficial.
 
@@ -663,7 +656,7 @@ Do not manufacture approval requirements for ordinary capability selection when 
 
 Flexibility increases the importance of truthful provenance; it does not reduce it.
 
-The audit record must describe what actually happened according to the owning receipt/schema contracts, including required route revisions, fallback transitions, provider/configuration changes, evidence modes, validation breadth, unavailable measurements, and unresolved concerns.
+The audit record must describe what actually happened according to the owning receipt/schema contracts, including required route revisions, fallback transitions, provider/configuration changes, evidence modes, validation breadth, unavailable measurements, unresolved concerns, and the identity and establishment status of any production-path claim relied upon.
 
 Important distinctions include:
 
@@ -671,7 +664,11 @@ Important distinctions include:
 - capability selection versus fallback;
 - evidence-mode fallback versus provider change;
 - observed measurement versus inferred or unavailable measurement;
-- current route versus historical route revision.
+- current route versus historical route revision;
+- actor-recorded conduct versus independently observed history;
+- a false claim versus an unestablished claim; and
+- a required claim versus a narrower claim with a different subject, covered
+  state, consumption boundary, or consumer.
 
 Never infer zero from unavailable evidence. Never rewrite provider identity because an already-configured provider used another authorized evidence capability. Never suppress a required fallback event because the final route succeeded.
 
@@ -715,7 +712,7 @@ Mechanically enforce actual invariants and schema contracts. Do not use validato
 
 ### Measure consequences
 
-Compare routes by accepted outcome, correctness, repair rate, context occupancy, token/cost consumption, latency, user attention, and maintenance burden. Metrics inform future judgment and design; they do not silently redefine success.
+Compare routes by accepted outcome, correctness, repair rate, context occupancy, token/cost consumption, latency, operator attention, and maintenance burden. Metrics inform future judgment and design; they do not silently redefine success.
 
 ---
 
@@ -734,7 +731,11 @@ Be suspicious when a proposed feature introduces:
 - procedural validation of method rather than deterministic validation of an invariant;
 - mandatory evidence gathering after the model already has sufficient support for the required consequence;
 - model reasoning spent on fully determined mechanical work;
-- infrastructure failures "fixed" by adding cognitive procedure to the model.
+- infrastructure failures "fixed" by adding cognitive procedure to the model;
+- a production-path claim whose only consumer is the constraint that requires
+  it; or
+- an actor narrowing an unestablished claim until its available evidence can
+  support the substitute.
 
 A useful warning sign is a rule whose exceptions keep growing. That usually means the rule flattened a decision that belongs in semantic space.
 
@@ -771,7 +772,7 @@ The system's state, evidence, confidence, provenance, and unresolved conditions 
 
 Local convenience must not replace the requested downstream consequence.
 
-### User authority
+### Operator authority
 
 The model operates within granted authority and surfaces decisions that genuinely require human judgment or approval.
 

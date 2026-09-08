@@ -19,6 +19,14 @@ const nativeReviewToolDescription =
   + "Retry is admitted only from host-verified definite pre-provider authentication failure: it resumes an existing exact retained session, or reuses the exact deterministic UUID when failure occurred before any process or session existed; ambiguous outcomes remain non-replayable. "
   + "Result correction is distinct from retry and remediation: it requires a host-recovered provider-entered result-contract rejection and resumes only that exact retained session without changing the immutable subject. "
   + "This capability grants no shell, filesystem, credential, model-routing, reviewer-selection, finding-evaluation, review-acceptance, or campaign-acceptance authority.";
+const lifecycleControlToolDescription =
+  "Control the exact campaign lifecycle through host-owned operations. "
+  + "Use builder_turn to create or resume a manifest-defined Work Engine slice-builder with its declared sandbox, tools, durable binding, and context lifecycle. "
+  + "Do not use Codex collaboration spawn_agent for builders: provider-native children are outside Work Engine role custody.";
+const canonicalPublicationToolDescription =
+  "Prepare, adopt a separately resolved integration, seal validated content, promote, or reconcile canonical Git publication through the host-owned publication chain. "
+  + "adopt_resolved requires the ordinary prepare fields plus the exact host allocation, its current directory lease, resolved_tree, and a digest-bound passing validation receipt. "
+  + "The host independently verifies current lease/fence custody, target parent, accepted checkpoint, exact manifest, clean index tree, and validation binding before creating a normal durable prepared revision; it never updates the canonical branch directly.";
 
 function strategicReconciliationRequestInputSchema() {
   const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
@@ -82,7 +90,8 @@ function nativeReviewToolInputSchema() {
     recover: {identity, obligation_id: text()},
     retry: common,
     correct_result: common,
-    record_finding_evaluation: {...common, finding_id: text(), consumer_revision: text()},
+    record_finding_evaluation: {...common, finding_id: text(), consumer_revision: text(),
+      disposition: {type: "string", enum: ["valid", "invalid"]}},
     execute_remediation: {...common, remediation_subject: {type: "object",
       required: ["commit", "tree", "patchIdentity"], properties: {
         commit: text(), tree: text(), patchIdentity: text(),
@@ -99,18 +108,18 @@ function nativeReviewToolInputSchema() {
 const CAPABILITIES = Object.freeze({
   "capability.preflight": Object.freeze(["run"]),
   "capability.lifecycle_control": Object.freeze([
-    "admit", "recover", "advance", "bind_review_selection", "terminalize",
+    "admit", "recover", "advance", "bind_review_selection", "builder_turn", "supersede", "terminalize",
   ]),
   "capability.receipt_finalization": Object.freeze(["finalize_named_campaign"]),
   "capability.checkpoint_lifecycle": Object.freeze(["bind_candidate", "accept", "stop"]),
   "capability.completion_offer": Object.freeze([
-    "open", "load", "resolve", "reconcile", "expire",
+    "open", "load", "resolve", "reconcile", "expire", "supersede",
   ]),
   "capability.resume": Object.freeze(["recover_active", "recover_terminal"]),
   "capability.workspace_coordination": Object.freeze(["acquire", "inspect", "release"]),
   "capability.worktree_lifecycle": Object.freeze(["allocate", "cleanup"]),
   "capability.canonical_publication": Object.freeze([
-    "prepare", "seal_validation", "promote", "reconcile",
+    "prepare", "adopt_resolved", "seal_validation", "promote", "reconcile",
   ]),
   "capability.completion_publication": Object.freeze(["prepare", "complete", "reconcile"]),
   "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
@@ -149,6 +158,12 @@ const INPUT_FIELDS = Object.freeze({
   "capability.lifecycle_control/bind_review_selection": [
     new Set(["identity", "expectedRevision", "selection"]), new Set(),
   ],
+  "capability.lifecycle_control/builder_turn": [
+    new Set(["instance_id", "client_user_message_id", "text"]), new Set(),
+  ],
+  "capability.lifecycle_control/supersede": [
+    new Set(["identity", "expectedRevision", "operationId", "successor"]), new Set(),
+  ],
   "capability.lifecycle_control/terminalize": [
     new Set(["identity", "expectedRevision", "outcome", "receipt"]), new Set(),
   ],
@@ -175,6 +190,9 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.completion_offer/reconcile": [new Set(["offer"]), new Set()],
   "capability.completion_offer/expire": [new Set(["offer", "reason"]), new Set()],
+  "capability.completion_offer/supersede": [
+    new Set(["identity", "expected_revision", "expected_offer_id", "operation_id", "request", "reason"]), new Set(),
+  ],
   "capability.resume/recover_active": [new Set(["identity"]), new Set()],
   "capability.resume/recover_terminal": [
     new Set(["campaign_preflight", "run_id"]), new Set(),
@@ -190,6 +208,9 @@ const INPUT_FIELDS = Object.freeze({
   "capability.worktree_lifecycle/cleanup": [new Set(["allocation"]), new Set()],
   "capability.canonical_publication/prepare": [
     new Set(["operation_id", "target_branch", "expected_parent", "checkpoint", "manifest", "authorization", "message"]), new Set(),
+  ],
+  "capability.canonical_publication/adopt_resolved": [
+    new Set(["operation_id", "target_branch", "expected_parent", "checkpoint", "manifest", "authorization", "message", "allocation", "lease", "resolved_tree", "validation"]), new Set(),
   ],
   "capability.canonical_publication/seal_validation": [
     new Set(["operation_id", "preparation_revision", "validation"]), new Set(),
@@ -236,7 +257,7 @@ const INPUT_FIELDS = Object.freeze({
     new Set(["identity", "expected_revision", "obligation_id", "operation_id"]), new Set(),
   ],
   "capability.native_review/record_finding_evaluation": [
-    new Set(["identity", "expected_revision", "obligation_id", "operation_id", "finding_id", "consumer_revision"]), new Set(),
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id", "finding_id", "consumer_revision", "disposition"]), new Set(),
   ],
   "capability.native_review/execute_remediation": [
     new Set(["identity", "expected_revision", "obligation_id", "operation_id", "remediation_subject"]), new Set(),
@@ -330,11 +351,40 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
   if (capability === "capability.preflight") {
     requireText(value.campaign_path, "campaign path");
   }
+  if (capability === "capability.lifecycle_control" && operation === "supersede") {
+    requireRecord(value.identity, "superseded campaign identity");
+    requireText(value.expectedRevision, "superseded campaign expected revision");
+    requireText(value.operationId, "supersession operation identity");
+    requireRecord(value.successor, "supersession successor");
+    exactFields(value.successor, new Set(["identity", "acceptedBoundary", "baseline"]),
+      new Set(["expectedImpact"]), "supersession successor");
+    requireRecord(value.successor.identity, "supersession successor identity");
+    requireRecord(value.successor.acceptedBoundary, "supersession successor accepted boundary");
+    requireRecord(value.successor.baseline, "supersession successor baseline");
+  }
+  if (capability === "capability.lifecycle_control" && operation === "builder_turn") {
+    for (const [field, label] of [
+      ["instance_id", "managed builder instance id"],
+      ["client_user_message_id", "managed builder client user message id"],
+      ["text", "managed builder turn text"],
+    ]) requireText(value[field], label);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value.instance_id)) {
+      throw new TypeError("managed builder instance id contains unsupported characters");
+    }
+  }
   if (capability === "capability.completion_offer" && operation === "resolve") {
     validateDecision(value.decision);
   }
   if (capability === "capability.completion_offer" && operation === "expire") {
     requireText(value.reason, "completion offer expiration reason");
+  }
+  if (capability === "capability.completion_offer" && operation === "supersede") {
+    requireRecord(value.identity, "completion offer campaign identity");
+    requireText(value.expected_revision, "completion offer campaign revision");
+    requireText(value.expected_offer_id, "expected completion offer identity");
+    requireText(value.operation_id, "completion offer supersession operation identity");
+    requireRecord(value.request, "completion offer successor request");
+    requireText(value.reason, "completion offer supersession reason");
   }
   if (capability === "capability.resume" && operation === "recover_terminal") {
     requireText(value.run_id, "campaign run id");
@@ -356,13 +406,19 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
   }
   if (capability === "capability.canonical_publication") {
     requireText(value.operation_id, "publication operation");
-    if (operation === "prepare") {
+    if (operation === "prepare" || operation === "adopt_resolved") {
       requireText(value.target_branch, "publication target branch");
       requireText(value.expected_parent, "publication expected parent");
       requireRecord(value.checkpoint, "publication checkpoint");
       if (!Array.isArray(value.manifest)) throw new TypeError("publication manifest must be an array");
       requireRecord(value.authorization, "publication authorization");
       requireRecord(value.message, "publication message");
+      if (operation === "adopt_resolved") {
+        requireRecord(value.allocation, "resolved publication allocation");
+        requireRecord(value.lease, "resolved publication lease");
+        requireText(value.resolved_tree, "resolved publication tree");
+        requireRecord(value.validation, "resolved publication validation");
+      }
     } else {
       requireText(value[operation === "seal_validation" ? "preparation_revision" : "prepared_revision"], "publication revision");
       if (operation === "seal_validation") requireRecord(value.validation, "publication validation");
@@ -390,6 +446,9 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
     if (operation === "record_finding_evaluation") {
       requireText(value.finding_id, "native review finding identity");
       requireText(value.consumer_revision, "native review consumer revision");
+      if (!["valid", "invalid"].includes(value.disposition)) {
+        throw new TypeError("native review finding disposition must be valid or invalid");
+      }
     }
     if (operation === "execute_remediation") {
       requireRecord(value.remediation_subject, "native review remediation subject");
@@ -447,6 +506,10 @@ export function createSupervisorCampaignCapabilityDefinitions(
     name: TOOL_NAMES[capability],
     description: capability === "capability.strategic_reconciliation"
       ? strategicReconciliationToolDescription
+      : capability === "capability.lifecycle_control"
+        ? lifecycleControlToolDescription
+      : capability === "capability.canonical_publication"
+        ? canonicalPublicationToolDescription
       : capability === "capability.operational_coordination"
         ? operationalCoordinationToolDescription
         : capability === "capability.native_review"

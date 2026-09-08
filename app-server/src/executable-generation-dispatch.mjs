@@ -27,6 +27,20 @@ function turnTargetKey({ threadId, turnId }) {
 }
 
 const SYNTHETIC_APP_SERVER_RESPONSE = "work-engine.synthetic-app-server-response.v1";
+const OPERATOR_PROJECTION_REQUEST = "work-engine.operator-projection-request.v1";
+
+function appServerRequestPayload(method, params, operatorThreadIds) {
+  const payload = { method, params };
+  const threadId = params?.threadId;
+  if (typeof threadId !== "string" || !operatorThreadIds.has(threadId)) return payload;
+  return {
+    ...payload,
+    workEngineRequestContext: {
+      protocol: OPERATOR_PROJECTION_REQUEST,
+      threadId,
+    },
+  };
+}
 
 function notification(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
@@ -182,6 +196,7 @@ export class ExecutableGenerationDispatchHost {
 export class GenerationBoundAppServerTransport {
   constructor({
     transport, dispatchHost, idFactory = null, supervisorCampaignHostEffectRuntime = null,
+    onInitialization = null,
   }) {
     if (!transport || typeof transport.request !== "function"
         || typeof transport.notify !== "function") {
@@ -200,6 +215,10 @@ export class GenerationBoundAppServerTransport {
       throw new TypeError("generation-bound transport requires a supervisor campaign host-effect runtime");
     }
     this.supervisorCampaignHostEffectRuntime = supervisorCampaignHostEffectRuntime;
+    if (onInitialization !== null && typeof onInitialization !== "function") {
+      throw new TypeError("generation-bound transport initialization observer must be a function");
+    }
+    this.onInitialization = onInitialization;
     this.serverRequestHandler = null;
     this.notificationHandlers = new Set();
     this.lifecycleErrorHandlers = new Set();
@@ -208,6 +227,10 @@ export class GenerationBoundAppServerTransport {
     this.turnControls = new Map();
     this.interruptRequests = new Map();
     this.completedBeforeAdmission = new Set();
+    // Operator projection identity belongs to the stable transport. Executable
+    // generations are replaceable and must not forget an already-open UI
+    // thread when a successor activates.
+    this.operatorThreadIds = new Set();
     transport.onServerRequest((request) => this.#handleServerRequest(request));
     transport.onNotification((notification) => {
       this.#handleNotification(notification).catch((error) => {
@@ -524,7 +547,7 @@ export class GenerationBoundAppServerTransport {
         kind: "app_server_request",
         id: text(this.idFactory("request"), "generation request admission id"),
         operation: "app_server.request",
-        payload: { method, params },
+        payload: appServerRequestPayload(method, params, this.operatorThreadIds),
       }, (_generation, forwarded) => {
         const forwardedCompletion = this.transport.request(forwarded.method, forwarded.params);
         markSent();
@@ -541,6 +564,18 @@ export class GenerationBoundAppServerTransport {
       return completion.then(async (response) => {
         const synthetic = syntheticResponse(response);
         const projected = synthetic ? synthetic.response : response;
+        if (method === "initialize" && this.onInitialization) {
+          await this.onInitialization(Object.freeze({
+            params: structuredClone(params ?? {}),
+            response: structuredClone(projected),
+          }));
+        }
+        if (["thread/start", "thread/resume"].includes(method)) {
+          const threadId = projected?.thread?.id;
+          if (typeof threadId === "string" && threadId.length > 0) {
+            this.operatorThreadIds.add(threadId);
+          }
+        }
         const retained = method === "turn/start"
           ? await this.#retainTurn(
               projected,

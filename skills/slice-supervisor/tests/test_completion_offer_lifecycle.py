@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import copy
 import tempfile
 import unittest
 from pathlib import Path
@@ -154,6 +155,46 @@ class CompletionOfferLifecycleTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ambiguous"):
                 OFFER.expire(authorized, "offer no longer available")
             self.assertEqual("create_authorized", OFFER.load(repository, "test-run", 1)["state"])
+
+    def test_supersession_preserves_authorized_offer_and_installs_distinct_open_successor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted, _metrics, _terminal, _preflight = self.accepted(directory)
+            authorized = OFFER.resolve(OFFER.open_offer(request), self.decision("create"))
+            successor = copy.deepcopy(request)
+            successor["proposal"]["subject"] = "Replacement accepted checkpoint"
+            operation_id = "replace-stale-offer-v1"
+            publication_state = {
+                "operation_id": f"completion-{authorized['offer_id']}", "status": "absent",
+            }
+            result = OFFER.supersede(
+                authorized, successor, operation_id, "accepted checkpoint was superseded",
+                publication_state,
+            )
+            self.assertEqual("open", result["offer"]["state"])
+            self.assertNotEqual(authorized["offer_id"], result["offer"]["offer_id"])
+            self.assertEqual(result["offer"], OFFER.load(repository, "test-run", 1))
+            self.assertEqual(authorized["artifact_oid"], result["supersession"]["prior_offer_oid"])
+            self.assertEqual(result, OFFER.supersede(
+                authorized, successor, operation_id, "accepted checkpoint was superseded",
+                publication_state,
+            ))
+            replacement_authorized = OFFER.resolve(result["offer"], self.decision("create", "user-message-2"))
+            self.assertEqual("create_authorized", replacement_authorized["state"])
+            self.assertEqual("user-message-2", replacement_authorized["decision"]["authority"]["reference"])
+
+    def test_supersession_fails_closed_when_prior_offer_was_published(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, request, _accepted, _metrics, _terminal, _preflight = self.accepted(directory)
+            authorized = OFFER.resolve(OFFER.open_offer(request), self.decision("create"))
+            OFFER.ADAPTER.decide(request, "create")
+            successor = copy.deepcopy(request)
+            successor["proposal"]["subject"] = "Replacement accepted checkpoint"
+            with self.assertRaisesRegex(ValueError, "prior publication is present"):
+                OFFER.supersede(
+                    authorized, successor, "replace-published-offer-v1",
+                    "must not replace published offer",
+                    {"operation_id": f"completion-{authorized['offer_id']}", "status": "absent"},
+                )
 
     def test_open_offer_never_implies_human_authority(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

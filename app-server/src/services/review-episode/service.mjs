@@ -131,6 +131,20 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
         handledTransitions: { [transitionId]: transitionRevision }, continuity: "fresh_initial",
         uncertainty: null, retirement: null }, null);
     },
+    resumeInitial({ authority }) {
+      validateAuthority(authority);
+      const current = recover(authority.identity);
+      if (!current) throw new Error("review episode does not exist");
+      if (digest(current.authority) !== digest(authorityBinding(authority))
+          || digest(current.writer) !== digest(authority.writer)) {
+        throw new Error("review episode authority does not match current writer generation");
+      }
+      if (current.status !== "active" || current.phase !== "initial_review"
+          || current.currentResult !== null) {
+        throw new Error("review episode is not awaiting its initial result");
+      }
+      return current;
+    },
     transition,
     validateResult,
     recover,

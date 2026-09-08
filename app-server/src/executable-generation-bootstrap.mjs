@@ -18,6 +18,7 @@ import { compileRunExtensionBundle } from "./run-extension-bundle-compiler.mjs";
 export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/default-executable-generation-worker.mjs",
   "app-server/src/executable-generation-worker-runtime.mjs",
+  "app-server/src/managed-builder-turn.mjs",
   "app-server/src/services/slice-campaign/capability-contract.mjs",
   "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
   "app-server/src/services/slice-campaign/strategic-reconciliation.mjs",
@@ -82,7 +83,7 @@ const ROLE_ENVIRONMENT_CONFIG = "app-server/generated/executable-role-environmen
 export const DEFAULT_EXECUTABLE_ENVIRONMENT_FINGERPRINT =
   "work-engine.app-server-transparent-environment-v1";
 export const DEFAULT_EXECUTABLE_BOOTSTRAP_FINGERPRINT =
-  "work-engine.app-server-bootstrap-ipc-v1";
+  "work-engine.app-server-bootstrap-ipc-v5";
 
 export class ExecutableGenerationStartupError extends Error {
   constructor(code, message, details = {}) {
@@ -279,6 +280,7 @@ export async function createExecutableGenerationBootstrap({
   const store = new FileExecutableGenerationStore(
     path.join(path.resolve(stateRoot), "generation-state.json"),
   );
+  let appServerInitialization = null;
   const stored = await store.read();
   let currentSnapshot = null;
   let currentSnapshotFailureType = null;
@@ -374,6 +376,9 @@ export async function createExecutableGenerationBootstrap({
           WORK_ENGINE_CONFIGURED_PROVIDER_FEATURES: JSON.stringify(configuredProviderFeatures),
           WORK_ENGINE_LIVE_REPOSITORY_ROOT: path.resolve(workspaceRoot),
           WORK_ENGINE_DEVELOPMENT_ARTIFACT_ROOT: path.resolve(developmentArtifactRoot),
+          ...(appServerInitialization === null ? {} : {
+            WORK_ENGINE_APP_SERVER_INITIALIZATION: JSON.stringify(appServerInitialization),
+          }),
           ...(generationRecord.extensionAttachment ? {
             WORK_ENGINE_RUN_EXTENSION_ATTACHMENT_PATH: path.join(
               snapshot.directory, "app-server/generated/run-extension-attachment.json",
@@ -478,6 +483,9 @@ export async function createExecutableGenerationBootstrap({
       transport: new GenerationBoundAppServerTransport({
         transport, dispatchHost,
         supervisorCampaignHostEffectRuntime: campaignHostEffectRuntime,
+        onInitialization(initialization) {
+          appServerInitialization = structuredClone(initialization);
+        },
       }),
       currentSnapshot,
       currentSnapshotFailureType,

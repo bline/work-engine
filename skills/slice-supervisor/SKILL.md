@@ -171,6 +171,21 @@ wait` and the expected durable revision. Reconstruct that same attempt after
 context or session replacement with `skills/slice-supervisor/scripts/resume_active_slice.py`; continue
 only the recovered pending phase.
 
+When recovered evidence establishes that an admitted attempt cannot continue
+but its accepted work must be replanned in the same workspace, use the
+host-owned lifecycle supersession control. Supersession preserves the stopped
+attempt's candidate, review, finding, and authority evidence in its
+attempt-local receipt while atomically transferring mutable-workspace admission
+to a distinct successor at a new accepted boundary. It is not a backward phase
+transition, named-campaign terminal-history append, review acceptance, finding
+evaluation, provider retry, or publication authority. An already-reported
+zero-finding episode may reconcile a stranded empty binding during that atomic
+transition without synthesizing a finding or reliance; other review obligations
+retain their exact state. Before continuing the successor, establish the exact
+predecessor/successor supersession relationship from the atomic response or
+recovery evidence. If the response is uncertain or lost, recover both attempts
+and reconcile their relationship before continuing.
+
 When the pending obligation is conclusively discharged, or the attempt reaches
 an authoritative terminal outcome already decided by its owner, record
 lifecycle closure with `skills/slice-supervisor/scripts/manage_active_slice.py retire`. Terminal

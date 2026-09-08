@@ -88,7 +88,7 @@ test("resolved native findings become reported only after every exact builder re
     revisionRef: episodeReference("claim-evidence", `finding:${findingId}`, `revision:${findingId}`, "e".repeat(64)),
     relianceRef: null});
   const request = {authority: {}, consumer: "slice-builder:test", consumerRevision: "candidate-tree",
-    decisionScope: "slice-campaign-native-review"};
+    decisionScope: "slice-campaign-native-review", disposition: "valid"};
   let binding = {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder",
     findings: [resolved("F1"), resolved("F2")]};
   binding = closure.recordBuilderEvaluation({...request, binding,
@@ -98,19 +98,109 @@ test("resolved native findings become reported only after every exact builder re
     operationId: "rely:F2", findingId: "F2"});
   assert.equal(binding.status, "reported");
 
-  const stranded = {...binding, status: "awaiting_builder"};
-  binding = closure.recordBuilderEvaluation({...request, binding: stranded,
-    operationId: "rely:F1", findingId: "F1"});
-  assert.equal(binding.status, "reported");
-  assert.deepEqual(binding.findings, stranded.findings);
-
   const open = {...resolved("F3"), outcome: "open"};
   binding = closure.recordBuilderEvaluation({...request,
     binding: {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder", findings: [open]},
     operationId: "rely:F3", findingId: "F3"});
   assert.equal(binding.status, "awaiting_builder");
   assert.throws(() => closure.recordBuilderEvaluation({...request, binding,
-    operationId: "rely:F3:again", findingId: "F3"}), /already has builder reliance/);
+    operationId: "rely:F3:again", findingId: "F3"}), /already has a builder disposition/);
+
+  const stranded = {schemaVersion: 1, obligationId: "generic", status: "awaiting_builder",
+    findings: [reliance(open)]};
+  binding = closure.recordBuilderEvaluation({...request, disposition: "invalid", binding: stranded,
+    operationId: "reconcile:F3:invalid", findingId: "F3"});
+  assert.equal(binding.status, "reported");
+  assert.equal(binding.findings[0].outcome, "open");
+  assert.equal(binding.findings[0].builderEvaluation.disposition, "invalid");
+  assert.deepEqual(binding.findings[0].builderEvaluation.relianceRef, stranded.findings[0].relianceRef);
+});
+
+test("atomic supersession preserves review evidence and reconciles only exact zero-finding closure", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "slice-campaign-supersession."));
+  t.after(() => rm(directory, {recursive: true, force: true}));
+  const filePath = path.join(directory, "campaign.sqlite");
+  let store = await openSqliteSliceCampaignStore({filePath});
+  const reviewResult = await load("initial-finding");
+  const sourceIdentity = {...identity, attemptId: "attempt-1"};
+  const successorIdentity = {...identity, attemptId: "attempt-9", planVersion: "s13-successor-v1"};
+  const genericEpisodeRef = episodeReference("review-episode", "episode:generic",
+    "episode-reported-revision", "a".repeat(64));
+  const specialistEpisodeRef = episodeReference("review-episode", "episode:instructions",
+    "episode-open-revision", "b".repeat(64));
+  const nativeReview = {async executeInitial({obligationId}) {
+    return {binding: obligationId === "generic"
+      ? {schemaVersion: 1, obligationId, status: "awaiting_builder",
+        episodeRef: genericEpisodeRef, findings: []}
+      : {schemaVersion: 1, obligationId, status: "awaiting_builder",
+        episodeRef: specialistEpisodeRef, findings: [{findingId: "F1", outcome: "open"},
+          {findingId: "F2", outcome: "open"}]}, builderContext: null, failure: null};
+  }};
+  const makeService = () => createSliceCampaignService({store, nativeReview,
+    reviewSubject: {async createCandidate(request) { return request; },
+      async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+    receiptFinalizer: {async finalize() { throw new Error("supersession must not finalize"); }}});
+  let service = makeService();
+  const untouched = [];
+  for (let attempt = 2; attempt <= 8; attempt += 1) {
+    const preservedIdentity = {...identity, attemptId: `attempt-${attempt}`};
+    const preserved = service.admit({identity: preservedIdentity, workspace: `/s13/preserved-${attempt}`,
+      acceptedBoundary: {reference: `plan:s13-attempt-${attempt}`, sha256: String(attempt).repeat(64)},
+      baseline: {acceptedCommit: `commit-${attempt}`, acceptedTree: `tree-${attempt}`,
+        interSliceCommit: "inter"}});
+    untouched.push([preservedIdentity, structuredClone(preserved)]);
+  }
+  let state = service.admit({identity: sourceIdentity, workspace: "/s13/workspace",
+    acceptedBoundary: {reference: "plan:s13-attempt-1", sha256: "1".repeat(64)},
+    baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+  for (const phase of ["implementing", "gate_ready"]) state = service.advance({identity: sourceIdentity,
+    expectedRevision: state.revision, phase, consequence: {}});
+  state = await service.bindCandidate({identity: sourceIdentity, expectedRevision: state.revision,
+    request: candidate(reviewResult)});
+  state = service.advance({identity: sourceIdentity, expectedRevision: state.revision,
+    phase: "review_ready", consequence: {}});
+  const selected = {...selection(reviewResult), specialists: [
+    {obligationId: "generic", skill: "implementation-review", selection: "selected"},
+    {obligationId: "instructions", skill: "agent-instruction-review", selection: "selected"},
+  ]};
+  state = service.bindReviewSelection({identity: sourceIdentity, expectedRevision: state.revision,
+    selection: selected});
+  state = (await service.runNativeReview({identity: sourceIdentity, expectedRevision: state.revision,
+    request: {obligationId: "generic"}})).campaign;
+  state = (await service.runNativeReview({identity: sourceIdentity, expectedRevision: state.revision,
+    request: {obligationId: "instructions"}})).campaign;
+  const before = structuredClone(state);
+  const request = {identity: sourceIdentity, expectedRevision: state.revision,
+    operationId: "s13:supersede:attempt-1", successor: {identity: successorIdentity,
+      acceptedBoundary: {reference: "plan:s13-successor", sha256: "9".repeat(64)},
+      baseline: {acceptedCommit: "successor", acceptedTree: "successor-tree", interSliceCommit: "inter"}}};
+  const result = service.supersede(request);
+  assert.equal(result.superseded.phase, "superseded");
+  assert.equal(result.successor.phase, "accepted");
+  assert.equal(result.superseded.nativeReview.obligations.generic.status, "reported");
+  assert.equal(result.superseded.nativeReview.obligations.generic.reconciliation.providerEntry, false);
+  assert.deepEqual(result.superseded.nativeReview.obligations.generic.findings, []);
+  assert.deepEqual(result.superseded.nativeReview.obligations.instructions,
+    before.nativeReview.obligations.instructions);
+  assert.deepEqual(result.superseded.candidate, before.candidate);
+  assert.deepEqual(result.superseded.physicalProfile, before.physicalProfile);
+  assert.deepEqual(result.superseded.reviewSelection, before.reviewSelection);
+  for (const [preservedIdentity, preserved] of untouched) {
+    assert.deepEqual(service.recover(preservedIdentity), preserved);
+  }
+  assert.deepEqual(service.supersede(request), result);
+  assert.throws(() => service.admit({identity: {...successorIdentity, attemptId: "attempt-10"},
+    workspace: "/s13/workspace", acceptedBoundary: {reference: "conflict", sha256: "c".repeat(64)},
+    baseline: request.successor.baseline}), /already has an admitted/);
+  store.close();
+  store = await openSqliteSliceCampaignStore({filePath});
+  service = makeService();
+  assert.deepEqual(service.recover(sourceIdentity), result.superseded);
+  assert.deepEqual(service.recover(successorIdentity), result.successor);
+  assert.deepEqual(service.supersede(request), result);
+  for (const [preservedIdentity, preserved] of untouched) {
+    assert.deepEqual(service.recover(preservedIdentity), preserved);
+  }
 });
 
 test("campaign terminalization admits a reliance-complete resolved native closure", async () => {
@@ -157,14 +247,14 @@ test("campaign terminalization admits a reliance-complete resolved native closur
   state = service.recordNativeFindingEvaluation({identity: campaignIdentity, expectedRevision: state.revision,
     request: {obligationId: "generic", authority: {}, operationId: "rely:F1", findingId: "F1",
       consumer: "slice-builder:test", consumerRevision: initialResult.subject.tree,
-      decisionScope: "slice-campaign-native-review"}}).campaign;
+      decisionScope: "slice-campaign-native-review", disposition: "valid"}}).campaign;
   assert.equal(state.nativeReview.obligations.generic.status, "awaiting_builder");
   await assert.rejects(service.terminalize({identity: campaignIdentity, expectedRevision: state.revision,
     outcome: "accepted", receipt: {}}), /completed native closure/);
   state = service.recordNativeFindingEvaluation({identity: campaignIdentity, expectedRevision: state.revision,
     request: {obligationId: "generic", authority: {}, operationId: "rely:F2", findingId: "F2",
       consumer: "slice-builder:test", consumerRevision: initialResult.subject.tree,
-      decisionScope: "slice-campaign-native-review"}}).campaign;
+      decisionScope: "slice-campaign-native-review", disposition: "valid"}}).campaign;
   assert.equal(state.nativeReview.obligations.generic.status, "reported");
   state = await service.terminalize({identity: campaignIdentity, expectedRevision: state.revision,
     outcome: "accepted", receipt: {status: "accepted"}});
@@ -333,15 +423,15 @@ test("native campaign closes one claim-backed finding through remediation and re
   outcome = service.recordNativeFindingEvaluation({identity, expectedRevision: state.revision, request: {
     obligationId: "generic", authority: owners.authority, operationId: "s12:rely:S12-001",
     findingId: "S12-001", consumer: "slice-builder:s12", consumerRevision: initialResult.subject.tree,
-    decisionScope: "s12-native-review",
+    decisionScope: "s12-native-review", disposition: "valid",
   }});
   state = outcome.campaign;
   assert.equal(state.nativeReview.obligations.generic.findings[0].relianceRef !== null, true);
   assert.throws(() => service.recordNativeFindingEvaluation({identity, expectedRevision: state.revision, request: {
     obligationId: "generic", authority: owners.authority, operationId: "s12:rely:S12-001:second",
     findingId: "S12-001", consumer: "slice-builder:s12", consumerRevision: initialResult.subject.tree,
-    decisionScope: "s12-native-review",
-  }}), /already has builder reliance/);
+    decisionScope: "s12-native-review", disposition: "valid",
+  }}), /already has a builder disposition/);
   assert.equal(readClaimEvidence(owners.claimStore, {schema_version: 1, request_id: "reliance", operation: "query_reverse_reliance",
     parameters: {consumer: "slice-builder:s12", limit: 10, cursor: null}}).result.reliances.length, 1);
 
@@ -399,7 +489,7 @@ test("native campaign closes one claim-backed finding through remediation and re
   outcome = service.recordNativeFindingEvaluation({identity, expectedRevision: state.revision, request: {
     obligationId: "generic", authority: owners.authority, operationId: "s12:rely:S12-001:remediated",
     findingId: "S12-001", consumer: "slice-builder:s12", consumerRevision: remediatedResult.subject.tree,
-    decisionScope: "s12-native-review",
+    decisionScope: "s12-native-review", disposition: "valid",
   }});
   state = outcome.campaign;
   assert.equal(state.nativeReview.obligations.generic.findings[0].relianceRef !== null, true);

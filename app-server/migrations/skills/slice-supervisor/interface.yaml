@@ -3,6 +3,7 @@ status: experimental_non_authoritative
 skill_id: slice-supervisor
 runtime_requirements:
   required_capabilities:
+    - capability.repository_evidence
     - capability.preflight
     - capability.lifecycle_control
     - capability.receipt_finalization
@@ -17,6 +18,7 @@ runtime_requirements:
     - capability.operational_coordination
     - capability.native_review
   capability_ceiling:
+    - capability.repository_evidence
     - capability.preflight
     - capability.lifecycle_control
     - capability.receipt_finalization

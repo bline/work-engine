@@ -26,6 +26,7 @@ OPERATIONS = {
     "checkpoint.accept", "checkpoint.stop",
     "receipt.finalize", "receipt.validate",
     "offer.open", "offer.load", "offer.resolve", "offer.reconcile", "offer.expire",
+    "offer.supersede",
     "resume.terminal",
 }
 
@@ -102,6 +103,12 @@ def dispatch(operation: str, value: Any) -> Any:
     if operation == "offer.expire":
         item = exact(value, {"offer", "reason"}, "offer.expire input")
         return load("completion_offer_lifecycle").expire(item["offer"], item["reason"])
+    if operation == "offer.supersede":
+        item = exact(value, {"offer", "request", "operation_id", "reason", "publication_state"}, "offer.supersede input")
+        return load("completion_offer_lifecycle").supersede(
+            item["offer"], item["request"], item["operation_id"], item["reason"],
+            item["publication_state"],
+        )
     if operation == "resume.terminal":
         item = exact(value, {"path", "campaign_preflight", "run_id"}, "resume.terminal input")
         return load("resume_campaign").resume(

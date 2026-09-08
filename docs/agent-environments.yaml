@@ -226,6 +226,7 @@ roles:
       role.independent_reviewer:
         - INV-012
     may_invoke:
+      - capability.repository_evidence
       - capability.preflight
       - capability.lifecycle_control
       - capability.receipt_finalization

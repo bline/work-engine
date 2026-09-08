@@ -118,6 +118,18 @@ test("Codex inference uses an ephemeral bounded turn and returns provenance and 
     approval_policy: "never",
     sandbox: "read-only",
     model: "test-model",
+    config: {
+      "agents.enabled": false,
+      "features.apps": false,
+      "features.multi_agent": false,
+      "features.plugins": false,
+      "features.remote_plugin": false,
+      "features.skill_mcp_dependency_install": false,
+      project_doc_max_bytes: 0,
+      web_search: "disabled",
+      "tools.web_search": false,
+      "tools.view_image": false,
+    },
     developerInstructions: "Compile only the supplied bounded material.",
     ephemeral: true,
   });

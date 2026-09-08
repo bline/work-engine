@@ -61,6 +61,20 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       },
       completionOffer: {
         async open({ request }) { return legacy.offer("open", { request }); },
+        async supersede({ offer, request, operationId, reason, publicationState }) {
+          const durableOffer = await legacy.offer("load", {
+            repository: offer.request.repository,
+            run_id: offer.request.run_id,
+            slice_number: offer.request.slice_number,
+          });
+          if (durableOffer?.offer_id !== offer.offer_id) {
+            throw new Error("completion offer supersession durable identity conflicts with campaign state");
+          }
+          return legacy.offer("supersede", {
+            offer: durableOffer, request, operation_id: operationId, reason,
+            publication_state: publicationState,
+          });
+        },
       },
     });
     const nativeReview = createNativeReviewHost({workspaceRoot, campaignService: service,
@@ -73,6 +87,12 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.lifecycle_control/advance": ({ input }) => service.advance(input),
       "capability.lifecycle_control/bind_review_selection": ({ input }) =>
         service.bindReviewSelection(input),
+      "capability.lifecycle_control/builder_turn": () => {
+        throw new Error(
+          "managed builder turns execute only inside the admitted role generation",
+        );
+      },
+      "capability.lifecycle_control/supersede": ({ input }) => service.supersede(input),
       "capability.lifecycle_control/terminalize": ({ input }) => service.terminalize(input),
       "capability.receipt_finalization/finalize_named_campaign": ({ input }) =>
         legacy.finalize(input),
@@ -98,6 +118,26 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.completion_offer/resolve": ({ input }) => legacy.offer("resolve", input),
       "capability.completion_offer/reconcile": ({ input }) => legacy.offer("reconcile", input),
       "capability.completion_offer/expire": ({ input }) => legacy.offer("expire", input),
+      "capability.completion_offer/supersede": async ({ input }) => {
+        const publicationOperationId = `completion-${input.expected_offer_id}`;
+        if (workspace.inspectPublication(publicationOperationId) !== null) {
+          throw new Error("completion offer supersession refused because prior publication state exists");
+        }
+        const campaign = await service.supersedeCompletionOffer({
+          identity: input.identity,
+          expectedRevision: input.expected_revision,
+          expectedOfferId: input.expected_offer_id,
+          operationId: input.operation_id,
+          request: input.request,
+          reason: input.reason,
+          publicationState: {operation_id: publicationOperationId, status: "absent"},
+        });
+        return {
+          offer: campaign.terminal.completionOffer,
+          supersession: campaign.terminal.completionOfferSupersession,
+          campaign_revision: campaign.revision,
+        };
+      },
       "capability.resume/recover_active": ({ input }) => service.recover(input.identity),
       "capability.resume/recover_terminal": ({ input }) => legacy.resumeTerminal(input),
       "capability.workspace_coordination/acquire": ({ input }) => workspace.acquireResource({
@@ -118,6 +158,13 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
         operationId: input.operation_id, targetBranch: input.target_branch,
         expectedParent: input.expected_parent, checkpoint: input.checkpoint,
         manifest: input.manifest, authorization: input.authorization, message: input.message,
+      }),
+      "capability.canonical_publication/adopt_resolved": ({ input }) => workspace.adoptResolvedPublication({
+        operationId: input.operation_id, targetBranch: input.target_branch,
+        expectedParent: input.expected_parent, checkpoint: input.checkpoint,
+        manifest: input.manifest, authorization: input.authorization, message: input.message,
+        allocation: input.allocation, lease: input.lease, resolvedTree: input.resolved_tree,
+        validation: input.validation,
       }),
       "capability.canonical_publication/seal_validation": ({ input }) =>
         workspace.sealPublication({ operationId: input.operation_id,

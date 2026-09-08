@@ -23,21 +23,22 @@ export class ImplementationReviewerRuntime {
 
   async review({ instanceId, profileId, subject, catalogProjection, rawEventPolicy,
     continuationSessionId = null, claimContext = null, resultCorrection = null,
-    refreshCredentials = false, reviewBoundary }) {
+    refreshCredentials = false, preSpawnRetry = false, reviewBoundary }) {
     const projection = this.projection(instanceId);
     const roleInstructions = claimContext === null
       ? projection.role.developerInstructions
       : `${projection.role.developerInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     return this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, reviewBoundary,
+      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, preSpawnRetry,
+      reviewBoundary,
     });
   }
 
   async reviewAgentInstructions({
     instanceId, profileId, subject, closure, catalogProjection, rawEventPolicy,
     continuationSessionId = null, claimContext = null,
-    resultCorrection = null, refreshCredentials = false, reviewBoundary,
+    resultCorrection = null, refreshCredentials = false, preSpawnRetry = false, reviewBoundary,
   }) {
     const projection = this.projection(instanceId);
     const delivery = await this.agentInstructionReview.renderDelivery({
@@ -49,7 +50,8 @@ export class ImplementationReviewerRuntime {
       : `${delivery.roleInstructions.trim()}\n\n${renderReviewerClaimContext(claimContext)}`;
     const execution = await this.adapter.execute({
       instanceId, profileId, subject, catalogProjection, rawEventPolicy,
-      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, reviewBoundary,
+      continuationSessionId, roleInstructions, resultCorrection, refreshCredentials, preSpawnRetry,
+      reviewBoundary,
     });
     if (execution.failure || !execution.result) return execution;
     let specialistReview;

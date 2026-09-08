@@ -10,6 +10,8 @@
     "test:app-server:integration": "WORK_ENGINE_APP_SERVER_INTEGRATION=1 node --test app-server/tests/integration.test.mjs",
     "app-server:control": "node app-server/scripts/app-server-control.mjs",
     "app-server:proxy": "node app-server/scripts/app-server-proxy.mjs",
+    "app-server:prepare-generation": "node app-server/scripts/prepare-generation-rollover.mjs",
+    "app-server:classify-skill-integrity": "node app-server/scripts/classify-skills-migration-integrity.mjs",
     "app-server:switchboard": "node app-server/scripts/operator-switchboard.mjs",
     "generate:app-server-protocol": "node app-server/scripts/generate-protocol-bindings.mjs",
     "test:supervisor": "node --test skills/slice-supervisor/tests/campaign-preflight.test.mjs",

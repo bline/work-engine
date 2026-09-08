@@ -219,6 +219,9 @@ export async function createLegacySupervisorControlAdapter({
         projected.offer.request.repository = await confinedRepository(
           root, projected.offer.request.repository,
         );
+        if (operation === "supersede") {
+          projected.request.repository = await confinedRepository(root, projected.request.repository);
+        }
       }
       return call(`offer.${operation}`, projected);
     },

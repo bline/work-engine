@@ -24,7 +24,7 @@ source_bindings:
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
+    sha256: 38002804a2ef3966e58ecef5af50f9376f302a08964ba9d139e8a562aa30e97b
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
@@ -34,7 +34,7 @@ source_bindings:
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 5373c424506133074233af000b049b0e96fe9690f13b530c70bd7f7157e2bca9
+    sha256: 6f7e3644b3f555aafb5a25ea2aec2d487ad3d853a3aecba97ae4111ce819d8cb
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.builder
@@ -44,7 +44,7 @@ role_profile:
   context_lifetime: one slice across planning, implementation, and gate phases
   projection:
     path: docs/agent-environment-views/slice-builder.yaml
-    sha256: 5373c424506133074233af000b049b0e96fe9690f13b530c70bd7f7157e2bca9
+    sha256: 6f7e3644b3f555aafb5a25ea2aec2d487ad3d853a3aecba97ae4111ce819d8cb
   relations:
     bound_by:
       - INV-001

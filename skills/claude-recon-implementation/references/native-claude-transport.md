@@ -29,6 +29,8 @@ python3 skills/claude-recon-implementation/scripts/claude_transport.py \
   --continuity disposable \
   --allow-paid-failover \
   --receipt '<transport-receipt.json>' \
+  --stdin-file '<prompt.txt>' \
+  --stdin-sha256 '<prompt-file-sha256>' \
   --openrouter-model 'anthropic/claude-sonnet-5-20260630' \
   -- \
   claude -p \
@@ -38,9 +40,16 @@ python3 skills/claude-recon-implementation/scripts/claude_transport.py \
     --tools 'mcp__codebase-memory-mcp,Read,Glob,Grep' \
     --output-format json \
     --json-schema '<schema>' \
-    --dangerously-skip-permissions \
-    '<bounded prompt>'
+    --dangerously-skip-permissions
 ```
+
+Use the integrity-bound stdin route for generated or potentially large
+prompts. The launcher verifies the exact UTF-8 file bytes before process entry,
+forwards those same bytes to every permitted attempt on stdin, and records the
+digest and byte count separately from the bounded command digest. This avoids
+the operating system's per-argument size ceiling without weakening request
+provenance. Supplying either stdin flag without the other fails before provider
+entry.
 
 `OPENROUTER_API_KEY` must be present only in the process environment. The
 launcher supplies `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, an empty

@@ -19,6 +19,9 @@ import { openSqliteReviewEpisodeStore } from "../review-episode/sqlite-store.mjs
 import { NativeClaudeCodeReviewerAdapter } from "../reviewer-runtime/native-claude-code-adapter.mjs";
 import { ReviewerRuntimeError } from "../reviewer-runtime/contract.mjs";
 import { ReviewerProfileRegistry } from "../reviewer-runtime/profile-registry.mjs";
+import {
+  classifySkillsMigrationIntegrity, skillsMigrationInventoryPath,
+} from "../skills-migration-integrity/attribution.mjs";
 import { createNativeReviewClosureService } from "./native-review-closure.mjs";
 
 const PROFILE_ID = "anthropic.claude-code.sonnet-review-v1";
@@ -48,8 +51,11 @@ function instanceId(identity, obligationId) {
   return `review-${episodeDigest({identity, obligationId}).slice(0, 32)}`;
 }
 function exactPreSpawnRecovery(recovery, expectedSession) {
+  const exactFailure = recovery?.failureSignature === "authentication_unavailable"
+    || (recovery?.failureSignature === "process_start_failed"
+      && typeof recovery.errorCode === "string" && recovery.errorCode.trim());
   return recovery?.schemaVersion === 1
-    && recovery.failureSignature === "authentication_unavailable"
+    && exactFailure
     && recovery.providerEntry === "not_entered"
     && recovery.sessionAvailable === false
     && recovery.sessionId === expectedSession ? recovery : null;
@@ -161,6 +167,11 @@ export function createReviewBoundary({workspaceRoot, campaign, subject}) {
     ...paths.map(({path: filePath}) => filePath)], {
     encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
   });
+  const generatedIntegrityAttribution = declared.has(skillsMigrationInventoryPath)
+    ? classifySkillsMigrationIntegrity({repository: workspaceRoot,
+      baselineRevision: baselineCommit, candidateRevision: candidateCommit,
+      acceptedPaths: [...declared]})
+    : null;
   return Object.freeze({
     schemaVersion: 1,
     baselineCommit,
@@ -171,6 +182,7 @@ export function createReviewBoundary({workspaceRoot, campaign, subject}) {
     paths: Object.freeze(paths),
     evidenceCatalog: Object.freeze(evidenceCatalog),
     baselineEvidenceCatalog: Object.freeze(baselineEvidenceCatalog),
+    generatedIntegrityAttribution,
     changeDiff,
   });
 }
@@ -258,7 +270,8 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     throw new TypeError("native review host requires Slice Campaign");
   }
   const request = (campaign, obligationId, operationId,
-    {remediationSubject = null, continuationSessionId = null, resultCorrection = null} = {}) => {
+    {remediationSubject = null, continuationSessionId = null, resultCorrection = null,
+      preSpawnRetry = false} = {}) => {
     const disposition = campaign.reviewSelection?.specialists.find(({obligationId: value}) => value === obligationId);
     if (!disposition || disposition.selection !== "selected") throw new Error("native review obligation is not selected by the supervisor");
     const subject = remediationSubject ?? subjectOf(campaign);
@@ -293,6 +306,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     const reviewerRequest = {instanceId: instance, profileId: PROFILE_ID, subject,
       reviewBoundary: owners.reviewBoundaryFactory({workspaceRoot, campaign, subject}),
       catalogProjection, rawEventPolicy: POLICY,
+      ...(preSpawnRetry ? {preSpawnRetry: true} : {}),
       ...(remediationSubject || continuationSessionId ? {continuationSessionId: sessionId} : {}),
       ...(resultCorrection ? {resultCorrection} : {}),
       ...(disposition.skill === "agent-instruction-review" ? {
@@ -345,6 +359,17 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         sessionArtifactDigest: recovered.sessionArtifactDigest});
     }
   };
+  const recoverRetryExecution = async (campaign, obligationId, obligation, reviewInstance) => {
+    const providerResult = await recoverProviderResult(campaign, obligationId);
+    if (providerResult) return providerResult;
+    const recordedRecovery = obligation?.recovery ?? obligation?.failure?.recovery ?? null;
+    const adapterRecovery = await owners.adapter.recoverFailure(reviewInstance, {recordedRecovery});
+    const expectedSession = owners.adapter.runtimeSessionId(reviewInstance);
+    const exactRecorded = exactPreSpawnRecovery(recordedRecovery, expectedSession);
+    const exactAdapter = exactPreSpawnRecovery(adapterRecovery, expectedSession);
+    return exactRecorded && exactAdapter
+      && episodeDigest(exactRecorded) === episodeDigest(exactAdapter) ? exactRecorded : null;
+  };
   return Object.freeze({
     async execute({identity, expected_revision, obligation_id, operation_id}) {
       const campaign = campaignService.recover(identity);
@@ -367,7 +392,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         : obligation?.status === "executing"
           ? await owners.adapter.recoverFailure(reviewInstance)
           : obligation?.status === "retry_executing"
-            ? await recoverProviderResult(campaign, obligation_id)
+            ? await recoverRetryExecution(campaign, obligation_id, obligation, reviewInstance)
             : obligation?.status === "correction_executing"
               ? await recoverProviderResult(campaign, obligation_id)
               : obligation?.status === "remediation_executing"
@@ -383,10 +408,13 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       const recovery = obligation?.status === "retryable_failure"
         ? exactPreSpawnRecovery(recordedRecovery, owners.adapter.runtimeSessionId(instance))
           ?? await owners.adapter.recoverFailure(instance, {recordedRecovery})
+        : obligation?.status === "retry_executing"
+          ? await recoverRetryExecution(campaign, obligation_id, obligation, instance)
         : await owners.adapter.recoverFailure(instance);
       if (!recovery) throw new Error("native review retry has no recoverable definite pre-provider failure");
       const {base, sessionId} = request(campaign, obligation_id, operation_id,
-        recovery.sessionAvailable ? {continuationSessionId: recovery.sessionId} : {});
+        recovery.sessionAvailable ? {continuationSessionId: recovery.sessionId}
+          : {preSpawnRetry: recovery.failureSignature === "process_start_failed"});
       const outcome = await campaignService.retryNativeReview({identity,
         expectedRevision: expected_revision, recovery,
         request: {...base, beginTransitionId: `${operation_id}:begin`,
@@ -416,13 +444,14 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         failure: outcome.failure ?? null});
     },
     recordFindingEvaluation({identity, expected_revision, obligation_id, operation_id,
-      finding_id, consumer_revision}) {
+      finding_id, consumer_revision, disposition}) {
       const campaign = campaignService.recover(identity);
       if (consumer_revision !== subjectOf(campaign).tree) throw new Error("native finding evaluation consumer revision differs from immutable candidate");
       return campaignService.recordNativeFindingEvaluation({identity, expectedRevision: expected_revision,
         request: {obligationId: obligation_id, authority: owners.authority, operationId: operation_id,
           findingId: finding_id, consumer: `slice-builder:${identityKey(campaign.identity)}`,
-          consumerRevision: consumer_revision, decisionScope: "slice-campaign-native-review"}}).campaign;
+          consumerRevision: consumer_revision, decisionScope: "slice-campaign-native-review",
+          disposition}}).campaign;
     },
     async executeRemediation({identity, expected_revision, obligation_id, operation_id,
       remediation_subject}) {

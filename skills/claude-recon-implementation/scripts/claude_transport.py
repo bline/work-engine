@@ -264,11 +264,12 @@ def _run_attempt(
     *,
     transport: str,
     model: str | None,
+    stdin_text: str | None = None,
     requested_upstream_provider: str | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
     started = time.monotonic()
     result = subprocess.run(
-        list(command), env=env, capture_output=True, text=True, check=False
+        list(command), env=env, input=stdin_text, capture_output=True, text=True, check=False
     )
     duration_ms = round((time.monotonic() - started) * 1000)
     quota_signature = classify_quota_failure(
@@ -301,7 +302,13 @@ def _write_receipt(path: Path, receipt: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def _base_receipt(args: argparse.Namespace, command: Sequence[str]) -> dict[str, Any]:
+def _base_receipt(
+    args: argparse.Namespace,
+    command: Sequence[str],
+    *,
+    stdin_sha256: str | None,
+    stdin_size_bytes: int | None,
+) -> dict[str, Any]:
     session_mode, session_id = _session_reference(command)
     script_digest = _sha256_bytes(Path(__file__).read_bytes())
     config_dir_value = os.environ.get("CLAUDE_CONFIG_DIR")
@@ -319,6 +326,8 @@ def _base_receipt(args: argparse.Namespace, command: Sequence[str]) -> dict[str,
             "continuity": args.continuity,
             "command_sha256": _sha256_bytes(_canonical_json(list(command))),
             "command_shape": _safe_command_shape(command),
+            "stdin_sha256": stdin_sha256,
+            "stdin_size_bytes": stdin_size_bytes,
             "openrouter_base_url": args.openrouter_base_url,
             "openrouter_model": args.openrouter_model,
             "batch_route_explicitly_allowed": args.allow_batch_route,
@@ -361,7 +370,26 @@ def run(args: argparse.Namespace) -> int:
     if not command:
         raise TransportError("a native Claude command is required after '--'")
 
-    receipt = _base_receipt(args, command)
+    if (args.stdin_file is None) != (args.stdin_sha256 is None):
+        raise TransportError("--stdin-file and --stdin-sha256 must be supplied together")
+    stdin_text = None
+    stdin_size_bytes = None
+    if args.stdin_file is not None:
+        try:
+            stdin_bytes = args.stdin_file.read_bytes()
+        except OSError as error:
+            raise TransportError(f"could not read stdin payload: {error}") from error
+        observed_stdin_sha256 = _sha256_bytes(stdin_bytes)
+        if observed_stdin_sha256 != args.stdin_sha256:
+            raise TransportError("stdin payload SHA-256 differs from --stdin-sha256")
+        try:
+            stdin_text = stdin_bytes.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise TransportError("stdin payload must be valid UTF-8") from error
+        stdin_size_bytes = len(stdin_bytes)
+
+    receipt = _base_receipt(args, command, stdin_sha256=args.stdin_sha256,
+                            stdin_size_bytes=stdin_size_bytes)
     anthropic_env = _anthropic_environment(os.environ)
     receipt["claude_version"] = _claude_version(command[0], anthropic_env)
 
@@ -403,6 +431,7 @@ def run(args: argparse.Namespace) -> int:
             env,
             transport="openrouter",
             model=args.openrouter_model,
+            stdin_text=stdin_text,
             requested_upstream_provider=(
                 "anthropic" if args.require_anthropic_1p else None
             ),
@@ -419,6 +448,7 @@ def run(args: argparse.Namespace) -> int:
         anthropic_env,
         transport="anthropic",
         model=_requested_model(command),
+        stdin_text=stdin_text,
     )
     receipt["attempts"].append(primary_attempt)
     if primary.returncode == 0 or args.transport == "anthropic":
@@ -487,6 +517,7 @@ def run(args: argparse.Namespace) -> int:
         openrouter_env,
         transport="openrouter",
         model=args.openrouter_model,
+        stdin_text=stdin_text,
         requested_upstream_provider=(
             "anthropic" if args.require_anthropic_1p else None
         ),
@@ -516,6 +547,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="disposable",
     )
     parser.add_argument("--receipt", type=Path, required=True)
+    parser.add_argument(
+        "--stdin-file",
+        type=Path,
+        help="read the exact UTF-8 Claude prompt from this file and forward it on stdin",
+    )
+    parser.add_argument(
+        "--stdin-sha256",
+        help="required SHA-256 of --stdin-file bytes",
+    )
     parser.add_argument(
         "--openrouter-base-url",
         default=DEFAULT_OPENROUTER_BASE_URL,

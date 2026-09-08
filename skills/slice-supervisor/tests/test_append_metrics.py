@@ -225,7 +225,67 @@ def add_review_selection(record: dict[str, object]) -> None:
     }
 
 
+def declare_provider_accounting_unavailable(record: dict[str, object]) -> None:
+    metrics = record["worker_metrics"]
+    for path in APPEND_METRICS.UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS:
+        metrics.pop(path.removeprefix("worker_metrics."), None)
+    metrics["unavailable_metrics"] = {
+        "schema_version": 1,
+        "reason_code": "legacy_execution_not_instrumented",
+        "reason": (
+            "Legacy retained execution predates authoritative provider-accounting "
+            "projection; absence must not be represented as zero."
+        ),
+        "fields": sorted(APPEND_METRICS.UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS),
+        "evidence": [
+            {
+                "kind": "terminal-receipt-assembly-audit",
+                "reference": "terminalization/schema-v5-receipt.audit.json",
+                "sha256": "a" * 64,
+            }
+        ],
+    }
+
+
 class AppendMetricsCompatibilityTest(unittest.TestCase):
+    def test_v5_accepts_closed_provider_accounting_unavailable_bundle(self) -> None:
+        record = base_record(5)
+        make_config_v2(record)
+        declare_provider_accounting_unavailable(record)
+
+        APPEND_METRICS.validate(record)
+
+    def test_unavailable_provider_accounting_rejects_partial_or_overlapping_claims(self) -> None:
+        record = base_record(5)
+        make_config_v2(record)
+        declare_provider_accounting_unavailable(record)
+
+        partial = copy.deepcopy(record)
+        partial["worker_metrics"]["unavailable_metrics"]["fields"].pop()
+        with self.assertRaisesRegex(ValueError, "closed legacy provider-accounting bundle"):
+            APPEND_METRICS.validate(partial)
+
+        overlapping = copy.deepcopy(record)
+        overlapping["worker_metrics"]["provider_successful_calls"] = 0
+        with self.assertRaisesRegex(ValueError, "cannot be supplied and declared unavailable"):
+            APPEND_METRICS.validate(overlapping)
+
+        no_evidence = copy.deepcopy(record)
+        no_evidence["worker_metrics"]["unavailable_metrics"]["evidence"] = []
+        with self.assertRaisesRegex(ValueError, "evidence must be a nonempty array"):
+            APPEND_METRICS.validate(no_evidence)
+
+        wrong_reason = copy.deepcopy(record)
+        wrong_reason["worker_metrics"]["unavailable_metrics"]["reason_code"] = "unknown"
+        with self.assertRaisesRegex(ValueError, "legacy_execution_not_instrumented"):
+            APPEND_METRICS.validate(wrong_reason)
+
+    def test_unavailable_provider_accounting_is_not_backported_to_historical_schema(self) -> None:
+        record = base_record(4)
+        declare_provider_accounting_unavailable(record)
+        with self.assertRaisesRegex(ValueError, "only valid for schema version 5"):
+            APPEND_METRICS.validate(record)
+
     def test_v5_requires_review_selection_while_v4_remains_readable(self) -> None:
         historical = base_record(4)
         APPEND_METRICS.validate(historical)

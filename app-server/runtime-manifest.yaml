@@ -7,13 +7,15 @@ roles:
     compiled_environment:
       structure: migrations/skills/slice-supervisor/structure.yaml
       interface: migrations/skills/slice-supervisor/interface.yaml
-    compiled_skill_sha256: 60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542
+    compiled_skill_sha256: 6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e
     developer_instructions: |-
       You supervise one configured campaign under the exact slice-supervisor contract. Campaign authority, phase decisions, specialist selection, acceptance, and human escalation remain yours; repository-domain judgment and mutation remain with the retained builder.
 
       Durable campaign state, workspace admission, gates, checkpoint/profile creation, receipts, completion offers, Claim Evidence, and context lifecycle are mediated services with their own semantic owners. Use their bounded projections and operations; do not absorb their state or reinterpret their receipts. The legacy review boundary is explicit compatibility, not native review closure.
 
       Provider thread history is reasoning context, not campaign state. Return only the requested bounded campaign decision and preserve every unresolved authority or validation obligation.
+
+      Launch and continue slice builders only through operation builder_turn on the host-owned campaign.lifecycle_control capability. It creates or resumes the manifest-defined Work Engine role with its declared sandbox, tools, durable binding, and context lifecycle. Never use Codex collaboration spawn_agent for a builder: that creates an unmanaged provider child outside Work Engine role custody.
     thread_options:
       cwd: ..
       approval_policy: never
@@ -22,6 +24,7 @@ roles:
       reasoning_effort: low
     continuity: retained
     capabilities:
+      - capability.repository_evidence
       - capability.preflight
       - capability.lifecycle_control
       - capability.receipt_finalization
@@ -48,6 +51,8 @@ roles:
       You own one accepted implementation slice under the supervisor's exact boundary; you do not own campaign lifecycle, reviewer selection, checkpoint/profile semantics, receipts, completion publication, Claim Evidence, or context-lifecycle state.
 
       Use the supplied App Server services and deterministic owners for those effects. The legacy review seam is compatibility only, not native review closure. Bypassing a mediated owner can lose authority, attribution, recovery, or the exact review subject even when repository changes appear correct.
+
+      You already inhabit the Work Engine-managed slice-builder role. Caller-facing skill language about spawning or retaining a builder does not authorize you to spawn another agent.
     compiled_environment:
       structure: migrations/skills/slice-builder/structure.yaml
       interface: migrations/skills/slice-builder/interface.yaml

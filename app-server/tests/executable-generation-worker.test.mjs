@@ -21,6 +21,7 @@ import {
   openSqliteAppServerStateStore,
 } from "../src/index.mjs";
 import {
+  DEFAULT_EXECUTABLE_BOOTSTRAP_FINGERPRINT,
   DEFAULT_EXECUTABLE_GENERATION_FILES,
   DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES,
 } from "../src/executable-generation-bootstrap.mjs";
@@ -43,6 +44,10 @@ const ENTRY = path.resolve(
 );
 
 test("role generations pin product-development services and deterministic validators", () => {
+  assert.equal(
+    DEFAULT_EXECUTABLE_BOOTSTRAP_FINGERPRINT,
+    "work-engine.app-server-bootstrap-ipc-v5",
+  );
   for (const expected of [
     "app-server/src/services/product-development/artifact-root.mjs",
     "app-server/src/services/product-development/intake-delivery.mjs",
@@ -356,6 +361,80 @@ test("stable transport keeps in-flight work on its predecessor and routes later 
   ]);
 });
 
+test("stable transport carries operator thread identity across generation replacement", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-operator-thread-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const dispatches = [];
+  const generation = (generationId) => ({
+    ...record(generationId),
+    async validate() { return { valid: true }; },
+    async activate() {},
+    async dispose() {},
+    async dispatch(operation, payload) {
+      dispatches.push({ generationId, operation, payload: structuredClone(payload) });
+      return { disposition: "forward" };
+    },
+  });
+  const manager = await ExecutableGenerationManager.create({
+    activeGeneration: generation("g1"),
+    store: new FileExecutableGenerationStore(path.join(root, "generations.json")),
+    substrateArbiter: new InMemoryReplaceableSubstrateArbiter(),
+    snapshotter: async () => ({ snapshotId: "snapshot-g2", sourceDigest: "source-g2" }),
+    candidateBuilder: async () => generation("g2"),
+    reloadIdFactory: () => "reload-operator-thread",
+  });
+  t.after(() => manager.close({ abandonActiveWork: true }));
+  const delegateRequests = [];
+  const transport = new GenerationBoundAppServerTransport({
+    transport: {
+      onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
+      async request(method, params) {
+        delegateRequests.push({ method, params });
+        if (method === "thread/start") return { thread: { id: "thread-shell" } };
+        if (method === "turn/start") {
+          return { turn: { id: "turn-shell", status: "completed" } };
+        }
+        return { accepted: true };
+      },
+    },
+    dispatchHost: new ExecutableGenerationDispatchHost(manager),
+  });
+
+  await transport.request("thread/start", { cwd: "/workspace" });
+  let staged;
+  await manager.runAdmission({ kind: "turn", id: "reload-owner" }, async () => {
+    staged = await manager.requestReload({ requestedByTurnId: "reload-owner", source: {} });
+  });
+  assert.equal((await staged.completion).generationId, "g2");
+
+  await transport.request("turn/start", {
+    threadId: "thread-shell",
+    input: [{ type: "text", text: ":we status" }],
+  });
+  assert.deepEqual(dispatches.at(-1), {
+    generationId: "g2",
+    operation: "app_server.request",
+    payload: {
+      method: "turn/start",
+      params: {
+        threadId: "thread-shell",
+        input: [{ type: "text", text: ":we status" }],
+      },
+      workEngineRequestContext: {
+        protocol: "work-engine.operator-projection-request.v1",
+        threadId: "thread-shell",
+      },
+    },
+  });
+  assert.deepEqual(delegateRequests.at(-1), {
+    method: "turn/start",
+    params: {
+      threadId: "thread-shell",
+      input: [{ type: "text", text: ":we status" }],
+    },
+  });
+});
+
 test("semantic interruption bypasses blocked dispatch and resolves a projected turn alias", async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), "work-engine-worker-control-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -612,7 +691,7 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
     workspaceRoot,
     stateRoot,
     transport: delegate,
-    bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v2",
+    bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v6-test",
     workerRequestTimeoutMs: 2_000,
   });
   assert.equal(restarted.startupSelection.outcome, "bootstrap_restart_completed");
@@ -629,7 +708,7 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
       workspaceRoot,
       stateRoot,
       transport: delegate,
-      bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v2",
+      bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v6-test",
       workerRequestTimeoutMs: 2_000,
     }),
     (error) => error instanceof ExecutableGenerationStartupError
@@ -647,7 +726,7 @@ test("bootstrap reconciles compatible workspace edits and refuses stale recovery
       workspaceRoot,
       stateRoot,
       transport: delegate,
-      bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v2",
+      bootstrapFingerprint: "work-engine.app-server-bootstrap-ipc-v3",
       workerRequestTimeoutMs: 2_000,
     }),
     (error) => error instanceof ExecutableGenerationStartupError
@@ -739,9 +818,13 @@ test("fresh executable-generation roots can retain one supervisor operational st
       const command = request.args.slice(request.args.indexOf("--") + 1);
       const modelIndex = command.indexOf("--model");
       const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+      const stdinShaIndex = request.args.indexOf("--stdin-sha256");
+      const stdinFileIndex = request.args.indexOf("--stdin-file");
+      const stdinBytes = await readFile(request.args[stdinFileIndex + 1]);
       await writeFile(receiptPath, `${JSON.stringify({schema_version: 1, request: {
         transport: "anthropic", continuity: "retained",
         command_sha256: createHash("sha256").update(JSON.stringify(command)).digest("hex"),
+        stdin_sha256: request.args[stdinShaIndex + 1], stdin_size_bytes: stdinBytes.length,
         session_mode: "new", session_id: request.args[sessionIndex + 1],
         paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false},
       attempts: [{transport: "anthropic", gateway: "anthropic",
@@ -1761,22 +1844,31 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
   ].includes(request.method)), false);
 
   forwardedNotifications.length = 0;
-  await stage("attach builder", bootstrap.transport.request("turn/start", {
-    threadId: "thread-shell",
-    clientUserMessageId: "shell-command-builder",
-    input: [{ type: "text", text: ":we attach slice-builder:root", text_elements: [] }],
-  }));
-  await waitForSyntheticStart();
-  await waitForSyntheticCompletion();
-  forwardedNotifications.length = 0;
-  await stage("builder delivery", bootstrap.transport.request("turn/start", {
-    threadId: "thread-shell",
-    clientUserMessageId: "shell-message-builder",
-    input: [{ type: "text", text: "Implement the accepted slice.", text_elements: [] }],
-  }));
-  await waitForSyntheticStart();
-  const builderCompletion = await waitForSyntheticCompletion();
-  assert.equal(builderCompletion.params.turn.status, "completed");
+  const managedBuilderToolResult = await delegate.serverRequestHandler({
+    id: 92,
+    method: "item/tool/call",
+    params: {
+      threadId: "thread-role",
+      turnId: "turn-role",
+      callId: "call-managed-builder",
+      namespace: "campaign",
+      tool: "lifecycle_control",
+      arguments: {operation: "builder_turn", input: {
+        instance_id: "root",
+        client_user_message_id: "supervisor-builder-1",
+        text: "Implement the accepted slice.",
+      }},
+    },
+  });
+  assert.equal(managedBuilderToolResult.success, true);
+  const managedBuilder = JSON.parse(managedBuilderToolResult.contentItems[0].text);
+  assert.equal(managedBuilder.capability, "capability.lifecycle_control");
+  assert.equal(managedBuilder.operation, "builder_turn");
+  assert.equal(managedBuilder.result.delivery.logicalRoleInstanceId, "slice-builder:root");
+  assert.equal(managedBuilder.result.completion.outputText.startsWith("builder-owned response"), true);
+  const managedBindings = JSON.parse(await readFile(path.join(root, "bindings.json"), "utf8"));
+  assert.equal(managedBindings.bindings["slice-builder:root"].threadId, "thread-builder");
+  assert.deepEqual(forwardedNotifications, []);
   const builderThreadStart = requests.find((request) =>
     request.method === "thread/start" && request.params.developerInstructions
       ?.includes("accepted implementation slice"));
@@ -1791,6 +1883,189 @@ test("manifest generation intercepts commands and routes ordinary shell turns to
     "campaign",
     "environment",
   ]);
+});
+
+test("a successor role generation recognizes stable operator projection identity", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-successor-operator-thread-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot: path.resolve("."),
+    stateRoot: path.join(root, "state"),
+    transport: {
+      onServerRequest() {}, onNotification() {}, onClosed() {}, notify() {},
+      async request() { return {}; },
+    },
+    runtimeManifestPath: path.resolve("app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.resolve(
+      "app-server/tests/fixtures/semantic-context-host-inspection-profile.yaml",
+    ),
+    workerRequestTimeoutMs: 2_000,
+    workerDispatchTimeoutMs: 2_000,
+  });
+  const snapshotRoot = path.join(
+    root,
+    "state",
+    "generations",
+    bootstrap.manager.snapshot().activeGeneration.generationId,
+  );
+  await bootstrap.close({ abandonActiveWork: true });
+  const environment = await createExecutableGenerationRoleEnvironment({
+    snapshotRoot,
+    bindingsPath: path.join(root, "bindings.json"),
+    attachmentPath: path.join(root, "attachment.json"),
+    semanticContextStatePath: path.join(root, "semantic-context.sqlite3"),
+  });
+  t.after(() => environment.close());
+
+  let forwarded = 0;
+  const result = await environment.handleRequest({
+    method: "turn/start",
+    params: {
+      threadId: "thread-shell",
+      input: [{ type: "text", text: ":we status" }],
+    },
+    workEngineRequestContext: {
+      protocol: "work-engine.operator-projection-request.v1",
+      threadId: "thread-shell",
+    },
+  }, async () => {
+    forwarded += 1;
+    return {};
+  });
+
+  assert.equal(result.disposition, "respond");
+  assert.equal(forwarded, 0);
+  assert.equal(result.notifications.at(-1).method, "turn/completed");
+  assert.equal(
+    JSON.parse(result.notifications.at(-1).params.turn.items[0].text).command,
+    "status",
+  );
+
+  const mismatched = await environment.handleRequest({
+    method: "turn/start",
+    params: {
+      threadId: "thread-other",
+      input: [{ type: "text", text: ":we status" }],
+    },
+    workEngineRequestContext: {
+      protocol: "work-engine.operator-projection-request.v1",
+      threadId: "thread-shell",
+    },
+  }, async () => {
+    forwarded += 1;
+    return {};
+  });
+  assert.equal(mismatched.disposition, "forward");
+  assert.equal(forwarded, 0);
+});
+
+test("a successor role generation adopts the stable App Server initialization", async (t) => {
+  const root = await mkdtemp(path.join(tmpdir(), "work-engine-successor-initialization-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  let notificationHandler = null;
+  let roleTurnCount = 0;
+  const delegate = {
+    onServerRequest() {},
+    onNotification(handler) { notificationHandler = handler; },
+    onClosed() {},
+    notify() {},
+    async request(method, params) {
+      if (method === "initialize") return { userAgent: "codex-cli/0.149.1" };
+      if (method === "thread/start") {
+        return { thread: {
+          id: typeof params.developerInstructions === "string" ? "thread-role" : "thread-shell",
+        } };
+      }
+      if (method === "thread/resume") return { thread: { id: params.threadId } };
+      if (method === "turn/start") {
+        roleTurnCount += 1;
+        const turnId = `turn-role-${roleTurnCount}`;
+        setImmediate(() => notificationHandler({
+          method: "turn/completed",
+          params: {
+            threadId: "thread-role",
+            turn: {
+              id: turnId,
+              status: "completed",
+              items: [{
+                type: "agentMessage",
+                id: `agent-${turnId}`,
+                text: `completed ${turnId}`,
+                phase: "final_answer",
+                memoryCitation: null,
+                delivery: null,
+              }],
+              itemsView: "full",
+              error: null,
+              startedAt: 1,
+              completedAt: 2,
+              durationMs: 1,
+            },
+          },
+        }));
+        return { turn: { id: turnId, status: "inProgress" } };
+      }
+      throw new Error(`unexpected App Server request ${method}`);
+    },
+  };
+  const bootstrap = await createExecutableGenerationBootstrap({
+    workspaceRoot: path.resolve("."),
+    stateRoot: path.join(root, "state"),
+    transport: delegate,
+    runtimeManifestPath: path.resolve("app-server/runtime-manifest.yaml"),
+    semanticContextProfilePath: path.resolve(
+      "app-server/tests/fixtures/semantic-context-host-inspection-profile.yaml",
+    ),
+    semanticContextStatePath: path.join(root, "semantic-context.sqlite3"),
+    workerRequestTimeoutMs: 2_000,
+    workerDispatchTimeoutMs: 2_000,
+  });
+  t.after(() => bootstrap.close({ abandonActiveWork: true }));
+  const completions = [];
+  const waiters = [];
+  bootstrap.transport.onNotification((notification) => {
+    if (notification.method !== "turn/completed") return;
+    const waiter = waiters.shift();
+    if (waiter) waiter(notification);
+    else completions.push(notification);
+  });
+  const waitForCompletion = () => completions.length > 0
+    ? Promise.resolve(completions.shift())
+    : new Promise((resolve) => waiters.push(resolve));
+
+  await bootstrap.transport.request("initialize", { clientInfo: { name: "stable-client" } });
+  await bootstrap.transport.notify("initialized");
+  await bootstrap.transport.request("thread/start", {});
+  await bootstrap.transport.request("turn/start", {
+    threadId: "thread-shell",
+    input: [{
+      type: "text",
+      text: ":we attach slice-supervisor:reload-initialization",
+      text_elements: [],
+    }],
+  });
+  await waitForCompletion();
+  await bootstrap.transport.request("turn/start", {
+    threadId: "thread-shell",
+    input: [{ type: "text", text: "Before reload.", text_elements: [] }],
+  });
+  await waitForCompletion();
+
+  let staged;
+  await bootstrap.manager.runAdmission({ kind: "turn", id: "reload-initialization" }, async () => {
+    staged = await bootstrap.manager.requestReload({
+      requestedByTurnId: "reload-initialization",
+      source: {},
+    });
+  });
+  assert.equal((await staged.completion).status, "active_unexercised");
+
+  await bootstrap.transport.request("turn/start", {
+    threadId: "thread-shell",
+    input: [{ type: "text", text: "Continue after reload.", text_elements: [] }],
+  });
+  await waitForCompletion();
+  assert.equal(roleTurnCount, 2);
 });
 
 test("executable role snapshots refuse missing, corrupt, or excessive transported requirements before adapter delivery", async (t) => {

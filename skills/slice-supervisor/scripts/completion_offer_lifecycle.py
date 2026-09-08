@@ -24,6 +24,11 @@ ACTIVE_STATES = {"open", "create_authorized"}
 V1_FIELDS = {"schema_version", "offer_id", "state", "request", "result", "reason", "prior_oid"}
 V2_FIELDS = V1_FIELDS | {"decision"}
 IDENTITY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+SUPERSESSION_FIELDS = {
+    "schema_version", "operation_id", "reason", "canonical_ref",
+    "prior_offer_id", "prior_offer_oid", "replacement_offer_id",
+    "replacement_offer_oid", "publication_state",
+}
 
 
 def fail(message: str) -> None:
@@ -48,6 +53,13 @@ def offer_ref(request: dict[str, Any]) -> str:
     if not IDENTITY.fullmatch(request["run_id"]):
         fail("completion offer run_id must be a safe identity")
     return f"refs/work-engine/completion-offers/{request['run_id']}/slice-{request['slice_number']}"
+
+
+def supersession_ref(request: dict[str, Any], operation_id: str) -> str:
+    if not IDENTITY.fullmatch(operation_id):
+        fail("completion offer supersession operation_id must be a safe identity")
+    return (f"refs/work-engine/completion-offer-supersessions/{request['run_id']}"
+            f"/slice-{request['slice_number']}/{operation_id}")
 
 
 def current_oid(repository: Path, ref: str) -> str | None:
@@ -152,6 +164,80 @@ def open_offer(raw: Any) -> dict[str, Any]:
              "request": request, "result": None, "reason": None, "prior_oid": None,
              "decision": None}
     return write(repository, value, None)
+
+
+def supersede(current: Any, raw: Any, operation_id: str, reason: str,
+              publication_state: Any) -> dict[str, Any]:
+    """Atomically preserve an unconsumed stale offer and install its successor."""
+    old = validate(current)
+    if old.get("state") not in ACTIVE_STATES or not old.get("artifact_oid"):
+        fail("only a loaded active completion offer may be superseded")
+    request = ADAPTER.validate_request(raw)
+    old_request = old["request"]
+    if (request["repository"] != old_request["repository"]
+            or request["run_id"] != old_request["run_id"]
+            or request["slice_number"] != old_request["slice_number"]):
+        fail("completion offer successor must preserve repository, run, and slice identity")
+    if offer_id(request) == old["offer_id"]:
+        fail("completion offer successor must have a distinct request identity")
+    if not isinstance(reason, str) or not reason.strip():
+        fail("completion offer supersession reason must be nonempty")
+    expected_publication = {
+        "operation_id": f"completion-{old['offer_id']}", "status": "absent",
+    }
+    if publication_state != expected_publication:
+        fail("completion offer supersession requires host-attested absent publication state")
+
+    repository = Path(request["repository"]).resolve()
+    ref = offer_ref(request)
+    if old.get("ref") != ref:
+        fail("completion offer canonical ref does not match its request")
+    replacement = {
+        "schema_version": 2, "offer_id": offer_id(request), "state": "open",
+        "request": request, "result": None, "reason": None, "prior_oid": None,
+        "decision": None,
+    }
+    validate(replacement)
+    replacement_oid = git(repository, ["hash-object", "-w", "--stdin"],
+                          input_bytes=canonical(replacement)).decode().strip()
+    archive_ref = supersession_ref(request, operation_id)
+    receipt = {
+        "schema_version": 1, "operation_id": operation_id, "reason": reason,
+        "canonical_ref": ref, "prior_offer_id": old["offer_id"],
+        "prior_offer_oid": old["artifact_oid"],
+        "replacement_offer_id": replacement["offer_id"],
+        "replacement_offer_oid": replacement_oid,
+        "publication_state": expected_publication,
+    }
+    if set(receipt) != SUPERSESSION_FIELDS:
+        fail("completion offer supersession receipt fields are invalid")
+    receipt_oid = git(repository, ["hash-object", "-w", "--stdin"],
+                      input_bytes=canonical(receipt)).decode().strip()
+
+    observed = current_oid(repository, ref)
+    archived = current_oid(repository, archive_ref)
+    if observed == replacement_oid and archived == receipt_oid:
+        return {
+            "offer": {**replacement, "artifact_oid": replacement_oid, "ref": ref},
+            "supersession": {**receipt, "artifact_oid": receipt_oid, "ref": archive_ref},
+        }
+    if observed != old["artifact_oid"] or archived is not None:
+        fail("completion offer supersession ref conflict")
+
+    branch_ref = f"refs/heads/{old_request['expected_branch']}"
+    history = git(repository, ["log", "--format=%T", branch_ref]).decode().splitlines()
+    if old_request["proposal"]["checkpoint_tree_oid"] in history:
+        fail("completion offer supersession refused because prior publication is present")
+
+    transaction = (f"start\n"
+                   f"update {ref} {replacement_oid} {old['artifact_oid']}\n"
+                   f"create {archive_ref} {receipt_oid}\n"
+                   f"prepare\ncommit\n").encode()
+    git(repository, ["update-ref", "--stdin"], input_bytes=transaction)
+    return {
+        "offer": {**replacement, "artifact_oid": replacement_oid, "ref": ref},
+        "supersession": {**receipt, "artifact_oid": receipt_oid, "ref": archive_ref},
+    }
 
 
 def load(repository: Path, run_id: str, slice_number: int) -> dict[str, Any] | None:

@@ -57,6 +57,33 @@ function normalizeValidation(value, tree) {
   if (sha256(value.receiptDigest, "integrated-tree validation receipt digest") !== digest(projected)) throw new Error("integrated-tree validation receipt digest mismatch");
   return freeze(structuredClone(value));
 }
+function validatePreparationRequest({ repositoryRoot, targetBranch, expectedParent, checkpoint, manifest, authorization, message, git }) {
+  const branchRef = `refs/heads/${targetBranch}`; oid(expectedParent, "publication expected parent"); requireRecord(checkpoint, "accepted checkpoint");
+  const checkpointCommit = oid(checkpoint.commitOid, "accepted checkpoint commit"); const checkpointTree = oid(checkpoint.treeOid, "accepted checkpoint tree"); const baselineCommit = oid(checkpoint.baselineCommitOid, "accepted checkpoint baseline"); sha256(checkpoint.taskPatchDigest, "accepted checkpoint patch digest");
+  const expectedActions = manifestActions(manifest); const accepted = acceptedCheckpointMetadata(repositoryRoot, git, checkpoint, checkpointCommit, checkpointTree);
+  exactKeys(authorization, ["checkpointCommitOid", "checkpointTreeOid", "decision", "paths", "reference", "targetBranch"], "publication authorization");
+  if (authorization.decision !== "create" || !Array.isArray(authorization.paths) || new Set(authorization.paths).size !== authorization.paths.length || authorization.paths.length !== expectedActions.size || authorization.paths.some((file) => !expectedActions.has(file)) || authorization.checkpointCommitOid !== checkpointCommit || authorization.checkpointTreeOid !== checkpointTree || authorization.targetBranch !== targetBranch) throw new Error("publication authorization does not match the attributed manifest");
+  requireText(authorization.reference, "publication authorization reference"); exactKeys(message, ["body", "subject"], "publication message"); requireText(message.subject, "publication message subject"); if (message.subject.includes("\n") || typeof message.body !== "string") throw new TypeError("publication message is invalid");
+  if (git.text(repositoryRoot, ["rev-parse", `${checkpointCommit}^{tree}`]) !== checkpointTree) throw new Error("accepted checkpoint tree mismatch");
+  const patch = git.run(repositoryRoot, ["diff-tree", "--binary", "--no-renames", "--no-ext-diff", `${baselineCommit}^{tree}`, checkpointTree], { encoding: null });
+  if (patch.status !== 0 || createHash("sha256").update(patch.stdout).digest("hex") !== checkpoint.taskPatchDigest) throw new Error("accepted checkpoint patch identity mismatch");
+  if (!equalActions(expectedActions, diffActions(repositoryRoot, baselineCommit, checkpointCommit, git.run))) throw new Error("accepted checkpoint delta does not match the attributed manifest");
+  return { branchRef, checkpointCommit, checkpointTree, baselineCommit, expectedActions, accepted };
+}
+function allocationForAdoption({ repositoryRoot, expectedParent, allocation, lease, worktrees, git }) {
+  const rebound = worktrees.rebindLease(allocation, lease);
+  if (rebound.repository !== repositoryRoot) throw new Error("resolved integration allocation belongs to another repository");
+  const worktreePath = rebound.path;
+  if (rebound.baselineCommit !== expectedParent
+      || git.text(worktreePath, ["rev-parse", "HEAD"]) !== expectedParent
+      || rebound.baselineTree !== git.text(repositoryRoot, ["rev-parse", `${expectedParent}^{tree}`])) {
+    throw new Error("resolved integration worktree does not bind the expected publication parent");
+  }
+  if (git.text(repositoryRoot, ["rev-parse", "--verify", rebound.privateRef]) !== expectedParent) {
+    throw new Error("resolved integration private ref does not bind the expected publication parent");
+  }
+  return rebound;
+}
 function publicationReceipt(sealed, admission, status = "published") {
   if (!admission || admission.operationId !== sealed.operationId || admission.result?.commit !== sealed.commit) {
     throw new Error("publication admission does not prove the observed branch mutation");
@@ -69,22 +96,13 @@ function unconfirmedPublication(sealed, reason) {
 
 export function createCanonicalGitPublisher({ coordination, worktrees, git = { text: textGit, run: runGit } } = {}) {
   if (!coordination || typeof coordination.admitMutation !== "function" || typeof coordination.inspectAdmission !== "function") throw new TypeError("canonical publisher requires workspace coordination");
-  if (!worktrees || typeof worktrees.allocate !== "function" || typeof worktrees.cleanup !== "function") throw new TypeError("canonical publisher requires worktree lifecycle");
+  if (!worktrees || typeof worktrees.allocate !== "function" || typeof worktrees.cleanup !== "function" || typeof worktrees.rebindLease !== "function") throw new TypeError("canonical publisher requires worktree lifecycle");
   const publisher = {
     prepare({ repository, targetBranch, expectedParent, checkpoint, manifest, authorization, operationId, holder, message }) {
       const repositoryRoot = path.resolve(requireText(repository, "publication repository")); requireOperationId(operationId); requireText(holder, "publication holder");
       if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(targetBranch) || targetBranch.includes("..")) throw new TypeError("publication target branch is unsafe");
-      const branchRef = `refs/heads/${targetBranch}`; oid(expectedParent, "publication expected parent"); requireRecord(checkpoint, "accepted checkpoint");
-      const checkpointCommit = oid(checkpoint.commitOid, "accepted checkpoint commit"); const checkpointTree = oid(checkpoint.treeOid, "accepted checkpoint tree"); const baselineCommit = oid(checkpoint.baselineCommitOid, "accepted checkpoint baseline"); sha256(checkpoint.taskPatchDigest, "accepted checkpoint patch digest");
-      const expectedActions = manifestActions(manifest); const accepted = acceptedCheckpointMetadata(repositoryRoot, git, checkpoint, checkpointCommit, checkpointTree);
-      exactKeys(authorization, ["checkpointCommitOid", "checkpointTreeOid", "decision", "paths", "reference", "targetBranch"], "publication authorization");
-      if (authorization.decision !== "create" || !Array.isArray(authorization.paths) || new Set(authorization.paths).size !== authorization.paths.length || authorization.paths.length !== expectedActions.size || authorization.paths.some((file) => !expectedActions.has(file)) || authorization.checkpointCommitOid !== checkpointCommit || authorization.checkpointTreeOid !== checkpointTree || authorization.targetBranch !== targetBranch) throw new Error("publication authorization does not match the attributed manifest");
-      requireText(authorization.reference, "publication authorization reference"); exactKeys(message, ["body", "subject"], "publication message"); requireText(message.subject, "publication message subject"); if (message.subject.includes("\n") || typeof message.body !== "string") throw new TypeError("publication message is invalid");
+      const { branchRef, checkpointCommit, checkpointTree, baselineCommit, expectedActions, accepted } = validatePreparationRequest({ repositoryRoot, targetBranch, expectedParent, checkpoint, manifest, authorization, message, git });
       if (git.text(repositoryRoot, ["rev-parse", "--verify", branchRef]) !== expectedParent) return freeze({ status: "parent_changed" });
-      if (git.text(repositoryRoot, ["rev-parse", `${checkpointCommit}^{tree}`]) !== checkpointTree) throw new Error("accepted checkpoint tree mismatch");
-      const patch = git.run(repositoryRoot, ["diff-tree", "--binary", "--no-renames", "--no-ext-diff", `${baselineCommit}^{tree}`, checkpointTree], { encoding: null });
-      if (patch.status !== 0 || createHash("sha256").update(patch.stdout).digest("hex") !== checkpoint.taskPatchDigest) throw new Error("accepted checkpoint patch identity mismatch");
-      if (!equalActions(expectedActions, diffActions(repositoryRoot, baselineCommit, checkpointCommit, git.run))) throw new Error("accepted checkpoint delta does not match the attributed manifest");
       const merge = git.run(repositoryRoot, ["merge-tree", "--write-tree", "--messages", `--merge-base=${baselineCommit}`, expectedParent, checkpointCommit]);
       if (merge.status !== 0) return freeze({ status: "semantic_conflict", details: merge.stdout.trim() || merge.stderr.trim() });
       const tree = merge.stdout.split("\n", 1)[0].trim(); oid(tree, "integrated tree"); const parentTree = git.text(repositoryRoot, ["rev-parse", `${expectedParent}^{tree}`]);
@@ -98,8 +116,31 @@ export function createCanonicalGitPublisher({ coordination, worktrees, git = { t
         return withDigest({ schemaVersion: 1, status: "prepared", operationId, repository: repositoryRoot, targetBranch, branchRef, expectedParent, tree, requestDigest, acceptedCheckpoint: { ...structuredClone(checkpoint), verifiedRef: accepted.ref }, manifest: structuredClone(manifest).sort((a, b) => a.path.localeCompare(b.path)), authorization: structuredClone(authorization), message: structuredClone(message), holder, allocation: structuredClone(allocation) }, "preparationDigest");
       } catch (error) { try { worktrees.cleanup(allocation); } catch {} throw error; }
     },
+    adoptResolved({ repository, targetBranch, expectedParent, checkpoint, manifest, authorization, operationId, holder, message, allocation, lease, resolvedTree, validation }) {
+      const repositoryRoot = path.resolve(requireText(repository, "publication repository")); requireOperationId(operationId); requireText(holder, "publication holder");
+      if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(targetBranch) || targetBranch.includes("..")) throw new TypeError("publication target branch is unsafe");
+      const { branchRef, expectedActions, accepted } = validatePreparationRequest({ repositoryRoot, targetBranch, expectedParent, checkpoint, manifest, authorization, message, git });
+      if (git.text(repositoryRoot, ["rev-parse", "--verify", branchRef]) !== expectedParent) return freeze({ status: "parent_changed" });
+      const adoptedAllocation = allocationForAdoption({ repositoryRoot, expectedParent, allocation: requireRecord(allocation, "resolved integration allocation"), lease, worktrees, git });
+      const tree = oid(resolvedTree, "resolved integration tree");
+      if (git.text(adoptedAllocation.path, ["write-tree"]) !== tree) throw new Error("resolved integration tree does not match the worktree index");
+      if (git.text(adoptedAllocation.path, ["diff", "--name-only"]) !== ""
+          || git.text(adoptedAllocation.path, ["ls-files", "--others", "--exclude-standard"]) !== "") {
+        throw new Error("resolved integration worktree has unstaged or untracked content");
+      }
+      const parentTree = git.text(repositoryRoot, ["rev-parse", `${expectedParent}^{tree}`]);
+      if (!equalActions(expectedActions, diffActions(repositoryRoot, parentTree, tree, git.run))) {
+        throw new Error("resolved integration tree does not match the exact publication manifest");
+      }
+      if (tree === parentTree) return freeze({ status: "already_integrated", tree });
+      const normalized = normalizeValidation(validation, tree);
+      const requestDigest = digest({ repository: repositoryRoot, targetBranch, operationId, holder, expectedParent, checkpoint: structuredClone(checkpoint), manifest: structuredClone(manifest), authorization: structuredClone(authorization), message: structuredClone(message) });
+      const adoptionRequestDigest = digest({ requestDigest, resolvedTree: tree, allocation: structuredClone(allocation), lease: structuredClone(lease), validation: structuredClone(normalized) });
+      return withDigest({ schemaVersion: 2, status: "prepared", operationId, repository: repositoryRoot, targetBranch, branchRef, expectedParent, tree, requestDigest, acceptedCheckpoint: { ...structuredClone(checkpoint), verifiedRef: accepted.ref }, manifest: structuredClone(manifest).sort((a, b) => a.path.localeCompare(b.path)), authorization: structuredClone(authorization), message: structuredClone(message), holder, allocation: freeze(adoptedAllocation), adoption: { schemaVersion: 1, requestDigest: adoptionRequestDigest, resolvedTree: tree, validation: structuredClone(normalized), sourceAllocation: structuredClone(allocation) } }, "preparationDigest");
+    },
     sealValidation({ preparation, validation }) {
       validateDigestRecord(preparation, "preparationDigest", "publication preparation"); if (preparation.status !== "prepared") throw new Error("publication preparation is not sealable"); const normalized = normalizeValidation(validation, preparation.tree); const allocation = preparation.allocation;
+      if (preparation.adoption && digest(normalized) !== digest(preparation.adoption.validation)) throw new Error("publication validation does not match the adopted integration receipt");
       if (git.text(allocation.path, ["write-tree"]) !== preparation.tree || git.text(allocation.path, ["diff", "--name-only"]) !== "" || git.text(allocation.path, ["ls-files", "--others", "--exclude-standard"]) !== "") return freeze({ status: "validation_mutated_integration", path: allocation.path, retained: worktrees.cleanup(allocation) });
       const created = git.run(preparation.repository, ["commit-tree", preparation.tree, "-p", preparation.expectedParent], { input: `${preparation.message.subject}${preparation.message.body ? `\n\n${preparation.message.body}` : ""}\n` });
       if (created.status !== 0) throw new Error(created.stderr.trim() || "cannot create publication commit"); const commit = created.stdout.trim(); oid(commit, "publication commit"); git.text(allocation.path, ["reset", "--hard", commit]); const cleanup = worktrees.cleanup(allocation);

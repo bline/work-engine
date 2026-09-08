@@ -122,6 +122,28 @@ test("SQLite campaign owner survives reconstruction with CAS and exclusive admis
   assert.throws(() => service.advance({ identity: durableIdentity, expectedRevision: sha("stale"), phase: "gate_ready", consequence: {} }), /revision conflict/);
 });
 
+test("SQLite supersession rolls back both states when admission transfer fails", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "slice-campaign-supersede-rollback."));
+  t.after(() => rm(directory, {recursive: true, force: true}));
+  const store = await openSqliteSliceCampaignStore({filePath: path.join(directory, "campaign.sqlite")});
+  t.after(() => store.close());
+  const source = {revision: sha("source"), phase: "review_ready", marker: "preserve"};
+  const superseded = {revision: sha("superseded"), phase: "superseded", marker: "preserve"};
+  const successor = {revision: sha("successor"), phase: "accepted"};
+  store.admit("source", "/workspace", source);
+  store.database.exec(`CREATE TRIGGER reject_supersession_transfer
+    BEFORE UPDATE OF identity_key ON slice_campaign_admission
+    BEGIN SELECT RAISE(ABORT, 'injected admission transfer failure'); END`);
+  assert.throws(() => store.supersede({key: "source", expectedRevision: source.revision,
+    workspace: "/workspace", state: superseded, successorKey: "successor",
+    successorState: successor}), /injected admission transfer failure/);
+  assert.deepEqual(store.get("source"), source);
+  assert.equal(store.get("successor"), null);
+  assert.equal(store.database.prepare(
+    "SELECT identity_key FROM slice_campaign_admission WHERE workspace = ?",
+  ).get("/workspace").identity_key, "source");
+});
+
 test("SQLite campaign database is private before SQLite opens it and rejects unsafe paths", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "slice-campaign-private-sqlite."));
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -165,9 +187,15 @@ test("campaign vertical preserves owners, exclusive admission, expected/actual i
       calls.push("legacy-review"); return { status: "passed", subjectCommit: subject.commit };
     } }),
     receiptFinalizer: { async finalize(value) { calls.push("receipt"); return { digest: sha(JSON.stringify(value)) }; } },
-    completionOffer: { async open({ request }) { calls.push("offer"); return {
-      status: "open", publicationAuthorized: false, request,
-    }; } },
+    completionOffer: {
+      async open({ request }) { calls.push("offer"); return {
+        offer_id: "offer-1", status: "open", publicationAuthorized: false, request,
+      }; },
+      async supersede({request, operationId}) { calls.push("offer-supersede"); return {
+        offer: {offer_id: "offer-2", status: "open", publicationAuthorized: false, request},
+        supersession: {operation_id: operationId, prior_offer_id: "offer-1"},
+      }; },
+    },
   });
   let state = service.admit({ identity, workspace: "/workspace", acceptedBoundary: { reference: "plan:s8", sha256: sha("plan") },
     expectedImpact: { reference: "impact:prospective", sha256: sha("expected") },
@@ -197,10 +225,20 @@ test("campaign vertical preserves owners, exclusive admission, expected/actual i
     request: { proposal: "exact-proposal" } })).revision, state.revision);
   await assert.rejects(service.openCompletionOffer({ identity, expectedRevision: state.revision,
     request: { proposal: "different" } }), /conflicts/);
+  state = await service.supersedeCompletionOffer({identity, expectedRevision: state.revision,
+    expectedOfferId: "offer-1", operationId: "replace-offer-v1",
+    request: {proposal: "different"}, reason: "new accepted checkpoint",
+    publicationState: {operation_id: "completion-offer-1", status: "absent"}});
+  assert.equal(state.terminal.completionOffer.offer_id, "offer-2");
+  assert.equal(state.terminal.completionOfferSupersession.operation_id, "replace-offer-v1");
+  assert.equal((await service.supersedeCompletionOffer({identity, expectedRevision: state.revision,
+    expectedOfferId: "offer-1", operationId: "replace-offer-v1",
+    request: {proposal: "different"}, reason: "new accepted checkpoint",
+    publicationState: {operation_id: "completion-offer-1", status: "absent"}})).revision, state.revision);
   assert.notEqual(state.revision, terminalRevision);
   await assert.rejects(service.runLegacyReview({ identity, expectedRevision: state.revision, selectionPlan: {} }), /review-ready/);
   assert.equal(service.recover(identity).revision, state.revision);
-  assert.deepEqual(calls, ["candidate", "profile", "legacy-review", "receipt", "offer"]);
+  assert.deepEqual(calls, ["candidate", "profile", "legacy-review", "receipt", "offer", "offer-supersede"]);
 });
 
 test("S9 vertical admits exact review meaning, persists episode truth, and binds the native campaign path", async () => {

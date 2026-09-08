@@ -71,6 +71,37 @@ export async function openWorkspaceDevelopmentRuntime({
       if (prepared.status !== "prepared") return freeze({ revision: null, record: prepared });
       return coordination.savePublication({ operationId, record: prepared });
     },
+    adoptResolvedPublication({ targetBranch, operationId, ...request } = {}) {
+      requireOpen(); requireOperationId(operationId); branchName(targetBranch); requireRecord(request, "resolved publication request");
+      if (!allowedBranches.has(targetBranch)) throw new Error("publication target is not a configured canonical branch");
+      const current = coordination.loadPublication(operationId);
+      const standardRequest = {
+        expectedParent: request.expectedParent, checkpoint: request.checkpoint,
+        manifest: request.manifest, authorization: request.authorization, message: request.message,
+      };
+      const requestDigest = publicationRequestDigest({
+        repository: repositoryRoot, targetBranch, operationId, holder: publisherId,
+        request: standardRequest,
+      });
+      const adoptionRequestDigest = digest({
+        requestDigest, resolvedTree: request.resolvedTree, allocation: structuredClone(request.allocation),
+        lease: structuredClone(request.lease), validation: structuredClone(request.validation),
+      });
+      if (current) {
+        const source = current.record.status === "published" ? current.record.sealed : current.record;
+        if (source.requestDigest !== requestDigest || source.adoption?.requestDigest !== adoptionRequestDigest) {
+          throw new Error("resolved publication operation conflicts with its durable request binding");
+        }
+        return current;
+      }
+      const prepared = publisher.adoptResolved({
+        ...standardRequest, repository: repositoryRoot, targetBranch, operationId,
+        holder: publisherId, allocation: request.allocation, lease: request.lease,
+        resolvedTree: request.resolvedTree, validation: request.validation,
+      });
+      if (prepared.status !== "prepared") return freeze({ revision: null, record: prepared });
+      return coordination.savePublication({ operationId, record: prepared });
+    },
     sealPublication({ operationId, preparationRevision, validation } = {}) {
       requireOpen(); requireOperationId(operationId); requireText(preparationRevision, "preparation revision");
       const current = coordination.loadPublication(operationId);

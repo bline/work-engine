@@ -26,6 +26,7 @@ if "--version" in sys.argv:
 
 record = {
     "argv": sys.argv[1:],
+    "stdin": sys.stdin.read(),
     "base_url": os.environ.get("ANTHROPIC_BASE_URL"),
     "auth_token_present": bool(os.environ.get("ANTHROPIC_AUTH_TOKEN")),
     "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY"),
@@ -135,6 +136,39 @@ class ClaudeTransportTest(unittest.TestCase):
         receipt = json.loads(self.receipt.read_text())
         self.assertEqual(receipt["selected_transport"], "anthropic")
         self.assertFalse(receipt["failover"]["attempted"])
+
+    def test_integrity_bound_file_is_forwarded_on_stdin_without_entering_argv(self) -> None:
+        prompt = "review payload " + ("x" * 150_000)
+        prompt_file = self.root / "prompt.txt"
+        prompt_file.write_text(prompt, encoding="utf-8")
+        import hashlib
+        prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        result = self.invoke(
+            "success",
+            "-p",
+            "--no-session-persistence",
+            wrapper_args=("--stdin-file", str(prompt_file), "--stdin-sha256", prompt_sha256),
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertEqual(calls[0]["stdin"], prompt)
+        self.assertNotIn(prompt, calls[0]["argv"])
+        request = json.loads(self.receipt.read_text())["request"]
+        self.assertEqual(request["stdin_sha256"], prompt_sha256)
+        self.assertEqual(request["stdin_size_bytes"], len(prompt.encode("utf-8")))
+
+    def test_stdin_digest_mismatch_stops_before_provider_entry(self) -> None:
+        prompt_file = self.root / "prompt.txt"
+        prompt_file.write_text("exact prompt", encoding="utf-8")
+        result = self.invoke(
+            "success",
+            "-p",
+            "--no-session-persistence",
+            wrapper_args=("--stdin-file", str(prompt_file), "--stdin-sha256", "0" * 64),
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("stdin payload SHA-256 differs", result.stderr)
+        self.assertEqual(self.calls(), [])
 
     def test_quota_failure_replays_disposable_call_through_native_claude(self) -> None:
         result = self.invoke(

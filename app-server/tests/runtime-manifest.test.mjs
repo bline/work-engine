@@ -85,6 +85,9 @@ roles:
       reasoning_effort: low
     capabilities:
       - fixture.lookup
+      - capability.external_information_retrieval
+      - capability.repository_evidence
+      - capability.visual_artifact_observation
     skills:
       - {name: shared, path: skills/shared/SKILL.md}
 `, "utf8");
@@ -99,7 +102,12 @@ test("runtime manifest projects arbitrary role instances and exact skills", asyn
   const second = manifest.projectRole("alpha", "two");
   assert.equal(first.role.logicalRoleInstanceId, "alpha:one");
   assert.deepEqual(first.role.capabilities, []);
-  assert.deepEqual(manifest.projectRole("beta", "one").role.capabilities, ["fixture.lookup"]);
+  assert.deepEqual(manifest.projectRole("beta", "one").role.capabilities, [
+    "capability.external_information_retrieval",
+    "capability.repository_evidence",
+    "capability.visual_artifact_observation",
+    "fixture.lookup",
+  ]);
   assert.equal(second.role.logicalRoleInstanceId, "alpha:two");
   assert.equal(first.role.threadOptions.cwd, directory);
   assert.match(first.role.runtimeEnvironmentRevision, /^[a-f0-9]{64}$/);
@@ -181,10 +189,14 @@ test("production manifest grants coordination and native review only to the read
   }
   assert.equal(supervisor.capabilities.includes("capability.operational_coordination"), true);
   assert.equal(supervisor.capabilities.includes("capability.native_review"), true);
+  assert.equal(supervisor.capabilities.includes("capability.repository_evidence"), true);
   assert.equal(manifest.projectRole("slice-builder", "coordination").role.capabilities
     .includes("capability.operational_coordination"), false);
   assert.equal(manifest.projectRole("slice-builder", "coordination").role.capabilities
     .includes("capability.native_review"), false);
+  assert.match(supervisor.developerInstructions, /Never use Codex collaboration spawn_agent/);
+  assert.match(manifest.projectRole("slice-builder", "coordination").role.developerInstructions,
+    /does not authorize you to spawn another agent/);
 });
 
 test("compiled slice-builder requirements admit one generic manifest role and reject excess before delivery", async () => {
@@ -363,6 +375,21 @@ test("manifest role runtime delivers projected roles through the shared adapter"
   assert.equal(start.params.developerInstructions, "Keep beta isolated.");
   assert.equal(start.params.approvalPolicy, "on-request");
   assert.equal(start.params.model, "gpt-5.6-sol");
+  assert.deepEqual(start.params.config, {
+    "agents.enabled": false,
+    "features.apps": false,
+    "features.multi_agent": false,
+    "features.plugins": false,
+    "features.remote_plugin": false,
+    "features.skill_mcp_dependency_install": false,
+    project_doc_max_bytes: 0,
+    "mcp_servers.codebase-memory-mcp.command": "codebase-memory-mcp",
+    "mcp_servers.codebase-memory-mcp.args": [],
+    "mcp_servers.codebase-memory-mcp.required": true,
+    web_search: "live",
+    "tools.web_search": true,
+    "tools.view_image": true,
+  });
   assert.equal("effort" in start.params, false);
   assert.deepEqual(start.params.dynamicTools.map(({ name }) => name), ["fixture"]);
   const turn = transport.requests.find(({ method }) => method === "turn/start");

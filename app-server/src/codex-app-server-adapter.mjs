@@ -378,12 +378,49 @@ function environmentFingerprint({ dynamicTools, providerCapabilities, role, thre
 
 function checkedThreadOptions(role) {
   const options = role.threadOptions ?? {};
-  for (const reserved of ["developerInstructions", "dynamicTools", "ephemeral"]) {
+  for (const reserved of ["config", "developerInstructions", "dynamicTools", "ephemeral"]) {
     if (reserved in options) {
       throw new Error(`thread option ${reserved} is owned by the runtime adapter`);
     }
   }
   return options;
+}
+
+const WORK_ENGINE_CODEX_THREAD_CONFIG = Object.freeze({
+  "agents.enabled": false,
+  "features.apps": false,
+  "features.multi_agent": false,
+  "features.plugins": false,
+  "features.remote_plugin": false,
+  "features.skill_mcp_dependency_install": false,
+  project_doc_max_bytes: 0,
+});
+
+const EXTERNAL_INFORMATION_RETRIEVAL = "capability.external_information_retrieval";
+const REPOSITORY_EVIDENCE = "capability.repository_evidence";
+const VISUAL_ARTIFACT_OBSERVATION = "capability.visual_artifact_observation";
+
+function codexThreadConfig(role) {
+  const capabilities = new Set(role.capabilities ?? []);
+  const externalInformationRetrieval = capabilities.has(EXTERNAL_INFORMATION_RETRIEVAL);
+  return {
+    ...WORK_ENGINE_CODEX_THREAD_CONFIG,
+    ...(capabilities.has(REPOSITORY_EVIDENCE) ? {
+      "mcp_servers.codebase-memory-mcp.command": "codebase-memory-mcp",
+      "mcp_servers.codebase-memory-mcp.args": [],
+      "mcp_servers.codebase-memory-mcp.required": true,
+    } : {}),
+    web_search: externalInformationRetrieval ? "live" : "disabled",
+    "tools.web_search": externalInformationRetrieval,
+    "tools.view_image": capabilities.has(VISUAL_ARTIFACT_OBSERVATION),
+  };
+}
+
+function enforcedThreadOptions(role) {
+  return {
+    ...checkedThreadOptions(role),
+    config: codexThreadConfig(role),
+  };
 }
 
 function partitionRoleOptions(options) {
@@ -644,7 +681,7 @@ export class CodexAppServerAdapter {
     this.#requireCapability("thread_start");
     this.#requireCapability("turn_start");
     this.#requireCapability("client_message_id");
-    const options = checkedThreadOptions({ threadOptions });
+    const options = enforcedThreadOptions({ threadOptions });
     const partitioned = partitionRoleOptions(options);
     const tokenUsageByTurn = new Map();
     let threadId = null;
@@ -778,7 +815,7 @@ export class CodexAppServerAdapter {
     if (skills.length > 0) this.#requireCapability("exact_skill_input");
     const dynamicTools = toolBridge?.specs() ?? [];
     if (dynamicTools.length > 0) this.#requireCapability("thread_scoped_dynamic_tools");
-    const roleOptions = checkedThreadOptions(role);
+    const roleOptions = enforcedThreadOptions(role);
     const { threadOptions, turnOptions } = partitionRoleOptions(roleOptions);
     let binding = await this.registry.get(role.logicalRoleInstanceId);
     if (boundControlTurn && !binding) {

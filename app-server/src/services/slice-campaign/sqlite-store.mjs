@@ -40,6 +40,36 @@ export class SqliteSliceCampaignStore {
       ).run(releaseWorkspace, key);
     });
   }
+  supersede({key, expectedRevision, workspace, state, successorKey, successorState}) {
+    return this.#transaction(() => {
+      const current = this.database.prepare(
+        "SELECT revision FROM slice_campaign_state WHERE identity_key = ?",
+      ).get(key);
+      if (current?.revision !== expectedRevision) throw new Error("slice campaign revision conflict");
+      if (this.database.prepare(
+        "SELECT identity_key FROM slice_campaign_state WHERE identity_key = ?",
+      ).get(successorKey)) throw new Error("slice campaign successor attempt already exists");
+      const holder = this.database.prepare(
+        "SELECT identity_key FROM slice_campaign_admission WHERE workspace = ?",
+      ).get(workspace);
+      if (holder?.identity_key !== key) {
+        throw new Error("slice campaign supersession requires the source workspace admission");
+      }
+      const updated = this.database.prepare(
+        "UPDATE slice_campaign_state SET revision = ?, state_json = ? WHERE identity_key = ? AND revision = ?",
+      ).run(state.revision, JSON.stringify(state), key, expectedRevision);
+      if (updated.changes !== 1) throw new Error("slice campaign revision conflict");
+      this.database.prepare(
+        "INSERT INTO slice_campaign_state(identity_key, revision, state_json) VALUES(?,?,?)",
+      ).run(successorKey, successorState.revision, JSON.stringify(successorState));
+      const transferred = this.database.prepare(
+        "UPDATE slice_campaign_admission SET identity_key = ? WHERE workspace = ? AND identity_key = ?",
+      ).run(successorKey, workspace, key);
+      if (transferred.changes !== 1) {
+        throw new Error("slice campaign supersession failed to transfer workspace admission");
+      }
+    });
+  }
   close() { if (!this.closed) { this.closed = true; this.database.close(); } }
 }
 

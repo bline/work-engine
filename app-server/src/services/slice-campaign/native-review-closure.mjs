@@ -14,7 +14,9 @@ function status(episode, findings) {
 }
 function relianceComplete(findings) {
   return findings.length > 0
-    && findings.every((item) => item.outcome === "verified_resolved" && item.relianceRef !== null);
+    && findings.every((item) => item.relianceRef !== null
+      && (item.builderEvaluation?.disposition === "invalid"
+        || (item.builderEvaluation?.disposition === "valid" && item.outcome === "verified_resolved")));
 }
 function withRelianceStatus(current, findings) {
   return Object.freeze({...current,
@@ -125,8 +127,18 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
         resultRecorded,
       });
     },
-    async executeInitial({obligationId, reviewSkill, authority, beginTransitionId, resultTransitionId, reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true}) {
-      let episode = reviewEpisode.begin({authority, transitionId: beginTransitionId});
+    async executeInitial({obligationId, reviewSkill, authority, beginTransitionId, resultTransitionId,
+      reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true,
+      resumeExistingEpisode = false}) {
+      if (typeof resumeExistingEpisode !== "boolean") {
+        throw new TypeError("native review initial episode resume flag must be boolean");
+      }
+      if (resumeExistingEpisode && typeof reviewEpisode.resumeInitial !== "function") {
+        throw new Error("native review initial episode resume service is unavailable");
+      }
+      let episode = resumeExistingEpisode
+        ? reviewEpisode.resumeInitial({authority})
+        : reviewEpisode.begin({authority, transitionId: beginTransitionId});
       if (!episode.handledTransitions[resultTransitionId]) {
         if (!allowProviderEntry) throw new Error("native reviewer outcome is unavailable; provider replay is refused");
         const {execution, result, contractError, rejectedResult} = await executeReviewer(
@@ -206,15 +218,23 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
       return Object.freeze({binding: nativeBinding, builderContext, failure: null});
     },
-    recordBuilderEvaluation({binding: current, authority, operationId, findingId, consumer, consumerRevision, decisionScope}) {
+    recordBuilderEvaluation({binding: current, authority, operationId, findingId, consumer,
+      consumerRevision, decisionScope, disposition}) {
+      if (!["valid", "invalid"].includes(disposition)) {
+        throw new TypeError("native review finding disposition must be valid or invalid");
+      }
       const finding = current.findings.find((item) => item.findingId === findingId);
       if (!finding) throw new Error("native review finding evaluation names an unknown finding");
-      if (finding.relianceRef !== null) {
-        const reconciled = withRelianceStatus(current, current.findings);
-        if (reconciled.status !== current.status) return reconciled;
-        throw new Error("native review finding already has builder reliance");
+      if (finding.builderEvaluation !== undefined) {
+        throw new Error("native review finding already has a builder disposition");
       }
-      const evaluated = findingBridge.recordReliance({authority, operationId, finding, consumer, consumerRevision, decisionScope});
+      const relied = finding.relianceRef === null
+        ? findingBridge.recordReliance({authority, operationId, finding, consumer, consumerRevision, decisionScope})
+        : finding;
+      const evaluated = Object.freeze({...relied, builderEvaluation: Object.freeze({
+        schemaVersion: 1, disposition, operationId, consumer, consumerRevision, decisionScope,
+        relianceRef: relied.relianceRef,
+      })});
       const findings = current.findings.map((item) => item.findingId === findingId ? evaluated : item);
       return withRelianceStatus(current, findings);
     },

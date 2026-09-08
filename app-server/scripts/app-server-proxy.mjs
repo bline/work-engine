@@ -49,6 +49,9 @@ function parseArguments(argv) {
     operationalStateExplicit: false,
     developmentArtifactRoot: WORKSPACE_ROOT,
     codexCommand: process.env.WORK_ENGINE_CODEX ?? "codex",
+    codexHome: process.env.WORK_ENGINE_CODEX_HOME
+      ? path.resolve(process.env.WORK_ENGINE_CODEX_HOME)
+      : null,
     canonicalBranches: [],
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -76,6 +79,7 @@ function parseArguments(argv) {
       options.developmentArtifactRoot = path.resolve(value());
     }
     else if (argument === "--codex") options.codexCommand = value();
+    else if (argument === "--codex-home") options.codexHome = path.resolve(value());
     else if (argument === "--canonical-branch") options.canonicalBranches.push(value());
     else throw new Error(`unknown App Server proxy option ${argument}`);
   }
@@ -91,6 +95,7 @@ function parseArguments(argv) {
   );
   options.generationState ??= defaultGenerationState(options.socketPath);
   options.operationalState ??= options.generationState;
+  options.codexHome ??= path.join(options.operationalState, "codex-home");
   return options;
 }
 
@@ -128,6 +133,43 @@ async function validateExplicitOperationalState(options) {
   options.operationalState = await realpath(options.operationalState);
 }
 
+async function validateCodexHome(options) {
+  let homeMetadata;
+  let resolvedHome;
+  try {
+    [homeMetadata, resolvedHome] = await Promise.all([
+      stat(options.codexHome),
+      realpath(options.codexHome),
+    ]);
+  } catch (error) {
+    throw new Error(
+      `dedicated --codex-home must select an existing private directory: ${options.codexHome}`,
+      { cause: error },
+    );
+  }
+  if (!homeMetadata.isDirectory() || (homeMetadata.mode & 0o077) !== 0) {
+    throw new Error("dedicated --codex-home must be a directory inaccessible to group and other");
+  }
+  const authPath = path.join(resolvedHome, "auth.json");
+  let authMetadata;
+  let resolvedAuth;
+  try {
+    [authMetadata, resolvedAuth] = await Promise.all([stat(authPath), realpath(authPath)]);
+  } catch (error) {
+    throw new Error(
+      "dedicated --codex-home must contain a private auth.json credential projection",
+      { cause: error },
+    );
+  }
+  if (path.dirname(resolvedAuth) !== resolvedHome) {
+    throw new Error("dedicated --codex-home auth.json must not resolve outside its home");
+  }
+  if (!authMetadata.isFile() || (authMetadata.mode & 0o077) !== 0) {
+    throw new Error("dedicated --codex-home auth.json must be a private regular file");
+  }
+  options.codexHome = resolvedHome;
+}
+
 function formatStartupFailure(error) {
   const code = typeof error?.code === "string" ? ` code=${error.code}` : "";
   const details = error?.details && typeof error.details === "object"
@@ -154,15 +196,25 @@ async function main() {
       { cause: error },
     );
   }
+  await validateCodexHome(options);
   process.stderr.write(
-    `[host] generation-state=${options.generationState} operational-state=${options.operationalState}\n`,
+    `[host] generation-state=${options.generationState} operational-state=${options.operationalState} codex-home=${options.codexHome}\n`,
   );
   const delegate = StdioJsonRpcTransport.spawn({
     command: options.codexCommand,
     cwd: options.cwd,
-    ...(options.tokenBudget
-      ? { args: ["app-server", "--stdio", "--enable", "token_budget"] }
-      : {}),
+    env: { ...process.env, CODEX_HOME: options.codexHome },
+    args: [
+      "app-server", "--stdio",
+      "--disable", "apps",
+      "--disable", "multi_agent",
+      "--disable", "plugins",
+      "--disable", "remote_plugin",
+      "--disable", "skill_mcp_dependency_install",
+      "-c", "agents.enabled=false",
+      "-c", "project_doc_max_bytes=0",
+      ...(options.tokenBudget ? ["--enable", "token_budget"] : []),
+    ],
   });
   if (options.trace) {
     delegate.on("stderr", (chunk) => process.stderr.write(`[app-server-child] ${chunk}`));

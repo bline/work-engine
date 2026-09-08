@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 import { runExecutableGenerationWorker } from "./executable-generation-worker-runtime.mjs";
+import { createManagedBuilderTurnHandler } from "./managed-builder-turn.mjs";
 import { createSupervisorCampaignCapabilityDefinitions } from "./services/slice-campaign/capability-contract.mjs";
 
 const AMBIENT_ROLE_CAPABILITIES = new Set([
@@ -88,7 +89,21 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
     const proposal = createProposalDelivery({ repositoryRoot, artifactRoot, snapshotRoot, artifacts });
     const supervisorEffects = new AsyncLocalStorage();
     let environment = null;
+    const managedBuilderTurn = createManagedBuilderTurnHandler(async (turn) => {
+      if (!environment) throw new Error("managed role environment is unavailable");
+      return environment.deliverRoleTurn(turn);
+    });
     const supervisor = createSupervisorCampaignCapabilityDefinitions(async (request) => {
+      if (request.capability === "capability.lifecycle_control"
+          && request.operation === "builder_turn") {
+        return {
+          schema_version: 1,
+          generation_id: generation.generationId,
+          capability: request.capability,
+          operation: request.operation,
+          result: await managedBuilderTurn(request.input),
+        };
+      }
       const effect = supervisorEffects.getStore();
       if (typeof effect !== "function") {
         throw new Error("supervisor capability call is outside an admitted generation dispatch");
@@ -140,6 +155,9 @@ const roleEnvironment = process.env.WORK_ENGINE_EXECUTABLE_ROLE_ENVIRONMENT === 
       roleToolBridgeResolver,
       productDevelopmentEnvironmentIdentity: artifacts.environmentIdentity(),
       extensionRegistryIdentity: extensionRegistry?.attachment_sha256 ?? null,
+      appServerInitialization: process.env.WORK_ENGINE_APP_SERVER_INITIALIZATION
+        ? JSON.parse(process.env.WORK_ENGINE_APP_SERVER_INITIALIZATION)
+        : null,
     });
     return Object.freeze({ ...environment, extensionRegistry, supervisorEffects });
   })()

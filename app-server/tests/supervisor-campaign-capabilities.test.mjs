@@ -141,16 +141,49 @@ test("thirteen thin clients bind exact operations and never infer human authorit
     "capability.worktree_lifecycle",
   ]);
   const offer = definitions.get("capability.completion_offer");
+  assert.equal(offer.inputSchema.properties.operation.enum.includes("supersede"), true);
+  const lifecycle = definitions.get("capability.lifecycle_control");
+  assert.equal(lifecycle.inputSchema.properties.operation.enum.includes("supersede"), true);
+  assert.equal(lifecycle.inputSchema.properties.operation.enum.includes("builder_turn"), true);
+  const publication = definitions.get("capability.canonical_publication");
+  assert.equal(publication.inputSchema.properties.operation.enum.includes("adopt_resolved"), true);
+  assert.match(publication.description, /current directory lease/);
+  assert.match(publication.description, /never updates the canonical branch directly/);
+  await assert.rejects(publication.handler({operation: "adopt_resolved", input: {
+    operation_id: "adopt-v1", target_branch: "main", expected_parent: "a".repeat(40),
+    checkpoint: {}, manifest: [], authorization: {}, message: {}, allocation: {}, lease: {},
+    resolved_tree: "b".repeat(40), validation: {}, caller_verified: true,
+  }}), /unsupported field caller_verified/);
+  assert.match(lifecycle.description, /Do not use Codex collaboration spawn_agent/);
+  await assert.rejects(lifecycle.handler({operation: "supersede", input: {
+    identity: {}, expectedRevision: "r", operationId: "op", successor: {
+      identity: {}, acceptedBoundary: {}, baseline: {}, callerAuthority: "inferred",
+    },
+  }}), /unsupported field callerAuthority/);
+  assert.equal(calls.length, 0);
   await assert.rejects(offer.handler({ operation: "resolve", input: {
     offer: {}, decision: { decision: "create", authority: {
       kind: "agent", reference: "inferred", observed_at: "2026-09-01T09:00:00-06:00",
     } },
   } }), /kind must be human/);
+  await assert.rejects(offer.handler({operation: "supersede", input: {
+    identity: {}, expected_revision: "a".repeat(64), expected_offer_id: "old",
+    operation_id: "replace-v1", request: {}, reason: "stale", publication_state: "caller-forged",
+  }}), /unsupported field publication_state/);
   assert.equal(calls.length, 0);
   const nativeReview = definitions.get("capability.native_review");
   assert.match(nativeReview.description, /grants no shell, filesystem, credential, model-routing/);
   assert.deepEqual(nativeReview.inputSchema.oneOf.map((entry) => entry.properties.operation.enum[0]),
     ["execute", "recover", "retry", "correct_result", "record_finding_evaluation", "execute_remediation"]);
+  const findingEvaluationSchema = nativeReview.inputSchema.oneOf.find((entry) =>
+    entry.properties.operation.enum[0] === "record_finding_evaluation");
+  assert.deepEqual(findingEvaluationSchema.properties.input.properties.disposition.enum,
+    ["valid", "invalid"]);
+  await assert.rejects(nativeReview.handler({operation: "record_finding_evaluation", input: {
+    identity: {runId: "r", sliceNumber: 1, attemptId: "a", planVersion: "p"},
+    expected_revision: "a".repeat(64), obligation_id: "generic", operation_id: "native:finding",
+    finding_id: "F1", consumer_revision: "candidate-tree",
+  }}), /requires field disposition/);
   await assert.rejects(nativeReview.handler({operation: "execute", input: {
     identity: {runId: "r", sliceNumber: 1, attemptId: "a", planVersion: "p"},
     expected_revision: "a".repeat(64), obligation_id: "generic", operation_id: "native:generic",

@@ -237,6 +237,56 @@ An overlay revision can make a realization stale, but it is not itself
 permission to interrupt an admitted operation or violate its role contract.
 Work Engine applies the change through admission at a safe boundary.
 
+### Delegated child capability selection
+
+The current operator-authored design direction is that the parent role owns the
+semantic capability request for each child operation. A campaign supervisor
+therefore selects the requested capabilities for its builder, while a review
+panel assembler selects the requested capabilities for each reviewer. A role
+does not expand its own capabilities, and a parent does not directly configure
+a provider or harness.
+
+The selection remains bounded by independently owned constraints:
+
+- the child role contract defines required capabilities, a permitted ceiling,
+  prohibited capabilities, and an effect ceiling;
+- the parent contract identifies which child relationship and launch operation
+  may carry a capability request;
+- operator policy retains network, privacy, provider, credential, and spending
+  constraints;
+- capability observations establish what an implementation can presently
+  realize; and
+- deterministic admission verifies the request before materializing an exact
+  immutable child realization.
+
+The intended admission relationship is:
+
+```text
+child required capabilities
+        subset of
+requested and admitted child capabilities
+        subset of
+child capability ceiling
+```
+
+The materialized realization records both the provider-neutral semantic grants
+and their attributable harness mapping. For example,
+`capability.external_information_retrieval` may map to Codex web-search
+configuration, while `capability.visual_artifact_observation` may map to the
+Codex local-image tool. Another harness may satisfy either grant differently.
+
+Universal harness-isolation invariants, such as rejecting ambient project
+instructions or unmanaged harness-native subagents, remain adapter-owned and
+are not selectable child capabilities. Selective facilities such as external
+information retrieval and visual observation must not be disabled daemon-wide;
+they are denied when absent from a realization and enabled only by an admitted
+semantic grant.
+
+The migration-time emergency implementation may derive these selective Codex
+settings from the role's currently admitted capability set. Parent-selected
+per-operation subsets, policy resolution, and complete realization receipts
+remain post-migration work and must not be implied by that temporary bridge.
+
 ## 7. Invalidation consequences by port
 
 The split makes failure consequences more precise.

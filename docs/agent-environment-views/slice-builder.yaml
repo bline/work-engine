@@ -9,7 +9,7 @@ source_inputs:
     sha256: 124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9
   role_environment:
     path: ../agent-environments.yaml
-    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
+    sha256: 38002804a2ef3966e58ecef5af50f9376f302a08964ba9d139e8a562aa30e97b
 environment_context:
   document_id: work-engine.agent-environments
   status: verified_baseline

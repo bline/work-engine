@@ -4555,7 +4555,7 @@
       ],
       "source": {
         "path": "skills/slice-supervisor/SKILL.md",
-        "sha256": "60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542"
+        "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e"
       },
       "artifacts": [
         {
@@ -4568,7 +4568,7 @@
         },
         {
           "path": "skills/slice-supervisor/references/receipt-schema.md",
-          "sha256": "9d7b09f8189a94023d8b57d42bebb9a11f165a0d2956af332e6fe5cd08f40921"
+          "sha256": "ffa447fbef98e90e6968561e45adf8503ceac8d25992f7bce67eb60922681f3e"
         },
         {
           "path": "skills/slice-supervisor/references/review-selection.md",
@@ -4584,7 +4584,7 @@
         },
         {
           "path": "skills/slice-supervisor/scripts/append_metrics.py",
-          "sha256": "14a0da03e9c89d938613aefa10dab6982df43e8fbd4d7b36d676ae4f95fc1d8c"
+          "sha256": "bcfd00a681dec0d61756e7bc953d839c88cde45c297b3c11417b99a1d277e230"
         },
         {
           "path": "skills/slice-supervisor/scripts/assemble_receipt.py",
@@ -4600,7 +4600,7 @@
         },
         {
           "path": "skills/slice-supervisor/scripts/completion_offer_lifecycle.py",
-          "sha256": "461ed95026676fae83f595838bac3242372482932aed6f4d1ea31d3ba0ac5195"
+          "sha256": "d90b7e59abcd63dceecba4e5c14e08f7bb83de13bc0b4c7d3fa39fb19379aae2"
         },
         {
           "path": "skills/slice-supervisor/scripts/finalize_receipt.py",
@@ -4660,7 +4660,7 @@
         },
         {
           "path": "skills/slice-supervisor/tests/test_append_metrics.py",
-          "sha256": "ab1880a9dc0bb1953ac59b46dcacb56663460f76921371fc4bcb4864fdcc5e62",
+          "sha256": "6d65035a32bad24f30b75b0069871ac9c5a908fe0b5d10627ccc85723698801c",
           "protected_distinction": "Protects the package-specific behaviors exercised by this file: v5 requires review selection while v4 remains readable; review selection preserves selection execution and applicability; review selection records truthful selection omission; review selection records pre candidate terminal state; review selection records candidate bound undecided terminal state; same model review provenance is exact and not independence; same model review accepts model selected reasoning effort; same model review cannot satisfy independent requirement; completion projection accepts open provenance and rejects weak evidence; accepts historical and current schema versions; cli rejects legacy write without touching destination and appends v5; cli rejects duplicate identity without touching destination; plus 26 additional declared cases.",
           "candidate_disposition": "retain"
         },
@@ -4678,8 +4678,8 @@
         },
         {
           "path": "skills/slice-supervisor/tests/test_completion_offer_lifecycle.py",
-          "sha256": "b9a1a2656f69ca054410efc60039dd64dd26d6c22b3d7bd1a200b0f53799b0fd",
-          "protected_distinction": "Protects the package-specific behaviors exercised by this file: pending survives fresh resume and decline without rewriting terminal; publication crash reconciles created without replaying mutation; expiration fails closed when publication state is ambiguous.",
+          "sha256": "89d0132ca2b24e1e21127e4f0e42a7d7ede37159e94be7f67a3fa90a94e53bd8",
+          "protected_distinction": "Protects the package-specific behaviors exercised by this file: pending survives fresh resume and decline without rewriting terminal; publication crash reconciles created without replaying mutation; expiration fails closed when publication state is ambiguous; supersession preserves a stale authorized offer while installing a distinct open successor and refuses an already-published predecessor.",
           "candidate_disposition": "retain"
         },
         {

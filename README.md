@@ -139,6 +139,14 @@ The project also produces experimental evidence about agent behavior under
 different instruction and review configurations; that work lives under
 `skills/review-bench/`, `skills/linguistic-register-pilot/`, and `proposals/`.
 
+## Reproducible execution
+
+Work Engine is moving toward a model in which agent conversations and provider sessions are replaceable realizations of durable role and workflow state rather than the canonical owners of that state.
+
+The intended consequence is that a meaningful point in an engineering workflow can eventually be reconstructed from revision-bound role, authority, evidence, capability, planning, and history state. The same coordinate can then be resumed for recovery or branched under a different model, harness, capability set, or plan projection for controlled comparison without rewriting the original execution history.
+
+This makes reproducibility useful for both engineering and research: real workflow states can become repeatable experimental fixtures for evaluating model and execution strategies against the kinds of decisions Work Engine actually encounters.
+
 ## Status
 
 Single maintainer, active development, no stability guarantees. The execution

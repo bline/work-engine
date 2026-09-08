@@ -264,6 +264,20 @@ provider-call counts as mutually exclusive outcomes. Every non-successful call
 has exactly one primary cause in `provider_failure_reasons`; the cause counts
 must equal the failed, timed-out, and infrastructure-failed call total.
 
+Schema version 5 also permits one narrow legacy-recovery exception when a
+retained execution predates authoritative provider-accounting projection. In
+that case, omit the entire closed provider-accounting bundle and add
+`worker_metrics.unavailable_metrics` with schema version 1, a nonempty reason,
+the `legacy_execution_not_instrumented` reason code, the validator-defined
+exact field list, and at least one integrity-bound terminal-receipt assembly
+audit reference (`kind`, `reference`, and lowercase SHA-256). Never mix supplied
+values with the unavailable declaration, use a partial field list, or convert
+absence into zero. This exception does not waive workflow route, route
+revisions, validation breadth, configured and actual provider identities,
+review selection, campaign identity, validation results, or checkpoint
+evidence. It exists only to terminalize preserved legacy work truthfully;
+newly instrumented execution must report the ordinary provider accounting.
+
 The validator checks that route and validation-breadth records are present and
 internally consistent. It does not replace the supervisor's procedural judgment
 about whether the selected breadth is adequate for the recorded consequence,

@@ -21,6 +21,9 @@ const TOOLS = [
 ].join(",");
 
 const SPECIALIST_MARKER = "WORK_ENGINE_AGENT_INSTRUCTION_REVIEW_V1";
+const DEFINITE_PRE_SPAWN_CODES = Object.freeze(new Set([
+  "E2BIG", "EACCES", "EMFILE", "ENFILE", "ENOENT", "ENOMEM", "ENOTDIR", "ETXTBSY",
+]));
 const AUTHENTICATION_FAILURE_MESSAGES = Object.freeze(new Set([
   "Not logged in · Please run /login",
   "Failed to authenticate: OAuth session expired and could not be refreshed",
@@ -72,12 +75,15 @@ function directAnthropicCatalogModel(profile, catalog, now) {
   return model;
 }
 
-function validateTransportReceipt(value, {commandDigest, requestedModel, sessionId, sessionMode, exitCode}) {
+function validateTransportReceipt(value, {commandDigest, promptDigest, promptSizeBytes,
+  requestedModel, sessionId, sessionMode, exitCode}) {
   const attempt = value?.attempts?.[0];
   const valid = value?.schema_version === 1
     && value?.request?.transport === "anthropic"
     && value?.request?.continuity === "retained"
     && value?.request?.command_sha256 === commandDigest
+    && value?.request?.stdin_sha256 === promptDigest
+    && value?.request?.stdin_size_bytes === promptSizeBytes
     && value?.request?.session_id === sessionId
     && value?.request?.session_mode === sessionMode
     && value?.request?.paid_failover_explicitly_allowed === false
@@ -294,7 +300,8 @@ export class NativeClaudeCodeReviewerAdapter {
 
   runtimeSessionId(instanceId) { return sessionUuid(instanceId); }
 
-  async #bindSession(instanceRoot, {profile, registryRevision, sessionId, continuation}) {
+  async #bindSession(instanceRoot, {profile, registryRevision, sessionId, continuation,
+    allowFreshPreSpawnRetry = false}) {
     const file = path.join(instanceRoot, "session-binding.json");
     const expected = {schemaVersion: 1, profileId: profile.profileId,
       profileConfigurationDigest: profile.configurationDigest, registryRevision,
@@ -305,10 +312,16 @@ export class NativeClaudeCodeReviewerAdapter {
         if (error?.code === "EEXIST") {
           let existing;
           try { existing = JSON.parse(await readFile(file, "utf8")); } catch {}
-          let attemptExists = true;
-          try { await access(path.join(instanceRoot, "latest-attempt.json")); }
-          catch (accessError) { if (accessError?.code === "ENOENT") attemptExists = false; else throw accessError; }
-          if (!attemptExists && digest(existing) === digest(expected)) return Object.freeze(existing);
+          let priorAttempt = null;
+          try { priorAttempt = JSON.parse(await readFile(path.join(instanceRoot, "latest-attempt.json"), "utf8")); }
+          catch (accessError) { if (accessError?.code !== "ENOENT") throw accessError; }
+          const exactBinding = digest(existing) === digest(expected);
+          const exactFailedPreSpawn = allowFreshPreSpawnRetry
+            && priorAttempt?.schemaVersion === 1
+            && priorAttempt.sessionId === sessionId
+            && priorAttempt.processStart?.status === "failed"
+            && priorAttempt.processStart?.providerEntry === "not_entered";
+          if ((priorAttempt === null || exactFailedPreSpawn) && exactBinding) return Object.freeze(existing);
           throw new ReviewerRuntimeError("continuity", "native Claude fresh session already has a binding");
         }
         throw error;
@@ -384,8 +397,16 @@ export class NativeClaudeCodeReviewerAdapter {
         legacyEvidence: {transportReceiptDigest: recordedRecovery.transportReceiptDigest,
           sessionArtifactDigest: recordedRecovery.sessionArtifactDigest}};
     }
-    if (attempt?.schemaVersion !== 1 || attempt.sessionId !== expectedSession
-        || typeof attempt.transportReceipt !== "string"
+    if (attempt?.schemaVersion !== 1 || attempt.sessionId !== expectedSession) return null;
+    if (attempt.processStart?.status === "failed"
+        && attempt.processStart.providerEntry === "not_entered"
+        && typeof attempt.processStart.errorCode === "string"
+        && DEFINITE_PRE_SPAWN_CODES.has(attempt.processStart.errorCode)) {
+      return Object.freeze({schemaVersion: 1, failureSignature: "process_start_failed",
+        providerEntry: "not_entered", sessionAvailable: false, sessionId: expectedSession,
+        errorCode: attempt.processStart.errorCode});
+    }
+    if (typeof attempt.transportReceipt !== "string"
         || path.basename(attempt.transportReceipt) !== attempt.transportReceipt
         || !attempt.transportReceipt.endsWith(".transport.json")) return null;
     const receiptFile = files.find((value) => path.basename(value) === attempt.transportReceipt);
@@ -465,7 +486,7 @@ export class NativeClaudeCodeReviewerAdapter {
 
   async execute({instanceId, profileId, subject, catalogProjection, rawEventPolicy,
     continuationSessionId = null, roleInstructions, resultCorrection = null, reviewBoundary,
-    refreshCredentials = false}) {
+    refreshCredentials = false, preSpawnRetry = false}) {
     if (typeof instanceId !== "string" || !instanceId.trim()) throw new ReviewerRuntimeError("configuration", "native Claude instanceId is required");
     if (typeof roleInstructions !== "string" || !roleInstructions.trim()) throw new ReviewerRuntimeError("configuration", "canonical role instructions are required");
     const {profile, registryRevision} = this.registry.admit(profileId);
@@ -481,16 +502,22 @@ export class NativeClaudeCodeReviewerAdapter {
     if (continuationSessionId !== null && continuationSessionId !== expectedSession) {
       throw new ReviewerRuntimeError("continuity", "native Claude continuation differs from the pre-registered session");
     }
-    if (typeof refreshCredentials !== "boolean" || (refreshCredentials && continuationSessionId !== expectedSession)) {
+    if (typeof refreshCredentials !== "boolean"
+        || (refreshCredentials && continuationSessionId !== expectedSession && !preSpawnRetry)) {
       throw new ReviewerRuntimeError("authentication",
-        "native Claude credential refresh requires the exact retained session");
+        "native Claude credential refresh requires an exact retained or pre-spawn retry");
+    }
+    if (typeof preSpawnRetry !== "boolean" || (preSpawnRetry && continuationSessionId !== null)) {
+      throw new ReviewerRuntimeError("continuity",
+        "native Claude pre-spawn retry requires the exact fresh retained-session identity");
     }
     const env = {...directAnthropicEnvironment(this.baseEnvironment)};
     const instanceRoot = path.join(this.stateRoot, "native-claude", digest(instanceId));
     const configRoot = path.join(instanceRoot, "config");
     await mkdir(configRoot, {recursive: true, mode: 0o700});
     const sessionBinding = await this.#bindSession(instanceRoot, {profile, registryRevision,
-      sessionId: expectedSession, continuation: continuationSessionId !== null});
+      sessionId: expectedSession, continuation: continuationSessionId !== null,
+      allowFreshPreSpawnRetry: preSpawnRetry});
     const attemptId = randomUUID();
     try { await this.#seedCredentials(configRoot, {refresh: refreshCredentials}); }
     catch (error) {
@@ -515,31 +542,56 @@ export class NativeClaudeCodeReviewerAdapter {
       ? `Review only the immutable subject and exact change boundary below. The host has mounted that exact candidate commit as your working directory. Inspect only the declared changed paths. Use the host-computed EXACT CHANGE DIFF for comparison to the declared baseline; do not use commit ancestry as the review boundary because checkpoint ancestry may contain unrelated work. Use working-directory files for exact candidate content and Codebase Memory only for structural context. For every candidate-side evidence citation, copy the host-computed whole-file range and SHA-256 from EVIDENCE CATALOG exactly. For a deleted path only, cite its exact BASELINE EVIDENCE CATALOG entry. The host rejects any other citation; do not fabricate, approximate, or replace a digest. Deterministic gates are separately owned supervisor evidence: do not run them, and do not report the deliberate absence of gate-running authority as a limitation. You must still disclose any other material limitation, including inability to verify a behavior that static review and the supplied gate evidence do not establish. Return only the required structured result. Do not mutate files, select reviewers, accept work, or use network tools.\n\nREVIEW BOUNDARY\n${JSON.stringify({...admittedReviewBoundary, changeDiff: undefined})}\n\nEXACT CHANGE DIFF\n${admittedReviewBoundary.changeDiff}\n\nEVIDENCE CATALOG\n${JSON.stringify(admittedReviewBoundary.evidenceCatalog)}\n\nBASELINE EVIDENCE CATALOG\n${JSON.stringify(admittedReviewBoundary.baselineEvidenceCatalog)}\n\nSUBJECT\n${JSON.stringify(subject)}`
       : `This is a same-session correction of your previously returned structured result, not a new review. Do not repeat repository reconnaissance or invoke tools. Preserve the exact current subject. Reconcile your own verdict, findings, decisive evidence, and limitations, then return only one corrected structured result. The host will apply the unchanged canonical validator; the host is not choosing or rewriting your judgment.${requiredPriorResult === null ? "" : ` The authoritative prior result below is part of the episode lineage. Every prior finding must remain present by exact id. For each prior finding, copy these immutable fields exactly, without paraphrase or correction: id, severity, title, evidence, observed, violatedExpectation, consequence, basis, confidence, recommendedRemediation. You may change only status and remediationEvidence on those retained findings. Do not repair an old citation, replace old evidence with current-subject evidence, or rewrite old subject-specific attribution; use remediationEvidence to cite current-subject closure. Findings absent from the authoritative prior result may be added when justified.`} Apply the result closure rules exactly to the implementation-review result payload: this is the top-level result for a generic review and the nested result field for a specialist review. In that payload, acceptable_as_is requires non-empty decisiveEvidence, an empty limitations array, and no unresolved finding; remediation_required requires at least one unresolved finding; incomplete requires at least one explicit limitation. Never combine acceptable_as_is with a limitation or unresolved finding.\n\nCONTRACT REJECTION\n${resultCorrection.message}\n\nPREVIOUS STRUCTURED RESULT\n${JSON.stringify(resultCorrection.rejectedResult)}${requiredPriorResult === null ? "" : `\n\nAUTHORITATIVE PRIOR EPISODE RESULT\n${JSON.stringify(requiredPriorResult)}`}\n\nSUBJECT\n${JSON.stringify(subject)}`;
     const prompt = `${selectedInstructions}\n\nExecution-profile constraints are subordinate to the selected review obligation and its canonical instructions:\n${profile.effectiveInstructions}\n\nKnown execution limitations:\n${profile.limitations.length ? profile.limitations.map((limitation) => `- ${limitation}`).join("\n") : "- None declared."}\n\n${task}`;
+    const promptBytes = Buffer.from(prompt, "utf8");
+    const promptDigest = createHash("sha256").update(promptBytes).digest("hex");
+    const promptPath = path.join(instanceRoot, `${attemptId}.prompt.txt`);
+    await writeFile(promptPath, promptBytes, {mode: 0o600});
     const claudeArgs = ["-p", "--effort", profile.reasoning, "--model", profile.requestedModel,
       ...(continuationSessionId === null ? ["--session-id", expectedSession] : ["--resume", expectedSession]),
       "--strict-mcp-config", "--mcp-config", mcpPath, "--tools", TOOLS,
       "--output-format", "json", "--json-schema", JSON.stringify(outputSchema(specialist)),
-      "--dangerously-skip-permissions", prompt];
+      "--dangerously-skip-permissions"];
     const commandDigest = digest([this.claudeExecutable, ...claudeArgs]);
     const args = [this.transportScript, "--transport", "anthropic", "--continuity", "retained",
-      "--receipt", receiptPath, "--", this.claudeExecutable, ...claudeArgs];
+      "--receipt", receiptPath, "--stdin-file", promptPath, "--stdin-sha256", promptDigest,
+      "--", this.claudeExecutable, ...claudeArgs];
     env.CLAUDE_CONFIG_DIR = configRoot;
-    await writeFile(path.join(instanceRoot, "latest-attempt.json"), `${JSON.stringify({
+    const latestAttemptPath = path.join(instanceRoot, "latest-attempt.json");
+    const attemptRecord = {
       schemaVersion: 1, attemptId, sessionId: expectedSession,
       sessionBindingDigest: digest(sessionBinding), commandDigest,
+      promptDigest, promptSizeBytes: promptBytes.length, promptFile: path.basename(promptPath),
       catalogDigest: digest(catalogProjection), subjectDigest: digest(subject),
       transportReceipt: path.basename(receiptPath),
-    })}\n`, {mode: 0o600});
+      processStart: {status: "pending", providerEntry: "not_entered"},
+    };
+    await writeFile(latestAttemptPath, `${JSON.stringify(attemptRecord)}\n`, {mode: 0o600});
     const subjectWorkspace = path.resolve(await this.subjectWorkspaceFactory({
       workspaceRoot: this.workspaceRoot, stateRoot: this.stateRoot, instanceId, subject,
     }));
     let transport;
     try { transport = await this.executeProcess({command: this.pythonExecutable, args, env, cwd: subjectWorkspace}); }
-    catch (error) { throw new ReviewerRuntimeError("spawn", `native Claude process start failed: ${error.message}`); }
+    catch (error) {
+      const errorCode = typeof error?.code === "string" && error.code.trim() ? error.code : "UNKNOWN";
+      if (!DEFINITE_PRE_SPAWN_CODES.has(errorCode)) {
+        throw new ReviewerRuntimeError("spawn",
+          `native Claude process outcome is uncertain after launch failure: ${error.message}`);
+      }
+      await writeFile(latestAttemptPath, `${JSON.stringify({...attemptRecord,
+        processStart: {status: "failed", providerEntry: "not_entered", errorCode}})}\n`, {mode: 0o600});
+      const recovery = Object.freeze({schemaVersion: 1, failureSignature: "process_start_failed",
+        providerEntry: "not_entered", sessionAvailable: false, sessionId: expectedSession, errorCode});
+      return Object.freeze({attemptId, failure: {kind: "spawn",
+        message: `native Claude process start failed: ${error.message}`,
+        providerEntry: "not_entered", failureSignature: "process_start_failed",
+        sessionAvailable: false, recovery}, result: null, runtimeSessionId: expectedSession,
+        transportReceipt: null});
+    }
     let transportReceipt;
     try { transportReceipt = JSON.parse(await readFile(receiptPath, "utf8")); }
     catch { throw new ReviewerRuntimeError("provenance", "native Claude transport receipt is unavailable"); }
     const observedModels = validateTransportReceipt(transportReceipt, {commandDigest,
+      promptDigest, promptSizeBytes: promptBytes.length,
       requestedModel: profile.requestedModel, sessionId: expectedSession,
       sessionMode: continuationSessionId === null ? "new" : "resume", exitCode: transport.exitCode});
     if (transport.exitCode !== 0) {

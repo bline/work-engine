@@ -66,9 +66,17 @@ async function main() {
   const options = parseArguments(process.argv.slice(2));
   const delegate = StdioJsonRpcTransport.spawn({
     cwd: options.cwd,
-    ...(options.tokenBudget
-      ? { args: ["app-server", "--stdio", "--enable", "token_budget"] }
-      : {}),
+    args: [
+      "app-server", "--stdio",
+      "--disable", "apps",
+      "--disable", "multi_agent",
+      "--disable", "plugins",
+      "--disable", "remote_plugin",
+      "--disable", "skill_mcp_dependency_install",
+      "-c", "agents.enabled=false",
+      "-c", "project_doc_max_bytes=0",
+      ...(options.tokenBudget ? ["--enable", "token_budget"] : []),
+    ],
   });
   const transport = new ObservableAppServerTransport({
     transport: delegate,

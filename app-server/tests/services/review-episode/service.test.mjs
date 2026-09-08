@@ -68,11 +68,16 @@ test("review episode retries are idempotent and conflicting transitions fail", a
   const first = service.begin({ authority: grant, transitionId: "begin" });
   const replay = service.begin({ authority: grant, transitionId: "begin" });
   assert.equal(first.revision, replay.revision);
+  const resumed = service.resumeInitial({authority: grant});
+  assert.equal(first.revision, resumed.revision);
+  assert.throws(() => service.resumeInitial({authority: {...grant, grantId: "different-grant"}}),
+    /authority does not match/);
   const reported = service.transition({ authority: grant, expectedRevision: first.revision,
     transitionId: "result", action: "record_result", payload: { result, unresolvedQuestions: [] } });
   const retried = service.transition({ authority: grant, expectedRevision: first.revision,
     transitionId: "result", action: "record_result", payload: { result, unresolvedQuestions: [] } });
   assert.equal(reported.revision, retried.revision);
+  assert.throws(() => service.resumeInitial({authority: grant}), /not awaiting its initial result/);
   assert.throws(() => service.transition({ authority: grant, expectedRevision: reported.revision,
     transitionId: "result", action: "mark_uncertain", payload: { reason: "x", reconciliationAction: "y" } }), /conflicts/);
 });

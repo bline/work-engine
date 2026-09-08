@@ -4,7 +4,7 @@ skill_id: slice-supervisor
 source:
   path: skills/slice-supervisor/SKILL.md
   repository_revision: 2fcdd6cdddede6a694e84db79aab00e747121cee
-  sha256: 60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542
+  sha256: 6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e
   producer: S8 bounded legacy role migration
 frontmatter:
   name: slice-supervisor
@@ -20,12 +20,12 @@ source_bindings:
   - id: authority.legacy-skill
     kind: canonical_authority
     path: skills/slice-supervisor/SKILL.md
-    sha256: 60df1a8695dc9b089767912136f35e1db088b7a14d0230d92972d07a5e084542
+    sha256: 6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e
     role: canonical legacy supervisor role contract
   - id: authority.environment
     kind: canonical_authority
     path: docs/agent-environments.yaml
-    sha256: c9f96a47af42ee9410c763fdd696804de73de4fe8ab27ecfcaacb9c09beeb289
+    sha256: 38002804a2ef3966e58ecef5af50f9376f302a08964ba9d139e8a562aa30e97b
     role: canonical role environment
   - id: authority.invariants
     kind: canonical_authority
@@ -35,7 +35,7 @@ source_bindings:
   - id: evidence.role-projection
     kind: generated_evidence
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 00892545536651b319eba00c788ae7bd3137c37a14f855efb19a188bc263add1
+    sha256: 1071afffd9b6f0162d3e6ffab3e6bc478c0635408ded599f2e8d7c02744f9c6c
     role: generated AEG comparison oracle
 role_profile:
   role_id: role.supervisor
@@ -45,7 +45,7 @@ role_profile:
   context_lifetime: one campaign; compact lifecycle state across slices
   projection:
     path: docs/agent-environment-views/slice-supervisor.yaml
-    sha256: 00892545536651b319eba00c788ae7bd3137c37a14f855efb19a188bc263add1
+    sha256: 1071afffd9b6f0162d3e6ffab3e6bc478c0635408ded599f2e8d7c02744f9c6c
   relations:
     bound_by:
       - INV-001
@@ -89,6 +89,7 @@ role_profile:
       role.independent_reviewer:
         - INV-012
     may_invoke:
+      - capability.repository_evidence
       - capability.preflight
       - capability.lifecycle_control
       - capability.receipt_finalization
@@ -545,6 +546,21 @@ sections:
       context or session replacement with `skills/slice-supervisor/scripts/resume_active_slice.py`; continue
       only the recovered pending phase.
 
+      When recovered evidence establishes that an admitted attempt cannot continue
+      but its accepted work must be replanned in the same workspace, use the
+      host-owned lifecycle supersession control. Supersession preserves the stopped
+      attempt's candidate, review, finding, and authority evidence in its
+      attempt-local receipt while atomically transferring mutable-workspace admission
+      to a distinct successor at a new accepted boundary. It is not a backward phase
+      transition, named-campaign terminal-history append, review acceptance, finding
+      evaluation, provider retry, or publication authority. An already-reported
+      zero-finding episode may reconcile a stranded empty binding during that atomic
+      transition without synthesizing a finding or reliance; other review obligations
+      retain their exact state. Before continuing the successor, establish the exact
+      predecessor/successor supersession relationship from the atomic response or
+      recovery evidence. If the response is uncertain or lost, recover both attempts
+      and reconcile their relationship before continuing.
+
       When the pending obligation is conclusively discharged, or the attempt reaches
       an authoritative terminal outcome already decided by its owner, record
       lifecycle closure with `skills/slice-supervisor/scripts/manage_active_slice.py retire`. Terminal
@@ -602,8 +618,8 @@ sections:
 
     source_span:
       start_byte: 12579
-      end_byte: 16925
-      sha256: c088b3526c188ea0a11d294e4406279631ca757a1a98f34e7c583bf20abdb7fb
+      end_byte: 17977
+      sha256: aa7061785c236a5acf41b8a68b0bf0c02fe4fee2baa9533fd51b0ff8b4d1d002
   - id: accept-and-record-a-slice
     kind: receipt
     heading:
@@ -816,8 +832,8 @@ sections:
       durable record was written.
 
     source_span:
-      start_byte: 16925
-      end_byte: 24133
+      start_byte: 17977
+      end_byte: 25185
       sha256: 006835251fde49ac5e7e3c9bab5c86720e176606021f540272551f4bcaa384fc
   - id: reconcile-strategy-when-execution-changes-the-map
     kind: operation
@@ -848,8 +864,8 @@ sections:
       on a roadmap known to be unreliable.
 
     source_span:
-      start_byte: 24133
-      end_byte: 25459
+      start_byte: 25185
+      end_byte: 26511
       sha256: c525224610abdec9b19a3d33692359046d05f7bd067257325f9d73c63b78ad49
   - id: decide-whether-to-continue
     kind: operation
@@ -922,8 +938,8 @@ sections:
       objective completion without evidence.
 
     source_span:
-      start_byte: 25459
-      end_byte: 27741
+      start_byte: 26511
+      end_byte: 28793
       sha256: f14fe76463f692d18e00e9883a44d4c965106389c5167c50c98ceba20a894f0c
   - id: notify-and-finish
     kind: operation
@@ -943,6 +959,6 @@ sections:
       improvements, and exact stop or completion reason. Missing metrics remain `null`; incomplete
       history must not imply precision.
     source_span:
-      start_byte: 27741
-      end_byte: 28387
+      start_byte: 28793
+      end_byte: 29439
       sha256: 500d700dc79d6d49c20f3900cf0e6faebfd64521db81b3e86899f4c92fa414cf

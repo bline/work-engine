@@ -36,6 +36,12 @@ async function credentials(root) {
   return source;
 }
 
+async function promptFromRequest(request) {
+  const promptFileIndex = request.args.indexOf("--stdin-file");
+  assert.notEqual(promptFileIndex, -1);
+  return readFile(request.args[promptFileIndex + 1], "utf8");
+}
+
 async function transportResult(request, envelope = null, {exitCode = 0, stderr = "",
   observedModels = null, receiptOverrides = {}} = {}) {
   const receiptIndex = request.args.indexOf("--receipt");
@@ -44,10 +50,15 @@ async function transportResult(request, envelope = null, {exitCode = 0, stderr =
   const modelIndex = command.indexOf("--model");
   const sessionFlag = command.includes("--session-id") ? "--session-id" : "--resume";
   const sessionIndex = command.indexOf(sessionFlag);
+  const stdinShaIndex = request.args.indexOf("--stdin-sha256");
+  const stdinFileIndex = request.args.indexOf("--stdin-file");
+  const stdinBytes = await readFile(request.args[stdinFileIndex + 1]);
   const requestedModel = command[modelIndex + 1];
   const observed = envelope?.model ?? Object.keys(envelope?.modelUsage ?? {})[0] ?? null;
   const base = {schema_version: 1, request: {transport: "anthropic", continuity: "retained",
-    command_sha256: digest(command), session_mode: sessionFlag === "--session-id" ? "new" : "resume",
+    command_sha256: digest(command), stdin_sha256: request.args[stdinShaIndex + 1],
+    stdin_size_bytes: stdinBytes.length,
+    session_mode: sessionFlag === "--session-id" ? "new" : "resume",
     paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false,
     session_id: command[sessionIndex + 1]}, attempts: [{transport: "anthropic", harness: "claude-code",
     gateway: "anthropic", requested_model: requestedModel, requested_upstream_provider: null,
@@ -101,9 +112,12 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
     digest("episode"), "latest-attempt.json"), "utf8"));
   assert.match(latestAttempt.sessionBindingDigest, /^[0-9a-f]{64}$/);
   assert.match(latestAttempt.commandDigest, /^[0-9a-f]{64}$/);
+  assert.match(latestAttempt.promptDigest, /^[0-9a-f]{64}$/);
   assert.equal(latestAttempt.catalogDigest, digest(catalog));
   assert.equal(latestAttempt.subjectDigest, digest(subject));
-  const prompt = calls[0].args.at(-1);
+  const prompt = await promptFromRequest(calls[0]);
+  assert.equal(calls[0].args.includes(prompt), false);
+  assert.equal(latestAttempt.promptSizeBytes, Buffer.byteLength(prompt));
   assert.match(prompt, /Execution-profile constraints are subordinate to the selected review obligation/);
   assert.match(prompt, /Review exact subject\./);
   const continued = await adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
@@ -289,7 +303,7 @@ test("native Claude correction prompt states immutable finding and result closur
     registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
     stateRoot: path.join(root, "state"), credentialSourcePath, catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
-      prompt = request.args.at(-1);
+      prompt = await promptFromRequest(request);
       const resumeIndex = request.args.indexOf("--resume");
       return transportResult(request, {type: "result", subtype: "success",
         session_id: request.args[resumeIndex + 1], structured_output: corrected});
@@ -471,7 +485,7 @@ test("native Claude adapter replaces generic preamble for the agent-instruction 
     workspaceRoot: root, stateRoot: path.join(root, "state"), catalogSource,
     credentialSourcePath,
     transportScript: path.join(root, "transport.py"), baseEnvironment: {}, executeProcess: async (request) => {
-      prompt = request.args.at(-1); const sessionIndex = request.args.indexOf("--session-id");
+      prompt = await promptFromRequest(request); const sessionIndex = request.args.indexOf("--session-id");
       return transportResult(request, {type: "result", subtype: "success",
         session_id: request.args[sessionIndex + 1], structured_output: specialistResult});
     }});
@@ -505,4 +519,51 @@ test("native Claude adapter fails before process entry when isolated credentials
   assert.deepEqual(execution.failure.recovery, {schemaVersion: 1,
     failureSignature: "authentication_unavailable", providerEntry: "not_entered",
     sessionAvailable: false, sessionId: execution.runtimeSessionId});
+});
+
+test("native Claude adapter records and retries an exact pre-spawn process failure", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-pre-spawn-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  let calls = 0;
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), catalogSource, credentialSourcePath: await credentials(root),
+    transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
+      calls += 1;
+      if (calls === 1) throw Object.assign(new Error("argument list too long"), {code: "E2BIG"});
+      const sessionIndex = request.args.indexOf("--session-id");
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5", structured_output: result});
+    },
+  });
+  const request = {instanceId: "pre-spawn", profileId: profile().profileId, subject,
+    catalogProjection: catalog, rawEventPolicy: policy,
+    reviewBoundary: {...reviewBoundary, changeDiff: "x".repeat(150_000)}, roleInstructions: "Review."};
+  const failed = await adapter.execute(request);
+  assert.equal(failed.failure.failureSignature, "process_start_failed");
+  assert.equal(failed.failure.providerEntry, "not_entered");
+  assert.equal(failed.failure.recovery.errorCode, "E2BIG");
+  assert.equal(failed.transportReceipt, null);
+  assert.deepEqual(await adapter.recoverFailure("pre-spawn"), failed.failure.recovery);
+  await writeFile(adapter.credentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
+  const retried = await adapter.execute({...request, preSpawnRetry: true, refreshCredentials: true});
+  assert.equal(retried.failure, null);
+  assert.equal(calls, 2);
+  assert.equal(await readFile(path.join(root, "state", "native-claude", digest("pre-spawn"),
+    "config", ".credentials.json"), "utf8"), '{"fixture":"refreshed-subscription"}\n');
+});
+
+test("native Claude adapter does not relabel an unclassified process exception as pre-provider", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-uncertain-spawn-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), catalogSource, credentialSourcePath: await credentials(root),
+    transportScript: path.join(root, "transport.py"),
+    executeProcess: async () => { throw new Error("unclassified transport exception"); },
+  });
+  await assert.rejects(adapter.execute({instanceId: "uncertain-spawn", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Review."}), /process outcome is uncertain/);
+  assert.equal(await adapter.recoverFailure("uncertain-spawn"), null);
 });

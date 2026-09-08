@@ -16,7 +16,7 @@ periodically preserve continuation-critical state, choose an efficient
 replacement point, issue a fenced retirement directive, and reconcile a fresh
 window before resuming work.
 
-Two deeper concerns should remain explicit post-migration proposal candidates:
+Three deeper concerns should remain explicit post-migration proposal candidates:
 
 1. recovery when the provider reaches its own emergency token-budget boundary
    before the Work Engine lifecycle completes an authorized transition; and
@@ -67,6 +67,103 @@ been offered an impossible escalation control and spent a turn selecting it.
 The same episode also exposed a routing problem: validation that required the
 builder's execution environment should have been returned to the builder or a
 host-owned gate runner rather than attempted through supervisor escalation.
+
+## Live lifecycle audit: 2026-09-08
+
+A later retained-builder episode provided the first useful end-to-end evidence
+from the repaired live lifecycle. The result was mixed: preservation and
+fail-closed reconciliation worked, but the observed cycle was not token
+efficient and did not produce a usable continuation.
+
+Observed facts:
+
+- the builder reached 211,732 live-context tokens in a 258,400-token window
+  before replacement, approximately 81.9 percent of the window;
+- the provider's recorded native auto-compact limit was 244,800 tokens,
+  approximately 94.7 percent, so Work Engine acted about 33,068 tokens earlier;
+- the lifecycle published a durable checkpoint whose attribution, authority
+  preservation, interaction closure, source binding, and sufficiency checks all
+  passed;
+- compaction reduced the next visible context to 9,842 tokens, removing about
+  201,890 tokens from the live context;
+- reconciliation truthfully reported that the checkpoint's Work Engine skills
+  were not exposed in the fresh runtime's available skill catalog;
+- because governing-environment applicability could not be established, input
+  admission remained closed and no lifecycle episode was admitted; and
+- no operator request or unresolved authority was silently discarded. The
+  lifecycle stopped instead of guessing.
+
+The absence of an admitted lifecycle episode must not be interpreted as an
+absence of lifecycle activity. In this case the checkpoint, verification,
+compaction observation, and rejected reconciliation were durable in separate
+stores, while the episode table remained empty because admission never
+completed.
+
+### Observed token economics
+
+The primary retained thread consumed approximately 590,142 gross tokens between
+the completed domain turn and the end of lifecycle reconciliation. Of its
+588,235 additional input tokens, 551,168 were reported as cached input. The
+separate compiler and verifier calls carried approximately 61,512 additional
+gross context tokens. The observed lifecycle cost was therefore about 651,654
+gross tokens, although the available telemetry cannot translate cached and
+ephemeral inputs into an exact quota or monetary cost.
+
+The replacement removed approximately 201,890 tokens from the live context.
+On gross context volume alone, the lifecycle would need roughly four later
+productive inference calls before the avoided replay exceeded the observed
+overhead. No such productive calls occurred in this episode: reconciliation
+kept admission closed after the domain task had already completed. This episode
+therefore improved durability and safety but does not establish any token
+saving. It most likely increased token consumption.
+
+These figures are an incident measurement, not a general benchmark. In
+particular, cumulative thread token usage is not live context size, cached input
+does not have the same cost characteristics as uncached input, and compiler and
+verifier accounting is not yet projected with enough detail for an exact
+break-even calculation.
+
+## Bounded repair direction
+
+The immediate correctness repair should make a fresh context epoch realize and
+attest the same activated Work Engine role environment that the checkpoint
+names. The compiler must not issue a continuation whose required skills or
+governing instructions are absent from the runtime catalog. A mismatch should
+continue to fail closed, but it should produce one durable, queryable failed
+episode that links the checkpoint, compaction, realization evidence, rejected
+reconciliation, and admission state.
+
+After correctness is restored, token-efficiency work should be evaluated as a
+separate optimization:
+
+1. Project per-stage input, cached-input, output, compiler, verifier, and
+   reconciliation usage into one lifecycle accounting receipt.
+2. Record the live-context reduction and the number of productive post-recovery
+   calls so realized savings can be distinguished from predicted savings.
+3. Include expected remaining work in replacement judgment. Avoid an expensive
+   proactive replacement when the domain turn has already reached a terminal or
+   handoff boundary unless preservation risk independently requires it.
+4. Reduce repeated compiler and verifier context, reuse immutable projections
+   where their contracts permit it, and measure rather than assume cache
+   effectiveness.
+5. Surface checkpointing, retirement, compaction, reconciliation, admission,
+   and failure as visible operator events without treating UI rendering as the
+   canonical record.
+
+The repair should be proven with a controlled retained-role exercise that:
+
+- crosses the configured replacement threshold before native compaction;
+- preserves a known operator obligation and active campaign reference;
+- exposes the exact required role skills in the fresh epoch;
+- successfully reopens admission only after reconciliation;
+- performs enough productive post-recovery calls to measure break-even; and
+- demonstrates a catalog-mismatch variant that remains closed with a complete
+  failed-episode receipt.
+
+This bounded repair does not require implementing generalized continuation
+packets or branchable workflow history. Those ideas may later reuse its
+checkpoint, environment-realization, and accounting evidence, but they should
+remain separate proposals.
 
 ## Candidate A: provider-emergency context recovery
 

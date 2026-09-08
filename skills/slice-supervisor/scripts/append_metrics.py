@@ -31,6 +31,21 @@ CURRENT_SCHEMA_VERSION = 5
 SUPPORTED_SCHEMA_VERSIONS = frozenset(range(1, CURRENT_SCHEMA_VERSION + 1))
 REVIEW_SELECTION_MIN_SCHEMA_VERSION = 5
 
+UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS = frozenset({
+    "worker_metrics.provider_role_metrics",
+    "worker_metrics.provider_successful_calls",
+    "worker_metrics.provider_failed_calls",
+    "worker_metrics.provider_timed_out_calls",
+    "worker_metrics.provider_infrastructure_failed_calls",
+    "worker_metrics.provider_failure_reasons",
+    "worker_metrics.evidence_mode_metrics",
+    "worker_metrics.evidence_recon_calls",
+    "worker_metrics.evidence_supplemental_calls",
+    "worker_metrics.review_gate_calls",
+    "worker_metrics.fallback_reason_counts",
+    "worker_metrics.fallbacks",
+})
+
 REQUIRED_TYPES = {
     "schema_version": int,
     "run_id": str,
@@ -486,6 +501,57 @@ def require_exact_keys(value: dict[str, Any], expected: set[str], path: str) -> 
         fail(f"{path} has unknown keys: {', '.join(sorted(unknown))}")
 
 
+def validate_unavailable_metrics(record: dict[str, Any]) -> set[str]:
+    metrics = record["worker_metrics"]
+    value = metrics.get("unavailable_metrics")
+    if value is None:
+        return set()
+    path = "worker_metrics.unavailable_metrics"
+    if record["schema_version"] != CURRENT_SCHEMA_VERSION:
+        fail(f"{path} is only valid for schema version {CURRENT_SCHEMA_VERSION}")
+    if not isinstance(value, dict):
+        fail(f"{path} must be an object")
+    require_exact_keys(
+        value,
+        {"schema_version", "reason_code", "reason", "fields", "evidence"},
+        path,
+    )
+    if value["schema_version"] != 1:
+        fail(f"{path}.schema_version must be 1")
+    if value["reason_code"] != "legacy_execution_not_instrumented":
+        fail(f"{path}.reason_code must be legacy_execution_not_instrumented")
+    if not isinstance(value["reason"], str) or not value["reason"].strip():
+        fail(f"{path}.reason must be a nonempty string")
+    fields = value["fields"]
+    if fields != sorted(UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS):
+        fail(
+            f"{path}.fields must exactly identify the closed legacy provider-accounting bundle"
+        )
+    evidence = value["evidence"]
+    if not isinstance(evidence, list) or not evidence:
+        fail(f"{path}.evidence must be a nonempty array")
+    for index, item in enumerate(evidence):
+        item_path = f"{path}.evidence[{index}]"
+        if not isinstance(item, dict):
+            fail(f"{item_path} must be an object")
+        require_exact_keys(item, {"kind", "reference", "sha256"}, item_path)
+        for field in ("kind", "reference"):
+            if not isinstance(item[field], str) or not item[field].strip():
+                fail(f"{item_path}.{field} must be a nonempty string")
+        digest = item["sha256"]
+        if not isinstance(digest, str) or len(digest) != 64 or any(
+            character not in "0123456789abcdef" for character in digest
+        ):
+            fail(f"{item_path}.sha256 must be lowercase SHA-256")
+    if not any(item["kind"] == "terminal-receipt-assembly-audit" for item in evidence):
+        fail(f"{path}.evidence must include a terminal-receipt-assembly-audit")
+    for field in UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS:
+        metric_name = field.removeprefix("worker_metrics.")
+        if metric_name in metrics:
+            fail(f"{field} cannot be supplied and declared unavailable")
+    return set(fields)
+
+
 def validate_builder_context(version: int, context: Any) -> None:
     if not isinstance(context, dict):
         fail("engine_config.builder.context must be an object")
@@ -605,6 +671,7 @@ def validate_review_selection(value: Any, record: dict[str, Any]) -> None:
 
 def validate_evidence_provenance(record: dict[str, Any]) -> None:
     metrics = record["worker_metrics"]
+    unavailable = validate_unavailable_metrics(record)
     required = {
         "workflow_route": str,
         "route_revisions": list,
@@ -619,6 +686,8 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         "fallbacks": list,
     }
     for key, expected in required.items():
+        if f"worker_metrics.{key}" in unavailable:
+            continue
         if key not in metrics or not isinstance(metrics[key], expected):
             fail(f"worker_metrics.{key} must be {expected.__name__}")
     if (
@@ -719,13 +788,24 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         "evidence_recon_calls", "evidence_supplemental_calls", "review_gate_calls"
     }
     present_call_fields = semantic_call_fields & set(metrics)
-    if config_version == 2 and present_call_fields != semantic_call_fields:
+    semantic_calls_unavailable = all(
+        f"worker_metrics.{field}" in unavailable for field in semantic_call_fields
+    )
+    if (
+        config_version == 2
+        and not semantic_calls_unavailable
+        and present_call_fields != semantic_call_fields
+    ):
         fail("version 2 receipts require semantic evidence and review call counters")
     for field in present_call_fields:
         require_nonnegative_integer(metrics[field], f"worker_metrics.{field}")
 
     role_metrics = metrics.get("provider_role_metrics")
-    if record.get("engine_config", {}).get("version") == 2 and not isinstance(role_metrics, dict):
+    if (
+        record.get("engine_config", {}).get("version") == 2
+        and "worker_metrics.provider_role_metrics" not in unavailable
+        and not isinstance(role_metrics, dict)
+    ):
         fail("version 2 receipts require worker_metrics.provider_role_metrics")
     if role_metrics is not None:
         if not isinstance(role_metrics, dict):
@@ -763,6 +843,8 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
         "provider_timed_out_calls", "provider_infrastructure_failed_calls",
     }
     for field in provider_count_fields:
+        if f"worker_metrics.{field}" in unavailable:
+            continue
         require_nonnegative_integer(metrics[field], f"worker_metrics.{field}")
 
     if role_metrics is not None:
@@ -837,6 +919,9 @@ def validate_evidence_provenance(record: dict[str, Any]) -> None:
     overlap = set(selected) & set(omitted_names)
     if overlap:
         fail("worker_metrics.validation_breadth stages cannot be selected and omitted")
+
+    if unavailable:
+        return
 
     failure_reasons = metrics["provider_failure_reasons"]
     require_exact_keys(

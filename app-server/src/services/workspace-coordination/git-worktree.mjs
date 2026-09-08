@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { lstatSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
-import { freeze, requireOperationId, requireRecord, requireText } from "./contract.mjs";
+import { digest, freeze, normalizeLease, requireOperationId, requireRecord, requireText } from "./contract.mjs";
 
 function defaultGit(repository, args) {
   return execFileSync("git", ["-C", repository, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -19,7 +19,8 @@ function repositoryIdentity(repository) {
 }
 
 export function createGitWorktreeLifecycle({ coordination, runtimeRoot, git = defaultGit } = {}) {
-  if (!coordination || typeof coordination.acquire !== "function" || typeof coordination.release !== "function") {
+  if (!coordination || typeof coordination.acquire !== "function" || typeof coordination.release !== "function"
+      || typeof coordination.inspect !== "function") {
     throw new TypeError("Git worktree lifecycle requires workspace coordination");
   }
   const root = path.resolve(requireText(runtimeRoot, "worktree runtime root"));
@@ -72,6 +73,40 @@ export function createGitWorktreeLifecycle({ coordination, runtimeRoot, git = de
       git(value.repository, ["worktree", "remove", "--force", worktreePath]);
       const released = coordination.release(value.lease);
       return freeze({ status: "removed", path: worktreePath, retainedCommit: head, privateRef: value.privateRef, released });
+    },
+    rebindLease(value, leaseValue) {
+      requireRecord(value, "worktree allocation");
+      const keys = ["baselineCommit", "baselineTree", "lease", "operationId", "path", "privateRef", "repository", "repositoryId", "schemaVersion", "status"];
+      if (JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(keys.sort())
+          || value.status !== "allocated" || value.schemaVersion !== 1) {
+        throw new TypeError("lease rebinding requires an exact allocated worktree receipt");
+      }
+      const repositoryRoot = path.resolve(requireText(value.repository, "worktree allocation repository"));
+      if (path.resolve(git(repositoryRoot, ["rev-parse", "--show-toplevel"])) !== repositoryRoot) {
+        throw new Error("worktree allocation repository must be the Git worktree root");
+      }
+      requireOperationId(value.operationId, "worktree allocation operation");
+      const repositoryId = repositoryIdentity(repositoryRoot);
+      const worktreePath = path.resolve(requireText(value.path, "worktree allocation path"));
+      if (value.repositoryId !== repositoryId
+          || worktreePath !== path.join(root, repositoryId, value.operationId)
+          || value.privateRef !== `refs/work-engine/workspaces/${repositoryId}/${value.operationId}`) {
+        throw new Error("worktree allocation is outside its lifecycle namespace");
+      }
+      oid(value.baselineCommit, "worktree allocation baseline commit");
+      oid(value.baselineTree, "worktree allocation baseline tree");
+      normalizeLease(value.lease);
+      const lease = normalizeLease(leaseValue);
+      if (lease.resource.type !== "directory" || path.resolve(lease.resource.id) !== worktreePath) {
+        throw new Error("replacement lease does not fence the allocated worktree");
+      }
+      const current = coordination.inspect(lease.resource);
+      if (!current?.lease || current.generation !== lease.fencingToken
+          || digest(current.lease) !== digest(lease)) {
+        throw new Error("worktree lease is absent or superseded");
+      }
+      if (Date.parse(lease.expiresAt) <= Date.now()) throw new Error("worktree lease is expired");
+      return freeze({...structuredClone(value), path: worktreePath, lease: structuredClone(lease)});
     },
   });
 }

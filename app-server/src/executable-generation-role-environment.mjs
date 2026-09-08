@@ -62,6 +62,15 @@ const ROLE_THREAD_INPUT_METHODS = new Set([
   "thread/realtime/appendSpeech",
 ]);
 
+const OPERATOR_PROJECTION_REQUEST = "work-engine.operator-projection-request.v1";
+
+function isStableOperatorProjectionRequest(payload) {
+  const context = payload?.workEngineRequestContext;
+  return context?.protocol === OPERATOR_PROJECTION_REQUEST
+    && typeof context.threadId === "string"
+    && context.threadId === payload.params?.threadId;
+}
+
 function syntheticTurnStart(threadId, startedAtMs) {
   const turnId = randomUUID();
   const responseTurn = {
@@ -256,6 +265,7 @@ export async function createExecutableGenerationRoleEnvironment({
   roleToolBridgeResolver = null,
   productDevelopmentEnvironmentIdentity = null,
   extensionRegistryIdentity = null,
+  appServerInitialization = null,
   now = () => Date.now(),
 } = {}) {
   const root = path.resolve(requireText(snapshotRoot, "generation snapshot root"));
@@ -290,6 +300,18 @@ export async function createExecutableGenerationRoleEnvironment({
     transitionGate,
     roleToolBridgeResolver,
   });
+  if (appServerInitialization !== null) {
+    if (!appServerInitialization || typeof appServerInitialization !== "object"
+        || Array.isArray(appServerInitialization)
+        || !Object.hasOwn(appServerInitialization, "response")) {
+      throw new TypeError("executable role environment App Server initialization is invalid");
+    }
+    adapter.adoptInitialization(structuredClone(appServerInitialization.response), {
+      requiredProviderCapabilities: liveContext
+        ? [MODEL_CONTEXT_REPLACEMENT_CAPABILITY]
+        : [],
+    });
+  }
   const semanticHost = config.semanticContext === undefined
     ? null
     : await (async () => {
@@ -353,6 +375,9 @@ export async function createExecutableGenerationRoleEnvironment({
   };
 
   return Object.freeze({
+    deliverRoleTurn(turn) {
+      return runtime.deliverTurn(turn);
+    },
     executeStrategicReconciliation(input) {
       return strategicPlanner.requestReview(strategicPlannerRequest(input));
     },
@@ -390,7 +415,9 @@ export async function createExecutableGenerationRoleEnvironment({
           "role-owned threads accept domain input only through the Work Engine switchboard",
         );
       }
-      if (payload?.method !== "turn/start" || !uiThreadIds.has(payload.params?.threadId)) {
+      const operatorProjectionRequest = uiThreadIds.has(payload.params?.threadId)
+        || isStableOperatorProjectionRequest(payload);
+      if (payload?.method !== "turn/start" || !operatorProjectionRequest) {
         return { disposition: "forward", payload };
       }
       const text = exactTextInput(payload.params);

@@ -75,7 +75,16 @@ Increasingly, durable system state owns distinctions such as:
 - continuation and reconciliation state; and
 - historical execution records.
 
-The model context then becomes a **projection over owned state**, not the sole owner of that state.
+The model context then becomes a **working set over owned state**, not the sole
+owner of that state. Part of the working set is a role-scoped projection. Part
+may be an uncommitted write buffer containing in-flight judgment, candidate
+evidence, and intended actions that have not crossed an admission boundary and
+cannot necessarily be regenerated from the durable store.
+
+That distinction matters most during recovery. A tool effect may already be
+committed to the external world while its meaning remains uncommitted to Work
+Engine state. Treating all context as a derivable view would hide precisely the
+frontier that recovery must reconcile.
 
 Conceptually:
 
@@ -86,18 +95,30 @@ durable Work Engine state
 role-scoped projection
         |
         v
-model context
+context working set
         |
         v
 judgment / execution
         |
         v
-new durable evidence and state
+candidate evidence and state
+        |
+        v
+owned admission / reconciliation
+        |
+        +------------------> durable Work Engine state
 ```
 
 This changes the meaning of an agent session.
 
 The session becomes one realization of a logical role at a particular point in a durable execution history.
+
+Model output acquires authority only through the boundary owned by the state it
+would change. Before admission it may re-enter later reasoning as revisable
+evidence or remain uncommitted, but it does not become authoritative merely by
+appearing in context. Conversely, state already owned by the system should be
+read from its owner rather than reconstructed from a transcript, model report,
+or other replica.
 
 ---
 
@@ -147,9 +168,11 @@ effects and reconciliation frontier
 
 The exact coordinate representation remains an implementation question.
 
-The important property is that a coordinate identifies a sufficiently complete
-**decision environment**, including what is known not to have been captured or
-reconstructed.
+The important property is that a coordinate identifies a **decision
+environment** sufficiently complete for the recovery, forensic, or research
+claim that will rely on it, including what is known not to have been captured
+or reconstructed. Coordinate adequacy is therefore claim-relative and belongs
+in admission, not in an intrinsic fidelity label attached to the coordinate.
 
 Conceptually:
 
@@ -367,6 +390,12 @@ successor may safely continue. Replaying from the coordinate without the
 frontier could duplicate an external effect or leave two realizations acting as
 one logical role.
 
+The same frontier also identifies consumption. Replacement restores a required
+production-path claim only when invalid or uncertain outputs from the discarded
+subject can still be fenced, discarded, repaired, or replaced before they cross
+into the state covered by that claim. Which crossing matters depends on the
+claim's exact subject, covered state, consumption boundary, and consumer.
+
 ---
 
 # 7. The Larger Consequence: Historical Coordinates Become Experimental Fixtures
@@ -412,6 +441,8 @@ experiment requires another revisioned object that owns at least:
 - model, provider, harness, capability, and sampling bindings;
 - repetitions, randomization, and stopping conditions;
 - outcome definitions, acceptance or scoring oracles, and blinding limits;
+- required production-path claims, their covered state and consumption
+  boundaries, admissible evidence sources, and owning consumers;
 - research execution, cost, credential, network, and mutation authority; and
 - declared non-claims and generalization limits.
 
@@ -1148,6 +1179,8 @@ A useful research coordinate should eventually make explicit:
 - capability grant;
 - runtime realization;
 - context projection identity;
+- the identity, covered state, consumption boundary, consumer, and establishment
+  status of any production-path claim relied upon;
 - known omissions;
 - and experimental variation.
 
@@ -1156,6 +1189,18 @@ A branch result should identify the coordinate and realization from which it des
 An experimental result should additionally identify the exact experiment
 specification, treatment or condition, assignment, repetition, scorer or oracle,
 and research authority under which it was produced.
+
+Every admitted realization must also be able to obtain the exact subject it
+claims to execute or review. A subject may be materialized into the realization
+or held behind a shared, integrity-checked reference whose retrievability is
+part of admission. A local-only ref or ambient working-tree path is not a common
+subject across realizations that cannot read it.
+
+Derived comparison artifacts such as diffs are projections, not subject
+identity. Prefer exact endpoint content identities. When a projected delta is
+relied upon, bind its endpoint identities and a canonical projection format, or
+record the generator and every option or configuration input that can change
+its bytes.
 
 Without these properties, apparent comparisons may actually compare different worlds.
 
@@ -1183,6 +1228,20 @@ The purpose of reproducibility is therefore not:
 It is:
 
 > **make the relevant starting conditions attributable enough that differences in continuation become meaningful evidence.**
+
+Projection fidelity is adequate only relative to the claim made from the
+projection. Mechanical reconstruction coverage can expose omissions, but no
+general score establishes semantic sufficiency. Fidelity evidence should
+therefore accumulate as claim-bound falsifications: a judgment that required
+omitted state, a recovery that had to reacquire missing evidence, or another
+attributable failure of the projection at a coordinate.
+
+Successful recovery is weak evidence that a projection sufficed for that role
+and coordinate; a recovery that required omitted information is a specific
+falsification. Both observations carry their sampling condition. Recovery
+exercises failures, restarts, and degraded environments rather than an unbiased
+sample of ordinary coordinates, so its record must not be treated as an
+estimate of general projection sufficiency.
 
 ---
 
@@ -1254,35 +1313,28 @@ This distinction is important for both audit and research validity.
 
 ---
 
-# 27. Possible Coordinate Classes
+# 27. Coordinate Adequacy Is Claim-Relative
 
-A future implementation may discover that not every historical point needs the same reconstruction fidelity.
+A historical point does not possess one intrinsic reconstruction-fidelity
+class. The same coordinate may be adequate for forensic inspection and
+inadequate for role recovery; adequate for one bounded comparison and
+inadequate for another whose claim depends on omitted state.
 
-Candidate classes might include:
+Recovery, comparative, forensic, benchmark, and architecture use may still
+define useful admission profiles. They should remain named consumers with
+explicit claims and coverage requirements rather than becoming a taxonomy that
+asserts what every coordinate of a class contains.
 
-### Recovery coordinate
+Admission evaluates the coordinate's reconstruction-coverage account against
+the particular claim, covered state, consumption boundary, realization, and
+consequence. An inaccessible or unknown input leaves the dependent claim
+unestablished unless its owner has already authorized an acceptance condition
+that does not rely on that input.
 
-Enough state to resume a logical role safely.
-
-### Comparative coordinate
-
-Enough controlled state to compare alternative model or harness realizations.
-
-### Forensic coordinate
-
-Enough state to explain a past execution and its dependencies.
-
-### Benchmark coordinate
-
-A deliberately curated historical point with validated projection fidelity and known evaluation criteria.
-
-### Architecture coordinate
-
-A state suitable for comparing architecture synthesis or planning judgment.
-
-These categories are exploratory.
-
-The system should not create a taxonomy before actual reconstruction requirements are understood.
+The admission decision should expose both declared reconstruction coverage and
+the accumulated claim-relevant falsification record. A mechanically convenient
+coverage number must not displace evidence that prior judgments required state
+the projection omitted.
 
 ---
 
@@ -1295,7 +1347,8 @@ Several important questions remain unresolved.
 3. Which workflow events are sufficiently meaningful to become reconstructable coordinates?
 4. What minimum state is required for safe role recovery?
 5. What additional state is required for controlled experimentation?
-6. How should projection fidelity be measured?
+6. How should claim-relative projection falsifications be attached to projection
+   revisions and made available to later admission decisions?
 7. Which context elements must be materialized versus referenced?
 8. How should unavailable historical capabilities be represented during replay?
 9. How should experiments handle provider features that cannot be reproduced exactly?
@@ -1312,8 +1365,11 @@ Several important questions remain unresolved.
 20. Which aspects of this architecture are genuinely domain-general versus artifacts of software engineering?
 21. What artifact owns experiment specification, preregistration, and amendment?
 22. How are coordinate candidates sampled without post-outcome selection bias?
-23. Which acceptance or scoring oracle is valid for each coordinate class?
+23. Which acceptance or scoring oracle is valid for each admission profile and
+    bounded claim?
 24. What effects and messages belong to the recovery frontier after a coordinate?
+25. Which realization owns admissible observation for each required
+    production-path claim, and how is `unestablished` routed to its consumer?
 
 ---
 
@@ -1357,6 +1413,18 @@ advance.
 
 Agreement with a favored or stronger model is treated as correctness instead of
 plan fidelity, authorized judgment, and independently owned acceptance evidence.
+
+### Claim substitution
+
+An actor responds to an unestablished claim by narrowing its subject, covered
+state, consumption boundary, or consumer until available evidence can support a
+weaker statement that the owning acceptance condition never authorized.
+
+### Self-attested independence
+
+An acting role's own route record is treated as independent observation of its
+capability grant, exposure, custody, or external effects even though the
+purported observer is under the same relevant authority.
 
 ### Research authority leakage
 

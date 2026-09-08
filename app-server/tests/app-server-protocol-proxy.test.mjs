@@ -12,6 +12,7 @@ import { AppServerProtocolProxy } from "../src/index.mjs";
 
 const PROXY_ENTRY = path.resolve("app-server/scripts/app-server-proxy.mjs");
 const CONTROL_ENTRY = path.resolve("app-server/scripts/app-server-control.mjs");
+const SWITCHBOARD_ENTRY = path.resolve("app-server/scripts/operator-switchboard.mjs");
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
@@ -137,6 +138,15 @@ test("proxy couples token-budget activation to the live semantic lifecycle profi
   assert.match(source, /options\.semanticProfilePath \?\?= path\.join\([\s\S]*options\.tokenBudget[\s\S]*semantic-context-live-profile\.yaml[\s\S]*semantic-context-profile\.yaml/);
   assert.match(source, /--semantic-profile/,
     "an explicit profile remains available for bounded shadow and test operation");
+});
+
+test("Codex process entries deny ambient Apps and plugin MCP startup", async () => {
+  for (const entry of [PROXY_ENTRY, SWITCHBOARD_ENTRY]) {
+    const source = await readFile(entry, "utf8");
+    for (const feature of ["apps", "plugins", "remote_plugin", "skill_mcp_dependency_install"]) {
+      assert.match(source, new RegExp(`"--disable", "${feature}"`));
+    }
+  }
 });
 
 async function fixture(t, { operatorControl = null } = {}) {
@@ -343,6 +353,28 @@ test("proxy rejects an unavailable selected Codex executable before opening its 
   assert.match(result.stderr, /selected Codex executable/);
   assert.match(result.stderr, /select codex-cli 0\.149\.1 with --codex PATH/);
   assert.match(result.stderr, /ENOENT/);
+  await assert.rejects(stat(socketPath), { code: "ENOENT" });
+});
+
+test("proxy requires a dedicated private Codex home before opening its socket", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "work-engine-proxy-codex-home."));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const executable = path.join(directory, "fake-codex");
+  const socketPath = path.join(directory, "must-not-open.sock");
+  await writeFile(executable, "#!/bin/sh\nprintf 'codex-cli 0.149.1\\n'\n", "utf8");
+  await chmod(executable, 0o700);
+
+  const result = await run(process.execPath, [
+    "app-server/scripts/app-server-proxy.mjs",
+    "--socket", socketPath,
+    "--codex", executable,
+    "--codex-home", path.join(directory, "missing-home"),
+    "--canonical-branch", "main",
+  ]);
+
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /dedicated --codex-home must select an existing private directory/);
   await assert.rejects(stat(socketPath), { code: "ENOENT" });
 });
 

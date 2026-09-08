@@ -705,6 +705,99 @@ test("publisher refuses checked-out targets, wrong-resource leases, and semantic
   assert.equal(git(fixture.root, "rev-parse", "canonical"), advanced);
 });
 
+test("runtime adopts an exactly validated fenced conflict resolution into the durable publication chain", async (t) => {
+  const fixture = await repositoryFixture(t);
+  const runtime = await openWorkspaceDevelopmentRuntime({
+    repository: fixture.root, runtimeRoot: fixture.runtime, canonicalBranches: ["canonical"],
+  });
+  t.after(() => runtime.close());
+
+  const task = runtime.allocateAgentWorktree({
+    operationId: "adoption-task", agentId: "builder", intentId: "accepted-task",
+    baselineCommit: fixture.base,
+  });
+  await writeFile(path.join(task.path, "base.txt"), "accepted task version\n");
+  git(task.path, "add", "base.txt"); git(task.path, "commit", "--quiet", "-m", "accepted task");
+  const candidateCommit = git(task.path, "rev-parse", "HEAD");
+  const checkpointTree = git(task.path, "rev-parse", "HEAD^{tree}");
+  runtime.cleanupAgentWorktree(task);
+  const checkpoint = makeAcceptedCheckpoint(fixture.root, fixture.base, candidateCommit, checkpointTree);
+
+  const advance = runtime.allocateAgentWorktree({
+    operationId: "adoption-public-advance", agentId: "other", intentId: "public-advance",
+    baselineCommit: fixture.base,
+  });
+  await writeFile(path.join(advance.path, "base.txt"), "public version\n");
+  git(advance.path, "add", "base.txt"); git(advance.path, "commit", "--quiet", "-m", "public advance");
+  const advanced = git(advance.path, "rev-parse", "HEAD");
+  runtime.cleanupAgentWorktree(advance);
+  git(fixture.root, "update-ref", "refs/heads/canonical", advanced, fixture.base);
+
+  const integration = runtime.allocateAgentWorktree({
+    operationId: "adoption-resolved-integration", agentId: "integration-builder",
+    intentId: "resolve-publication-conflict", baselineCommit: advanced,
+  });
+  await writeFile(path.join(integration.path, "base.txt"), "resolved public and accepted task version\n");
+  git(integration.path, "add", "base.txt");
+  const resolvedTree = git(integration.path, "write-tree");
+  const validation = {
+    schemaVersion: 1, status: "passed", tree: resolvedTree, profile: "publication-integration",
+    requirements: ["exact_manifest", "focused_tests"],
+    gateResult: {status: "passed", exactPaths: ["base.txt"], focusedTests: "1/1"},
+  };
+  validation.receiptDigest = workspaceDigest(validation);
+  const request = {
+    operationId: "adopt-resolved-publication", targetBranch: "canonical",
+    expectedParent: advanced, checkpoint,
+    manifest: [{path: "base.txt", action: "include"}],
+    authorization: publicationAuthorization(checkpoint, "canonical", ["base.txt"]),
+    message: {subject: "adopt resolved publication", body: "preserve canonical custody"},
+    allocation: integration, lease: integration.lease, resolvedTree, validation,
+  };
+
+  assert.equal(runtime.releaseResource(integration.lease), true);
+  const renewed = runtime.acquireResource({
+    resource: {type: "directory", id: integration.path}, holder: "integration-builder",
+    intentId: "adopt-resolved-publication", ttlMs: 60_000,
+  });
+  assert.equal(renewed.status, "acquired");
+  await assert.rejects(async () => runtime.adoptResolvedPublication(request), /absent or superseded/);
+  request.lease = renewed.lease;
+  await assert.rejects(async () => runtime.adoptResolvedPublication({
+    ...request, allocation: {...integration, path: fixture.root},
+  }), /outside its lifecycle namespace/);
+  await assert.rejects(async () => runtime.adoptResolvedPublication({
+    ...request, resolvedTree: checkpointTree,
+  }), /does not match the worktree index/);
+  const prepared = runtime.adoptResolvedPublication(request);
+  assert.equal(prepared.record.status, "prepared");
+  assert.equal(prepared.record.tree, resolvedTree);
+  assert.equal(prepared.record.adoption.validation.receiptDigest, validation.receiptDigest);
+  assert.equal(runtime.adoptResolvedPublication(request).revision, prepared.revision);
+  await assert.rejects(async () => runtime.adoptResolvedPublication({
+    ...request, validation: {...validation, gateResult: {status: "passed", focusedTests: "different"}},
+  }), /conflicts with its durable request binding/);
+
+  const {receiptDigest: _originalReceiptDigest, ...validationWithoutDigest} = validation;
+  const otherValidation = {...validationWithoutDigest, profile: "different"};
+  otherValidation.receiptDigest = workspaceDigest(otherValidation);
+  assert.throws(() => runtime.sealPublication({
+    operationId: request.operationId, preparationRevision: prepared.revision,
+    validation: otherValidation,
+  }), /does not match the adopted integration receipt/);
+  const sealed = runtime.sealPublication({
+    operationId: request.operationId, preparationRevision: prepared.revision, validation,
+  });
+  assert.equal(sealed.record.status, "sealed");
+  assert.equal(sealed.record.tree, resolvedTree);
+  const published = runtime.promotePublication({
+    operationId: request.operationId, preparedRevision: sealed.revision,
+  });
+  assert.equal(published.record.status, "published");
+  assert.equal(git(fixture.root, "rev-parse", "canonical"), published.record.publication.commit);
+  assert.equal(git(fixture.root, "show", "canonical:base.txt"), "resolved public and accepted task version");
+});
+
 test("publisher refuses validation mutations and does not move the canonical ref", async (t) => {
   const fixture = await repositoryFixture(t);
   const coordination = createWorkspaceCoordinationService();

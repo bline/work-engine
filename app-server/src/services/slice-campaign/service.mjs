@@ -19,6 +19,16 @@ export class InMemorySliceCampaignStore {
     this.states.set(key, state);
     if (releaseWorkspace !== null && this.workspaceAdmissions.get(releaseWorkspace) === key) this.workspaceAdmissions.delete(releaseWorkspace);
   }
+  supersede({key, expectedRevision, workspace, state, successorKey, successorState}) {
+    if (this.states.get(key)?.revision !== expectedRevision) throw new Error("slice campaign revision conflict");
+    if (this.states.has(successorKey)) throw new Error("slice campaign successor attempt already exists");
+    if (this.workspaceAdmissions.get(workspace) !== key) {
+      throw new Error("slice campaign supersession requires the source workspace admission");
+    }
+    this.states.set(key, state);
+    this.states.set(successorKey, successorState);
+    this.workspaceAdmissions.set(workspace, successorKey);
+  }
 }
 
 export function createSliceCampaignService({
@@ -68,6 +78,15 @@ export function createSliceCampaignService({
       && selected.every((obligation) => ["awaiting_builder", "reported"].includes(obligation?.status));
   };
   const nativeEnvelope = (obligations) => freeze({schemaVersion: 1, obligations: freeze({...obligations})});
+  const initialState = ({identity, workspace, acceptedBoundary, expectedImpact, baseline}) => ({
+    schemaVersion: SLICE_CAMPAIGN_SCHEMA_VERSION, identity, workspace,
+    acceptedBoundary: freeze(structuredClone(acceptedBoundary)),
+    expectedImpact: expectedImpact && freeze(structuredClone(expectedImpact)),
+    baseline: freeze(structuredClone(baseline)), phase: "accepted", latestConsequence: null,
+    candidateRequestDigest: null, candidate: null, physicalProfile: null,
+    review: null, implementationReview: null, reviewSelection: null, nativeReview: null,
+    terminal: null,
+  });
   const replacementNativeEnvelope = (state) => {
     const selected = new Set(state.reviewSelection.specialists
       .filter(({selection}) => selection === "selected").map(({obligationId}) => obligationId));
@@ -105,16 +124,83 @@ export function createSliceCampaignService({
       for (const field of ["acceptedCommit", "acceptedTree", "interSliceCommit"]) requireText(baseline[field], `campaign baseline ${field}`);
       if (expectedImpact !== null) { requireRecord(expectedImpact, "expected impact"); requireSha256(expectedImpact.sha256, "expected impact sha256"); }
       const key = identityKey(normalized);
-      const initial = { schemaVersion: SLICE_CAMPAIGN_SCHEMA_VERSION, identity: normalized, workspace,
-        acceptedBoundary: freeze(structuredClone(acceptedBoundary)), expectedImpact: expectedImpact && freeze(structuredClone(expectedImpact)),
-        baseline: freeze(structuredClone(baseline)), phase: "accepted", latestConsequence: null,
-        candidateRequestDigest: null, candidate: null, physicalProfile: null,
-        review: null, implementationReview: null, reviewSelection: null, nativeReview: null, terminal: null };
+      const initial = initialState({identity: normalized, workspace, acceptedBoundary, expectedImpact, baseline});
       const published = freeze({ ...initial, revision: digest(initial) });
       store.admit(key, workspace, published);
       return published;
     },
     recover(identity) { return current(identity); },
+    supersede({identity, expectedRevision, operationId, successor}) {
+      const state = current(identity);
+      requireText(operationId, "slice campaign supersession operation identity");
+      requireRecord(successor, "slice campaign successor");
+      const successorIdentity = normalizeIdentity(successor.identity);
+      requireRecord(successor.acceptedBoundary, "successor accepted boundary");
+      requireText(successor.acceptedBoundary.reference, "successor accepted boundary reference");
+      requireSha256(successor.acceptedBoundary.sha256, "successor accepted boundary sha256");
+      requireRecord(successor.baseline, "successor campaign baseline");
+      for (const field of ["acceptedCommit", "acceptedTree", "interSliceCommit"]) {
+        requireText(successor.baseline[field], `successor campaign baseline ${field}`);
+      }
+      if (successor.expectedImpact !== undefined && successor.expectedImpact !== null) {
+        requireRecord(successor.expectedImpact, "successor expected impact");
+        requireSha256(successor.expectedImpact.sha256, "successor expected impact sha256");
+      }
+      const sourceKey = identityKey(state.identity);
+      const successorKey = identityKey(successorIdentity);
+      if (sourceKey === successorKey) throw new Error("slice campaign successor identity must be distinct");
+      const requestDigest = digest({operationId, identity: state.identity, expectedRevision,
+        successor: {...successor, identity: successorIdentity}});
+      if (state.phase === "superseded") {
+        if (state.supersession?.requestDigest !== requestDigest) {
+          throw new Error("slice campaign supersession request conflicts with durable superseded state");
+        }
+        return freeze({superseded: state, successor: store.get(successorKey)});
+      }
+      requireRevision(state, expectedRevision);
+      if (state.phase !== "review_ready") {
+        throw new Error("slice campaign supersession requires review-ready source state");
+      }
+      const reconciliations = [];
+      const selectedSkills = new Map(state.reviewSelection?.specialists
+        ?.filter(({selection}) => selection === "selected")
+        .map(({obligationId, skill}) => [obligationId, skill]) ?? []);
+      const obligations = Object.fromEntries(Object.entries(nativeObligations(state)).map(
+        ([obligationId, obligation]) => {
+          const exactZeroFinding = obligation?.status === "awaiting_builder"
+            && ["implementation-review", "claude-recon-implementation"].includes(
+              selectedSkills.get(obligationId))
+            && Array.isArray(obligation.findings) && obligation.findings.length === 0
+            && obligation.episodeRef?.owner === "review-episode"
+            && typeof obligation.episodeRef?.revision === "string"
+            && obligation.episodeRef.revision.length > 0
+            && obligation.remediationExecuting !== true
+            && obligation.failure === undefined;
+          if (!exactZeroFinding) return [obligationId, obligation];
+          reconciliations.push(freeze({schemaVersion: 1, obligationId,
+            reason: "existing_reported_zero_finding_binding", episodeRef: obligation.episodeRef,
+            providerEntry: false, findingCreated: false, relianceCreated: false,
+            reviewAcceptanceImplied: false}));
+          return [obligationId, freeze({...obligation, status: "reported",
+            reconciliation: reconciliations.at(-1)})];
+        },
+      ));
+      const supersession = freeze({schemaVersion: 1, outcome: "superseded", operationId,
+        requestDigest, successorIdentity, reconciliations: freeze(reconciliations),
+        authority: freeze({reviewAcceptanceAuthorized: false, campaignAcceptanceAuthorized: false,
+          publicationAuthorized: false, providerEntryAuthorized: false})});
+      const oldUnpublished = {...state, phase: "superseded", nativeReview: state.nativeReview
+        ? nativeEnvelope(obligations) : null, supersession};
+      const superseded = freeze({...oldUnpublished, revision: digest({...oldUnpublished, revision: undefined})});
+      const successorUnpublished = initialState({identity: successorIdentity, workspace: state.workspace,
+        acceptedBoundary: successor.acceptedBoundary, expectedImpact: successor.expectedImpact ?? null,
+        baseline: successor.baseline});
+      const successorState = freeze({...successorUnpublished,
+        revision: digest({...successorUnpublished, revision: undefined})});
+      store.supersede({key: sourceKey, expectedRevision: state.revision, workspace: state.workspace,
+        state: superseded, successorKey, successorState});
+      return freeze({superseded, successor: successorState});
+    },
     advance({ identity, expectedRevision, phase, consequence }) {
       const state = current(identity); requireRevision(state, expectedRevision);
       const remediationCycle = state.phase === "review_ready" && phase === "gate_ready"
@@ -234,7 +320,8 @@ export function createSliceCampaignService({
     async retryNativeReview({ identity, expectedRevision, request, recovery }) {
       const state = current(identity); requireRevision(state, expectedRevision);
       const currentObligation = nativeObligations(state)[request?.obligationId] ?? null;
-      if (state.phase !== "review_ready" || !["executing", "retryable_failure"].includes(currentObligation?.status)) {
+      if (state.phase !== "review_ready"
+          || !["executing", "retryable_failure", "retry_executing"].includes(currentObligation?.status)) {
         throw new Error("native review retry requires an unresolved admitted obligation");
       }
       if (!nativeReview?.executeInitial) throw new Error("native review closure service is unavailable");
@@ -248,11 +335,21 @@ export function createSliceCampaignService({
         && recovery.sessionAvailable === false
         && recovery.sessionId === request.retrySessionId
         && request.reviewerRequest?.continuationSessionId === undefined;
+      const preSpawnProcess = recovery.failureSignature === "process_start_failed"
+        && recovery.sessionAvailable === false
+        && recovery.sessionId === request.retrySessionId
+        && request.reviewerRequest?.continuationSessionId === undefined
+        && request.reviewerRequest?.preSpawnRetry === true
+        && typeof recovery.errorCode === "string" && Boolean(recovery.errorCode.trim());
       if (recovery.providerEntry !== "not_entered"
-          || (!retainedAuthentication && !preSpawnAuthentication)) {
+          || (!retainedAuthentication && !preSpawnAuthentication && !preSpawnProcess)) {
         throw new Error("native review retry lacks exact definite pre-provider failure evidence");
       }
-      const executionRequest = retainedAuthentication
+      if (currentObligation.status === "retry_executing"
+          && digest(currentObligation.recovery) !== digest(recovery)) {
+        throw new Error("native review retry execution recovery differs from durable pre-provider evidence");
+      }
+      const executionRequest = retainedAuthentication || preSpawnProcess
         ? freeze({...request, reviewerRequest: freeze({...request.reviewerRequest, refreshCredentials: true})})
         : request;
       const requestDigest = digest(executionRequest);
@@ -261,7 +358,7 @@ export function createSliceCampaignService({
       const prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
         [request.obligationId]: preparedObligation})}, state.revision);
       const outcome = await nativeReview.executeInitial({...executionRequest, reviewSkill: disposition.skill,
-        allowProviderEntry: true});
+        allowProviderEntry: true, resumeExistingEpisode: true});
       if (outcome.failure) {
         const failed = failedNativeObligation({obligationId: request.obligationId,
           requestDigest, outcome, prior: preparedObligation});
@@ -449,7 +546,8 @@ export function createSliceCampaignService({
       const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome, receipt, candidate: state.candidate });
       return publish({ ...state, phase: "terminal", terminal: freeze({
         outcome, finalizedReceipt, completionOffer: null,
-        completionOfferRequestDigest: null, requestDigest: terminalRequestDigest,
+        completionOfferRequestDigest: null, completionOfferSupersession: null,
+        requestDigest: terminalRequestDigest,
       }) }, state.revision, { releaseWorkspace: state.workspace });
     },
     async openCompletionOffer({ identity, expectedRevision, request }) {
@@ -474,6 +572,37 @@ export function createSliceCampaignService({
         ...state.terminal,
         completionOffer: freeze(structuredClone(offer)),
         completionOfferRequestDigest: requestDigest,
+      }) }, state.revision);
+    },
+    async supersedeCompletionOffer({ identity, expectedRevision, expectedOfferId,
+      operationId, request, reason, publicationState }) {
+      const state = current(identity); requireRevision(state, expectedRevision);
+      if (state.phase !== "terminal" || state.terminal?.completionOffer === null) {
+        throw new Error("completion offer supersession requires a terminal campaign offer");
+      }
+      if (!completionOffer || typeof completionOffer.supersede !== "function") {
+        throw new Error("completion-offer supersession owner is unavailable");
+      }
+      requireText(expectedOfferId, "expected completion offer identity");
+      requireText(operationId, "completion offer supersession operation identity");
+      requireRecord(request, "completion offer successor request");
+      requireText(reason, "completion offer supersession reason");
+      const requestDigest = digest(request);
+      if (state.terminal.completionOfferRequestDigest === requestDigest) {
+        if (state.terminal.completionOfferSupersession?.operation_id === operationId) return state;
+        throw new Error("completion offer supersession operation conflicts with durable terminal state");
+      }
+      if (state.terminal.completionOffer.offer_id !== expectedOfferId) {
+        throw new Error("completion offer supersession expected offer conflicts with durable terminal state");
+      }
+      const result = await completionOffer.supersede({
+        offer: state.terminal.completionOffer, request, operationId, reason, publicationState,
+      });
+      return publish({ ...state, terminal: freeze({
+        ...state.terminal,
+        completionOffer: freeze(structuredClone(result.offer)),
+        completionOfferRequestDigest: requestDigest,
+        completionOfferSupersession: freeze(structuredClone(result.supersession)),
       }) }, state.revision);
     },
   });
