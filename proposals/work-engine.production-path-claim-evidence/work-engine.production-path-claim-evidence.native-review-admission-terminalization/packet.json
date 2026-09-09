@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.production-path-claim-evidence.native-review-admission-terminalization",
+  "family_id": "work-engine.production-path-claim-evidence",
+  "title": "Establish native-review claim evidence through campaign terminalization",
+  "lifecycle_state": "decided",
+  "narrative": {
+    "path": "proposal.md"
+  },
+  "origin_refs": [
+    {
+      "kind": "intake_projection",
+      "path": "formation-evidence.md"
+    }
+  ],
+  "placement": {
+    "state": "probable",
+    "claim": "Accepted as the bounded pre-S14 PPCE-03/PPCE-04 product proposal for subsequent implementation planning; permanent ownership and S14 placement remain unsettled."
+  },
+  "uncertainty": {
+    "state": "unresolved",
+    "reopening_conditions": [
+      "Implementation planning finds that PPCE-03 and PPCE-04 cannot remain one coherent selection-to-terminalization boundary.",
+      "The acceptance owner chooses or changes the normalized-admission owner, backend boundary, evidence-retention form, or claim-relative evidence profile.",
+      "Accepted S14 contracts supersede this pre-S14 placement or assign different owners.",
+      "A separately accepted bootstrap protocol identifies exact retained Claude artifacts and changes the transitional evidence boundary.",
+      "Migration audit finds another consumption boundary or incompatible historical or in-flight records."
+    ]
+  },
+  "authority": {
+    "decision_owner": "active operator or explicitly delegated native-review acceptance owner",
+    "implementation_authorized": false
+  },
+  "relationships": []
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "checkpoint_kind": "exact_git_source",
+  "repository": "/home/bline/code/work-engine",
+  "source": {
+    "repository_revision": "4821625a4d8ba23a3943833b3e02652264b9075a",
+    "blob_oid": "4ecad07d756eef4b370295d03af7c9616cebe0c8",
+    "path": "app-server/ideas/pending/production-path-claim-evidence-remediation.md",
+    "line_start": 1,
+    "line_end": 34,
+    "content_sha256": "6c1c1ee3f1e6b8e523d859476cae46a9e7c18a210c32c3d16de71fd1e8ac137d"
+  },
+  "evidence_cutoff_revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+  "raw_source_mutated": false
+}

@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "idea_id": "work-engine.idea.production-path-claim-evidence-remediation",
+  "assessment_id": "work-engine.intake.production-path-claim-evidence-remediation-intake-v1",
+  "source": {
+    "repository_revision": "4821625a4d8ba23a3943833b3e02652264b9075a",
+    "blob_oid": "4ecad07d756eef4b370295d03af7c9616cebe0c8",
+    "path": "app-server/ideas/pending/production-path-claim-evidence-remediation.md",
+    "range": {
+      "line_start": 1,
+      "line_end": 34,
+      "content_sha256": "6c1c1ee3f1e6b8e523d859476cae46a9e7c18a210c32c3d16de71fd1e8ac137d"
+    }
+  },
+  "assessment": {
+    "revision": 1,
+    "producer": {
+      "kind": "agent_role",
+      "id": "idea-intake"
+    },
+    "authority": {
+      "owner": "active operator",
+      "scope": "Assess and publish the exact raw-source revision and make bounded candidates available to proposal formation. The operator's “shall we?” authorizes intake and proposal formation only; it does not form or accept a proposal, authorize implementation or cleanup, launch a campaign, change roadmap priority, or settle S14 ownership.",
+      "evidence_refs": [
+        "evidence.operator-intake-authority"
+      ]
+    },
+    "purpose": "Separate independently decidable production-path claim-evidence remediations from a temporary Claude-session bootstrap mechanism while preserving current evidence, uncertainty, and downstream authority boundaries.",
+    "evidence_cutoff": {
+      "repository_revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+      "description": "Exact raw source at 4821625a4d8ba23a3943833b3e02652264b9075a plus the three operator-supplied planning evidence files at main commit 815de0ef96734ba4a3b2af78aeac42f2e352758c."
+    },
+    "published_state": "ready_for_handoff",
+    "reopening_conditions": [
+      "An accepted proposal or stronger contract revises, merges, splits, or declines one of the three candidate boundaries.",
+      "A later transition audit changes PPCE-01, PPCE-02, PPCE-03, or PPCE-04 or identifies an additional acceptance-path blocker relevant to these candidates.",
+      "Exact Claude session artifacts and an authorized bootstrap acceptance protocol become available, or the owning acceptance authority declines their transitional use.",
+      "The S14 acceptance path or migration roadmap changes so that the strategic dependency or ownership interpretation no longer applies."
+    ]
+  },
+  "narrative": {
+    "path": "assessment.md"
+  },
+  "evidence": [
+    {
+      "evidence_id": "evidence.operator-intake-authority",
+      "kind": "human_decision",
+      "owner": "active operator",
+      "reference": "app-server/ideas/pending/production-path-claim-evidence-remediation.md",
+      "revision": "4821625a4d8ba23a3943833b3e02652264b9075a",
+      "attribution": "The exact raw source records approval of the successor design, direction to use intake/proposal workflow, the final “shall we?” authorization for that workflow, and explicit withholding of proposal acceptance and supervisor implementation.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "6c1c1ee3f1e6b8e523d859476cae46a9e7c18a210c32c3d16de71fd1e8ac137d",
+        "freshness_rule": "Exact operator-authored source checkpoint; only a later direct operator decision can expand, narrow, or supersede its authority."
+      }
+    },
+    {
+      "evidence_id": "evidence.transition",
+      "kind": "contract",
+      "owner": "production-path claim evidence transition",
+      "reference": "planning/production-path-claim-evidence-transition.md",
+      "revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+      "attribution": "Active transition contract defining the bounded audit, necessity rule, required dispositions, invariants, completion conditions, and unchanged acceptance-condition authority.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "6d1558cacc1dee7d12266648c6bb5285669c9e509aef6ea2fe4f57c874202eb4",
+        "freshness_rule": "Reassess when the transition completes, expires, is superseded, or its bounded contract inventory changes."
+      }
+    },
+    {
+      "evidence_id": "evidence.audit-round-one",
+      "kind": "repository_observation",
+      "owner": "production-path claim evidence audit round 1",
+      "reference": "planning/production-path-claim-evidence-audit-round-1.md",
+      "revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+      "attribution": "Advisory audit identifying PPCE-01 through PPCE-04 and a sufficient Git-publication control, with explicit limitations and no implementation authority.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "4f669f2f2ff54bba785a43352cbefafc438dae899c0d8b0e10687286fbf8188a",
+        "freshness_rule": "Current only for the exact inspected implementation and evidence cutoff; re-audit after affected result, admission, receipt, or terminalization contracts change."
+      }
+    },
+    {
+      "evidence_id": "evidence.strategic-handoff",
+      "kind": "repository_observation",
+      "owner": "production-path claim evidence strategic handoff",
+      "reference": "planning/production-path-claim-evidence-strategic-handoff.md",
+      "revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+      "attribution": "Strategic advice nominating PPCE-03/04 as one coherent pre-S14 gate, PPCE-01 as a separate correction, and PPCE-02 as a normalization/profile-admission dependency; it does not amend the roadmap or launch work.",
+      "verification": {
+        "mode": "repository_file",
+        "integrity_sha256": "4a062820818f3dd6328492c5fb3d306fe4cca8328bccd0d8b4f0bb059e49bda1",
+        "freshness_rule": "Reassess when the roadmap, transition, audit dispositions, S14 claim trial, or relevant campaign authority changes."
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "relationship.bootstrap-to-permanent-admission",
+      "type": "possibly_refines",
+      "source_claim_id": "claim.claude-session-bootstrap",
+      "target": {
+        "kind": "claim",
+        "id": "claim.native-review-admission-terminalization",
+        "reference": "This intake record"
+      },
+      "status": "nominated",
+      "evidence_refs": [
+        "evidence.operator-intake-authority",
+        "evidence.audit-round-one",
+        "evidence.strategic-handoff"
+      ],
+      "authority_ref": null,
+      "rationale": "Exact Claude session artifacts may supply temporary bootstrap evidence for reviewer recording if an authorized protocol admits them, but they cannot become or replace the permanent normalized claim identity, evidence profile, result-admission, and terminalization contract."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim.native-review-admission-terminalization",
+      "revision": 1,
+      "source_range": {
+        "line_start": 11,
+        "line_end": 12,
+        "content_sha256": "eae918b12b0741b28257e2cdc2d981a1e5387e6d5622947d389c657d1d07cc3b"
+      },
+      "statement": "Plan a coherent repair of native-review selection, result admission, receipts, and Slice Campaign terminalization so each required production-path claim preserves complete identity, admissible establishment evidence, and an owner-routed unestablished outcome.",
+      "statement_kind": "assessor_interpretation",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "PPCE-03 and PPCE-04 cross one selection-to-acceptance boundary, the host already observes much of the needed execution evidence, and the operator authorized bounded proposal formation for fixing the identified issues.",
+        "authority_ref": "evidence.operator-intake-authority"
+      },
+      "uncertainty": [
+        "Formation must decide whether the execution observation is embedded in Review Episode state or retained under one stable integrity-bound evidence reference.",
+        "The owning consumer must decide which claims require independent observation and which require attributable actor recording; independence must not become universal by default.",
+        "S14 ownership, campaign launch, bootstrap protocol, implementation plan, provider use, publication, and transition completion remain separately authorized.",
+        "The exact permanent normalization boundary across reviewer backends remains a formation decision."
+      ],
+      "evidence_refs": [
+        "evidence.operator-intake-authority",
+        "evidence.transition",
+        "evidence.audit-round-one",
+        "evidence.strategic-handoff"
+      ],
+      "relationship_refs": [],
+      "candidate": {
+        "meaning": "Define a durable native-review claim-evidence admission and terminalization contract that carries required claim identity, covered state, consumer, authority source, evidence profile, establishment status, and owner-routed unestablished outcomes from selection through Review Episode and Slice Campaign acceptance.",
+        "boundary": "PPCE-03 and PPCE-04 across specialist selection, host execution observation, normalized result admission, native binding, terminal receipt, and campaign terminalization; preserves stronger claim and acceptance owners; excludes implementation, campaign launch, universal independent-observation requirements, provider replay, S14 ownership, and temporary Claude-session artifacts as the permanent evidence contract.",
+        "placement_hypotheses": [
+          "A focused App Server control-plane proposal spanning review selection, Review Episode admission, and Slice Campaign terminalization.",
+          "A normalized reviewer result-admission contract with backend-specific evidence adapters and a compact campaign-terminal projection.",
+          "One pre-S14 remediation proposal governed by the active production-path claim-evidence transition."
+        ],
+        "evidence_still_needed": [
+          "Inventory the exact current selection, execution-receipt, Review Episode, native-binding, terminal-receipt, and acceptance schemas at proposal-formation cutoff.",
+          "Identify the acceptance owner and admissible evidence profile for each required independence, realization, capability, continuity, and subject-binding claim.",
+          "Specify recovery and correction behavior when evidence is unavailable, malformed, orphaned, or retained under a separate reference.",
+          "Define and separately authorize a bootstrap acceptance protocol if transitional historical Claude session artifacts are used to review this repair."
+        ],
+        "unresolved_decisions": [
+          "Embed the host observation or retain it behind a stable integrity-bound evidence reference.",
+          "Choose the canonical normalized admission owner and backend projection boundaries.",
+          "Determine which claims need independent observation versus actor recording.",
+          "Decide campaign identity, S14 dependency ownership, implementation scope, and bootstrap reviewer protocol under later authority."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.review-bench-configuration-identity",
+      "revision": 1,
+      "source_range": {
+        "line_start": 11,
+        "line_end": 12,
+        "content_sha256": "eae918b12b0741b28257e2cdc2d981a1e5387e6d5622947d389c657d1d07cc3b"
+      },
+      "statement": "Correct Review Bench configuration identity so attempts differing in inference family or fresh-context state cannot be silently pooled or attributed to one displayed configuration.",
+      "statement_kind": "assessor_interpretation",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "PPCE-01 has a distinct consumer and historical-report compatibility consequence from native-review admission, and the operator authorized bounded proposal formation for the identified issues.",
+        "authority_ref": "evidence.operator-intake-authority"
+      },
+      "uncertainty": [
+        "The versioning and compatibility treatment for already-produced descriptive reports remains unchosen.",
+        "No authority here permits generation or reliance on a new comparison report, implementation, or a separate correction campaign."
+      ],
+      "evidence_refs": [
+        "evidence.operator-intake-authority",
+        "evidence.transition",
+        "evidence.audit-round-one",
+        "evidence.strategic-handoff"
+      ],
+      "relationship_refs": [],
+      "candidate": {
+        "meaning": "Version or correct Review Bench configuration keys to include every configuration-defining field, add collision coverage for inference family and fresh-context state, and preserve truthful interpretation of historical reports.",
+        "boundary": "PPCE-01 configuration aggregation and report attribution; excludes path-fact provenance, provider admission, paid comparisons, native-review terminalization, silent reinterpretation of historical reports, and implementation authority.",
+        "placement_hypotheses": [
+          "A bounded Review Bench comparison-contract correction.",
+          "A versioned configuration-identity migration with explicit historical-report compatibility.",
+          "A separate proposal from the native-review control-plane repair because its consumer and compatibility risks differ."
+        ],
+        "evidence_still_needed": [
+          "Read the exact current Review Bench result schema, key function, comparison service, and compatibility consumers at formation cutoff.",
+          "Inventory existing report revisions whose interpretation depends on the incomplete key.",
+          "Specify collision tests and migration behavior for mixed historical and corrected result versions."
+        ],
+        "unresolved_decisions": [
+          "Whether to version the key, result schema, report schema, or all affected identities.",
+          "How existing reports remain attributable without being silently reinterpreted.",
+          "Whether and when a separately authorized correction campaign should be launched."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.review-bench-path-provenance",
+      "revision": 1,
+      "source_range": {
+        "line_start": 11,
+        "line_end": 12,
+        "content_sha256": "eae918b12b0741b28257e2cdc2d981a1e5387e6d5622947d389c657d1d07cc3b"
+      },
+      "statement": "Define evidence-bearing Review Bench result admission for configuration path facts, preserving unavailable values and distinguishing harness recording from provider- or host-owned observation.",
+      "statement_kind": "assessor_interpretation",
+      "disposition": {
+        "state": "ready_for_proposal_formation",
+        "status": "adjudicated",
+        "rationale": "PPCE-02 is independently decidable from key correction and native campaign terminalization because it owns the evidence profile for admitted research path facts; formation may still defer or merge it with already-planned normalization work.",
+        "authority_ref": "evidence.operator-intake-authority"
+      },
+      "uncertainty": [
+        "Which fields are required production-path claims depends on the later research consumer; telemetry is not automatically a required claim.",
+        "Cross-provider normalization, reviewer-profile admission, paid comparisons, and provider authorization remain outside this intake authority.",
+        "Formation may decide this meaning is best merged into an existing normalization/profile-admission proposal rather than formed separately."
+      ],
+      "evidence_refs": [
+        "evidence.operator-intake-authority",
+        "evidence.transition",
+        "evidence.audit-round-one",
+        "evidence.strategic-handoff"
+      ],
+      "relationship_refs": [],
+      "candidate": {
+        "meaning": "Define a normalized evidence profile for Review Bench attempt path facts so admission binds attributable harness recording, independently owned observation where required by the consumer, explicit establishment status, and truthful unavailable values.",
+        "boundary": "PPCE-02 result admission for provider, model, harness, inference family, context freshness, tool access, reasoning effort, protocol, pass count, aggregation, session identity, and later-consumed measurements; excludes treating model output as provenance, universalizing independent observation, paid execution, routing adjudication, and implementation authority.",
+        "placement_hypotheses": [
+          "A reviewer-profile admission and cross-provider normalization proposal.",
+          "A Review Bench result-contract revision consumed by later comparison and adjudication.",
+          "A deferred candidate formed alongside existing S13 research residuals rather than as an S14 blocker."
+        ],
+        "evidence_still_needed": [
+          "Map every admitted path fact to its actor recording, host/provider observation, establishment status, and actual consuming claim.",
+          "Identify which current telemetry sources are attributable measurements and which required facts remain unavailable.",
+          "Reconcile this candidate with any already-formed cross-provider normalization or reviewer-profile admission owner at formation cutoff."
+        ],
+        "unresolved_decisions": [
+          "Which facts require independent observation rather than harness recording.",
+          "Whether to form separately, merge with normalization/profile admission, or defer until a concrete research consumer exists.",
+          "Which owner retains provider-specific evidence while Review Bench owns the normalized admission view."
+        ],
+        "next_consumer": "proposal-former"
+      }
+    },
+    {
+      "claim_id": "claim.claude-session-bootstrap",
+      "revision": 1,
+      "source_range": {
+        "line_start": 14,
+        "line_end": 15,
+        "content_sha256": "902f1bb03c30832a6e513bcf5cd4b743261b4d1a28b126d4d626414cae0d0cb1"
+      },
+      "statement": "Claude session logs may be considered as temporary bootstrap evidence for missing reviewer recording, explicitly not as the permanent solution.",
+      "statement_kind": "source_assertion",
+      "disposition": {
+        "state": "unresolved",
+        "status": "adjudicated",
+        "rationale": "The source authorizes proposal formation around this transitional possibility but supplies no exact session artifacts, integrity bindings, admissibility decision, bootstrap acceptance protocol, provider authority, or implementation authority.",
+        "authority_ref": "evidence.operator-intake-authority"
+      },
+      "uncertainty": [
+        "The exact Claude sessions, bytes, ownership, integrity, retention, sensitivity, and covered review claims are not identified.",
+        "Historical session artifacts may contain actor assertions or transport evidence without independently establishing every required claim.",
+        "Use for bootstrap review requires separate acceptance-owner and provider authority and must expire once the permanent normalized admission/terminalization contract is available."
+      ],
+      "evidence_refs": [
+        "evidence.operator-intake-authority",
+        "evidence.audit-round-one",
+        "evidence.strategic-handoff"
+      ],
+      "relationship_refs": [
+        "relationship.bootstrap-to-permanent-admission"
+      ],
+      "candidate": null
+    }
+  ],
+  "proposal_refs": [],
+  "non_authorization": {
+    "cleanup_authorized": false,
+    "implementation_authorized": false,
+    "proposal_accepted": false,
+    "permanent_placement_settled": false,
+    "roadmap_priority_changed": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.production-path-claim-evidence.native-review-admission-terminalization",
+  "source": {
+    "repository_revision": "815de0ef96734ba4a3b2af78aeac42f2e352758c",
+    "lifecycle_state": "placement_uncertain",
+    "placement_state": "uncertain"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "Accepted as the bounded pre-S14 PPCE-03/PPCE-04 product proposal for subsequent implementation planning; permanent ownership and S14 placement remain unsettled.",
+    "rationale": "The human operator explicitly accepted the exact proposal identity and bounded purpose while withholding implementation, campaign launch, provider use, bootstrap protocol, roadmap priority, and S14 ownership authority.",
+    "reopening_conditions": [
+      "Implementation planning finds that PPCE-03 and PPCE-04 cannot remain one coherent selection-to-terminalization boundary.",
+      "The acceptance owner chooses or changes the normalized-admission owner, backend boundary, evidence-retention form, or claim-relative evidence profile.",
+      "Accepted S14 contracts supersede this pre-S14 placement or assign different owners.",
+      "A separately accepted bootstrap protocol identifies exact retained Claude artifacts and changes the transitional evidence boundary.",
+      "Migration audit finds another consumption boundary or incompatible historical or in-flight records."
+    ]
+  },
+  "authority": {
+    "decision_owner": "active operator or explicitly delegated native-review acceptance owner",
+    "exercised_by": "active human operator",
+    "evidence": "Direct operator statement on 2026-09-08 accepting the exact proposal as bounded pre-S14 PPCE-03/PPCE-04 work for subsequent implementation planning and explicitly withholding implementation, campaign, provider, bootstrap, roadmap-priority, and S14-ownership authority."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}
