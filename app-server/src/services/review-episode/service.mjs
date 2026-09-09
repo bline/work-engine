@@ -93,10 +93,16 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
       if (action === "record_result") {
         const admittedResult = validateResult({ authority, expectedRevision, result: payload.result });
         if (!Array.isArray(payload.unresolvedQuestions)) throw new Error("review episode unresolvedQuestions must be an array");
+        const evidenceAdmissions = payload.evidenceAdmissions ?? [];
+        if (!Array.isArray(evidenceAdmissions)) throw new Error("review episode evidence admissions must be an array");
+        const evidenceBlocked = evidenceAdmissions.some(({status}) => status !== "established");
         const pending = admittedResult.verdict !== "acceptable_as_is" || payload.unresolvedQuestions.length > 0;
-        updated = { ...semantic(current), currentResult: admittedResult,
-          unresolvedQuestions: payload.unresolvedQuestions, phase: pending ? "remediation" : "reported",
-          pendingAction: pending ? "await_remediation" : "return_review_result_to_builder", continuity: "same_session" };
+        updated = { ...semantic(current), schemaVersion: evidenceAdmissions.length ? 2 : current.schemaVersion,
+          currentResult: admittedResult, ...(evidenceAdmissions.length ? {evidenceAdmissions: structuredClone(evidenceAdmissions)} : {}),
+          unresolvedQuestions: payload.unresolvedQuestions,
+          phase: evidenceBlocked ? "evidence_unestablished" : pending ? "remediation" : "reported",
+          pendingAction: evidenceBlocked ? "route_unestablished_claim_to_owner"
+            : pending ? "await_remediation" : "return_review_result_to_builder", continuity: "same_session" };
       } else if (action === "record_remediation_subject") {
         if (current.status !== "active" || !["remediation", "reported"].includes(current.phase)) throw new Error("review episode remediation subject transition is invalid");
         validateReference(payload.subject, "review episode remediation subject");

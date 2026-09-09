@@ -7,6 +7,7 @@ import test from "node:test";
 
 import {
   createImplementationReviewService, createNativeReviewClosureService,
+  createProductionPathEvidenceService, makeProductionPathClaimRevision,
   createReviewEpisodeService, createReviewFindingBridge,
   createSliceCampaignService, openSqliteClaimEvidenceStore,
   openSqliteReviewEpisodeStore, openSqliteSliceCampaignStore,
@@ -819,4 +820,112 @@ test("native closure refuses replay after an outcome-ambiguous provider exceptio
   state = service.recover(failureIdentity);
   await assert.rejects(service.runNativeReview({identity: failureIdentity, expectedRevision: state.revision, request}), /provider replay is refused/);
   assert.equal(entries, 1);
+});
+
+test("version-2 native selection establishes exact builder and terminal claims or fails closed", async (t) => {
+  const acceptable = await load("remediated-finding");
+  const run = async ({attemptId, observerIdentity}) => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), `ppce-native-${attemptId}.`));
+    t.after(() => rm(directory, {recursive: true, force: true}));
+    const owners = await stores(t, directory, {bootstrap: true});
+    const episodeId = `episode-${attemptId}`;
+    const campaignIdentity = {...identity, attemptId};
+    const campaignKey = `${campaignIdentity.runId}:${campaignIdentity.sliceNumber}:${campaignIdentity.attemptId}:${campaignIdentity.planVersion}`;
+    const claimFor = (boundary, consumer = boundary === "builder_projection"
+      ? `slice-builder:${campaignKey}` : `slice-campaign:${campaignKey}`) =>
+      makeProductionPathClaimRevision({
+        proposition: "The selected native result was independently observed under the required production path.",
+        subject: {candidate: acceptable.subject, reviewEpisodeId: episodeId},
+        coveredState: "admitted_native_review_result", consumptionBoundary: boundary,
+        consumer,
+        acceptance: {owner: "operator", source: "accepted-selection-v2", unestablishedRoute: "operator"},
+        profile: {id: "production-path-v1", revision: "production-path-profile-v1",
+          allowedMechanisms: ["native-review-host-receipt-v1"],
+          admissibleObservers: ["app-server.reviewer-host"], integrityRequired: true,
+          requiredRealization: "claude-sonnet", requiredCapabilities: ["repository_read"],
+          continuity: "fresh_initial"},
+      });
+    const claims = ["builder_projection", "campaign_terminalization"].map((boundary) => claimFor(boundary));
+    const reviewer = {async review() { return {attemptId: `provider-${attemptId}`,
+      result: structuredClone(acceptable), runtimeSessionId: `session-${attemptId}`,
+      receipt: {requestedModel: "claude-sonnet", observedModel: "claude-sonnet",
+        capabilities: ["repository_read"], mutationAuthorized: false, continuity: "fresh_initial",
+        sessionId: `session-${attemptId}`, transportReceiptDigest: "f".repeat(64),
+        evidenceMechanism: "native-review-host-receipt-v1", observerIdentity,
+        observedAt: "2026-09-09T05:00:00.000Z", profileConfigurationDigest: "adapter-v1",
+        artifacts: [{owner: "reviewer-runtime", reference: `artifact:${attemptId}:transport`,
+          digest: "f".repeat(64), status: "verified"}]}}; }};
+    const reviewEpisode = createReviewEpisodeService({store: owners.episodeStore,
+      implementationReview: owners.implementationReview});
+    const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer,
+      findingBridge: createReviewFindingBridge({store: owners.claimStore}),
+      productionPathEvidence: createProductionPathEvidenceService({store: owners.claimStore})});
+    let finalized = null;
+    const service = createSliceCampaignService({store: owners.campaignStore, nativeReview,
+      reviewSubject: {async createCandidate(request) { return request; },
+        async createPhysicalProfile({subject: value}) { return {subject: value}; }},
+      receiptFinalizer: {async finalize(value) { finalized = value; return value; }}});
+    let state = service.admit({identity: campaignIdentity, workspace: directory,
+      acceptedBoundary: {reference: "ppce-plan", sha256: "1".repeat(64)},
+      baseline: {acceptedCommit: "baseline", acceptedTree: "baseline-tree", interSliceCommit: "inter"}});
+    for (const phase of ["implementing", "gate_ready"]) state = service.advance({identity: campaignIdentity,
+      expectedRevision: state.revision, phase, consequence: {}});
+    state = await service.bindCandidate({identity: campaignIdentity, expectedRevision: state.revision,
+      request: candidate(acceptable)});
+    state = service.advance({identity: campaignIdentity, expectedRevision: state.revision,
+      phase: "review_ready", consequence: {}});
+    const selected = {schemaVersion: 2, owner: "slice-supervisor", selectionId: `selection:${attemptId}`,
+      subject: acceptable.subject, specialists: [{obligationId: "generic", skill: "implementation-review",
+        selection: "selected", requiredClaims: claims}]};
+    const incompleteSelection = structuredClone(selected);
+    incompleteSelection.specialists[0].requiredClaims.pop();
+    assert.throws(() => service.bindReviewSelection({identity: campaignIdentity,
+      expectedRevision: state.revision, selection: incompleteSelection}), /requires builder and terminal claims/);
+    const selfAuthorizedSelection = structuredClone(selected);
+    selfAuthorizedSelection.specialists[0].requiredClaims[0].acceptance.owner = "reviewer";
+    assert.throws(() => service.bindReviewSelection({identity: campaignIdentity,
+      expectedRevision: state.revision, selection: selfAuthorizedSelection}), /self-authorized/);
+    const builderConsumerMismatch = structuredClone(selected);
+    builderConsumerMismatch.specialists[0].requiredClaims[0] = claimFor(
+      "builder_projection", "slice-builder:another-run:1:another-attempt:another-plan");
+    assert.throws(() => service.bindReviewSelection({identity: campaignIdentity,
+      expectedRevision: state.revision, selection: builderConsumerMismatch}),
+    /builder_projection consumer does not match campaign identity/);
+    const terminalConsumerMismatch = structuredClone(selected);
+    terminalConsumerMismatch.specialists[0].requiredClaims[1] = claimFor(
+      "campaign_terminalization", "slice-campaign:another-run:1:another-attempt:another-plan");
+    assert.throws(() => service.bindReviewSelection({identity: campaignIdentity,
+      expectedRevision: state.revision, selection: terminalConsumerMismatch}),
+    /campaign_terminalization consumer does not match campaign identity/);
+    state = service.bindReviewSelection({identity: campaignIdentity, expectedRevision: state.revision,
+      selection: selected});
+    const selectionRevision = reviewEpisodeDigest(selected);
+    const outcome = await service.runNativeReview({identity: campaignIdentity, expectedRevision: state.revision,
+      request: {obligationId: "generic",
+        authority: episodeAuthority(acceptable, {campaignIdentity, episodeId}),
+        beginTransitionId: `${attemptId}:begin`, resultTransitionId: `${attemptId}:result`,
+        reviewerRequest: {subject: acceptable.subject}, findingAuthority: owners.authority,
+        operationPrefix: `ppce:${attemptId}`, requiredClaims: claims,
+        selection: {id: selected.selectionId, revision: selectionRevision},
+        contextRequest: {requestId: `ppce:${attemptId}:context`, consumer: {
+          identity: `slice-builder:${campaignKey}`, revision: acceptable.subject.tree,
+          decision_scope: "s12-native-review"},
+          limitations: ["Claim evidence records do not grant review acceptance authority."]}}});
+    return {service, state: outcome.campaign, outcome, campaignIdentity, finalized};
+  };
+
+  const valid = await run({attemptId: "ppce-established", observerIdentity: "app-server.reviewer-host"});
+  assert.equal(valid.state.nativeReview.obligations.generic.status, "reported");
+  assert.equal(valid.outcome.builderContext.requiredClaimEvidence.length, 1);
+  const terminal = await valid.service.terminalize({identity: valid.campaignIdentity,
+    expectedRevision: valid.state.revision, outcome: "accepted", receipt: {status: "accepted"}});
+  assert.equal(terminal.phase, "terminal");
+  assert.equal(terminal.terminal.finalizedReceipt.receipt.productionPathClaimEvidence.length, 2);
+
+  const mismatched = await run({attemptId: "ppce-unestablished", observerIdentity: "reviewer"});
+  assert.equal(mismatched.state.nativeReview.obligations.generic.status, "evidence_unestablished");
+  assert.equal(mismatched.outcome.builderContext, null);
+  await assert.rejects(mismatched.service.terminalize({identity: mismatched.campaignIdentity,
+    expectedRevision: mismatched.state.revision, outcome: "accepted", receipt: {status: "accepted"}}),
+  /established production-path claim evidence/);
 });

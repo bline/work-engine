@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { validateProductionPathClaimRevision } from "../claim-evidence/production-path-contract.mjs";
 
 export const SLICE_CAMPAIGN_SCHEMA_VERSION = 2;
 export const SLICE_PHASES = Object.freeze(["accepted", "implementing", "gate_ready", "review_ready", "terminal"]);
@@ -51,13 +52,13 @@ export function identityKey(identity) {
   return `${identity.runId}:${identity.sliceNumber}:${identity.attemptId}:${identity.planVersion}`;
 }
 
-export function validateReviewSelection(value, expectedSubject) {
+export function validateReviewSelection(value, expectedSubject, campaignIdentity = null) {
   requireRecord(value, "review selection");
   const fields = ["schemaVersion", "owner", "selectionId", "subject", "specialists"];
   if (Object.keys(value).some((field) => !fields.includes(field)) || fields.some((field) => !(field in value))) {
     throw new TypeError("review selection fields are invalid");
   }
-  if (value.schemaVersion !== 1 || value.owner !== "slice-supervisor") throw new TypeError("review selection owner is invalid");
+  if (![1, 2].includes(value.schemaVersion) || value.owner !== "slice-supervisor") throw new TypeError("review selection owner is invalid");
   requireText(value.selectionId, "review selection selectionId");
   requireRecord(value.subject, "review selection subject");
   if (digest(value.subject) !== digest(expectedSubject)) throw new TypeError("review selection subject does not match the immutable candidate");
@@ -65,14 +66,45 @@ export function validateReviewSelection(value, expectedSubject) {
   const ids = [];
   for (const [index, specialist] of value.specialists.entries()) {
     requireRecord(specialist, `review selection specialists[${index}]`);
-    const specialistFields = ["obligationId", "skill", "selection"];
+    const specialistFields = value.schemaVersion === 1
+      ? ["obligationId", "skill", "selection"]
+      : ["obligationId", "skill", "selection", "requiredClaims"];
     if (Object.keys(specialist).some((field) => !specialistFields.includes(field))
         || specialistFields.some((field) => !(field in specialist))) throw new TypeError("review specialist disposition fields are invalid");
     requireText(specialist.obligationId, "review specialist obligationId");
     requireText(specialist.skill, "review specialist skill");
     if (!["selected", "omitted"].includes(specialist.selection)) throw new TypeError("review specialist disposition is invalid");
+    if (value.schemaVersion === 2) {
+      if (!Array.isArray(specialist.requiredClaims)) throw new TypeError("review specialist requiredClaims must be an array");
+      if (specialist.selection === "selected") {
+        if (specialist.requiredClaims.length !== 2) throw new TypeError("selected review specialist requires builder and terminal claims");
+        specialist.requiredClaims.forEach((claim) => validateProductionPathClaimRevision(claim, expectedSubject));
+        const boundaries = new Set(specialist.requiredClaims.map(({consumptionBoundary}) => consumptionBoundary));
+        if (boundaries.size !== 2 || !boundaries.has("builder_projection") || !boundaries.has("campaign_terminalization")) {
+          throw new TypeError("selected review specialist required claim boundaries are incomplete");
+        }
+      } else if (specialist.requiredClaims.length !== 0) {
+        throw new TypeError("omitted review specialist cannot declare required claims");
+      }
+    }
     ids.push(specialist.obligationId);
   }
   if (new Set(ids).size !== ids.length) throw new TypeError("review specialist obligation IDs must be unique");
+  if (value.schemaVersion === 2) {
+    const key = identityKey(normalizeIdentity(campaignIdentity));
+    const expectedConsumers = new Map([
+      ["builder_projection", `slice-builder:${key}`],
+      ["campaign_terminalization", `slice-campaign:${key}`],
+    ]);
+    for (const specialist of value.specialists.filter(({selection}) => selection === "selected")) {
+      for (const claim of specialist.requiredClaims) {
+        if (claim.consumer !== expectedConsumers.get(claim.consumptionBoundary)) {
+          throw new TypeError(`review selection ${claim.consumptionBoundary} consumer does not match campaign identity`);
+        }
+      }
+    }
+    const claimIds = value.specialists.flatMap(({requiredClaims}) => requiredClaims.map(({claimId}) => claimId));
+    if (new Set(claimIds).size !== claimIds.length) throw new TypeError("review selection required claim IDs must be unique");
+  }
   return value;
 }

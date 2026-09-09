@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { validateImplementationReviewResult } from "../implementation-review/contract.mjs";
 
-export const REVIEW_EPISODE_SCHEMA_VERSION = 1;
+export const REVIEW_EPISODE_SCHEMA_VERSION = 2;
 const SHA256 = /^[0-9a-f]{64}$/;
 
 export class ReviewEpisodeError extends Error {}
@@ -83,11 +83,13 @@ export function validateAuthority(value) {
 }
 
 export function validateState(value) {
-  exact(value, [
+  const fields = [
     "schemaVersion", "identity", "authority", "writer", "status", "phase", "subject", "currentResult",
     "unresolvedQuestions", "pendingAction", "handledTransitions", "continuity", "uncertainty", "retirement",
-  ], "review episode state");
-  if (value.schemaVersion !== REVIEW_EPISODE_SCHEMA_VERSION) throw new ReviewEpisodeError("review episode state schema version is invalid");
+  ];
+  if (value.schemaVersion === 2) fields.push("evidenceAdmissions");
+  exact(value, fields, "review episode state");
+  if (![1, REVIEW_EPISODE_SCHEMA_VERSION].includes(value.schemaVersion)) throw new ReviewEpisodeError("review episode state schema version is invalid");
   validateIdentity(value.identity);
   exact(value.authority, ["grantId", "source", "manifestRevision", "readers"], "review episode authority binding");
   text(value.authority.grantId, "review episode authority binding.grantId");
@@ -96,9 +98,21 @@ export function validateState(value) {
   if (!Array.isArray(value.authority.readers) || value.authority.readers.some((item) => typeof item !== "string" || item.trim() === "")) throw new ReviewEpisodeError("review episode authority binding.readers are invalid");
   validateWriter(value.writer);
   if (!["active", "uncertain", "retired"].includes(value.status)) throw new ReviewEpisodeError("review episode status is invalid");
-  if (!["initial_review", "remediation", "re_evaluation", "reported"].includes(value.phase)) throw new ReviewEpisodeError("review episode phase is invalid");
+  if (!["initial_review", "remediation", "re_evaluation", "reported", "evidence_unestablished"].includes(value.phase)) throw new ReviewEpisodeError("review episode phase is invalid");
   validateReference(value.subject, "review episode subject");
   if (value.currentResult !== null) validateImplementationReviewResult(value.currentResult);
+  if (value.schemaVersion === 2) {
+    if (!Array.isArray(value.evidenceAdmissions)) throw new ReviewEpisodeError("review episode evidence admissions must be an array");
+    for (const admission of value.evidenceAdmissions) {
+      exact(admission, ["claimRevisionRef", "establishmentRef", "observationRef", "consumptionRef", "status", "boundary", "consumer"], "review episode evidence admission");
+      validateReference(admission.claimRevisionRef, "review episode claim revision");
+      validateReference(admission.establishmentRef, "review episode establishment");
+      if (admission.observationRef !== null) validateReference(admission.observationRef, "review episode observation");
+      validateReference(admission.consumptionRef, "review episode evidence consumption");
+      if (!["established", "false", "unestablished"].includes(admission.status)) throw new ReviewEpisodeError("review episode evidence status is invalid");
+      text(admission.boundary, "review episode evidence boundary"); text(admission.consumer, "review episode evidence consumer");
+    }
+  }
   if (!Array.isArray(value.unresolvedQuestions) || value.unresolvedQuestions.some((item) => typeof item !== "string" || item.trim() === "")) throw new ReviewEpisodeError("review episode unresolvedQuestions are invalid");
   text(value.pendingAction, "review episode pendingAction");
   record(value.handledTransitions, "review episode handledTransitions");

@@ -1,6 +1,7 @@
 import { ClaimEvidenceError, COMPLETENESS_STATES } from "./contract.mjs";
 import { digest, validateTransportSafeJson } from "./identity.mjs";
 import { exactFields, nonempty, stringList, validateReference } from "./validation.mjs";
+import { validateProductionPathObservation } from "./production-path-contract.mjs";
 
 export const OBSERVATION_SCHEMA_VERSION = 1;
 export const OBSERVATION_VERIFICATION_STATES = new Set(["verified", "unavailable"]);
@@ -37,6 +38,9 @@ function validateSubject(subject) {
 
 export function validateObservation(observation) {
   validateTransportSafeJson(observation, "observation");
+  if (observation?.schema_version === 2 && observation?.kind === "production_path") {
+    return validateProductionPathObservation(observation);
+  }
   exactFields(observation, [
     "schema_version", "id", "event_identity", "producer", "origin", "subject",
     "evidence_baseline", "artifact", "observed_at", "provider_sequence",

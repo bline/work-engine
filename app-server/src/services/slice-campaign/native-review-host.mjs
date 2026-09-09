@@ -11,6 +11,7 @@ import { createAgentInstructionReviewService } from "../agent-instruction-review
 import { AgentInstructionReviewError, digest as instructionDigest } from "../agent-instruction-review/contract.mjs";
 import { createReviewFindingBridge } from "../claim-evidence/review-finding-bridge.mjs";
 import { openSqliteClaimEvidenceStore } from "../claim-evidence/sqlite-store.mjs";
+import { createProductionPathEvidenceService } from "../claim-evidence/production-path-service.mjs";
 import { createImplementationReviewService } from "../implementation-review/service.mjs";
 import { ImplementationReviewError } from "../implementation-review/contract.mjs";
 import { createReviewEpisodeService, ReviewEpisodeResultError } from "../review-episode/service.mjs";
@@ -257,8 +258,9 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   const authority = findingAuthority();
   const claimStore = await openClaims(path.join(stateRoot, "review-findings.sqlite3"), authority);
   const reviewEpisode = createReviewEpisodeService({store: episodeStore, implementationReview});
+  const productionPathEvidence = createProductionPathEvidenceService({store: claimStore});
   const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer,
-    findingBridge: createReviewFindingBridge({store: claimStore})});
+    findingBridge: createReviewFindingBridge({store: claimStore}), productionPathEvidence});
   return Object.freeze({implementationReview, agentInstructionReview, nativeReview, adapter, authority, catalogSource,
     reviewBoundaryFactory,
     close() { episodeStore.close(); claimStore.close(); }});
@@ -313,6 +315,8 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         closure: instructionClosure({workspaceRoot, campaign, subject, obligationId}),
       } : {})};
     const base = {obligationId, authority, reviewerRequest, findingAuthority: owners.authority,
+      requiredClaims: disposition.requiredClaims ?? [],
+      selection: {id: campaign.reviewSelection.selectionId, revision: selectionRevision},
       operationPrefix: `native-review:${episodeDigest({identity: campaign.identity, obligationId, operationId})}`,
       contextRequest: {requestId: `native-review:${operationId}:context`, consumer: {
         identity: `slice-builder:${identityKey(campaign.identity)}`, revision: subject.tree,

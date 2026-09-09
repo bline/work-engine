@@ -52,6 +52,9 @@ export function validateProfilePayload(profile, payload) {
   } else if (profile === "revision-bound-review-finding-v1") {
     exactFields(payload, ["finding_id", "severity", "episode", "outcome"], "review finding payload");
     for (const key of ["finding_id", "severity", "episode", "outcome"]) nonempty(payload[key], `review finding ${key}`);
+  } else if (profile === "production-path-v1") {
+    exactFields(payload, ["claim_kind", "consumption_boundary", "consumer"], "production path payload");
+    for (const key of ["claim_kind", "consumption_boundary", "consumer"]) nonempty(payload[key], `production path ${key}`);
   } else {
     throw new ClaimEvidenceError("unknown profile");
   }

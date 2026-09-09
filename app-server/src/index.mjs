@@ -83,6 +83,8 @@ export * from "./services/review-episode/service.mjs";
 export * from "./services/review-episode/sqlite-store.mjs";
 export { readClaimEvidence } from "./services/claim-evidence/read-service.mjs";
 export { openSqliteClaimEvidenceStore } from "./services/claim-evidence/sqlite-store.mjs";
+export * from "./services/claim-evidence/production-path-contract.mjs";
+export * from "./services/claim-evidence/production-path-service.mjs";
 export * from "./services/claim-evidence/review-finding-bridge.mjs";
 export * from "./services/claim-evidence/reviewer-projection.mjs";
 export * from "./services/product-development/claim-context-delivery.mjs";

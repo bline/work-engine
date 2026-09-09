@@ -276,7 +276,7 @@ export function createSliceCampaignService({
         tree: state.candidate.checkpoint_tree_oid ?? state.candidate.tree,
         patchIdentity: state.candidate.task_patch_digest ?? state.candidate.manifestSha256,
       };
-      validateReviewSelection(selection, subject);
+      validateReviewSelection(selection, subject, state.identity);
       if (state.reviewSelection) {
         if (digest(state.reviewSelection) === digest(selection)) return state;
         throw new Error("native review selection conflicts with the bound disposition");
@@ -534,16 +534,38 @@ export function createSliceCampaignService({
       }
       const selected = state.reviewSelection?.specialists.filter(({selection}) => selection === "selected") ?? [];
       const obligations = nativeObligations(state);
+      const productionPathSelected = state.reviewSelection?.schemaVersion === 2;
+      const terminalCandidateSubject = {commit: state.candidate?.checkpoint_commit_oid ?? state.candidate?.commit,
+        tree: state.candidate?.checkpoint_tree_oid ?? state.candidate?.tree,
+        patchIdentity: state.candidate?.task_patch_digest ?? state.candidate?.manifestSha256};
+      const requiredEvidence = productionPathSelected ? selected.flatMap(({obligationId, requiredClaims}) => {
+        const admissions = obligations[obligationId]?.claimEvidence ?? [];
+        return requiredClaims.map((claim) => admissions.find(({claimRevisionRef}) =>
+          claimRevisionRef.revision === claim.revision) ?? null);
+      }) : [];
+      const productionPathComplete = !productionPathSelected || (requiredEvidence.length === selected.length * 2
+        && selected.every(({requiredClaims}) => requiredClaims.every((claim) =>
+          digest(claim.subject.candidate) === digest(terminalCandidateSubject)))
+        && requiredEvidence.every((item) => item !== null && item.status === "established"
+          && item.claimRevisionRef && item.establishmentRef && item.consumptionRef)
+        && requiredEvidence.filter(({boundary}) => boundary === "campaign_terminalization").length === selected.length
+        && requiredEvidence.filter(({boundary}) => boundary === "builder_projection").length === selected.length);
       const nativeComplete = state.reviewSelection !== null && selected.length > 0
         && selected.every(({obligationId}) => obligations[obligationId]?.status === "reported"
           && obligations[obligationId].remediationExecuting !== true)
         && Object.keys(obligations).every((obligationId) => selected.some((item) => item.obligationId === obligationId));
       const compatibilityComplete = state.review !== null && state.reviewSelection === null && state.nativeReview === null;
+      if (state.phase === "review_ready" && !productionPathComplete) {
+        throw new Error("terminalization requires established production-path claim evidence");
+      }
       if (state.phase !== "review_ready" || (!compatibilityComplete && !nativeComplete)) {
         throw new Error("terminalization requires completed native closure or compatibility review");
       }
       requireText(outcome, "terminal outcome"); requireRecord(receipt, "terminal receipt");
-      const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome, receipt, candidate: state.candidate });
+      const terminalReceipt = productionPathSelected ? freeze({...structuredClone(receipt),
+        productionPathClaimEvidence: freeze(structuredClone(requiredEvidence))}) : receipt;
+      const finalizedReceipt = await receiptFinalizer.finalize({ identity: state.identity, outcome,
+        receipt: terminalReceipt, candidate: state.candidate });
       return publish({ ...state, phase: "terminal", terminal: freeze({
         outcome, finalizedReceipt, completionOffer: null,
         completionOfferRequestDigest: null, completionOfferSupersession: null,

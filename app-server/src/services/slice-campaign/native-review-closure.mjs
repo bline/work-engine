@@ -2,6 +2,10 @@ import { digest as episodeDigest } from "../review-episode/contract.mjs";
 import { ReviewEpisodeResultError } from "../review-episode/service.mjs";
 import { ImplementationReviewError } from "../implementation-review/contract.mjs";
 import { AgentInstructionReviewError } from "../agent-instruction-review/contract.mjs";
+import { digest as claimDigest } from "../claim-evidence/identity.mjs";
+import {
+  normalizeProductionPathObservation, productionPathReference,
+} from "../claim-evidence/production-path-contract.mjs";
 
 function reference(owner, reference, revision, value) {
   return Object.freeze({owner, reference, revision, sha256: episodeDigest(value), freshness: "exact immutable revision"});
@@ -10,6 +14,7 @@ function episodeRef(state) {
   return reference("review-episode", `review-episode@${episodeDigest(state.identity)}`, state.revision, state);
 }
 function status(episode, findings) {
+  if (episode.phase === "evidence_unestablished") return "evidence_unestablished";
   return episode.phase === "reported" || findings.length === 0 ? "reported" : "awaiting_builder";
 }
 function relianceComplete(findings) {
@@ -27,6 +32,7 @@ function binding({obligationId, episode, findings, prior = null}) {
   return Object.freeze({
     schemaVersion: 1, obligationId, status: status(episode, findings),
     episodeRef: episodeRef(episode), runtimeSessionRef: episode.writer.runtimeSession, findings,
+    claimEvidence: Object.freeze(structuredClone(episode.evidenceAdmissions ?? [])),
     initialEpisodeRef: prior?.initialEpisodeRef ?? episodeRef(episode),
     authority: Object.freeze({reviewerSelectionAuthorized: false, findingEvaluationAuthorized: false,
       reviewAcceptanceAuthorized: false, campaignAcceptanceAuthorized: false, mutationAuthorized: false}),
@@ -71,11 +77,11 @@ function resultContractFailure(error, result, execution) {
     sessionAvailable: true, recovery});
 }
 
-function recordResult({reviewEpisode, authority, episode, transitionId, result, execution}) {
+function recordResult({reviewEpisode, authority, episode, transitionId, result, execution, evidenceAdmissions = []}) {
   try {
     return Object.freeze({episode: reviewEpisode.transition({authority,
       expectedRevision: episode.revision, transitionId, action: "record_result",
-      payload: {result, unresolvedQuestions: []}}), failure: null});
+      payload: {result, unresolvedQuestions: [], ...(evidenceAdmissions.length ? {evidenceAdmissions} : {})}}), failure: null});
   } catch (error) {
     return Object.freeze({episode, failure: resultContractFailure(error, result, execution)});
   }
@@ -89,11 +95,51 @@ function reviewerContextRequest({contextRequest, authority, reviewerRequest}) {
   })});
 }
 
-export function createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge} = {}) {
+export function createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge,
+  productionPathEvidence = null} = {}) {
   if (!reviewEpisode?.begin || !reviewEpisode?.transition || !reviewEpisode?.recover
       || !reviewEpisode?.read) throw new TypeError("native review closure requires Review Episode");
   if (!reviewer?.review) throw new TypeError("native review closure requires canonical reviewer runtime");
   if (!findingBridge?.publishFindings || !findingBridge?.recordReliance || !findingBridge?.project) throw new TypeError("native review closure requires review finding bridge");
+  const admitProductionPath = ({requiredClaims = [], execution, result, authority, operationPrefix,
+    selection}) => {
+    if (!requiredClaims.length) return [];
+    if (!productionPathEvidence?.admit) throw new Error("production-path evidence service is unavailable");
+    const receipt = execution.receipt ?? null;
+    let observation = null;
+    if (receipt?.transportReceiptDigest) {
+      observation = normalizeProductionPathObservation({
+        event_identity: `production-path-event-v1@${claimDigest({selection, obligationId: authority.identity.reviewObligationId, attemptId: execution.attemptId})}`,
+        selection, obligationId: authority.identity.reviewObligationId,
+        subject: {candidate: result.subject, reviewEpisodeId: authority.identity.reviewEpisodeId},
+        coveredState: "admitted_native_review_result",
+        execution: {attemptId: execution.attemptId, resultDigest: claimDigest(result)},
+        realization: {requested: receipt.requestedModel, observed: receipt.observedModel},
+        capabilityEnvelope: {capabilities: receipt.capabilities ?? [], mutationAuthorized: receipt.mutationAuthorized},
+        continuity: {mode: receipt.continuity, sessionId: receipt.sessionId},
+        transport: {mechanism: receipt.evidenceMechanism, digest: receipt.transportReceiptDigest},
+        observer: {identity: receipt.observerIdentity, kind: "app_server_host"},
+        observedAt: receipt.observedAt, adapterVersion: receipt.profileConfigurationDigest,
+        artifacts: receipt.artifacts ?? [],
+      });
+    }
+    return requiredClaims.map((claim) => {
+      const establishment = productionPathEvidence.admit({
+        operationId: `${operationPrefix}:establish:${claim.revision}`, claim, observation,
+      });
+      const claimRef = productionPathReference("claim-evidence", claim.claimId, claim.revision, claim);
+      const establishmentRef = productionPathReference("claim-evidence", establishment.id, establishment.id, establishment);
+      const observationRef = observation === null ? null
+        : productionPathReference("claim-evidence", observation.id, observation.id, observation);
+      const consumption = {schemaVersion: 1, claimRevision: claim.revision,
+        establishment: establishment.id, boundary: claim.consumptionBoundary, consumer: claim.consumer};
+      const consumptionRef = productionPathReference("slice-campaign", `claim-consumption:${claim.claimId}`,
+        claimDigest(consumption), consumption);
+      return Object.freeze({claimRevisionRef: claimRef, establishmentRef, observationRef,
+        consumptionRef, status: establishment.status, boundary: claim.consumptionBoundary,
+        consumer: claim.consumer});
+    });
+  };
   return Object.freeze({
     recoverInitialSubject({binding: current, identity}) {
       const reference = current?.initialEpisodeRef;
@@ -129,7 +175,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     },
     async executeInitial({obligationId, reviewSkill, authority, beginTransitionId, resultTransitionId,
       reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true,
-      resumeExistingEpisode = false}) {
+      resumeExistingEpisode = false, requiredClaims = [], selection = null}) {
       if (typeof resumeExistingEpisode !== "boolean") {
         throw new TypeError("native review initial episode resume flag must be boolean");
       }
@@ -150,16 +196,27 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
             failure: execution.failure ?? Object.freeze({kind: "output", message: "native reviewer produced no result",
               providerEntry: "unknown", failureSignature: null, sessionAvailable: false}), execution});
         }
+        const evidenceAdmissions = admitProductionPath({requiredClaims, execution, result, authority,
+          operationPrefix, selection});
         const recorded = recordResult({reviewEpisode, authority, episode,
-          transitionId: resultTransitionId, result, execution});
+          transitionId: resultTransitionId, result, execution, evidenceAdmissions});
         if (recorded.failure) return Object.freeze({binding: null, builderContext: null,
           failure: recorded.failure, execution});
         episode = recorded.episode;
       }
       if (!episode.currentResult) throw new Error("native reviewer result transition has no durable result");
+      if (episode.phase === "evidence_unestablished") {
+        return Object.freeze({binding: binding({obligationId, episode, findings: []}),
+          builderContext: null, failure: null});
+      }
       const findings = findingBridge.publishFindings({authority: findingAuthority, operationPrefix, episode, result: episode.currentResult});
       const nativeBinding = binding({obligationId, episode, findings});
-      const builderContext = findings.length ? findingBridge.project({...contextRequest, findings}) : null;
+      const builderClaims = (episode.evidenceAdmissions ?? [])
+        .filter(({boundary}) => boundary === "builder_projection");
+      const builderContext = findings.length ? Object.freeze({...findingBridge.project({...contextRequest, findings}),
+        requiredClaimEvidence: Object.freeze(structuredClone(builderClaims))})
+        : builderClaims.length ? Object.freeze({schemaVersion: 1, findings: [],
+          requiredClaimEvidence: Object.freeze(structuredClone(builderClaims))}) : null;
       return Object.freeze({binding: nativeBinding, builderContext, failure: null});
     },
     async executeCorrection({binding: current, obligationId, reviewSkill, authority,

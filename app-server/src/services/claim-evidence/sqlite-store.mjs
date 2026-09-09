@@ -5,10 +5,11 @@ import { canonicalJson, digest } from "./identity.mjs";
 import { validateObservation } from "./observation.mjs";
 import { buildProjection } from "./projections.mjs";
 import { validateSemanticShadowEpisode } from "./semantic-shadow-contract.mjs";
+import { validateProductionPathEstablishment } from "./production-path-contract.mjs";
 import { applyOperation, blankStore } from "./service.mjs";
 import { validateStore } from "./validation.mjs";
 
-export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 3;
+export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 4;
 
 function nonemptyText(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -81,6 +82,17 @@ const MIGRATION_3 = `
   ) STRICT;
 `;
 
+const MIGRATION_4 = `
+  CREATE TABLE production_path_establishments (
+    operation_id TEXT PRIMARY KEY,
+    establishment_id TEXT NOT NULL UNIQUE,
+    establishment_sha256 TEXT NOT NULL CHECK(length(establishment_sha256) = 64),
+    claim_revision TEXT NOT NULL,
+    observation_id TEXT NOT NULL,
+    establishment_json TEXT NOT NULL
+  ) STRICT;
+`;
+
 function observationFromRow(row) {
   if (!row) return null;
   let observation;
@@ -114,6 +126,20 @@ function shadowEpisodeFromRow(row) {
   return episode;
 }
 
+function productionPathEstablishmentFromRow(row) {
+  if (!row) return null;
+  let value;
+  try { value = JSON.parse(row.establishment_json); }
+  catch (error) { throw new TypeError(`stored production-path establishment contains invalid JSON: ${error.message}`); }
+  if (canonicalJson(value) !== row.establishment_json || digest(value) !== row.establishment_sha256
+      || value.id !== row.establishment_id || value.operationId !== row.operation_id
+      || value.claimRevision !== row.claim_revision || value.observationId !== row.observation_id) {
+    throw new TypeError("stored production-path establishment failed its canonical integrity check");
+  }
+  validateProductionPathEstablishment(value);
+  return value;
+}
+
 function migrate(database, filePath) {
   database.exec("BEGIN EXCLUSIVE");
   try {
@@ -140,6 +166,12 @@ function migrate(database, filePath) {
       database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (3, ?)")
         .run(new Date().toISOString());
       database.exec("PRAGMA user_version = 3");
+    }
+    if (current < 4) {
+      database.exec(MIGRATION_4);
+      database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (4, ?)")
+        .run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 4");
     }
     const versions = database.prepare("SELECT version FROM schema_migrations ORDER BY version")
       .all().map((row) => Number(row.version));
@@ -276,6 +308,53 @@ class SqliteClaimEvidenceStore {
     return row ? structuredClone(observationFromRow(row)) : null;
   }
 
+  recordProductionPathEstablishment(establishment) {
+    validateProductionPathEstablishment(establishment);
+    return this.#transaction(() => {
+      if (establishment.observationId !== "observation:unavailable") {
+        const observation = this.readObservation(establishment.observationId);
+        if (!observation || digest(observation) !== establishment.observationDigest) {
+          throw new TypeError("production-path establishment contains an unadmitted observation binding");
+        }
+      }
+      const json = canonicalJson(establishment);
+      const prior = this.database.prepare(`SELECT operation_id, establishment_id,
+        establishment_sha256, claim_revision, observation_id, establishment_json
+        FROM production_path_establishments WHERE operation_id = ?`).get(establishment.operationId);
+      if (prior) {
+        const stored = productionPathEstablishmentFromRow(prior);
+        if (prior.establishment_json !== json) throw new TypeError("production-path establishment operation identity conflict");
+        return {idempotent: true, establishment: structuredClone(stored)};
+      }
+      this.database.prepare(`INSERT INTO production_path_establishments(
+        operation_id, establishment_id, establishment_sha256, claim_revision, observation_id,
+        establishment_json) VALUES(?,?,?,?,?,?)`).run(establishment.operationId, establishment.id,
+        digest(establishment), establishment.claimRevision, establishment.observationId, json);
+      return {idempotent: false, establishment: structuredClone(establishment)};
+    });
+  }
+
+  readProductionPathEstablishment(establishmentId) {
+    this.#assertOpen(); nonemptyText(establishmentId, "production-path establishment identity");
+    const row = this.database.prepare(`SELECT operation_id, establishment_id,
+      establishment_sha256, claim_revision, observation_id, establishment_json
+      FROM production_path_establishments WHERE establishment_id = ?`).get(establishmentId);
+    return row ? structuredClone(productionPathEstablishmentFromRow(row)) : null;
+  }
+
+  listProductionPathEstablishments({limit = 100, afterOperationId = null} = {}) {
+    this.#assertOpen(); positiveInteger(limit, "production-path establishment list limit");
+    if (limit > 1_000) throw new TypeError("production-path establishment list limit exceeds 1000");
+    if (afterOperationId !== null) nonemptyText(afterOperationId, "production-path establishment cursor");
+    const select = `SELECT operation_id, establishment_id, establishment_sha256,
+      claim_revision, observation_id, establishment_json FROM production_path_establishments`;
+    const rows = afterOperationId === null
+      ? this.database.prepare(`${select} ORDER BY operation_id LIMIT ?`).all(limit)
+      : this.database.prepare(`${select} WHERE operation_id > ? ORDER BY operation_id LIMIT ?`)
+        .all(afterOperationId, limit);
+    return rows.map(productionPathEstablishmentFromRow).map(structuredClone);
+  }
+
   listObservations({ limit = 100, afterEventIdentity = null } = {}) {
     this.#assertOpen();
     positiveInteger(limit, "evidence observation list limit");
@@ -373,6 +452,13 @@ class SqliteClaimEvidenceStore {
       const page = this.listObservations({ limit: 1_000, afterEventIdentity });
       if (page.length === 0) break;
       afterEventIdentity = page.at(-1).event_identity;
+      if (page.length < 1_000) break;
+    }
+    let afterOperationId = null;
+    while (true) {
+      const page = this.listProductionPathEstablishments({limit: 1_000, afterOperationId});
+      if (page.length === 0) break;
+      afterOperationId = page.at(-1).operationId;
       if (page.length < 1_000) break;
     }
     let afterEpisodeIdentity = null;

@@ -4,6 +4,7 @@ export const BUILD_VERSION = "claim-evidence-javascript-v1";
 export const PROFILES = new Set([
   "proposal-research-v1",
   "revision-bound-review-finding-v1",
+  "production-path-v1",
 ]);
 export const LINEAGE_RELATIONSHIPS = new Set([
   "refresh", "correction", "supersession", "composition", "derivation",
@@ -20,4 +21,3 @@ export const RELIANCE_STATES = new Set(["active", "retired", "superseded"]);
 export const COMPLETENESS_STATES = new Set(["available", "partial", "unavailable"]);
 
 export class ClaimEvidenceError extends TypeError {}
-

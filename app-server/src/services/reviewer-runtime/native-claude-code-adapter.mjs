@@ -623,7 +623,14 @@ export class NativeClaudeCodeReviewerAdapter {
         observedModel,
         claudeVersion: transportReceipt?.claude_version ?? "unknown", sessionId: expectedSession,
         continuity: continuationSessionId === null ? "fresh_initial" : "same_session_resume",
-        mutationAuthorized: false, transportReceiptDigest: transportReceipt ? digest(transportReceipt) : null}),
+        mutationAuthorized: false, capabilities: Object.freeze(["repository_read", "codebase_memory_read"]),
+        observerIdentity: "app-server.reviewer-host", observedAt: new Date(this.now()).toISOString(),
+        evidenceMechanism: "native-review-host-receipt-v1",
+        artifacts: Object.freeze([{owner: "reviewer-runtime",
+          reference: `native-review-artifact:${attemptId}:transport`,
+          digest: transportReceipt ? digest(transportReceipt) : null,
+          status: transportReceipt ? "verified" : "unavailable"}]),
+        transportReceiptDigest: transportReceipt ? digest(transportReceipt) : null}),
       transportReceipt});
   }
 

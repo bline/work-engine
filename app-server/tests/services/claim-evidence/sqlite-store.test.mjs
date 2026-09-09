@@ -264,7 +264,7 @@ test("SQLite claim store refuses future or incomplete migration history", async 
   store.close();
   const { DatabaseSync } = await import("node:sqlite");
   let database = new DatabaseSync(futurePath);
-  database.exec("PRAGMA user_version = 4");
+  database.exec("PRAGMA user_version = 5");
   database.close();
   await assert.rejects(
     openSqliteClaimEvidenceStore({ filePath: futurePath }),
@@ -294,6 +294,7 @@ test("SQLite migrates canonical schema v1 to separate observation custody", asyn
   const database = new DatabaseSync(filePath);
   database.exec("DROP TABLE evidence_observations");
   database.exec("DROP TABLE semantic_shadow_episodes");
+  database.exec("DROP TABLE production_path_establishments");
   database.exec("DELETE FROM schema_migrations WHERE version >= 2");
   database.exec("PRAGMA user_version = 1");
   database.close();
@@ -369,11 +370,25 @@ test("SQLite semantic shadow custody serializes writers and rejects conflicting 
 test("SQLite migrates schema v2 to separate semantic shadow custody", async (t) => {
   const filePath = await temporaryDatabase(t); let store = await openSqliteClaimEvidenceStore({ filePath, bootstrapAuthorities: [authority] }); const before = store.exportStore(); store.close();
   const { DatabaseSync } = await import("node:sqlite"); const database = new DatabaseSync(filePath);
-  database.exec("DROP TABLE semantic_shadow_episodes"); database.exec("DELETE FROM schema_migrations WHERE version = 3"); database.exec("PRAGMA user_version = 2"); database.close();
+  database.exec("DROP TABLE semantic_shadow_episodes"); database.exec("DROP TABLE production_path_establishments"); database.exec("DELETE FROM schema_migrations WHERE version >= 3"); database.exec("PRAGMA user_version = 2"); database.close();
   store = await openSqliteClaimEvidenceStore({ filePath }); t.after(() => store.close());
   assert.deepEqual(store.exportStore(), before); assert.deepEqual(store.listShadowEpisodes(), []);
   const observation = exactObservation(); store.recordObservation(observation);
   assert.equal(store.recordShadowEpisode(closedShadowEpisode(observation)).idempotent, false);
+});
+
+test("SQLite migrates schema v3 to append-only production-path establishment custody", async (t) => {
+  const filePath = await temporaryDatabase(t);
+  let store = await openSqliteClaimEvidenceStore({filePath, bootstrapAuthorities: [authority]});
+  const before = store.exportStore(); store.close();
+  const {DatabaseSync} = await import("node:sqlite");
+  const database = new DatabaseSync(filePath);
+  database.exec("DROP TABLE production_path_establishments");
+  database.exec("DELETE FROM schema_migrations WHERE version = 4");
+  database.exec("PRAGMA user_version = 3"); database.close();
+  store = await openSqliteClaimEvidenceStore({filePath}); t.after(() => store.close());
+  assert.deepEqual(store.exportStore(), before);
+  assert.equal(store.readProductionPathEstablishment("missing-establishment"), null);
 });
 
 test("semantic shadow reads and integrity checks detect stored payload corruption", async (t) => {
