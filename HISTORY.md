@@ -14,11 +14,11 @@ It is a historical account, not a normative contract or current roadmap:
 - [`roadmap.md`](roadmap.md) owns current priorities and completion evidence.
 
 The current quantitative snapshot in this document was taken on 2026-09-08 at
-commit `3d128b7c7b34a8d9373d7cd236d46b12886369c7`. It supersedes the original
+commit `b987dd143741c4293d162ebd1515934a5f173be8`. It supersedes the original
 2026-08-25 snapshot at `5308ae55e5c4de2710c179da5caba8a0d63d3323` while
-retaining that earlier state as a useful growth boundary. The working tree
-contained substantial user-owned App Server, doctrine, documentation, and
-migration work, so committed history and active development remain distinct.
+retaining that earlier state as a useful growth boundary. At the current
+snapshot `main` and `origin/main` were synchronized; one unrelated untracked
+note remained outside the committed history.
 
 The account uses two parallel historical streams:
 
@@ -54,10 +54,10 @@ The central historical observation is:
 > Work Engine discovered its philosophy before it built most of its machinery.
 
 By the end of 2026-08-20, the repository had only 89 files and 13,646 text
-lines, but 81.6% of the 2026-09-08 `DESIGN.md` and all of the current
+lines, but 81.5% of the 2026-09-08 `DESIGN.md` and 89.0% of the current
 `PHILOSOPHY.md` were already present. Five days later it had 731 committed files
-and 104,210 text lines. Nineteen days after doctrine selection it had 1,725
-committed files and 246,693 text lines.
+and 104,210 text lines. Nineteen days after doctrine selection it had 1,750
+committed files and 252,130 text lines.
 
 The most precise origin statement supported by the combined record is:
 
@@ -154,7 +154,7 @@ later entries below are repository transitions unless stated otherwise:
 | 2026-08-29–31 | Immutable review subjects, provider-neutral review services, native reviewer runtimes, specialist review, claim-backed closure, isolated workspaces, extension bundles, and cross-session coordination form a hosted review stack |
 | 2026-09-01 | Supervisor effects, capabilities, workspace publication, strategic reconciliation, operational coordination, and native review move behind App Server hosting |
 | 2026-09-02–07 | Recovery work hardens authentication, result custody, remediation lineage, nested reload authority, operator control, generation/supervisor separation, and zero-finding review closure |
-| 2026-09-08 | Revisioned execution environments are generalized into a recovery, comparison, forensics, and research architecture |
+| 2026-09-08 | Revisioned execution environments become a research architecture; S13 publishes App Server-native Review Bench machinery after its dogfood drives a broad host-recovery cycle |
 
 The especially revealing entry is the direct formulation recorded at 20:57
 UTC on 2026-08-21:
@@ -198,16 +198,16 @@ line counts are repository snapshots at the last commit on each date.
 | 2026-09-05 | 13 | 1,721 | 241,667 | Review recovery, remediation lineage, nested reload authority, operator control |
 | 2026-09-06 | 5 | 1,724 | 244,390 | Operational-state separation, continuity fixes, runtime and architecture ideas |
 | 2026-09-07 | 2 | 1,724 | 245,016 | Context-migration recovery and zero-finding review closure |
-| 2026-09-08 | 1 | 1,725 | 246,693 | Revisioned research and execution architecture |
+| 2026-09-08 | 3 | 1,750 | 252,130 | Revisioned research architecture, S13 Review Bench, emergency host repairs and follow-up ideas |
 
 Across committed `main` at the snapshot revision:
 
-- 221 commits were reachable;
-- 266,369 lines had been inserted and 19,676 deleted across commit patches;
-- 1,725 files and 246,693 text lines remained;
+- 223 commits were reachable;
+- 272,218 lines had been inserted and 20,088 deleted across commit patches;
+- 1,750 files and 252,130 text lines remained;
 - one author identity appeared on all mainline commits;
-- 72 commits, or 32.6% of the total, landed on August 22 and 23; and
-- the median commit changed 447 lines, while 58 commits changed at least 1,000
+- 72 commits, or 32.3% of the total, landed on August 22 and 23; and
+- the median commit changed 447 lines, while 59 commits changed at least 1,000
   lines.
 
 The change size and cadence are characteristic of agent-accelerated
@@ -253,9 +253,12 @@ The growth falls into twelve recognizable phases.
     result recovery, replay refusal, retained remediation, nested reloads,
     operator interruption, operational-state separation, and zero-finding
     closure exposed and repaired the consequences of hosting real work.
-12. **Revisioned execution as research architecture, September 8.** The
-    repository connected durable execution history to reproducible recovery,
-    comparison, forensics, behavioral experiments, and architecture research.
+12. **Revisioned execution and S13 dogfood, September 8.** The repository
+    connected durable execution history to reproducible recovery, comparison,
+    forensics, behavioral experiments, and architecture research. Publishing
+    the App Server-native Review Bench then forced a sustained correction of
+    the host's review, generation, builder, evidence, and publication
+    boundaries before the accepted thirteen-path slice reached `main`.
 
 ---
 
@@ -339,11 +342,12 @@ one minute later.
 Those files have been remarkably stable at their philosophical center:
 
 - the first canonical `DESIGN.md` contained 666 lines;
-- the snapshot version contains 816 lines;
-- three mainline commits appear in `DESIGN.md`'s named history, including its
+- the snapshot version contains 817 lines;
+- four mainline commits appear in `DESIGN.md`'s named history, including its
   canonical selection;
-- the first and snapshot `PHILOSOPHY.md` both contain 788 lines; and
-- only the creation commit has touched `PHILOSOPHY.md`.
+- the first canonical `PHILOSOPHY.md` contained 788 lines and the snapshot
+  version contains 885; and
+- two mainline commits appear in `PHILOSOPHY.md`'s named history.
 
 The first material later doctrine addition was the 45-line **outcome-derived
 design** section on 2026-08-23. It sharpened the existing position into the
@@ -355,11 +359,14 @@ On 2026-09-08 the design expanded again to distinguish independently required
 production-path claims from local procedural preferences. That addition made
 execution sequence, capability grants, custody, and evidence history part of
 the result only when an independently owned acceptance claim actually depends
-on them. It qualified route-invariance without abandoning it.
+on them. The follow-up revision required admissible establishment evidence,
+separated constraint, recording, and independent observation, and extended the
+philosophy with the corresponding claim-locus, consumption-frontier, truth,
+and authority reasoning. It qualified route-invariance without abandoning it.
 
 The vocabulary and boundary cases continued to improve, but the philosophical
 center did not move. The root concepts crystallized within approximately 2.3
-days of the first Work Engine commit, before roughly 94.5% of the current
+days of the first Work Engine commit, before roughly 94.6% of the current
 repository text existed.
 
 The conversation record makes the sequence more nuanced. Formal doctrine was
@@ -459,6 +466,48 @@ its service boundary. Its Git refs retain candidate, accepted, and stopped
 checkpoint commits; its proposal system records the decisions behind new
 skills; and its metrics record both accepted and stopped campaign outcomes.
 
+### Durable operational chronology
+
+Git records the code that survived; the cross-session chatboard records why
+some apparently small changes were necessary. Its retained predecessor chain
+contained 404 unique messages across 848 durable revisions during this
+investigation, spanning 2026-08-30 through 2026-09-08. The record is especially
+important after App Server hosting began, because it preserves interrupted
+provider turns, rejected result envelopes, superseded attempts, resource
+claims, exact recovery boundaries, and deliberately withheld publication.
+
+S13, the Review Bench migration slice, is the clearest example. Its first plan
+was accepted on September 1 and its first implementation checkpoint was ready
+the same day, but live dogfood exposed a succession of host responsibilities
+that unit-scale capability work had not established:
+
+- retained reviews could enter execution without an admitted result;
+- authentication recovery and exact-session retry needed separate authority;
+- remediation had to preserve prior findings, exact result evidence, and
+  writer-generation identity;
+- fully resolved findings and zero-finding reviews needed truthful terminal
+  projections without invented reliance;
+- candidate cycling, executable reload, operational-state continuity, and
+  nonterminal attempt supersession needed explicit host contracts; and
+- managed builders needed durable write capability, clean runtime isolation,
+  and explicitly realized repository-evidence access.
+
+Attempts 1 through 8 remained preserved rather than overwritten. On September
+8 the repaired lifecycle atomically superseded the original attempt, admitted
+two renewed boundaries, reconciled inherited inventory debt without relabeling
+it as a passing gate, and reached accepted attempt 10. The feature remained
+provider-neutral experimental comparison machinery; none of this converted it
+into production-review authority.
+
+Publication itself supplied the last lesson. The canonical publisher correctly
+stopped on an additive `app-server/src/index.mjs` conflict, while its bounded
+interface could not ingest the separately authorized fenced resolution. The
+resolved tree was preserved rather than silently bypassed, and commit
+`8abc57ba9b140b1c30367364572c8f10b55da842` subsequently published that exact
+tree and thirteen-path attributed boundary. The following commit captured the
+emergency host repairs, S13 terminal metric, doctrine revision, and the research
+directions generated by the episode.
+
 ---
 
 ## Routes that failed, narrowed, or were demoted
@@ -539,7 +588,7 @@ Seven sibling design and philosophy drafts lost the August 20 canonical
 selection. Four older historical design documents were briefly imported and
 then removed. These are discarded formulations, not abandoned core concepts.
 
-Of 1,770 paths ever added to the standalone mainline, 71 no longer exist under
+Of 1,795 paths ever added to the standalone mainline, 71 no longer exist under
 their original names. The earlier set already included lossless idea moves,
 canonical renames, generated bytecode caches, an archive, and a superseded
 campaign path. The later set adds deliberate research and charter relocations
@@ -571,9 +620,9 @@ rather than being rewritten as success.
 
 ### Recorded campaign terminals
 
-The seven committed metric files contained 70 terminal receipts:
+The seven committed metric files contained 71 terminal receipts:
 
-- 55 accepted;
+- 56 accepted;
 - 15 stopped.
 
 Most stopped outcomes were not conceptual failures. Recorded reasons included
@@ -596,30 +645,30 @@ or unexercised rather than failed.
 ## Estimated development effort
 
 Git timestamps are activity evidence, not time tracking. Work Engine's own
-telemetry is also incomplete: only 38 of 70 committed metric records contain a
+telemetry is also incomplete: only 38 of 71 committed metric records contain a
 builder wall-clock measurement. Those measured records total 65.92 builder
 hours, but they cover only a subset of the development history and sometimes
 overlap other provider measurements.
 
 Clustering mainline commits into likely work sessions gives:
 
-- approximately 82 hours using 90-minute session gaps;
+- approximately 83 hours using 90-minute session gaps;
 - approximately 104 hours using two-hour gaps; and
-- approximately 145 hours using four-hour gaps.
+- approximately 148 hours using four-hour gaps.
 
 Allowing for work before the first commit, long-running agent work between
-commits, upstream conceptual incubation, and the active uncommitted worktree,
-the best estimate is:
+commits, upstream conceptual incubation, and work not represented by commit
+timestamps, the best estimate is:
 
-> **Approximately 100–170 human-directed development hours**, of which
-> **approximately 85–145 hours** are directly attributable to the committed
+> **Approximately 100–175 human-directed development hours**, of which
+> **approximately 85–150 hours** are directly attributable to the committed
 > Work Engine lineage.
 
 Confidence is moderate to low. At least one experiment explicitly records that
 manually supplied Git author timestamps were inaccurate for experimental
 chronology.
 
-It would be misleading to convert the 246,693 text lines directly into
+It would be misleading to convert the 252,130 text lines directly into
 traditional developer-hours. Much of the tree consists of agent-authored
 documentation, schemas, fixtures, receipts, reviews, and experimental evidence.
 A conventional team would likely need many hundreds of hours to reproduce the
@@ -631,20 +680,20 @@ surface area, but that is not the labor represented by this history.
 
 The committed tree contained:
 
-- 1,725 files and 246,693 text lines;
-- 411 Markdown files;
-- 722 JSON files;
+- 1,750 files and 252,130 text lines;
+- 419 Markdown files;
+- 723 JSON files;
 - 88 TypeScript files;
-- 222 JavaScript module files;
+- 236 JavaScript module files;
 - 104 Python files;
-- 959 files under `skills/`;
-- 404 files under `app-server/`;
+- 960 files under `skills/`;
+- 427 files under `app-server/`;
 - 115 files under `reviews/`;
 - 103 files under `proposals/`; and
-- 196 test-related files.
+- 204 test-related files.
 
-The current codebase index at the time of investigation contained 28,946 nodes
-and 77,157 edges, including 2,606 functions and 1,028 methods. It showed an
+The current codebase index at the time of investigation contained 29,068 nodes
+and 78,390 edges, including 2,651 functions and 1,033 methods. It showed an
 implemented execution backbone, substantial skill and proposal machinery, and
 an App Server runtime that now hosts compiled roles, review, claims, workspace,
 and supervisor capabilities.
@@ -659,22 +708,16 @@ observation were authoritative for chronology and prose.
 
 At the time of investigation:
 
-- `main` was two commits ahead of `origin/main`;
-- 60 tracked files were modified before this history edit;
-- 16 files were untracked; and
-- active work centered on App Server executable-generation maintenance,
-  skills-migration integrity, operator ingress, provider-turn hosting,
-  structural planning, and production-path claim doctrine.
+- `main` and `origin/main` both pointed to the snapshot commit;
+- no tracked changes remained before this history edit; and
+- one unrelated `application-notes.md` file was untracked.
 
-The active tree also contained an accepted S13 receipt for provider-neutral
-Review Bench validation, blinded rendering, supplied-observation inventory,
-and descriptive comparison through bounded experimental App Server machinery.
-That receipt explicitly withheld production-review authority. Its publication
-to `main` was pending and is therefore not included in the commit-bound counts
-above.
+S13's provider-neutral Review Bench service, accepted terminal receipt, and the
+emergency work developed during its execution were therefore included in the
+commit-bound counts above. The Review Bench receipt still explicitly withheld
+production-review authority.
 
-This document does not treat those user-owned working-tree changes as accepted
-mainline history.
+The unrelated untracked note is not treated as accepted mainline history.
 
 ---
 
@@ -711,7 +754,7 @@ its first day it was producing accepted, tested changes to itself, and it
 continued building substantial parts of its own machinery through its own
 lifecycle.
 
-The rapid surface-area growth remains a maintenance pressure: more than 233,000
+The rapid surface-area growth remains a maintenance pressure: more than 238,000
 text lines arrived after the doctrine stabilized, in approximately nineteen
 days. The second half of the record also changes the standard of evidence. The
 App Server migration demonstrated that a capability can work in isolation yet
@@ -731,7 +774,7 @@ questions rather than only a record that the questions exist.
 
 ## Evidence and limitations
 
-This account used four evidence classes:
+This account used five evidence classes:
 
 1. **Git history** from both `/home/bline/code/site2json` and the standalone
    Work Engine repository for dates, ancestry, path changes, growth, and
@@ -745,6 +788,10 @@ This account used four evidence classes:
 4. **Codebase Memory structural evidence** for the current implementation
    inventory and selected App Server boundaries, checked against generation
    and coverage metadata.
+5. **Durable chatboard history** for cross-session operational chronology,
+   resource claims, exact failure boundaries, recovery decisions, attempt
+   supersession, and publication state that ordinary commit history compresses
+   into successful terminal artifacts.
 
 The main limitations are:
 
@@ -763,6 +810,9 @@ The main limitations are:
   must not be counted as ordinary authored product commits;
 - candidate-only slices are unresolved historical states, not automatically
   failures;
+- chatboard messages are attributed operational reports; their durable sequence
+  and referenced artifacts can be verified, but not every observation was
+  independently replayed during this investigation;
 - clean index coverage metadata is best-effort and is not proof of
   completeness; and
 - the repository was changing during the investigation, so this document binds
