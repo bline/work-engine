@@ -2,20 +2,22 @@
 
 ## Status and authority
 
-- State: candidate transition record
+- State: active transition
 - Historical parent: `3d128b7c7b34a8d9373d7cd236d46b12886369c7`
-- Target: the exact successor `DESIGN.md` revision admitted with this record
+- Target: successor `DESIGN.md` SHA-256
+  `2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095`
 - Preparation authority: operator direction in the active session to preserve
   the first revision, prepare the successor, and continue testing
-- Activation authority: not yet supplied; an exact operator admission reference
-  must be recorded before this transition becomes binding
+- Activation authority: operator statement, "I approve the successor design.",
+  recorded in the active session at `2026-09-08T18:40:01-06:00`
 - Transition owner: the operator authority that admits the successor design
 - Claim decisions: the owner of each affected acceptance condition
 
-This record does not activate itself. It becomes effective only if the operator
-admits the successor `DESIGN.md` revision together with this transition. It does
-not authorize implementation, mutation outside the named audit, provider use,
-cost, publication, or weakening of an existing acceptance condition.
+The recorded operator admission activates the exact successor `DESIGN.md`
+revision together with this transition. Activation does not accept transition
+completion or authorize implementation, mutation outside the named audit,
+provider use, cost, publication, or weakening of an existing acceptance
+condition.
 
 ## Trigger
 
