@@ -467,6 +467,25 @@ export function verifyContextTransitionLease(value) {
   }
 }
 
+export const LIFECYCLE_RESERVE_PERMIT_TYPE = "work-engine.lifecycle-reserve-permit";
+
+export function verifyLifecycleReservePermit(value) {
+  try {
+    record(value, "lifecycle reserve permit");
+    const { permitRevision, ...body } = value;
+    if (body.schemaVersion !== 1 || body.type !== LIFECYCLE_RESERVE_PERMIT_TYPE
+        || revision(body) !== permitRevision) return false;
+    text(body.logicalRoleInstanceId, "lifecycle reserve role");
+    text(body.threadId, "lifecycle reserve thread");
+    text(body.turnId, "lifecycle reserve turn");
+    text(body.triggeringObservationId, "lifecycle reserve observation");
+    shaRevision(body.lifecycleRevision, "lifecycle reserve state revision");
+    if (!Number.isSafeInteger(body.bindingRevision) || body.bindingRevision < 1) return false;
+    if (!["replacement_candidate", "critical"].includes(body.disposition)) return false;
+    return true;
+  } catch { return false; }
+}
+
 export class InMemoryContextTransitionLeaseGate {
   constructor({ now = () => new Date().toISOString() } = {}) {
     this.now = now;
@@ -483,8 +502,19 @@ export class InMemoryContextTransitionLeaseGate {
     return current;
   }
 
+  mintLifecycleReservePermit(input) {
+    const body = { schemaVersion: 1, type: LIFECYCLE_RESERVE_PERMIT_TYPE,
+      logicalRoleInstanceId: input.logicalRoleInstanceId, bindingRevision: input.bindingRevision,
+      threadId: input.threadId, turnId: input.turnId,
+      triggeringObservationId: input.triggeringObservationId,
+      disposition: input.disposition, lifecycleRevision: input.lifecycleRevision };
+    const permit = freeze({ ...body, permitRevision: revision(body) });
+    if (!verifyLifecycleReservePermit(permit)) throw new TypeError("lifecycle reserve permit input is invalid");
+    return permit;
+  }
+
   beginPreparation(
-    { logicalRoleInstanceId, threadId, bindingRevision },
+    { logicalRoleInstanceId, threadId, bindingRevision, lifecycleReservePermit = null },
     { closeAdmission = null } = {},
   ) {
     text(logicalRoleInstanceId, "context transition preparation role");
@@ -494,6 +524,12 @@ export class InMemoryContextTransitionLeaseGate {
     }
     if (closeAdmission !== null && typeof closeAdmission !== "function") {
       throw new TypeError("context transition admission closer must be a function or null");
+    }
+    if (lifecycleReservePermit !== null && (!verifyLifecycleReservePermit(lifecycleReservePermit)
+        || lifecycleReservePermit.logicalRoleInstanceId !== logicalRoleInstanceId
+        || lifecycleReservePermit.threadId !== threadId
+        || lifecycleReservePermit.bindingRevision !== bindingRevision)) {
+      throw new ContextTransitionLeaseError("invalid_lifecycle_reserve", "preparation requires its exact lifecycle reserve permit");
     }
     return this.#withRoleLock(logicalRoleInstanceId, async () => {
       const existing = this.states.get(logicalRoleInstanceId);

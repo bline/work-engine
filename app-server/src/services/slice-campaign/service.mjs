@@ -2,11 +2,12 @@ import {
   SLICE_CAMPAIGN_SCHEMA_VERSION, SLICE_PHASES, digest, freeze, identityKey,
   normalizeIdentity, requireRecord, requireSha256, requireText, validateReviewSelection,
 } from "./contract.mjs";
+import { validateExternalBootstrapPacket } from "./external-bootstrap-adoption-contract.mjs";
 
 const NEXT_PHASE = new Map([["accepted", "implementing"], ["implementing", "gate_ready"], ["gate_ready", "review_ready"], ["review_ready", "terminal"]]);
 
 export class InMemorySliceCampaignStore {
-  constructor() { this.states = new Map(); this.workspaceAdmissions = new Map(); }
+  constructor() { this.states = new Map(); this.workspaceAdmissions = new Map(); this.externalBootstrapEvidence = new Map(); }
   get(key) { return this.states.get(key) ?? null; }
   admit(key, workspace, state) {
     if (this.states.has(key)) throw new Error("slice campaign attempt already exists");
@@ -29,6 +30,17 @@ export class InMemorySliceCampaignStore {
     this.states.set(successorKey, successorState);
     this.workspaceAdmissions.set(workspace, successorKey);
   }
+  adoptExternalBootstrapEvidence(key, expectedCampaignRevision, adoption) {
+    if (this.states.get(key)?.revision !== expectedCampaignRevision) throw new Error("slice campaign revision conflict");
+    const existing = this.externalBootstrapEvidence.get(key);
+    if (existing) {
+      if (existing.packetDigest !== adoption.packetDigest) throw new Error("external bootstrap packet conflicts with adopted evidence");
+      return existing;
+    }
+    this.externalBootstrapEvidence.set(key, adoption);
+    return adoption;
+  }
+  getExternalBootstrapEvidence(key) { return this.externalBootstrapEvidence.get(key) ?? null; }
 }
 
 export function createSliceCampaignService({
@@ -130,6 +142,34 @@ export function createSliceCampaignService({
       return published;
     },
     recover(identity) { return current(identity); },
+    adoptExternalBootstrapEvidence({identity, expectedRevision, packet}) {
+      const state = current(identity);
+      requireRevision(state, expectedRevision);
+      const verified = validateExternalBootstrapPacket(packet);
+      if (identityKey(verified.identity) !== identityKey(state.identity)) {
+        throw new Error("external bootstrap packet campaign identity conflicts with target");
+      }
+      if (verified.expected_campaign_revision !== state.revision) {
+        throw new Error("external bootstrap packet expected campaign revision is stale");
+      }
+      if (verified.objective_boundary_baseline.accepted_boundary.reference !== state.acceptedBoundary.reference
+          || verified.objective_boundary_baseline.accepted_boundary.sha256 !== state.acceptedBoundary.sha256
+          || verified.objective_boundary_baseline.baseline.commit !== state.baseline.acceptedCommit
+          || verified.objective_boundary_baseline.baseline.tree !== state.baseline.acceptedTree) {
+        throw new Error("external bootstrap packet boundary or baseline conflicts with campaign");
+      }
+      const adoption = freeze({schemaVersion: 1, provenance: verified.provenance,
+        packetDigest: verified.whole_packet_sha256, packet: verified,
+        authority: freeze({phaseAdvance: false, candidateBinding: false, reviewAcceptance: false,
+          terminalization: false, publication: false})});
+      const stored = store.adoptExternalBootstrapEvidence(identityKey(state.identity), state.revision, adoption);
+      return freeze({campaign: state, adoption: stored});
+    },
+    recoverExternalBootstrapEvidence(identity) {
+      const normalized = normalizeIdentity(identity);
+      current(normalized);
+      return store.getExternalBootstrapEvidence(identityKey(normalized));
+    },
     supersede({identity, expectedRevision, operationId, successor}) {
       const state = current(identity);
       requireText(operationId, "slice campaign supersession operation identity");

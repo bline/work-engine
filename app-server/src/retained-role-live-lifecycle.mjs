@@ -28,6 +28,7 @@ export class RetainedRoleLiveLifecycleRuntime {
     pressureProjector,
     pressureControllerForRole,
     coordinatorForRole,
+    activeTurnScheduler = null,
   }) {
     if (!roleRuntime || typeof roleRuntime.deliverTurn !== "function"
         || typeof roleRuntime.adapter?.waitForTurnCompletion !== "function") {
@@ -47,6 +48,8 @@ export class RetainedRoleLiveLifecycleRuntime {
       "live pressure controller resolver",
     );
     this.coordinatorForRole = requiredFunction(coordinatorForRole, "live coordinator resolver");
+    this.activeTurnScheduler = activeTurnScheduler;
+    this.activeTurns = new Map();
   }
 
   async deliverTurn(turn) {
@@ -61,7 +64,27 @@ export class RetainedRoleLiveLifecycleRuntime {
 
   async startTurn(turn) {
     const delivery = await this.roleRuntime.deliverTurn(turn);
+    this.activeTurns.set(delivery.threadId, { turn, delivery });
     return freeze({ delivery, completion: this.#completeTurn(turn, delivery) });
+  }
+
+  async observeLifecycleObservation(observation) {
+    if (observation?.observationType !== "token_usage" || !this.activeTurnScheduler) return null;
+    const active = this.activeTurns.get(observation.threadId);
+    if (!active || active.delivery.turnId !== observation.turnId) return null;
+    const snapshot = this.lifecycleEvidence.snapshot(observation.threadId);
+    const pressure = this.pressureProjector.project(snapshot);
+    if (pressure.status !== "projected") return pressure;
+    const controller = await this.pressureControllerForRole(active.delivery.logicalRoleInstanceId);
+    const decision = controller.observe(pressure.observation);
+    if (!["replacement_candidate", "critical"].includes(decision.disposition)) return decision;
+    return this.activeTurnScheduler.observe({
+      logicalRoleInstanceId: active.delivery.logicalRoleInstanceId,
+      bindingRevision: active.delivery.binding.bindingRevision,
+      threadId: active.delivery.threadId, turnId: active.delivery.turnId,
+      triggeringObservationId: pressure.observation.observationId,
+      disposition: decision.disposition, observedAt: observation.observedAt,
+    });
   }
 
   async #completeTurn(turn, delivery) {
@@ -71,6 +94,7 @@ export class RetainedRoleLiveLifecycleRuntime {
       replayedDelivery: delivery.replayedDelivery,
       signal: turn.signal,
     });
+    this.activeTurns.delete(delivery.threadId);
     let lifecycle;
     try {
       const lifecycleSnapshot = this.lifecycleEvidence.snapshot(delivery.threadId);

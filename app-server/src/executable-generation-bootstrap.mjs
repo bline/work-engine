@@ -20,16 +20,19 @@ export const DEFAULT_EXECUTABLE_GENERATION_FILES = Object.freeze([
   "app-server/src/executable-generation-worker-runtime.mjs",
   "app-server/src/managed-builder-turn.mjs",
   "app-server/src/services/slice-campaign/capability-contract.mjs",
+  "app-server/src/services/slice-campaign/external-bootstrap-adoption-contract.mjs",
   "app-server/src/services/slice-campaign/host-effect-runtime.mjs",
   "app-server/src/services/slice-campaign/strategic-reconciliation.mjs",
 ]);
 
 export const DEFAULT_ROLE_EXECUTABLE_GENERATION_FILES = Object.freeze([
+  "app-server/src/active-turn-lifecycle-scheduler.mjs",
   "app-server/src/capabilities.mjs",
   "app-server/src/codex-app-server-adapter.mjs",
   "app-server/src/executable-generation-role-environment.mjs",
   "app-server/src/operator-switchboard.mjs",
   "app-server/src/request-context-input.mjs",
+  "app-server/src/retained-turn-output-store.mjs",
   "app-server/src/role-binding-registry.mjs",
   "app-server/src/runtime-manifest.mjs",
   "app-server/roles/strategic-planner.mjs",

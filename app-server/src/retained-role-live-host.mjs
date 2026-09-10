@@ -9,6 +9,7 @@ import { LiveContextLifecycleCoordinator } from "./live-context-lifecycle-coordi
 import { RetainedRoleLiveLifecycleRuntime } from "./retained-role-live-lifecycle.mjs";
 import { ManifestRoleRuntime, RuntimeManifest } from "./runtime-manifest.mjs";
 import { TokenUsagePressureProjector } from "./token-usage-pressure-projection.mjs";
+import { ActiveTurnLifecycleScheduler } from "./active-turn-lifecycle-scheduler.mjs";
 
 function requiredFunction(value, label) {
   if (typeof value !== "function") throw new TypeError(`${label} must be a function`);
@@ -63,15 +64,26 @@ export function createRetainedRoleLiveHost({
     retentionLimit: lifecycleRetentionLimit,
     initialSequence: sequenceFloor,
   });
-  const detachLifecycleEvidence = attachCodexLifecycleEvidence({
-    adapter,
-    collector: lifecycleEvidence,
-    onError: onLifecycleEvidenceError,
-  });
   const transitionRuntime = new ContextTransitionLeaseRuntime({
     gate: transitionGate,
     adapter,
     inputCustody,
+  });
+  const activeTurnScheduler = typeof episodeStore.scheduleActiveTurnLifecycle === "function"
+    ? new ActiveTurnLifecycleScheduler({
+      store: episodeStore, transitionGate,
+      reserve: (permit) => transitionRuntime.beginPreparation({
+        logicalRoleInstanceId: permit.logicalRoleInstanceId,
+        threadId: permit.threadId, bindingRevision: permit.bindingRevision,
+        lifecycleReservePermit: permit,
+      }),
+    }) : null;
+  let runtime = null;
+  const detachLifecycleEvidence = attachCodexLifecycleEvidence({
+    adapter,
+    collector: lifecycleEvidence,
+    onError: onLifecycleEvidenceError,
+    onObservation: (observation) => runtime?.observeLifecycleObservation(observation),
   });
   const controllers = new Map();
   const coordinators = new Map();
@@ -114,12 +126,13 @@ export function createRetainedRoleLiveHost({
     return pending;
   };
 
-  const runtime = new RetainedRoleLiveLifecycleRuntime({
+  runtime = new RetainedRoleLiveLifecycleRuntime({
     roleRuntime: new ManifestRoleRuntime({ adapter, manifest }),
     lifecycleEvidence,
     pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile, now }),
     pressureControllerForRole,
     coordinatorForRole,
+    activeTurnScheduler,
   });
 
   return Object.freeze({
@@ -129,6 +142,8 @@ export function createRetainedRoleLiveHost({
     sequenceFloor,
     pressureControllerForRole,
     coordinatorForRole,
+    activeTurnScheduler,
+    recovery: activeTurnScheduler?.recover() ?? Promise.resolve([]),
     close: detachLifecycleEvidence,
   });
 }

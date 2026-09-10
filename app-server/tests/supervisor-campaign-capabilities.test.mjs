@@ -15,6 +15,7 @@ import {
 } from "../src/services/slice-campaign/capability-host-runtime.mjs";
 import { createLegacySupervisorControlAdapter } from "../src/services/slice-campaign/legacy-control-adapter.mjs";
 import { SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL } from "../src/services/slice-campaign/host-effect-runtime.mjs";
+import { buildExternalBootstrapPacket } from "../src/services/slice-campaign/external-bootstrap-adoption-contract.mjs";
 import { validateStrategicReconciliationRequest } from "../src/services/slice-campaign/strategic-reconciliation.mjs";
 import { canonicalJson, digest as workspaceDigest } from "../src/services/workspace-coordination/contract.mjs";
 
@@ -108,7 +109,7 @@ async function completionFixture(t) {
   return { repository, stateRoot, checkpoint, offer: { ...authorized, artifact_oid: artifactOid, ref } };
 }
 
-test("thirteen thin clients bind exact operations and never infer human authority", async () => {
+test("fourteen thin clients bind exact operations and never infer human authority", async () => {
   const calls = [];
   const definitions = createSupervisorCampaignCapabilityDefinitions(async (request) => {
     calls.push(request);
@@ -130,6 +131,7 @@ test("thirteen thin clients bind exact operations and never infer human authorit
     "capability.checkpoint_lifecycle",
     "capability.completion_offer",
     "capability.completion_publication",
+    "capability.external_bootstrap_evidence",
     "capability.lifecycle_control",
     "capability.native_review",
     "capability.operational_coordination",
@@ -160,6 +162,13 @@ test("thirteen thin clients bind exact operations and never infer human authorit
       identity: {}, acceptedBoundary: {}, baseline: {}, callerAuthority: "inferred",
     },
   }}), /unsupported field callerAuthority/);
+  assert.equal(calls.length, 0);
+  const bootstrapEvidence = definitions.get("capability.external_bootstrap_evidence");
+  assert.match(bootstrapEvidence.description, /without advancing campaign phase/);
+  assert.deepEqual(bootstrapEvidence.inputSchema.properties.operation.enum, ["adopt", "recover"]);
+  await assert.rejects(bootstrapEvidence.handler({operation: "adopt", input: {
+    identity: {}, expectedRevision: "a".repeat(64), packet: {}, advance_phase: true,
+  }}), /unsupported field advance_phase/);
   assert.equal(calls.length, 0);
   await assert.rejects(offer.handler({ operation: "resolve", input: {
     offer: {}, decision: { decision: "create", authority: {
@@ -277,6 +286,32 @@ test("stable host executes preflight and native lifecycle across reconstruction"
   });
   assert.equal(recovered.generation_id, "generation-b");
   assert.equal(recovered.result.revision, campaign.revision);
+  const packet = buildExternalBootstrapPacket({
+    schema_version: 1, kind: "work-engine.external-bootstrap-evidence-packet",
+    provenance: "external_bootstrap_wind_walker", identity,
+    expected_campaign_revision: campaign.revision,
+    objective_boundary_baseline: {objective: "fixture",
+      accepted_boundary: {reference: "plan:a2", sha256: sha("accepted-a2")},
+      baseline: {commit: "baseline", tree: "tree"}},
+    task_manifest: [{path: "task.txt", action: "modify"}],
+    checkpoint: {parent_commit: "baseline", commit: "checkpoint", tree: "tree",
+      ref: "refs/private/checkpoint", task_patch_sha256: sha("patch")},
+    gate: {manifest_sha256: sha("manifest"), receipt_sha256: sha("receipt"),
+      test_counts: {passed: 1, failed: 0}, workspace_integrity_sha256: sha("workspace")},
+    incident_refs: {failed_turn: "fixture"},
+    limitations: ["app_server_lifecycle_proof_unavailable",
+      "app_server_mailbox_proof_unavailable", "app_server_delivery_output_proof_unavailable"],
+  });
+  const adopted = await runtime.dispatch({generationId: "generation-b",
+    effect: effect("capability.external_bootstrap_evidence", "adopt", {
+      identity, expectedRevision: campaign.revision, packet,
+    })});
+  assert.equal(adopted.result.campaign.revision, campaign.revision);
+  assert.equal(adopted.result.campaign.phase, "implementing");
+  assert.equal(adopted.result.adoption.authority.phaseAdvance, false);
+  const evidence = await runtime.dispatch({generationId: "generation-b",
+    effect: effect("capability.external_bootstrap_evidence", "recover", {identity})});
+  assert.equal(evidence.result.packetDigest, packet.whole_packet_sha256);
   for (const capability of ["capability.completion_publication"]) {
     await assert.rejects(runtime.dispatch({
       generationId: "generation-b",

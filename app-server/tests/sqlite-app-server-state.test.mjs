@@ -9,6 +9,7 @@ import {
   appendLifecycleLedgerEntry,
   createContextLifecycleEpisode,
   openSqliteAppServerStateStore,
+  SQLITE_APP_SERVER_STATE_SCHEMA_VERSION,
   verifyContextLifecycleEpisode,
 } from "../src/index.mjs";
 
@@ -277,7 +278,7 @@ test("SQLite state refuses an unknown future schema revision", async (t) => {
   store.close();
   const { DatabaseSync } = await import("node:sqlite");
   const database = new DatabaseSync(filePath);
-  database.exec("PRAGMA user_version = 3");
+  database.exec("PRAGMA user_version = " + (SQLITE_APP_SERVER_STATE_SCHEMA_VERSION + 1));
   database.close();
   await assert.rejects(
     openSqliteAppServerStateStore({ filePath }),

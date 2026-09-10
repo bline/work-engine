@@ -1,4 +1,5 @@
 import { chmodSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 
 import {
@@ -14,7 +15,7 @@ import {
 } from "./context-lifecycle-episode.mjs";
 import { normalizeContextTransitionInput } from "./context-input-custody.mjs";
 
-export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 2;
+export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 3;
 
 function text(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -37,6 +38,15 @@ function parseJson(value, label) {
     throw new TypeError(`${label} contains invalid JSON: ${error.message}`);
   }
 }
+
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) =>
+    `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function revision(value) { return `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`; }
 
 function freeze(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
@@ -210,6 +220,18 @@ const MIGRATION_2 = `
 
   CREATE INDEX context_input_queue_release_order
     ON context_input_queue(logical_role_instance_id, transition_revision, status, sequence);
+`;
+
+const MIGRATION_3 = `
+  CREATE TABLE active_turn_lifecycle (
+    identity_key TEXT PRIMARY KEY,
+    revision TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL CHECK(status IN ('scheduled','preparing','aborted_retryable','reconciled','recovery_required')),
+    next_eligible_at TEXT,
+    state_json TEXT NOT NULL
+  ) STRICT;
+  CREATE INDEX active_turn_lifecycle_recovery
+    ON active_turn_lifecycle(status, next_eligible_at);
 `;
 
 class SqliteAppServerStateStore {
@@ -910,6 +932,79 @@ class SqliteAppServerStateStore {
       });
     });
   }
+
+  scheduleActiveTurnLifecycle(input) {
+    this.#assertOpen();
+    const identity = {
+      logicalRoleInstanceId: text(input.logicalRoleInstanceId, "active lifecycle role"),
+      bindingRevision: positiveInteger(input.bindingRevision, "active lifecycle binding revision"),
+      threadId: text(input.threadId, "active lifecycle thread"),
+      turnId: text(input.turnId, "active lifecycle turn"),
+      triggeringObservationId: text(input.triggeringObservationId, "active lifecycle observation"),
+    };
+    const identityKey = canonical(identity);
+    const existing = this.database.prepare("SELECT state_json FROM active_turn_lifecycle WHERE identity_key = ?").get(identityKey);
+    if (existing) return freeze(parseJson(existing.state_json, "active lifecycle state"));
+    const body = { identity, status: "scheduled", attempt: 0,
+      retryLimit: input.retryLimit ?? 1, disposition: text(input.disposition, "active lifecycle disposition"),
+      preparationRevision: null, predecessorPreparationRevision: null,
+      nextEligibleAt: input.observedAt ?? new Date().toISOString() };
+    const state = freeze({ ...body, revision: revision(body) });
+    this.database.prepare("INSERT INTO active_turn_lifecycle(identity_key,revision,status,next_eligible_at,state_json) VALUES(?,?,?,?,?)")
+      .run(identityKey, state.revision, state.status, state.nextEligibleAt, JSON.stringify(state));
+    return state;
+  }
+
+  #transitionActive(identity, expectedRevision, operation) {
+    return this.#transaction(() => {
+      const identityKey = canonical(identity);
+      const row = this.database.prepare("SELECT revision,state_json FROM active_turn_lifecycle WHERE identity_key = ?").get(identityKey);
+      if (!row || row.revision !== expectedRevision) throw new Error("active lifecycle revision conflict");
+      const nextBody = operation(parseJson(row.state_json, "active lifecycle state"));
+      const next = freeze({ ...nextBody, revision: revision(nextBody) });
+      const changed = this.database.prepare("UPDATE active_turn_lifecycle SET revision=?,status=?,next_eligible_at=?,state_json=? WHERE identity_key=? AND revision=?")
+        .run(next.revision, next.status, next.nextEligibleAt ?? null, JSON.stringify(next), identityKey, expectedRevision);
+      if (changed.changes !== 1) throw new Error("active lifecycle revision conflict");
+      return next;
+    });
+  }
+
+  claimActiveTurnLifecycle({ identity, expectedRevision, claimedAt, claimExpiresAt }) {
+    return this.#transitionActive(identity, expectedRevision, (prior) => ({ ...prior,
+      status: "preparing", claimedAt, nextEligibleAt: claimExpiresAt, attempt: prior.attempt + 1 }));
+  }
+
+  reclaimActiveTurnLifecycle({ identity, expectedRevision, error, reclaimedAt }) {
+    return this.#transitionActive(identity, expectedRevision, (prior) => {
+      if (prior.status !== "preparing" || prior.nextEligibleAt > reclaimedAt) {
+        throw new Error("active lifecycle preparing claim is not reclaimable");
+      }
+      return {...prior,
+        status: prior.attempt <= prior.retryLimit ? "aborted_retryable" : "recovery_required",
+        predecessorPreparationRevision: prior.preparationRevision, preparationRevision: null,
+        error, reclaimedAt, nextEligibleAt: reclaimedAt};
+    });
+  }
+
+  abortActiveTurnLifecycle({ identity, expectedRevision, error, abortedAt }) {
+    return this.#transitionActive(identity, expectedRevision, (prior) => ({ ...prior,
+      status: prior.attempt <= prior.retryLimit ? "aborted_retryable" : "recovery_required",
+      predecessorPreparationRevision: prior.preparationRevision, preparationRevision: null,
+      error, abortedAt, nextEligibleAt: abortedAt }));
+  }
+
+  completeActiveTurnLifecycle({ identity, expectedRevision, result, completedAt }) {
+    return this.#transitionActive(identity, expectedRevision, (prior) => ({ ...prior,
+      status: "reconciled", result, completedAt, nextEligibleAt: null }));
+  }
+
+  recoverableActiveTurnLifecycles(now) {
+    return freeze(this.database.prepare(`SELECT state_json FROM active_turn_lifecycle
+      WHERE (status IN ('scheduled','aborted_retryable')
+          AND (next_eligible_at IS NULL OR next_eligible_at <= ?))
+        OR (status = 'preparing' AND next_eligible_at <= ?)
+      ORDER BY identity_key`).all(now, now).map(({state_json}) => parseJson(state_json, "active lifecycle state")));
+  }
 }
 
 function migrate(database) {
@@ -934,6 +1029,11 @@ function migrate(database) {
         INSERT INTO schema_migrations(version, applied_at) VALUES (2, ?)
       `).run(new Date().toISOString());
       database.exec("PRAGMA user_version = 2");
+    }
+    if (current < 3) {
+      database.exec(MIGRATION_3);
+      database.prepare(`INSERT INTO schema_migrations(version, applied_at) VALUES (3, ?)`).run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 3");
     }
     const versions = database.prepare(`
       SELECT version FROM schema_migrations ORDER BY version

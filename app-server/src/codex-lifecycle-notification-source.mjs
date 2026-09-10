@@ -73,6 +73,7 @@ export function attachCodexLifecycleEvidence({
   collector,
   protocolVersion = PINNED_PROTOCOL.codexCliVersion,
   onError = null,
+  onObservation = null,
 }) {
   if (!adapter || typeof adapter.onNotification !== "function") {
     throw new TypeError("Codex lifecycle evidence requires a notification source");
@@ -83,12 +84,20 @@ export function attachCodexLifecycleEvidence({
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("Codex lifecycle evidence onError must be a function or null");
   }
+  if (onObservation !== null && typeof onObservation !== "function") {
+    throw new TypeError("Codex lifecycle evidence onObservation must be a function or null");
+  }
   return adapter.onNotification((notification) => {
     try {
       const observation = normalizeCodexLifecycleNotification(notification, {
         protocolVersion,
       });
-      if (observation) collector.record(observation);
+      if (observation) {
+        const recorded = collector.record(observation);
+        Promise.resolve(onObservation?.(recorded)).catch((error) => {
+          if (onError) onError(error, notification);
+        });
+      }
     } catch (error) {
       if (onError) onError(error, notification);
       else throw error;

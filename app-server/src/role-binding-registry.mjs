@@ -165,6 +165,47 @@ export class FileRoleBindingRegistry {
     return state.deliveries[this.#deliveryKey(logicalRoleInstanceId, clientUserMessageId)] ?? null;
   }
 
+  async getDeliveryByTurn(threadId, turnId) {
+    requireIdentity(threadId, "threadId");
+    requireIdentity(turnId, "turnId");
+    const state = await this.#readState();
+    return Object.values(state.deliveries).find((delivery) =>
+      delivery.threadId === threadId && delivery.turnId === turnId) ?? null;
+  }
+
+  async getPendingDeliveryByThread(threadId) {
+    requireIdentity(threadId, "threadId");
+    const state = await this.#readState();
+    return Object.values(state.deliveries).find((delivery) =>
+      delivery.threadId === threadId && delivery.status === "pending") ?? null;
+  }
+
+  async attachTerminalOutput({ threadId, turnId, terminalOutput }) {
+    requireIdentity(threadId, "threadId"); requireIdentity(turnId, "turnId");
+    if (!terminalOutput || typeof terminalOutput !== "object" || Array.isArray(terminalOutput)) {
+      throw new TypeError("terminal output metadata must be an object");
+    }
+    const operation = this.#writeTail.then(() => this.#withWriteLock(async () => {
+      const state = await this.#readState();
+      const entry = Object.entries(state.deliveries).find(([, delivery]) =>
+        delivery.status === "completed" && delivery.threadId === threadId && delivery.turnId === turnId);
+      if (!entry) throw new BindingConflictError("terminal output has no exact completed delivery");
+      const [deliveryKey, existing] = entry;
+      if (existing.terminalOutput) {
+        if (JSON.stringify(existing.terminalOutput) !== JSON.stringify(terminalOutput)) {
+          throw new BindingConflictError("terminal output conflicts with immutable delivery metadata");
+        }
+        return { status: "replayed", delivery: existing };
+      }
+      const delivery = { ...existing, terminalOutput: Object.freeze(structuredClone(terminalOutput)) };
+      await this.#writeState({ schemaVersion: SCHEMA_VERSION, revision: state.revision + 1,
+        bindings: state.bindings, deliveries: { ...state.deliveries, [deliveryKey]: delivery } });
+      return { status: "attached", delivery };
+    }));
+    this.#writeTail = operation.catch(() => {});
+    return operation;
+  }
+
   async beginDelivery({
     logicalRoleInstanceId,
     clientUserMessageId,

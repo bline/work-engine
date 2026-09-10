@@ -94,6 +94,10 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       },
       "capability.lifecycle_control/supersede": ({ input }) => service.supersede(input),
       "capability.lifecycle_control/terminalize": ({ input }) => service.terminalize(input),
+      "capability.external_bootstrap_evidence/adopt": ({ input }) =>
+        service.adoptExternalBootstrapEvidence(input),
+      "capability.external_bootstrap_evidence/recover": ({ input }) =>
+        service.recoverExternalBootstrapEvidence(input.identity),
       "capability.receipt_finalization/finalize_named_campaign": ({ input }) =>
         legacy.finalize(input),
       "capability.checkpoint_lifecycle/bind_candidate": ({ input }) =>

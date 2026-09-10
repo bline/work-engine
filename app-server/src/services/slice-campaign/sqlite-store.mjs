@@ -70,6 +70,31 @@ export class SqliteSliceCampaignStore {
       }
     });
   }
+  adoptExternalBootstrapEvidence(key, expectedCampaignRevision, adoption) {
+    return this.#transaction(() => {
+      const campaign = this.database.prepare(
+        "SELECT revision FROM slice_campaign_state WHERE identity_key = ?",
+      ).get(key);
+      if (campaign?.revision !== expectedCampaignRevision) throw new Error("slice campaign revision conflict");
+      const existing = this.database.prepare(
+        "SELECT packet_digest, adoption_json FROM slice_campaign_external_bootstrap_evidence WHERE identity_key = ?",
+      ).get(key);
+      if (existing) {
+        if (existing.packet_digest !== adoption.packetDigest) throw new Error("external bootstrap packet conflicts with adopted evidence");
+        return JSON.parse(existing.adoption_json);
+      }
+      this.database.prepare(
+        "INSERT INTO slice_campaign_external_bootstrap_evidence(identity_key, campaign_revision, packet_digest, adoption_json) VALUES(?,?,?,?)",
+      ).run(key, expectedCampaignRevision, adoption.packetDigest, JSON.stringify(adoption));
+      return adoption;
+    });
+  }
+  getExternalBootstrapEvidence(key) {
+    const row = this.database.prepare(
+      "SELECT adoption_json FROM slice_campaign_external_bootstrap_evidence WHERE identity_key = ?",
+    ).get(key);
+    return row ? JSON.parse(row.adoption_json) : null;
+  }
   close() { if (!this.closed) { this.closed = true; this.database.close(); } }
 }
 
@@ -124,6 +149,7 @@ export async function openSqliteSliceCampaignStore({ filePath, busyTimeoutMs = 5
       workspace TEXT PRIMARY KEY, identity_key TEXT NOT NULL UNIQUE,
       FOREIGN KEY(identity_key) REFERENCES slice_campaign_state(identity_key)
     ) STRICT`);
+    database.exec("CREATE TABLE IF NOT EXISTS slice_campaign_external_bootstrap_evidence (identity_key TEXT PRIMARY KEY, campaign_revision TEXT NOT NULL, packet_digest TEXT NOT NULL, adoption_json TEXT NOT NULL, FOREIGN KEY(identity_key) REFERENCES slice_campaign_state(identity_key)) STRICT");
     database.exec("PRAGMA foreign_keys = ON");
     return new SqliteSliceCampaignStore(database, resolved);
   } catch (error) { database.close(); throw error; }

@@ -27,6 +27,9 @@ const canonicalPublicationToolDescription =
   "Prepare, adopt a separately resolved integration, seal validated content, promote, or reconcile canonical Git publication through the host-owned publication chain. "
   + "adopt_resolved requires the ordinary prepare fields plus the exact host allocation, its current directory lease, resolved_tree, and a digest-bound passing validation receipt. "
   + "The host independently verifies current lease/fence custody, target parent, accepted checkpoint, exact manifest, clean index tree, and validation binding before creating a normal durable prepared revision; it never updates the canonical branch directly.";
+const externalBootstrapAdoptionToolDescription =
+  "Verify and append exact external_bootstrap_wind_walker evidence without advancing campaign phase, binding a candidate, accepting review, terminalizing, or publishing. "
+  + "The packet binds the current campaign revision, accepted boundary, baseline, checkpoint, gate evidence, incident identities, explicit unavailable App Server proof, and whole-packet digest.";
 
 function strategicReconciliationRequestInputSchema() {
   const text = () => ({ ...NON_EMPTY_TEXT_SCHEMA });
@@ -127,6 +130,7 @@ const CAPABILITIES = Object.freeze({
   "capability.native_review": Object.freeze([
     "execute", "recover", "retry", "correct_result", "record_finding_evaluation", "execute_remediation",
   ]),
+  "capability.external_bootstrap_evidence": Object.freeze(["adopt", "recover"]),
 });
 
 const TOOL_NAMES = Object.freeze({
@@ -143,6 +147,7 @@ const TOOL_NAMES = Object.freeze({
   "capability.strategic_reconciliation": "strategic_reconciliation",
   "capability.operational_coordination": "operational_coordination",
   "capability.native_review": "native_review",
+  "capability.external_bootstrap_evidence": "external_bootstrap_evidence",
 });
 
 const INPUT_FIELDS = Object.freeze({
@@ -261,6 +266,12 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.native_review/execute_remediation": [
     new Set(["identity", "expected_revision", "obligation_id", "operation_id", "remediation_subject"]), new Set(),
+  ],
+  "capability.external_bootstrap_evidence/adopt": [
+    new Set(["identity", "expectedRevision", "packet"]), new Set(),
+  ],
+  "capability.external_bootstrap_evidence/recover": [
+    new Set(["identity"]), new Set(),
   ],
 });
 
@@ -456,6 +467,13 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
       for (const field of ["commit", "tree", "patchIdentity"]) requireText(value.remediation_subject[field], `native review remediation ${field}`);
     }
   }
+  if (capability === "capability.external_bootstrap_evidence") {
+    requireRecord(value.identity, "external bootstrap campaign identity");
+    if (operation === "adopt") {
+      requireText(value.expectedRevision, "external bootstrap expected campaign revision");
+      requireRecord(value.packet, "external bootstrap packet");
+    }
+  }
   return structuredClone(value);
 }
 
@@ -510,6 +528,8 @@ export function createSupervisorCampaignCapabilityDefinitions(
         ? lifecycleControlToolDescription
       : capability === "capability.canonical_publication"
         ? canonicalPublicationToolDescription
+      : capability === "capability.external_bootstrap_evidence"
+        ? externalBootstrapAdoptionToolDescription
       : capability === "capability.operational_coordination"
         ? operationalCoordinationToolDescription
         : capability === "capability.native_review"

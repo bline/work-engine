@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { open } from "node:fs/promises";
 import path from "node:path";
 import { compileRequestContextInput } from "./request-context-input.mjs";
+import { RetainedTurnOutputStore } from "./retained-turn-output-store.mjs";
 
 function requireText(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -442,6 +443,7 @@ export class CodexAppServerAdapter {
     transitionGate = null,
     roleToolBridgeResolver = null,
     rolloutSnapshotReader = readCodexRolloutSnapshot,
+    retainedTurnOutputStore = undefined,
   }) {
     if (transitionGate
         && (typeof transitionGate.runTurnAdmission !== "function"
@@ -464,10 +466,21 @@ export class CodexAppServerAdapter {
     this.transitionGate = transitionGate;
     this.rolloutSnapshotReader = rolloutSnapshotReader;
     this.roleToolBridgeResolver = roleToolBridgeResolver;
+    if (retainedTurnOutputStore === undefined) {
+      retainedTurnOutputStore = typeof registry?.filePath === "string"
+        ? new RetainedTurnOutputStore(path.join(path.dirname(registry.filePath), "retained-turn-outputs"))
+        : null;
+    }
+    if (retainedTurnOutputStore !== null && (typeof retainedTurnOutputStore.put !== "function"
+        || typeof retainedTurnOutputStore.read !== "function")) {
+      throw new TypeError("retained turn output store is invalid");
+    }
+    this.retainedTurnOutputStore = retainedTurnOutputStore;
     this.negotiated = null;
     this.threadTools = new Map();
     this.turnCompletionOutcomes = new Map();
     this.turnCompletionWaiters = new Map();
+    this.pendingDurableTurnOutcomes = new Map();
     transport.onServerRequest((request) => this.#handleServerRequest(request));
     transport.onNotification((notification) => this.#handleNotification(notification));
     transport.onClosed?.((error) => this.#rejectTurnWaiters(error));
@@ -620,7 +633,7 @@ export class CodexAppServerAdapter {
     }
   }
 
-  #handleNotification(notification) {
+  async #handleNotification(notification) {
     if (notification?.method !== "turn/completed") return;
     let outcome;
     try {
@@ -629,8 +642,69 @@ export class CodexAppServerAdapter {
       this.#rejectTurnWaiters(error);
       return;
     }
-    this.#retainTurnOutcome(outcome.key, outcome);
-    this.#settleTurnWaiters(outcome.key, outcome);
+    if (!outcome.error && this.retainedTurnOutputStore
+        && typeof this.registry.attachTerminalOutput === "function") {
+      let terminalOutput;
+      try {
+        const terminalIdentity = { threadId: outcome.value.threadId,
+          turnId: outcome.value.turnId, status: outcome.value.status };
+        terminalOutput = typeof outcome.value.outputText === "string"
+          ? { ...await this.retainedTurnOutputStore.put(Buffer.from(outcome.value.outputText, "utf8")),
+            terminalIdentity }
+          : { availability: "unavailable", digest: null, byteLength: null,
+            reference: null, terminalIdentity, reason: "final_output_absent" };
+        await this.registry.attachTerminalOutput({ ...terminalIdentity, terminalOutput });
+      } catch (error) {
+        if (error?.message === "terminal output has no exact completed delivery") {
+          const pendingDelivery = await this.registry.getPendingDeliveryByThread?.(outcome.value.threadId);
+          if (pendingDelivery) {
+            this.pendingDurableTurnOutcomes.set(outcome.key, { outcome, terminalOutput });
+            return;
+          }
+          // Notifications observed outside an admitted durable delivery retain
+          // their historical transient semantics but create no durable claim.
+          this.#retainTurnOutcome(outcome.key, outcome); this.#settleTurnWaiters(outcome.key, outcome);
+          return;
+        }
+        outcome = { key: outcome.key, error };
+      }
+    }
+    this.#retainTurnOutcome(outcome.key, outcome); this.#settleTurnWaiters(outcome.key, outcome);
+  }
+
+  async #finalizePendingDurableOutcome(threadId, turnId) {
+    const key = turnKey(threadId, turnId);
+    const pending = this.pendingDurableTurnOutcomes.get(key);
+    if (!pending) return;
+    this.pendingDurableTurnOutcomes.delete(key);
+    let outcome = pending.outcome;
+    try { await this.registry.attachTerminalOutput({ threadId, turnId,
+      terminalOutput: pending.terminalOutput }); }
+    catch (error) { outcome = { key, error }; }
+    this.#retainTurnOutcome(key, outcome); this.#settleTurnWaiters(key, outcome);
+  }
+
+  async #recoverTurnOutcome(threadId, turnId) {
+    const delivery = await this.registry.getDeliveryByTurn?.(threadId, turnId);
+    if (!delivery) throw new AppServerTurnError(
+      "completed turn output is unavailable for the replayed delivery; reconcile it from App Server thread state",
+      { threadId, turnId },
+    );
+    const metadata = delivery?.terminalOutput ?? null;
+    if (!metadata || metadata.availability === "unavailable") {
+      return Object.freeze({ threadId, turnId, status: "completed", outputText: null,
+        outputAvailability: "unavailable", reason: metadata?.reason ?? "legacy_output_metadata_absent" });
+    }
+    if (!this.retainedTurnOutputStore) {
+      return Object.freeze({ threadId, turnId, status: "completed", outputText: null,
+        outputAvailability: "unavailable", reason: "output_store_unavailable" });
+    }
+    const loaded = await this.retainedTurnOutputStore.read(metadata);
+    if (loaded.status !== "available") return Object.freeze({ threadId, turnId,
+      status: "completed", outputText: null, outputAvailability: loaded.status, reason: loaded.reason });
+    return Object.freeze({ threadId, turnId, status: "completed",
+      outputText: loaded.bytes.toString("utf8"), outputAvailability: "available",
+      outputDigest: metadata.digest, terminalIdentity: metadata.terminalIdentity });
   }
 
   waitForTurnCompletion({ threadId, turnId, replayedDelivery = false, signal } = {}) {
@@ -641,6 +715,9 @@ export class CodexAppServerAdapter {
     }
     const activeWaiters = this.turnCompletionWaiters.get(key);
     if (replayedDelivery && !activeWaiters) {
+      if (this.retainedTurnOutputStore && typeof this.registry.getDeliveryByTurn === "function") {
+        return this.#recoverTurnOutcome(threadId, turnId);
+      }
       return Promise.reject(new AppServerTurnError(
         "completed turn output is unavailable for the replayed delivery; reconcile it from App Server thread state",
         { threadId, turnId },
@@ -948,6 +1025,7 @@ export class CodexAppServerAdapter {
       threadId,
       turnId: response.turn.id,
     });
+    await this.#finalizePendingDurableOutcome(threadId, response.turn.id);
     return {
       logicalRoleInstanceId: role.logicalRoleInstanceId,
       threadId,
