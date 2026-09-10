@@ -57,10 +57,8 @@ export function validateTokenUsagePressureProfile(value) {
 }
 
 export class TokenUsagePressureProjector {
-  constructor({ profile, now = () => new Date().toISOString() }) {
+  constructor({ profile }) {
     this.profile = validateTokenUsagePressureProfile(profile);
-    if (typeof now !== "function") throw new TypeError("token usage pressure clock must be a function");
-    this.now = now;
   }
 
   project(lifecycleSnapshot) {
@@ -83,9 +81,9 @@ export class TokenUsagePressureProjector {
     if (!Number.isSafeInteger(usage.sequence) || usage.sequence < 1) {
       throw new TypeError("latest token usage sequence must be a positive safe integer");
     }
-    const observedAt = this.now();
+    const observedAt = usage.observedAt;
     if (typeof observedAt !== "string" || Number.isNaN(Date.parse(observedAt))) {
-      throw new TypeError("token usage pressure clock must return an ISO timestamp");
+      throw new TypeError("latest token usage observedAt must be an ISO timestamp");
     }
     const sourceEvidence = {
       profileRevision: this.profile.profileRevision,

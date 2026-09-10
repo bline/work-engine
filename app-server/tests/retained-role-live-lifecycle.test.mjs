@@ -1,7 +1,52 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { RetainedRoleLiveLifecycleRuntime } from "../src/index.mjs";
+import {
+  ContextLifecycleEvidenceCollector,
+  ContextPressureController,
+  RetainedRoleLiveLifecycleRuntime,
+  TokenUsagePressureProjector,
+} from "../src/index.mjs";
+
+const pressureProfile = {
+  schemaVersion: 1,
+  usageField: "last.totalTokens",
+  windowField: "modelContextWindow",
+  rounding: "floor",
+  saturation: "clamp_10000",
+};
+
+const pressurePolicy = {
+  schemaVersion: 1,
+  unit: "basis_points",
+  approaching: { enter: 6_500, exit: 5_500 },
+  replacementCandidate: { enter: 7_800, exit: 6_800 },
+  critical: { enter: 9_000, exit: 8_000 },
+};
+
+function tokenUsageObservation() {
+  const breakdown = {
+    inputTokens: 80_000,
+    cachedInputTokens: 0,
+    cacheWriteInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 80_000,
+  };
+  return {
+    schemaVersion: 1,
+    observationType: "token_usage",
+    source: {
+      provider: "codex",
+      transport: "app-server",
+      protocolVersion: "0.149.1",
+      method: "thread/tokenUsage/updated",
+    },
+    threadId: "thread-1",
+    turnId: "turn-1",
+    details: { last: breakdown, total: breakdown, modelContextWindow: 100_000 },
+  };
+}
 
 function fixture({ tokenUsage = true, pressureStatus = "projected", lifecycleError = null } = {}) {
   const calls = [];
@@ -130,4 +175,50 @@ test("completed domain output survives a post-turn lifecycle failure", async () 
       code: "non_sterile_identity_attestation",
     },
   });
+});
+
+test("active-turn pressure observation is replayed byte-identically at completion", async () => {
+  let observedAt = "2026-09-10T20:00:00.000Z";
+  let finishTurn;
+  const completion = new Promise((resolve) => { finishTurn = resolve; });
+  const lifecycleEvidence = new ContextLifecycleEvidenceCollector({ now: () => observedAt });
+  const recorded = lifecycleEvidence.record(tokenUsageObservation());
+  const controller = new ContextPressureController({ policy: pressurePolicy });
+  const pressureObservations = [];
+  const runtime = new RetainedRoleLiveLifecycleRuntime({
+    roleRuntime: {
+      async deliverTurn() {
+        return {
+          logicalRoleInstanceId: "strategic-planner:main",
+          threadId: "thread-1",
+          turnId: "turn-1",
+          replayedDelivery: false,
+          binding: { bindingRevision: 1 },
+          roleProjection: { role: {}, skills: [] },
+        };
+      },
+      adapter: { waitForTurnCompletion: async () => completion },
+    },
+    lifecycleEvidence,
+    pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile }),
+    pressureControllerForRole: async () => ({
+      observe(value) {
+        pressureObservations.push(value);
+        return controller.observe(value);
+      },
+    }),
+    coordinatorForRole: async () => ({ run: async () => ({ status: "reconciled" }) }),
+    activeTurnScheduler: { observe: async () => ({ status: "scheduled" }) },
+  });
+
+  const started = await runtime.startTurn({ text: "Continue." });
+  await runtime.observeLifecycleObservation(recorded);
+  observedAt = "2026-09-10T20:05:00.000Z";
+  finishTurn({ status: "completed", outputText: "Done." });
+  await started.completion;
+
+  assert.equal(controller.snapshot().lastObservation.observedAt, "2026-09-10T20:00:00.000Z");
+  assert.equal(pressureObservations.length, 2);
+  assert.deepEqual(pressureObservations[1], pressureObservations[0]);
+  assert.equal(controller.observe(structuredClone(pressureObservations[0])).status, "replayed");
 });

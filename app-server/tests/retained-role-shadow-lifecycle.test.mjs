@@ -36,6 +36,7 @@ function snapshot({ turnId = "turn-1", activeTokens = 25_000, window = 100_000 }
       schemaVersion: 1,
       observationType: "token_usage",
       sequence: 7,
+      observedAt: "2026-08-25T12:00:00Z",
       source: { provider: "codex", transport: "app-server", protocolVersion: "0.149.1", method: "thread/tokenUsage/updated" },
       threadId: "thread-1",
       turnId,

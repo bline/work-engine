@@ -50,6 +50,7 @@ export function createRetainedRoleShadowHost({
   const lifecycleEvidence = new ContextLifecycleEvidenceCollector({
     retentionLimit: lifecycleRetentionLimit,
     initialSequence: sequenceFloor,
+    now,
   });
   const detachLifecycleEvidence = attachCodexLifecycleEvidence({
     adapter,
@@ -97,7 +98,7 @@ export function createRetainedRoleShadowHost({
   const runtime = new RetainedRoleShadowLifecycleRuntime({
     roleRuntime: new ManifestRoleRuntime({ adapter, manifest }),
     lifecycleEvidence,
-    pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile, now }),
+    pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile }),
     coordinatorForRole,
     ...(projectionForTurn ? { projectionForTurn } : {}),
   });

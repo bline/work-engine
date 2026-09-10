@@ -133,24 +133,37 @@ export function normalizeLifecycleObservation(observation) {
 }
 
 export class ContextLifecycleEvidenceCollector {
-  constructor({ retentionLimit = 256, initialSequence = 0 } = {}) {
+  constructor({
+    retentionLimit = 256,
+    initialSequence = 0,
+    now = () => new Date().toISOString(),
+  } = {}) {
     if (!Number.isSafeInteger(retentionLimit) || retentionLimit < 1) {
       throw new TypeError(
         "lifecycle evidence retention limit must be a positive safe integer",
       );
     }
     requireNonNegativeInteger(initialSequence, "lifecycle evidence initial sequence");
+    if (typeof now !== "function") {
+      throw new TypeError("lifecycle evidence clock must be a function");
+    }
     this.retentionLimit = retentionLimit;
     this.nextSequence = initialSequence + 1;
     this.droppedThroughSequence = initialSequence;
     this.retained = [];
+    this.now = now;
   }
 
   record(observation) {
     const normalized = normalizeLifecycleObservation(observation);
+    const observedAt = this.now();
+    if (typeof observedAt !== "string" || Number.isNaN(Date.parse(observedAt))) {
+      throw new TypeError("lifecycle evidence clock must return an ISO timestamp");
+    }
     const recorded = deepFreeze({
       ...normalized,
       sequence: this.nextSequence,
+      observedAt,
     });
     this.nextSequence += 1;
     this.retained.push(recorded);

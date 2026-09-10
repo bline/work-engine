@@ -114,7 +114,10 @@ test("recognized malformed lifecycle notifications fail instead of becoming evid
 });
 
 test("collector retains immutable bounded evidence and projects one thread", () => {
-  const collector = new ContextLifecycleEvidenceCollector({ retentionLimit: 2 });
+  const collector = new ContextLifecycleEvidenceCollector({
+    retentionLimit: 2,
+    now: () => "2026-09-10T20:00:00.000Z",
+  });
   const first = collector.record(normalizeCodexLifecycleNotification(
     tokenUsageNotification({ threadId: "thread-1", turnId: "turn-1" }),
   ));
@@ -131,6 +134,7 @@ test("collector retains immutable bounded evidence and projects one thread", () 
   ));
 
   assert.equal(first.sequence, 1);
+  assert.equal(first.observedAt, "2026-09-10T20:00:00.000Z");
   assert.equal(third.sequence, 3);
   assert.deepEqual(collector.observations().map(({ sequence }) => sequence), [2, 3]);
   assert.deepEqual(collector.observations({ afterSequence: 2 }), [third]);
@@ -150,6 +154,15 @@ test("collector retains immutable bounded evidence and projects one thread", () 
     earliestGloballyRetainedSequence: 2,
   });
   assert.equal(Object.isFrozen(threadOne), true);
+});
+
+test("collector rejects an invalid receipt clock before retaining evidence", () => {
+  const collector = new ContextLifecycleEvidenceCollector({ now: () => "not-a-time" });
+  assert.throws(
+    () => collector.record(normalizeCodexLifecycleNotification(tokenUsageNotification())),
+    /clock must return an ISO timestamp/,
+  );
+  assert.equal(collector.observations().length, 0);
 });
 
 test("subscription records supported observations and surfaces normalization errors", () => {

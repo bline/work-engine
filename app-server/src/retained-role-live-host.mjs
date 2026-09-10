@@ -63,6 +63,7 @@ export function createRetainedRoleLiveHost({
   const lifecycleEvidence = new ContextLifecycleEvidenceCollector({
     retentionLimit: lifecycleRetentionLimit,
     initialSequence: sequenceFloor,
+    now,
   });
   const transitionRuntime = new ContextTransitionLeaseRuntime({
     gate: transitionGate,
@@ -129,7 +130,7 @@ export function createRetainedRoleLiveHost({
   runtime = new RetainedRoleLiveLifecycleRuntime({
     roleRuntime: new ManifestRoleRuntime({ adapter, manifest }),
     lifecycleEvidence,
-    pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile, now }),
+    pressureProjector: new TokenUsagePressureProjector({ profile: pressureProfile }),
     pressureControllerForRole,
     coordinatorForRole,
     activeTurnScheduler,

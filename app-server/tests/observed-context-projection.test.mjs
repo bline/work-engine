@@ -21,7 +21,9 @@ const fileSha256 = async (filePath) => createHash("sha256")
   .digest("hex");
 
 function fixture() {
-  const collector = new ContextLifecycleEvidenceCollector();
+  const collector = new ContextLifecycleEvidenceCollector({
+    now: () => "2026-09-10T20:00:00.000Z",
+  });
   collector.record(normalizeCodexLifecycleNotification({
     method: "thread/tokenUsage/updated",
     params: {
@@ -88,6 +90,10 @@ test("host signs a deterministic attributed observed-context projection", () => 
     "provider_internal_instructions",
   ]);
   assert.equal(first.observedContext.visibleItems[1].trustClass, "untrusted_data");
+  assert.equal(
+    first.observedContext.lifecycleSnapshot.latestTokenUsage.observedAt,
+    "2026-09-10T20:00:00.000Z",
+  );
   assert.equal(Object.isFrozen(first.observedContext), true);
   assert.equal(verifyObservedContextProjection(first, {
     resolvePublicKey: (keyId) => keyId === "host-key-1" ? publicKey : null,
