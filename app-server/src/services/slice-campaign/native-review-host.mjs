@@ -61,6 +61,15 @@ function exactPreSpawnRecovery(recovery, expectedSession) {
     && recovery.sessionAvailable === false
     && recovery.sessionId === expectedSession ? recovery : null;
 }
+function exactRetainedAuthenticationRecovery(recovery, expectedSession) {
+  return recovery?.schemaVersion === 1
+    && recovery.failureSignature === "authentication_required"
+    && recovery.providerEntry === "not_entered"
+    && recovery.sessionAvailable === true
+    && recovery.sessionId === expectedSession
+    && /^[0-9a-f]{64}$/.test(recovery.transportReceiptDigest ?? "")
+    && /^[0-9a-f]{64}$/.test(recovery.sessionArtifactDigest ?? "") ? recovery : null;
+}
 function lineCount(content) { return Math.max(1, content.split("\n").length - (content.endsWith("\n") ? 1 : 0)); }
 
 async function inspectSubjectWorkspace(directory, subject) {
@@ -268,7 +277,8 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
 
 export function createNativeReviewHost({workspaceRoot, campaignService, owners} = {}) {
   if (!campaignService?.recover || !campaignService?.runNativeReview
-      || !campaignService?.retryNativeReview || !campaignService?.correctNativeReviewResult) {
+      || !campaignService?.retryNativeReview || !campaignService?.correctNativeReviewResult
+      || !campaignService?.succeedReviewSelection) {
     throw new TypeError("native review host requires Slice Campaign");
   }
   const request = (campaign, obligationId, operationId,
@@ -369,12 +379,24 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     const recordedRecovery = obligation?.recovery ?? obligation?.failure?.recovery ?? null;
     const adapterRecovery = await owners.adapter.recoverFailure(reviewInstance, {recordedRecovery});
     const expectedSession = owners.adapter.runtimeSessionId(reviewInstance);
+    const recordedAuthentication = exactRetainedAuthenticationRecovery(recordedRecovery, expectedSession);
+    const adapterAuthentication = exactRetainedAuthenticationRecovery(adapterRecovery, expectedSession);
+    if (recordedAuthentication && adapterAuthentication) return adapterAuthentication;
     const exactRecorded = exactPreSpawnRecovery(recordedRecovery, expectedSession);
     const exactAdapter = exactPreSpawnRecovery(adapterRecovery, expectedSession);
     return exactRecorded && exactAdapter
       && episodeDigest(exactRecorded) === episodeDigest(exactAdapter) ? exactRecorded : null;
   };
   return Object.freeze({
+    correctProductionPathClaims({identity, expected_revision, obligation_id, operation_id,
+      authority, successor_selection, observation_id}) {
+      const campaign = campaignService.recover(identity);
+      const {base} = request(campaign, obligation_id, operation_id);
+      return campaignService.succeedReviewSelection({identity, expectedRevision: expected_revision,
+        operationId: operation_id, obligationId: obligation_id, authority,
+        successorSelection: successor_selection, observationId: observation_id,
+        episodeAuthority: base.authority});
+    },
     async execute({identity, expected_revision, obligation_id, operation_id}) {
       const campaign = campaignService.recover(identity);
       const {base} = request(campaign, obligation_id, operation_id);

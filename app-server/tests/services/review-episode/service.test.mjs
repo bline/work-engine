@@ -81,3 +81,34 @@ test("review episode retries are idempotent and conflicting transitions fail", a
   assert.throws(() => service.transition({ authority: grant, expectedRevision: reported.revision,
     transitionId: "result", action: "mark_uncertain", payload: { reason: "x", reconciliationAction: "y" } }), /conflicts/);
 });
+
+test("evidence succession appends admissions without rewriting result or predecessor Episode", async () => {
+  const result = await fixture("acceptable-as-is");
+  const service = createReviewEpisodeService({implementationReview: createImplementationReviewService()});
+  const grant = authority(result.subject);
+  let state = service.begin({authority: grant, transitionId: "begin"});
+  const admission = (suffix, status) => ({claimRevisionRef: reference("claim-evidence", `claim-${suffix}`, suffix),
+    establishmentRef: reference("claim-evidence", `establishment-${suffix}`, suffix),
+    observationRef: reference("claim-evidence", "observation", "observation"),
+    consumptionRef: reference("slice-campaign", `consumption-${suffix}`, suffix), status,
+    boundary: suffix.includes("builder") ? "builder_projection" : "campaign_terminalization",
+    consumer: suffix.includes("builder") ? "slice-builder:campaign" : "slice-campaign:campaign"});
+  const predecessors = [admission("builder-prior", "unestablished"),
+    admission("terminal-prior", "unestablished")];
+  state = service.transition({authority: grant, expectedRevision: state.revision,
+    transitionId: "result", action: "record_result",
+    payload: {result, unresolvedQuestions: [], evidenceAdmissions: predecessors}});
+  const blockedRevision = state.revision; const resultDigest = digest(state.currentResult);
+  const successors = [admission("builder-successor", "established"),
+    admission("terminal-successor", "established")];
+  state = service.transition({authority: grant, expectedRevision: state.revision,
+    transitionId: "evidence-successor", action: "succeed_evidence",
+    payload: {predecessorAdmissions: predecessors, successorAdmissions: successors}});
+  assert.equal(state.phase, "reported");
+  assert.equal(state.evidenceAdmissions.length, 4);
+  assert.equal(digest(state.currentResult), resultDigest);
+  assert.deepEqual(service.read({identity, revision: blockedRevision}).evidenceAdmissions, predecessors);
+  assert.throws(() => service.transition({authority: grant, expectedRevision: state.revision,
+    transitionId: "bad-successor", action: "succeed_evidence",
+    payload: {predecessorAdmissions: predecessors, successorAdmissions: successors}}), /requires blocked/);
+});

@@ -31,8 +31,15 @@ const policy = {classification: "confidential", access: "episode actors", retent
   exactRetentionAuthorized: false, redaction: "raw bodies omitted", tamperEvidence: "sha256"};
 
 async function credentials(root) {
-  const source = path.join(root, "fixture-credentials.json");
-  await writeFile(source, '{"fixture":"subscription"}\n', {mode: 0o600});
+  return loginCredentials(root);
+}
+
+async function loginCredentials(root, accessToken = "fixture-access-token-1", {mode = 0o600,
+  expiresAt = Date.parse("2099-01-01T00:00:00Z")} = {}) {
+  const source = path.join(root, "fixture-login-credentials.json");
+  await writeFile(source, `${JSON.stringify({claudeAiOauth: {accessToken,
+    refreshToken: "fixture-refresh-token-that-must-not-leave-the-source", expiresAt,
+    scopes: ["user:inference"]}})}\n`, {mode});
   return source;
 }
 
@@ -58,6 +65,7 @@ async function transportResult(request, envelope = null, {exitCode = 0, stderr =
   const base = {schema_version: 1, request: {transport: "anthropic", continuity: "retained",
     command_sha256: digest(command), stdin_sha256: request.args[stdinShaIndex + 1],
     stdin_size_bytes: stdinBytes.length,
+    claude_code_oauth_token_present: Boolean(request.env.CLAUDE_CODE_OAUTH_TOKEN),
     session_mode: sessionFlag === "--session-id" ? "new" : "resume",
     paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false,
     session_id: command[sessionIndex + 1]}, attempts: [{transport: "anthropic", harness: "claude-code",
@@ -84,6 +92,7 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   const adapter = new NativeClaudeCodeReviewerAdapter({registry: new ReviewerProfileRegistry({profiles: [profile()]}),
     workspaceRoot: root, stateRoot: path.join(root, "state"),
     credentialSourcePath,
+    baseEnvironment: {CLAUDE_CODE_OAUTH_TOKEN: "ambient-token-must-not-leak"},
     catalogSource,
     transportScript: path.join(root, "transport.py"),
     executeProcess: async (request) => {
@@ -101,9 +110,11 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   assert.equal(initial.receipt.gateway, "anthropic");
   assert.equal(initial.receipt.continuity, "fresh_initial");
   const isolatedCredentials = path.join(root, "state", "native-claude", digest("episode"), "config", ".credentials.json");
-  assert.equal(await readFile(isolatedCredentials, "utf8"), '{"fixture":"subscription"}\n');
-  assert.equal((await stat(isolatedCredentials)).mode & 0o777, 0o600);
+  await assert.rejects(readFile(isolatedCredentials, "utf8"), {code: "ENOENT"});
+  assert.equal(initial.receipt.authenticationMechanism, "claude_login_access_projection");
+  assert.equal(initial.receipt.authenticationRefreshCapable, false);
   assert.equal(calls[0].args.includes("openrouter"), false);
+  assert.equal(calls[0].env.CLAUDE_CODE_OAUTH_TOKEN, "fixture-access-token-1");
   assert.deepEqual(calls[0].args.slice(1, 7), ["--transport", "anthropic", "--continuity", "retained", "--receipt", calls[0].args[6]]);
   assert.equal(calls[0].args.includes("--session-id"), true);
   assert.equal(calls[0].args.includes("--strict-mcp-config"), true);
@@ -128,6 +139,90 @@ test("native Claude adapter constructs only direct-Anthropic retained commands a
   await assert.rejects(adapter.execute({instanceId: "episode", profileId: profile().profileId, subject,
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Read-only review.",
     continuationSessionId: "00000000-0000-4000-8000-000000000000"}), /pre-registered session/);
+});
+
+test("native Claude adapter projects only the current login access token", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-access-projection-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const credentialSourcePath = await loginCredentials(root);
+  const instanceRoot = path.join(root, "state", "native-claude", digest("oauth-token"));
+  await mkdir(path.join(instanceRoot, "config"), {recursive: true});
+  await writeFile(path.join(instanceRoot, "config", ".credentials.json"),
+    '{"fixture":"stale-rotating-credentials"}\n', {mode: 0o600});
+  const observedTokens = [];
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath,
+    catalogSource, transportScript: path.join(root, "transport.py"),
+    baseEnvironment: {ANTHROPIC_API_KEY: "must-not-route-through-api-key"},
+    executeProcess: async (request) => {
+      observedTokens.push(request.env.CLAUDE_CODE_OAUTH_TOKEN);
+      assert.equal(Object.hasOwn(request.env, "ANTHROPIC_API_KEY"), false);
+      const command = request.args.slice(request.args.indexOf("--") + 1);
+      const sessionFlag = command.includes("--session-id") ? "--session-id" : "--resume";
+      return transportResult(request, {type: "result", subtype: "success",
+        session_id: command[command.indexOf(sessionFlag) + 1], model: "claude-sonnet-5",
+        structured_output: result});
+    },
+  });
+  const initial = await adapter.execute({instanceId: "oauth-token", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Read-only review."});
+  assert.equal(initial.failure, null);
+  assert.equal(initial.receipt.authenticationMechanism, "claude_login_access_projection");
+  assert.equal(initial.receipt.authenticationExpiresAt, "2099-01-01T00:00:00.000Z");
+  assert.equal(initial.receipt.authenticationRefreshCapable, false);
+  await assert.rejects(readFile(path.join(instanceRoot, "config", ".credentials.json")), {code: "ENOENT"});
+  assert.doesNotMatch(JSON.stringify(initial), /fixture-access-token|fixture-refresh-token/);
+  assert.doesNotMatch(await readFile(path.join(instanceRoot, "latest-attempt.json"), "utf8"),
+    /fixture-access-token|fixture-refresh-token/);
+
+  await loginCredentials(root, "fixture-access-token-2");
+  const continued = await adapter.execute({instanceId: "oauth-token", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Read-only review.", continuationSessionId: initial.runtimeSessionId});
+  assert.equal(continued.failure, null);
+  assert.deepEqual(observedTokens, ["fixture-access-token-1", "fixture-access-token-2"]);
+});
+
+test("native Claude adapter fails before process entry for an unsafe login credential source", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-unsafe-login-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const credentialSourcePath = await loginCredentials(root, "fixture-access-token", {mode: 0o644});
+  let calls = 0;
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath,
+    catalogSource, transportScript: path.join(root, "transport.py"),
+    executeProcess: async () => { calls += 1; throw new Error("must not run"); },
+  });
+  const execution = await adapter.execute({instanceId: "unsafe-oauth", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Read-only review."});
+  assert.equal(calls, 0);
+  assert.equal(execution.failure.failureSignature, "authentication_unavailable");
+  assert.match(execution.failure.message, /owner-owned, owner-only regular file/);
+});
+
+test("native Claude adapter rejects an expired login access projection before provider entry", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-expired-login-"));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  const credentialSourcePath = await loginCredentials(root, "fixture-expired-token",
+    {expiresAt: Date.parse("2026-01-01T00:00:00Z")});
+  let calls = 0;
+  const adapter = new NativeClaudeCodeReviewerAdapter({
+    registry: new ReviewerProfileRegistry({profiles: [profile()]}), workspaceRoot: root,
+    stateRoot: path.join(root, "state"), credentialSourcePath,
+    catalogSource, transportScript: path.join(root, "transport.py"),
+    now: () => Date.parse("2026-09-09T00:00:00Z"),
+    executeProcess: async () => { calls += 1; throw new Error("must not run"); },
+  });
+  const execution = await adapter.execute({instanceId: "expired-login", profileId: profile().profileId,
+    subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary,
+    roleInstructions: "Read-only review."});
+  assert.equal(calls, 0);
+  assert.equal(execution.failure.failureSignature, "authentication_unavailable");
+  assert.match(execution.failure.message, /access token is expired/);
 });
 
 test("native Claude adapter uses the exact profile/catalog-authorized Anthropic model", async (t) => {
@@ -323,15 +418,16 @@ test("native Claude correction prompt states immutable finding and result closur
   assert.match(prompt, /Never combine acceptable_as_is with a limitation or unresolved finding/);
 });
 
-test("native Claude adapter refreshes isolated credentials only after exact retained authentication failure", async (t) => {
+test("native Claude adapter rereads the access projection after exact retained authentication failure", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "native-claude-adapter-auth-refresh-"));
   t.after(() => rm(root, {recursive: true, force: true}));
   const stateRoot = path.join(root, "state");
   const credentialSourcePath = await credentials(root);
-  await writeFile(credentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
+  const observedTokens = [];
   const adapter = new NativeClaudeCodeReviewerAdapter({registry: new ReviewerProfileRegistry({profiles: [profile()]}),
     workspaceRoot: root, stateRoot, credentialSourcePath, catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
+      observedTokens.push(request.env.CLAUDE_CODE_OAUTH_TOKEN);
       const resumeFlag = request.args.indexOf("--resume");
       return transportResult(request, {type: "result", subtype: "success",
         session_id: request.args[resumeFlag + 1], model: "claude-sonnet-5", structured_output: result});
@@ -369,18 +465,25 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
     {text: "Not logged in · Please run /login"},
     {text: "Authentication is required."},
   ], {newerDecoy: true});
+  await loginCredentials(root, "fixture-refreshed-access-token");
   const refreshed = await adapter.execute({instanceId: "exact-auth-failure", profileId: profile().profileId,
     subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
     continuationSessionId: exact.session, refreshCredentials: true});
   assert.equal(refreshed.failure, null);
-  assert.equal(await readFile(path.join(exact.configRoot, ".credentials.json"), "utf8"),
-    '{"fixture":"refreshed-subscription"}\n');
+  assert.deepEqual(observedTokens, ["fixture-refreshed-access-token"]);
+  await assert.rejects(readFile(path.join(exact.configRoot, ".credentials.json")), {code: "ENOENT"});
 
   const legacy = await prepare("legacy-auth-failure", [
     {text: "Failed to authenticate: OAuth session expired and could not be refreshed"},
   ]);
   const recordedRecovery = await adapter.recoverFailure("legacy-auth-failure");
   assert.equal(recordedRecovery.failureSignature, "authentication_required");
+  const invalidBearer = await prepare("invalid-bearer-token", [
+    {text: "Failed to authenticate. API Error: 401 Invalid bearer token"},
+  ]);
+  const invalidBearerRecovery = await adapter.recoverFailure("invalid-bearer-token");
+  assert.equal(invalidBearerRecovery.failureSignature, "authentication_required");
+  assert.equal(invalidBearerRecovery.sessionId, invalidBearer.session);
   const legacyInstanceRoot = path.dirname(legacy.configRoot);
   await rm(path.join(legacyInstanceRoot, "latest-attempt.json"));
   assert.equal(await adapter.recoverFailure("legacy-auth-failure"), null);
@@ -416,8 +519,7 @@ test("native Claude adapter refreshes isolated credentials only after exact reta
     subject, catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review.",
     continuationSessionId: other.session});
   assert.equal(preserved.failure, null);
-  assert.equal(await readFile(path.join(other.configRoot, ".credentials.json"), "utf8"),
-    '{"fixture":"stale-subscription"}\n');
+  await assert.rejects(readFile(path.join(other.configRoot, ".credentials.json")), {code: "ENOENT"});
 });
 
 test("native Claude adapter preserves transport failure and rejects subject or UUID drift", async (t) => {
@@ -430,7 +532,8 @@ test("native Claude adapter preserves transport failure and rejects subject or U
     credentialSourcePath,
     catalogSource,
     transportScript: path.join(root, "transport.py"), executeProcess: async (request) => {
-      if (mode === "transport") return transportResult(request, null, {exitCode: 1, stderr: "quota"});
+      if (mode === "transport") return transportResult(request, null,
+        {exitCode: 1, stderr: "quota", observedModels: []});
       const index = request.args.indexOf("--session-id"); const session = request.args[index + 1];
       return transportResult(request, {type: "result", subtype: "success",
         session_id: mode === "uuid" ? "00000000-0000-4000-8000-000000000000" : session,
@@ -465,7 +568,7 @@ test("native Claude adapter fails closed on catalog provenance drift and inherit
     catalogProjection: catalog, rawEventPolicy: policy, reviewBoundary, roleInstructions: "Review."};
   await assert.rejects(create().execute({...request,
     catalogProjection: {...catalog, sourceSha256: "c".repeat(64)}}), /catalog provenance differs/);
-  for (const name of ["CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY",
+  for (const name of ["CLAUDE_CODE_USE_GATEWAY", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY",
     "ANTHROPIC_BEDROCK_BASE_URL", "ANTHROPIC_VERTEX_BASE_URL", "ANTHROPIC_FOUNDRY_BASE_URL"]) {
     await assert.rejects(create({[name]: "1"}).execute(request), new RegExp(name));
   }
@@ -545,12 +648,12 @@ test("native Claude adapter records and retries an exact pre-spawn process failu
   assert.equal(failed.failure.recovery.errorCode, "E2BIG");
   assert.equal(failed.transportReceipt, null);
   assert.deepEqual(await adapter.recoverFailure("pre-spawn"), failed.failure.recovery);
-  await writeFile(adapter.credentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
+  await loginCredentials(root, "fixture-refreshed-access-token");
   const retried = await adapter.execute({...request, preSpawnRetry: true, refreshCredentials: true});
   assert.equal(retried.failure, null);
   assert.equal(calls, 2);
-  assert.equal(await readFile(path.join(root, "state", "native-claude", digest("pre-spawn"),
-    "config", ".credentials.json"), "utf8"), '{"fixture":"refreshed-subscription"}\n');
+  await assert.rejects(readFile(path.join(root, "state", "native-claude", digest("pre-spawn"),
+    "config", ".credentials.json")), {code: "ENOENT"});
 });
 
 test("native Claude adapter does not relabel an unclassified process exception as pre-provider", async (t) => {

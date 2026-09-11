@@ -784,7 +784,11 @@ test("fresh executable-generation roots can retain one supervisor operational st
   const factoryStateRoots = [];
   const reviewerCredentialSourcePath = path.join(operationalStateRoot, "fixture-credentials.json");
   await mkdir(operationalStateRoot, { recursive: true });
-  await writeFile(reviewerCredentialSourcePath, '{"fixture":"subscription"}\n', { mode: 0o600 });
+  await writeFile(reviewerCredentialSourcePath, `${JSON.stringify({claudeAiOauth: {
+    accessToken: "fixture-generation-access-token",
+    refreshToken: "fixture-generation-refresh-token-that-must-not-be-projected",
+    expiresAt: Date.parse("2099-01-01T00:00:00Z"),
+  }})}\n`, { mode: 0o600 });
   const nativeReviewOwnersFactory = (options) => createNativeReviewHostOwners({
     ...options,
     reviewerCredentialSourcePath,
@@ -825,6 +829,7 @@ test("fresh executable-generation roots can retain one supervisor operational st
         transport: "anthropic", continuity: "retained",
         command_sha256: createHash("sha256").update(JSON.stringify(command)).digest("hex"),
         stdin_sha256: request.args[stdinShaIndex + 1], stdin_size_bytes: stdinBytes.length,
+        claude_code_oauth_token_present: true,
         session_mode: "new", session_id: request.args[sessionIndex + 1],
         paid_failover_explicitly_allowed: false, batch_route_explicitly_allowed: false},
       attempts: [{transport: "anthropic", gateway: "anthropic",

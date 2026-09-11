@@ -69,6 +69,7 @@ async function ensureTransportReceipt(request, result) {
     request: {...existing.request, transport: "anthropic", continuity: "retained",
       command_sha256: createHash("sha256").update(JSON.stringify(command)).digest("hex"),
       stdin_sha256: request.args[stdinShaIndex + 1], stdin_size_bytes: stdinBytes.length,
+      claude_code_oauth_token_present: Boolean(request.env.CLAUDE_CODE_OAUTH_TOKEN),
       session_mode: sessionFlag === "--session-id" ? "new" : "resume",
       session_id: command[sessionIndex + 1], paid_failover_explicitly_allowed: false,
       batch_route_explicitly_allowed: false},
@@ -190,7 +191,10 @@ test("supervisor dispatch uses the production review boundary against the real c
   const evidence = {path: filePath, startLine: 1, endLine: 1,
     sha256: createHash("sha256").update("export const value = 2;\n").digest("hex")};
   const ownersFactory = (options) => createProductionNativeReviewHostOwners({...options,
-    reviewerCredentialSourcePath, reviewerExecuteProcess: withTransportReceipt(async (request) => {
+    reviewerExecuteProcess: withTransportReceipt(async (request) => {
+      assert.equal(request.env.CLAUDE_CODE_OAUTH_TOKEN, "fixture-login-access-token");
+      await assert.rejects(readFile(path.join(request.env.CLAUDE_CONFIG_DIR, ".credentials.json")),
+        {code: "ENOENT"});
       const sessionIndex = request.args.indexOf("--session-id");
       return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
         session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5",
@@ -199,7 +203,7 @@ test("supervisor dispatch uses the production review boundary against the real c
     })});
   const host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: fixture, stateRoot,
     canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory,
-    nativeReviewOwnersFactory: ownersFactory});
+    nativeReviewOwnersFactory: ownersFactory, reviewerCredentialSourcePath});
   t.after(() => host.close());
   const executed = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: "native-host:production-boundary:initial"}));
@@ -207,9 +211,15 @@ test("supervisor dispatch uses the production review boundary against the real c
   assert.equal(campaign.nativeReview.obligations.generic.status, "reported");
 });
 
-async function credentialSource(stateRoot) {
+function loginCredentialJson(accessToken = "fixture-login-access-token") {
+  return `${JSON.stringify({claudeAiOauth: {accessToken,
+    refreshToken: "fixture-login-refresh-token-that-must-not-be-projected",
+    expiresAt: Date.parse("2099-01-01T00:00:00Z")}})}\n`;
+}
+
+async function credentialSource(stateRoot, accessToken = "fixture-login-access-token") {
   const source = path.join(stateRoot, "fixture-credentials.json");
-  await writeFile(source, '{"fixture":"subscription"}\n', {mode: 0o600});
+  await writeFile(source, loginCredentialJson(accessToken), {mode: 0o600});
   return source;
 }
 
@@ -944,7 +954,8 @@ test("definite pre-provider authentication failure resumes the exact retained se
   assert.equal(recovered.result.recovery.sessionId, sessions[0].session);
   assert.equal(JSON.parse(await readFile(path.join(path.dirname(isolatedConfigRoot), "latest-attempt.json"), "utf8"))
     .sessionId, sessions[0].session);
-  await writeFile(reviewerCredentialSourcePath, '{"fixture":"refreshed-subscription"}\n', {mode: 0o600});
+  await writeFile(reviewerCredentialSourcePath, loginCredentialJson("fixture-refreshed-access-token"),
+    {mode: 0o600});
   dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: "process-start-retry:retry-1"}));
   assert.equal(dispatched.result.failure, null);
@@ -953,8 +964,7 @@ test("definite pre-provider authentication failure resumes the exact retained se
     {session: sessions[0].session, fresh: true, resume: false},
     {session: sessions[0].session, fresh: false, resume: true},
   ]);
-  assert.equal(await readFile(path.join(isolatedConfigRoot, ".credentials.json"), "utf8"),
-    '{"fixture":"refreshed-subscription"}\n');
+  await assert.rejects(readFile(path.join(isolatedConfigRoot, ".credentials.json")), {code: "ENOENT"});
 });
 
 test("credential repair retries the exact deterministic UUID when no process or session existed", async (t) => {
@@ -981,7 +991,7 @@ test("credential repair retries the exact deterministic UUID when no process or 
   assert.equal(sessions.length, 0);
   assert.equal(dispatched.result.failure.failureSignature, "authentication_unavailable");
   assert.equal(campaign.nativeReview.obligations.generic.status, "retryable_failure");
-  await writeFile(reviewerCredentialSourcePath, '{"fixture":"subscription"}\n', {mode: 0o600});
+  await writeFile(reviewerCredentialSourcePath, loginCredentialJson(), {mode: 0o600});
   dispatched = await host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
     obligation_id: "generic", operation_id: operationId}));
   assert.equal(dispatched.result.failure, null);
@@ -989,6 +999,63 @@ test("credential repair retries the exact deterministic UUID when no process or 
   assert.equal(sessions.length, 1);
   assert.deepEqual(sessions[0], {session: dispatched.result.campaign.nativeReview.obligations.generic.runtimeSessionRef.reference,
     fresh: true, resume: false});
+});
+
+test("restart reconciles a newer retained authentication failure from an interrupted retry", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-auth-retry-recovery-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  let campaign = await seed(stateRoot);
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  const sessions = [];
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options, reviewerCredentialSourcePath,
+    reviewerExecuteProcess: async (request) => {
+      const command = request.args.slice(request.args.indexOf("--") + 1);
+      const sessionFlag = command.includes("--session-id") ? "--session-id" : "--resume";
+      const session = command[command.indexOf(sessionFlag) + 1];
+      sessions.push(session);
+      if (sessions.length <= 2) {
+        const receiptPath = request.args[request.args.indexOf("--receipt") + 1];
+        const sessionDirectory = path.join(request.env.CLAUDE_CONFIG_DIR, "projects", "fixture");
+        await mkdir(sessionDirectory, {recursive: true});
+        const timestamp = new Date().toISOString();
+        await writeFile(path.join(sessionDirectory, `${session}.jsonl`), `${JSON.stringify({type: "assistant",
+          timestamp, message: {role: "assistant", content: [{type: "text",
+            text: "Failed to authenticate: OAuth session expired and could not be refreshed"}]}})}\n`,
+        {flag: "a"});
+        const failure = {exitCode: 1, stdout: "", stderr: "authentication required"};
+        if (sessions.length === 2) {
+          await ensureTransportReceipt(request, failure);
+          throw new Error("host lost the retry result after transport completion");
+        }
+        return failure;
+      }
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: session, model: "claude-sonnet-5", structured_output: result})};
+    }});
+  let host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  let dispatched = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "orphaned-auth-retry:initial"}));
+  campaign = dispatched.result.campaign;
+  const initialRecovery = campaign.nativeReview.obligations.generic.failure.recovery;
+  await assert.rejects(host.dispatch(effect("retry", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "orphaned-auth-retry:retry-1"})),
+  /outcome is uncertain after launch failure/);
+  host.close();
+
+  host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.obligation.status, "retry_executing");
+  assert.equal(recovered.result.recovery.failureSignature, "authentication_required");
+  assert.notEqual(recovered.result.recovery.transportReceiptDigest, initialRecovery.transportReceiptDigest);
+  dispatched = await host.dispatch(effect("retry", {identity,
+    expected_revision: recovered.result.campaign_revision, obligation_id: "generic",
+    operation_id: "orphaned-auth-retry:retry-2"}));
+  assert.equal(dispatched.result.failure, null);
+  assert.equal(dispatched.result.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.deepEqual(sessions, [sessions[0], sessions[0], sessions[0]]);
 });
 
 test("process-start failure is durably retryable with the exact fresh reviewer identity", async (t) => {

@@ -335,6 +335,12 @@ def _base_receipt(
             "anthropic_1p_required": args.require_anthropic_1p,
             "claude_config_dir": config_dir_value,
             "claude_config_dir_sha256_before": config_digest,
+            # Presence only: never persist the bearer token or a correlatable
+            # digest of it. This attests what the transport process received;
+            # _anthropic_environment preserves this variable for the child.
+            "claude_code_oauth_token_present": bool(
+                os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
+            ),
             "experimental_betas_disabled": (
                 os.environ.get("CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS") == "1"
             ),
