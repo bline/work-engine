@@ -28,7 +28,7 @@ function wrap(generationId, capability, operation, result) {
 }
 
 export async function createSupervisorCampaignCapabilityHostRuntime({
-  workspaceRoot, stateRoot, canonicalBranches,
+  workspaceRoot, stateRoot, canonicalBranches, reviewerCredentialSourcePath = null,
   legacyAdapterFactory = createLegacySupervisorControlAdapter,
   nativeReviewOwnersFactory = createNativeReviewHostOwners,
 } = {}) {
@@ -50,7 +50,8 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
     const completionPublication = createCompletionPublicationService({ workspace });
     const strategicReconciliation = createStrategicReconciliationHost();
     const operationalCoordination = createChatboardAdapter({ workspaceRoot });
-    nativeReviewOwners = await nativeReviewOwnersFactory({workspaceRoot, stateRoot});
+    nativeReviewOwners = await nativeReviewOwnersFactory({workspaceRoot, stateRoot,
+      reviewerCredentialSourcePath});
     const service = createSliceCampaignService({
       store,
       reviewSubject,
@@ -197,6 +198,8 @@ export async function createSupervisorCampaignCapabilityHostRuntime({
       "capability.native_review/recover": ({ input }) => nativeReview.recover(input),
       "capability.native_review/retry": ({ input }) => nativeReview.retry(input),
       "capability.native_review/correct_result": ({ input }) => nativeReview.correctResult(input),
+      "capability.native_review/correct_production_path_claims": ({ input }) =>
+        nativeReview.correctProductionPathClaims(input),
       "capability.native_review/record_finding_evaluation": ({ input }) =>
         nativeReview.recordFindingEvaluation(input),
       "capability.native_review/execute_remediation": ({ input }) =>
