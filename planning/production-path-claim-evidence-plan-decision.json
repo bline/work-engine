@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "decision_id": "work-engine.production-path-claim-evidence.native-review-admission-terminalization.plan-v1",
+  "subject": {
+    "path": "planning/production-path-claim-evidence-implementation-plan.md",
+    "sha256": "ac12b877d3096aaab075811337aaa53ef7864ee417921f0aeeef85f0f5429ff3",
+    "repository_commit": "9a1016987be7676d79a98ca44e8582dc83036548"
+  },
+  "decision": {
+    "status": "accepted",
+    "accepted_at": "2026-09-09T04:06:19Z",
+    "owner": "operator",
+    "authority_reference": "Direct operator statement in the active session: The plan is accepted.",
+    "consequence": "The exact subject revision is the accepted PPCE-03/PPCE-04 implementation-planning basis. Any byte change requires a successor plan decision."
+  },
+  "separate_unaccepted_artifact": {
+    "path": "planning/production-path-claim-evidence-campaign.candidate.yaml",
+    "sha256": "53c26cbe8bc9d1f2f252b0147a705b11549c8ce570e6662d26bfc179c67dbf5a",
+    "status": "candidate_not_launched"
+  },
+  "authority_boundary": {
+    "authorizes": [
+      "Use of the exact plan revision as the basis for a later separately authorized campaign and slice plan."
+    ],
+    "does_not_authorize": [
+      "Campaign launch or implementation.",
+      "Claude or any other provider use.",
+      "A bootstrap evidence protocol or reliance on retained session artifacts.",
+      "Roadmap priority or S14 ownership.",
+      "Repair of the separate intake staging-path defect.",
+      "A Git commit, publication, or push."
+    ]
+  },
+  "reopening_conditions": [
+    "The accepted plan bytes change.",
+    "The accepted proposal or governing doctrine revision changes materially.",
+    "Repository validation exposes a new route-variant ownership, schema, migration, recovery, security, or acceptance decision.",
+    "The existing claim-evidence service cannot preserve the planned production-path profile and establishment semantics without incompatible ownership or identity changes."
+  ]
+}
