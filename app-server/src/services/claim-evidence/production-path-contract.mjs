@@ -4,6 +4,7 @@ export const PRODUCTION_PATH_PROFILE = "production-path-v1";
 export const PRODUCTION_PATH_PROFILE_REVISION = "production-path-profile-v1";
 export const PRODUCTION_PATH_OBSERVATION_SCHEMA_VERSION = 2;
 export const PRODUCTION_PATH_ESTABLISHMENT_SCHEMA_VERSION = 1;
+export const PRODUCTION_PATH_SUCCESSION_SCHEMA_VERSION = 1;
 export const PRODUCTION_PATH_BOUNDARIES = new Set(["builder_projection", "campaign_terminalization"]);
 export const PRODUCTION_PATH_STATUSES = new Set(["established", "false", "unestablished"]);
 
@@ -147,6 +148,65 @@ export function validateProductionPathEstablishment(value) {
   if (value.predecessor !== null) text(value.predecessor, "production-path establishment predecessor");
   const withoutId = structuredClone(value); delete withoutId.id;
   if (value.id !== `production-path-establishment-v1@${digest(withoutId)}`) throw new ProductionPathEvidenceError("production-path establishment identity is invalid");
+  return value;
+}
+
+export function validateProductionPathCorrectionAuthority(value) {
+  exact(value, ["schemaVersion", "owner", "source", "sequence", "campaign", "acceptanceOwner"],
+    "production-path correction authority");
+  if (value.schemaVersion !== 1 || value.owner !== "slice-supervisor") {
+    throw new ProductionPathEvidenceError("production-path correction authority owner is invalid");
+  }
+  text(value.source, "production-path correction authority source");
+  if (!Number.isSafeInteger(value.sequence) || value.sequence < 1) {
+    throw new ProductionPathEvidenceError("production-path correction authority sequence is invalid");
+  }
+  text(value.campaign, "production-path correction authority campaign");
+  text(value.acceptanceOwner, "production-path correction acceptance owner");
+  if (value.acceptanceOwner !== "operator") {
+    throw new ProductionPathEvidenceError("production-path correction must preserve operator acceptance ownership");
+  }
+  return value;
+}
+
+export function validateProductionPathSuccession(value) {
+  exact(value, ["schemaVersion", "id", "operationId", "authorityDigest", "campaignRevision",
+    "selection", "claims", "observationId", "observationDigest", "reviewEpisode",
+    "candidate", "consequences"], "production-path succession");
+  if (value.schemaVersion !== PRODUCTION_PATH_SUCCESSION_SCHEMA_VERSION) {
+    throw new ProductionPathEvidenceError("production-path succession schema version is invalid");
+  }
+  for (const field of ["operationId", "campaignRevision", "observationId"]) {
+    text(value[field], `production-path succession.${field}`);
+  }
+  sha256(value.authorityDigest, "production-path succession authorityDigest");
+  sha256(value.observationDigest, "production-path succession observationDigest");
+  exact(value.selection, ["id", "predecessorRevision", "successorRevision"], "production-path succession selection");
+  text(value.selection.id, "production-path succession selection.id");
+  sha256(value.selection.predecessorRevision, "production-path succession selection.predecessorRevision");
+  sha256(value.selection.successorRevision, "production-path succession selection.successorRevision");
+  exact(value.claims, ["builder", "terminal"], "production-path succession claims");
+  for (const [boundary, item] of Object.entries(value.claims)) {
+    exact(item, ["claimId", "predecessorRevision", "successorRevision", "predecessorEstablishment",
+      "successorEstablishment"], `production-path succession ${boundary} claim`);
+    text(item.claimId, `production-path succession ${boundary} claimId`);
+    for (const field of ["predecessorRevision", "successorRevision", "predecessorEstablishment",
+      "successorEstablishment"]) text(item[field], `production-path succession ${boundary}.${field}`);
+  }
+  exact(value.reviewEpisode, ["id", "predecessorRevision", "successorRevision"], "production-path succession review episode");
+  Object.values(value.reviewEpisode).forEach((item) => text(item, "production-path succession review episode value"));
+  exact(value.candidate, ["commit", "tree", "patchIdentity"], "production-path succession candidate");
+  Object.values(value.candidate).forEach((item) => text(item, "production-path succession candidate value"));
+  exact(value.consequences, ["builder", "terminal", "reviewAccepted", "campaignAccepted"], "production-path succession consequences");
+  if (value.consequences.builder !== "projection_enabled"
+      || value.consequences.terminal !== "eligible_for_later_consumption"
+      || value.consequences.reviewAccepted !== false || value.consequences.campaignAccepted !== false) {
+    throw new ProductionPathEvidenceError("production-path succession consequences are invalid");
+  }
+  const withoutId = structuredClone(value); delete withoutId.id;
+  if (value.id !== `production-path-succession-v1@${digest(withoutId)}`) {
+    throw new ProductionPathEvidenceError("production-path succession identity is invalid");
+  }
   return value;
 }
 
