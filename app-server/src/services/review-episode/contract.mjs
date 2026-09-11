@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { validateImplementationReviewResult } from "../implementation-review/contract.mjs";
 
 export const REVIEW_EPISODE_SCHEMA_VERSION = 2;
+export const REVIEW_EPISODE_ACTIONS = Object.freeze(["record_result", "record_remediation_subject",
+  "succeed_evidence", "mark_uncertain", "retire", "replace_writer"]);
 const SHA256 = /^[0-9a-f]{64}$/;
 
 export class ReviewEpisodeError extends Error {}
