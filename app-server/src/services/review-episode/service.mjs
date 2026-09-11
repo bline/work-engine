@@ -1,5 +1,6 @@
 import {
-  digest, freeze, identityKey, sha256, text, validateAuthority, validateReference, validateState,
+  REVIEW_EPISODE_ACTIONS, digest, freeze, identityKey, sha256, text, validateAuthority,
+  validateReference, validateState,
 } from "./contract.mjs";
 
 export class ReviewEpisodeResultError extends Error {}
@@ -68,6 +69,7 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
   };
   const transition = ({ authority, expectedRevision, transitionId, action, payload }) => {
     validateAuthority(authority); text(transitionId, "review episode transitionId");
+    if (!REVIEW_EPISODE_ACTIONS.includes(action)) throw new Error("review episode action is unsupported");
     const current = recover(authority.identity);
     const transitionRevision = digest({ action, payload });
     const previous = current?.handledTransitions?.[transitionId];
@@ -108,6 +110,24 @@ export function createReviewEpisodeService({ store = new InMemoryReviewEpisodeSt
         validateReference(payload.subject, "review episode remediation subject");
         updated = { ...semantic(current), subject: payload.subject, phase: "re_evaluation",
           pendingAction: "re_evaluate_delta_in_retained_session", continuity: "same_session" };
+      } else if (action === "succeed_evidence") {
+        if (current.status !== "active" || current.phase !== "evidence_unestablished"
+            || !current.currentResult || current.schemaVersion !== 2) {
+          throw new Error("review episode evidence succession requires blocked immutable review evidence");
+        }
+        if (!Array.isArray(payload.predecessorAdmissions) || !Array.isArray(payload.successorAdmissions)
+            || payload.predecessorAdmissions.length !== 2 || payload.successorAdmissions.length !== 2
+            || digest(payload.predecessorAdmissions) !== digest(current.evidenceAdmissions)) {
+          throw new Error("review episode evidence succession predecessor differs from current admissions");
+        }
+        if (payload.successorAdmissions.some(({status}) => status !== "established")) {
+          throw new Error("review episode successor evidence is not established");
+        }
+        updated = {...semantic(current), evidenceAdmissions: [
+          ...current.evidenceAdmissions, ...structuredClone(payload.successorAdmissions),
+        ], phase: current.currentResult.verdict === "acceptable_as_is" ? "reported" : "remediation",
+        pendingAction: current.currentResult.verdict === "acceptable_as_is"
+          ? "return_review_result_to_builder" : "await_remediation", continuity: "same_session"};
       } else if (action === "mark_uncertain") {
         text(payload.reason, "review episode uncertainty.reason"); text(payload.reconciliationAction, "review episode uncertainty.reconciliationAction");
         updated = { ...semantic(current), status: "uncertain", uncertainty: payload,
