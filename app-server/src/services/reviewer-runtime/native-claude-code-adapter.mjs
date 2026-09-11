@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { constants as fsConstants } from "node:fs";
-import { access, chmod, copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -27,8 +26,10 @@ const DEFINITE_PRE_SPAWN_CODES = Object.freeze(new Set([
 const AUTHENTICATION_FAILURE_MESSAGES = Object.freeze(new Set([
   "Not logged in · Please run /login",
   "Failed to authenticate: OAuth session expired and could not be refreshed",
+  "Failed to authenticate. API Error: 401 Invalid bearer token",
 ]));
 const CLOUD_ROUTE_ENVIRONMENT = Object.freeze([
+  "CLAUDE_CODE_USE_GATEWAY",
   "CLAUDE_CODE_USE_BEDROCK",
   "CLAUDE_CODE_USE_VERTEX",
   "CLAUDE_CODE_USE_FOUNDRY",
@@ -45,8 +46,40 @@ function directAnthropicEnvironment(environment) {
   }
   const env = {...environment};
   delete env.OPENROUTER_API_KEY; delete env.OPENROUTER_MANAGEMENT_KEY;
-  delete env.ANTHROPIC_BASE_URL; delete env.ANTHROPIC_AUTH_TOKEN;
+  delete env.ANTHROPIC_BASE_URL; delete env.ANTHROPIC_AUTH_TOKEN; delete env.ANTHROPIC_API_KEY;
+  delete env.CLAUDE_CODE_OAUTH_TOKEN;
   return env;
+}
+
+async function readClaudeLoginAccessProjection(sourcePath, now) {
+  let handle;
+  try {
+    handle = await open(sourcePath, "r");
+    const metadata = await handle.stat();
+    if (!metadata.isFile() || (metadata.mode & 0o077) !== 0
+        || (typeof process.getuid === "function" && metadata.uid !== process.getuid())) {
+      throw new Error("credential source must be an owner-owned, owner-only regular file");
+    }
+    const credentials = JSON.parse(await handle.readFile("utf8"));
+    const oauth = credentials?.claudeAiOauth;
+    const token = typeof oauth?.accessToken === "string" ? oauth.accessToken.trim() : "";
+    if (!token || /\s/.test(token)) {
+      throw new Error("credential source has no single Claude login access token");
+    }
+    const expiresAtMilliseconds = typeof oauth.expiresAt === "number"
+      ? oauth.expiresAt : Date.parse(oauth.expiresAt);
+    if (!Number.isFinite(expiresAtMilliseconds)) {
+      throw new Error("credential source has no valid access-token expiry");
+    }
+    if (expiresAtMilliseconds <= now) throw new Error("Claude login access token is expired");
+    return Object.freeze({mechanism: "claude_login_access_projection", token,
+      expiresAt: new Date(expiresAtMilliseconds).toISOString(), refreshCapable: false});
+  } catch (error) {
+    throw new ReviewerRuntimeError("authentication",
+      `native Claude login credential source is unavailable: ${error.message}`);
+  } finally {
+    await handle?.close();
+  }
 }
 
 const DIRECT_ANTHROPIC_ROUTING_CONSTRAINTS = new Set(["direct", "direct-anthropic-only"]);
@@ -76,7 +109,7 @@ function directAnthropicCatalogModel(profile, catalog, now) {
 }
 
 function validateTransportReceipt(value, {commandDigest, promptDigest, promptSizeBytes,
-  requestedModel, sessionId, sessionMode, exitCode}) {
+  requestedModel, sessionId, sessionMode, exitCode, oauthTokenPresent}) {
   const attempt = value?.attempts?.[0];
   const valid = value?.schema_version === 1
     && value?.request?.transport === "anthropic"
@@ -86,6 +119,7 @@ function validateTransportReceipt(value, {commandDigest, promptDigest, promptSiz
     && value?.request?.stdin_size_bytes === promptSizeBytes
     && value?.request?.session_id === sessionId
     && value?.request?.session_mode === sessionMode
+    && value?.request?.claude_code_oauth_token_present === oauthTokenPresent
     && value?.request?.paid_failover_explicitly_allowed === false
     && value?.request?.batch_route_explicitly_allowed === false
     && Array.isArray(value?.attempts) && value.attempts.length === 1
@@ -95,7 +129,7 @@ function validateTransportReceipt(value, {commandDigest, promptDigest, promptSiz
     && attempt?.requested_upstream_provider === null
     && attempt?.returncode === exitCode
     && Array.isArray(attempt?.observed_models)
-    && attempt.observed_models.length > 0
+    && (exitCode !== 0 || attempt.observed_models.length > 0)
     && attempt.observed_models.every((model) => typeof model === "string" && model.trim())
     && value?.failover?.attempted === false
     && value?.failover?.allowed === false
@@ -349,22 +383,10 @@ export class NativeClaudeCodeReviewerAdapter {
     return Object.freeze(existing);
   }
 
-  async #seedCredentials(configRoot, {refresh = false} = {}) {
-    const destination = path.join(configRoot, ".credentials.json");
-    if (!refresh) {
-      try { await access(destination); await chmod(destination, 0o600); return false; }
-      catch (error) { if (error?.code !== "ENOENT") throw error; }
-    }
-    try {
-      await copyFile(this.credentialSourcePath, destination,
-        refresh ? 0 : fsConstants.COPYFILE_EXCL);
-      await chmod(destination, 0o600);
-      return true;
-    } catch (error) {
-      if (!refresh && error?.code === "EEXIST") { await chmod(destination, 0o600); return false; }
-      throw new ReviewerRuntimeError("authentication",
-        "native Claude subscription credentials are unavailable to the isolated reviewer");
-    }
+  async #prepareAuthentication(configRoot) {
+    const projection = await readClaudeLoginAccessProjection(this.credentialSourcePath, this.now());
+    await rm(path.join(configRoot, ".credentials.json"), {force: true});
+    return projection;
   }
 
   async recoverFailure(instanceId, {recordedRecovery = null} = {}) {
@@ -519,7 +541,8 @@ export class NativeClaudeCodeReviewerAdapter {
       sessionId: expectedSession, continuation: continuationSessionId !== null,
       allowFreshPreSpawnRetry: preSpawnRetry});
     const attemptId = randomUUID();
-    try { await this.#seedCredentials(configRoot, {refresh: refreshCredentials}); }
+    let authentication;
+    try { authentication = await this.#prepareAuthentication(configRoot); }
     catch (error) {
       if (!(error instanceof ReviewerRuntimeError)) throw error;
       const recovery = Object.freeze({schemaVersion: 1,
@@ -556,12 +579,16 @@ export class NativeClaudeCodeReviewerAdapter {
       "--receipt", receiptPath, "--stdin-file", promptPath, "--stdin-sha256", promptDigest,
       "--", this.claudeExecutable, ...claudeArgs];
     env.CLAUDE_CONFIG_DIR = configRoot;
+    if (authentication.token !== null) env.CLAUDE_CODE_OAUTH_TOKEN = authentication.token;
     const latestAttemptPath = path.join(instanceRoot, "latest-attempt.json");
     const attemptRecord = {
       schemaVersion: 1, attemptId, sessionId: expectedSession,
       sessionBindingDigest: digest(sessionBinding), commandDigest,
       promptDigest, promptSizeBytes: promptBytes.length, promptFile: path.basename(promptPath),
       catalogDigest: digest(catalogProjection), subjectDigest: digest(subject),
+      authenticationMechanism: authentication.mechanism,
+      authenticationExpiresAt: authentication.expiresAt,
+      authenticationRefreshCapable: authentication.refreshCapable,
       transportReceipt: path.basename(receiptPath),
       processStart: {status: "pending", providerEntry: "not_entered"},
     };
@@ -593,7 +620,8 @@ export class NativeClaudeCodeReviewerAdapter {
     const observedModels = validateTransportReceipt(transportReceipt, {commandDigest,
       promptDigest, promptSizeBytes: promptBytes.length,
       requestedModel: profile.requestedModel, sessionId: expectedSession,
-      sessionMode: continuationSessionId === null ? "new" : "resume", exitCode: transport.exitCode});
+      sessionMode: continuationSessionId === null ? "new" : "resume", exitCode: transport.exitCode,
+      oauthTokenPresent: authentication.token !== null});
     if (transport.exitCode !== 0) {
       const recovery = await this.recoverFailure(instanceId);
       return Object.freeze({attemptId, failure: {kind: "transport", message: `native Claude exited ${transport.exitCode}`,
@@ -626,6 +654,9 @@ export class NativeClaudeCodeReviewerAdapter {
         mutationAuthorized: false, capabilities: Object.freeze(["repository_read", "codebase_memory_read"]),
         observerIdentity: "app-server.reviewer-host", observedAt: new Date(this.now()).toISOString(),
         evidenceMechanism: "native-review-host-receipt-v1",
+        authenticationMechanism: authentication.mechanism,
+        authenticationExpiresAt: authentication.expiresAt,
+        authenticationRefreshCapable: authentication.refreshCapable,
         artifacts: Object.freeze([{owner: "reviewer-runtime",
           reference: `native-review-artifact:${attemptId}:transport`,
           digest: transportReceipt ? digest(transportReceipt) : null,
