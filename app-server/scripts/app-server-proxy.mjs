@@ -52,6 +52,7 @@ function parseArguments(argv) {
     codexHome: process.env.WORK_ENGINE_CODEX_HOME
       ? path.resolve(process.env.WORK_ENGINE_CODEX_HOME)
       : null,
+    claudeLoginCredentials: null,
     canonicalBranches: [],
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -80,6 +81,9 @@ function parseArguments(argv) {
     }
     else if (argument === "--codex") options.codexCommand = value();
     else if (argument === "--codex-home") options.codexHome = path.resolve(value());
+    else if (argument === "--claude-login-credentials") {
+      options.claudeLoginCredentials = path.resolve(value());
+    }
     else if (argument === "--canonical-branch") options.canonicalBranches.push(value());
     else throw new Error(`unknown App Server proxy option ${argument}`);
   }
@@ -133,6 +137,23 @@ async function validateExplicitOperationalState(options) {
   options.operationalState = await realpath(options.operationalState);
 }
 
+async function validateClaudeLoginCredentials(options) {
+  if (options.claudeLoginCredentials === null) return;
+  let metadata;
+  try {
+    metadata = await stat(options.claudeLoginCredentials);
+  } catch (error) {
+    throw new Error(
+      `--claude-login-credentials must select an existing credential file: ${options.claudeLoginCredentials}`,
+      { cause: error },
+    );
+  }
+  if (!metadata.isFile() || (metadata.mode & 0o077) !== 0) {
+    throw new Error("--claude-login-credentials must select an owner-only regular file");
+  }
+  options.claudeLoginCredentials = await realpath(options.claudeLoginCredentials);
+}
+
 async function validateCodexHome(options) {
   let homeMetadata;
   let resolvedHome;
@@ -181,6 +202,7 @@ function formatStartupFailure(error) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   await validateExplicitOperationalState(options);
+  await validateClaudeLoginCredentials(options);
   let versionOutput;
   try {
     ({ stdout: versionOutput } = await execFileAsync(options.codexCommand, ["--version"], {
@@ -254,6 +276,7 @@ async function main() {
           workspaceRoot,
           stateRoot: options.operationalState,
           canonicalBranches: options.canonicalBranches,
+          reviewerCredentialSourcePath: options.claudeLoginCredentials,
         }),
     });
   } catch (error) {

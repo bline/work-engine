@@ -1,0 +1,52 @@
+version: 2
+objective: >-
+  Implement the accepted bounded pre-S14 PPCE-03/PPCE-04 product proposal as a
+  lossless native-review selection-to-terminalization claim-evidence chain,
+  without absorbing PPCE-01, PPCE-02, the intake staging-path defect, roadmap
+  priority, or S14 ownership.
+
+work_source:
+  kind: file
+  value: "planning/production-path-claim-evidence-implementation-plan.md"
+
+builder:
+  skill: "slice-builder"
+  model: "gpt-5.6-sol"
+  reasoning_effort: "low"
+  context:
+    repository_evidence:
+      skill: "repo-search"
+      provider: "codex-codebase-memory"
+    independent_review:
+      skill: "claude-recon-implementation"
+      provider: "claude"
+
+validation:
+  profile: "engineering-proportional"
+  requirements:
+    - semantic_proof
+    - risk_proportional_checks
+    - workspace_integrity
+
+metrics:
+  path: "metrics/production-path-claim-evidence.jsonl"
+
+limits: {}
+
+approval:
+  plan: "human_required"
+  uninterrupted_after_plan: false
+
+notifications:
+  intervention: true
+  completion: false
+
+slice_completion_commit:
+  prompt: enabled
+
+stop_on:
+  - objective_complete
+  - human_judgment
+  - unresolved_architecture
+  - quota_exhaustion
+  - validation_nonconvergence

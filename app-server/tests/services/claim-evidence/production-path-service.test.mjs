@@ -52,3 +52,40 @@ test("production-path admission persists established, unestablished, and contrad
   t.after(() => store.close());
   assert.deepEqual(store.readProductionPathEstablishment(id), established);
 });
+
+test("owner correction appends two successor claims and reuses the exact retained observation idempotently", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "ppce-production-correction."));
+  t.after(() => rm(directory, {recursive: true, force: true}));
+  const store = await openSqliteClaimEvidenceStore({filePath: path.join(directory, "claims.sqlite"),
+    bootstrapAuthorities: []});
+  t.after(() => store.close());
+  const service = createProductionPathEvidenceService({store});
+  const builder = claim();
+  const terminal = makeProductionPathClaimRevision({...structuredClone(builder),
+    consumptionBoundary: "campaign_terminalization", consumer: "slice-campaign:run-1"});
+  const {id: _oldObservationId, ...observationInput} = structuredClone(observation());
+  const retained = normalizeProductionPathObservation({...observationInput,
+    event_identity: "event-retained", realization: {requested: "claude-sonnet-5",
+      observed: "claude-sonnet-5"}, continuity: {mode: "same_session_resume", sessionId: "session-1"}});
+  const builderPrior = service.admit({operationId: "prior-builder", claim: builder, observation: retained});
+  const terminalPrior = service.admit({operationId: "prior-terminal", claim: terminal, observation: retained});
+  assert.deepEqual([builderPrior.status, terminalPrior.status], ["unestablished", "unestablished"]);
+  const input = {operationId: "correction-1", authority: {schemaVersion: 1, owner: "slice-supervisor",
+    source: "chatboard:444", sequence: 444, campaign: "run-1", acceptanceOwner: "operator"},
+  campaignRevision: "9".repeat(64), selection: {id: "selection-1",
+    predecessorRevision: "1".repeat(64), successorRevision: "2".repeat(64)},
+  claims: {builder, terminal}, observationId: retained.id,
+  reviewEpisode: {id: "episode-1", predecessorRevision: "3".repeat(64)}, candidate,
+  succeedEpisode: () => "4".repeat(64)};
+  const corrected = service.correct(input);
+  assert.equal(corrected.idempotent, false);
+  assert.equal(corrected.observation.id, retained.id);
+  assert.deepEqual(Object.values(corrected.successors).map(({profile}) =>
+    [profile.requiredRealization, profile.continuity]), [["claude-sonnet-5", "retained"],
+    ["claude-sonnet-5", "retained"]]);
+  assert.ok(Object.values(corrected.establishments).every(({status}) => status === "established"));
+  assert.deepEqual(service.correct(input).succession, corrected.succession);
+  assert.deepEqual(service.read(builderPrior.id), builderPrior);
+  assert.deepEqual(service.read(terminalPrior.id), terminalPrior);
+  assert.throws(() => service.correct({...input, observationId: "missing"}), /operation identity|observation/);
+});

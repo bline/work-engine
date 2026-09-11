@@ -824,7 +824,8 @@ test("native closure refuses replay after an outcome-ambiguous provider exceptio
 
 test("version-2 native selection establishes exact builder and terminal claims or fails closed", async (t) => {
   const acceptable = await load("remediated-finding");
-  const run = async ({attemptId, observerIdentity}) => {
+  const run = async ({attemptId, observerIdentity, observedModel = "claude-sonnet",
+    continuity = "fresh_initial"}) => {
     const directory = await mkdtemp(path.join(os.tmpdir(), `ppce-native-${attemptId}.`));
     t.after(() => rm(directory, {recursive: true, force: true}));
     const owners = await stores(t, directory, {bootstrap: true});
@@ -846,10 +847,11 @@ test("version-2 native selection establishes exact builder and terminal claims o
           continuity: "fresh_initial"},
       });
     const claims = ["builder_projection", "campaign_terminalization"].map((boundary) => claimFor(boundary));
-    const reviewer = {async review() { return {attemptId: `provider-${attemptId}`,
+    let providerEntries = 0;
+    const reviewer = {async review() { providerEntries += 1; return {attemptId: `provider-${attemptId}`,
       result: structuredClone(acceptable), runtimeSessionId: `session-${attemptId}`,
-      receipt: {requestedModel: "claude-sonnet", observedModel: "claude-sonnet",
-        capabilities: ["repository_read"], mutationAuthorized: false, continuity: "fresh_initial",
+      receipt: {requestedModel: observedModel, observedModel,
+        capabilities: ["repository_read"], mutationAuthorized: false, continuity,
         sessionId: `session-${attemptId}`, transportReceiptDigest: "f".repeat(64),
         evidenceMechanism: "native-review-host-receipt-v1", observerIdentity,
         observedAt: "2026-09-09T05:00:00.000Z", profileConfigurationDigest: "adapter-v1",
@@ -911,7 +913,9 @@ test("version-2 native selection establishes exact builder and terminal claims o
           identity: `slice-builder:${campaignKey}`, revision: acceptable.subject.tree,
           decision_scope: "s12-native-review"},
           limitations: ["Claim evidence records do not grant review acceptance authority."]}}});
-    return {service, state: outcome.campaign, outcome, campaignIdentity, finalized};
+    return {service, state: outcome.campaign, outcome, campaignIdentity, finalized, selected,
+      episodeAuthority: episodeAuthority(acceptable, {campaignIdentity, episodeId}),
+      observation: owners.claimStore.listObservations()[0], providerEntries: () => providerEntries};
   };
 
   const valid = await run({attemptId: "ppce-established", observerIdentity: "app-server.reviewer-host"});
@@ -928,4 +932,35 @@ test("version-2 native selection establishes exact builder and terminal claims o
   await assert.rejects(mismatched.service.terminalize({identity: mismatched.campaignIdentity,
     expectedRevision: mismatched.state.revision, outcome: "accepted", receipt: {status: "accepted"}}),
   /established production-path claim evidence/);
+
+  const retained = await run({attemptId: "ppce-retained-correction",
+    observerIdentity: "app-server.reviewer-host", observedModel: "claude-sonnet-5",
+    continuity: "same_session_resume"});
+  assert.equal(retained.state.nativeReview.obligations.generic.status, "evidence_unestablished");
+  const predecessorState = structuredClone(retained.state);
+  const successorSelection = structuredClone(retained.selected);
+  successorSelection.specialists[0].requiredClaims = successorSelection.specialists[0].requiredClaims
+    .map((prior) => makeProductionPathClaimRevision({...prior, profile: {...prior.profile,
+      requiredRealization: "claude-sonnet-5", continuity: "retained"}}));
+  const correction = retained.service.succeedReviewSelection({identity: retained.campaignIdentity,
+    expectedRevision: retained.state.revision, operationId: "ppce-correction:444", obligationId: "generic",
+    authority: {schemaVersion: 1, owner: "slice-supervisor", source: "chatboard:444", sequence: 444,
+      campaign: `${retained.campaignIdentity.runId}:${retained.campaignIdentity.sliceNumber}:${retained.campaignIdentity.attemptId}:${retained.campaignIdentity.planVersion}`,
+      acceptanceOwner: "operator"}, successorSelection, observationId: retained.observation.id,
+    episodeAuthority: retained.episodeAuthority});
+  assert.equal(retained.providerEntries(), 1);
+  assert.equal(correction.campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(correction.builderContext.requiredClaimEvidence.length, 1);
+  assert.equal(correction.campaign.reviewSelectionSuccession.consequences.terminal,
+    "eligible_for_later_consumption");
+  assert.equal(correction.campaign.reviewSelectionSuccession.consequences.reviewAccepted, false);
+  assert.deepEqual(predecessorState.reviewSelection, retained.selected);
+  assert.equal(predecessorState.nativeReview.obligations.generic.claimEvidence.length, 2);
+  assert.equal(correction.campaign.nativeReview.obligations.generic.claimEvidence.length, 4);
+  assert.equal(correction.campaign.nativeReview.obligations.generic.claimEvidence[2].observationRef.reference,
+    retained.observation.id);
+  assert.throws(() => retained.service.succeedReviewSelection({identity: retained.campaignIdentity,
+    expectedRevision: retained.state.revision, operationId: "ppce-correction:other", obligationId: "generic",
+    authority: {}, successorSelection, observationId: retained.observation.id,
+    episodeAuthority: retained.episodeAuthority}), /revision conflict/);
 });

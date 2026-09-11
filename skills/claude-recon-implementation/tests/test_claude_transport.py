@@ -29,6 +29,7 @@ record = {
     "stdin": sys.stdin.read(),
     "base_url": os.environ.get("ANTHROPIC_BASE_URL"),
     "auth_token_present": bool(os.environ.get("ANTHROPIC_AUTH_TOKEN")),
+    "claude_code_oauth_token_present": bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")),
     "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY"),
     "sonnet_model": os.environ.get("ANTHROPIC_DEFAULT_SONNET_MODEL"),
 }
@@ -94,6 +95,7 @@ class ClaudeTransportTest(unittest.TestCase):
         *claude_args: str,
         wrapper_args: tuple[str, ...] = (),
         include_key: bool = True,
+        oauth_token: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         env = dict(os.environ)
         env.update(
@@ -106,6 +108,9 @@ class ClaudeTransportTest(unittest.TestCase):
             env["OPENROUTER_API_KEY"] = "test-secret-that-must-not-be-recorded"
         else:
             env.pop("OPENROUTER_API_KEY", None)
+        env.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+        if oauth_token is not None:
+            env["CLAUDE_CODE_OAUTH_TOKEN"] = oauth_token
         return subprocess.run(
             [
                 sys.executable,
@@ -136,6 +141,18 @@ class ClaudeTransportTest(unittest.TestCase):
         receipt = json.loads(self.receipt.read_text())
         self.assertEqual(receipt["selected_transport"], "anthropic")
         self.assertFalse(receipt["failover"]["attempted"])
+
+    def test_receipt_attests_oauth_token_presence_without_recording_secret(self) -> None:
+        token = "fixture-setup-token-that-must-not-be-recorded"
+        result = self.invoke(
+            "success", "-p", "--no-session-persistence", "prompt", oauth_token=token
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt_text = self.receipt.read_text()
+        receipt = json.loads(receipt_text)
+        self.assertTrue(receipt["request"]["claude_code_oauth_token_present"])
+        self.assertTrue(self.calls()[0]["claude_code_oauth_token_present"])
+        self.assertNotIn(token, receipt_text)
 
     def test_integrity_bound_file_is_forwarded_on_stdin_without_entering_argv(self) -> None:
         prompt = "review payload " + ("x" * 150_000)

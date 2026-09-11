@@ -5,11 +5,11 @@ import { canonicalJson, digest } from "./identity.mjs";
 import { validateObservation } from "./observation.mjs";
 import { buildProjection } from "./projections.mjs";
 import { validateSemanticShadowEpisode } from "./semantic-shadow-contract.mjs";
-import { validateProductionPathEstablishment } from "./production-path-contract.mjs";
+import { validateProductionPathEstablishment, validateProductionPathSuccession } from "./production-path-contract.mjs";
 import { applyOperation, blankStore } from "./service.mjs";
 import { validateStore } from "./validation.mjs";
 
-export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 4;
+export const SQLITE_CLAIM_EVIDENCE_SCHEMA_VERSION = 5;
 
 function nonemptyText(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -93,6 +93,16 @@ const MIGRATION_4 = `
   ) STRICT;
 `;
 
+const MIGRATION_5 = `
+  CREATE TABLE production_path_successions (
+    operation_id TEXT PRIMARY KEY,
+    succession_id TEXT NOT NULL UNIQUE,
+    predecessor_selection_revision TEXT NOT NULL,
+    successor_selection_revision TEXT NOT NULL,
+    succession_json TEXT NOT NULL
+  ) STRICT;
+`;
+
 function observationFromRow(row) {
   if (!row) return null;
   let observation;
@@ -172,6 +182,12 @@ function migrate(database, filePath) {
       database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (4, ?)")
         .run(new Date().toISOString());
       database.exec("PRAGMA user_version = 4");
+    }
+    if (current < 5) {
+      database.exec(MIGRATION_5);
+      database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (5, ?)")
+        .run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 5");
     }
     const versions = database.prepare("SELECT version FROM schema_migrations ORDER BY version")
       .all().map((row) => Number(row.version));
@@ -342,6 +358,55 @@ class SqliteClaimEvidenceStore {
     return row ? structuredClone(productionPathEstablishmentFromRow(row)) : null;
   }
 
+  recordProductionPathCorrection({succession, establishments}) {
+    validateProductionPathSuccession(succession);
+    if (!Array.isArray(establishments) || establishments.length !== 2) {
+      throw new TypeError("production-path correction requires exactly two establishments");
+    }
+    establishments.forEach(validateProductionPathEstablishment);
+    return this.#transaction(() => {
+      const prior = this.database.prepare(`SELECT succession_json FROM production_path_successions
+        WHERE operation_id = ?`).get(succession.operationId);
+      const json = canonicalJson(succession);
+      if (prior) {
+        if (prior.succession_json !== json) throw new TypeError("production-path succession operation identity conflict");
+        return {idempotent: true, succession: structuredClone(JSON.parse(prior.succession_json))};
+      }
+      const competing = this.database.prepare(`SELECT operation_id FROM production_path_successions
+        WHERE predecessor_selection_revision = ?`).get(succession.selection.predecessorRevision);
+      if (competing) throw new TypeError("production-path selection already has a successor");
+      for (const establishment of establishments) {
+        const observation = this.readObservation(establishment.observationId);
+        if (!observation || digest(observation) !== establishment.observationDigest) {
+          throw new TypeError("production-path correction contains an unadmitted observation binding");
+        }
+        if (!this.readProductionPathEstablishment(establishment.predecessor)) {
+          throw new TypeError("production-path correction predecessor establishment is unavailable");
+        }
+        const establishmentJson = canonicalJson(establishment);
+        this.database.prepare(`INSERT INTO production_path_establishments(
+          operation_id, establishment_id, establishment_sha256, claim_revision, observation_id,
+          establishment_json) VALUES(?,?,?,?,?,?)`).run(establishment.operationId, establishment.id,
+          digest(establishment), establishment.claimRevision, establishment.observationId, establishmentJson);
+      }
+      this.database.prepare(`INSERT INTO production_path_successions(operation_id, succession_id,
+        predecessor_selection_revision, successor_selection_revision, succession_json)
+        VALUES(?,?,?,?,?)`).run(succession.operationId, succession.id,
+        succession.selection.predecessorRevision, succession.selection.successorRevision, json);
+      return {idempotent: false, succession: structuredClone(succession)};
+    });
+  }
+
+  readProductionPathSuccession(id) {
+    this.#assertOpen(); nonemptyText(id, "production-path succession identity");
+    const row = this.database.prepare(`SELECT succession_json FROM production_path_successions
+      WHERE succession_id = ? OR operation_id = ?`).get(id, id);
+    if (!row) return null;
+    const value = JSON.parse(row.succession_json); validateProductionPathSuccession(value);
+    if (canonicalJson(value) !== row.succession_json) throw new TypeError("stored production-path succession failed integrity");
+    return structuredClone(value);
+  }
+
   listProductionPathEstablishments({limit = 100, afterOperationId = null} = {}) {
     this.#assertOpen(); positiveInteger(limit, "production-path establishment list limit");
     if (limit > 1_000) throw new TypeError("production-path establishment list limit exceeds 1000");
@@ -352,7 +417,7 @@ class SqliteClaimEvidenceStore {
       ? this.database.prepare(`${select} ORDER BY operation_id LIMIT ?`).all(limit)
       : this.database.prepare(`${select} WHERE operation_id > ? ORDER BY operation_id LIMIT ?`)
         .all(afterOperationId, limit);
-    return rows.map(productionPathEstablishmentFromRow).map(structuredClone);
+    return rows.map(productionPathEstablishmentFromRow).map((value) => structuredClone(value));
   }
 
   listObservations({ limit = 100, afterEventIdentity = null } = {}) {

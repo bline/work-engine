@@ -1,6 +1,7 @@
 import {
   SLICE_CAMPAIGN_SCHEMA_VERSION, SLICE_PHASES, digest, freeze, identityKey,
   normalizeIdentity, requireRecord, requireSha256, requireText, validateReviewSelection,
+  validateReviewSelectionSuccession,
 } from "./contract.mjs";
 import { validateExternalBootstrapPacket } from "./external-bootstrap-adoption-contract.mjs";
 
@@ -323,6 +324,51 @@ export function createSliceCampaignService({
       }
       return publish({ ...state, reviewSelection: freeze(structuredClone(selection)) }, state.revision);
     },
+    succeedReviewSelection({identity, expectedRevision, operationId, obligationId,
+      authority, successorSelection, observationId, episodeAuthority}) {
+      const state = current(identity);
+      requireText(operationId, "review selection succession operation identity");
+      if (state.reviewSelectionSuccession?.operationId === operationId) {
+        if (state.reviewSelectionSuccession.requestDigest === digest({authority, successorSelection, observationId})) {
+          return freeze({campaign: state, builderContext: state.reviewSelectionSuccession.builderContext});
+        }
+        throw new Error("review selection succession operation identity conflicts with durable content");
+      }
+      requireRevision(state, expectedRevision);
+      const obligation = nativeObligations(state)[obligationId];
+      if (state.phase !== "review_ready" || obligation?.status !== "evidence_unestablished") {
+        throw new Error("review selection succession requires review-ready evidence-unestablished obligation");
+      }
+      if (!nativeReview?.succeedProductionPathEvidence) {
+        throw new Error("production-path correction owner is unavailable");
+      }
+      const subject = {commit: state.candidate.checkpoint_commit_oid ?? state.candidate.commit,
+        tree: state.candidate.checkpoint_tree_oid ?? state.candidate.tree,
+        patchIdentity: state.candidate.task_patch_digest ?? state.candidate.manifestSha256};
+      validateReviewSelectionSuccession(state.reviewSelection, successorSelection, subject, state.identity);
+      const priorSpecialist = state.reviewSelection.specialists.find((item) => item.obligationId === obligationId);
+      const nextSpecialist = successorSelection.specialists.find((item) => item.obligationId === obligationId);
+      if (!priorSpecialist || !nextSpecialist || priorSpecialist.requiredClaims.length !== 2) {
+        throw new Error("review selection succession requires both predecessor claims");
+      }
+      const predecessorClaims = Object.fromEntries(priorSpecialist.requiredClaims.map((claim) =>
+        [claim.consumptionBoundary === "builder_projection" ? "builder" : "terminal", claim]));
+      const outcome = nativeReview.succeedProductionPathEvidence({binding: obligation, obligationId,
+        authority: episodeAuthority, operationId, correctionAuthority: authority, campaignRevision: state.revision,
+        predecessorSelection: state.reviewSelection, successorSelection, predecessorClaims,
+        observationId, candidate: subject});
+      const requestDigest = digest({authority, successorSelection, observationId});
+      const succession = freeze({schemaVersion: 1, operationId, requestDigest,
+        predecessorRevision: digest(state.reviewSelection), successorRevision: digest(successorSelection),
+        correction: outcome.correction.succession, builderContext: outcome.builderContext,
+        consequences: freeze({builder: "projection_enabled",
+          terminal: "eligible_for_later_consumption", reviewAccepted: false, campaignAccepted: false})});
+      const campaign = publish({...state, reviewSelection: freeze(structuredClone(successorSelection)),
+        reviewSelectionSuccession: succession,
+        nativeReview: nativeEnvelope({...nativeObligations(state), [obligationId]: outcome.binding}),
+        latestConsequence: succession.consequences}, state.revision);
+      return freeze({campaign, builderContext: outcome.builderContext});
+    },
     async runNativeReview({ identity, expectedRevision, request }) {
       const state = current(identity); requireRevision(state, expectedRevision);
       if (state.phase !== "review_ready" || state.review || state.implementationReview) {
@@ -385,8 +431,15 @@ export function createSliceCampaignService({
           || (!retainedAuthentication && !preSpawnAuthentication && !preSpawnProcess)) {
         throw new Error("native review retry lacks exact definite pre-provider failure evidence");
       }
-      if (currentObligation.status === "retry_executing"
-          && digest(currentObligation.recovery) !== digest(recovery)) {
+      const recoveryChanged = currentObligation.status === "retry_executing"
+        && digest(currentObligation.recovery) !== digest(recovery);
+      const recoveredAuthenticationRetry = recoveryChanged
+        && currentObligation.recovery?.failureSignature === "authentication_required"
+        && currentObligation.recovery?.providerEntry === "not_entered"
+        && currentObligation.recovery?.sessionAvailable === true
+        && currentObligation.recovery?.sessionId === recovery.sessionId
+        && retainedAuthentication;
+      if (recoveryChanged && !recoveredAuthenticationRetry) {
         throw new Error("native review retry execution recovery differs from durable pre-provider evidence");
       }
       const executionRequest = retainedAuthentication || preSpawnProcess
@@ -394,7 +447,11 @@ export function createSliceCampaignService({
         : request;
       const requestDigest = digest(executionRequest);
       const preparedObligation = freeze({...currentObligation, status: "retry_executing",
-        requestDigest, recovery: freeze(structuredClone(recovery))});
+        requestDigest, recovery: freeze(structuredClone(recovery)),
+        ...(recoveredAuthenticationRetry ? {priorRecoveries: freeze([
+          ...(currentObligation.priorRecoveries ?? []),
+          freeze(structuredClone(currentObligation.recovery)),
+        ])} : {})});
       const prepared = publish({...state, nativeReview: nativeEnvelope({...nativeObligations(state),
         [request.obligationId]: preparedObligation})}, state.revision);
       const outcome = await nativeReview.executeInitial({...executionRequest, reviewSkill: disposition.skill,

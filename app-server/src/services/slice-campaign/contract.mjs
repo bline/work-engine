@@ -108,3 +108,36 @@ export function validateReviewSelection(value, expectedSubject, campaignIdentity
   }
   return value;
 }
+
+export function validateReviewSelectionSuccession(predecessor, successor, expectedSubject, campaignIdentity) {
+  validateReviewSelection(predecessor, expectedSubject, campaignIdentity);
+  validateReviewSelection(successor, expectedSubject, campaignIdentity);
+  if (predecessor.schemaVersion !== 2 || successor.schemaVersion !== 2
+      || predecessor.selectionId !== successor.selectionId
+      || predecessor.owner !== successor.owner
+      || digest(predecessor.subject) !== digest(successor.subject)
+      || predecessor.specialists.length !== successor.specialists.length) {
+    throw new TypeError("review selection successor rewrites immutable selection fields");
+  }
+  predecessor.specialists.forEach((prior, index) => {
+    const next = successor.specialists[index];
+    if (prior.obligationId !== next.obligationId || prior.skill !== next.skill
+        || prior.selection !== next.selection || prior.requiredClaims.length !== next.requiredClaims.length) {
+      throw new TypeError("review selection successor rewrites specialist disposition");
+    }
+    prior.requiredClaims.forEach((claim, claimIndex) => {
+      const replacement = next.requiredClaims[claimIndex];
+      if (claim.claimId !== replacement.claimId
+          || claim.consumptionBoundary !== replacement.consumptionBoundary
+          || claim.consumer !== replacement.consumer
+          || digest(claim.subject) !== digest(replacement.subject)
+          || digest(claim.acceptance) !== digest(replacement.acceptance)
+          || replacement.profile.requiredRealization !== "claude-sonnet-5"
+          || replacement.profile.continuity !== "retained") {
+        throw new TypeError("review selection successor has invalid claim succession");
+      }
+    });
+  });
+  if (digest(predecessor) === digest(successor)) throw new TypeError("review selection successor must be a new revision");
+  return successor;
+}

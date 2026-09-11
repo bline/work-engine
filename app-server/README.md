@@ -229,6 +229,17 @@ artifacts. An explicit operational root must already exist and contain its
 App Server starts. Startup logs print both resolved roots so the binding is
 observable.
 
+For isolated native Claude reviewers authenticated through a Claude
+subscription, perform one operator-mediated `claude auth login --claudeai`
+inside a durable, private canonical `CLAUDE_CONFIG_DIR`, then pass its
+owner-only `.credentials.json` as `--claude-login-credentials PATH`. The host
+reads only the current `.claudeAiOauth.accessToken` for each review attempt and
+supplies it as `CLAUDE_CODE_OAUTH_TOKEN`; isolated reviewer profiles never
+receive the refresh token or a credential file. Claude Code 2.1.267 accepted
+this access-only projection for both fresh and resumed sessions, while its
+`setup-token` path returned HTTP 401 on the same host. This compatibility path
+does not yet provide broker-managed refresh or credential generations.
+
 Hosted manifest-role turns pass through the semantic lifecycle in shadow mode
 when provider-managed context replacement is not enabled. When the proxy is
 started with `--enable-token-budget`, it selects the checked-in

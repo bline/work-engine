@@ -141,6 +141,54 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     });
   };
   return Object.freeze({
+    succeedProductionPathEvidence({binding: current, obligationId, authority, operationId,
+      correctionAuthority, campaignRevision, predecessorSelection, successorSelection,
+      predecessorClaims, observationId, candidate}) {
+      const episode = reviewEpisode.recover(authority.identity);
+      if (!episode || episode.revision !== current?.episodeRef?.revision
+          || episode.phase !== "evidence_unestablished") {
+        throw new Error("production-path correction requires the exact evidence-unestablished Episode");
+      }
+      const originalResultDigest = episodeDigest(episode.currentResult);
+      const originalAdmissions = structuredClone(episode.evidenceAdmissions);
+      const corrected = productionPathEvidence.correct({operationId, authority: correctionAuthority,
+        campaignRevision, selection: {id: successorSelection.selectionId,
+          predecessorRevision: episodeDigest(predecessorSelection),
+          successorRevision: episodeDigest(successorSelection)}, claims: predecessorClaims,
+        observationId, reviewEpisode: {id: authority.identity.reviewEpisodeId,
+          predecessorRevision: episode.revision}, candidate,
+        succeedEpisode({successors, establishments, observation}) {
+          const admissions = Object.entries(successors).map(([name, claim]) => {
+            const establishment = establishments[name];
+            const consumption = {schemaVersion: 1, claimRevision: claim.revision,
+              establishment: establishment.id, boundary: claim.consumptionBoundary,
+              consumer: claim.consumer};
+            return Object.freeze({
+              claimRevisionRef: productionPathReference("claim-evidence", claim.claimId, claim.revision, claim),
+              establishmentRef: productionPathReference("claim-evidence", establishment.id, establishment.id, establishment),
+              observationRef: productionPathReference("claim-evidence", observation.id, observation.id, observation),
+              consumptionRef: productionPathReference("slice-campaign", `claim-consumption:${claim.claimId}`,
+                claimDigest(consumption), consumption), status: establishment.status,
+              boundary: claim.consumptionBoundary, consumer: claim.consumer,
+            });
+          });
+          const succeeded = reviewEpisode.transition({authority, expectedRevision: episode.revision,
+            transitionId: `${operationId}:episode-succession`, action: "succeed_evidence",
+            payload: {predecessorAdmissions: originalAdmissions, successorAdmissions: admissions}});
+          return succeeded.revision;
+        }});
+      const succeededEpisode = reviewEpisode.recover(authority.identity);
+      if (episodeDigest(succeededEpisode.currentResult) !== originalResultDigest) {
+        throw new Error("production-path correction rewrote the immutable review result");
+      }
+      const findings = current.findings ?? [];
+      const nextBinding = binding({obligationId, episode: succeededEpisode, findings, prior: current});
+      const builderClaims = succeededEpisode.evidenceAdmissions.filter(({boundary, status}) =>
+        boundary === "builder_projection" && status === "established").slice(-1);
+      return Object.freeze({binding: nextBinding, correction: corrected,
+        builderContext: Object.freeze({schemaVersion: 1, findings: structuredClone(findings),
+          requiredClaimEvidence: structuredClone(builderClaims)})});
+    },
     recoverInitialSubject({binding: current, identity}) {
       const reference = current?.initialEpisodeRef;
       if (!reference) throw new Error("native review initial episode binding is unavailable");
