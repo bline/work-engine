@@ -18,7 +18,8 @@ const nativeReviewToolDescription =
   + "The host derives reviewer authority, subject delivery, session identity, command, tools, provider route, durable episode, and finding state. "
   + "Retry is admitted only from host-verified definite pre-provider authentication failure: it resumes an existing exact retained session, or reuses the exact deterministic UUID when failure occurred before any process or session existed; ambiguous outcomes remain non-replayable. "
   + "Result correction is distinct from retry and remediation: it requires a host-recovered provider-entered result-contract rejection and resumes only that exact retained session without changing the immutable subject. "
-  + "This capability grants no shell, filesystem, credential, model-routing, reviewer-selection, finding-evaluation, review-acceptance, or campaign-acceptance authority.";
+  + "correct_production_path_claims performs an owner-authorized append-only selection and claim succession against an already admitted observation without provider entry. "
+  + "This capability grants no shell, filesystem, credential, model-routing, reviewer creation, finding-evaluation, review-acceptance, or campaign-acceptance authority.";
 const lifecycleControlToolDescription =
   "Control the exact campaign lifecycle through host-owned operations. "
   + "Use builder_turn to create or resume a manifest-defined Work Engine slice-builder with its declared sandbox, tools, durable binding, and context lifecycle. "
@@ -90,6 +91,8 @@ function nativeReviewToolInputSchema() {
     recover: {identity, obligation_id: text()},
     retry: common,
     correct_result: common,
+    correct_production_path_claims: {...common, authority: {type: "object"},
+      successor_selection: {type: "object"}, observation_id: text()},
     record_finding_evaluation: {...common, finding_id: text(), consumer_revision: text(),
       disposition: {type: "string", enum: ["valid", "invalid"]}},
     execute_remediation: {...common, remediation_subject: {type: "object",
@@ -125,7 +128,8 @@ const CAPABILITIES = Object.freeze({
   "capability.strategic_reconciliation": Object.freeze(["reconcile"]),
   "capability.operational_coordination": Object.freeze(["read", "claim", "post", "release"]),
   "capability.native_review": Object.freeze([
-    "execute", "recover", "retry", "correct_result", "record_finding_evaluation", "execute_remediation",
+    "execute", "recover", "retry", "correct_result", "correct_production_path_claims",
+    "record_finding_evaluation", "execute_remediation",
   ]),
 });
 
@@ -255,6 +259,10 @@ const INPUT_FIELDS = Object.freeze({
   ],
   "capability.native_review/correct_result": [
     new Set(["identity", "expected_revision", "obligation_id", "operation_id"]), new Set(),
+  ],
+  "capability.native_review/correct_production_path_claims": [
+    new Set(["identity", "expected_revision", "obligation_id", "operation_id", "authority",
+      "successor_selection", "observation_id"]), new Set(),
   ],
   "capability.native_review/record_finding_evaluation": [
     new Set(["identity", "expected_revision", "obligation_id", "operation_id", "finding_id", "consumer_revision", "disposition"]), new Set(),
@@ -449,6 +457,11 @@ export function validateSupervisorCapabilityInput(capability, operation, value) 
       if (!["valid", "invalid"].includes(value.disposition)) {
         throw new TypeError("native review finding disposition must be valid or invalid");
       }
+    }
+    if (operation === "correct_production_path_claims") {
+      requireRecord(value.authority, "production-path correction authority");
+      requireRecord(value.successor_selection, "production-path successor selection");
+      requireText(value.observation_id, "production-path observation identity");
     }
     if (operation === "execute_remediation") {
       requireRecord(value.remediation_subject, "native review remediation subject");
