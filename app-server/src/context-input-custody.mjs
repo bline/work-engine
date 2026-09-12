@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 export const CONTEXT_INPUT_SCHEMA_VERSION = 1;
 export const CONTEXT_INPUT_TYPE = "work-engine.context-transition-input";
+export const ABORTED_CONTEXT_INPUT_RELEASE_TYPE =
+  "work-engine.aborted-context-input-release";
 
 function text(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -80,11 +82,49 @@ export function normalizeContextTransitionInput(value) {
   return freeze({ ...body, inputRevision });
 }
 
+export function normalizeAbortedContextInputRelease(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("aborted context input release must be an object");
+  }
+  const allowed = new Set([
+    "schemaVersion", "type", "logicalRoleInstanceId", "threadId", "bindingRevision",
+    "transitionRevision", "failureMessage", "authorizationRevision",
+  ]);
+  const unknown = Object.keys(value).filter((field) => !allowed.has(field));
+  if (unknown.length > 0) {
+    throw new TypeError(`aborted context input release has unknown fields: ${unknown.sort().join(", ")}`);
+  }
+  if (value.schemaVersion !== undefined && value.schemaVersion !== 1) {
+    throw new TypeError("aborted context input release schema version is unsupported");
+  }
+  if (value.type !== undefined && value.type !== ABORTED_CONTEXT_INPUT_RELEASE_TYPE) {
+    throw new TypeError("aborted context input release type is unsupported");
+  }
+  const body = {
+    schemaVersion: 1,
+    type: ABORTED_CONTEXT_INPUT_RELEASE_TYPE,
+    logicalRoleInstanceId: text(value.logicalRoleInstanceId, "aborted release role"),
+    threadId: text(value.threadId, "aborted release thread"),
+    bindingRevision: positiveInteger(value.bindingRevision, "aborted release binding revision"),
+    transitionRevision: text(value.transitionRevision, "aborted release transition revision"),
+    failureMessage: text(value.failureMessage, "aborted release failure message"),
+  };
+  const authorizationRevision = revision(body);
+  if (value.authorizationRevision !== undefined
+      && value.authorizationRevision !== authorizationRevision) {
+    throw new TypeError("aborted release authorization revision does not match its content");
+  }
+  return freeze({ ...body, authorizationRevision });
+}
+
 export class ContextInputCustodyController {
   constructor({ store }) {
     if (!store || typeof store.queueContextInput !== "function"
         || typeof store.abortContextInputAdmission !== "function"
-        || typeof store.nextContextInputForRelease !== "function") {
+        || typeof store.nextContextInputForRelease !== "function"
+        || typeof store.beginAbortedContextInputRelease !== "function"
+        || typeof store.reopenContextInputAdmissionAfterAbort !== "function"
+        || typeof store.recoverableAbortedContextInputReleases !== "function") {
       throw new TypeError("context input custody requires a durable queue store");
     }
     this.store = store;
@@ -119,13 +159,22 @@ export class ContextInputCustodyController {
     return this.store.contextInputAdmission(logicalRoleInstanceId);
   }
 
-  abortPreparation({ logicalRoleInstanceId, transitionRevision }) {
+  abortPreparation({ logicalRoleInstanceId, transitionRevision, authorization = null }) {
     text(logicalRoleInstanceId, "context input admission role");
     text(transitionRevision, "context input admission transition revision");
+    const normalizedAuthorization = authorization === null
+      ? null
+      : normalizeAbortedContextInputRelease(authorization);
+    if (normalizedAuthorization !== null
+        && (normalizedAuthorization.logicalRoleInstanceId !== logicalRoleInstanceId
+          || normalizedAuthorization.transitionRevision !== transitionRevision)) {
+      throw new TypeError("aborted input release authority does not match its admission");
+    }
     return this.#serialize(logicalRoleInstanceId, () =>
       this.store.abortContextInputAdmission({
         logicalRoleInstanceId,
         transitionRevision,
+        authorization: normalizedAuthorization,
       })
     );
   }
@@ -180,6 +229,63 @@ export class ContextInputCustodyController {
         reconciliationRevision,
       });
       return freeze({ status: "released", admission, released });
+    });
+  }
+
+  releaseAfterAbortedPreparation({ preparation, transition }, deliver) {
+    if (transition?.status !== "aborted"
+        || transition.preparationRevision !== preparation?.preparationRevision) {
+      throw new TypeError("aborted input release requires the matching aborted preparation");
+    }
+    const authorization = normalizeAbortedContextInputRelease({
+      logicalRoleInstanceId: preparation.subject?.logicalRoleInstanceId,
+      threadId: preparation.subject?.threadId,
+      bindingRevision: preparation.subject?.bindingRevision,
+      transitionRevision: preparation.preparationRevision,
+      failureMessage: transition.failure?.message,
+    });
+    return this.#releaseAborted(authorization, deliver);
+  }
+
+  recoverableAbortedReleases() {
+    return this.store.recoverableAbortedContextInputReleases();
+  }
+
+  resumeAbortedRelease(authorization, deliver) {
+    return this.#releaseAborted(normalizeAbortedContextInputRelease(authorization), deliver);
+  }
+
+  #releaseAborted(authorization, deliver) {
+    if (typeof deliver !== "function") {
+      throw new TypeError("aborted input release requires a delivery function");
+    }
+    return this.#serialize(authorization.logicalRoleInstanceId, async () => {
+      const releasing = this.store.beginAbortedContextInputRelease(authorization);
+      if (releasing.status === "replayed") return releasing;
+      if (!["releasing", "resuming"].includes(releasing.status)) return releasing;
+      const released = [];
+      for (;;) {
+        const item = this.store.nextContextInputForRelease({
+          logicalRoleInstanceId: authorization.logicalRoleInstanceId,
+          transitionRevision: authorization.transitionRevision,
+        });
+        if (item === null) break;
+        const delivery = await deliver(item.input);
+        released.push(this.store.completeContextInputRelease({
+          queueId: item.queueId,
+          inputRevision: item.input.inputRevision,
+          delivery,
+        }));
+      }
+      const admission = this.store.reopenContextInputAdmissionAfterAbort({
+        logicalRoleInstanceId: authorization.logicalRoleInstanceId,
+        transitionRevision: authorization.transitionRevision,
+        authorizationRevision: authorization.authorizationRevision,
+      });
+      if (!["open", "replayed"].includes(admission.status)) {
+        throw new Error(`aborted input release could not reopen admission: ${admission.reason}`);
+      }
+      return freeze({ status: "released", admission, released, authorization });
     });
   }
 }

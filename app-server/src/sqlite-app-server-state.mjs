@@ -13,9 +13,12 @@ import {
 import {
   verifyContextLifecycleEpisode,
 } from "./context-lifecycle-episode.mjs";
-import { normalizeContextTransitionInput } from "./context-input-custody.mjs";
+import {
+  normalizeAbortedContextInputRelease,
+  normalizeContextTransitionInput,
+} from "./context-input-custody.mjs";
 
-export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 3;
+export const SQLITE_APP_SERVER_STATE_SCHEMA_VERSION = 4;
 
 function text(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -232,6 +235,21 @@ const MIGRATION_3 = `
   ) STRICT;
   CREATE INDEX active_turn_lifecycle_recovery
     ON active_turn_lifecycle(status, next_eligible_at);
+`;
+
+const MIGRATION_4 = `
+  CREATE TABLE aborted_context_input_releases (
+    authorization_revision TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    transition_revision TEXT NOT NULL,
+    authorization_json TEXT NOT NULL,
+    authorized_at TEXT NOT NULL,
+    UNIQUE(logical_role_instance_id, transition_revision)
+  ) STRICT;
+  CREATE INDEX aborted_context_input_release_recovery
+    ON aborted_context_input_releases(logical_role_instance_id, transition_revision);
 `;
 
 class SqliteAppServerStateStore {
@@ -649,11 +667,20 @@ class SqliteAppServerStateStore {
   abortContextInputAdmission({
     logicalRoleInstanceId,
     transitionRevision,
+    authorization = null,
     reopenedAt = new Date().toISOString(),
   }) {
     this.#assertOpen();
     text(logicalRoleInstanceId, "context input admission role");
     text(transitionRevision, "context input admission transition revision");
+    const normalizedAuthorization = authorization === null
+      ? null
+      : normalizeAbortedContextInputRelease(authorization);
+    if (normalizedAuthorization !== null
+        && (normalizedAuthorization.logicalRoleInstanceId !== logicalRoleInstanceId
+          || normalizedAuthorization.transitionRevision !== transitionRevision)) {
+      throw new TypeError("aborted input release authority does not match its admission");
+    }
     text(reopenedAt, "context input admission abort timestamp");
     if (Number.isNaN(Date.parse(reopenedAt))) {
       throw new TypeError("context input admission abort timestamp must be ISO formatted");
@@ -678,11 +705,37 @@ class SqliteAppServerStateStore {
           AND status != 'released'
       `).get(logicalRoleInstanceId, transitionRevision).count);
       if (pending !== 0) {
+        if (normalizedAuthorization !== null) {
+          if (normalizedAuthorization.threadId !== admission.threadId
+              || normalizedAuthorization.bindingRevision !== admission.bindingRevision) {
+            return rejected("abort_release_admission_mismatch", admission);
+          }
+          this.database.prepare(`
+            INSERT INTO aborted_context_input_releases (
+              authorization_revision, logical_role_instance_id, thread_id,
+              binding_revision, transition_revision, authorization_json, authorized_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            normalizedAuthorization.authorizationRevision,
+            normalizedAuthorization.logicalRoleInstanceId,
+            normalizedAuthorization.threadId,
+            normalizedAuthorization.bindingRevision,
+            normalizedAuthorization.transitionRevision,
+            JSON.stringify(normalizedAuthorization),
+            reopenedAt,
+          );
+          this.database.prepare(`
+            UPDATE context_input_admissions SET status = 'releasing'
+            WHERE logical_role_instance_id = ? AND transition_revision = ?
+              AND status = 'closed' AND reconciliation_revision IS NULL
+          `).run(logicalRoleInstanceId, transitionRevision);
+        }
         return freeze({
           status: "recovery_required",
           reason: "queued_inputs_preserved",
           pendingInputCount: pending,
-          admission,
+          admission: this.contextInputAdmission(logicalRoleInstanceId),
+          ...(normalizedAuthorization === null ? {} : { authorization: normalizedAuthorization }),
         });
       }
       this.database.prepare(`
@@ -810,6 +863,80 @@ class SqliteAppServerStateStore {
     });
   }
 
+  beginAbortedContextInputRelease(value, { authorizedAt = new Date().toISOString() } = {}) {
+    this.#assertOpen();
+    const authorization = normalizeAbortedContextInputRelease(value);
+    text(authorizedAt, "aborted input release authorization timestamp");
+    if (Number.isNaN(Date.parse(authorizedAt))) {
+      throw new TypeError("aborted input release authorization timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(authorization.logicalRoleInstanceId);
+      if (!admission || admission.transitionRevision !== authorization.transitionRevision
+          || admission.threadId !== authorization.threadId
+          || admission.bindingRevision !== authorization.bindingRevision) {
+        return rejected("abort_release_admission_mismatch", admission);
+      }
+      const existing = this.database.prepare(`
+        SELECT authorization_json FROM aborted_context_input_releases
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+      `).get(authorization.logicalRoleInstanceId, authorization.transitionRevision);
+      if (existing && existing.authorization_json !== JSON.stringify(authorization)) {
+        throw new TypeError("aborted input release has conflicting durable authority");
+      }
+      if (admission.status === "open") {
+        if (!existing || admission.reconciliationRevision !== null) {
+          return rejected("abort_release_not_active", admission);
+        }
+        return freeze({ status: "replayed", admission, authorization });
+      }
+      if (admission.reconciliationRevision !== null) {
+        return rejected("transition_already_reconciled", admission);
+      }
+      if (!existing) {
+        this.database.prepare(`
+          INSERT INTO aborted_context_input_releases (
+            authorization_revision, logical_role_instance_id, thread_id,
+            binding_revision, transition_revision, authorization_json, authorized_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          authorization.authorizationRevision,
+          authorization.logicalRoleInstanceId,
+          authorization.threadId,
+          authorization.bindingRevision,
+          authorization.transitionRevision,
+          JSON.stringify(authorization),
+          authorizedAt,
+        );
+      }
+      this.database.prepare(`
+        UPDATE context_input_admissions SET status = 'releasing'
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status IN ('closed', 'releasing') AND reconciliation_revision IS NULL
+      `).run(authorization.logicalRoleInstanceId, authorization.transitionRevision);
+      return freeze({
+        status: admission.status === "releasing" ? "resuming" : "releasing",
+        admission: this.contextInputAdmission(authorization.logicalRoleInstanceId),
+        authorization,
+      });
+    });
+  }
+
+  recoverableAbortedContextInputReleases() {
+    this.#assertOpen();
+    return freeze(this.database.prepare(`
+      SELECT r.authorization_json
+      FROM aborted_context_input_releases r
+      JOIN context_input_admissions a
+        ON a.logical_role_instance_id = r.logical_role_instance_id
+       AND a.transition_revision = r.transition_revision
+      WHERE a.status = 'releasing' AND a.reconciliation_revision IS NULL
+      ORDER BY r.logical_role_instance_id, r.transition_revision
+    `).all().map(({ authorization_json }) => normalizeAbortedContextInputRelease(
+      parseJson(authorization_json, "stored aborted input release authorization"),
+    )));
+  }
+
   nextContextInputForRelease({ logicalRoleInstanceId, transitionRevision }) {
     this.#assertOpen();
     text(logicalRoleInstanceId, "context input release role");
@@ -933,6 +1060,48 @@ class SqliteAppServerStateStore {
     });
   }
 
+  reopenContextInputAdmissionAfterAbort({
+    logicalRoleInstanceId,
+    transitionRevision,
+    authorizationRevision,
+    reopenedAt = new Date().toISOString(),
+  }) {
+    this.#assertOpen();
+    text(logicalRoleInstanceId, "aborted input release role");
+    text(transitionRevision, "aborted input release transition revision");
+    text(authorizationRevision, "aborted input release authorization revision");
+    text(reopenedAt, "aborted input release reopen timestamp");
+    if (Number.isNaN(Date.parse(reopenedAt))) {
+      throw new TypeError("aborted input release reopen timestamp must be ISO formatted");
+    }
+    return this.#transaction(() => {
+      const admission = this.contextInputAdmission(logicalRoleInstanceId);
+      const authorization = this.database.prepare(`
+        SELECT authorization_revision FROM aborted_context_input_releases
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+      `).get(logicalRoleInstanceId, transitionRevision);
+      if (!admission || admission.transitionRevision !== transitionRevision
+          || authorization?.authorization_revision !== authorizationRevision
+          || admission.reconciliationRevision !== null) {
+        return rejected("abort_release_authority_mismatch", admission);
+      }
+      if (admission.status === "open") return freeze({ status: "replayed", admission });
+      if (admission.status !== "releasing") return rejected("release_not_started", admission);
+      const pending = Number(this.database.prepare(`
+        SELECT COUNT(*) AS count FROM context_input_queue
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status != 'released'
+      `).get(logicalRoleInstanceId, transitionRevision).count);
+      if (pending !== 0) return rejected("queued_inputs_pending", admission);
+      this.database.prepare(`
+        UPDATE context_input_admissions SET status = 'open', reopened_at = ?
+        WHERE logical_role_instance_id = ? AND transition_revision = ?
+          AND status = 'releasing' AND reconciliation_revision IS NULL
+      `).run(reopenedAt, logicalRoleInstanceId, transitionRevision);
+      return freeze({ status: "open", admission: this.contextInputAdmission(logicalRoleInstanceId) });
+    });
+  }
+
   scheduleActiveTurnLifecycle(input) {
     this.#assertOpen();
     const identity = {
@@ -1034,6 +1203,11 @@ function migrate(database) {
       database.exec(MIGRATION_3);
       database.prepare(`INSERT INTO schema_migrations(version, applied_at) VALUES (3, ?)`).run(new Date().toISOString());
       database.exec("PRAGMA user_version = 3");
+    }
+    if (current < 4) {
+      database.exec(MIGRATION_4);
+      database.prepare(`INSERT INTO schema_migrations(version, applied_at) VALUES (4, ?)`).run(new Date().toISOString());
+      database.exec("PRAGMA user_version = 4");
     }
     const versions = database.prepare(`
       SELECT version FROM schema_migrations ORDER BY version

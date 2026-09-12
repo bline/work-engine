@@ -151,6 +151,9 @@ test("live lifecycle fails closed before publication when semantic verification 
     "abortPreparation",
   ]);
   assert.equal(result.preparationRecovery.admission.status, "aborted");
+  const aborted = calls.find(([name]) => name === "abortPreparation")[1];
+  assert.equal(aborted.role, ROLE);
+  assert.deepEqual(aborted.skills, []);
 });
 
 test("live lifecycle aborts preparation when attestation delivery throws", async () => {

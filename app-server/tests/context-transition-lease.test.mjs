@@ -704,7 +704,10 @@ test("failed identity preparation durably reopens empty admission and permits a 
   });
   t.after(() => store.close());
   const inputCustody = new ContextInputCustodyController({ store });
-  const { gate, runtime, transport } = await preparationHarness({ inputCustody });
+  const { gate, runtime, transport } = await preparationHarness({
+    inputCustody,
+    initialToolBridge: false,
+  });
   const prepared = await runtime.beginPreparation({
     logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
     threadId: "thread-1",
@@ -738,6 +741,64 @@ test("failed identity preparation durably reopens empty admission and permits a 
   });
   assert.equal(retry.status, "preparing");
   assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).status, "closed");
+});
+
+test("pre-promotion abort durably authorizes and delivers queued input without a lease", async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "work-engine-abort-release-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const store = await openSqliteAppServerStateStore({
+    filePath: path.join(directory, "state.sqlite3"),
+  });
+  t.after(() => store.close());
+  const inputCustody = new ContextInputCustodyController({ store });
+  const { gate, runtime, transport } = await preparationHarness({
+    inputCustody,
+    initialToolBridge: false,
+  });
+  const prepared = await runtime.beginPreparation({
+    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    threadId: "thread-1",
+    bindingRevision: 1,
+  });
+  await inputCustody.queueIfClosed({
+    logicalRoleInstanceId: ROLE.logicalRoleInstanceId,
+    roleId: "strategic-planner",
+    instanceId: "main",
+    threadId: "thread-1",
+    bindingRevision: 1,
+    clientUserMessageId: "queued-after-abort",
+    sourceKind: "human",
+    text: "Continue without replacing context.",
+  });
+  transport.deferNextTurn();
+  const recoveryFlow = runtime.abortPreparation({
+    preparation: prepared.preparation,
+    error: new Error("semantic verification rejected"),
+    role: ROLE,
+    skills: [],
+  });
+  await new Promise(setImmediate);
+  assert.equal(transport.turns, 2, JSON.stringify({
+    admission: store.contextInputAdmission(ROLE.logicalRoleInstanceId),
+    recoverable: inputCustody.recoverableAbortedReleases(),
+  }));
+  await transport.turnStarted;
+  transport.emitNotification(completedTurnNotification("turn-2", [{
+    type: "agentMessage",
+    phase: "final_answer",
+    text: "queued work completed",
+  }]));
+  transport.releaseTurn();
+  const recovery = await recoveryFlow;
+  assert.equal(recovery.transition.status, "aborted");
+  assert.equal(recovery.admission.status, "recovery_required");
+  assert.equal(recovery.queuedInputRelease.status, "released");
+  assert.equal(gate.snapshot(ROLE.logicalRoleInstanceId).phase, "preparation_failed");
+  assert.equal(gate.snapshot(ROLE.logicalRoleInstanceId).lease, null);
+  assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).status, "open");
+  assert.equal(store.contextInputAdmission(ROLE.logicalRoleInstanceId).reconciliationRevision, null);
+  const queuedTurn = transport.requests.filter(({ method }) => method === "turn/start").at(-1);
+  assert.equal(queuedTurn.params.input[0].text, "Continue without replacing context.");
 });
 
 test("preparation validation and promotion fail closed on stale or invented identity", async () => {

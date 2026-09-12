@@ -1284,7 +1284,7 @@ export class ContextTransitionLeaseRuntime {
     });
   }
 
-  async abortPreparation({ preparation, error = null }) {
+  async abortPreparation({ preparation, error = null, role = null, skills = [], signal }) {
     if (!verifyContextTransitionPreparation(preparation)) {
       throw new TypeError("preparation abort requires an integrity-valid preparation");
     }
@@ -1295,8 +1295,55 @@ export class ContextTransitionLeaseRuntime {
     const admission = await this.inputCustody.abortPreparation({
       logicalRoleInstanceId: preparation.subject.logicalRoleInstanceId,
       transitionRevision: preparation.preparationRevision,
+      authorization: {
+        logicalRoleInstanceId: preparation.subject.logicalRoleInstanceId,
+        threadId: preparation.subject.threadId,
+        bindingRevision: preparation.subject.bindingRevision,
+        transitionRevision: preparation.preparationRevision,
+        failureMessage: transition.failure.message,
+      },
     });
-    return freeze({ transition, admission });
+    if (admission.status !== "recovery_required") {
+      return freeze({ transition, admission, queuedInputRelease: null });
+    }
+    if (role?.logicalRoleInstanceId !== preparation.subject.logicalRoleInstanceId) {
+      throw new TypeError("aborted input release role does not match its preparation");
+    }
+    if (!Array.isArray(skills)) throw new TypeError("aborted input release skills must be an array");
+    const queuedInputRelease = await this.inputCustody.releaseAfterAbortedPreparation({
+      preparation,
+      transition,
+    }, (queuedInput) => this.#deliverQueuedInput({ role, skills, signal }, queuedInput));
+    return freeze({ transition, admission, queuedInputRelease });
+  }
+
+  async resumeAbortedInputRelease({ authorization, role, skills = [], signal }) {
+    if (role?.logicalRoleInstanceId !== authorization?.logicalRoleInstanceId) {
+      throw new TypeError("resumed aborted input release role does not match its authority");
+    }
+    if (!Array.isArray(skills)) throw new TypeError("resumed aborted input release skills must be an array");
+    return this.inputCustody.resumeAbortedRelease(
+      authorization,
+      (queuedInput) => this.#deliverQueuedInput({ role, skills, signal }, queuedInput),
+    );
+  }
+
+  async #deliverQueuedInput({ role, skills, signal }, queuedInput) {
+    const delivery = await this.adapter.deliverTurn({
+      role,
+      text: queuedInput.text,
+      clientUserMessageId: queuedInput.clientUserMessageId,
+      skills,
+      requestContext: null,
+    });
+    await this.adapter.waitForTurnCompletion({ ...delivery, signal });
+    return freeze({
+      logicalRoleInstanceId: delivery.logicalRoleInstanceId,
+      threadId: delivery.threadId,
+      turnId: delivery.turnId,
+      clientUserMessageId: queuedInput.clientUserMessageId,
+      replayedDelivery: delivery.replayedDelivery,
+    });
   }
 
   async attestContextWindow({ role, preparation, clientUserMessageId, signal }) {

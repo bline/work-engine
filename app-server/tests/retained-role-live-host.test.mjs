@@ -7,6 +7,7 @@ import { InMemoryContextTransitionLeaseGate } from "../src/context-transition-le
 import { openSqliteAppServerStateStore } from "../src/sqlite-app-server-state.mjs";
 
 import {
+  ContextInputCustodyController,
   createRetainedRoleLiveHost,
   projectRuntimeManifest,
 } from "../src/index.mjs";
@@ -51,6 +52,8 @@ function fixture() {
       abortPreparation() {},
       admission() {},
       releaseAfterReconciliation() {},
+      recoverableAbortedReleases() { return []; },
+      resumeAbortedRelease() {},
     },
     pressureProfile: {
       schemaVersion: 1,
@@ -127,7 +130,7 @@ test("production notification schedules and retries preparation before active tu
       contract:"skills/probe/SKILL.md",developer_instructions:"probe",thread_options:{cwd:".",approval_policy:"never",sandbox:"read-only"},skills:[{name:"probe",path:"skills/probe/SKILL.md"}]}}},
       {baseDirectory:"/tmp/live-host-active"});
     const host=createRetainedRoleLiveHost({adapter,manifest,episodeStore:store,transitionGate:gate,
-      inputCustody:{closeAdmission(){closes+=1;if(closes===1)throw new Error("abort first preparation");},abortPreparation(){},admission(){},releaseAfterReconciliation(){}},
+      inputCustody:{closeAdmission(){closes+=1;if(closes===1)throw new Error("abort first preparation");},abortPreparation(){},admission(){},releaseAfterReconciliation(){},recoverableAbortedReleases(){return[];},resumeAbortedRelease(){}},
       pressureProfile:{schemaVersion:1,usageField:"last.totalTokens",windowField:"modelContextWindow",rounding:"floor",saturation:"clamp_10000"},
       pressurePolicyForRole:async()=>({schemaVersion:1,unit:"basis_points",approaching:{enter:5000,exit:4500},replacementCandidate:{enter:7000,exit:6500},critical:{enter:9000,exit:8500}}),
       inferenceRuntimeForRole:async()=>({}),checkpointPublisherForRole:async()=>({}),projectionForPreparation:async()=>({})});
@@ -140,4 +143,62 @@ test("production notification schedules and retries preparation before active tu
     assert.equal(gate.snapshot("probe:main").phase,"preparing");
     host.close();
   } finally {store?.close();await rm(root,{recursive:true,force:true});}
+});
+
+test("host startup resumes only a durably authorized aborted input release", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "live-host-abort-release-"));
+  const filePath = path.join(root, "state.sqlite");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const first = await openSqliteAppServerStateStore({ filePath });
+  const initialCustody = new ContextInputCustodyController({ store: first });
+  const transitionRevision = `sha256:${"9".repeat(64)}`;
+  await initialCustody.closeAdmission({ logicalRoleInstanceId: "probe:main",
+    threadId: "thread-probe", bindingRevision: 1, transitionRevision });
+  for (const number of [1, 2]) {
+    await initialCustody.queueIfClosed({ logicalRoleInstanceId: "probe:main",
+      roleId: "probe", instanceId: "main", threadId: "thread-probe", bindingRevision: 1,
+      clientUserMessageId: `queued-${number}`, sourceKind: "human", text: `queued ${number}` });
+  }
+  await assert.rejects(initialCustody.releaseAfterAbortedPreparation({
+    preparation: { preparationRevision: transitionRevision, subject: {
+      logicalRoleInstanceId: "probe:main", threadId: "thread-probe", bindingRevision: 1 } },
+    transition: { status: "aborted", preparationRevision: transitionRevision,
+      failure: { message: "pre-promotion verification rejected" } },
+  }, async (queued) => {
+    if (queued.clientUserMessageId === "queued-2") throw new Error("restart required");
+    return { threadId: queued.threadId, turnId: "turn-1",
+      clientUserMessageId: queued.clientUserMessageId, replayedDelivery: false };
+  }), /restart required/);
+  first.close();
+
+  const store = await openSqliteAppServerStateStore({ filePath });
+  t.after(() => { if (!store.closed) store.close(); });
+  const inputCustody = new ContextInputCustodyController({ store });
+  const transitionGate = new InMemoryContextTransitionLeaseGate();
+  const delivered = [];
+  const adapter = { transitionGate, onNotification() { return () => {}; },
+    async deliverTurn({ role, text, clientUserMessageId }) {
+      delivered.push({ text, clientUserMessageId });
+      return { logicalRoleInstanceId: role.logicalRoleInstanceId,
+        threadId: "thread-probe", turnId: "turn-2", replayedDelivery: true };
+    }, async waitForTurnCompletion() {} };
+  const manifest = projectRuntimeManifest({ schema_version: 1, manifest_id: "abort.recovery",
+    roles: { probe: { contract: "skills/probe/SKILL.md", developer_instructions: "probe",
+      thread_options: { cwd: ".", approval_policy: "never", sandbox: "read-only" },
+      skills: [{ name: "probe", path: "skills/probe/SKILL.md" }] } } },
+  { baseDirectory: "/tmp/live-host-abort-release" });
+  const host = createRetainedRoleLiveHost({ adapter, manifest, episodeStore: store,
+    transitionGate, inputCustody,
+    pressureProfile: { schemaVersion: 1, usageField: "last.totalTokens",
+      windowField: "modelContextWindow", rounding: "floor", saturation: "clamp_10000" },
+    pressurePolicyForRole: async () => ({ schemaVersion: 1, unit: "basis_points",
+      approaching: { enter: 5000, exit: 4500 }, replacementCandidate: { enter: 7000, exit: 6500 },
+      critical: { enter: 9000, exit: 8500 } }), inferenceRuntimeForRole: async () => ({}),
+    checkpointPublisherForRole: async () => ({}), projectionForPreparation: async () => ({}) });
+  const recovery = await host.recovery;
+  assert.equal(recovery.length, 1);
+  assert.deepEqual(delivered, [{ text: "queued 2", clientUserMessageId: "queued-2" }]);
+  assert.equal(store.contextInputAdmission("probe:main").status, "open");
+  assert.equal(store.contextInputAdmission("probe:main").reconciliationRevision, null);
+  host.close();
 });

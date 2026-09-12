@@ -151,6 +151,141 @@ test("failed preparation preserves a closed admission when attributed input is q
   }).map((item) => item.input.text), ["queued input 1"]);
 });
 
+test("authorized aborted preparation releases queued input without fabricating reconciliation", async (t) => {
+  const { store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  await controller.queueIfClosed(input(1));
+  await controller.queueIfClosed(input(2));
+  const delivered = [];
+  const outcome = await controller.releaseAfterAbortedPreparation({
+    preparation: {
+      preparationRevision: transitionRevision,
+      subject: {
+        logicalRoleInstanceId: "strategic-planner:main",
+        threadId: "thread-planner-1",
+        bindingRevision: 1,
+      },
+    },
+    transition: {
+      status: "aborted",
+      preparationRevision: transitionRevision,
+      failure: { message: "semantic verification rejected" },
+    },
+  }, async (queued) => {
+    delivered.push(queued.clientUserMessageId);
+    return {
+      threadId: queued.threadId,
+      turnId: `abort-release-${delivered.length}`,
+      clientUserMessageId: queued.clientUserMessageId,
+      replayedDelivery: false,
+    };
+  });
+  assert.equal(outcome.status, "released");
+  assert.deepEqual(delivered, ["operator:queued-1", "operator:queued-2"]);
+  assert.equal(store.contextInputAdmission("strategic-planner:main").status, "open");
+  assert.equal(
+    store.contextInputAdmission("strategic-planner:main").reconciliationRevision,
+    null,
+  );
+});
+
+test("aborted release rejects substituted preparation authority and keeps input fenced", async (t) => {
+  const { store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  await controller.queueIfClosed(input(1));
+  const outcome = await controller.releaseAfterAbortedPreparation({
+    preparation: { preparationRevision: transitionRevision, subject: {
+      logicalRoleInstanceId: "strategic-planner:main",
+      threadId: "substituted-thread",
+      bindingRevision: 1,
+    } },
+    transition: { status: "aborted", preparationRevision: transitionRevision,
+      failure: { message: "semantic verification rejected" } },
+  }, async () => { throw new Error("substituted authority must not deliver"); });
+  assert.equal(outcome.status, "rejected");
+  assert.equal(outcome.reason, "abort_release_admission_mismatch");
+  assert.equal(store.contextInputAdmission("strategic-planner:main").status, "closed");
+  assert.equal(controller.recoverableAbortedReleases().length, 0);
+});
+
+test("aborted release retries one stable delivery identity after a receipt-write crash", async (t) => {
+  const { filePath, store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  await controller.queueIfClosed(input(1));
+  const originalComplete = store.completeContextInputRelease.bind(store);
+  store.completeContextInputRelease = () => { throw new Error("receipt write interrupted"); };
+  const delivered = [];
+  const authorizationInput = {
+    preparation: { preparationRevision: transitionRevision, subject: {
+      logicalRoleInstanceId: "strategic-planner:main",
+      threadId: "thread-planner-1",
+      bindingRevision: 1,
+    } },
+    transition: { status: "aborted", preparationRevision: transitionRevision,
+      failure: { message: "semantic verification rejected" } },
+  };
+  await assert.rejects(controller.releaseAfterAbortedPreparation(
+    authorizationInput,
+    async (queued) => {
+      delivered.push(queued.clientUserMessageId);
+      return { threadId: queued.threadId, turnId: "turn-before-crash",
+        clientUserMessageId: queued.clientUserMessageId, replayedDelivery: false };
+    },
+  ), /receipt write interrupted/);
+  store.completeContextInputRelease = originalComplete;
+  const [authorization] = controller.recoverableAbortedReleases();
+  assert.equal(store.contextInputAdmission("strategic-planner:main").status, "releasing");
+  store.close();
+
+  const recovered = await openSqliteAppServerStateStore({ filePath });
+  t.after(() => recovered.close());
+  const resumed = new ContextInputCustodyController({ store: recovered });
+  const outcome = await resumed.resumeAbortedRelease(authorization, async (queued) => {
+    delivered.push(queued.clientUserMessageId);
+    return { threadId: queued.threadId, turnId: "turn-before-crash",
+      clientUserMessageId: queued.clientUserMessageId, replayedDelivery: true };
+  });
+  assert.equal(outcome.status, "released");
+  assert.deepEqual(delivered, ["operator:queued-1", "operator:queued-1"]);
+  assert.equal(recovered.contextInputAdmission("strategic-planner:main").status, "open");
+});
+
+test("abort authority survives restart before release delivery begins", async (t) => {
+  const { filePath, store, controller } = await harness(t);
+  await controller.closeAdmission(fence());
+  await controller.queueIfClosed(input(1));
+  const authorization = {
+    logicalRoleInstanceId: "strategic-planner:main",
+    threadId: "thread-planner-1",
+    bindingRevision: 1,
+    transitionRevision,
+    failureMessage: "semantic verification rejected",
+  };
+  const aborted = await controller.abortPreparation({
+    logicalRoleInstanceId: "strategic-planner:main",
+    transitionRevision,
+    authorization,
+  });
+  assert.equal(aborted.status, "recovery_required");
+  assert.equal(aborted.admission.status, "releasing");
+  assert.equal(controller.recoverableAbortedReleases().length, 1);
+  store.close();
+
+  const recovered = await openSqliteAppServerStateStore({ filePath });
+  t.after(() => recovered.close());
+  const resumed = new ContextInputCustodyController({ store: recovered });
+  const [durableAuthorization] = resumed.recoverableAbortedReleases();
+  const delivered = [];
+  const outcome = await resumed.resumeAbortedRelease(durableAuthorization, async (queued) => {
+    delivered.push(queued.clientUserMessageId);
+    return { threadId: queued.threadId, turnId: "turn-after-restart",
+      clientUserMessageId: queued.clientUserMessageId, replayedDelivery: false };
+  });
+  assert.equal(outcome.status, "released");
+  assert.deepEqual(delivered, ["operator:queued-1"]);
+  assert.equal(recovered.contextInputAdmission("strategic-planner:main").status, "open");
+});
+
 test("failed delivery keeps admission closed and restart resumes from the first unreceipted input", async (t) => {
   const { filePath, store, controller } = await harness(t);
   await controller.closeAdmission(fence());

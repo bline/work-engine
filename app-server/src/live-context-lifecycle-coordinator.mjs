@@ -110,6 +110,9 @@ export class LiveContextLifecycleCoordinator {
     const abort = (error) => this.transitionRuntime.abortPreparation({
       preparation: prepared.preparation,
       error,
+      role,
+      skills,
+      signal,
     });
     let attestation;
     let projected;

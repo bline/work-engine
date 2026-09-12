@@ -51,7 +51,9 @@ export function createRetainedRoleLiveHost({
   }
   if (!inputCustody || typeof inputCustody.closeAdmission !== "function"
       || typeof inputCustody.admission !== "function"
-      || typeof inputCustody.releaseAfterReconciliation !== "function") {
+      || typeof inputCustody.releaseAfterReconciliation !== "function"
+      || typeof inputCustody.recoverableAbortedReleases !== "function"
+      || typeof inputCustody.resumeAbortedRelease !== "function") {
     throw new TypeError("retained-role live host requires durable input custody");
   }
   requiredFunction(pressurePolicyForRole, "role pressure policy resolver");
@@ -136,6 +138,32 @@ export function createRetainedRoleLiveHost({
     activeTurnScheduler,
   });
 
+  const abortedReleaseRecovery = (async () => {
+    const outcomes = [];
+    for (const authorization of inputCustody.recoverableAbortedReleases()) {
+      const roleId = manifest.roleIds.find((candidate) =>
+        authorization.logicalRoleInstanceId.startsWith(`${candidate}:`)
+      );
+      const instanceId = roleId === undefined
+        ? null
+        : authorization.logicalRoleInstanceId.slice(roleId.length + 1);
+      if (roleId === undefined || !instanceId) {
+        throw new TypeError("aborted input release authority does not match a manifest role");
+      }
+      const projection = manifest.projectRole(roleId, instanceId);
+      outcomes.push(await transitionRuntime.resumeAbortedInputRelease({
+        authorization,
+        role: projection.role,
+        skills: projection.skills,
+      }));
+    }
+    return outcomes;
+  })();
+  const recovery = Promise.all([
+    activeTurnScheduler?.recover() ?? Promise.resolve([]),
+    abortedReleaseRecovery,
+  ]).then(([active, aborted]) => Object.freeze([...active, ...aborted]));
+
   return Object.freeze({
     runtime,
     lifecycleEvidence,
@@ -144,7 +172,7 @@ export function createRetainedRoleLiveHost({
     pressureControllerForRole,
     coordinatorForRole,
     activeTurnScheduler,
-    recovery: activeTurnScheduler?.recover() ?? Promise.resolve([]),
+    recovery,
     close: detachLifecycleEvidence,
   });
 }
