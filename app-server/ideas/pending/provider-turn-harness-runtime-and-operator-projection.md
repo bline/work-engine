@@ -436,6 +436,10 @@ This idea does not propose:
 - [OpenCode Substrate Evaluation](./opencode-substrate-evaluation.md) evaluates
   OpenCode as a candidate implementation source for the provider-turn and
   operator-projection ports, and conditionally for the harness-runtime port.
+- [Service Plane and the Kernel/Domain Boundary](./service-plane-and-kernel-domain-boundary.md)
+  proposes that a service operation requires a realization only when it is
+  classified semantic or hybrid; realization admission and port ownership
+  remain exactly as this document describes.
 
 ## Core principle
 
