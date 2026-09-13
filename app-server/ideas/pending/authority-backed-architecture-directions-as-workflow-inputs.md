@@ -807,6 +807,16 @@ transition contract changes or expires
         +-- operational admissibility may narrow
 ```
 
+This section states the propagation consequences without specifying the
+recomputation mechanism itself.
+[`claim-evidence-service.md`](../../docs/claim-evidence-service.md)'s
+"Impact, refresh, and reliance propagation" section is the authorized design
+for that mechanism (nomination → domain-owned refresh episode → outcome),
+proven in part by root `ARCHITECTURE.md`'s claim-lineage dogfood.
+[Evidence-Anchor Observation and Impact Nomination](evidence-anchor-observation-and-impact-nomination.md)
+proposes the narrower observation/nomination boundary that would feed it for
+non-code-change evidence sources. Neither is accepted or applied here.
+
 Superseding a direction does not rewrite history or automatically interrupt
 running work. Work Engine should determine the consequence according to the
 dependent artifact's lifecycle, active authority, reversibility, and safe

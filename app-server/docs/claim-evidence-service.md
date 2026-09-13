@@ -623,3 +623,9 @@ The base claims service is ready for ordinary development only after proving:
 - [`skills/claim-evidence`](../../skills/claim-evidence/SKILL.md) is the current
   skill-owned reference implementation to be decomposed and migrated, not
   silently edited into the new service.
+- [`ideas/pending/evidence-anchor-observation-and-impact-nomination.md`](../ideas/pending/evidence-anchor-observation-and-impact-nomination.md)
+  is an exploratory idea proposing an observation/nomination boundary
+  (covering codebase-memory-mcp and other evidence sources) that would feed
+  the "Impact, refresh, and reliance propagation" section above once its
+  corresponding operation exists. It does not propose a contract change here
+  and is not accepted or applied.

@@ -473,7 +473,15 @@ section separates the two rather than presenting all twelve as equally open.
     unknown — so absence is never ambiguous between "none existed," "not
     relevant," and "reconstruction failed to capture it." This is
     `code-change-profile`'s own measurement-state discipline, extended from
-    per-measurement to per-coordinate-reference coverage.
+    per-measurement to per-coordinate-reference coverage. Rather than a
+    bespoke coverage vocabulary invented here,
+    [`claim-evidence-service.md`](../../docs/claim-evidence-service.md)'s
+    authorized refresh-outcome vocabulary
+    (`retained_unchanged`/`changed`/`inapplicable`/`insufficient`/
+    `contested`/`deferred`/`superseded`) is the better candidate, reached via
+    [Evidence-Anchor Observation and Impact Nomination](evidence-anchor-observation-and-impact-nomination.md)'s
+    proposed anchor contract and observation boundary. Not accepted or
+    applied.
 11. **Domain-tag granularity**, newly surfaced. `product-development`'s
     delivery adapters do not fit the coarse "code domain" label used for
     triage in the inventory — `domain` needs to be a namespaced tag
