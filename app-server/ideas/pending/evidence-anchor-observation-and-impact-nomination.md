@@ -484,6 +484,21 @@ consumer here, not a reason to build a separate architecture-only mechanism.
    future `ServiceOperation`/`OwnedOperation` grammar
    (`service-plane-and-kernel-domain-boundary.md` §3) as a standard output
    type, or remain a separate concept?
+7. Is the five-state comparator (§5: `matches`/`differs`/`unknown`/
+   `unsupported`/`failed`) too flat? Seam reconciliation against
+   `AI_ACCESSIBLE_BROWSER_DESIGN.md`'s independently-designed eight-state
+   epistemic vocabulary (`ai-accessible-browser-seam-reconciliation.md`)
+   found that vocabulary mixes at least four separate questions (provenance
+   class, availability/coverage, temporal/correspondence, semantic
+   relationship) that a flat comparator conflates — corroborating evidence
+   for a richer state space, not a specific answer. That reconciliation
+   explicitly declined to port the browser document's enumeration directly,
+   flagging its `contradictory` state in particular as sometimes mechanical
+   (a declared relation observed absent) and sometimes irreducibly semantic
+   (cross-source disagreement requiring judgment) — exactly the ambiguity
+   §5's `differs`/`unknown` split exists to avoid. Any richer comparator
+   design should preserve that separation rather than adding a single
+   `contradictory` state that blurs it.
 
 ## Relationships
 
@@ -494,4 +509,5 @@ consumer here, not a reason to build a separate architecture-only mechanism.
 | [`provider-turn-harness-runtime-and-operator-projection.md`](provider-turn-harness-runtime-and-operator-projection.md) | `CodeEvidenceAdapter` (§4) is the same port pattern applied to structural code evidence: an external mechanism behind a Work-Engine-owned contract, replaceable without changing consumers. |
 | [`service-plane-and-kernel-domain-boundary.md`](service-plane-and-kernel-domain-boundary.md) | Its coordinate/service-state map and open coverage-vocabulary question (§10, refinement 11) are a candidate consumer of the impact-nomination substrate once it exists — not something this document builds a parallel mechanism for. |
 | codebase-memory-mcp | One evidence backend behind `CodeEvidenceAdapter` (§4), confirmed read-only and not asked to change. |
+| [`AI_ACCESSIBLE_BROWSER_DESIGN.md`](AI_ACCESSIBLE_BROWSER_DESIGN.md), [`ai-accessible-browser-seam-reconciliation.md`](../../docs/ai-accessible-browser-seam-reconciliation.md) | Independently-designed browser-evidence domain whose own claims/epistemic-status machinery was narrowed to defer to this document's `may_affect` boundary; its richer (but not directly portable) epistemic vocabulary is corroborating evidence for open question 7. |
 | `incremental-architecture-intake-and-seam-reconciliation.md` | A future architecture-intake session's baseline-verification step (§3 of that method) is a plausible consumer of this boundary once built, exactly as the retired draft of this document proposed — recorded here as a possible future connection, not owned by this document. |

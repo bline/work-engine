@@ -2,7 +2,27 @@
 
 ## Complete architectural design
 
-**Status:** Initial complete design  
+**Status:** Initial complete design, narrowed by seam reconciliation — see
+[`ai-accessible-browser-seam-reconciliation.md`](../../docs/ai-accessible-browser-seam-reconciliation.md).
+This document owns Chrome capture, normalization, identity, coordinate
+spaces, indexes, and projections. It does not own a claims system (§30) —
+see [`claim-evidence-service.md`](../../docs/claim-evidence-service.md) and
+[`ui-experience-evidence-interface/proposal.md`](../../../proposals/ui-experience-evidence/ui-experience-evidence-interface/proposal.md),
+which sits above this document as a UI-specific evidence façade:
+
+```text
+Chrome
+    ↓
+AI-Accessible Browser (this document)
+    browser reality / capture / normalization / indexes / projections
+    ↓
+UI Experience Evidence Interface
+    product-view identity / experience topology / UI-specific evidence
+    ↓
+claim-evidence
+    claim identity/revisions / may_affect publication / refresh judgment
+```
+
 **Date:** 2026-08-26  
 **Implementation status:** Not yet implemented  
 
@@ -21,7 +41,9 @@ The system does not attempt to replace browser rendering with a model descriptio
 - active perception through bounded browser probes;
 - lossless pixel evidence where actual rendering matters;
 - sparse histories that preserve change without transmitting filmstrips;
-- durable, evidence-bound semantic claims that can be reused until their dependencies change; and
+- durable, evidence-bound browser facts that upstream claim consumers can
+  cite and reuse until their dependencies change (this document produces
+  the evidence; it does not itself own a claims system — see §30); and
 - explicit boundaries among observation, deterministic derivation, judgment, uncertainty, and authority.
 
 The intended result is not merely improved screenshot understanding. It is a browser interface through which an agent can look, inspect, act, verify, remember, and explain.
@@ -45,7 +67,7 @@ Inspect or interact with the browser
       ↓
 Observe the resulting state
       ↓
-Update browser knowledge and evidence-bound claims
+Update browser knowledge and dependency-addressable evidence
       ↓
 Choose the next question or action
 ```
@@ -84,7 +106,7 @@ The AI-Accessible Browser shall:
 6. Support active perception through bounded, authority-aware browser probes.
 7. Preserve state changes and histories without duplicating unchanged evidence.
 8. Provide pixel-authoritative evidence for design and rendering verification.
-9. Cache semantic conclusions separately from observations and invalidate them by dependency.
+9. Expose observations and derived facts as dependency-addressable evidence, so an upstream claim owner can cache semantic conclusions against them and invalidate by dependency without this document authoring or storing those conclusions itself.
 10. Keep the common agent-facing instruction small.
 11. Expose uncertainty, inaccessible surfaces, and unsupported claims explicitly.
 12. Permit specialized perspectives to share one canonical evidence substrate.
@@ -112,7 +134,7 @@ Chrome owns rendering, style computation, layout, event dispatch, hit testing, n
 
 ### 6.2 Evidence precedes description
 
-Canonical state consists of typed evidence and relationships. Natural-language descriptions are derived for a particular question or perspective and may be cached as claims.
+Canonical state consists of typed evidence and relationships. Natural-language descriptions are derived for a particular question or perspective; an upstream claim owner (§30) may cache such a description as a claim bound to this document's evidence, but this document does not itself produce or cache claims.
 
 ### 6.3 Observation, derivation, and judgment remain distinct
 
@@ -266,9 +288,10 @@ Agent tools
         ↓
 Perspective roles/skills
   designer · developer · accessibility · structured data · performance
-        ↓
-Claims system
-  revisioned judgments bound to exact evidence dependencies
+        ┊ (this document's boundary ends here)
+        ┊
+claim-evidence (external, downstream, not owned by this document)
+  revisioned judgments bound to exact evidence dependencies — see §30
 ```
 
 ### 9.1 Stable host boundary
@@ -810,6 +833,32 @@ contradictory
 unsupported
 ```
 
+Seam reconciliation against `evidence-anchor-observation-and-impact-nomination.md`
+found this enumeration does not survive even this document's own analysis,
+and it is retained below only as an original design observation, **unresolved
+even within the browser model**, not as settled browser-internal
+classification. Two problems, not one:
+
+First, the eight states mix at least four different questions (provenance
+class, availability/coverage, temporal/correspondence state, and
+relationship/semantic state) that a general dependency-observation boundary
+must keep separate — `contradictory` specifically is dangerous to treat as
+one state: sometimes it is mechanically decidable (an expected relation is
+observed absent), and sometimes — as §21 already notes for semantic
+equivalence — it requires model judgment (visible salary disagreeing with
+structured-data salary).
+
+Second, and more basic: `model-claimed` cannot coherently be a *Fact*
+epistemic state at all. §7.1 defines a `Fact` as "an observed or
+deterministically derived proposition about an entity" — claims are
+explicitly excluded from that definition, and §30's narrowing confirms this
+document does not own claim production. A fact cannot simultaneously be
+"model-claimed" and satisfy its own ontology's definition of `Fact`. This
+enumeration needs decomposition into separate provenance/coverage/freshness/
+correspondence dimensions before it can be used anywhere, including here —
+that decomposition is not attempted in this pass; see
+[`ai-accessible-browser-seam-reconciliation.md`](../../docs/ai-accessible-browser-seam-reconciliation.md).
+
 Coverage is first-class:
 
 ```yaml
@@ -926,7 +975,11 @@ Orient within a scene or target. Accepts optional target, lens, resolution, dime
 
 #### `browser.inspect`
 
-Expand an entity, region, claim, state, or evidence reference along selected dimensions.
+Expand an entity, region, state, or evidence reference along selected
+dimensions. Expanding a *claim* reference is not a browser primitive — that
+is a façade-level composition performed by whatever consumes this document's
+evidence (`ui-experience-evidence-interface`, `claim-evidence`), not this
+tool itself.
 
 #### `browser.probe`
 
@@ -1010,39 +1063,49 @@ Questions include milestones, shifts, responsiveness, resource causality, state 
 
 Perspective instructions belong in separately loaded roles or skills. They must not contaminate the canonical page representation.
 
-## 30. Claims integration
+## 30. Relationship to claims (narrowed on seam reconciliation)
 
-Semantic conclusions are retained separately from browser facts.
+An earlier pass at this document proposed a local claims system here, with
+its own revisioned judgments and dependency-bound invalidation. Seam
+reconciliation against `claim-evidence-service.md` and
+`ui-experience-evidence-interface/proposal.md` found that ownership already
+exists or is already proposed elsewhere: the proposal states outright that
+"an implementation completion or other immutable source event may nominate
+`may_affect` relationships using observed change evidence. It cannot
+declare a visual claim false, attribute semantic causality, or reopen a
+downstream decision" — the same non-authoritative-nomination boundary
+`claim-evidence-service.md` and `evidence-anchor-observation-and-impact-nomination.md`
+already establish. This document does not own a claims system.
+
+**What this document still owns:** semantic conclusions such as "primary
+action," "component correspondence," or "likely causal explanation" are what
+a claim asserts — this document should not author or cache them, correcting
+the earlier pass noted above, which did. What this document *does* own is
+the browser-fact evidence and its dependency digests (scene, style,
+viewport, and similar) that a claim cites and that a `may_affect` nomination
+would compare against. That is still exactly the evidence-anchor shape:
 
 ```yaml
-claim:
-  id: claim/primary-action/12
+browser_fact_evidence:
   subject: scene://checkout/state-17
-  conclusion: node/842
-  status: supported
-  perspective: interaction-design/v2
+  entity_ref: node/842
   evidence:
     - node/842
     - query/result/291
-  dependencies:
+  dependency_digests:
     scene-digest: sha256:...
     style-digest: sha256:...
     viewport: [1440, 900]
 ```
 
-Claims are invalidated only when relevant dependencies change. A new page revision need not invalidate a claim whose evidence closure remains identical.
-
-The claims system may cache answers such as:
-
-- primary action;
-- component correspondence;
-- accessibility defect;
-- schema-to-visible-content agreement;
-- intended versus unexpected layout shift;
-- responsive-design judgment; and
-- likely causal explanation.
-
-Claim confidence is not a substitute for evidence coverage or dependency validity.
+A future evidence-anchor observer over browser facts would compare a
+declared dependency's recorded digest against this document's freshly
+observed one and, on mismatch, nominate `may_affect` — never publish a
+durable claim itself. See
+[`ai-accessible-browser-seam-reconciliation.md`](../../docs/ai-accessible-browser-seam-reconciliation.md)
+for the full reconciliation and the open question of whether that observer
+is literally an instance of `EvidenceAnchorObserver` or a distinct
+mechanism.
 
 ## 31. Storage and transport
 
@@ -1058,7 +1121,8 @@ The store must support:
 - dependency queries;
 - content-addressed artifacts;
 - spatial and semantic indexes;
-- claim invalidation; and
+- dependency-digest queries an external evidence-anchor observer can compare
+  against (not claim invalidation itself — see §30); and
 - durable receipts.
 
 ### 31.2 Chrome-to-host transport
@@ -1220,12 +1284,14 @@ The prototype succeeds only if the combined interface provides measurable benefi
 - viewport and media-preference branches;
 - animation and layout-shift summaries.
 
-### Phase 5 — Semantics, verification, and claims
+### Phase 5 — Semantics, verification, and evidence-anchor integration
 
 - accessibility and structured-data correspondence;
 - assertion verifier;
-- claims-system integration;
-- dependency-bound invalidation.
+- integration with claim-evidence's `may_affect` boundary via an
+  evidence-anchor observer over browser-fact dependency digests (not a local
+  claims system — see §30);
+- dependency-digest queries supporting that observer.
 
 ### Phase 6 — Causality and broader browser completeness
 
@@ -1246,7 +1312,10 @@ The following questions require implementation evidence:
 5. How should style, layout, and pixel invalidation be narrowed safely after browser events?
 6. What stabilization policy best preserves transient defects without flooding history?
 7. How much stateful evidence-view continuity reduces agent tokens without creating hidden dependencies?
-8. What cross-navigation identity matching is reliable enough to support automatic claim continuity?
+8. What cross-navigation identity matching is reliable enough for an
+   upstream claim owner to rely on for automatic evidence continuity —
+   this document only supplies the identity matching, not the continuity
+   decision itself?
 9. Which causal relationships can be captured without invasive page instrumentation?
 10. How should opaque dynamic surfaces be sampled and summarized?
 11. What projection budget policy best balances orientation, precision, and token cost?
@@ -1268,6 +1337,30 @@ verify  — test a bounded assertion
 ```
 
 The environment owns capture, indexing, projection, caching, and invalidation. The agent owns purpose, evidence selection, and irreducible judgment.
+
+## Relationship to neighboring designs
+
+- [`ai-accessible-browser-seam-reconciliation.md`](../../docs/ai-accessible-browser-seam-reconciliation.md)
+  owns the full reconciliation this document's §24 and §30 narrowing comes
+  from, including which open questions (browser dependency invalidation vs.
+  `EvidenceAnchorObserver`; browser evidence revisions vs. the revisioned-state
+  kernel primitive; the projection planner vs. evidence-calibrated projection
+  profiles) remain genuinely open rather than resolved.
+- [`ui-experience-evidence-interface/proposal.md`](../../../proposals/ui-experience-evidence/ui-experience-evidence-interface/proposal.md)
+  owns product-specific view identity, experience-state topology, and
+  UI-specific evidence questions above this document's browser substrate.
+  This document does not own Chrome transport or lifecycle from that
+  proposal's perspective, and that proposal does not own browser capture
+  from this document's.
+- [`claim-evidence-service.md`](../../docs/claim-evidence-service.md) owns
+  claim identity, revisions, `may_affect` publication, and refresh judgment.
+  This document produces evidence a claim may cite; it does not publish
+  claims.
+- [`evidence-anchor-observation-and-impact-nomination.md`](evidence-anchor-observation-and-impact-nomination.md)
+  owns the generic dependency-observation and non-authoritative
+  impact-nomination boundary this document's §30 now defers to, and is the
+  candidate (not confirmed) generalization of this document's own
+  dependency-digest comparison mechanics.
 
 ## 40. Conclusion
 
