@@ -2,6 +2,24 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/evidence-backed-proposal-evaluation-reconciliation.md`. "Claims" and
+"evidence items" are retired to `claim-evidence-service.md`'s already-implemented
+substrate (`proposal-research-v1` vertical profile). "Facets" remain an open modeling
+question this idea itself has not settled, not a placed gap. The primary remaining open
+scope is typed, comparison-ready evaluation conclusions (estimates like expected cost or
+regression risk, derived from evidence, each with its own scale, directionality, scope,
+and confidence — not an evidence sub-schema) plus the bounded comparison-contract
+machinery that can derive non-authoritative dominance/incomparability findings from them.
+Ownership within that machinery is split: evaluation owns the comparison-contract schema,
+validation, and dominance-derivation mechanics; the decision or portfolio owner owns which
+measures matter, which proposals are compared, and the authorized comparison surface.
+Confirmed `SUPPLIES` relationships to `ideas/proposal-research-maturity-and-freshness.md`
+(readiness judgments consume this idea's estimates as one input) and
+`ideas/proposal-backed-portfolio-selection.md` (portfolio selection consumes dominance
+findings for scheduling authority, without performing the comparison itself). See the
+reconciliation document for the full disposition.
+
 Exploratory planning capability.
 
 ## Idea
