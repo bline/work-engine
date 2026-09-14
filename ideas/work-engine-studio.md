@@ -2,6 +2,25 @@
 
 ## Status
 
+Reconciled against current implementation and prospective architecture in
+`app-server/docs/work-engine-studio-reconciliation.md` — the final item of the sequel
+reconciliation queue. Central finding: `app-server/docs/control-plane-causal-observability-ui.md`
+is an already-accepted design substantially overlapping this idea's Runtime view and the
+execution-history half of Forensics, written with zero cross-reference either direction;
+that document should be treated as the accepted design for those two areas, and should
+itself gain a reciprocal note pointing back at this idea. Contract/design splits into an
+already-real read projection (Agent Environment Graph / `role-compiler-proposal.md`) and a
+still-unspecified authoring path. Organization view and Forensics' design/organization ↔
+runtime correlation half are both blocked on `ideas/organizational-execution-envelopes.md`'s
+own still-unbuilt execution-envelope compiler, not separate gaps. Design-time diagnostics
+are a consumer of the joint `ideas/cross-cutting-seam-review.md` /
+`ideas/architectural-review.md` specialists once built, not logic Studio itself must invent.
+The one genuinely open design question — unifying what looked like separate Control-view and
+Contract/design-authoring gaps — is an authority-preserving interactive command/edit
+projection: discovery, rendering, bounded-intent submission, and lifecycle feedback over
+operations the canonical control plane and `OperatorProjection` already own. See the
+reconciliation document for the full disposition.
+
 Exploratory product-surface direction.
 
 ## Idea

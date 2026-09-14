@@ -7,6 +7,15 @@ live work, historical workflow causality, reviewer economics, anomalous cost,
 and evidence-backed workflow improvement. It is a product design and
 architecture boundary, not an implementation plan or authority grant.
 
+`ideas/work-engine-studio.md` proposes a broader human-facing product surface
+(Contract/design, Organization, Runtime, Control, and Forensics views) that
+this document sits inside. This design is the accepted owner for Studio's
+Runtime view and the execution-history half of its Forensics view; see
+`app-server/docs/work-engine-studio-reconciliation.md` for the full seam
+analysis. Studio's Contract/design, Organization, and Control views, and the
+design/organization-to-runtime correlation half of Forensics, remain outside
+this document's scope.
+
 The UI exists to answer questions such as:
 
 - What is active, waiting, retrying, or approaching a configured limit?
