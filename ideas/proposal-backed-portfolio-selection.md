@@ -2,13 +2,11 @@
 
 ## Status
 
-**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
-reconciliation's findings are confirmed accurate. Implementation of the stated residue —
-the `PortfolioDecision` record, with portfolio exclusion kept explicitly distinct from
-proposal-lifecycle rejection — is authorized to proceed.
-
 Reconciled against current app-server implementation and prospective architecture in
-`app-server/docs/proposal-backed-portfolio-selection-reconciliation.md`. Proposal
+`app-server/docs/proposal-backed-portfolio-selection-reconciliation.md` — **accepted and
+its residue authorized 2026-09-14; see that document for the authorization record.** This
+root idea file is retained as historical subject matter; the reconciliation document is the
+living artifact. Proposal
 identity, relationships (`depends_on`/`enables`/`informs`/`related_to`/`split_from`),
 and proposal decisions are already real. "A strategic planner" refers to a
 campaign-scoped mechanism (`strategic-planning-handoff.mjs`) whose structured handoff

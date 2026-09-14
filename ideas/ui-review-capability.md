@@ -2,15 +2,12 @@
 
 ## Status
 
-**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
-reconciliation's findings are confirmed accurate. The stated residue — the `UIReviewProfile`
-contract — is authorized for **design work only, not implementation yet**, pending its
-project/doctrine-revision, required-concern, judgment-semantics, evidence-requirement, and
-completeness-rule fields being specified.
-
 Reconciled against current implementation and prospective architecture (including the
 `ui-experience-evidence` dependency, evaluated inline) in
-`app-server/docs/ui-review-capability-reconciliation.md`. The four lenses
+`app-server/docs/ui-review-capability-reconciliation.md` — **accepted and its residue
+authorized for design work 2026-09-14; see that document for the authorization record.**
+This root idea file is retained as historical subject matter; the reconciliation document
+is the living artifact. The four lenses
 (Truth/Maintainability/Explainability/Aesthetics) are real as Site2JSON's own precedent
 (`skills/ui-design-principles`) and should stand as the first concrete instance of a
 project-parameterized `UIReviewProfile` contract, not a Work-Engine-owned universal

@@ -2,14 +2,11 @@
 
 ## Status
 
-**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
-reconciliation's findings are confirmed accurate. Implementation of the stated residue —
-typed evaluation estimates and the comparison-contract/dominance mechanism, with evaluation
-owning the contract mechanics and the decision/portfolio owner picking what is compared —
-is authorized to proceed.
-
 Reconciled against current app-server implementation and prospective architecture in
-`app-server/docs/evidence-backed-proposal-evaluation-reconciliation.md`. "Claims" and
+`app-server/docs/evidence-backed-proposal-evaluation-reconciliation.md` — **accepted and
+its residue authorized 2026-09-14; see that document for the authorization record.** This
+root idea file is retained as historical subject matter; the reconciliation document is the
+living artifact. "Claims" and
 "evidence items" are retired to `claim-evidence-service.md`'s already-implemented
 substrate (`proposal-research-v1` vertical profile). "Facets" remain an open modeling
 question this idea itself has not settled, not a placed gap. The primary remaining open

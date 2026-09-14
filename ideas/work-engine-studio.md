@@ -2,15 +2,11 @@
 
 ## Status
 
-**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
-reconciliation's findings are confirmed accurate. The stated residue — the authority-
-preserving interactive command/edit projection (discovery, rendering, bounded-intent
-submission, lifecycle feedback) — is authorized for **design work only, not implementation
-yet**, pending that connective-layer schema being specified.
-
 Reconciled against current implementation and prospective architecture in
 `app-server/docs/work-engine-studio-reconciliation.md` — the final item of the sequel
-reconciliation queue. Central finding: `app-server/docs/control-plane-causal-observability-ui.md`
+reconciliation queue, **accepted and its residue authorized for design work 2026-09-14; see
+that document for the authorization record.** This root idea file is retained as historical
+subject matter; the reconciliation document is the living artifact. Central finding: `app-server/docs/control-plane-causal-observability-ui.md`
 is an already-accepted design substantially overlapping this idea's Runtime view and the
 execution-history half of Forensics, written with zero cross-reference either direction;
 that document should be treated as the accepted design for those two areas, and should

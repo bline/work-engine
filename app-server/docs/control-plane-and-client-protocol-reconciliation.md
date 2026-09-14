@@ -270,3 +270,11 @@ that this reconciliation exists and that all but one clause is retired,
 pointing to this document. The remaining open clause (authoritative
 active-binding coordination for logical role instances) should be the only
 thing left active in that idea file going forward.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. Implementation
+of the stated residue — fenced active-binding coordination for logical role
+instances — is authorized to proceed.

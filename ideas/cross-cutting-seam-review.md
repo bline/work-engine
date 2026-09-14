@@ -2,18 +2,14 @@
 
 ## Status
 
-**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
-reconciliation's findings are confirmed accurate. Split authorization: implementation of the
-mechanical seam-evidence adapter extensions (implementation-evidence-driven, per the
-existing extensible `EvidenceAnchorObserver` taxonomy) is authorized to proceed. The semantic
-"truthfully and proportionately" correspondence-judgment owner and the attributed
-routing/disposition concept are authorized for **design work only, not implementation yet**
-— both require an owner decision this reconciliation deliberately left open.
-
 Reconciled jointly with `ideas/architectural-review.md` against current app-server
 implementation and prospective architecture in
 `app-server/docs/cross-cutting-seam-review-and-architectural-review-reconciliation.md`
-(per the `COUPLED_RECONCILIATION` flag in `app-server/docs/root-ideas-reconciliation.md`).
+(per the `COUPLED_RECONCILIATION` flag in `app-server/docs/root-ideas-reconciliation.md`) —
+**accepted and its residue split-authorized 2026-09-14 (adapters for implementation, the
+judgment-owner and routing concept for design only); see that document for the
+authorization record.** This root idea file is retained as historical subject matter; the
+reconciliation document is the living artifact.
 Deterministic observation/comparison of an already-declared seam dependency is retired to
 `app-server/ideas/pending/evidence-anchor-observation-and-impact-nomination.md`'s
 `EvidenceAnchorObserver` pattern — narrower than retiring `may_affect` itself, which

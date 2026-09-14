@@ -302,3 +302,13 @@ resolution) of the joint seam-review/architectural-review reconciliation's
 own open "UI-representation ↔ state" semantic-judgment residue, specifically
 for material human-facing interfaces, worth tracking so neither capability
 is designed twice independently.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. The stated
+residue — the `UIReviewProfile` contract — is authorized for **design work
+only, not implementation yet**, pending its project/doctrine-revision,
+required-concern, judgment-semantics, evidence-requirement, and
+completeness-rule fields being specified.

@@ -331,3 +331,13 @@ retired, pointing to this document and to `claim-evidence-service.md`,
 `revision-bound-review-artifacts`. The remaining open clause (prospective
 review-scope coordination before mutation admission) should be the only
 thing left active in that idea file going forward.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. Implementation
+of the stated residue — prospective review-scope coordination before
+mutation admission, including the design decision of which owner declares a
+scope protected before `workspace-coordination` enforces it — is authorized
+to proceed.

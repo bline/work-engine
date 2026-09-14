@@ -267,3 +267,14 @@ contributing explanations — never a single causal verdict, and never
 treating an adverse outcome as automatic proof a prediction was wrong — plus
 a calibration-record domain profile (coupled to `claim-evidence-service.md`'s
 existing pattern) to hold the comparison and that diagnosis together.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. The stated
+residue — the prediction↔outcome correspondence contract and the attributed
+calibration diagnosis — is authorized for **design work only, not
+implementation yet**. The correspondence contract (units, scale, tolerance,
+sufficiency of one outcome for a probabilistic prediction) must exist before
+any comparison code can meaningfully be written.

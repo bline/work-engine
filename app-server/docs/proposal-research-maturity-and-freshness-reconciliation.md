@@ -363,3 +363,11 @@ named decision, explicitly not the authority it informs — with
 `ideas/evidence-backed-proposal-evaluation.md`
 (item 6) recorded as its likely evidence supplier, to be confirmed when item
 6 is reconciled.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. Implementation
+of the stated residue — the decision-specific readiness contract and
+attributed assessment semantics — is authorized to proceed.

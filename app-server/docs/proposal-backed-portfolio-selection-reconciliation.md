@@ -350,3 +350,12 @@ proposal's own lifecycle. Confirmed `SUPPLIES` relationships to
 `ideas/evidence-backed-proposal-evaluation.md` (item 6) and
 `ideas/proposal-research-maturity-and-freshness.md` (item 5) should also be
 noted.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. Implementation
+of the stated residue — the `PortfolioDecision` record, with portfolio
+exclusion kept explicitly distinct from proposal-lifecycle rejection — is
+authorized to proceed.

@@ -484,3 +484,16 @@ former is a coupled, deferred seam with the role compiler; the latter is
 already substantially supplied by the role-compiler/skills-migration
 direction. Dynamic team synthesis remains explicitly out of scope until the
 fixed-topology first vertical exists.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. The stated
+residue — the execution-envelope compiler — is authorized for **design work
+and proposal formation only, not implementation yet**. It is coupled to
+`role-compiler-proposal.md`'s own explicitly-deferred composition question;
+building the compiler before that question is answered risks creating a
+second, competing relation-truth owner, per that document's own warning.
+Full implementation authorization is deferred until that design question is
+resolved.

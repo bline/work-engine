@@ -290,3 +290,13 @@ comparison mechanics; the decision or portfolio owner owns which measures,
 proposals, and comparison surface apply. This is evaluation's own genuine
 territory, distinct from and supplying both item 5's readiness judgments and
 item 7's portfolio-selection authority.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. Implementation
+of the stated residue — typed evaluation estimates and the comparison-
+contract/dominance mechanism, with evaluation owning the contract mechanics
+and the decision/portfolio owner picking what is compared — is authorized
+to proceed.

@@ -379,3 +379,16 @@ plus the open architectural question of whether judgment history belongs on
 a general revisioned-state primitive or grows from the existing sealed
 decision-set architecture, should be the only thing left active in that
 idea file going forward.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. The stated
+residue — durable semantic judgment identity/ancestry — is authorized for
+**design work only, not implementation yet**. This reconciliation
+deliberately left one architectural question open (a general
+revisioned-state primitive vs. growing from the sealed decision-set
+architecture); that choice must be made before any of the seven proposed
+relation types can be implemented against a defined foundation. Full
+implementation authorization is deferred until that choice is made.

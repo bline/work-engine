@@ -416,3 +416,13 @@ intent to canonical owners, shows authoritative transition results, and
 joins canonical histories for investigation. The UI is not another system —
 it is a projection and interaction boundary over the system that already
 exists.
+
+## Acceptance
+
+**Accepted 2026-09-14** (explicit user decision, after a closer-look review
+of this reconciliation as part of the sequel queue's acceptance pass). This
+document's findings and disposition are confirmed accurate. The stated
+residue — the authority-preserving interactive command/edit projection
+(discovery, rendering, bounded-intent submission, lifecycle feedback) — is
+authorized for **design work only, not implementation yet**, pending that
+connective-layer schema being specified.
