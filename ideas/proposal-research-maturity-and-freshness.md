@@ -2,6 +2,23 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/proposal-research-maturity-and-freshness-reconciliation.md`. The
+freshness/refresh mechanism and its ownership are retired to `claim-evidence-service.md`
+(`app-server/src/services/claim-evidence` already implements a real `proposal-research-v1`
+vertical profile) — freshness remains a referenced input to readiness, not something this
+idea owns. The R0-R5 maturity ladder is downgraded from a canonical lifecycle to an
+optional, coarse derived summary: each stage decomposes into an existing or separately
+queued owner (proposal formation, placement, `ideas/evidence-backed-proposal-evaluation.md`'s
+evaluation dimensions, `ideas/organizational-execution-envelopes.md`'s envelope consumption,
+authority/runtime admission). The primary remaining open scope is the decision-specific
+readiness contract and attributed assessment semantics: an attributed sufficiency judgment for a named decision
+contract (e.g. "sufficient for placement" vs. "blocked for activation, missing X") that
+explicitly does not acquire the decision/acceptance/activation authority it informs.
+`ideas/evidence-backed-proposal-evaluation.md` is recorded as a likely evidence supplier to
+that judgment, not a competing owner. See the reconciliation document for the full
+disposition.
+
 Exploratory research architecture. A narrower shared claim-centered evidence-lineage candidate has already been promoted to `proposals/evidence-lineage/`; this idea should consume that candidate or an equivalent primitive rather than redefine it.
 
 ## Idea
