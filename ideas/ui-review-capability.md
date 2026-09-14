@@ -2,6 +2,25 @@
 
 ## Status
 
+Reconciled against current implementation and prospective architecture (including the
+`ui-experience-evidence` dependency, evaluated inline) in
+`app-server/docs/ui-review-capability-reconciliation.md`. The four lenses
+(Truth/Maintainability/Explainability/Aesthetics) are real as Site2JSON's own precedent
+(`skills/ui-design-principles`) and should stand as the first concrete instance of a
+project-parameterized `UIReviewProfile` contract, not a Work-Engine-owned universal
+ontology — this idea's own falsification test for a fifth dimension stays open. Specialist
+execution mechanics are coupled to `proposals/adaptive-specialized-review/adaptive-review-panel-coordination/`
+and `proposals/adaptive-specialized-review/concern-scoped-review-judgments/` (both formed,
+undecided proposals), following the same pattern already dogfooded for
+`agent-instruction-review`; required-concern and completeness semantics belong to
+`UIReviewProfile` itself, not the coordinator. Mechanism-evidence needs are per-concern
+evidence requirements within that same profile, satisfied by existing source owners
+(`claim-evidence`, evidence-anchor, browser evidence), not a new evidence-projection layer.
+Its Truth concern is a named candidate domain owner (not a full resolution) of the joint
+seam-review/architectural-review reconciliation's open "UI-representation ↔ state"
+semantic-judgment residue, for material human-facing interfaces specifically. See the
+reconciliation document for the full disposition.
+
 Exploratory project-facing capability pattern. The current `ui-design-principles` skill is a retained Site2JSON compatibility surface, not a generic Work Engine UI architecture owner.
 
 ## Idea
