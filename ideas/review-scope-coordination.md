@@ -2,6 +2,19 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/review-scope-coordination-reconciliation.md`. Most clauses are retired
+or partially retired: `claim-evidence` (design and substantial implementation, including
+`review-finding-bridge.mjs`) already owns exact reviewed-subject identity, supersession,
+refresh/selective-reopening obligations, and reliance bookkeeping; `workspace-coordination`
+already owns generic protected-resource enforcement (lease/fence/`admitMutation`); the
+formed `revision-bound-review-artifacts` proposal already owns the review-result
+disposition vocabulary. What remains unowned: prospective review-scope coordination
+before mutation admission — before changing something under active review, establishing
+whether the review's evidence world must remain stable and what consequence
+(continue/wait/new subject/adjudicate) follows if it won't. See the reconciliation
+document for the full disposition.
+
 Exploratory coordination idea. Review-artifact semantics are separately represented by the formed adaptive-specialized-review proposal family; Git-backed checkpoints are already implemented.
 
 ## Idea
