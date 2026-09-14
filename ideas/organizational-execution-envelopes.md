@@ -2,6 +2,22 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/organizational-execution-envelopes-reconciliation.md`. Unlike other
+reconciled ideas in this queue, this one survives as genuine unbuilt architecture, not
+a narrow coordination seam: no current or prospective document (the role compiler,
+`RoleRealization`, or hierarchical orchestration) answers what exact multi-role
+organization existed for a given problem, under what authority and provenance, or what
+organizational world each participating role received. Role-contract identity, single-role
+runtime binding, and workflow topology decomposition are already owned elsewhere. Reusable
+role-profile composition is a coupled, deferred seam with `role-compiler-proposal.md`
+(not this idea's own gap), and skill/capability-contract separation is already substantially
+supplied by the role-compiler/skills-migration direction. The surviving residue is a durable,
+provenance-bearing, problem-level multi-role organizational envelope and its role-scoped
+organizational projections, initially over Work Engine's already-existing fixed topology,
+without inventing new roles, authority, or runtime realizations — one new organizational
+level, not a second compiler stack. See the reconciliation document for the full disposition.
+
 Exploratory architecture direction.
 
 ## Idea
