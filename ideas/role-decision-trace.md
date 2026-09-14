@@ -2,6 +2,26 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/role-decision-trace-reconciliation.md`. This idea does not survive as a
+new claim-evidence domain profile or a new database: `claim-evidence-service.md` supplies
+proven, reusable substrate patterns (revisioned identity, evidence/provenance fields,
+immutable history, exact-revision reliance) without being the semantic owner of decisions
+or judgments, and `proposal-decision-gated-implementation-compilation.md`'s sealed
+"material decision set" is a real but narrow existing consumer covering only explicit
+route selection, not interpretations, sufficiency judgments, assumptions, or placement
+judgments. The idea's actual subject is broader than "decisions" in that narrow sense —
+it is durable semantic judgment identity and ancestry, of which material decisions are
+one subtype. What remains genuinely open: judgment identity, judgment class, judgment
+lifecycle (including whether "contradicted" is even a lifecycle state), active
+governing-judgment state (owned state vs. a projection over separately owned promote/
+retire/supersede transitions — neither demonstrated), and all seven ancestry relations
+(`PREMISE_FOR`/`SUPERSEDES`/`WEAKENS`/`CONTRADICTS`/`AFFECTS`/`REOPENED_BY`/
+`CHANGED_BECAUSE_OF`) with endpoints still undefined. The open architectural question —
+whether judgment history belongs on a general revisioned-state primitive or grows from
+the sealed decision-set architecture — is preserved, not resolved. See the reconciliation
+document for the full disposition.
+
 Exploratory observability and recovery idea.
 
 ## Idea
