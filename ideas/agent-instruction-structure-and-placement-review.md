@@ -2,6 +2,24 @@
 
 ## Status
 
+**Formed, decided, implementation-authorized, built, and dogfooded to acceptance.**
+Reconciled against current implementation in
+`app-server/docs/agent-instruction-structure-and-placement-review-reconciliation.md`.
+See `proposals/agent-instruction-integrity/agent-instruction-structure-placement-review/decision.json`
+for the approved decision and `metrics/agent-instruction-review.jsonl` for the accepted
+dogfood record. The capability is implemented at the root substrate
+(`skills/agent-instruction-review/`) and ported to app-server
+(`app-server/src/services/agent-instruction-review/`, exported from
+`app-server/src/index.mjs`, covered by
+`app-server/tests/agent-instruction-review-specialist.test.mjs`), with the finding
+schema, outcome vocabulary, and authority/independence boundary (including this
+idea's own self-referential concern) mechanically enforced rather than merely
+instructional. No architecture-level gap remains. The decision's own
+`reopening_conditions` include four standing falsification tests (satisfied for
+initial acceptance, not closed forever) and one deliberately unresolved empirical
+question — whether proposal-subject and implementation-subject review genuinely
+share one reviewer capability — which remains this idea's only live open question.
+
 Exploratory specialized-review capability, prioritized by the user as a
 critical structural-integrity intake before further skill and workflow
 instruction expansion. This priority does not create a review gate, accept the
