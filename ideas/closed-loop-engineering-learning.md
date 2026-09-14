@@ -2,6 +2,25 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/closed-loop-engineering-learning-reconciliation.md`. The predicted side
+is confirmed supplied by `ideas/evidence-backed-proposal-evaluation.md` (item 6, typed
+evaluation estimates). The observed side, including review burden (reclassified away from
+review findings, which own finding semantics, not burden), decomposes into two
+still-pending designs this idea should consume once they land:
+`app-server/ideas/pending/incremental-terminal-accounting-projection.md` (scope,
+failures/recoveries, validation evidence, review burden) and
+`app-server/ideas/pending/candidate-trajectory-remediation-delta-for-native-review.md`/
+`candidate-trajectory-builder-side-consumption.md` (route revisions). The primary
+remaining open scope is a prediction↔outcome correspondence/comparison contract
+(partially sequenced behind those pending designs, partially a genuinely unowned typed-
+comparability question — units, scale, tolerance, sufficiency of one outcome for a
+probabilistic prediction) and an attributed calibration diagnosis supporting multiple
+possible contributing explanations (never a single causal verdict, and never treating an
+adverse outcome as automatic proof a prediction was wrong), coupled to
+`claim-evidence-service.md`'s existing domain-profile pattern but not built. See the
+reconciliation document for the full disposition.
+
 Exploratory product-learning idea.
 
 ## Idea
