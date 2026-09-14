@@ -2,6 +2,21 @@
 
 ## Status
 
+Reconciled jointly with `ideas/cross-cutting-seam-review.md` against current app-server
+implementation and prospective architecture in
+`app-server/docs/cross-cutting-seam-review-and-architectural-review-reconciliation.md`
+(per the `COUPLED_RECONCILIATION` flag in `app-server/docs/root-ideas-reconciliation.md`).
+Its "Blocking consequence remains separately owned" boundary is confirmed achievable:
+`app-server/roles/strategic-planning-handoff.mjs` is a real, concrete campaign-level
+consumer (verdicts: continue/revise/pause/reorder/split_campaign/stop_campaign, dogfooded
+in `app-server/docs/post-migration-strategic-plan.md`) — but not the universal owner of
+every architectural-finding consequence; proposal reconsideration, architecture-direction
+reopening, and human authority are other named owning boundaries. The remaining open scope
+is an architectural-finding domain profile coupled to `claim-evidence-service.md`'s
+existing domain-profile pattern (not yet built), plus a routing step from a pause/stop
+recommendation to whichever owning decision boundary actually applies. See the
+reconciliation document for the full disposition.
+
 Exploratory capability idea.
 
 ## Idea

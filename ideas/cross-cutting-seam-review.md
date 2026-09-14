@@ -2,6 +2,22 @@
 
 ## Status
 
+Reconciled jointly with `ideas/architectural-review.md` against current app-server
+implementation and prospective architecture in
+`app-server/docs/cross-cutting-seam-review-and-architectural-review-reconciliation.md`
+(per the `COUPLED_RECONCILIATION` flag in `app-server/docs/root-ideas-reconciliation.md`).
+Deterministic observation/comparison of an already-declared seam dependency is retired to
+`app-server/ideas/pending/evidence-anchor-observation-and-impact-nomination.md`'s
+`EvidenceAnchorObserver` pattern — narrower than retiring `may_affect` itself, which
+requires a known dependent claim/fact and is not the mismatch itself. The remaining open
+scope: implementation-evidence-driven seam-evidence adapters and, only where needed,
+anchor-kind extensions (not a predeclared list); the owner of the semantic "truthfully and
+proportionately" correspondence judgment for non-mechanically-decidable seams; and an
+attributed routing/disposition concept (not a fixed local/architectural/documentation/UI/
+workflow taxonomy, which would be semantic and multidimensional) that can flag
+architectural diagnosis as warranted. See the reconciliation document for the full
+disposition.
+
 Exploratory review capability.
 
 ## Idea
