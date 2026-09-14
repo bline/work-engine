@@ -2,6 +2,24 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/proposal-backed-portfolio-selection-reconciliation.md`. Proposal
+identity, relationships (`depends_on`/`enables`/`informs`/`related_to`/`split_from`),
+and proposal decisions are already real. "A strategic planner" refers to a
+campaign-scoped mechanism (`strategic-planning-handoff.mjs`) whose structured handoff
+schema (see `post-migration-strategic-plan.md`'s "Strategic planning handoff" block) is
+real precedent for strategic-assumption content, not evidence it is missing.
+Confirmed `SUPPLIES` relationships from `ideas/evidence-backed-proposal-evaluation.md`
+(item 6, evaluated value/risk) and `ideas/proposal-research-maturity-and-freshness.md`
+(item 5, readiness). The primary remaining open scope is a `PortfolioDecision` record:
+a revision-bound basis (exact strategic assumptions, proposal/evaluation/readiness
+revisions) plus attributed cross-proposal analysis (portfolio-relative unlock/enablement;
+portfolio-relative mutual exclusion under this basis, kept separate from any durable
+`conflicts_with` proposal relationship) and a priority/sequencing/exclusion disposition
+that references proposal packet identity without mutating the proposal's own lifecycle
+(portfolio exclusion is not proposal rejection). See the reconciliation document for the
+full disposition.
+
 Exploratory planning/portfolio idea.
 
 ## Idea
