@@ -2,6 +2,14 @@
 
 ## Status
 
+Reconciled against current app-server implementation and prospective architecture in
+`app-server/docs/control-plane-and-client-protocol-reconciliation.md`. All sections below
+are retired except one: fenced active-binding coordination for logical role instances
+(ensuring at most one runtime realization generation holds the authoritative active
+binding for a logical role instance) has no current owner. See the reconciliation
+document for the full disposition; the "Future resource-claim coordination" subsection
+below is superseded by the already-implemented `workspace-coordination` service.
+
 Exploratory control-plane direction with one active-construction foundation: `role-scheduler`.
 
 ## Idea
