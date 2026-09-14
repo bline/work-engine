@@ -2,6 +2,13 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. The stated residue — an architectural-
+finding domain profile coupled to `claim-evidence-service.md`'s existing pattern, plus the
+routing step from a recommendation to whichever owning decision boundary applies — is
+authorized for **design work only, not implementation yet**, pending the domain-profile
+coupling decision and the routing design.
+
 Reconciled jointly with `ideas/cross-cutting-seam-review.md` against current app-server
 implementation and prospective architecture in
 `app-server/docs/cross-cutting-seam-review-and-architectural-review-reconciliation.md`

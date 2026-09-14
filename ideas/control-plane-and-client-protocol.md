@@ -2,6 +2,10 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. Implementation of the stated residue —
+fenced active-binding coordination for logical role instances — is authorized to proceed.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/control-plane-and-client-protocol-reconciliation.md`. All sections below
 are retired except one: fenced active-binding coordination for logical role instances

@@ -2,6 +2,12 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. The stated residue — the authority-
+preserving interactive command/edit projection (discovery, rendering, bounded-intent
+submission, lifecycle feedback) — is authorized for **design work only, not implementation
+yet**, pending that connective-layer schema being specified.
+
 Reconciled against current implementation and prospective architecture in
 `app-server/docs/work-engine-studio-reconciliation.md` — the final item of the sequel
 reconciliation queue. Central finding: `app-server/docs/control-plane-causal-observability-ui.md`

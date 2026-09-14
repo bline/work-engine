@@ -2,6 +2,11 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. Implementation of the stated residue —
+the decision-specific readiness contract and attributed assessment semantics — is
+authorized to proceed.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/proposal-research-maturity-and-freshness-reconciliation.md`. The
 freshness/refresh mechanism and its ownership are retired to `claim-evidence-service.md`

@@ -2,6 +2,13 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. The stated residue — the prediction↔
+outcome correspondence contract and the attributed calibration diagnosis — is authorized
+for **design work only, not implementation yet**. The correspondence contract (units,
+scale, tolerance, sufficiency of one outcome for a probabilistic prediction) must exist
+before any comparison code can meaningfully be written.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/closed-loop-engineering-learning-reconciliation.md`. The predicted side
 is confirmed supplied by `ideas/evidence-backed-proposal-evaluation.md` (item 6, typed

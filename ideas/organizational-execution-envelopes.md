@@ -2,6 +2,15 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. The stated residue — the execution-envelope
+compiler — is authorized for **design work and proposal formation only, not implementation
+yet**. It is coupled to `role-compiler-proposal.md`'s own explicitly-deferred question
+(composition/inheritance of role fragments); building the compiler before that question is
+answered risks creating a second, competing relation-truth owner, per that document's own
+warning. Full implementation authorization is deferred until that design question is
+resolved.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/organizational-execution-envelopes-reconciliation.md`. Unlike other
 reconciled ideas in this queue, this one survives as genuine unbuilt architecture, not

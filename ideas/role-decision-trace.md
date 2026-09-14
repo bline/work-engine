@@ -2,6 +2,15 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. The stated residue — durable semantic
+judgment identity/ancestry — is authorized for **design work only, not implementation yet**.
+The reconciliation deliberately left one architectural question open (a general
+revisioned-state primitive vs. growing from the sealed decision-set architecture); that
+choice must be made before any of the seven proposed relation types can be implemented
+against a defined foundation. Full implementation authorization is deferred until that
+choice is made.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/role-decision-trace-reconciliation.md`. This idea does not survive as a
 new claim-evidence domain profile or a new database: `claim-evidence-service.md` supplies

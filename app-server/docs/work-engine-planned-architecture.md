@@ -764,6 +764,21 @@ itself.
 "Implemented" means production evidence exists — real code, exported,
 tested, or dogfooded — not that a document describes it.
 
+On 2026-09-14 the user explicitly reviewed and accepted the reconciliation
+findings for all thirteen queue idea files, and authorized their residues
+to proceed — distinguishing two states this table now uses in addition to
+the original six. `ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION` means the
+residue is specified enough to build against directly. 
+`ACCEPTED_AUTHORIZED_FOR_DESIGN` means the reconciliation's meaning is
+accepted but the residue itself names an open design question (an owner
+choice, a foundational primitive decision, or a contract that must exist
+before code referencing it can be written) — implementation authorization
+for those is explicitly deferred until that design question is resolved.
+Acceptance of meaning does not retroactively make an `UNRESOLVED_SEAM`
+architecturally solved; it is a decision to proceed, not a claim that the
+work is done. See each idea file's own Status section for the exact
+authorization language.
+
 | Responsibility | State | Evidence |
 | --- | --- | --- |
 | `claim-evidence` core substrate (identity, evidence, revision/lineage) | IMPLEMENTED | `app-server/src/services/claim-evidence/` (15 files, ~2400 lines); `proposal-research-v1` and `revision-bound-review-finding-v1` in `authorized-vertical.mjs` |
@@ -789,24 +804,34 @@ tested, or dogfooded — not that a document describes it.
 | `evidence-anchor-observation-and-impact-nomination.md` | RECONCILED_PENDING | Exploratory only; supersedes an earlier, corrected draft |
 | Candidate Trajectory family (4 files) | RECONCILED_PENDING | No implementation evidence; deterministic engineering, no pilot required per this session's own assessment |
 | `incremental-terminal-accounting-projection.md` | RECONCILED_PENDING | "pending post-migration proposal" |
-| Fenced active-binding for role realization | UNRESOLVED_SEAM | `control-plane-and-client-protocol-reconciliation.md` |
-| Prospective review-scope coordination before mutation admission | UNRESOLVED_SEAM | `review-scope-coordination-reconciliation.md` |
-| Execution-envelope compiler | UNRESOLVED_SEAM | `organizational-execution-envelopes-reconciliation.md` — the queue's one new architectural level |
-| Durable semantic judgment identity/ancestry | UNRESOLVED_SEAM | `role-decision-trace-reconciliation.md` |
-| Decision-specific readiness contract | UNRESOLVED_SEAM | `proposal-research-maturity-and-freshness-reconciliation.md` |
-| Comparison-contract / dominance mechanism | UNRESOLVED_SEAM | `evidence-backed-proposal-evaluation-reconciliation.md` |
-| `PortfolioDecision` record | UNRESOLVED_SEAM | `proposal-backed-portfolio-selection-reconciliation.md` |
-| Attributed routing/disposition + architectural-finding domain profile | UNRESOLVED_SEAM | joint seam-review/architectural-review reconciliation |
-| Attributed calibration diagnosis + prediction↔outcome correspondence contract | UNRESOLVED_SEAM | `closed-loop-engineering-learning-reconciliation.md` |
-| `UIReviewProfile` contract | UNRESOLVED_SEAM | `ui-review-capability-reconciliation.md` |
-| Authority-preserving interactive command/edit projection | UNRESOLVED_SEAM | `work-engine-studio-reconciliation.md` |
+| Fenced active-binding for role realization | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | `control-plane-and-client-protocol-reconciliation.md`; user acceptance 2026-09-14 |
+| Prospective review-scope coordination before mutation admission | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | `review-scope-coordination-reconciliation.md`; user acceptance 2026-09-14 |
+| Execution-envelope compiler | ACCEPTED_AUTHORIZED_FOR_DESIGN | `organizational-execution-envelopes-reconciliation.md` — the queue's one new architectural level; user acceptance 2026-09-14, implementation deferred pending reconciliation with `role-compiler-proposal.md`'s own deferred composition question |
+| Durable semantic judgment identity/ancestry | ACCEPTED_AUTHORIZED_FOR_DESIGN | `role-decision-trace-reconciliation.md`; user acceptance 2026-09-14, implementation deferred pending the general-primitive-vs-sealed-decision-set choice |
+| Decision-specific readiness contract | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | `proposal-research-maturity-and-freshness-reconciliation.md`; user acceptance 2026-09-14 |
+| Comparison-contract / dominance mechanism | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | `evidence-backed-proposal-evaluation-reconciliation.md`; user acceptance 2026-09-14 |
+| `PortfolioDecision` record | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | `proposal-backed-portfolio-selection-reconciliation.md`; user acceptance 2026-09-14 |
+| Seam-evidence adapter extensions | ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION | joint seam-review/architectural-review reconciliation; user acceptance 2026-09-14 |
+| Semantic correspondence-judgment owner + attributed routing/disposition concept | ACCEPTED_AUTHORIZED_FOR_DESIGN | joint seam-review/architectural-review reconciliation; user acceptance 2026-09-14, implementation deferred pending an owner decision |
+| Architectural-finding domain profile + routing step | ACCEPTED_AUTHORIZED_FOR_DESIGN | joint seam-review/architectural-review reconciliation; user acceptance 2026-09-14 |
+| Attributed calibration diagnosis + prediction↔outcome correspondence contract | ACCEPTED_AUTHORIZED_FOR_DESIGN | `closed-loop-engineering-learning-reconciliation.md`; user acceptance 2026-09-14, implementation deferred pending the correspondence contract's own specification |
+| `UIReviewProfile` contract | ACCEPTED_AUTHORIZED_FOR_DESIGN | `ui-review-capability-reconciliation.md`; user acceptance 2026-09-14 |
+| Authority-preserving interactive command/edit projection | ACCEPTED_AUTHORIZED_FOR_DESIGN | `work-engine-studio-reconciliation.md`; user acceptance 2026-09-14 |
 | Dynamic team synthesis, new-role invention | DEFERRED | Explicitly self-deferred by `organizational-execution-envelopes.md`'s own "Adoption boundary" |
 | `CodeStructureAnchor` locator | DEFERRED | Investigation, not invention, per evidence-anchor's own §9 |
 
 ## 13. Remaining open seams
 
 Only what is already unresolved. No brainstorming; each states known facts,
-why it is unresolved, and what would resolve it.
+why it is unresolved, and what would resolve it. Per §12, every seam below arising from the sequel reconciliation queue
+(items 1, 2, 4, 5, 6, 7, 8, 9, 10, 11) was explicitly accepted and
+authorized to proceed by the user on 2026-09-14 — acceptance changes who
+may act on a seam, not whether the underlying architectural question is
+answered. Items 1, 4, 8, 9, 10, and 11 are authorized for design work only;
+items 2, 3, 5, 6, and 7 are authorized for implementation directly (item 8
+additionally includes a build-ready sub-piece, the mechanical seam-evidence
+adapter extensions, per §12's table). Item 12 (`routing.vs.admission`)
+predates the queue and was not part of this acceptance.
 
 **1. Execution-envelope compiler** (the queue's largest survivor)
 Known: `organizational-execution-envelopes.md`'s ExecutionEnvelope concept

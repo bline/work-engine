@@ -2,6 +2,12 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. Implementation of the stated residue —
+typed evaluation estimates and the comparison-contract/dominance mechanism, with evaluation
+owning the contract mechanics and the decision/portfolio owner picking what is compared —
+is authorized to proceed.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/evidence-backed-proposal-evaluation-reconciliation.md`. "Claims" and
 "evidence items" are retired to `claim-evidence-service.md`'s already-implemented

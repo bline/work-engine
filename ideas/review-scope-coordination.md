@@ -2,6 +2,12 @@
 
 ## Status
 
+**Accepted 2026-09-14** (explicit user decision after reviewing this reconciliation): the
+reconciliation's findings are confirmed accurate. Implementation of the stated residue —
+prospective review-scope coordination before mutation admission, including the design
+decision of which owner declares a scope protected before `workspace-coordination` enforces
+it — is authorized to proceed.
+
 Reconciled against current app-server implementation and prospective architecture in
 `app-server/docs/review-scope-coordination-reconciliation.md`. Most clauses are retired
 or partially retired: `claim-evidence` (design and substantial implementation, including
