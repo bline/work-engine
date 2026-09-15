@@ -57,6 +57,15 @@ domain-local judgment's concurrency control, precisely because coordination
 authority over *when* something may run is not the same as domain authority
 over *whether a judgment is correct*.
 
+**Companion principle (Sol's, contributed on the fourth review, after the
+claim-head admission gap was found):** reusing a mechanism does not inherit
+the contract that previously governed its use. `makeRevision` gives you a
+revision; it does not, by itself, give you permission to publish that
+revision from that predecessor under that claim's branching policy. Every
+internal reuse in this document (`makeRevision`, lineage-edge construction,
+`revisionHeads`-style CAS) is checked against this directly — see Operation
+3's "Claim-head admission, not just episode CAS."
+
 ## Revision history
 
 **2026-09-15, first draft reviewed by Sol — not passed.** Three material
@@ -131,7 +140,34 @@ episode publishes a new immutable episode-state revision succeeding the
 opened state, never a destructive overwrite of it — matching
 `semantic-model.md`'s own "immutable lifecycle transitions" requirement
 directly, the same way claim revisions already chain via
-`predecessor_revision`. All corrected below.
+`predecessor_revision`. All corrected in the fourth draft.
+
+**2026-09-15, fourth draft reviewed by Sol — "Architecture PASS. Bounded
+three-operation decomposition PASS. Contract surface NOT YET
+implementation-ready" — three invariants and one identity clarification
+remained, none requiring further redesign.** (1) The third round's
+`retained_unchanged`-prohibits-`resolved_changed` rule was too narrow — it
+still admitted `inapplicable`/`contested`/`deferred` episodes with a
+`resolved_changed` trigger, equally impossible since those dispositions
+produce no claim revision at all. Strengthened to the tight biconditional
+`resolved_changed ⇒ episode_disposition == "changed"`. (2) Internally
+reusing `makeRevision` fixed the atomicity problem but does not by itself
+inherit `publish_revision`'s own admission invariant that the target claim's
+head hasn't moved — Sol's naming: "reusing a mechanism does not inherit the
+contract that previously governed its use." Added an explicit claim-head
+admission check before minting any successor revision, and scoped this
+first vertical's successor-revision path to non-branching domain profiles
+only, stated as a scope choice rather than left ambiguous. (3) A
+`retained_unchanged` judgment's successor revision was accepted at face
+value with no check that its proposition actually matches its predecessor's
+— `semantic-model.md` and the proposal's own invariants require preserving
+proposition identity, not merely producing *a* revision. Required the
+claim's own domain profile to identify proposition-identity fields and
+enforced the comparison, without inventing the comparator itself. (4)
+`superseded_by.kind == "judgment"` pointed at a category with no defined
+concrete identity. Resolved: it names the terminal `episode_state_id` of
+whichever episode is the successor judgment — no new identity concept
+introduced. All four addressed below.
 
 ## Method: discovering the operation count, not presuming it
 
@@ -511,17 +547,103 @@ episode-state record is appended (never mutating the opened state),
 carrying `lifecycle_state: "closed"`, `episode_disposition`,
 `trigger_resolutions`, `causal_attribution`, `superseded_by`, rationale, and
 evidence references; when `episode_disposition` is
-`retained_unchanged`/`changed`, a new revision is constructed via the
-existing `makeRevision` helper and appended to `store.revisions`, and a
-`refresh` lineage edge is appended to `store.lineage` linking the episode's
-subject revision to that new successor — all appends, or none, under one
-operation receipt. The opened state remains individually addressable
+`retained_unchanged`/`changed`, this operation first checks claim-head
+admission (`subject_revision` still current, or rejects — see "Claim-head
+admission" above) and, for `retained_unchanged`, proposition preservation
+(see "Retained-unchanged must preserve the proposition" above), then
+constructs the new revision via the existing `makeRevision` helper and
+appends it to `store.revisions`, and appends a `refresh` lineage edge to
+`store.lineage` linking the episode's subject revision to that new
+successor — all appends, or none, under one operation receipt. The opened
+state remains individually addressable
 afterward, satisfying `semantic-model.md`'s "immutable lifecycle
 transitions" directly. Every triggering nomination's disposition now
 resolves through its own entry in this closing state's `trigger_resolutions`
 (a read-time projection, per Operation 1) — never through the episode's own
 overall disposition directly, and causal attribution resolves through
 `causal_attribution` — never derived from `trigger_resolutions`.
+
+**Claim-head admission, not just episode CAS (fourth-review correction —
+the most serious finding this round).** Internally reusing `makeRevision`
+fixed round 1's atomicity problem, but reuse of a construction mechanic is
+not the same as inheriting the admission invariants the *public*
+`publish_revision` operation enforces around it — Sol's own naming for this:
+"reusing a mechanism does not inherit the contract that previously governed
+its use." The episode's own CAS (`expected_state` matching the episode's
+current state-chain head) establishes only that nobody else changed *this
+episode*. It says nothing about whether `subject_revision` is still an
+admissible predecessor for the claim — the claim can advance independently
+while an episode is open (another authorized writer publishes a new head
+between this episode's opening and its closing). `semantic-model.md`'s own
+"Branching, conflict, and canonical support" section is explicit that
+competing revisions or refresh judgments are permitted "only when the domain
+profile permits branching," and that "no wall-clock ordering... silently
+selects canonical support" — so this operation must not mint a successor
+revision from a `subject_revision` that is no longer a current head without
+consulting that policy. Before constructing any successor revision, this
+operation checks whether `subject_revision` remains an admissible
+predecessor for the claim, exactly as `publish_revision`'s own
+`expected_state`-against-`revisionHeads` check already does for its own
+callers:
+
+```text
+subject_revision still current head, or domain profile permits branching
+    -> proceed (branching case still requires the branch to be explicitly
+       represented; this design does not invent that representation, see
+       "What this design deliberately does not decide")
+
+subject_revision no longer current head, domain profile prohibits branching
+    -> reject: publishing this successor is no longer admissible
+```
+
+**Scope choice for this first vertical, stated explicitly rather than left
+ambiguous:** rather than design branch representation now, this vertical
+admits refresh-judgment successor-revision publication only for domain
+profiles whose policy is non-branching; a domain profile that permits
+branching is out of scope for `publish_refresh_judgment`'s successor-revision
+path until branch representation is designed — consistent with this
+document's own Route-B discipline (a genuine, explicitly-scoped subset of
+approved semantics, not a claim that branching-permitted refresh doesn't
+exist).
+
+**Retained-unchanged must preserve the proposition, not merely produce a
+revision.** `semantic-model.md`: "An unchanged refresh preserves the
+proposition while updating its evidence support." `proposal.md`'s own
+invariants: "Unchanged refresh produces a new evidence-bound revision
+without pretending the proposition changed." A generic
+`successor_revision_payload` accepted at face value does not prove this —
+nothing currently stops a `retained_unchanged` judgment from constructing a
+revision whose proposition differs materially from its predecessor. This
+operation therefore requires the claim's own domain profile to identify
+which of a revision's fields constitute proposition identity (as distinct
+from its evidence-bound fields — support qualification, evidence
+references, confidence, and similar, which *are* expected to change on an
+unchanged refresh) and compares the successor's proposition-identity fields
+against the predecessor's, rejecting any mismatch under
+`retained_unchanged`. This document does not design that comparator itself —
+which fields count as proposition identity is a domain-profile-owned
+question, not something this contract invents — but it requires the
+comparison to exist and be enforced before a `retained_unchanged` successor
+publishes, not merely trusted.
+
+**Superseded identity: `kind: judgment` names the terminal episode state
+itself.** `superseded_by.kind == "judgment"` refers to exactly the terminal
+state this same Operation 3 produces for some other episode — its own
+`episode_state_id` *is* the durable identity of that refresh judgment, since
+the terminal state is defined as the attributed judgment record (disposition,
+trigger resolutions, causal attribution, and any successor revision, all
+bound together in one immutable record). No separate `refresh_judgment_id`
+is introduced: doing so would create a second identity for the same fact
+without evidence one is needed, and this session's own standing discipline
+is to avoid inventing identity machinery the approved semantics do not
+require. `superseded_by.kind == "episode"` names an `episode_logical_id`;
+`superseded_by.kind == "revision"` names a claim revision id, exactly as
+`store.revisions` already identifies them. This resolves the concrete
+locally-addressable identity for supersession without attempting to solve
+the broader, still-open durable-semantic-judgment-identity seam named
+elsewhere in the capstone (`work-engine-planned-architecture.md` §13 item
+4) — this proposal already locally owns refresh-judgment authority and
+publication, so a locally-scoped answer is sufficient here.
 
 **Canonical support is a separate act, not implied by this operation.**
 Per `semantic-model.md`'s own "Branching, conflict, and canonical support"
@@ -554,20 +676,40 @@ nomination_id → reject (exhaustiveness is required, not advisory).
 with `causal_attribution` present for any other disposition → reject (never
 manufacture causality mechanically — at least one affirmatively adjudicated
 source event must support a `changed` outcome, and none may be claimed
-otherwise). `episode_disposition == "retained_unchanged"` with any
-`trigger_resolutions` entry resolving `resolved_changed` → reject — the
-approved semantics do not allow a nomination to resolve "the claim changed"
-while the episode's own outcome asserts nothing changed. `episode_disposition
-== "superseded"` without a `superseded_by` reference, or `superseded_by`
-present for any other disposition → reject; `superseded_by.id` must resolve
-to an actual episode, judgment, or revision, per `semantic-model.md`'s
-"supersession identifies the exact successor episode, judgment, or
-revision." `successor_revision_payload` present for an `episode_disposition`
-other than `retained_unchanged`/`changed` → reject. `successor_revision_payload`
-absent for `retained_unchanged`/`changed` → reject. Any failure in
-constructing the successor revision or lineage edge aborts the entire
-operation — no partial state is ever visible, matching `applyOperation`'s
-existing all-or-nothing behavior for every other action.
+otherwise). **Fourth-review strengthening:** any `trigger_resolutions` entry
+resolving `resolved_changed` when `episode_disposition` is anything other
+than `changed` → reject. This replaces (and subsumes) the third round's
+narrower `retained_unchanged`-only prohibition — Sol's review found that
+rule alone still admitted `inapplicable`/`contested`/`deferred` episodes with
+a `resolved_changed` trigger, which is equally impossible:
+`semantic-model.md` treats `inapplicable`/`insufficient`/`contested`/
+`deferred` as producing no claim revision at all, so no trigger can
+truthfully resolve "the claim changed" under any of them. The forced rule is
+now the tight biconditional: `resolved_changed ⇒ episode_disposition ==
+"changed"`, together with the existing `changed ⇒ ≥1 resolved_changed trigger
+and non-empty causal_attribution`. `episode_disposition == "superseded"`
+without a `superseded_by` reference, or `superseded_by` present for any other
+disposition → reject; `superseded_by.id` must resolve to an actual episode,
+judgment, or revision, per `semantic-model.md`'s "supersession identifies
+the exact successor episode, judgment, or revision" — see "Superseded
+identity" below for what `kind: judgment` concretely names.
+`successor_revision_payload` present for an `episode_disposition` other than
+`retained_unchanged`/`changed` → reject. `successor_revision_payload` absent
+for `retained_unchanged`/`changed` → reject. **Fourth-review addition:**
+when `episode_disposition == "retained_unchanged"`, the constructed
+successor revision's proposition-identity fields (as the claim's own domain
+profile defines proposition identity, distinct from its evidence-bound
+fields) must match the predecessor's — see "Retained-unchanged must
+preserve the proposition" below; a generic `successor_revision_payload` is
+not by itself proof of semantic unchangedness. **Fourth-review addition:**
+before minting any successor revision, `subject_revision` must still be an
+admissible predecessor for the claim under its domain profile's branching
+policy — see "Claim-head admission, not just episode CAS" below; the
+episode's own CAS answers only whether the episode itself is unchanged, not
+whether the claim underneath it is. Any failure in constructing the
+successor revision or lineage edge aborts the entire operation — no partial
+state is ever visible, matching `applyOperation`'s existing all-or-nothing
+behavior for every other action.
 
 Beyond these logically-forced rules, the full cross-consistency matrix
 between `episode_disposition` and the complete *set* of `trigger_resolutions`
@@ -604,10 +746,19 @@ an incomplete one.
   separate act") — named as a real, required boundary, not designed here.
 - The full cross-consistency matrix between `episode_disposition` and the
   set of `trigger_resolutions` values, beyond the logically-forced rules
-  Operation 3's failure states already state (a `changed` episode requires
-  causal attribution; a `retained_unchanged` episode prohibits any
-  `resolved_changed` trigger; every triggering nomination must be
-  exhaustively represented).
+  Operation 3's failure states already state (`resolved_changed` implies and
+  is implied by a `changed` episode with non-empty causal attribution; every
+  triggering nomination must be exhaustively represented).
+- How a branching-permitted domain profile represents a competing successor
+  revision (Operation 3's "Claim-head admission, not just episode CAS") —
+  this vertical's `publish_refresh_judgment` successor-revision path is
+  scoped to non-branching domain profiles only; branch representation is
+  named as required future work, not designed here.
+- The exact comparator each domain profile uses to determine
+  proposition-identity equality for a `retained_unchanged` judgment
+  (Operation 3's "Retained-unchanged must preserve the proposition") — this
+  document requires the check to exist and be enforced, not what it
+  concretely compares field-by-field for any given profile.
 
 ## Intermediate episode lifecycle states — not represented by this first production vertical
 

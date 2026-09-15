@@ -291,7 +291,17 @@ outcomes §4 restates:
   silently absorbed causal attribution, the bounded first vertical had
   drifted from lowering the approved semantic model into narrowing it,
   `superseded` lacked a required successor reference, and episode-state
-  persistence needed to be an explicit revision chain, not an overwrite);
+  persistence needed to be an explicit revision chain, not an overwrite;
+  round 4 — Sol's disposition "Architecture PASS, bounded three-operation
+  decomposition PASS, contract surface NOT YET implementation-ready" — the
+  trigger-resolution invariant was too narrow (tightened to a biconditional
+  with `changed`), the internally-reused `makeRevision` call had not
+  inherited `publish_revision`'s own claim-head admission invariant (added,
+  scoped this vertical to non-branching domain profiles), a
+  `retained_unchanged` judgment had no check that its successor actually
+  preserved the claim's proposition (added, comparator left to the domain
+  profile), and `superseded_by: judgment` had no defined concrete identity
+  (resolved to the terminal `episode_state_id` itself));
   `implementation_authorized` remains `false`.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
