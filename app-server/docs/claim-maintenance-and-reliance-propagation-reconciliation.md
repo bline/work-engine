@@ -280,13 +280,19 @@ outcomes §4 restates:
   [`operation-contract-surface.md`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md)
   (three operations: `nominate_impact`, `open_refresh_episode`,
   `publish_refresh_judgment`; the last causally produces its own successor
-  revision and `refresh` lineage edge as one atomic consequence, uses plain
-  revision-CAS rather than a borrowed writer-generation abstraction, and
-  publishes per-trigger nomination resolutions distinct from its own episode
-  disposition). Reviewed twice, not yet passed — both rounds found real
-  issues (round 1: atomicity, nomination identity, fencing precedent; round
-  2: writer-generation admitted-transition gap, episode-vs-trigger
-  disposition conflation); `implementation_authorized` remains `false`.
+  revision and `refresh` lineage edge as one atomic consequence, publishes
+  the episode's own terminal state as a successor to its opened state rather
+  than an overwrite, and keeps episode disposition, per-trigger nomination
+  resolution, and causal source-event attribution as three separate,
+  non-derived facts). Reviewed three times, not yet passed — each round
+  found real issues (round 1: atomicity, nomination identity, fencing
+  precedent; round 2: writer-generation admitted-transition gap,
+  episode-vs-trigger disposition conflation; round 3: trigger resolution
+  silently absorbed causal attribution, the bounded first vertical had
+  drifted from lowering the approved semantic model into narrowing it,
+  `superseded` lacked a required successor reference, and episode-state
+  persistence needed to be an explicit revision chain, not an overwrite);
+  `implementation_authorized` remains `false`.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
   four-way split). Recorded in

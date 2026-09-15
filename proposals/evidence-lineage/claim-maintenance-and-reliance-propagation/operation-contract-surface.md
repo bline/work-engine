@@ -97,7 +97,41 @@ irrelevant. Added per-trigger resolution to Operation 3, distinct from the
 episode's own disposition, and removed the singular `changed_because_of`
 field in favor of causality attribution living at the per-trigger level
 (neither forcing it into an array nor presuming it singular). Both
-corrected below; the sections below reflect this third-round design.
+corrected in the third draft.
+
+**2026-09-15, third draft reviewed by Sol — still not passed, three
+source-level contradictions and one implementation-boundary ambiguity
+found.** (1) Folding causal attribution into `trigger_resolutions`
+(`resolution: "resolved_changed"`) repeated the exact failure mode again at
+a finer grain: `semantic-model.md` keeps "this nomination's candidate
+impact was resolved, and the claim changed" (`resolved_changed`, a
+per-nomination resolution) strictly separate from "this source event's
+causal effect was actually adjudicated" (`changed_because_of`, keyed on
+source events) — a nomination can resolve `resolved_changed` without its own
+source event being the one adjudicated causal. Restored a distinct causal-
+attribution field, not derived from `trigger_resolutions`. (2) The "two-state
+first vertical" framing had drifted from *lowering* the approved semantic
+model into *silently narrowing* it: `semantic-model.md` names "current writer
+generation" and the three intermediate lifecycle states as real, approved
+semantics, not merely-possible extensions — this design cannot decide they
+are unneeded in general, only that this bounded slice does not implement
+them yet. Reframed throughout: "not represented by this first production
+vertical; still part of the approved broader semantic model," never
+"resolved" or "not needed." (3) `episode_disposition: superseded` had no
+required successor reference, though `semantic-model.md` states "supersession
+identifies the exact successor episode, judgment, or revision" — added a
+required `superseded_by` field. (4) Defined only the logically-forced
+episode↔trigger consistency invariants (a `changed` episode requires ≥1
+causal source event; a `retained_unchanged` episode prohibits any
+`resolved_changed` trigger; every triggering nomination must be exhaustively
+represented) rather than leaving the door open to structurally-admissible
+contradictions, without inventing the full matrix beyond what the approved
+semantics force. Also made explicit, per Sol's request, that closing an
+episode publishes a new immutable episode-state revision succeeding the
+opened state, never a destructive overwrite of it — matching
+`semantic-model.md`'s own "immutable lifecycle transitions" requirement
+directly, the same way claim revisions already chain via
+`predecessor_revision`. All corrected below.
 
 ## Method: discovering the operation count, not presuming it
 
@@ -119,13 +153,21 @@ requirements differ again from judgment-publication's guarded close. That is
 three operations, not one, not four — the causal production of a successor
 revision belongs *inside* the judgment operation's own atomicity boundary,
 not to a separately-sequenced call to an existing operation (see Operation 3
-below). **This conclusion depends on a choice made explicit in Operation 3:**
-this two-state (`opened` → terminal) first vertical needs no writer-ownership
-abstraction, only plain revision CAS — had a genuinely multi-transition
-lifecycle been in scope (the deferred intermediate states), a fourth
-operation admitting writer takeover might have been required, per Sol's own
-second review. Adopting the plain-CAS design is what keeps this at three
-operations. This still matches Sol's own speculative sketch
+below). **This conclusion depends on a scope choice made explicit in
+Operation 3, corrected on third review to state accurately:** this document
+implements only a bounded first production vertical —
+`nominate_impact`/`open_refresh_episode`/`publish_refresh_judgment` — that
+does not exercise writer-generation replacement or the three approved
+intermediate episode lifecycle states. That is a statement about what this
+slice implements, not a claim that writer-generation or the intermediate
+states are unneeded in general: `semantic-model.md` names "current writer
+generation" and the intermediate lifecycle states as real, approved
+semantics, and this design does not amend or narrow that approval. A future
+vertical implementing the full lifecycle may require a fourth operation
+admitting writer takeover, exactly as `review-episode`'s own
+`replace_writer` does. Three operations is this bounded slice's own count,
+not a claim about the eventual full surface. This still matches Sol's own
+speculative sketch
 (`nominate_impact`/`open_refresh_episode`/`publish_refresh_judgment`), but
 arrived at by the test rather than presumed from it.
 
@@ -142,7 +184,7 @@ invent conventions:
 - `authority` is validated separately from the operation payload (`validateAuthority`) — profile match, permission membership, decision-scope match, a verified `authority_reference`.
 - Records are exact-field validated (`exactFields`) — no optional/undeclared fields.
 - `LINEAGE_RELATIONSHIPS` already contains `"refresh"` alongside `correction`/`supersession`/`composition`/`derivation`/`identity_fork`/`retraction` (`contract.mjs:9-12`). **Corrected 2026-09-15** (Sol's review): the first draft claimed this was "independent evidence the original substrate had already anticipated exactly this composition" — that overstates what one unused enum value supports. It is evidence that refresh lineage was anticipated by the substrate, and that this design may extend rather than contradict the existing relationship vocabulary. It says nothing about the three operations, their authority split, their concurrency mechanism, or their atomicity boundaries — those are established below on their own evidence, not borrowed from this one fact.
-- `review-episode` (`app-server/src/services/review-episode/{contract,service}.mjs`) is domain-locality-correct precedent for writer-generation fencing generally — a closer analogy than `workspace-coordination` for any domain-local concurrency problem in this family. **Second review finding:** its writer-generation mechanism only means something because `replace_writer` is itself a real, separately-admitted transition; this surface's own two-state vertical has no equivalent transition to admit a takeover through, so it does not borrow the mechanism after all — see Operation 3's "Concurrency" below. `review-episode`'s pattern remains the right answer *if* a future, richer refresh-episode vertical needs genuine multi-actor writer ownership.
+- `review-episode` (`app-server/src/services/review-episode/{contract,service}.mjs`) is domain-locality-correct precedent for writer-generation fencing generally — a closer analogy than `workspace-coordination` for any domain-local concurrency problem in this family. **Second review finding:** its writer-generation mechanism only means something because `replace_writer` is itself a real, separately-admitted transition; this bounded first vertical does not implement an equivalent transition, so it does not implement the mechanism *in this slice* — see Operation 3's "Concurrency" below. **Third-review correction:** this is a statement about what this slice implements, not that writer-generation is unneeded — `semantic-model.md` names "current writer generation" as real, approved semantics for the full episode lifecycle. `review-episode`'s pattern is the answer once a future vertical implements writer takeover, not a discarded alternative.
 
 ## Operation 1: `nominate_impact`
 
@@ -285,15 +327,20 @@ episode-opening is itself the admission act (there is no separate approval
 step before an authorized owner may open an episode against evidence
 already nominated).
 
-**Identity.** `episode_id` is `refresh-episode-v1@digest({episode_identity, subject_revision, reopened_by, domain_profile, evidence_cutoff})`, following the `production-path-establishment` precedent (caller-supplied identity string plus a content-derived record id, `production-path-contract.mjs:141-152`). The episode record's own content digest (its `episode_revision`, computed the same way every other record's identity is — content minus the id field) is what `publish_refresh_judgment` will present as `expected_state`; no separate writer/generation object is minted here. **Second-review correction (2026-09-15):** an earlier draft minted a `review-episode`-style writer-generation authority at this step. Sol's review found that mechanism only means something because `review-episode` has a real, separately-admitted `replace_writer` transition giving generation-advancement meaning; this surface's two-state vertical (`opened` → terminal, no intermediate writable states per the deferral below) has no such transition to admit, so borrowing the token without the transition would have been "the token but not the transition." See Operation 3's "Concurrency" for the plain-CAS mechanism used instead.
+**Identity, and episode state as a revision chain, not a mutable row.**
+`episode_logical_id` is `refresh-episode-v1@digest({episode_identity, subject_revision, reopened_by, domain_profile, evidence_cutoff})`, following the `production-path-establishment` precedent (caller-supplied identity string plus a content-derived record id, `production-path-contract.mjs:141-152`) — this is the stable identity of the episode across its whole lifecycle, not one state snapshot. Opening publishes the *first* immutable episode-state record: `{episode_logical_id, predecessor_state: null, lifecycle_state: "opened", ...payload fields..., authority_ref, operation_id}`, with its own content-derived `episode_state_id` — exactly the same predecessor-chained-revision pattern `store.revisions` already uses for claims (`service.mjs`'s `makeRevision`/`revisionHeads`), not a single row that later gets overwritten. **Third-review correction (2026-09-15):** `semantic-model.md` requires "immutable lifecycle transitions" for refresh episodes explicitly — an earlier draft described the episode as one record whose digest changes on close, which reads as an overwrite even though CAS would have prevented races. Modeled as a proper chain instead: the opened state remains individually addressable forever; closing (Operation 3) publishes a *second*, successor state record referencing the first via `predecessor_state`, mirroring exactly how a claim's successor revision references its predecessor. **Second-review correction, still applicable:** no separate writer/generation authority object is minted here — see Operation 3's "Concurrency" for why plain revision-CAS (checking the episode's current state head, exactly as `revisionHeads` does for claims) is sufficient for this bounded vertical's two states, without claiming writer-generation is unneeded for the full approved lifecycle.
 
-**Result and state.** A new record in a new `refresh_episodes` collection,
-`lifecycle_state: "opened"`, no disposition, no candidate/verification
-content — matching `semantic-shadow-episode`'s own precedent of an
-`exactFields`-validated record whose non-terminal fields are explicitly
-`null` until closed (`semantic-shadow-contract.mjs:161-205`'s
-`validateSemanticShadowEpisode` is a close structural precedent for this
-record's own eventual validator, though it validates a different object).
+**Result and state.** A new record in a new `refresh_episode_states`
+collection (the first in its episode's own state chain, per the Identity
+section above): `lifecycle_state: "opened"`, `predecessor_state: null`, no
+disposition, no candidate/verification content — matching
+`semantic-shadow-episode`'s own precedent of an `exactFields`-validated
+record whose non-terminal fields are explicitly `null` until closed
+(`semantic-shadow-contract.mjs:161-205`'s `validateSemanticShadowEpisode` is
+a close structural precedent for this record's own eventual validator,
+though it validates a different object). This record is never mutated; the
+episode's "current state" is whichever state in its chain has no successor,
+exactly as `revisionHeads` finds a claim's current revision.
 
 **Failure states.** Any `reopened_by` nomination id not found → reject
 (dangling trigger). `subject_revision` not found in `store.revisions` →
@@ -352,9 +399,9 @@ boundary sits.
   operation_id: <idempotency key>,
   action: "publish_refresh_judgment",
   profile: <same as the episode's subject claim>,
-  expected_state: <the episode's own exact episode_revision digest — see Concurrency>,
+  expected_state: <the episode's current state head's exact episode_state_id — see Concurrency>,
   payload: {
-    episode_id: <must be an open episode>,
+    episode_logical_id: <the episode being closed>,
     episode_disposition: one of [retained_unchanged, changed, inapplicable,
                           insufficient, contested, deferred, superseded],
     rationale: <nonempty text>,
@@ -367,6 +414,8 @@ boundary sits.
       },
       ...   // exactly one entry per reopened_by nomination_id — none omitted, none extra, none duplicated
     ],
+    causal_attribution: [ <source_event identity>, ... ],   // required non-empty only when episode_disposition == "changed"; else must be empty. Records exactly which source events' causal effect was affirmatively adjudicated -- NOT derived from trigger_resolutions, see below.
+    superseded_by: { kind: one of [episode, judgment, revision], id: <exact successor identity> } | null,   // required exactly when episode_disposition == "superseded", else null
     successor_revision_payload: <exact same shape publish_revision's own payload.revision already requires, present only for retained_unchanged/changed, else null — this operation constructs and publishes the revision itself, using the existing makeRevision helper; the caller supplies the revision's content, not a pre-existing id>,
     decision_scope: <matches authority.decision_scope>,
   }
@@ -391,13 +440,31 @@ visibly distinct spellings from `episode_disposition`'s own vocabulary
 (`retained_unchanged`/`changed`/`inapplicable`/`insufficient`/`contested`/
 `deferred`/`superseded`), matching `semantic-model.md`'s own differing
 spellings for the two concepts rather than treating them as one reused enum.
-The singular `changed_because_of` field is removed entirely: causal
-attribution is now which `trigger_resolutions` entries carry
-`resolution: "resolved_changed"` — a naturally-plural, per-trigger fact, not
-a top-level field forced into either a singular or array shape by this
-document's own assumption. If exactly one trigger resolves `resolved_changed`,
-causality reads as singular; if several do, it reads as plural — the schema
-does not presuppose either.
+The singular `changed_because_of` field was removed entirely on that round,
+in favor of reading causal attribution off `trigger_resolutions` directly.
+
+**Corrected again, third review (2026-09-15) — restored, in a different
+shape.** Sol found that this repeated the exact failure mode one level
+finer: `semantic-model.md` keeps a nomination's own resolution
+(`resolved_changed` — "this candidate impact has been resolved, and the
+claim changed") strictly separate from causal attribution ("a changed
+judgment records `changed_because_of` only for source events whose causal
+effect the authorized domain owner actually adjudicated"). A nomination can
+truthfully resolve `resolved_changed` — the investigation concluded the
+claim changed — without that nomination's own source event being the one
+adjudicated causal; multiple source events can feed one investigation with
+only some found causal. Deriving causal attribution from
+`trigger_resolutions` would silently conflate "this trigger's own outcome"
+with "this source event was the adjudicated cause," which are not the same
+claim. Restored as `causal_attribution`: an explicit set of source-event
+identities affirmatively adjudicated as causal, required non-empty exactly
+when `episode_disposition == "changed"`, and **not derived from**
+`trigger_resolutions` — the two are independently populated and independently
+validated. `semantic-model.md` itself refers to "source events" in the
+plural without dictating a schema shape, so this is deliberately a set, not
+a reflexive re-singularization of the original field — if exactly one event
+is adjudicated causal the set has one member; nothing about the shape
+presumes that in advance.
 
 **Who may request/admit it.** The same `publish_refresh_judgment` domain-
 owner permission class as `open_refresh_episode` — still not required to be
@@ -407,44 +474,54 @@ already established). Domain authority answers *who may judge*; see
 Concurrency below for the separate question of *whether this judgment still
 applies to the current episode state*.
 
-**Concurrency (second-review correction, replaces a rejected
-writer-generation design).** An earlier draft minted a `review-episode`-style
-writer-generation authority at `open_refresh_episode` and required
-`publish_refresh_judgment` to present a successor generation to close it.
-Sol's review applied the contracts-not-procedures test directly: *what
-invariant becomes false if refresh episodes do not have writer generations
-in this first vertical?* None — this vertical models exactly two durable
-states (`opened`, terminal; the intermediate states are deferred below), so
-there is no ongoing multi-transition lifecycle for a writer to hold across.
-`review-episode`'s generation mechanism means something only because
-`replace_writer` is itself a real, separately-admitted transition; without
-an equivalent transition here, presenting "generation 2" would have proven
-nothing beyond the closer's own say-so — self-authorizing, not admitted.
+**Concurrency (second-review correction, sharpened on third review — a
+bounded-slice choice, not a claim about the approved semantic model).** An
+earlier draft minted a `review-episode`-style writer-generation authority at
+`open_refresh_episode` and required `publish_refresh_judgment` to present a
+successor generation to close it. Sol's second review applied the
+contracts-not-procedures test directly: *what invariant becomes false if
+this bounded slice's two states (`opened`, terminal) do not have writer
+generations?* None — there is no ongoing multi-transition lifecycle within
+*this slice* for a writer to hold across. `review-episode`'s generation
+mechanism means something only because `replace_writer` is itself a real,
+separately-admitted transition; without an equivalent transition here,
+presenting "generation 2" would have proven nothing beyond the closer's own
+say-so. **Third-review correction:** this is not a finding that
+writer-generation is unneeded — `semantic-model.md` names "current writer
+generation" as real, approved semantics for the full episode lifecycle this
+document does not fully implement. It is a finding that *this bounded
+vertical's own two states* do not need it.
 
 The corrected design uses plain optimistic concurrency, identical in kind to
 `publish_revision`'s own existing `expected_state`-against-heads check:
-`expected_state` must equal the episode's exact `episode_revision` digest as
-it stood at open. If two judges race to close the same episode, the second's
-`expected_state` no longer matches (the first's close already advanced the
-record), and it is rejected as a plain CAS conflict — the same mechanism
+`expected_state` must equal the episode's current state-chain head — its
+exact `episode_state_id`, per Operation 2's Identity section — as it stood
+after opening. If two judges race to close the same episode, the second's
+`expected_state` no longer matches (the first's close already published a
+new head), and it is rejected as a plain CAS conflict — the same mechanism
 `publish_revision` already uses for every claim revision, not a new concept.
 Domain authority (the `publish_refresh_judgment` permission) answers who may
-judge; CAS answers whether this judgment still targets current episode
-state. No writer-ownership abstraction sits between them.
+judge; CAS answers whether this judgment still targets the current episode
+state. No writer-ownership abstraction sits between them, for this slice.
 
-**Result and state, as one atomic consequence.** In a single
-`applyOperation` call: the episode record becomes terminal
-(`lifecycle_state: "closed"`, `episode_disposition`, `trigger_resolutions`,
-rationale, evidence references — its `episode_revision` digest advancing,
-which is what makes the CAS above meaningful for any subsequent attempt);
-when `episode_disposition` is `retained_unchanged`/`changed`, a new revision
-is constructed via the existing `makeRevision` helper and appended to
-`store.revisions`, and a `refresh` lineage edge is appended to
-`store.lineage` linking the episode's subject revision to that new
-successor — all appends, or none, under one operation receipt. Every
-triggering nomination's disposition now resolves through its own entry in
-this episode's `trigger_resolutions` (a read-time projection, per Operation
-1) — never through the episode's own overall disposition directly.
+**Result and state, as one atomic consequence, published as a successor
+state — never an overwrite.** In a single `applyOperation` call: a *new*
+episode-state record is appended (never mutating the opened state),
+`predecessor_state` pointing at the opened state's `episode_state_id`,
+carrying `lifecycle_state: "closed"`, `episode_disposition`,
+`trigger_resolutions`, `causal_attribution`, `superseded_by`, rationale, and
+evidence references; when `episode_disposition` is
+`retained_unchanged`/`changed`, a new revision is constructed via the
+existing `makeRevision` helper and appended to `store.revisions`, and a
+`refresh` lineage edge is appended to `store.lineage` linking the episode's
+subject revision to that new successor — all appends, or none, under one
+operation receipt. The opened state remains individually addressable
+afterward, satisfying `semantic-model.md`'s "immutable lifecycle
+transitions" directly. Every triggering nomination's disposition now
+resolves through its own entry in this closing state's `trigger_resolutions`
+(a read-time projection, per Operation 1) — never through the episode's own
+overall disposition directly, and causal attribution resolves through
+`causal_attribution` — never derived from `trigger_resolutions`.
 
 **Canonical support is a separate act, not implied by this operation.**
 Per `semantic-model.md`'s own "Branching, conflict, and canonical support"
@@ -463,27 +540,43 @@ mechanism is required before the produced revision governs, and this
 document does not design that mechanism — it is named here as a boundary
 this surface must not silently cross, not solved.
 
-**Failure states.** `episode_id` not found or already closed → reject.
-`expected_state` not matching the episode's current `episode_revision` →
-reject (plain CAS conflict, identical in kind to `publish_revision`'s
-existing conflicting-predecessor rejection). `trigger_resolutions` missing
-an entry for any of the episode's own `reopened_by` nominations, containing
-an entry for a nomination not in `reopened_by`, or containing a duplicate
+**Failure states, including the minimum episode↔trigger invariants the
+approved semantics force (third-review correction — not the full matrix,
+but not silent about the part that is forced either).** `episode_id`/
+`episode_logical_id` not found or already closed → reject. `expected_state`
+not matching the episode's current state-chain head → reject (plain CAS
+conflict, identical in kind to `publish_revision`'s existing
+conflicting-predecessor rejection). `trigger_resolutions` missing an entry
+for any of the episode's own `reopened_by` nominations, containing an entry
+for a nomination not in `reopened_by`, or containing a duplicate
 nomination_id → reject (exhaustiveness is required, not advisory).
-`episode_disposition == "changed"` with no `trigger_resolutions` entry
-resolving `resolved_changed` → reject (never manufacture causality
-mechanically — at least one adjudicated trigger must support it).
-`successor_revision_payload` present for an `episode_disposition` other than
-`retained_unchanged`/`changed` → reject. `successor_revision_payload` absent
-for `retained_unchanged`/`changed` → reject. Any failure in constructing the
-successor revision or lineage edge aborts the entire operation — no partial
-state is ever visible, matching `applyOperation`'s existing all-or-nothing
-behavior for every other action. Left open, not decided here: the full cross-
-consistency matrix between `episode_disposition` and the *set* of
-`trigger_resolutions` values beyond the one rule above (for example, whether
-an episode may resolve `retained_unchanged` while some individual trigger
-resolves `resolved_changed`) — `semantic-model.md` does not specify this
-matrix, and inventing one would be unsupported connective tissue.
+`episode_disposition == "changed"` with no `causal_attribution` entries, or
+with `causal_attribution` present for any other disposition → reject (never
+manufacture causality mechanically — at least one affirmatively adjudicated
+source event must support a `changed` outcome, and none may be claimed
+otherwise). `episode_disposition == "retained_unchanged"` with any
+`trigger_resolutions` entry resolving `resolved_changed` → reject — the
+approved semantics do not allow a nomination to resolve "the claim changed"
+while the episode's own outcome asserts nothing changed. `episode_disposition
+== "superseded"` without a `superseded_by` reference, or `superseded_by`
+present for any other disposition → reject; `superseded_by.id` must resolve
+to an actual episode, judgment, or revision, per `semantic-model.md`'s
+"supersession identifies the exact successor episode, judgment, or
+revision." `successor_revision_payload` present for an `episode_disposition`
+other than `retained_unchanged`/`changed` → reject. `successor_revision_payload`
+absent for `retained_unchanged`/`changed` → reject. Any failure in
+constructing the successor revision or lineage edge aborts the entire
+operation — no partial state is ever visible, matching `applyOperation`'s
+existing all-or-nothing behavior for every other action.
+
+Beyond these logically-forced rules, the full cross-consistency matrix
+between `episode_disposition` and the complete *set* of `trigger_resolutions`
+values remains open — `semantic-model.md` does not specify it, and inventing
+the rest would be unsupported connective tissue. The rules above are not
+optional hardening; they are the minimum the approved semantics already
+require, and an implementation that admits them as durable state without
+enforcing at least these would be admitting contradictory state, not merely
+an incomplete one.
 
 ## What this design deliberately does not decide
 
@@ -510,47 +603,56 @@ matrix, and inventing one would be unsupported connective tissue.
   branching-permitted domain profile (Operation 3's "Canonical support is a
   separate act") — named as a real, required boundary, not designed here.
 - The full cross-consistency matrix between `episode_disposition` and the
-  set of `trigger_resolutions` values, beyond the one rule this design
-  states (a `changed` episode requires at least one `resolved_changed`
-  trigger) — see Operation 3's failure states.
+  set of `trigger_resolutions` values, beyond the logically-forced rules
+  Operation 3's failure states already state (a `changed` episode requires
+  causal attribution; a `retained_unchanged` episode prohibits any
+  `resolved_changed` trigger; every triggering nomination must be
+  exhaustively represented).
 
-## Intermediate episode lifecycle states — resolved for this first vertical
+## Intermediate episode lifecycle states — not represented by this first production vertical
 
-**Corrected 2026-09-15** (Sol's review): the first draft left
+**Corrected twice.** First (second review): the first draft left
 `semantic-model.md`'s named intermediate states (`active`, `awaiting_evidence`,
 `awaiting_authority`, between `opened` and a terminal disposition,
 `semantic-model.md:44-49`) as "descriptive, not additional operations, until
-evidence says otherwise" — Sol correctly pointed out this is not a resolved
-position, since the source text calls them episode lifecycle states, not
-commentary, and if they are durable/queryable something must establish them.
-This design makes the explicit choice Sol asked for, rather than leaving the
-question open by omission:
+evidence says otherwise" — Sol pointed out this is not a resolved position,
+since the source text calls them episode lifecycle states, not commentary.
+Second (third review): the fix that followed — "(C) deferred... not needed"
+— went too far the other way. `semantic-model.md` states "current writer
+generation, and immutable lifecycle transitions" as part of the *already
+approved* refresh-episode design, alongside the named intermediate states.
+This document cannot decide they are unneeded; that would silently narrow
+proposal meaning the user already approved, not merely lower it into an
+implementation. Sol's framing, adopted directly: this is **Route B — a
+bounded first production vertical**, not **Route A — the full operation-
+contract surface**. Route A would need to design writer replacement and the
+intermediate states' own operations before the surface could be called
+closed; Route B implements a genuine subset and says so plainly.
 
-**Chosen: (C) deferred from this first production vertical.** This surface
-models exactly two durable episode states — `opened` (Operation 2) and
-terminal (Operation 3) — and does not attempt to give `active`/
-`awaiting_evidence`/`awaiting_authority` their own authority, transition
-operation, or durable representation. A domain workflow may track its own
-in-progress investigation status in its own state, outside this shared
-substrate, without this surface needing to represent it. If a later vertical
-finds real consumers need to query or rely on those intermediate states as
-durable facts (option A: authoritative transitions with a named publisher,
-or option B: deterministic projections derived from other owned facts), that
-is new, separately-bounded work extending this surface — not a gap silently
-left in it. The surface described in this document is closed and complete
-for its own stated scope (nomination through terminal judgment), not for
-`semantic-model.md`'s full episode lifecycle vocabulary.
+**Stated correctly: not represented by this first production vertical; still
+part of the approved broader semantic model.** This surface models exactly
+two durable episode states — `opened` (Operation 2) and terminal
+(Operation 3) — and does not implement `active`/`awaiting_evidence`/
+`awaiting_authority` or writer-generation replacement in this slice. That is
+a scope boundary of this implementation vertical, not a finding about what
+the approved semantics require. A domain workflow may track its own
+in-progress investigation status outside this shared substrate for now. If a
+later vertical implements the full lifecycle (option A: authoritative
+transitions with a named publisher and admitted writer-takeover transition,
+or option B: deterministic projections derived from other owned facts), it
+extends this surface into the semantics already approved — it does not
+introduce new semantics this document declined to own.
 
-**This choice is what makes Operation 3's plain-CAS concurrency design
-correct, not merely convenient.** A two-state lifecycle (`opened` → terminal,
-no durable states in between) has no window in which a writer might need to
-be replaced mid-investigation — the only concurrency hazard is two closers
-racing to publish the *same* terminal transition, which plain revision CAS
-already resolves. If a future vertical promotes any of the deferred states to
-durable, authoritative transitions (option A above), that reopens the
-writer-ownership question this document currently answers "not needed" —
-it would need its own re-derivation, not an assumption that plain CAS still
-suffices.
+**This scope choice is what makes Operation 3's plain-CAS concurrency design
+correct for this slice — not evidence that writer ownership is unneeded in
+general.** Within the two states this slice actually implements, there is no
+window in which a writer might need to be replaced mid-investigation — the
+only concurrency hazard is two closers racing to publish the *same* terminal
+transition, which plain revision CAS already resolves. The moment a future
+vertical implements any of the deferred states as durable, authoritative
+transitions, the writer-ownership question reopens on its own terms — this
+document's "not needed here" claim would not transfer to that vertical
+without its own re-derivation.
 
 ## Boundaries this design must not cross (carried forward, not reopened)
 
@@ -579,6 +681,24 @@ suffices.
   found in Operation 3. The revision schema, lineage relationship vocabulary,
   and validation rules are unchanged and unduplicated; only where the
   mutation is committed moved, from two sequenced public calls to one.
+- A nomination's own resolution is never the same fact as causal attribution
+  — `resolved_changed` records that a triggering nomination's candidate
+  impact was resolved and the claim changed; `causal_attribution` separately
+  records which source events were affirmatively adjudicated causal. Neither
+  is derived from the other.
+- Supersession always identifies its exact successor — `episode_disposition
+  == "superseded"` requires a `superseded_by` reference to the exact
+  successor episode, judgment, or revision; "something else won" with no
+  named successor is not a representable state.
+- Closing an episode publishes a successor episode-state revision; it does
+  not destructively rewrite the opened state — the opened state remains
+  individually addressable after closing, matching `semantic-model.md`'s
+  "immutable lifecycle transitions" requirement.
+- Writer-generation replacement and the three named intermediate episode
+  lifecycle states are real, approved semantics this document does not
+  implement — not semantics this document has found unnecessary. A future
+  vertical implementing them extends this surface into already-approved
+  territory; it does not introduce new territory.
 
 ## Relationship to other open work
 
