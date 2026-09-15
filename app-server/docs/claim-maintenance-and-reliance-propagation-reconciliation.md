@@ -284,24 +284,15 @@ outcomes §4 restates:
   the episode's own terminal state as a successor to its opened state rather
   than an overwrite, and keeps episode disposition, per-trigger nomination
   resolution, and causal source-event attribution as three separate,
-  non-derived facts). Reviewed three times, not yet passed — each round
-  found real issues (round 1: atomicity, nomination identity, fencing
-  precedent; round 2: writer-generation admitted-transition gap,
-  episode-vs-trigger disposition conflation; round 3: trigger resolution
-  silently absorbed causal attribution, the bounded first vertical had
-  drifted from lowering the approved semantic model into narrowing it,
-  `superseded` lacked a required successor reference, and episode-state
-  persistence needed to be an explicit revision chain, not an overwrite;
-  round 4 — Sol's disposition "Architecture PASS, bounded three-operation
-  decomposition PASS, contract surface NOT YET implementation-ready" — the
-  trigger-resolution invariant was too narrow (tightened to a biconditional
-  with `changed`), the internally-reused `makeRevision` call had not
-  inherited `publish_revision`'s own claim-head admission invariant (added,
-  scoped this vertical to non-branching domain profiles), a
-  `retained_unchanged` judgment had no check that its successor actually
-  preserved the claim's proposition (added, comparator left to the domain
-  profile), and `superseded_by: judgment` had no defined concrete identity
-  (resolved to the terminal `episode_state_id` itself));
+  non-derived facts). Reviewed five times — every round found real issues,
+  each documented as its own dated entry in that document's own "Revision
+  history" section rather than summarized here. As of round 5: **Sol's
+  disposition is "Architecture: PASS. Three-operation bounded first
+  vertical: PASS. Operation semantics: PASS, except remove the unsupported
+  `changed ⇒ resolved_changed` implication. Implementation readiness:
+  BLOCKED only on making the profile-owned refresh-policy interface
+  concrete, plus the exact sole-head non-branching check"** — all three
+  addressed in the fifth draft, not yet re-reviewed.
   `implementation_authorized` remains `false`.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's

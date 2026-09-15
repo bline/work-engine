@@ -167,7 +167,38 @@ enforced the comparison, without inventing the comparator itself. (4)
 `superseded_by.kind == "judgment"` pointed at a category with no defined
 concrete identity. Resolved: it names the terminal `episode_state_id` of
 whichever episode is the successor judgment — no new identity concept
-introduced. All four addressed below.
+introduced. All four addressed in the fifth draft.
+
+**2026-09-15, fifth draft reviewed by Sol — "Architecture: PASS.
+Three-operation bounded first vertical: PASS. Operation semantics: PASS,
+except remove the unsupported `changed ⇒ resolved_changed` implication.
+Implementation readiness: BLOCKED only on the profile-owned refresh-policy
+interface and the exact sole-head non-branching check."** Three of the
+fourth round's four fixes were confirmed closed outright (claim-head
+admission, proposition preservation, supersession identity). Two items
+remained, plus one self-correction from Sol on the round-4 review itself.
+(1) Sol found their own fourth-round rule wrong: "`changed` requires ≥1
+`resolved_changed` trigger" is not supported by the approved semantics — the
+authorized domain owner may adjudicate causality against any source event,
+including one discovered mid-investigation that was never among the
+episode's own triggering nominations, so a `changed` episode's triggers may
+all resolve non-causally (e.g. all `inapplicable`) while `causal_attribution`
+names a distinct causal event. Requiring a `resolved_changed` trigger would
+partially re-collapse `trigger_resolutions` into `causal_attribution` — the
+exact distinction the third round existed to establish. Removed; the forced
+rule is one-directional only (`resolved_changed ⇒ changed`), not a
+biconditional. (2) The proposition-preservation requirement named a
+domain-profile-owned comparator without defining how the claim-evidence
+service actually asks a profile for it — "a requirement, not yet a
+contract." Added a defined profile-level refresh-policy extension point (see
+"Profile-owned refresh policy" below) that this vertical's admitted profiles
+populate, without deciding what any specific profile's proposition-identity
+fields are. (3) The non-branching claim-head check accepted
+`subject_revision ∈ current_heads(claim)` when the forced invariant for a
+non-branching profile is stricter: `current_heads(claim) == {subject_revision}`
+— membership alone would wrongly admit a successor when the store already
+holds multiple heads for reasons unrelated to this episode. Tightened
+accordingly. All three addressed below.
 
 ## Method: discovering the operation count, not presuming it
 
@@ -587,14 +618,27 @@ predecessor for the claim, exactly as `publish_revision`'s own
 callers:
 
 ```text
-subject_revision still current head, or domain profile permits branching
-    -> proceed (branching case still requires the branch to be explicitly
-       represented; this design does not invent that representation, see
-       "What this design deliberately does not decide")
+non-branching domain profile:
+    current_heads(claim) == { subject_revision }
+        -> proceed
+    anything else (subject_revision missing from heads, or heads contains
+    more than just subject_revision)
+        -> reject: publishing this successor is no longer admissible
 
-subject_revision no longer current head, domain profile prohibits branching
-    -> reject: publishing this successor is no longer admissible
+branching-permitted domain profile:
+    out of scope for this vertical's successor-revision path — see below
 ```
+
+**Fifth-review tightening:** the fourth round's rule accepted
+`subject_revision ∈ current_heads(claim)` (mere membership). Sol's review
+found that too loose for a non-branching profile: if the store already holds
+multiple heads for the claim — for any reason, not necessarily one this
+episode caused — "`subject_revision` is still *a* head" wrongly permits a
+successor when the actual forced invariant for a non-branching profile is
+that `subject_revision` is the *only* head. Tightened to set equality:
+`current_heads(claim) == {subject_revision}`, failing closed on anything
+else, per `semantic-model.md`'s own requirement that branches and conflicts
+remain visible and governed rather than silently ordered away.
 
 **Scope choice for this first vertical, stated explicitly rather than left
 ambiguous:** rather than design branch representation now, this vertical
@@ -606,24 +650,48 @@ document's own Route-B discipline (a genuine, explicitly-scoped subset of
 approved semantics, not a claim that branching-permitted refresh doesn't
 exist).
 
+**Profile-owned refresh policy: the interface, not the policy itself
+(fifth-review correction).** The fourth round said "the domain profile must
+identify proposition-identity fields" without saying how the claim-evidence
+service actually asks a profile that question — Sol: "a requirement, not yet
+a contract." This document does not decide what any specific profile's
+proposition-identity fields are (that would steal domain meaning this
+proposal's own ownership boundary gives to domain workflows), but it does
+define the extension point every profile admitted into this vertical must
+populate, mirroring exactly how `validateProfilePayload` already dispatches
+validation by `profile` name (`validation.mjs:47-61`):
+
+```text
+refresh_policy(profile) -> {
+  branching_permitted: boolean,
+  proposition_equivalent(predecessor_payload, successor_payload) -> boolean,
+}
+```
+
+`publish_refresh_judgment` calls `refresh_policy(profile).branching_permitted`
+to select the non-branching-only head-equality check above, and — for
+`retained_unchanged` — calls
+`refresh_policy(profile).proposition_equivalent(predecessor.profile_payload,
+successor_payload.profile_payload)`, rejecting the operation if it returns
+`false`. This vertical admits only domain profiles that supply a
+`refresh_policy` with `branching_permitted: false`; a profile without one, or
+with `branching_permitted: true`, is out of scope for this vertical's
+successor-revision path (same scope choice as the claim-head rule above).
+Which existing profiles (`proposal-research-v1`,
+`revision-bound-review-finding-v1`, `production-path-v1`) get a
+`refresh_policy` definition, and what each one's `proposition_equivalent`
+concretely compares, is domain-profile-owned work this document does not
+perform — it defines the socket, not what plugs into it for any given
+profile.
+
 **Retained-unchanged must preserve the proposition, not merely produce a
 revision.** `semantic-model.md`: "An unchanged refresh preserves the
 proposition while updating its evidence support." `proposal.md`'s own
 invariants: "Unchanged refresh produces a new evidence-bound revision
 without pretending the proposition changed." A generic
-`successor_revision_payload` accepted at face value does not prove this —
-nothing currently stops a `retained_unchanged` judgment from constructing a
-revision whose proposition differs materially from its predecessor. This
-operation therefore requires the claim's own domain profile to identify
-which of a revision's fields constitute proposition identity (as distinct
-from its evidence-bound fields — support qualification, evidence
-references, confidence, and similar, which *are* expected to change on an
-unchanged refresh) and compares the successor's proposition-identity fields
-against the predecessor's, rejecting any mismatch under
-`retained_unchanged`. This document does not design that comparator itself —
-which fields count as proposition identity is a domain-profile-owned
-question, not something this contract invents — but it requires the
-comparison to exist and be enforced before a `retained_unchanged` successor
+`successor_revision_payload` accepted at face value does not prove this;
+`refresh_policy(profile).proposition_equivalent`, above, is what this
+operation calls to enforce it before a `retained_unchanged` successor
 publishes, not merely trusted.
 
 **Superseded identity: `kind: judgment` names the terminal episode state
@@ -676,18 +744,32 @@ nomination_id → reject (exhaustiveness is required, not advisory).
 with `causal_attribution` present for any other disposition → reject (never
 manufacture causality mechanically — at least one affirmatively adjudicated
 source event must support a `changed` outcome, and none may be claimed
-otherwise). **Fourth-review strengthening:** any `trigger_resolutions` entry
-resolving `resolved_changed` when `episode_disposition` is anything other
-than `changed` → reject. This replaces (and subsumes) the third round's
-narrower `retained_unchanged`-only prohibition — Sol's review found that
-rule alone still admitted `inapplicable`/`contested`/`deferred` episodes with
-a `resolved_changed` trigger, which is equally impossible:
-`semantic-model.md` treats `inapplicable`/`insufficient`/`contested`/
-`deferred` as producing no claim revision at all, so no trigger can
-truthfully resolve "the claim changed" under any of them. The forced rule is
-now the tight biconditional: `resolved_changed ⇒ episode_disposition ==
-"changed"`, together with the existing `changed ⇒ ≥1 resolved_changed trigger
-and non-empty causal_attribution`. `episode_disposition == "superseded"`
+otherwise). **Fourth-review strengthening, corrected on fifth review:** any
+`trigger_resolutions` entry resolving `resolved_changed` when
+`episode_disposition` is anything other than `changed` → reject. This
+replaces (and subsumes) the third round's narrower
+`retained_unchanged`-only prohibition — Sol's fourth review found that rule
+alone still admitted `inapplicable`/`contested`/`deferred` episodes with a
+`resolved_changed` trigger, which is equally impossible: `semantic-model.md`
+treats `inapplicable`/`insufficient`/`contested`/`deferred` as producing no
+claim revision at all, so no trigger can truthfully resolve "the claim
+changed" under any of them. **The forced rule is one-directional only:**
+`resolved_changed ⇒ episode_disposition == "changed"`. The fourth round
+additionally claimed the converse — `changed ⇒ at least one trigger resolves
+resolved_changed` — as if the two together formed a biconditional. Sol's
+fifth review found this unsupported and removed it: the approved semantics
+let the authorized domain owner adjudicate causality against *any* source
+event, including one discovered during investigation that was never among
+the episode's own triggering nominations — none of the original triggers
+need resolve `resolved_changed` for the episode to truthfully resolve
+`changed`, as long as `causal_attribution` names the actual causal event(s).
+Requiring a `resolved_changed` trigger would have partially re-collapsed
+`trigger_resolutions` and `causal_attribution` into each other, the exact
+distinction the third round existed to establish. The minimum forced rules
+are therefore: `resolved_changed ⇒ changed`; `changed ⇒ causal_attribution`
+non-empty; every triggering nomination individually resolved — not a
+biconditional, and a nice-looking symmetry is not itself evidence.
+`episode_disposition == "superseded"`
 without a `superseded_by` reference, or `superseded_by` present for any other
 disposition → reject; `superseded_by.id` must resolve to an actual episode,
 judgment, or revision, per `semantic-model.md`'s "supersession identifies
@@ -751,14 +833,20 @@ an incomplete one.
   triggering nomination must be exhaustively represented).
 - How a branching-permitted domain profile represents a competing successor
   revision (Operation 3's "Claim-head admission, not just episode CAS") —
-  this vertical's `publish_refresh_judgment` successor-revision path is
-  scoped to non-branching domain profiles only; branch representation is
-  named as required future work, not designed here.
-- The exact comparator each domain profile uses to determine
-  proposition-identity equality for a `retained_unchanged` judgment
-  (Operation 3's "Retained-unchanged must preserve the proposition") — this
-  document requires the check to exist and be enforced, not what it
-  concretely compares field-by-field for any given profile.
+  this vertical's `publish_refresh_judgment` successor-revision path admits
+  only profiles whose `refresh_policy.branching_permitted` is `false`;
+  branch representation is named as required future work, not designed
+  here.
+- What each admitted profile's `refresh_policy.proposition_equivalent`
+  concretely compares field-by-field (Operation 3's "Profile-owned refresh
+  policy" and "Retained-unchanged must preserve the proposition") — this
+  document defines the extension point every profile must populate, not the
+  domain-owned comparison logic behind it for any given profile.
+- Which of the three existing profiles (`proposal-research-v1`,
+  `revision-bound-review-finding-v1`, `production-path-v1`) receive a
+  `refresh_policy` definition first, or whether all three need one before
+  this vertical can accept nominations/episodes against every profile —
+  domain-profile-owned formation work, not this contract's to schedule.
 
 ## Intermediate episode lifecycle states — not represented by this first production vertical
 
