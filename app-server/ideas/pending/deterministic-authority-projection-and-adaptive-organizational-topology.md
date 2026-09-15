@@ -609,6 +609,7 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 - **`role-compiler-proposal.md`** — role contract compilation (Part 2.2) overlaps directly with whatever that proposal already owns regarding composition and inheritance; not reconciled.
 - **The semantic-context-lifecycle-manager design** — Parts 3, 4, and 7 directly extend and constrain that system; Part 4's findings are current-implementation facts, not proposed changes, and any future work here must be checked against that design document's own current text before this idea is treated as settled.
 - **claim-evidence's `expected_state`/heads mechanism and `review-episode`'s writer-generation mechanism** — Part 7's reasoning-environment transition lease is a direct generalization of a fencing/revision-binding pattern already proven in both; this is corroborating precedent, not a coincidence, and any future design should reuse rather than reinvent it.
+- **claim-evidence's `nominate_impact`/`open_refresh_episode`/`publish_refresh_judgment` contract (`proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md`) and `claim-maintenance-and-reliance-propagation-reconciliation.md`** — Part 13.5 proposes reusing this already-passed contract to materialize planning-derived facts as revision-bound claims, cheapening 13.4's reconnaissance phase without granting claim-evidence any planning authority. This requires a new domain profile (`planning-facts-v1`, not yet designed) and is a genuinely separate, unreconciled relationship from the fencing-precedent one above — see Open Question 27.
 - **`claude-runtime-adapter-and-context-ownership-pilot.md`** — a real, code-grounded sibling consumer of the same context-lifecycle substrate Part 4 cites (`context-transition-lease.mjs`, `context-pressure-controller.mjs`, `context-lifecycle-evidence.mjs`), answering a different (empirical, provider-adapter) question. Not a joint-reconciliation candidate now, but worth checking once the Context Observer schema (Part 5.3) is concretized, since a Claude-shaped observation source would need to fit it.
 
 ---
@@ -640,10 +641,11 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 20. What is the smallest real current workflow from which a deterministic authority projection could be reconstructed without changing behavior?
 21. Can the proposed abstraction be demonstrated across one non-software domain without adding domain-specific rules to the projection mechanism?
 22. **Partially answered, not fully reconciled.** Checked directly: `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing `Preplanner/Orchestrator/Branch planner/Branch plan/Supervisor/Builder` hierarchy does already own semantic planning topology, and its §3/§7/§12 already separate that from execution realization and already have a working topology-conflict/replanning route — Part 13 now treats `auto-org` as the compilation layer underneath that hierarchy, not a competing one, and has been rewritten accordingly. What remains unchecked: whether this reframing survives a full, formal reconciliation pass against that document's complete text (not just the sections read so far), and whether any other section of it already anticipates organizational compilation in some form this idea hasn't found yet.
-23. Does that document's own branch-plan concept (§6) already anticipate being realized by more than one execution vantage, or does it implicitly assume one supervisor per branch with no further compiled decomposition beneath it? Part 13.8's recursion depends on the answer, and this was not checked in the sections read so far.
-24. What exactly must a hierarchical plan expose (per Part 13.11's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored — does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carry enough of this list, would it need extending, and does the current planning/Plan-IR architecture already carry any of this independently?
-25. **Partially answered.** `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §12 route is already explicitly headed "Branch planner / supervisor" — a supervisor discovering a topology conflict mid-execution is already an anticipated source, not something Part 13.5 needs to extend. What's still unchecked: whether the route's "current execution evidence" input already accommodates the specific shape of evidence an organizational-*realization* discovery would produce (e.g., "these two obligations turned out to share state" or "a capability I need doesn't exist"), or whether that's a narrower evidence class than what the route was designed around.
-26. How much freedom does organizational-realization authority actually have to repartition accepted semantic obligations before it becomes a planning transformation in disguise (Part 13.9)? Grouping and separating whole accepted obligations along their own existing boundaries is clearly organizational-realization territory; a realization that cuts *across* an obligation's own internal boundaries (splitting one obligation's work between two vantages, or merging parts of two different obligations into one vantage) is not yet placed. Part 13.9 states a candidate boundary (group/separate/assign vantages, never alter semantics/dependencies/create/eliminate obligations) but does not adopt it as final, and does not decide whether cross-cutting realizations should ever be permitted at all.
+23. Does that document's own branch-plan concept (§6) already anticipate being realized by more than one execution vantage, or does it implicitly assume one supervisor per branch with no further compiled decomposition beneath it? Part 13.9's recursion depends on the answer, and this was not checked in the sections read so far.
+24. What exactly must a hierarchical plan expose (per Part 13.12's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored — does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carry enough of this list, would it need extending, and does the current planning/Plan-IR architecture already carry any of this independently?
+25. **Partially answered.** `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §12 route is already explicitly headed "Branch planner / supervisor" — a supervisor discovering a topology conflict mid-execution is already an anticipated source, not something Part 13.6 needs to extend. What's still unchecked: whether the route's "current execution evidence" input already accommodates the specific shape of evidence an organizational-*realization* discovery would produce (e.g., "these two obligations turned out to share state" or "a capability I need doesn't exist"), or whether that's a narrower evidence class than what the route was designed around.
+26. How much freedom does organizational-realization authority actually have to repartition accepted semantic obligations before it becomes a planning transformation in disguise (Part 13.10)? Grouping and separating whole accepted obligations along their own existing boundaries is clearly organizational-realization territory; a realization that cuts *across* an obligation's own internal boundaries (splitting one obligation's work between two vantages, or merging parts of two different obligations into one vantage) is not yet placed. Part 13.10 states a candidate boundary (group/separate/assign vantages, never alter semantics/dependencies/create/eliminate obligations) but does not adopt it as final, and does not decide whether cross-cutting realizations should ever be permitted at all.
+27. **Named, not started.** Sol proposed a narrow three-part reconciliation pass connecting Part 13.5 to the wider planning and claim-evidence architecture: (a) Planning → claims — what, precisely, a branch plan revision must expose for a `planning-facts-v1` domain profile to materialize claims from it without inventing facts planning didn't already surface; (b) Claims → organizational compilation — whether 13.5's shrunk-reconnaissance diagram is sufficient, or whether organizational-realization authority itself needs a defined way to consult claims during compilation, not only during a supervisor's own reconnaissance; (c) Execution evidence → claims → replanning — whether the reuse chain in 13.5 (evidence contradicts claim → `changed` judgment → topology-conflict nomination → replan → re-derivation) is complete, or whether high-volume execution evidence needs its own batching/throttling discipline before it reaches the topology-conflict route at all. None of the three has been checked against source; this question only records that the pass was proposed and scoped, not that any part of it has been verified.
 
 ---
 
@@ -733,8 +735,8 @@ supervisor's own judgment
         v                                                  v
    organizational-realization authority                nominate topology conflict
    resolves the surface (JIT, event-scoped,             (per hierarchical-planning-and-multi-
-   per 13.12 -- not a standing responsibility)           supervisor-orchestration.md §12 --
-        v                                                see 13.6 below)
+   per 13.13 -- not a standing responsibility)           supervisor-orchestration.md §12 --
+        v                                                see 13.7 below)
    admit child topology:
    Supervisor[A] -> Builder[A1+A2], Builder[A3]
         v
@@ -743,7 +745,66 @@ supervisor's own judgment
 
 The left branch has not changed the plan — A1, A2, and A3 still exist, their dependencies and integration contract are unchanged, only *how* to realize them has been decided. The right branch is not a realization question at all; it is evidence that the accepted semantic structure itself is wrong, and the supervisor's only lawful move is to nominate that discovery through the existing conflict route, not to silently repair it by inventing a new semantic topology of its own. Resolving the left branch is an exercise of **organizational-realization authority** — a domain of authority that exists independently of any policy mode; a supervisor that instead resolves the right branch on its own has quietly become an unaccountable branch planner — the exact failure mode `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own ownership boundaries already exist to prevent.
 
-### 13.5 Two kinds of lowering, never confused
+### 13.5 Claims as a materialized starting point for formation, not new reconnaissance cost
+
+13.4's reconnaissance phase is bounded by authority, but nothing in it is bounded by *cost* — a newly instantiated supervisor re-derives its evidence from raw repository/runtime state every time, even when some of that evidence was already established, with provenance, during planning itself. Claim-evidence's substrate already exists to hold exactly this kind of thing: a revision-bound, provenance-bearing record of a fact and its consequences, together with a designed mechanism (`nominate_impact` / `open_refresh_episode` / `publish_refresh_judgment`, fully specified in `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md`) for the record to be re-examined and re-resolved without being silently overwritten in place.
+
+The ownership distinction has to be stated precisely, because it is easy to blur: the branch plan is the authoritative source of semantic truth; a claim is never that. A claim is, at most, **a materialization of a fact planning already surfaced, bound to the plan revision that justified it** — cache, not owner. Nothing about consulting or refreshing a claim changes who may change the plan; 13.2's and 13.7's authority rules are completely unaffected by anything in this section. What changes is only how much of 13.4's reconnaissance has to be freshly computed versus already available with citable provenance:
+
+```text
+instantiate Supervisor[A], given accepted branch plan A, revision R
+        v
+check claim-evidence for facts already materialized against plan revision R
+        v
+        +-- claim found, bound to R, no open refresh episode:            +-- no claim materialized for this fact, or the
+        |   treat as already-established -- fold directly into           |   claim's episode is unresolved, or the claim
+        |   13.4's reconnaissance without re-deriving it                 |   is bound to a superseded revision:
+        |                                                                 |   fall back to branch-local reconnaissance
+        v                                                                 |   exactly as 13.4 already describes
+   irreducible remainder requiring fresh reconnaissance is smaller       v
+        +-----------------------------------------------------------------+
+        v
+   continues into 13.4's own flow unchanged from here: topology service
+   judgment, supervisor's bounded remainder, topology-conflict route
+```
+
+**This is not yet available machinery — it is proposed work.** `app-server/src/services/claim-evidence/contract.mjs` currently defines exactly three domain profiles (`proposal-research-v1`, `revision-bound-review-finding-v1`, `production-path-v1`); none of them materializes planning-derived facts. A domain profile for this (call it, provisionally, `planning-facts-v1`) does not exist and would need to be designed and reconciled against the planning architecture before any of this diagram is real.
+
+Sol's proposal described claims moving between "challenged," "stale," and "invalidated" states. Those are not a third vocabulary alongside the one `operation-contract-surface.md` already fixed after six review rounds; they describe positions within it, and should be named that way rather than informally:
+
+- **"challenged"** is not itself a terminal disposition — it is the state of having an open refresh episode against the claim (a `nominate_impact` has been accepted and `open_refresh_episode` has run) whose disposition has not yet been published. The lifecycle already distinguishes "open" from every terminal disposition; nothing new is needed here.
+- **"stale"** maps to the episode-level disposition `superseded`: a later plan revision has already produced a newer claim, and the older one's episode terminates by pointing at that successor rather than by being judged against fresh evidence at all.
+- **"invalidated"** maps to the episode-level disposition `changed` (equivalently, `resolved_changed` at the nomination level): a `publish_refresh_judgment` resolved that the materialized fact no longer holds under current evidence.
+
+Mapping Sol's language onto the exact fixed vocabulary matters for the same reason it mattered every time in the operation-contract-surface reviews: a fourth informal vocabulary layered on top of two already-reconciled ones is exactly the kind of drift that produces silent conflation later.
+
+The reverse direction — execution evidence contradicting a plan-derived claim — reuses the same three operations, and terminates the same way 13.4's right-hand branch already does, not by inventing new authority for claim-evidence:
+
+```text
+execution evidence contradicts a claim materialized from plan revision R
+        v
+nominate_impact (evidence-producer authority; caller-asserted nomination_identity)
+        v
+open_refresh_episode (domain-owner authority, planning-facts-v1 profile)
+        v
+publish_refresh_judgment: changed  (episode-level disposition; NOT authority
+                                     to rewrite the plan -- cache =/= owner)
+        v
+the discovering actor (e.g. a supervisor per 13.4) nominates a topology
+conflict through the existing route -- same route as 13.4's right branch,
+same `hierarchical-planning-and-multi-supervisor-orchestration.md` §12 chain
+        v
+planning authority revises the branch plan -> new accepted revision R'
+        v
+claims bound to R are not mutated in place; facts are re-derived fresh
+against R', newly bound to R' -- the "bound to the revision that justified it"
+invariant is what keeps a stale claim from silently outliving the plan that
+produced it
+```
+
+A `changed` judgment on a claim is a fact about the claim's own currency, exactly as `superseded` and `resolved_changed` already are; none of the three is ever itself the mechanism that rewrites the branch plan. That authority still belongs only to the planning hierarchy, exercised only through the conflict route 13.4 and 13.6 already describe. This section adds a cheaper way to arrive at 13.4's reconnaissance evidence and a reused mechanism for keeping that evidence current — it adds no new authority anywhere in the tree.
+
+### 13.6 Two kinds of lowering, never confused
 
 ```text
 ADMITTED SEMANTIC STRUCTURE (branch plan)
@@ -769,14 +830,14 @@ compile next execution layer  <-----+        orchestration.md §12 already speci
 
 This is the corrected shape of recursion: organizational compilation lowers an accepted layer into execution; execution either confirms the layer (compile the next layer) or falsifies it (route to the existing, already-designed replanning mechanism, which produces a *new* accepted layer for auto-org to compile again). Nothing here invents a second replanning path — it reuses the one `hierarchical-planning-and-multi-supervisor-orchestration.md` already has.
 
-### 13.6 The authority rule at every level
+### 13.7 The authority rule at every level
 
 ```text
 planner (preplanner / branch planner):
     may change semantic work topology
 
 organizational compiler / topology service
-    (the mechanism auto-org's policy modes govern -- see 13.16;
+    (the mechanism auto-org's policy modes govern -- see 13.17;
      "auto-org" names a mode over this authority, not the authority itself):
     may derive lawful execution organization from an accepted semantic topology
 
@@ -788,7 +849,7 @@ supervisor (or any realized vantage):
 
 This preserves `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing architecture rather than superseding it, and prevents the organizational-compiler layer from turning supervisors into unaccountable local managers who accumulate planning authority just because they are closest to the evidence — precisely the failure mode that architecture's own ownership boundaries (§3, §7, §12) were built to avoid.
 
-### 13.7 The same retained context performs both reconnaissance and execution
+### 13.8 The same retained context performs both reconnaissance and execution
 
 The supervisor that performs organizational reconnaissance should be the same retained logical role and context that subsequently executes or supervises the resulting branch — not a disposable scout that investigates, writes a summary, and is discarded before a cold supervisor reconstructs what it learned:
 
@@ -803,7 +864,7 @@ Supervisor[A]
 
 The evidence gathered must still be externalized to run-owned durable state — the context itself is never canonical — but retaining the supervisor's own accumulated understanding across the formation-to-execution boundary has independent value. Both together, not one instead of the other: durable evidence *and* retained context continuity.
 
-### 13.8 Organizational compilation recurses within accepted structure; planning authority and agent spawning do not
+### 13.9 Organizational compilation recurses within accepted structure; planning authority and agent spawning do not
 
 A supervisor's own reconnaissance may reveal further asymmetric realization structure within its own accepted obligations:
 
@@ -815,7 +876,7 @@ Supervisor[A]                          Supervisor[B]
          coherent compatibility work)
 ```
 
-Nothing requires symmetry between branches, and any resulting child role may itself later encounter enough structural pressure to warrant its own further organizational compilation — bounded, at every layer, by the same rule from 13.5: confirm and compile deeper, or fall back to the existing topology-conflict route if the layer's own accepted structure is what's actually wrong:
+Nothing requires symmetry between branches, and any resulting child role may itself later encounter enough structural pressure to warrant its own further organizational compilation — bounded, at every layer, by the same rule from 13.6: confirm and compile deeper, or fall back to the existing topology-conflict route if the layer's own accepted structure is what's actually wrong:
 
 ```text
 plan -> orchestrator -> branch planners produce accepted branch plans
@@ -826,9 +887,9 @@ plan -> orchestrator -> branch planners produce accepted branch plans
 
 This is **recursive organizational compilation**, triggered by locally-discovered evidence at each layer and always bounded by whatever semantic structure is currently accepted at that layer — not recursive agent spawning, and not recursive planning authority, either of which would collapse the distinction Part 13.2 depends on.
 
-### 13.9 How much freedom does organizational compilation actually have?
+### 13.10 How much freedom does organizational compilation actually have?
 
-13.8's example (`Builder[A1+A2]`, `Builder[A3]`) groups and separates accepted obligations along their own existing boundaries — clean. But nothing said so far rules out a realization that cuts *across* those boundaries instead of merely grouping or separating them:
+13.9's example (`Builder[A1+A2]`, `Builder[A3]`) groups and separates accepted obligations along their own existing boundaries — clean. But nothing said so far rules out a realization that cuts *across* those boundaries instead of merely grouping or separating them:
 
 ```text
 still grouping/separating (clean):
@@ -857,7 +918,7 @@ organizational-realization authority may NOT:
 
 Under that boundary, cross-cutting realizations (splitting a single obligation's own internal work across more than one vantage) would fall outside organizational-realization authority entirely, and would need its own explicit treatment — deferred to Open Question 26, not decided here.
 
-### 13.10 Authority attenuates down the tree; depth never creates more of it
+### 13.11 Authority attenuates down the tree; depth never creates more of it
 
 Part 2.4's invariant (`child authority ⊆ delegable(parent authority)`) applies recursively without modification:
 
@@ -873,7 +934,7 @@ Builder[A-core]
 
 New organizational depth partitions existing authority into increasingly local vantages; it never manufactures new authority. Nondelegable surfaces stay wherever they are actually owned, at whatever depth that happens to be — depth is not itself a claim to authority.
 
-### 13.11 What this implies a hierarchical plan needs to expose
+### 13.12 What this implies a hierarchical plan needs to expose
 
 Not `spawn 3 supervisors, spawn 7 builders`, but organizationally-relevant semantics per workstream, from which the organization is *compiled* rather than *authored*:
 
@@ -885,7 +946,7 @@ integration boundary, known continuity constraints
 
 The plan describes the semantic structure of the work; the organization is a derived consequence of that structure, not a separate thing the plan author must also specify by hand. Whether `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carries enough of this list, or would need to be extended, is not decided here — see Open Question 24.
 
-### 13.12 This composes with event-scoped JIT organizational reasoning exactly as already designed
+### 13.13 This composes with event-scoped JIT organizational reasoning exactly as already designed
 
 Each supervisor runs normally, without permanently carrying auto-org machinery (per Part 2.7). During its formation phase, if the topology service's observer-derived evidence makes an organizational-realization question material — never a question about whether the accepted plan itself is correct — a JIT decision surface is temporarily injected:
 
@@ -897,9 +958,9 @@ Supervisor[A]'s normal context
     + available role/capability profiles
 ```
 
-resolving a narrow question — does this branch require one retained implementation vantage or several, and why — after which the result persists, the temporary skill is removed, and the supervisor proceeds to steady-state supervision. Nothing about this requires a role to carry organizational-decision doctrine permanently, and nothing about it authorizes the same JIT surface to also judge whether the plan itself should change — that question, per 13.5, has its own separate, already-existing route.
+resolving a narrow question — does this branch require one retained implementation vantage or several, and why — after which the result persists, the temporary skill is removed, and the supervisor proceeds to steady-state supervision. Nothing about this requires a role to carry organizational-decision doctrine permanently, and nothing about it authorizes the same JIT surface to also judge whether the plan itself should change — that question, per 13.6, has its own separate, already-existing route.
 
-### 13.13 Role formation as a named phase, precisely scoped
+### 13.14 Role formation as a named phase, precisely scoped
 
 ```text
 ROLE FORMATION
@@ -920,7 +981,7 @@ ROLE EXECUTION
 
 "Provisional" describes only the role's *downstream execution organization* — not its own authority, which is real and non-provisional from the moment of instantiation, and not the semantic plan it was instantiated to realize, which the role has no authority to revise itself. Supervisor[A] already owns supervising A the instant it exists; what remains undecided is only how A's own accepted obligations should be realized.
 
-### 13.14 The natural stopping condition
+### 13.15 The natural stopping condition
 
 No role should recurse automatically merely "to see what's there" — that is organizational recursion for its own sake, and this document names it explicitly as something to avoid. Recursion should trigger only when evidence establishes genuine separation pressure, reusing the exact generative criterion already stated in Part 2.5: create another vantage only when a stable semantic boundary lets the resulting contexts know materially less while preserving or improving the required consequence. The resulting fixed point:
 
@@ -928,7 +989,7 @@ No role should recurse automatically merely "to see what's there" — that is or
 
 At that point, recursive organizational compilation stops — not because of a depth limit, but because no further split of the *execution realization* (never the accepted semantic obligations themselves) would be justified by the criterion itself.
 
-### 13.15 The full picture
+### 13.16 The full picture
 
 ```text
                        ROOT PLAN
@@ -960,7 +1021,7 @@ At that point, recursive organizational compilation stops — not because of a d
 
 resting throughout on the shared substrate already established in Parts 4, 5, and 7: Context Observer, authority state, run evidence, plan state, ExecutionEnvelope revisions, transition fencing, context lifecycle, capability resolution. The orchestrator and branch planners stay within `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own already-designed roles; auto-org supplies only the compilation step between an accepted plan layer and the execution organization that realizes it.
 
-### 13.16 `auto-org` is a policy mode, not a second architecture
+### 13.17 `auto-org` is a policy mode, not a second architecture
 
 Extending Part 6's organizational-dynamics-as-policy framing directly, rather than introducing new machinery:
 
@@ -973,7 +1034,7 @@ organization_mode: auto               recursive organizational compilation where
 
 Same underlying machinery in every mode; no second architecture per mode; a fixed organization is simply the case where the transition set is constrained to `∅`, exactly as Part 6 already establishes for the non-recursive case. None of these modes touch semantic planning authority — they only vary how much of the execution organization beneath an accepted plan gets compiled versus authored.
 
-### 13.17 The operational payoff, restated precisely
+### 13.18 The operational payoff, restated precisely
 
 The genuine novelty here is not a new orchestration shape — `hierarchical-planning-and-multi-supervisor-orchestration.md` likely already has the shape. The novelty is a **missing compilation layer between hierarchical planning and hierarchical execution**:
 
