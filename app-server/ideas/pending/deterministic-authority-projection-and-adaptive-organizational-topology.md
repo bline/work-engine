@@ -6,6 +6,12 @@
 
 **Authority:** Exploratory only. This document does not amend current role contracts, manifests, workflow ownership, execution-envelope design, context-lifecycle ownership, or implementation authority. It proposes a candidate architectural direction whose seams must be reconciled against current Work Engine artifacts before adoption.
 
+**Pre-synthesis source material:** this document is a synthesized formulation, not a session transcript. The raw exploratory material it was formed from — including the full genealogy from the original seed hypothesis through the session dialogue that grounded it against real `context-lifecycle` code — is preserved separately at
+[`app-server/ideas/history/2026-09-15-pre-synthesis/`](../history/2026-09-15-pre-synthesis/)
+for reference, following the same convention as
+[`ideas/history/2026-08-22-pre-reconciliation/`](../../../ideas/history/2026-08-22-pre-reconciliation/).
+This document is the one that evolves going forward; the source material does not.
+
 ---
 
 ## Summary
