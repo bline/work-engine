@@ -16,7 +16,7 @@ Work Engine already assigns semantic decisions to different roles rather than co
 
 2. **Roles are compiled compositions, not atomic primitives.** A role such as "Builder" is a stable, reusable composition of more primitive elements — vantage, authority, obligation, continuity, information access, effect boundary, capability requirements, independence constraints, lifecycle. If those primitives are declared with enough structure, a role's own contract becomes partly a compilation target rather than a wholly hand-authored object, and roles themselves become partly emergent from the requirements of the work rather than fixed in advance.
 
-3. **The organization is an adaptive projection of durable semantic state, and this is the same problem context-lifecycle already solves in miniature.** Work Engine's context-lifecycle manager already externalizes a *temporal* question — when should this same vantage receive a fresh context? — using deterministic pressure detection to invoke bounded semantic inference without burdening the working role with lifecycle mechanics. The same discipline generalizes to a *topological* question the current system does not yet ask: is this still the correct context/vantage configuration for the judgment now in front of it? Both questions consume the same underlying observations, and the resulting architecture is not two separate systems but a shared observer feeding two independent consumers, coordinated by a shared transition-admission layer.
+3. **The organization is an adaptive projection of durable semantic state, and this follows the same architectural pattern context-lifecycle already applies to a narrower problem.** Work Engine's context-lifecycle manager already externalizes a *temporal* question — when should this same vantage receive a fresh context? — using deterministic pressure detection to invoke bounded semantic inference without burdening the working role with lifecycle mechanics. The organizational-topology question is not the same problem: temporal continuity concerns an *existing* vantage's lifetime, while topology concerns the fitness and composition of the vantages themselves. What is shared is the pattern, not the subject — observe externally, mechanically derive what can be derived, invoke bounded inference only at a genuine semantic gap, admit the consequence, realize a revision-bound transition. Both consume the same underlying observations, and the resulting architecture is not two separate systems but a shared observer feeding two *independent* consumers (neither owning the other's decision), coordinated by a shared transition-admission layer.
 
 The unifying principle beneath all three layers:
 
@@ -388,19 +388,49 @@ This is exactly where this idea's topology layer hits a real seam. A **context r
 
 ## Part 5: Proposed Architecture — Observer, Lifecycle, and Topology
 
-### 5.1 Context-lifecycle is still the natural owner of the decision *surface*, not the decision
+### 5.1 Neither service owns the other's decision surface — both consume one observer
 
-Context-lifecycle can own **when the current context/vantage configuration has accumulated enough evidence that an organizational decision should be considered**, without owning **what the semantic organization should become**. That is a direct extension of its existing shape: `observes pressure → deterministically decides inspection is warranted → invokes bounded semantic inference → host admits or rejects transition` becomes `observes context-fitness evidence → deterministically decides organizational decision surface is warranted → injects/invokes bounded organizational judgment → semantic owner decides unresolved consequence → organizational authority admits topology revision → context-lifecycle realizes resulting context topology`.
+An earlier framing of this idea had context-lifecycle own the applicability question for organizational decisions too ("context-lifecycle decides when an organizational decision surface is warranted"), reasoning by extension from its own existing pressure-detection shape. That framing does not survive its own later refinement below: once the Context Observer is pulled out as a shared, more primitive layer beneath *both* consumers (§5.3), there is no remaining reason for context-lifecycle to sit upstream of topology, or to gate topology's own applicability question — that would make lifecycle a decision authority over a domain (organizational fitness) it does not own, the same "coordination authority absorbing domain authority" failure Part 1 warns against.
+
+The corrected ownership:
+
+```text
+Context Observer
+    owns observations
+
+Context-lifecycle
+    owns temporal-context applicability
+    ("is a temporal context transition now warranted?")
+
+Vantage/topology service
+    owns organizational-decision applicability
+    ("is an organizational judgment now warranted?")
+    — independently of lifecycle, not gated by it
+
+Active semantic role
+    owns the irreducible semantic judgment where one remains
+
+ExecutionEnvelope / organizational authority
+    owns admission of the organizational consequence
+
+Shared transition infrastructure (Part 7)
+    owns safe ordering/fencing between whatever either consumer admits
+
+Projection/runtime machinery
+    realizes the admitted result
+```
+
+Lifecycle and topology are independent, parallel consumers of the same observer — neither the parent of the other, neither gating the other's applicability question. Both may conclude a transition is warranted at different times, for different reasons, over the same underlying reasoning environment, which is exactly why a shared transition-admission layer (Part 7) is required rather than either consumer coordinating the other directly.
 
 ### 5.2 Three ownership levels for an organizational decision
 
-1. **Context/topology machinery: observe and nominate.** It mechanically owns metrics (token pressure, relevance pressure, semantic-width pressure, context lifetime divergence, shared-state coupling, projection size, estimated branch context size, coordination history) and hard constraints (independence requires separation; non-transferable authority forbids transfer; atomic transition forbids splitting; workflow policy freezes topology). From these it determines only whether an organizational question exists at all — keeping this cognitive burden out of the normal role.
+1. **Topology service: observe (via the shared observer) and nominate.** Not context-lifecycle. It consumes `ContextObservation` plus semantic/work/authority state to derive its own `VantageSeparationEvidence` — coupling, continuity divergence, independence requirements, delegability, separation opportunity — and applies hard constraints (independence requires separation; non-transferable authority forbids transfer; atomic transition forbids splitting; workflow policy freezes topology). From these it determines only whether an organizational question exists at all — keeping this cognitive burden out of the normal role, and out of context-lifecycle.
 
 2. **The active semantic role: judge the irreducible work question.** When the case is not mechanically determined, the current role has the best vantage to answer whether a subproblem is independently coherent, how much accumulated understanding is genuinely required, whether separating it would destroy useful reasoning continuity, and whether the semantic boundary is stable enough to hand off through a contract. A JIT projection can temporarily add an "organizational decision" surface — mechanically established facts (separation lawful, authority delegable, child capabilities satisfiable, estimated projection reduction, mutation overlap, shared dependencies, coordination-cost evidence) plus the one unresolved question — with possible outcomes retain, disposable context, distinct vantage, or delegated logical role. The agent need not know any of this until that decision exists.
 
 3. **ExecutionEnvelope/workflow authority: admit the organizational consequence.** Even if the active role concludes "split this," that is a semantic nomination, not unilateral authority to rewrite the organization. Something must verify that the parent may delegate this authority, the child grant is correctly attenuated, the workflow permits organizational branching, independence constraints hold, no competing authority owner exists, and required capabilities can be realized — then the ExecutionEnvelope receives a new revision. Role judges semantic usefulness; role does not mint organization.
 
-Context-lifecycle comes back in *after* admission: once an organizational decision is accepted, the compiler layer derives the child role contract, authority grant, information requirements, continuity requirements, capability requirements, and parent/child boundary contract, and context-lifecycle's job becomes changing the parent context projection, creating the child context projection, removing the JIT organizational skill, and registering new lifecycle subjects. Context-lifecycle does not become the organizational authority — it becomes the projection and lifecycle executor for an admitted organizational state.
+**What happens after admission is deliberately left more open than an earlier framing claimed.** It is tempting to say "context-lifecycle then realizes the new topology" simply because context-lifecycle already manipulates contexts — but that would silently expand its ownership just because it happens to hold the relevant mechanism today. The more accurate statement: after organizational admission, the resulting topology revision is realized through the shared projection/runtime machinery; each resulting logical context then becomes a subject of ordinary context-lifecycle management going forward. Whether that projection/runtime machinery is a distinct owner from context-lifecycle, or context-lifecycle acting in a narrower "realize this admitted projection" capacity distinct from its own applicability judgment, is an open seam (Part 12), not settled here.
 
 ### 5.3 A shared, intentionally stupid Context Observer
 
@@ -417,7 +447,22 @@ ContextObservation
   relationships: subjects touched, authority surfaces involved, other active roles/vantages
 ```
 
-Some of these are already directly observable; others become available only as Work Engine externalizes more semantic structure. Consumers then derive their own metrics: lifecycle derives token pressure, replacement economics, continuation safety, and expected remaining work; topology derives context-width pressure, coupling, continuity divergence, independence requirements, delegability, and separation opportunity. There are really three layers, not two — raw/normalized observation, domain-specific derivation, and decision (token usage is an observation; token pressure is a deterministic lifecycle derivation; "replace now?" is the lifecycle decision; analogously, touched subjects plus an independence requirement plus mutation overlap plus projection size are vantage-separation evidence, from which "is organizational judgment warranted?" is the topology decision, only escalating to JIT semantic judgment when unresolved). Metrics like semantic-width pressure should not be placed directly in the observer unless they can be derived mechanically from owned state — the observer preserves the distinction between fact, derived metric, semantic interpretation, and decision.
+Some of these are already directly observable; others become available only as Work Engine externalizes more semantic structure. There are really three layers, not two, and each consumer owns its own middle layer independently:
+
+```text
+ContextObservation                          ContextObservation
+      v                                      + semantic/work/authority state
+LifecycleEvidence                                  v
+(token pressure, replacement economics,     VantageSeparationEvidence
+ continuation safety, expected remaining     (coupling, continuity divergence,
+ work)                                        independence requirements,
+      v                                       delegability, separation opportunity)
+LifecycleDecisionSurface                           v
+("replace now?")                            OrganizationalDecisionSurface
+                                             ("is organizational judgment warranted?")
+```
+
+Token usage is an observation; token pressure is a deterministic *lifecycle-owned* derivation; "replace now?" is lifecycle's own decision. Touched subjects, an independence requirement, and mutation overlap are observation-adjacent facts; vantage-separation evidence is a deterministic *topology-owned* derivation from them; "is organizational judgment warranted?" is topology's own decision, only escalating to JIT semantic judgment when unresolved. Metrics like semantic-width pressure, coupling, or projection reduction therefore do not belong in the observer itself, and are not owned by any single "context/topology machinery" blob either — they belong specifically to whichever consumer's own `*Evidence` layer derives them. The observer stays intentionally boring; the derivation and the decision both stay with the consumer that owns the domain in question.
 
 JIT injection becomes a normal consumer pattern rather than a lifecycle special case: an observation feeds a topology analysis; if organizational judgment is warranted, the projection service temporarily adds an organizational skill and the exact decision surface to the existing, still-alive context; the role resolves the decision; the temporary projection is removed. If the decision is "retain," nothing structural happens. If it is "create a separate vantage," organizational admission and compilation happen, and only afterward is context management asked to realize the resulting projections.
 
@@ -584,8 +629,9 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 16. Where should the decision-episode fence and topology-transition fence mechanism live — inside context-lifecycle itself, a new shared service, or the ExecutionEnvelope authority?
 17. Beyond illustrative examples, how is arbitration decided when lifecycle-critical pressure and an in-progress topology episode conflict?
 18. Should the observed-context substrate be promoted to a formally shared cross-service dependency now, or allowed to grow organically from its current lifecycle-scoped form?
-19. What is the smallest real current workflow from which a deterministic authority projection could be reconstructed without changing behavior?
-20. Can the proposed abstraction be demonstrated across one non-software domain without adding domain-specific rules to the projection mechanism?
+19. Who realizes an admitted organizational/topology revision concretely — a projection/runtime owner distinct from context-lifecycle, or context-lifecycle itself acting in a narrower "realize this admitted projection" capacity kept separate from its own temporal-applicability judgment? Deliberately left open in Part 5.2 rather than assumed either way.
+20. What is the smallest real current workflow from which a deterministic authority projection could be reconstructed without changing behavior?
+21. Can the proposed abstraction be demonstrated across one non-software domain without adding domain-specific rules to the projection mechanism?
 
 ---
 
