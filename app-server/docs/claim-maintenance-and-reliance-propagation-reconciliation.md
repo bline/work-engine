@@ -280,11 +280,13 @@ outcomes §4 restates:
   [`operation-contract-surface.md`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md)
   (three operations: `nominate_impact`, `open_refresh_episode`,
   `publish_refresh_judgment`; the last causally produces its own successor
-  revision and `refresh` lineage edge as one atomic consequence, reusing the
-  existing operations' internal construction logic rather than composing
-  them as separate sequenced calls — a first draft's atomicity flaw, found
-  and corrected on review). Reviewed once, not yet passed;
-  `implementation_authorized` remains `false`.
+  revision and `refresh` lineage edge as one atomic consequence, uses plain
+  revision-CAS rather than a borrowed writer-generation abstraction, and
+  publishes per-trigger nomination resolutions distinct from its own episode
+  disposition). Reviewed twice, not yet passed — both rounds found real
+  issues (round 1: atomicity, nomination identity, fencing precedent; round
+  2: writer-generation admitted-transition gap, episode-vs-trigger
+  disposition conflation); `implementation_authorized` remains `false`.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
   four-way split). Recorded in
