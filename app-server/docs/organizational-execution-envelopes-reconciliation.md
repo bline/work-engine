@@ -497,3 +497,86 @@ building the compiler before that question is answered risks creating a
 second, competing relation-truth owner, per that document's own warning.
 Full implementation authorization is deferred until that design question is
 resolved.
+
+## Candidate answer for the organizational-authority layer (proposed 2026-09-15, not yet accepted)
+
+The residue diagram above names an explicit "missing" layer between
+existing orchestration and `ExecutionEnvelope`: "Organizational authority /
+problem specification — owns what organization is permitted or required and
+any open selection judgment among valid candidates." A separate, later idea
+document —
+`app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md`,
+Part 5.2 ("Three ownership levels for an organizational decision") —
+independently arrived at the identical layering while reasoning about a
+different problem (adaptive context/vantage topology), then, on reconciling
+against this document directly, found the match and is surfacing a candidate
+answer here rather than adopting it silently in its own text. That routing
+is deliberate: this document is this residue's authorized owner, and
+leaving a candidate answer to sit only in the document that happened to
+discover it would recreate the exact ownership problem this architecture
+exists to prevent.
+
+**The candidate, restated precisely — one correction already applied before
+surfacing it (per review), so this is not a same-day draft.** An earlier
+version of the source idea's Part 5.2 bundled "organizational authority
+admits" and "`ExecutionEnvelope` materializes" into one phrase
+("ExecutionEnvelope/workflow authority: admit the organizational
+consequence... then the ExecutionEnvelope receives a new revision"). That
+reads as the artifact itself being an actor, which contradicts this
+document's own framing of `ExecutionEnvelope` as "the immutable
+materialization of that selection... not itself the authority that selects
+it." Corrected: organizational authority is the authority domain that
+admits a selection; `ExecutionEnvelope` only records the consequence.
+
+**A candidate decision procedure organizational authority may use — not a
+definition of organizational authority itself.** This distinction matters:
+organizational authority remains the authority domain/ownership surface
+regardless of how a given case is resolved. One candidate procedure within
+that domain:
+
+```text
+1. topology service observes and nominates
+   (derives VantageSeparationEvidence: coupling, continuity divergence,
+   independence requirements, delegability, separation opportunity;
+   applies hard constraints: independence requires separation,
+   non-transferable authority forbids transfer, atomic transition forbids
+   splitting, workflow policy freezes topology)
+        |
+        v
+2. IF the hard constraints alone determine the outcome: resolved
+   mechanically, no further judgment needed
+   IF NOT: the active semantic role judges the irreducible remainder
+   (is this subproblem independently coherent, how much context is
+   genuinely required, would separation destroy useful continuity,
+   is the semantic boundary stable enough to hand off)
+        |
+        v
+3. organizational authority admits the resulting selection
+        |
+        v
+4. ExecutionEnvelope receives the admitted selection as a new revision
+   -- the materialization, never the authority that produced it
+```
+
+Step 2's branch matters: some cases are resolved by hard constraints alone,
+with no active-role judgment involved at all. The topology-nominates/
+active-role-judges pairing is one candidate way this domain's open
+selection judgment gets resolved when a judgment is actually required — it
+is not what organizational authority *is*.
+
+**Mapped onto this document's own available/authorized/required/selected
+vocabulary** — named above as needing an "organization-level analogue" that
+"survives, folded into the residue":
+
+| Vocabulary term | Organization-level meaning (candidate) |
+| --- | --- |
+| **available** | Organizational components the topology service's own `VantageSeparationEvidence` surfaces as separable |
+| **authorized** | The hard-constraint set governing what composition is permitted (independence/non-transferability/atomicity/workflow-policy) |
+| **required** | The active role's own irreducible judgment about what the problem needs, when a judgment is actually required (step 2's second branch) |
+| **selected** | The specific organization admitted into a new `ExecutionEnvelope` revision |
+
+**Status: proposed, not accepted.** This candidate has not been evaluated
+against this document's own acceptance discipline (the same explicit-user-
+decision process that accepted the residue itself on 2026-09-14). It is
+recorded here so a future decision has a concrete candidate to accept,
+reject, or modify — not treated as settled by either document.
