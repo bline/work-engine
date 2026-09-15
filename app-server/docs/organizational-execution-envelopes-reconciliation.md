@@ -528,55 +528,89 @@ materialization of that selection... not itself the authority that selects
 it." Corrected: organizational authority is the authority domain that
 admits a selection; `ExecutionEnvelope` only records the consequence.
 
-**A candidate decision procedure organizational authority may use — not a
-definition of organizational authority itself.** This distinction matters:
-organizational authority remains the authority domain/ownership surface
-regardless of how a given case is resolved. One candidate procedure within
-that domain:
+**Second correction, applied on review before this section's first version
+was ever accepted.** The first version of this candidate mapped
+`available`/`authorized`/`required`/`selected` onto evidence, constraints,
+and decision mechanism directly — conflating properties of an organizational
+candidate with the mechanisms used to derive or discover them. Corrected
+below. The clean version keeps each of the four vocabulary terms describing
+a *property a candidate organization either has or lacks*, never a
+mechanism:
+
+- **available** — which organizational realizations can actually be
+  *constructed* from currently available role primitives, capabilities,
+  runtime realizations, and resources. Not `VantageSeparationEvidence`
+  itself — that is evidence bearing on *required*, below, not a definition
+  of what is constructible.
+- **authorized** — the subset of available realizations the current
+  authority ceiling, delegation rules, workflow policy, and effect
+  boundaries actually *permit*. Genuine lawfulness constraints only:
+  non-transferable authority forbids transfer; an atomic transition forbids
+  splitting; workflow policy freezes topology.
+- **required** — the properties the organization must *satisfy* for this
+  work: independence, continuity, effect separation, semantic obligations,
+  capability needs. "Independence requires separation" belongs here, not
+  under `authorized` — it is a property the organization must satisfy, not
+  a question of whether one lawfully may. Some required properties are
+  mechanically established directly; an unresolved remainder may need the
+  active semantic role's bounded judgment — but that judgment is a
+  *mechanism* for resolving an unresolved requirement, never itself
+  identical to "required."
+- **selected** — the specific candidate organizational authority actually
+  admits. Consistent with, not a departure from, `RoleRealization`'s own
+  established gloss of "selected" as "admitted realization" at the
+  realization layer — no fifth state is needed to keep "chosen" distinct
+  from "materialized." `ExecutionEnvelope` records what gets selected; it
+  is never the authority that selects.
+
+**The candidate decision procedure, corrected to match:**
 
 ```text
-1. topology service observes and nominates
-   (derives VantageSeparationEvidence: coupling, continuity divergence,
-   independence requirements, delegability, separation opportunity;
-   applies hard constraints: independence requires separation,
-   non-transferable authority forbids transfer, atomic transition forbids
-   splitting, workflow policy freezes topology)
+accepted work / current organization
         |
         v
-2. IF the hard constraints alone determine the outcome: resolved
-   mechanically, no further judgment needed
-   IF NOT: the active semantic role judges the irreducible remainder
-   (is this subproblem independently coherent, how much context is
-   genuinely required, would separation destroy useful continuity,
-   is the semantic boundary stable enough to hand off)
+derive candidate organizational realizations
         |
         v
-3. organizational authority admits the resulting selection
+AVAILABLE: filter to realizations constructible from current role
+primitives, capabilities, runtime realizations, and resources
         |
         v
-4. ExecutionEnvelope receives the admitted selection as a new revision
+AUTHORIZED: filter further to what the authority ceiling, delegation
+rules, workflow policy, and effect boundaries actually permit
+        |
+        v
+REQUIRED: derive the properties the organization must satisfy
+   -- mechanically known requirements resolve directly
+   -- an unresolved remainder, if any, is what VantageSeparationEvidence
+      feeds into the active semantic role's bounded judgment
+        |
+        v
+intersect: available (cap) authorized (cap) satisfies(required)
+        |
+        +-- 0 candidates survive  -> organizational gap
+        +-- 1 candidate survives  -> mechanically determined selection,
+        |                            no judgment needed at all
+        +-- N candidates survive  -> the only place a genuine selection
+                                     judgment can actually live
+        |
+        v
+organizational authority admits the surviving candidate
+        |
+        v
+ExecutionEnvelope records the admitted selection as a new revision
    -- the materialization, never the authority that produced it
 ```
 
-Step 2's branch matters: some cases are resolved by hard constraints alone,
-with no active-role judgment involved at all. The topology-nominates/
-active-role-judges pairing is one candidate way this domain's open
-selection judgment gets resolved when a judgment is actually required — it
-is not what organizational authority *is*.
+This handles the no-inference case directly: when the intersection reduces
+to exactly one candidate, nothing is left to judge. Model-level inference
+belongs only at the genuine N-candidate branch, or at deriving an
+unresolved required property — never at simply picking among options that
+were never actually narrowed.
 
-**Mapped onto this document's own available/authorized/required/selected
-vocabulary** — named above as needing an "organization-level analogue" that
-"survives, folded into the residue":
-
-| Vocabulary term | Organization-level meaning (candidate) |
-| --- | --- |
-| **available** | Organizational components the topology service's own `VantageSeparationEvidence` surfaces as separable |
-| **authorized** | The hard-constraint set governing what composition is permitted (independence/non-transferability/atomicity/workflow-policy) |
-| **required** | The active role's own irreducible judgment about what the problem needs, when a judgment is actually required (step 2's second branch) |
-| **selected** | The specific organization admitted into a new `ExecutionEnvelope` revision |
-
-**Status: proposed, not accepted.** This candidate has not been evaluated
-against this document's own acceptance discipline (the same explicit-user-
-decision process that accepted the residue itself on 2026-09-14). It is
-recorded here so a future decision has a concrete candidate to accept,
-reject, or modify — not treated as settled by either document.
+**Status: proposed, not accepted.** This candidate — corrected once already
+before being formally proposed — has not been evaluated against this
+document's own acceptance discipline (the same explicit-user-decision
+process that accepted the residue itself on 2026-09-14). It is recorded
+here so a future decision has a concrete candidate to accept, reject, or
+modify — not treated as settled by either document.
