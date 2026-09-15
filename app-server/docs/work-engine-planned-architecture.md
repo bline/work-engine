@@ -792,7 +792,7 @@ authorization language.
 | Agent Environment Graph / skill-compiler (single-role structure) | IMPLEMENTED | `docs/agent-environments.yaml`, `app-server/src/skill-compiler.mjs`, `structural-core-ownership.md` |
 | `product-development` proposal/intake delivery | IMPLEMENTED (mechanical only) | `proposal-delivery.mjs`, `intake-delivery.mjs` — packet validation, not evaluation |
 | `role-scheduler` | IMPLEMENTED at root only | `skills/role-scheduler`; zero references in `app-server/src`; named migration target |
-| `claim-evidence-service.md`'s impact/refresh/reliance pipeline | AUTHORIZED_DIRECTION | Design accepted; `nominate_impact`/refresh-episode operation not yet in `contract.mjs` |
+| `claim-evidence-service.md`'s impact/refresh/reliance pipeline | AUTHORIZED_DIRECTION | Design accepted; the production operation-contract surface for impact nomination and refresh-episode admission is not yet in `contract.mjs` (2026-09-15: proposal meaning approved for `claim-maintenance-and-reliance-propagation`, `implementation_authorized: false`; operation count deliberately undecided) |
 | `provider-turn-harness-runtime-and-operator-projection.md` (ports) | AUTHORIZED_DIRECTION | No provider-neutral contract built yet; production builder path still statically Codex-bound |
 | `pre-indexed-capability-resolution-and-frozen-runtime-realization.md` | AUTHORIZED_DIRECTION | Partial precursors only (runtime manifest, capability negotiation) |
 | `control-plane-causal-observability-ui.md` | AUTHORIZED_DIRECTION | Accepted design, phased delivery slices (UI-0..UI-4), none built |

@@ -16,7 +16,7 @@ session and was never reconciled against the App Server build that landed
 after it was formed:
 
 - [`production-claim-evidence-interface`](../../proposals/evidence-lineage/production-claim-evidence-interface/proposal.md) — candidate 3 of 4.
-- [`claim-maintenance-and-reliance-propagation`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md) — candidate 4 of 4, the one containing the missing `nominate_impact`/refresh-episode operation.
+- [`claim-maintenance-and-reliance-propagation`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md) — candidate 4 of 4, the one whose still-unformed production operation-contract surface admits durable impact nominations and refresh episodes.
 
 ## 1. `production-claim-evidence-interface`: implementation correspondence confirmed, historical authorization not reconstructed
 
@@ -98,7 +98,8 @@ produced or reconciled:
 
 - **`app-server/src/services/claim-evidence/contract.mjs`** — confirms the
   premise the proposal and the strategic plan both depend on: no
-  `nominate_impact` or refresh-episode operation exists yet. Nothing in the
+  `nominate_impact` or refresh-episode operations exist yet, in any number.
+  Nothing in the
   proposal contradicts the six operations that do exist; it depends on them
   ("It consumes that proposal's stable identities, immutable revisions,
   authority profiles, exact-revision reliance, publication mechanics, and
@@ -145,32 +146,50 @@ design):
 > boundary between retrieved impact candidates, derived cache edges, and
 > canonical `may_affect` nominations." (`proposal.md:50-61`)
 
-None of that list is the `nominate_impact` operation's own request/response
-contract (inputs, authority checks, persistence shape) at the same level of
-concreteness as the six existing `contract.mjs` operations — that contract
-does not exist in this proposal, in `claim-evidence-service.md`, or in
+None of that list is a production operation-contract surface (request/
+response shape, authority checks, persistence shape) for durable impact
+nomination and refresh-episode admission, at the same level of concreteness
+as the six existing `contract.mjs` operations — that surface does not exist
+in this proposal, in `claim-evidence-service.md`, or in
 `evidence-anchor-observation-and-impact-nomination.md`.
 
-**Corrected 2026-09-15** (Sol's review): a first pass called this "a
-genuinely unowned design task." That repeats the exact distinction this
-session's own routing-seam correction just fixed elsewhere: a missing design
-is not the same as a missing owner. The semantic owner is not in question —
-`evidence-anchor-observation-and-impact-nomination.md` §9 (`:442-445`)
-explicitly names it: "It does not propose the `claim-evidence` contract
-change (`nominate_impact` or equivalent)... That is
+**Corrected 2026-09-15, twice** (Sol's review, two rounds). First round: a
+first pass called this "a genuinely unowned design task." That repeats the
+exact distinction this session's own routing-seam correction just fixed
+elsewhere: a missing design is not the same as a missing owner. The semantic
+owner is not in question — `evidence-anchor-observation-and-impact-nomination.md`
+§9 (`:442-445`) explicitly names it: "It does not propose the
+`claim-evidence` contract change (`nominate_impact` or equivalent)... That is
 `claim-evidence-service.md`'s own authorized work to specify." And this
 proposal's own text already claims the operational consequence as its
 subject — impact nominations, refresh episodes, reliance, obligations,
 delivery, and recovery (`proposal.md:67-90`). Ownership is settled; what is
-unformed is the concrete production operation contract by which that
+unformed is a concrete production operation-contract surface by which that
 already-located owner admits durable impact nominations and refresh
 episodes — request shape, authority check, idempotency identity, publication
-semantics, persistence transition, and result/failure vocabulary. All three
-documents consistently and explicitly decline to specify that contract
+semantics, persistence transition, and result/failure vocabulary.
+
+Second round: the phrase "the `nominate_impact`/refresh-episode **operation**"
+(singular) presumed a conclusion the proposal's own `semantic-model.md` does
+not support. Impact nomination and refresh episodes are stated there as
+distinct objects with their own separate stable identities and lifecycles —
+a nomination "identifies one exact source event and revision," "targets one
+exact claim revision," and "begins with a visible disposition independent of
+any refresh episode" (`semantic-model.md:7-17`), while "a refresh episode has
+stable identity, exact subject revision, triggers, domain profile, authorized
+owner, evidence cutoff, current writer generation, and immutable lifecycle
+transitions" (`:35-40`) — a separate, richer object, not the same record
+under two names. Whether the eventual production surface is one operation,
+two, or a small family sharing a transition substrate is exactly the
+question the contract-design work still needs to answer; naming it "the
+operation" in scheduling language would have quietly pre-decided that. All
+three documents consistently and explicitly decline to specify this surface
 (`evidence-anchor...md §9` names it as future work belonging to whichever
 document forms it next), so this reconciliation correctly does not attempt
-to design it here — but it should be recorded as an unformed operation
-contract beneath a settled owner, not as an ownerless design task.
+to design it here — but it should be recorded as an unformed
+**operation-contract surface** beneath a settled owner, left open to
+discover its own operation count, not as an ownerless design task or a
+presumed single operation.
 
 `acceptance.md`'s evidence bar (end-to-end vertical across both initial
 domain profiles, structural/projection adversarial matrix, semantic-lifecycle
@@ -196,7 +215,8 @@ production-claim-evidence-interface
 claim-maintenance-and-reliance-propagation
     → proposal meaning UNDRIFTED
     → semantic ownership SETTLED (claim-evidence / claim-maintenance)
-    → concrete nominate_impact / refresh operation contract UNFORMED
+    → production operation-contract surface for impact nomination and
+      refresh-episode admission UNFORMED (operation count undecided)
     → implementation NOT YET AUTHORIZED
     → original acceptance.md evidence bar RETAINED, untouched by this pass
 ```
@@ -221,12 +241,17 @@ audit that would be needed before (C) could responsibly be decided.
 For `claim-maintenance-and-reliance-propagation`, this reconciliation found
 essentially no remaining *ownership* seam — the semantic architecture is
 settled and undrifted. What remains is a *design* gap beneath that settled
-owner: the `nominate_impact`/refresh-episode operation's own contract. The
-bounded next unit of work this reconciliation surfaces is exactly that: form
-the production operation contract for impact nomination and refresh
-admission, without revisiting the already-settled semantic architecture.
-Approving proposal *meaning* now, at the same `approve_proposal_meaning`
-disposition level already used for item 10
+owner: a production operation-contract surface for durable impact nomination
+and refresh-episode lifecycle admission. Deliberately left open: whether that
+surface is one operation, two, or a small family sharing a transition
+substrate — `semantic-model.md` gives nomination and refresh episodes
+separate stable identities and lifecycles, so the design work should discover
+the operation count, not have it presumed by scheduling language. The bounded
+next unit of work this reconciliation surfaces is exactly that: form the
+production operation-contract surface for durable impact nomination and
+refresh-episode lifecycle admission, without revisiting the already-settled
+semantic architecture. Approving proposal *meaning* now, at the same
+`approve_proposal_meaning` disposition level already used for item 10
 (`agent-instruction-structure-placement-review/decision.json`), would let
 that contract-design work proceed without re-litigating whether the
 proposal's own shape is still right. It would not itself authorize
@@ -245,10 +270,11 @@ outcomes §4 restates:
   [`decision.json`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/decision.json)
   (`approve_proposal_meaning`, `implementation_authorized: false`). The next
   bounded unit of work this reconciliation surfaces: form the production
-  operation contract for impact nomination and refresh admission, without
-  revisiting the already-settled semantic architecture.
-  `acceptance.md`'s full adversarial evidence matrix remains retained and
-  unmet.
+  operation-contract surface for durable impact nomination and
+  refresh-episode lifecycle admission — deliberately left open whether that
+  surface turns out to be one operation, two, or a small family — without
+  revisiting the already-settled semantic architecture. `acceptance.md`'s
+  full adversarial evidence matrix remains retained and unmet.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
   four-way split). Recorded in

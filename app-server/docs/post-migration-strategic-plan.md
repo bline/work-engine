@@ -46,17 +46,19 @@ single-threaded execution model. This does not replace the priorities above;
 it sequences and sharpens them.
 
 **Original 2026-09-12 evidence cutoff** (superseded for anything touched by
-the 2026-09-14 revision — see that revision's own evidence cutoff at the end
-of this document, under "Strategic planning handoff" → "Revision
-2026-09-14"): repository `714741ad4b02157b38c2339931d176043d2e846b` and
-directly inspected documentation on 2026-09-12. This pass establishes documented
-intent and candidate relationships, not implementation completeness or current
-campaign terminal status. No campaign terminal receipts were audited. Graph
-coverage metadata generation `2026-09-12T14:36:35Z` reported no recorded issues
-and matching metadata for the source documents checked; that is best-effort
+the 2026-09-14 or 2026-09-15 revisions — see each revision's own evidence
+cutoff at the end of this document, under "Strategic planning handoff" →
+"Revision 2026-09-14" / "Revision 2026-09-15"): repository
+`714741ad4b02157b38c2339931d176043d2e846b` and directly inspected
+documentation on 2026-09-12. This pass establishes documented intent and
+candidate relationships, not implementation completeness or current campaign
+terminal status. No campaign terminal receipts were audited. Graph coverage
+metadata generation `2026-09-12T14:36:35Z` reported no recorded issues and
+matching metadata for the source documents checked; that is best-effort
 coverage, not proof of completeness. Do not read this document as a single,
-uniformly-714741-based assessment — sections marked 2026-09-14 rest on the
-later cutoff.
+uniformly-714741-based assessment — sections marked 2026-09-14 rest on that
+day's cutoff, and the "Revised 2026-09-15" annotations in the Priority
+section plus the appended Revision 2026-09-15 block rest on the later one.
 
 Follow-up reconciliation: the operator confirms migration is paused before S14
 while approved PPCE-03/04 remediation and ongoing context repairs proceed. The
@@ -124,12 +126,11 @@ claim-evidence impact/refresh vertical
 `proposal-research-v1` and `revision-bound-review-finding-v1` domain
 profiles) is already real, implemented code — see
 [`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
-§12. What is not built is the one piece
-[`claim-evidence-service.md`](claim-evidence-service.md)'s own design
-identifies as its next step: the `nominate_impact`/refresh-episode operation
-(no such operation exists yet in `contract.mjs`, confirmed directly by
+§12. What is not built is a production operation-contract surface for
+durable impact nomination and refresh-episode admission — no such
+operation(s) exist yet in `contract.mjs`, confirmed directly by
 [`evidence-anchor-observation-and-impact-nomination.md`](../ideas/pending/evidence-anchor-observation-and-impact-nomination.md)
-§6). Its own §6 distinguishes what that gap actually blocks from what does
+§6. Its own §6 distinguishes what that gap actually blocks from what does
 not need to wait for it:
 
 ```text
@@ -137,42 +138,80 @@ independently buildable now, not blocked
     EvidenceAnchorObserver family (one adapter per anchor kind)
     AnchorObservation contract
     shadow observations against explicit test/input anchors -- may run
-        report/shadow-only until the operation below lands
+        report/shadow-only until the surface below lands
 
-blocked on the nominate_impact/refresh-episode operation landing
+blocked on the operation-contract surface landing
     the PRODUCTION anchor registry (durable, revision-bound dependency
         declarations)
     durable ImpactNomination records
 ```
 
-This sharpens the scheduling argument rather than weakening it: there is
-real, parallel work available on the observer/registry side right now, not
-a single hard dependency chain. The same `nominate_impact` gap also sits
-underneath the readiness contract (item 5) and the comparison-contract
-mechanism (item 6) treating freshness as an input. Completing this one
-operation remains disproportionately high-leverage relative to its size.
+**Revised 2026-09-15** (Sol's review of
+[`claim-maintenance-and-reliance-propagation-reconciliation.md`](claim-maintenance-and-reliance-propagation-reconciliation.md)):
+this priority is not yet "a bounded, specified build," and should not be
+described that way. That reconciliation, now decided, found semantic
+ownership of impact nomination, refresh, reliance, obligations, delivery,
+and recovery already settled under claim-evidence/claim-maintenance — but
+the concrete production operation-contract surface (request shape,
+authority checks, idempotency identity, publication semantics, persistence
+transition, result/failure vocabulary) remains unformed, and is deliberately
+left open as to whether it is one operation, two, or a small family sharing
+a transition substrate (`semantic-model.md` gives impact nominations and
+refresh episodes separate stable identities and lifecycles — not the same
+record under two names). The first step is contract *formation*, not
+implementation:
 
-**Hierarchical planning: what stands in the way.** Unlike the impact/refresh
-vertical's gap, this is not a small missing piece — it is a full idea in
-`app-server/ideas/pending/`, not yet formed as a proposal, with two open
-seams the pre-queue synthesis already found and did not resolve
+```text
+form the production operation-contract surface
+        |
+        v
+review / decide the exact operation(s) it resolves into
+        |
+        v
+bounded implementation authorization
+        |
+        v
+build
+        |
+        v
+acceptance.md's full evidence bar (unaffected by any of the above)
+```
+
+This sharpens the scheduling argument rather than weakening it: there is
+real, parallel work available on the observer/registry side right now
+(above), independent of where the contract-formation step lands. The same
+operation-contract-surface gap also sits underneath the readiness contract
+(item 5) and the comparison-contract mechanism (item 6) treating freshness
+as an input. Forming this one surface remains disproportionately
+high-leverage relative to its size, but "high-leverage" describes the
+contract-formation step now, not a completed design ready to build from.
+
+**Hierarchical planning: what stood in the way, now resolved.** Unlike the
+impact/refresh vertical, this was never a small missing piece — it is a
+full idea in `app-server/ideas/pending/`, not yet formed as a proposal. It
+had two open seams the pre-queue synthesis found and left unresolved
 (`architecture-direction-synthesis.md` §5, items 1 and 2): whether
 executor-class routing sits inside or above realization admission, and
 whether hierarchical orchestration's "branch plan" is the same artifact as
-decision-gated compilation's sealed decision set. Both need an explicit
-answer before hierarchical orchestration can be built without creating a
-second, competing authority for the same question. This is a genuine
-prerequisite, not busywork: running many concurrent branches without a
-settled admission/routing boundary risks exactly the kind of authority
-collapse this session's reconciliation work spent all day preventing
-elsewhere.
+decision-gated compilation's sealed decision set. **Both are now closed
+(2026-09-15)**, after one reopening and correction on the first — see
+[`work-engine-planned-architecture.md`](work-engine-planned-architecture.md)
+§13 items 12-13 for the full ruling. Routing resolved into three stages
+(contract characterization / executor-class routing-acceptance / runtime
+resolution-admission), not the two originally proposed; the branch-plan
+seam resolved with the branch plan sitting strictly upstream of, and
+realized through, decision-gated compilation's decision set and
+implementation contracts. Both rulings are recorded in the three owning
+idea documents directly. What remains before hierarchical orchestration can
+be built is forming it into an actual proposal — the seam-level
+authority-collapse risk this paragraph originally warned about is resolved,
+not merely deferred.
 
 **Sequencing implication.** Neither priority is blocked on the other, so
-they can proceed in parallel: the impact/refresh vertical is a bounded,
-specified build (with the observer/registry sub-piece already available in
-parallel, per above); hierarchical planning needs its two open seams
-resolved (a design/reconciliation task, not yet a build) before
-implementation starts. Neither priority is itself one of the reconciliation
+they can proceed in parallel: the impact/refresh vertical's next step is
+contract *formation* (per the diagram above, not a specified build);
+hierarchical planning's blocking seams are resolved, and its next step is
+proposal formation. Neither priority is itself one of the reconciliation
 queue's eleven queue items with a surviving residue (per the corrected
 accounting in "Legacy ideas" above — twelve queue items, one with no
 residue, eleven with one) — all eleven remain real, accepted, authorized
@@ -576,4 +615,67 @@ revisit_when:
   - Both hierarchical-orchestration seams are resolved, or evidence shows they require a different owner than currently assumed.
   - Actual Pro 20x capacity and usable throughput are confirmed, changing the urgency of the eleven secondary residues.
   - A future intake session (per incremental-architecture-intake-and-seam-reconciliation.md §3) admits new ideas that materially change this sequencing.
+```
+
+### Revision 2026-09-15 (appended, not a replacement)
+
+The block above is preserved as the 2026-09-14 handoff. This is a further
+revision, not an edit to that block, following the same non-destructive
+convention used for the 2026-09-12 → 2026-09-14 transition. It reflects two
+pieces of work completed since 2026-09-14: both hierarchical-orchestration
+seams closed, and Sol's review correcting how the impact/refresh vertical's
+first step was characterized (see the "Priority" section above, and
+[`claim-maintenance-and-reliance-propagation-reconciliation.md`](claim-maintenance-and-reliance-propagation-reconciliation.md)).
+
+```yaml
+schema_version: 1
+strategic_objective: Complete the claim-evidence impact/refresh vertical and resolve hierarchical planning/workflow's open seams as basic working blocks, so expanded Codex capacity can be spent on ready, well-scoped parallel work rather than bottlenecked by a single sequential thread or missing shared substrate
+evidence_cutoff:
+  roadmap_revision: "b14ad80540828cb1fb181c569ad973f7cdceab80:app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md"
+  repository_revision: "b14ad80540828cb1fb181c569ad973f7cdceab80"
+  campaign_terminals: []
+continuity: retained
+verdict: revise
+current_rationale: Both named priorities advanced, but neither is now a specified build ready to start. Hierarchical orchestration's two blocking seams (routing.vs.admission, decision-gated.vs.hierarchical-orchestration) are closed as of 2026-09-15 -- routing resolved into three stages (contract characterization / executor-class routing-acceptance / runtime resolution-admission) after one reopening and correction, not the two originally proposed; the branch-plan seam resolved with the branch plan strictly upstream of, and realized through, decision-gated compilation's decisions and contracts. Separately, claim-maintenance-and-reliance-propagation-reconciliation.md (reviewed and corrected twice by Sol) found the impact/refresh vertical's own next step was mischaracterized in the 2026-09-14 revision as "a bounded, specified build." It is not: semantic ownership of impact nomination, refresh, reliance, obligations, delivery, and recovery is settled, but the concrete production operation-contract surface is unformed, and deliberately left open as to whether it resolves into one operation, two, or a small family -- claim-maintenance's own semantic-model.md gives nominations and refresh episodes separate stable identities and lifecycles. Both proposals in that reconciliation (claim-maintenance-and-reliance-propagation, production-claim-evidence-interface) had their proposal meaning approved this session, with implementation_authorized false on both.
+assumptions:
+  confirmed:
+    - claim-evidence's core substrate remains real, implemented code; nothing in this revision changes that.
+    - The eleven reconciliation-queue residues secondary to these two priorities remain accepted, authorized, and correctly deprioritized until capacity increases -- unchanged by this revision.
+  changed:
+    - Both hierarchical-orchestration seams are now closed (2026-09-15), recorded in the three owning idea documents and work-engine-planned-architecture.md §13 items 12-13. Hierarchical orchestration's remaining prerequisite is proposal formation, not seam resolution.
+    - The impact/refresh vertical's first step is contract formation (form the production operation-contract surface, then review/decide its exact operation count, then seek bounded implementation authorization), not "build the operation" -- the 2026-09-14 revision's "bounded, specified build" framing is corrected.
+    - production-claim-evidence-interface (the impact/refresh vertical's own production predecessor) had its proposal meaning approved and its implementation correspondence with app-server/src/services/claim-evidence acknowledged, but not accepted as satisfying the proposal -- that requires a separate audit against its own "Evidence and acceptance needs" not yet performed.
+  invalidated:
+    - The 2026-09-14 revision's characterization of the impact/refresh vertical as "the one piece its own design still lacks" (singular) and "a bounded, specified build." Ownership was already settled; what was actually missing, and remains missing, is the operation-contract surface itself, of undecided operation count.
+route_changes:
+  priorities:
+    - Form the production operation-contract surface for durable impact nomination and refresh-episode admission (request shape, authority checks, idempotency identity, publication semantics, persistence transition, result/failure vocabulary), leaving its exact operation count to be discovered rather than presumed, before other claim-evidence-dependent residues. Its EvidenceAnchorObserver family, AnchorObservation contract, and shadow observations remain independently buildable now and do not need to wait.
+    - Form hierarchical orchestration into an actual proposal -- its two blocking seams are resolved (2026-09-15); this is no longer gated on seam resolution.
+    - Treat the queue's other eleven accepted residues, and production-claim-evidence-interface's undecided acceptance audit, as queued, not urgent, until capacity actually increases.
+  dependencies:
+    - evidence-anchor-observation-and-impact-nomination.md's own §6 distinguishes what is blocked from what is not: the production anchor registry and durable ImpactNomination records are blocked on the operation-contract surface landing; the observer family and shadow/report-only observation are not.
+    - Items 5 (readiness contract) and 6 (comparison-contract mechanism) both treat claim-evidence freshness as an input; the same surface strengthens both once formed and built.
+    - Hierarchical orchestration reuses workspace-coordination's fencing (already implemented) for cross-branch resource admission; that dependency remains satisfied and is unaffected by the seam closures.
+  newly_important:
+    - The distinction between "proposal meaning approved" and "implementation authorized" (used throughout the claim-maintenance-and-reliance-propagation-reconciliation.md decision) is the same two-tier mechanism the 2026-09-14 revision already named for reconciliation-queue residues -- it now applies to this evidence-lineage proposal family too, not only the root-idea reconciliation queue.
+  deferred:
+    - The eleven reconciled residues, and production-claim-evidence-interface's acceptance audit (item C of its own four-way decision split), until the operation-contract surface and hierarchical-orchestration proposal formation are underway.
+recommended_campaign:
+  disposition: none
+  objective: null
+  work_source: null
+  reason: The operation-contract surface still needs forming (and its own decision on operation count) before implementation can be authorized; hierarchical orchestration still needs proposal formation now that its seams are closed. Neither is yet a bounded packet a campaign could execute against.
+open_uncertainties:
+  - Exact scope, operation count, and evidence requirements for the impact-nomination/refresh-episode operation-contract surface -- deliberately not presumed to be one operation.
+  - Whether production-claim-evidence-interface's built implementation satisfies its own "Evidence and acceptance needs" (proposal.md) closely enough for a defensible retrospective acceptance decision, or whether the audit will surface material gaps.
+  - Whether hierarchical orchestration should be formed into a proposal immediately, now that its seams are closed, or wait for the impact/refresh vertical's contract-formation step to land first.
+  - Actual Pro 20x availability, usable capacity, and timing -- unchanged since 2026-09-14.
+authority_required:
+  - Forming the operation-contract surface and deciding its exact operation count is not authorized by this handoff -- it names the next bounded unit of work, not who performs it or under what authority.
+  - The item-by-item audit of production-claim-evidence-interface against its own acceptance needs is not authorized or scheduled by this handoff.
+revisit_when:
+  - The operation-contract surface is formed and its operation count decided, unblocking bounded implementation-authorization requests.
+  - Hierarchical orchestration is formed into an actual proposal.
+  - The production-claim-evidence-interface acceptance audit is performed, resolving item C of its decision split one way or the other.
+  - Actual Pro 20x capacity and usable throughput are confirmed, changing the urgency of the eleven secondary residues.
 ```
