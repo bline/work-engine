@@ -641,8 +641,9 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 21. Can the proposed abstraction be demonstrated across one non-software domain without adding domain-specific rules to the projection mechanism?
 22. **Partially answered, not fully reconciled.** Checked directly: `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing `Preplanner/Orchestrator/Branch planner/Branch plan/Supervisor/Builder` hierarchy does already own semantic planning topology, and its §3/§7/§12 already separate that from execution realization and already have a working topology-conflict/replanning route — Part 13 now treats `auto-org` as the compilation layer underneath that hierarchy, not a competing one, and has been rewritten accordingly. What remains unchecked: whether this reframing survives a full, formal reconciliation pass against that document's complete text (not just the sections read so far), and whether any other section of it already anticipates organizational compilation in some form this idea hasn't found yet.
 23. Does that document's own branch-plan concept (§6) already anticipate being realized by more than one execution vantage, or does it implicitly assume one supervisor per branch with no further compiled decomposition beneath it? Part 13.8's recursion depends on the answer, and this was not checked in the sections read so far.
-24. What exactly must a hierarchical plan expose (per Part 13.10's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored — does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carry enough of this list, would it need extending, and does the current planning/Plan-IR architecture already carry any of this independently?
+24. What exactly must a hierarchical plan expose (per Part 13.11's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored — does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carry enough of this list, would it need extending, and does the current planning/Plan-IR architecture already carry any of this independently?
 25. **Partially answered.** `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §12 route is already explicitly headed "Branch planner / supervisor" — a supervisor discovering a topology conflict mid-execution is already an anticipated source, not something Part 13.5 needs to extend. What's still unchecked: whether the route's "current execution evidence" input already accommodates the specific shape of evidence an organizational-*realization* discovery would produce (e.g., "these two obligations turned out to share state" or "a capability I need doesn't exist"), or whether that's a narrower evidence class than what the route was designed around.
+26. How much freedom does organizational-realization authority actually have to repartition accepted semantic obligations before it becomes a planning transformation in disguise (Part 13.9)? Grouping and separating whole accepted obligations along their own existing boundaries is clearly organizational-realization territory; a realization that cuts *across* an obligation's own internal boundaries (splitting one obligation's work between two vantages, or merging parts of two different obligations into one vantage) is not yet placed. Part 13.9 states a candidate boundary (group/separate/assign vantages, never alter semantics/dependencies/create/eliminate obligations) but does not adopt it as final, and does not decide whether cross-cutting realizations should ever be permitted at all.
 
 ---
 
@@ -696,12 +697,12 @@ BRANCH PLANNER[A]   BRANCH PLANNER[B]
     v                    v
 accepted branch plan A   accepted branch plan B
     v                    v
-organizational compilation (auto-org's own contribution starts here)
+organizational compilation (topology-realization authority begins here)
     v                    v
 SUPERVISOR[A]        SUPERVISOR[B]
 ```
 
-If a branch plan is already sufficiently concrete, the branch-planning stage may be trivial or already complete and the supervisor begins immediately — nothing here requires every layer to be materially deliberated. Once an accepted branch plan exists, the orchestrator can mechanically derive enough from its declared subject, dependencies, expected consequence, and constraints to instantiate a supervisor contract:
+The branch-planning obligation may already be satisfied by an accepted artifact, in which case no new branch-planner inference is required and the supervisor begins immediately — no inference needed is not the same as no owning transition existing; the branch-planning layer still ran, its output was just already sufficient. Once an accepted branch plan exists, the orchestrator can mechanically derive enough from its declared subject, dependencies, expected consequence, and constraints to instantiate a supervisor contract:
 
 ```text
 accepted branch plan A: subject=A, dependencies=[...], consequence=[...], constraints=[...]
@@ -714,28 +715,33 @@ The contract is a compiled consequence of the accepted plan's own declared struc
 
 ### 13.4 Role formation as a bounded reconnaissance phase — scoped to realization, not to replanning
 
-A newly instantiated supervisor need not begin executing immediately. It can be given a bounded formation phase first, but what it may conclude during that phase is bounded by the semantic/execution distinction in 13.2:
+A newly instantiated supervisor need not begin executing immediately. It can be given a bounded formation phase first, but what it may conclude during that phase is bounded by the semantic/execution distinction in 13.2 — and by a second distinction that matters just as much: **gathering reconnaissance evidence is not itself an organizational decision.** The supervisor accumulates evidence in its own retained context; per Part 5.2's own three-level model, it is still the topology service that determines, from that evidence, whether an organizational-decision surface becomes active at all — the supervisor resolves only the irreducible semantic remainder, if and when one exists, not a standing responsibility to reason about topology throughout formation:
 
 ```text
 instantiate Supervisor[A], given accepted branch plan A (obligations A1, A2, A3; A1->A2; A3 independent)
         v
 branch-local reconnaissance against real repository/runtime evidence
         v
+topology service derives evidence from this reconnaissance; determines whether
+an organizational-decision surface is warranted (per Part 5.2) -- not yet the
+supervisor's own judgment
+        v
         +-- accepted plan still holds:                  +-- accepted plan is falsified:
         |   A1+A2 need one retained context,             |   A3 is not actually independent --
         |   A3 can live in a separate vantage             |   it creates a new A3->A1 dependency
         |                                                  |
         v                                                  v
-   organizational realization judgment                nominate topology conflict
-   (auto-org's own authority)                          (per hierarchical-planning-and-multi-
-        v                                                supervisor-orchestration.md §12 --
-   admit child topology:                                see 13.6 below)
+   organizational-realization authority                nominate topology conflict
+   resolves the surface (JIT, event-scoped,             (per hierarchical-planning-and-multi-
+   per 13.12 -- not a standing responsibility)           supervisor-orchestration.md §12 --
+        v                                                see 13.6 below)
+   admit child topology:
    Supervisor[A] -> Builder[A1+A2], Builder[A3]
         v
    same supervisor continues executing A
 ```
 
-The left branch has not changed the plan — A1, A2, and A3 still exist, their dependencies and integration contract are unchanged, only *how* to realize them has been decided. The right branch is not a realization question at all; it is evidence that the accepted semantic structure itself is wrong, and the supervisor's only lawful move is to nominate that discovery through the existing conflict route, not to silently repair it by inventing a new semantic topology of its own. A supervisor that "decides how A should decompose" in the left sense is doing auto-org's own job; a supervisor that does so in the right sense has quietly become an unaccountable branch planner — the exact failure mode `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own ownership boundaries already exist to prevent.
+The left branch has not changed the plan — A1, A2, and A3 still exist, their dependencies and integration contract are unchanged, only *how* to realize them has been decided. The right branch is not a realization question at all; it is evidence that the accepted semantic structure itself is wrong, and the supervisor's only lawful move is to nominate that discovery through the existing conflict route, not to silently repair it by inventing a new semantic topology of its own. Resolving the left branch is an exercise of **organizational-realization authority** — a domain of authority that exists independently of any policy mode; a supervisor that instead resolves the right branch on its own has quietly become an unaccountable branch planner — the exact failure mode `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own ownership boundaries already exist to prevent.
 
 ### 13.5 Two kinds of lowering, never confused
 
@@ -769,7 +775,9 @@ This is the corrected shape of recursion: organizational compilation lowers an a
 planner (preplanner / branch planner):
     may change semantic work topology
 
-organizational compiler / topology service (auto-org):
+organizational compiler / topology service
+    (the mechanism auto-org's policy modes govern -- see 13.16;
+     "auto-org" names a mode over this authority, not the authority itself):
     may derive lawful execution organization from an accepted semantic topology
 
 supervisor (or any realized vantage):
@@ -778,7 +786,7 @@ supervisor (or any realized vantage):
     may NOT silently redefine the topology itself
 ```
 
-This preserves `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing architecture rather than superseding it, and prevents auto-org from turning supervisors into unaccountable local managers who accumulate planning authority just because they are closest to the evidence — precisely the failure mode that architecture's own ownership boundaries (§3, §7, §12) were built to avoid.
+This preserves `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing architecture rather than superseding it, and prevents the organizational-compiler layer from turning supervisors into unaccountable local managers who accumulate planning authority just because they are closest to the evidence — precisely the failure mode that architecture's own ownership boundaries (§3, §7, §12) were built to avoid.
 
 ### 13.7 The same retained context performs both reconnaissance and execution
 
@@ -818,7 +826,38 @@ plan -> orchestrator -> branch planners produce accepted branch plans
 
 This is **recursive organizational compilation**, triggered by locally-discovered evidence at each layer and always bounded by whatever semantic structure is currently accepted at that layer — not recursive agent spawning, and not recursive planning authority, either of which would collapse the distinction Part 13.2 depends on.
 
-### 13.9 Authority attenuates down the tree; depth never creates more of it
+### 13.9 How much freedom does organizational compilation actually have?
+
+13.8's example (`Builder[A1+A2]`, `Builder[A3]`) groups and separates accepted obligations along their own existing boundaries — clean. But nothing said so far rules out a realization that cuts *across* those boundaries instead of merely grouping or separating them:
+
+```text
+still grouping/separating (clean):
+    Builder X owns A1 + A2
+    Builder Y owns A3
+
+cutting across (a real, uncatalogued question):
+    Builder X owns part of A1 and part of A2
+    Builder Y owns the remaining parts of A1 and A2
+```
+
+The second shape may still be a legitimate realization choice, but it is no longer obviously just "how many vantages realize this work" — it starts to look like it is repartitioning the semantic obligations themselves, which is planning authority's territory, not organizational-realization authority's. This document does not resolve where the line sits. A safe initial boundary, stated but not adopted as final:
+
+```text
+organizational-realization authority may:
+    group accepted obligations under one vantage
+    separate accepted obligations into distinct vantages
+    assign capabilities and contexts to those vantages
+
+organizational-realization authority may NOT:
+    alter what an accepted obligation means
+    alter accepted dependency relations between obligations
+    create new semantic obligations
+    eliminate accepted obligations
+```
+
+Under that boundary, cross-cutting realizations (splitting a single obligation's own internal work across more than one vantage) would fall outside organizational-realization authority entirely, and would need its own explicit treatment — deferred to Open Question 26, not decided here.
+
+### 13.10 Authority attenuates down the tree; depth never creates more of it
 
 Part 2.4's invariant (`child authority ⊆ delegable(parent authority)`) applies recursively without modification:
 
@@ -834,7 +873,7 @@ Builder[A-core]
 
 New organizational depth partitions existing authority into increasingly local vantages; it never manufactures new authority. Nondelegable surfaces stay wherever they are actually owned, at whatever depth that happens to be — depth is not itself a claim to authority.
 
-### 13.10 What this implies a hierarchical plan needs to expose
+### 13.11 What this implies a hierarchical plan needs to expose
 
 Not `spawn 3 supervisors, spawn 7 builders`, but organizationally-relevant semantics per workstream, from which the organization is *compiled* rather than *authored*:
 
@@ -846,7 +885,7 @@ integration boundary, known continuity constraints
 
 The plan describes the semantic structure of the work; the organization is a derived consequence of that structure, not a separate thing the plan author must also specify by hand. Whether `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carries enough of this list, or would need to be extended, is not decided here — see Open Question 24.
 
-### 13.11 This composes with event-scoped JIT organizational reasoning exactly as already designed
+### 13.12 This composes with event-scoped JIT organizational reasoning exactly as already designed
 
 Each supervisor runs normally, without permanently carrying auto-org machinery (per Part 2.7). During its formation phase, if the topology service's observer-derived evidence makes an organizational-realization question material — never a question about whether the accepted plan itself is correct — a JIT decision surface is temporarily injected:
 
@@ -860,7 +899,7 @@ Supervisor[A]'s normal context
 
 resolving a narrow question — does this branch require one retained implementation vantage or several, and why — after which the result persists, the temporary skill is removed, and the supervisor proceeds to steady-state supervision. Nothing about this requires a role to carry organizational-decision doctrine permanently, and nothing about it authorizes the same JIT surface to also judge whether the plan itself should change — that question, per 13.5, has its own separate, already-existing route.
 
-### 13.12 Role formation as a named phase, precisely scoped
+### 13.13 Role formation as a named phase, precisely scoped
 
 ```text
 ROLE FORMATION
@@ -881,15 +920,15 @@ ROLE EXECUTION
 
 "Provisional" describes only the role's *downstream execution organization* — not its own authority, which is real and non-provisional from the moment of instantiation, and not the semantic plan it was instantiated to realize, which the role has no authority to revise itself. Supervisor[A] already owns supervising A the instant it exists; what remains undecided is only how A's own accepted obligations should be realized.
 
-### 13.13 The natural stopping condition
+### 13.14 The natural stopping condition
 
 No role should recurse automatically merely "to see what's there" — that is organizational recursion for its own sake, and this document names it explicitly as something to avoid. Recursion should trigger only when evidence establishes genuine separation pressure, reusing the exact generative criterion already stated in Part 2.5: create another vantage only when a stable semantic boundary lets the resulting contexts know materially less while preserving or improving the required consequence. The resulting fixed point:
 
 > No unresolved obligation benefits from another legitimate vantage.
 
-At that point, decomposition stops — not because of a depth limit, but because no further split would be justified by the criterion itself.
+At that point, recursive organizational compilation stops — not because of a depth limit, but because no further split of the *execution realization* (never the accepted semantic obligations themselves) would be justified by the criterion itself.
 
-### 13.14 The full picture
+### 13.15 The full picture
 
 ```text
                        ROOT PLAN
@@ -903,7 +942,7 @@ At that point, decomposition stops — not because of a depth limit, but because
              v                           v
       accepted branch plan A     accepted branch plan B
              v                           v
-      organizational compilation (auto-org)
+      organizational compilation (topology-realization authority)
              v                           v
        SUPERVISOR[A]               SUPERVISOR[B]
              v                           v
@@ -921,7 +960,7 @@ At that point, decomposition stops — not because of a depth limit, but because
 
 resting throughout on the shared substrate already established in Parts 4, 5, and 7: Context Observer, authority state, run evidence, plan state, ExecutionEnvelope revisions, transition fencing, context lifecycle, capability resolution. The orchestrator and branch planners stay within `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own already-designed roles; auto-org supplies only the compilation step between an accepted plan layer and the execution organization that realizes it.
 
-### 13.15 `auto-org` is a policy mode, not a second architecture
+### 13.16 `auto-org` is a policy mode, not a second architecture
 
 Extending Part 6's organizational-dynamics-as-policy framing directly, rather than introducing new machinery:
 
@@ -934,7 +973,7 @@ organization_mode: auto               recursive organizational compilation where
 
 Same underlying machinery in every mode; no second architecture per mode; a fixed organization is simply the case where the transition set is constrained to `∅`, exactly as Part 6 already establishes for the non-recursive case. None of these modes touch semantic planning authority — they only vary how much of the execution organization beneath an accepted plan gets compiled versus authored.
 
-### 13.16 The operational payoff, restated precisely
+### 13.17 The operational payoff, restated precisely
 
 The genuine novelty here is not a new orchestration shape — `hierarchical-planning-and-multi-supervisor-orchestration.md` likely already has the shape. The novelty is a **missing compilation layer between hierarchical planning and hierarchical execution**:
 
