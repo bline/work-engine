@@ -146,27 +146,30 @@ blocked on the operation-contract surface landing
     durable ImpactNomination records
 ```
 
-**Revised 2026-09-15** (Sol's review of
+**Revised 2026-09-15, twice.** First (Sol's review of
 [`claim-maintenance-and-reliance-propagation-reconciliation.md`](claim-maintenance-and-reliance-propagation-reconciliation.md)):
-this priority is not yet "a bounded, specified build," and should not be
-described that way. That reconciliation, now decided, found semantic
+this priority was not yet "a bounded, specified build," and should not have
+been described that way. That reconciliation, decided, found semantic
 ownership of impact nomination, refresh, reliance, obligations, delivery,
 and recovery already settled under claim-evidence/claim-maintenance — but
 the concrete production operation-contract surface (request shape,
 authority checks, idempotency identity, publication semantics, persistence
-transition, result/failure vocabulary) remains unformed, and is deliberately
-left open as to whether it is one operation, two, or a small family sharing
-a transition substrate (`semantic-model.md` gives impact nominations and
-refresh episodes separate stable identities and lifecycles — not the same
-record under two names). The first step is contract *formation*, not
-implementation:
+transition, result/failure vocabulary) remained unformed. Second (this
+revision, after six review rounds):
+[`operation-contract-surface.md`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md)
+**passed on its sixth draft.** It resolves into three operations
+(`nominate_impact`, `open_refresh_episode`, `publish_refresh_judgment`,
+discovered via a decomposition test rather than presumed), each verified
+against six review rounds covering causality, atomicity, nomination
+identity, episode fencing, persistence, and scope. The generic contract
+surface is closed. The updated chain:
 
 ```text
-form the production operation-contract surface
+form the production operation-contract surface     -- DONE, PASSED
         |
         v
-review / decide the exact operation(s) it resolves into
-        |
+form profile-owned refresh policies                -- next dependency,
+        |                                              not yet done
         v
 bounded implementation authorization
         |
@@ -177,14 +180,30 @@ build
 acceptance.md's full evidence bar (unaffected by any of the above)
 ```
 
+What "form profile-owned refresh policies" means concretely: the passed
+contract defines an extension point,
+`refresh_policy(profile) -> {branching_permitted, proposition_equivalent}`,
+but deliberately does not populate it for any of the three existing profiles
+(`proposal-research-v1`, `revision-bound-review-finding-v1`,
+`production-path-v1`) — that is domain meaning, not generic claim-evidence
+meaning, and belongs to whoever owns each profile. No builder can truthfully
+implement a `retained_unchanged` judgment for a real profile until its
+`proposition_equivalent` rule exists; none should be inferred from field
+names. A legitimate staging option, named but not decided: a first
+implementation slice (generic substrate plus one concrete non-branching
+profile's policy and its own vertical tests) is legitimate Route-B-consistent
+work, but would not itself satisfy the proposal's acceptance bar, which
+requires truthful coverage across both initial domain profiles plus the full
+adversarial lifecycle matrix.
+
 This sharpens the scheduling argument rather than weakening it: there is
 real, parallel work available on the observer/registry side right now
-(above), independent of where the contract-formation step lands. The same
+(above), independent of where profile-policy formation lands. The same
 operation-contract-surface gap also sits underneath the readiness contract
 (item 5) and the comparison-contract mechanism (item 6) treating freshness
-as an input. Forming this one surface remains disproportionately
-high-leverage relative to its size, but "high-leverage" describes the
-contract-formation step now, not a completed design ready to build from.
+as an input. The contract-formation step that was disproportionately
+high-leverage is now done; profile-policy formation is the next
+high-leverage step, not a completed design ready to build from.
 
 **Hierarchical planning: what stood in the way, now resolved.** Unlike the
 impact/refresh vertical, this was never a small missing piece — it is a
@@ -208,10 +227,11 @@ authority-collapse risk this paragraph originally warned about is resolved,
 not merely deferred.
 
 **Sequencing implication.** Neither priority is blocked on the other, so
-they can proceed in parallel: the impact/refresh vertical's next step is
-contract *formation* (per the diagram above, not a specified build);
-hierarchical planning's blocking seams are resolved, and its next step is
-proposal formation. Neither priority is itself one of the reconciliation
+they can proceed in parallel: the impact/refresh vertical's contract surface
+is now passed, and its next step is profile-owned refresh-policy formation
+(per the diagram above), not a specified build; hierarchical planning's
+blocking seams are resolved, and its next step is proposal formation.
+Neither priority is itself one of the reconciliation
 queue's eleven queue items with a surviving residue (per the corrected
 accounting in "Legacy ideas" above — twelve queue items, one with no
 residue, eleven with one) — all eleven remain real, accepted, authorized
@@ -631,50 +651,51 @@ first step was characterized (see the "Priority" section above, and
 schema_version: 1
 strategic_objective: Complete the claim-evidence impact/refresh vertical and resolve hierarchical planning/workflow's open seams as basic working blocks, so expanded Codex capacity can be spent on ready, well-scoped parallel work rather than bottlenecked by a single sequential thread or missing shared substrate
 evidence_cutoff:
-  roadmap_revision: "b14ad80540828cb1fb181c569ad973f7cdceab80:app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md"
-  repository_revision: "b14ad80540828cb1fb181c569ad973f7cdceab80"
+  roadmap_revision: "7815e74a63b164c20859a4b541360c44efb96a6a:proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md"
+  repository_revision: "7815e74a63b164c20859a4b541360c44efb96a6a"
   campaign_terminals: []
 continuity: retained
 verdict: revise
-current_rationale: Both named priorities advanced, but neither is now a specified build ready to start. Hierarchical orchestration's two blocking seams (routing.vs.admission, decision-gated.vs.hierarchical-orchestration) are closed as of 2026-09-15 -- routing resolved into three stages (contract characterization / executor-class routing-acceptance / runtime resolution-admission) after one reopening and correction, not the two originally proposed; the branch-plan seam resolved with the branch plan strictly upstream of, and realized through, decision-gated compilation's decisions and contracts. Separately, claim-maintenance-and-reliance-propagation-reconciliation.md (reviewed and corrected twice by Sol) found the impact/refresh vertical's own next step was mischaracterized in the 2026-09-14 revision as "a bounded, specified build." It is not: semantic ownership of impact nomination, refresh, reliance, obligations, delivery, and recovery is settled, but the concrete production operation-contract surface is unformed, and deliberately left open as to whether it resolves into one operation, two, or a small family -- claim-maintenance's own semantic-model.md gives nominations and refresh episodes separate stable identities and lifecycles. Both proposals in that reconciliation (claim-maintenance-and-reliance-propagation, production-claim-evidence-interface) had their proposal meaning approved this session, with implementation_authorized false on both.
+current_rationale: Both named priorities advanced further since this revision was first written. Hierarchical orchestration's two blocking seams are closed (2026-09-15) -- routing resolved into three stages after one reopening and correction; the branch-plan seam resolved with the branch plan strictly upstream of decision-gated compilation's decisions and contracts. Separately, the impact/refresh vertical's operation-contract surface -- named as this revision's own next step -- is now formed and passed after six review rounds (operation-contract-surface.md): three operations (nominate_impact, open_refresh_episode, publish_refresh_judgment), discovered via a decomposition test rather than presumed, with causality, atomicity, nomination identity, episode fencing, persistence, and scope all verified against the approved semantic model. The generic contract surface is closed. What remains before implementation is domain-profile-owned work outside that contract's own scope: populating refresh_policy(profile) -> {branching_permitted, proposition_equivalent} for proposal-research-v1, revision-bound-review-finding-v1, and production-path-v1 -- domain meaning, not generic claim-evidence meaning. implementation_authorized remains false on both evidence-lineage proposals in this family.
 assumptions:
   confirmed:
     - claim-evidence's core substrate remains real, implemented code; nothing in this revision changes that.
     - The eleven reconciliation-queue residues secondary to these two priorities remain accepted, authorized, and correctly deprioritized until capacity increases -- unchanged by this revision.
   changed:
     - Both hierarchical-orchestration seams are now closed (2026-09-15), recorded in the three owning idea documents and work-engine-planned-architecture.md §13 items 12-13. Hierarchical orchestration's remaining prerequisite is proposal formation, not seam resolution.
-    - The impact/refresh vertical's first step is contract formation (form the production operation-contract surface, then review/decide its exact operation count, then seek bounded implementation authorization), not "build the operation" -- the 2026-09-14 revision's "bounded, specified build" framing is corrected.
+    - The impact/refresh vertical's operation-contract surface is formed and passed (2026-09-15, sixth draft) -- three operations, not presumed to be one. The vertical's next step is now profile-owned refresh-policy formation, not contract formation; contract formation is done.
     - production-claim-evidence-interface (the impact/refresh vertical's own production predecessor) had its proposal meaning approved and its implementation correspondence with app-server/src/services/claim-evidence acknowledged, but not accepted as satisfying the proposal -- that requires a separate audit against its own "Evidence and acceptance needs" not yet performed.
   invalidated:
-    - The 2026-09-14 revision's characterization of the impact/refresh vertical as "the one piece its own design still lacks" (singular) and "a bounded, specified build." Ownership was already settled; what was actually missing, and remains missing, is the operation-contract surface itself, of undecided operation count.
+    - This revision's own earlier statement that "the impact/refresh vertical's first step is contract formation... then seek bounded implementation authorization" as an open, undone step -- contract formation is now complete and passed; profile-policy formation is the actual next step.
 route_changes:
   priorities:
-    - Form the production operation-contract surface for durable impact nomination and refresh-episode admission (request shape, authority checks, idempotency identity, publication semantics, persistence transition, result/failure vocabulary), leaving its exact operation count to be discovered rather than presumed, before other claim-evidence-dependent residues. Its EvidenceAnchorObserver family, AnchorObservation contract, and shadow observations remain independently buildable now and do not need to wait.
+    - Form profile-owned refresh policies (refresh_policy(profile) -> {branching_permitted, proposition_equivalent}) for the domain profiles this vertical needs -- proposal-research-v1, revision-bound-review-finding-v1, and/or production-path-v1, starting with whichever non-branching profile is cheapest to specify first (this vertical's successor-revision path admits only non-branching profiles). This is domain-owned work: what constitutes "the same proposition" for a given profile is not this contract's decision. Its EvidenceAnchorObserver family, AnchorObservation contract, and shadow observations remain independently buildable now and do not need to wait.
     - Form hierarchical orchestration into an actual proposal -- its two blocking seams are resolved (2026-09-15); this is no longer gated on seam resolution.
     - Treat the queue's other eleven accepted residues, and production-claim-evidence-interface's undecided acceptance audit, as queued, not urgent, until capacity actually increases.
   dependencies:
-    - evidence-anchor-observation-and-impact-nomination.md's own §6 distinguishes what is blocked from what is not: the production anchor registry and durable ImpactNomination records are blocked on the operation-contract surface landing; the observer family and shadow/report-only observation are not.
-    - Items 5 (readiness contract) and 6 (comparison-contract mechanism) both treat claim-evidence freshness as an input; the same surface strengthens both once formed and built.
+    - evidence-anchor-observation-and-impact-nomination.md's own §6 distinguishes what is blocked from what is not: the production anchor registry and durable ImpactNomination records are blocked on the operation-contract surface landing (now passed) and the profile policies it depends on; the observer family and shadow/report-only observation are not.
+    - Items 5 (readiness contract) and 6 (comparison-contract mechanism) both treat claim-evidence freshness as an input; the same surface strengthens both once profile policies are formed and it is built.
+    - A first implementation slice (generic substrate plus one concrete non-branching profile's policy and its own vertical tests) is a legitimate Route-B-consistent step per Sol's own suggested staging, but does not itself satisfy the proposal's acceptance bar, which requires truthful coverage across both initial domain profiles plus the full adversarial lifecycle matrix.
     - Hierarchical orchestration reuses workspace-coordination's fencing (already implemented) for cross-branch resource admission; that dependency remains satisfied and is unaffected by the seam closures.
   newly_important:
-    - The distinction between "proposal meaning approved" and "implementation authorized" (used throughout the claim-maintenance-and-reliance-propagation-reconciliation.md decision) is the same two-tier mechanism the 2026-09-14 revision already named for reconciliation-queue residues -- it now applies to this evidence-lineage proposal family too, not only the root-idea reconciliation queue.
+    - refresh_policy must be part of each domain profile's own versioned contract, not an ambient helper whose semantics could silently change underneath a profile -- named by Sol as a contract-hygiene rule for implementation, consistent with this proposal's own exact-versioned, reconstructable semantic state.
   deferred:
-    - The eleven reconciled residues, and production-claim-evidence-interface's acceptance audit (item C of its own four-way decision split), until the operation-contract surface and hierarchical-orchestration proposal formation are underway.
+    - The eleven reconciled residues, and production-claim-evidence-interface's acceptance audit (item C of its own four-way decision split), until profile-policy formation and hierarchical-orchestration proposal formation are underway.
 recommended_campaign:
   disposition: none
   objective: null
   work_source: null
-  reason: The operation-contract surface still needs forming (and its own decision on operation count) before implementation can be authorized; hierarchical orchestration still needs proposal formation now that its seams are closed. Neither is yet a bounded packet a campaign could execute against.
+  reason: Profile-owned refresh policies still need forming before implementation can be authorized; hierarchical orchestration still needs proposal formation now that its seams are closed. Neither is yet a bounded packet a campaign could execute against, though profile-policy formation is now a substantially smaller unit of work than the operation-contract surface it follows.
 open_uncertainties:
-  - Exact scope, operation count, and evidence requirements for the impact-nomination/refresh-episode operation-contract surface -- deliberately not presumed to be one operation.
+  - Which of the three existing profiles should receive a refresh_policy first, and whether all three are needed before implementation can start on any single vertical slice.
   - Whether production-claim-evidence-interface's built implementation satisfies its own "Evidence and acceptance needs" (proposal.md) closely enough for a defensible retrospective acceptance decision, or whether the audit will surface material gaps.
-  - Whether hierarchical orchestration should be formed into a proposal immediately, now that its seams are closed, or wait for the impact/refresh vertical's contract-formation step to land first.
+  - Whether hierarchical orchestration should be formed into a proposal immediately, now that its seams are closed, or wait for the impact/refresh vertical's profile-policy formation to land first.
   - Actual Pro 20x availability, usable capacity, and timing -- unchanged since 2026-09-14.
 authority_required:
-  - Forming the operation-contract surface and deciding its exact operation count is not authorized by this handoff -- it names the next bounded unit of work, not who performs it or under what authority.
+  - Forming profile-owned refresh policies is not authorized by this handoff -- it names the next bounded unit of work, not who performs it or under what authority.
   - The item-by-item audit of production-claim-evidence-interface against its own acceptance needs is not authorized or scheduled by this handoff.
 revisit_when:
-  - The operation-contract surface is formed and its operation count decided, unblocking bounded implementation-authorization requests.
+  - Profile-owned refresh policies are formed for at least one non-branching profile, unblocking a bounded implementation-authorization request for a first vertical slice.
   - Hierarchical orchestration is formed into an actual proposal.
   - The production-claim-evidence-interface acceptance audit is performed, resolving item C of its decision split one way or the other.
   - Actual Pro 20x capacity and usable throughput are confirmed, changing the urgency of the eleven secondary residues.

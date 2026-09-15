@@ -284,16 +284,21 @@ outcomes §4 restates:
   the episode's own terminal state as a successor to its opened state rather
   than an overwrite, and keeps episode disposition, per-trigger nomination
   resolution, and causal source-event attribution as three separate,
-  non-derived facts). Reviewed five times — every round found real issues,
-  each documented as its own dated entry in that document's own "Revision
-  history" section rather than summarized here. As of round 5: **Sol's
-  disposition is "Architecture: PASS. Three-operation bounded first
-  vertical: PASS. Operation semantics: PASS, except remove the unsupported
-  `changed ⇒ resolved_changed` implication. Implementation readiness:
-  BLOCKED only on making the profile-owned refresh-policy interface
-  concrete, plus the exact sole-head non-branching check"** — all three
-  addressed in the fifth draft, not yet re-reviewed.
-  `implementation_authorized` remains `false`.
+  non-derived facts). Reviewed six times total — five rounds found real
+  issues, each documented as its own dated entry in that document's own
+  "Revision history" section rather than summarized here. **PASSED on the
+  sixth draft (2026-09-15):** "Architecture: PASS. Three-operation bounded
+  first vertical: PASS. Generic operation-contract surface: PASS.
+  Implementation authorization for a real end-to-end vertical: not quite
+  yet — profile formation is now the remaining prerequisite." The generic
+  contract is closed; what remains before implementation is
+  domain-profile-owned work outside this document's own scope — populating
+  `refresh_policy(profile)` for `proposal-research-v1`,
+  `revision-bound-review-finding-v1`, and `production-path-v1` (this
+  vertical's successor-revision path admits only non-branching profiles).
+  `implementation_authorized` remains `false` on both this proposal and
+  `production-claim-evidence-interface` — passing the contract surface does
+  not itself authorize anything.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
   four-way split). Recorded in

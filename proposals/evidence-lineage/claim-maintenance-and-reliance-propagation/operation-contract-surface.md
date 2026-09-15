@@ -2,28 +2,65 @@
 
 ## Status
 
-Design document, not implementation. This is the "closed operation contracts"
-stage of the lowering Sol named when scoping this bounded unit of work:
+**PASSED 2026-09-15, fifth review round.** Sol's disposition: "Architecture:
+PASS. Three-operation bounded first vertical: PASS. Generic operation-
+contract surface: PASS. Implementation authorization for a real end-to-end
+vertical: not quite yet — profile formation is now the remaining
+prerequisite." Design document, not implementation. This was the "closed
+operation contracts" stage of the lowering Sol named when scoping this
+bounded unit of work, now complete:
 
 ```text
 already-approved semantic model
             ↓
 production transition boundaries
             ↓
-closed operation contracts        <- this document
+closed operation contracts        <- this document, PASSED
+            ↓
+profile-owned refresh policies    <- next dependency, not designed here
+            ↓
+implementation authorization
             ↓
 implementation
             ↓
 adversarial acceptance evidence (acceptance.md)
 ```
 
-It does not authorize implementation. `implementation_authorized` remains
-`false` on both
+Passing this document does not authorize implementation.
+`implementation_authorized` remains `false` on both
 [`claim-maintenance-and-reliance-propagation/decision.json`](decision.json)
 and
-[`production-claim-evidence-interface/decision.json`](../production-claim-evidence-interface/decision.json)
-until this design is reviewed and a separate implementation authorization is
-recorded.
+[`production-claim-evidence-interface/decision.json`](../production-claim-evidence-interface/decision.json).
+The remaining semantic work has moved out of this generic service contract
+and into the domain profiles, where it belongs: this design defines
+`refresh_policy(profile) -> {branching_permitted, proposition_equivalent}`
+as an extension point (Operation 3, "Profile-owned refresh policy"), but
+does not populate it for `proposal-research-v1`,
+`revision-bound-review-finding-v1`, or `production-path-v1` — no builder can
+truthfully implement `publish_refresh_judgment(retained_unchanged)` for a
+real profile until that profile has a concrete `proposition_equivalent`
+rule, and none should be inferred from field names. Forming those profile
+policies is the next bounded design unit, not something this document
+performs.
+
+**Contract-hygiene rule for implementation, carried forward from this
+review though it does not block this document's PASS:** `refresh_policy`
+must be part of each domain profile's own versioned contract, not an
+ambient helper whose semantics can silently change underneath
+`proposal-research-v1` or `revision-bound-review-finding-v1`. This proposal
+is built around exact-versioned, reconstructable semantic state; a profile's
+`proposition_equivalent` changing meaning without a version bump would
+violate that same spirit for "what counts as the same proposition," exactly
+as it would for any other profile-owned field.
+
+**A legitimate staging option for implementation, named by Sol, not decided
+here:** the proposal's own acceptance bar requires truthful coverage across
+both initial domain profiles plus the full adversarial lifecycle matrix — a
+single Slice A (generic substrate plus one concrete non-branching profile
+policy and its own vertical tests) would not itself constitute proposal
+acceptance, but is a legitimate, Route-B-consistent first implementation
+step, with Slice B (the second initial profile) and the full adversarial
+matrix following as separately bounded later work.
 
 **Scope.** This covers only impact nomination and refresh-episode admission —
 the segment of the semantic chain
@@ -198,7 +235,27 @@ fields are. (3) The non-branching claim-head check accepted
 non-branching profile is stricter: `current_heads(claim) == {subject_revision}`
 — membership alone would wrongly admit a successor when the store already
 holds multiple heads for reasons unrelated to this episode. Tightened
-accordingly. All three addressed below.
+accordingly. All three addressed in the sixth draft.
+
+**2026-09-15, sixth draft — PASSED.** Sol's disposition: "Architecture:
+PASS. Three-operation bounded first vertical: PASS. Generic operation-
+contract surface: PASS. Implementation authorization for a real end-to-end
+vertical: not quite yet — profile formation is now the remaining
+prerequisite." All three fifth-round items confirmed closed. One contract-
+hygiene rule was named for implementation without blocking this PASS:
+`refresh_policy` must be part of each domain profile's own versioned
+contract, not an ambient helper whose semantics could silently change
+underneath a profile — recorded in this document's Status section. A
+legitimate Slice A/Slice B staging option for implementation was also named,
+not decided: a first slice (generic substrate plus one concrete
+non-branching profile policy and its own vertical tests) is a legitimate
+Route-B-consistent step but would not itself satisfy the proposal's own
+acceptance bar, which requires truthful coverage across both initial domain
+profiles plus the full adversarial lifecycle matrix. Five rounds of real,
+verified corrections across causality, atomicity, identity, fencing,
+persistence, and scope — this is the first draft with no material issues
+found. See the Status section at the top of this document for the passed
+disposition and the remaining dependency chain.
 
 ## Method: discovering the operation count, not presuming it
 
