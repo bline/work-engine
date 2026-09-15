@@ -645,7 +645,7 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 24. What exactly must a hierarchical plan expose (per Part 13.12's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored — does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own branch-plan output (§6) already carry enough of this list, would it need extending, and does the current planning/Plan-IR architecture already carry any of this independently?
 25. **Partially answered.** `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §12 route is already explicitly headed "Branch planner / supervisor" — a supervisor discovering a topology conflict mid-execution is already an anticipated source, not something Part 13.6 needs to extend. What's still unchecked: whether the route's "current execution evidence" input already accommodates the specific shape of evidence an organizational-*realization* discovery would produce (e.g., "these two obligations turned out to share state" or "a capability I need doesn't exist"), or whether that's a narrower evidence class than what the route was designed around.
 26. How much freedom does organizational-realization authority actually have to repartition accepted semantic obligations before it becomes a planning transformation in disguise (Part 13.10)? Grouping and separating whole accepted obligations along their own existing boundaries is clearly organizational-realization territory; a realization that cuts *across* an obligation's own internal boundaries (splitting one obligation's work between two vantages, or merging parts of two different obligations into one vantage) is not yet placed. Part 13.10 states a candidate boundary (group/separate/assign vantages, never alter semantics/dependencies/create/eliminate obligations) but does not adopt it as final, and does not decide whether cross-cutting realizations should ever be permitted at all.
-27. **Named, not started.** Sol proposed a narrow three-part reconciliation pass connecting Part 13.5 to the wider planning and claim-evidence architecture: (a) Planning → claims — what, precisely, a branch plan revision must expose for a `planning-facts-v1` domain profile to materialize claims from it without inventing facts planning didn't already surface; (b) Claims → organizational compilation — whether 13.5's shrunk-reconnaissance diagram is sufficient, or whether organizational-realization authority itself needs a defined way to consult claims during compilation, not only during a supervisor's own reconnaissance; (c) Execution evidence → claims → replanning — whether the reuse chain in 13.5 (evidence contradicts claim → `changed` judgment → topology-conflict nomination → replan → re-derivation) is complete, or whether high-volume execution evidence needs its own batching/throttling discipline before it reaches the topology-conflict route at all. None of the three has been checked against source; this question only records that the pass was proposed and scoped, not that any part of it has been verified.
+27. **Partially answered.** Sol proposed a narrow three-part reconciliation pass connecting Part 13.5 to the wider planning and claim-evidence architecture. (a) **Planning → claims — mostly answered.** `hierarchical-planning-and-multi-supervisor-orchestration.md` §6's own declared branch-plan field list (objective, accepted authority and mutation boundary, evidence cutoff, affected semantic owners, required consequences, and the rest) and §16's naming of "branch-plan revisions" as required durable state together already give a `planning-facts-v1` profile enough structure to project from and a real, revision-producing transition to attach to — no new planning-side machinery needs inventing merely to have something to materialize. Still unchecked: the profile's exact field mapping, and whether every declared branch-plan field is safe to materialize as a claim or only some of them. (b) **Claims → organizational compilation — still open.** 13.5 now describes claims as present by the time a supervisor forms, but does not decide whether organizational-realization authority itself (as opposed to a supervisor's own formation reconnaissance) needs a defined way to consult claims during compilation. (c) **Execution evidence → claims → replanning — mostly answered, with one new requirement surfaced.** The reuse chain is complete in shape (evidence contradicts claim → `changed` judgment → topology-conflict nomination → replan → re-projection under the new revision), but this pass surfaced a requirement 13.5 didn't originally have: branch-plan acceptance and its planning-fact projection must publish as one atomic consequence, exactly the discipline `operation-contract-surface.md`'s own first review round forced onto `publish_refresh_judgment` — this has not been checked against any real implementation, since none exists yet. Whether high-volume execution evidence needs its own batching/throttling discipline before reaching the topology-conflict route remains fully open.
 
 ---
 
@@ -745,30 +745,47 @@ supervisor's own judgment
 
 The left branch has not changed the plan — A1, A2, and A3 still exist, their dependencies and integration contract are unchanged, only *how* to realize them has been decided. The right branch is not a realization question at all; it is evidence that the accepted semantic structure itself is wrong, and the supervisor's only lawful move is to nominate that discovery through the existing conflict route, not to silently repair it by inventing a new semantic topology of its own. Resolving the left branch is an exercise of **organizational-realization authority** — a domain of authority that exists independently of any policy mode; a supervisor that instead resolves the right branch on its own has quietly become an unaccountable branch planner — the exact failure mode `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own ownership boundaries already exist to prevent.
 
-### 13.5 Claims as a materialized starting point for formation, not new reconnaissance cost
+### 13.5 Claims as a lowering consequence of plan publication, not a lazily-populated cache
 
 13.4's reconnaissance phase is bounded by authority, but nothing in it is bounded by *cost* — a newly instantiated supervisor re-derives its evidence from raw repository/runtime state every time, even when some of that evidence was already established, with provenance, during planning itself. Claim-evidence's substrate already exists to hold exactly this kind of thing: a revision-bound, provenance-bearing record of a fact and its consequences, together with a designed mechanism (`nominate_impact` / `open_refresh_episode` / `publish_refresh_judgment`, fully specified in `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md`) for the record to be re-examined and re-resolved without being silently overwritten in place.
 
-The ownership distinction has to be stated precisely, because it is easy to blur: the branch plan is the authoritative source of semantic truth; a claim is never that. A claim is, at most, **a materialization of a fact planning already surfaced, bound to the plan revision that justified it** — cache, not owner. Nothing about consulting or refreshing a claim changes who may change the plan; 13.2's and 13.7's authority rules are completely unaffected by anything in this section. What changes is only how much of 13.4's reconnaissance has to be freshly computed versus already available with citable provenance:
+The ownership distinction has to be stated precisely, because it is easy to blur: the branch plan is the authoritative source of semantic truth; a claim is never that. A claim is, at most, **a materialization of a fact planning already surfaced, bound to the plan revision that justified it** — cache, not owner. Nothing about consulting or refreshing a claim changes who may change the plan; 13.2's and 13.7's authority rules are completely unaffected by anything in this section.
+
+**Corrected framing.** An earlier draft of this section had a newly instantiated supervisor *lazily check* claim-evidence for already-materialized facts, falling back to reconnaissance on a miss. That is weaker than it should be, for a reason this idea's own Part 1 already states as a general principle: *if an authoritative transition already established something, downstream roles should consume its durable consequence rather than reconstruct it.* `hierarchical-planning-and-multi-supervisor-orchestration.md` §16 already names "branch-plan revisions" as required durable state — accepting a branch plan is already an authoritative, revision-producing transition. Materializing planning-fact claims belongs *inside that same transition*, as one of its lowering consequences, not behind a separate opportunistic cache-check a supervisor performs afterward:
 
 ```text
-instantiate Supervisor[A], given accepted branch plan A, revision R
+branch planner produces branch plan; planning authority accepts it -> revision R
         v
-check claim-evidence for facts already materialized against plan revision R
-        v
-        +-- claim found, bound to R, no open refresh episode:            +-- no claim materialized for this fact, or the
-        |   treat as already-established -- fold directly into           |   claim's episode is unresolved, or the claim
-        |   13.4's reconnaissance without re-deriving it                 |   is bound to a superseded revision:
-        |                                                                 |   fall back to branch-local reconnaissance
-        v                                                                 |   exactly as 13.4 already describes
-   irreducible remainder requiring fresh reconnaissance is smaller       v
-        +-----------------------------------------------------------------+
-        v
-   continues into 13.4's own flow unchanged from here: topology service
-   judgment, supervisor's bounded remainder, topology-conflict route
+   (one atomic publication consequence, per the point below)
+        +-------------------------------+
+        |                                |
+        v                                v
+branch-plan durable state           deterministic planning-fact projection
+(§16: orchestration-plan rev,       over R's own declared fields (§6: objective,
+branch-plan revisions, ...)          authority/mutation boundary, evidence cutoff,
+                                      affected semantic owners, required
+                                      consequences, ...)
+        |                                |
+        v                                v
+                      claims bound to R, already present
+                                |
+                                v
+        instantiate Supervisor[A], given accepted branch plan A, revision R
+                                |
+                                v
+        13.4's reconnaissance starts with these claims already given --
+        not a lookup that might miss, a durable consequence of acceptance
+                                |
+                                v
+        irreducible remainder needing fresh reconnaissance is only whatever
+        R's own declared fields could not already settle
 ```
 
-**This is not yet available machinery — it is proposed work.** `app-server/src/services/claim-evidence/contract.mjs` currently defines exactly three domain profiles (`proposal-research-v1`, `revision-bound-review-finding-v1`, `production-path-v1`); none of them materializes planning-derived facts. A domain profile for this (call it, provisionally, `planning-facts-v1`) does not exist and would need to be designed and reconciled against the planning architecture before any of this diagram is real.
+**This must be one atomic publication, not two sequenced ones — the exact failure mode `operation-contract-surface.md`'s own first review round caught, one layer up.** That review rejected a design where `publish_refresh_judgment` referenced an already-published revision from a separate, earlier call, because it left a crash window: an authoritative revision with no admitted judgment explaining it. The identical hazard exists here in both directions — a branch plan accepted with no claims yet materialized, or claims materialized bound to a revision `R` that acceptance itself later fails to admit — and the fix is the same one Sol supplied there: reuse the underlying construction mechanics (`create_claim`/`makeRevision`-shaped operations, one per derived fact) *inside* the branch-plan-acceptance transition's own atomicity boundary, not composed afterward through separately-sequenced public calls. Nothing about this requires a new kind of atomicity mechanism — it requires applying the one already proven in Operation 3 to a second authoritative transition.
+
+**Who is the domain owner.** Planning authority itself — specifically whichever actor's acceptance transition publishes the branch plan — is the natural `open_refresh_episode`/`publish_refresh_judgment` domain-owner class for a `planning-facts-v1` profile, structurally the same separation `operation-contract-surface.md` already enforces between the evidence-producer class (`nominate_impact`) and the domain-owner class. This keeps claim materialization inside the authority that already owns the fact, rather than granting a new, separate observer authority over planning-derived content.
+
+**This is not yet available machinery — it is proposed work.** `app-server/src/services/claim-evidence/contract.mjs` currently defines exactly three domain profiles (`proposal-research-v1`, `revision-bound-review-finding-v1`, `production-path-v1`); none of them materializes planning-derived facts. A `planning-facts-v1` profile does not exist and would need to be designed and reconciled against the planning architecture before any of this diagram is real. What already exists and needs no further verification: `hierarchical-planning-and-multi-supervisor-orchestration.md` §6's own declared branch-plan field list (objective, accepted authority and mutation boundary, evidence cutoff, affected semantic owners, required consequences, and the rest) is already a real, sufficiently structured source to project *from* — the planning side of this pass does not need new planning machinery invented merely to have something to materialize.
 
 Sol's proposal described claims moving between "challenged," "stale," and "invalidated" states. Those are not a third vocabulary alongside the one `operation-contract-surface.md` already fixed after six review rounds; they describe positions within it, and should be named that way rather than informally:
 
@@ -777,6 +794,16 @@ Sol's proposal described claims moving between "challenged," "stale," and "inval
 - **"invalidated"** maps to the episode-level disposition `changed` (equivalently, `resolved_changed` at the nomination level): a `publish_refresh_judgment` resolved that the materialized fact no longer holds under current evidence.
 
 Mapping Sol's language onto the exact fixed vocabulary matters for the same reason it mattered every time in the operation-contract-surface reviews: a fourth informal vocabulary layered on top of two already-reconciled ones is exactly the kind of drift that produces silent conflation later.
+
+**The currency check needs a third term, and one honest limit stated alongside it.** "No open refresh episode against the claim" is necessary but not sufficient — it only proves nothing *opened* has gone unresolved; it says nothing about a nomination that has been published (`nominate_impact` is itself a caller-asserted, append-only act, per Operation 1) but not yet incorporated into any episode's `reopened_by`. The correct currency condition is:
+
+```text
+claim's current revision is bound to the plan's current accepted revision R
++ no open (unresolved) refresh episode against that revision
++ no pending nomination against that revision absent from every episode's reopened_by
+```
+
+**What this cannot ever prove, structurally, not as a gap to close:** absence of a nomination that *should* exist but does not yet, because no evidence-producer has observed and asserted it. `nominate_impact` is how real-world impact becomes visible to this substrate at all; a currency check can only assert "no *known* unprocessed impact," never "no unprocessed impact." This is a property of any evidence-producer-driven design, not a defect in this one, and claiming otherwise would overstate what the check supports — the same discipline `operation-contract-surface.md` applied to its own `LINEAGE_RELATIONSHIPS` overclaim. A fourth conjunct — some profile-owned staleness bound (e.g., "evidence older than N revisions is presumptively stale even absent an explicit episode") — is a plausible future extension, symmetric with `refresh_policy`'s own profile-owned extension point, but is not proposed here; no profile currently defines one, and inventing it would be exactly the unsupported connective tissue this session's discipline exists to avoid.
 
 The reverse direction — execution evidence contradicting a plan-derived claim — reuses the same three operations, and terminates the same way 13.4's right-hand branch already does, not by inventing new authority for claim-evidence:
 
@@ -796,10 +823,11 @@ same `hierarchical-planning-and-multi-supervisor-orchestration.md` §12 chain
         v
 planning authority revises the branch plan -> new accepted revision R'
         v
-claims bound to R are not mutated in place; facts are re-derived fresh
-against R', newly bound to R' -- the "bound to the revision that justified it"
-invariant is what keeps a stale claim from silently outliving the plan that
-produced it
+claims bound to R are not mutated in place; the replan's own acceptance
+transition, producing R', projects fresh claims bound to R', per the
+atomic-publication requirement above -- the "bound to the revision that
+justified it" invariant is what keeps a stale claim from silently outliving
+the plan that produced it
 ```
 
 A `changed` judgment on a claim is a fact about the claim's own currency, exactly as `superseded` and `resolved_changed` already are; none of the three is ever itself the mechanism that rewrites the branch plan. That authority still belongs only to the planning hierarchy, exercised only through the conflict route 13.4 and 13.6 already describe. This section adds a cheaper way to arrive at 13.4's reconnaissance evidence and a reused mechanism for keeping that evidence current — it adds no new authority anywhere in the tree.
