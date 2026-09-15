@@ -274,7 +274,14 @@ outcomes §4 restates:
   refresh-episode lifecycle admission — deliberately left open whether that
   surface turns out to be one operation, two, or a small family — without
   revisiting the already-settled semantic architecture. `acceptance.md`'s
-  full adversarial evidence matrix remains retained and unmet.
+  full adversarial evidence matrix remains retained and unmet. **2026-09-15
+  addendum:** that design is now drafted, per Sol's decomposition test
+  applied to the actual semantic chain rather than presumed — see
+  [`operation-contract-surface.md`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/operation-contract-surface.md)
+  (three operations: `nominate_impact`, `open_refresh_episode`,
+  `publish_refresh_judgment`, reusing the existing `publish_revision`/
+  `publish_lineage` operations for any successor revision). Not yet
+  reviewed; `implementation_authorized` remains `false`.
 - **`production-claim-evidence-interface`**: proposal meaning approved and
   implementation correspondence acknowledged (items A and B of §4's
   four-way split). Recorded in

@@ -4,8 +4,9 @@
 
 - Proposal ID: `work-engine.claim-maintenance-and-reliance-propagation`
 - Family ID: `work-engine.evidence-lineage`
-- State: formed; probable split ownership across shared claim semantics, domain
-  workflows, and general delivery; not evaluated, prioritized, accepted, or
+- State: **decided 2026-09-15** — proposal meaning approved (see
+  [`decision.json`](decision.json)); probable split ownership across shared
+  claim semantics, domain workflows, and general delivery; not yet
   authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
@@ -18,6 +19,12 @@ current meaning. Supporting artifacts elaborate its
 [relationships](relationships.md). The verified current-provider observations
 are retained separately as
 [Codebase Memory feasibility evidence](evidence/codebase-memory-feasibility.md).
+The production **operation-contract surface** for impact nomination and
+refresh-episode admission — the bounded next unit of work named in
+[`app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md`](../../../app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md) —
+is designed in
+[`operation-contract-surface.md`](operation-contract-surface.md), not yet
+reviewed or implementation-authorized.
 
 The user authorized formation of both production phases with the stated intent
 to complete the entire claim-lineage consequence. This proposal preserves the
