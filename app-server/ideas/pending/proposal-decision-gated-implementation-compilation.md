@@ -382,7 +382,7 @@ contract characterization (this document: the implementation compiler and
     any specific slice.)
             |
             v
-executor-class routing decision (the supervisor / the routing-policy
+executor-class routing / acceptance (the supervisor / the routing-policy
     authority named in Stage 6 — not this document alone: given the
     compiler's supported-class assessment plus historical outcomes, cost,
     and policy, the supervisor may nominate a class; that nomination

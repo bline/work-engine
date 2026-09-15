@@ -961,13 +961,18 @@ two —
 compiler + plan-conformance gate: which executor classes are semantically
 supported by a compiled contract, with what evidence-backed readiness; plan
 readiness only, no slice authority);
-(2) **executor-class routing decision** (the supervisor / routing-policy
+(2) **executor-class routing / acceptance** (the supervisor / routing-policy
 authority named in decision-gated-compilation's own Stage 6: which supported
-class this slice actually uses, given evidence, cost, and policy — advisory
-until accepted for the slice);
+class this slice actually uses, given evidence, cost, and policy — a
+nomination, advisory until accepted for the slice);
 (3) **runtime resolution/admission** (capability-resolution §4: given that
 accepted class plus current capabilities and policy, which exact realization
-is admitted now).
+is admitted now). The actor classes capable of supplying stages 2 and 3 may
+overlap (the same supervisor or operator could plausibly hold both), but
+that overlap carries no architectural weight: authorization to accept an
+executor class does not itself authorize a concrete realization, and
+realization authority does not imply authority to change the selected
+class. Same actor does not mean same decision or same authority.
 Recorded in both owning documents:
 `proposal-decision-gated-implementation-compilation.md`'s "Relationship to
 capability resolution's admission boundary" and
@@ -983,8 +988,10 @@ seam forward as its own tracked item — a gap in this document, not a new
 finding). Resolved: the user accepted the candidate composition §2.3 had
 drafted but not adopted — the branch plan sits strictly upstream of, and
 distinct from, the decision surface/sealed decisions/implementation
-contract(s); one accepted branch plan may contain multiple implementation
-contracts realized in successive bounded increments. Recorded in
+contract(s); one accepted branch plan may be realized through multiple
+implementation contracts produced in successive bounded increments, not an
+upstream artifact that embeds or pre-specifies contracts not yet produced.
+Recorded in
 `hierarchical-planning-and-multi-supervisor-orchestration.md`'s own "Branch
 plan" section (`decision-gated-compilation`'s document is unaffected by this
 ruling).

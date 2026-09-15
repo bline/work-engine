@@ -354,9 +354,10 @@ contract characterization (decision-gated compilation: which executor
     authority)
             |
             v
-executor-class routing decision (the supervisor / routing-policy authority:
-    which supported class should this slice actually use, given evidence,
-    cost, and policy — advisory until accepted for the slice)
+executor-class routing / acceptance (the supervisor / routing-policy
+    authority: which supported class should this slice actually use, given
+    evidence, cost, and policy — a nomination, advisory until accepted for
+    the slice)
             |
             v
 runtime resolution / admission (this section: given that accepted class
@@ -368,10 +369,19 @@ This section's own resolution/judgment/admission machinery (above) already
 matches the third stage precisely: deterministic candidate filtering plus a
 decision owner for admissible-candidate judgment "the supervisor, another
 authorized model role, the operator, or the human who owns budget or product
-authority" (above) — the same set of possible owners Stage 6 names for the
-routing decision, consistent rather than competing. This document's scope is
-otherwise unchanged by the ruling; it clarifies composition order, not a new
-authority for any of the three stages.
+authority" (above).
+
+**Wording sharpened 2026-09-15, after Sol's follow-up review:** the actor
+classes capable of supplying the second and third judgments may overlap —
+the same supervisor or operator could plausibly be authorized for both — but
+that overlap is not architecturally meaningful by itself. The judgments and
+their authority remain distinct: authorization to accept an executor class
+for a slice does not itself authorize a concrete realization, and realization
+authority does not imply authority to change the selected executor class.
+Same actor does not mean same decision, and same decision does not mean same
+authority. This document's scope is otherwise unchanged by the ruling; it
+clarifies composition order, not a new authority for any of the three
+stages.
 
 ## 5. Materialized realization
 

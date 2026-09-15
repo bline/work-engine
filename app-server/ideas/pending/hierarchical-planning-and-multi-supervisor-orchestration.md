@@ -457,10 +457,13 @@ decision surface -> sealed decisions -> implementation contract(s)
 slice execution
 ```
 
-A single accepted branch plan may contain more than one implementation
-contract as the workstream is realized in successive bounded increments.
+A single accepted branch plan may be realized through multiple
+implementation contracts produced in successive bounded increments — not, as
+"contain" would wrongly imply, an upstream artifact that embeds or
+pre-specifies downstream contracts that do not yet exist at acceptance time.
 
-**Wording sharpened 2026-09-15** (Sol's review): "accept branch plan"
+**Wording sharpened 2026-09-15, again after Sol's follow-up review**: "accept
+branch plan"
 authorizes the workstream to enter bounded implementation planning/execution
 subject to downstream decision-gated compilation and slice-level admission —
 not, as an earlier phrasing risked implying, sufficient execution authority
