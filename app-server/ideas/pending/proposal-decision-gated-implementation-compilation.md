@@ -352,6 +352,38 @@ route-variant choice appears. It may repair local mechanical defects within
 the discretion envelope but may not reinterpret proposal meaning to make tests
 pass.
 
+### Relationship to capability resolution's admission boundary
+
+**Ruling 2026-09-15** (resolves seam `routing.vs.admission`, previously left
+open by `architecture-direction-synthesis.md` §2.1): this section's "execution
+model routing" and
+`pre-indexed-capability-resolution-and-frozen-runtime-realization.md` §4's
+"resolution, judgment, and admission" are two stages of one composition, not
+competing claims on the same question:
+
+```text
+semantic requirement / strategy (this section: does the compiled contract
+                                  warrant Sol-class judgment, or is a cheaper
+                                  executor class admissible?)
+            |
+            v
+resolution / admission (capability-resolution §4: given that class + current
+                         capabilities + policy, which exact model/provider/
+                         harness/tool realization is admitted?)
+            |
+            v
+concrete realization
+```
+
+This document owns the first question — the executor-class criteria above
+(exactness, closed/delegated decisions, local discretion, objective feedback,
+reversibility, detectability, cost) decide *whether* a cheaper executor class
+is warranted at all. It does not own *which* concrete realization within that
+class gets admitted; that is capability-resolution's own resolution/admission
+judgment, applied after this section's class-level decision, not instead of
+it. Neither document is amended in any other respect by this ruling — it
+states composition order, not new authority.
+
 ## Context lifecycle boundary
 
 Task models do not monitor, request, schedule, or optimize their own context

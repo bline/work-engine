@@ -337,6 +337,18 @@ Invalidation does not grant authority. In particular, it cannot by itself:
 After a valid decision exists, deterministic machinery materializes and admits
 the exact realization.
 
+**Ruling 2026-09-15** (resolves seam `routing.vs.admission`, previously left
+open by `architecture-direction-synthesis.md` §2.1): this resolution/admission
+boundary sits downstream of, not in competition with,
+`proposal-decision-gated-implementation-compilation.md`'s "execution model
+routing" section. That document decides the semantic requirement/strategy
+question — whether the compiled contract warrants Sol-class judgment or
+admits a cheaper executor class at all. This section's resolution/judgment/
+admission machinery then decides, given that class plus current capabilities
+and policy, which exact model/provider/harness/tool realization is admitted.
+This document's scope is otherwise unchanged by the ruling; it clarifies
+composition order between the two documents, not a new authority for either.
+
 ## 5. Materialized realization
 
 Resolution and admission produce an immutable realization artifact.

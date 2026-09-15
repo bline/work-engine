@@ -830,8 +830,11 @@ may act on a seam, not whether the underlying architectural question is
 answered. Items 1, 4, 8, 9, 10, and 11 are authorized for design work only;
 items 2, 3, 5, 6, and 7 are authorized for implementation directly (item 8
 additionally includes a build-ready sub-piece, the mechanical seam-evidence
-adapter extensions, per §12's table). Item 12 (`routing.vs.admission`)
-predates the queue and was not part of this acceptance.
+adapter extensions, per §12's table). Two further seams predating the queue
+(`routing.vs.admission` and `decision-gated.vs.hierarchical-orchestration`,
+listed below as items 12 and 13) were not part of the 2026-09-14 acceptance
+but were separately resolved by explicit user ruling on 2026-09-15 — see the
+closure notice preceding them.
 
 **1. Execution-envelope compiler** (the queue's largest survivor)
 Known: `organizational-execution-envelopes.md`'s ExecutionEnvelope concept
@@ -934,12 +937,41 @@ feedback mechanism itself, needed by both Studio's Control view and its
 Contract/design authoring path. Resolved by: one connective-layer design
 covering both.
 
-**12. `routing.vs.admission`** (carried forward from the pre-queue synthesis,
-still open)
-Known: decision-gated compilation's executor-class routing and
-capability-resolution's admission are both claims on "which mechanism does
-this work," in incompatible vocabularies. Resolved by: an explicit
-composition order between the two documents' owners.
+**Seams closed since publication (2026-09-15):** the two items numbered 12
+and 13 below were open when this document was first published; both are now
+resolved by explicit user ruling and are listed here for the historical
+record, not as open seams.
+
+**12. `routing.vs.admission`** — CLOSED 2026-09-15.
+Was: decision-gated compilation's executor-class routing and
+capability-resolution's admission were both claims on "which mechanism does
+this work," in incompatible vocabularies, with no stated composition order
+(carried forward from the pre-queue `architecture-direction-synthesis.md`
+§2.1, not part of the sequel queue's 2026-09-14 acceptance). Resolved: the
+user accepted the candidate composition §2.1 had drafted but not adopted —
+decision-gated compilation owns the semantic requirement/strategy question
+(does the compiled contract warrant Sol-class judgment, or admit a cheaper
+executor class at all); capability-resolution owns resolution/admission
+(given that class, which exact realization is admitted). Recorded in both
+owning documents: `proposal-decision-gated-implementation-compilation.md`'s
+"Relationship to capability resolution's admission boundary" and
+`pre-indexed-capability-resolution-and-frozen-runtime-realization.md` §4's
+own ruling note.
+
+**13. `decision-gated.vs.hierarchical-orchestration`** — CLOSED 2026-09-15.
+Was: hierarchical orchestration's "branch plan" had no stated relationship to
+decision-gated compilation's "sealed decision set" and "implementation
+contract" (carried forward from the pre-queue synthesis §2.3; this document's
+§5 covered hierarchical orchestration's role boundary but never carried this
+seam forward as its own tracked item — a gap in this document, not a new
+finding). Resolved: the user accepted the candidate composition §2.3 had
+drafted but not adopted — the branch plan sits strictly upstream of, and
+distinct from, the decision surface/sealed decisions/implementation
+contract(s); one accepted branch plan may contain multiple implementation
+contracts realized in successive bounded increments. Recorded in
+`hierarchical-planning-and-multi-supervisor-orchestration.md`'s own "Branch
+plan" section (`decision-gated-compilation`'s document is unaffected by this
+ruling).
 
 ## 14. Architecture maintenance risks
 

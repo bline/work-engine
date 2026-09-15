@@ -433,6 +433,40 @@ accept branch plan
 "this bounded branch implementation is authorized to proceed"
 ```
 
+## Relationship to decision-gated compilation's sealed decision set
+
+**Ruling 2026-09-15** (resolves seam `decision-gated.vs.hierarchical-orchestration`,
+previously left open by `architecture-direction-synthesis.md` §2.3): the
+branch plan is not the same artifact as
+`proposal-decision-gated-implementation-compilation.md`'s sealed decision set
+and compiled implementation contract, and does not absorb that document's
+authority. It sits strictly upstream:
+
+```text
+orchestration plan
+      |
+      v
+branch objective / branch plan   <- this section: what coherent workstream
+                                     exists, its objective, authority and
+                                     mutation boundary, evidence cutoff
+      |
+      v
+decision surface -> sealed decisions -> implementation contract(s)
+      |
+      v
+slice execution
+```
+
+A single accepted branch plan may contain more than one implementation
+contract as the workstream is realized in successive bounded increments —
+"accept branch plan" (this section) authorizes the bounded branch
+implementation to proceed; it does not itself seal any material decision or
+compile any implementation contract, both of which remain
+decision-gated-compilation's own artifacts, produced and re-produced beneath
+an already-accepted branch plan.
+`proposal-decision-gated-implementation-compilation.md`'s own scope and text
+are unaffected by this ruling.
+
 ---
 
 # 7. Supervisor
