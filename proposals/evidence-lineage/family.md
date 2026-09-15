@@ -10,8 +10,15 @@
 - Review continuation:
   [`adaptive-specialized-review/fca5cbe`](../../reviews/proposals/adaptive-specialized-review/fca5cbe/synthesis.md)
 - State: shared semantic candidate deferred for dogfooding; bounded backbone
-  dogfood complete; two independently decidable production-phase candidates
-  formed; no candidate is prioritized or authorized for implementation
+  dogfood complete; both production-phase candidates' proposal meaning
+  approved 2026-09-15 (`production-claim-evidence-interface` and
+  `claim-maintenance-and-reliance-propagation`, see their `decision.json`) --
+  `production-claim-evidence-interface`'s meaning-approval also acknowledges
+  that corresponding implementation already exists in
+  `app-server/src/services/claim-evidence`, without yet deciding that
+  implementation is accepted as satisfying the proposal (see
+  `app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md`);
+  no candidate is authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 This family currently contains four independently decidable candidates:

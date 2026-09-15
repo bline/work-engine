@@ -18,13 +18,25 @@ after it was formed:
 - [`production-claim-evidence-interface`](../../proposals/evidence-lineage/production-claim-evidence-interface/proposal.md) — candidate 3 of 4.
 - [`claim-maintenance-and-reliance-propagation`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/proposal.md) — candidate 4 of 4, the one containing the missing `nominate_impact`/refresh-episode operation.
 
-## 1. `production-claim-evidence-interface`: built without a paper trail
+## 1. `production-claim-evidence-interface`: implementation correspondence confirmed, historical authorization not reconstructed
+
+**Corrected 2026-09-15** (Sol's review): a first pass at this section
+concluded "built without a paper trail" and treated "already built, approved
+in effect" as roughly what a `decision.json` would record, with "the paper
+trail is the only thing missing." That collapses three distinct facts that
+must stay separate:
+
+```text
+implementation exists
+≠ proposal meaning was accepted
+≠ implementation was authorized / accepted
+```
 
 `family.md`'s own "State" and "Current evidence and uncertainty" sections
 still say "no candidate is prioritized or authorized for implementation," and
 `production-claim-evidence-interface/packet.json` still shows
 `lifecycle_state: "formed"`, `implementation_authorized: false`, with no
-`decision.json`. Both are stale.
+`decision.json`. Both are stale relative to what actually exists.
 
 The proposal's own text is exact about what it set out to build: "Create the
 smallest production claim-evidence capability that real Work Engine roles can
@@ -32,32 +44,52 @@ use to publish, discover, resolve, and rely on exact evidence-backed
 statements" (`proposal.md:22-24`), via "a canonical owner, closed versioned
 records, domain authority profiles, transport-neutral operations, real
 consumers, and truthful discovery and applicability results"
-(`proposal.md:44-46`).
-
-That is, verified this session, exactly what `app-server/src/services/claim-evidence`
-already is: a real, ~2400-line implementation with six operations
-(`create_claim`, `publish_revision`, `publish_lineage`, `record_reliance`,
-`retire_reliance`, `retract_revision`), a domain-profile mechanism
-(`review-scope-coordination-reconciliation.md` and
+(`proposal.md:44-46`). That corresponds strongly, at a general level, to what
+`app-server/src/services/claim-evidence` already is: a real, ~2400-line
+implementation with six operations (`create_claim`, `publish_revision`,
+`publish_lineage`, `record_reliance`, `retire_reliance`, `retract_revision`),
+a domain-profile mechanism (`review-scope-coordination-reconciliation.md` and
 `proposal-research-maturity-and-freshness-reconciliation.md` both confirmed
 real, distinct `revision-bound-review-finding-v1` and `proposal-research-v1`
 profiles), and production consumers (native review's PPCE Slice 1 path).
 
+**What this reconciliation did not do:** audit that correspondence against
+the proposal's own specific acceptance bar. `proposal.md`'s "Evidence and
+acceptance needs" (`:230-246`) names concrete, checkable items — a closed
+schema and validator for the shared core and both initial profiles;
+deterministic identity, reference, lineage, branch/conflict, migration, and
+projection-completeness checks; authority-bound idempotent publication and
+exact-revision reliance; a Codex role discovering and relying on a material
+claim without receiving its identity in advance; an external read-only
+consumer via the MCP projection; one real proposal-research claim and one
+real revision-bound review finding published and consumed without
+domain-ownership collapse; and named failure cases (unauthorized publication,
+conflicting predecessors, dangling evidence, partial projections, unavailable
+evidence, misleading newest-revision selection). None of these were checked
+item-by-item here. General correspondence is not the same evidence as that
+list being satisfied.
+
 The proposal's own evidence cutoff (`cdc9e3fa5d300e5edc737faf38edf85a336fbdcf`,
 2026-08-24) predates the App Server implementation's own first commit
 (`f890057`, "feat: activate context lifecycle and add claims core,"
-2026-08-26) by two days. This is the same pattern the reconciliation queue
-found once before, in item 10
-(`agent-instruction-structure-and-placement-review-reconciliation.md`): real
-work happened after formation and nobody went back to close the loop with a
-decision record.
+2026-08-26) by two days — real work happened after formation and nobody went
+back to close the loop with any decision record, the same pattern found once
+before in reconciliation-queue item 10
+(`agent-instruction-structure-and-placement-review-reconciliation.md`). But
+item 10 had an actual dogfood metrics record and an explicit "Please proceed
+sir, you have the helm" authorization on file; this candidate has neither —
+only implementation correspondence, confirmed at a general level.
 
-**This is not this document's decision to make unilaterally.** Recording
-"already built, approved in effect" as a `decision.json` requires the same
-explicit-user-statement evidence every other decision.json in this repository
-requires (see `agent-instruction-integrity/agent-instruction-structure-placement-review/decision.json`'s
-own `authority.evidence` field as the precedent shape). This document places
-the finding; the decision section below asks for the ruling.
+**Finding, precisely:** implementation correspondence is confirmed;
+lifecycle and authority metadata are stale; historical authorization or
+acceptance is not reconstructed by this pass and would require the
+item-by-item audit above, not assumed from general correspondence. This is
+not this document's decision to make unilaterally in any case — any
+`decision.json` requires the same explicit-user-statement evidence every
+other decision.json in this repository requires (see
+`agent-instruction-integrity/agent-instruction-structure-placement-review/decision.json`'s
+own `authority.evidence` field as the precedent shape). The decision section
+below asks only for what this pass actually supports a ruling on.
 
 ## 2. `claim-maintenance-and-reliance-propagation`: what's confirmed still accurate
 
@@ -117,11 +149,28 @@ None of that list is the `nominate_impact` operation's own request/response
 contract (inputs, authority checks, persistence shape) at the same level of
 concreteness as the six existing `contract.mjs` operations — that contract
 does not exist in this proposal, in `claim-evidence-service.md`, or in
-`evidence-anchor-observation-and-impact-nomination.md`. All three
-consistently and explicitly decline to specify it (`evidence-anchor...md §9`
-names it as future work belonging to whichever document forms it next). It
-remains a genuinely unowned design task, not something this reconciliation
-can retire.
+`evidence-anchor-observation-and-impact-nomination.md`.
+
+**Corrected 2026-09-15** (Sol's review): a first pass called this "a
+genuinely unowned design task." That repeats the exact distinction this
+session's own routing-seam correction just fixed elsewhere: a missing design
+is not the same as a missing owner. The semantic owner is not in question —
+`evidence-anchor-observation-and-impact-nomination.md` §9 (`:442-445`)
+explicitly names it: "It does not propose the `claim-evidence` contract
+change (`nominate_impact` or equivalent)... That is
+`claim-evidence-service.md`'s own authorized work to specify." And this
+proposal's own text already claims the operational consequence as its
+subject — impact nominations, refresh episodes, reliance, obligations,
+delivery, and recovery (`proposal.md:67-90`). Ownership is settled; what is
+unformed is the concrete production operation contract by which that
+already-located owner admits durable impact nominations and refresh
+episodes — request shape, authority check, idempotency identity, publication
+semantics, persistence transition, and result/failure vocabulary. All three
+documents consistently and explicitly decline to specify that contract
+(`evidence-anchor...md §9` names it as future work belonging to whichever
+document forms it next), so this reconciliation correctly does not attempt
+to design it here — but it should be recorded as an unformed operation
+contract beneath a settled owner, not as an ownerless design task.
 
 `acceptance.md`'s evidence bar (end-to-end vertical across both initial
 domain profiles, structural/projection adversarial matrix, semantic-lifecycle
@@ -134,32 +183,84 @@ and used.
 
 ## 4. The residue, precisely
 
-Two distinct, separately-authorizable things, not one:
+**Corrected 2026-09-15** (Sol's review) — restated as two differently-shaped
+outcomes, not a symmetric pair:
 
-1. **Decision-readiness for `production-claim-evidence-interface`**: its
-   proposal meaning is already realized in production; the paper trail is
-   the only thing missing.
-2. **Decision-readiness for `claim-maintenance-and-reliance-propagation`**:
-   its proposal meaning is unchanged and unconflicted by everything reconciled
-   or designed since formation; nothing new was found that should change its
-   text. What remains before implementation is authorized is (a) the
-   `nominate_impact`/refresh-episode operation's own contract design — not
-   attempted here, not owned by any existing document — and (b)
-   `acceptance.md`'s full adversarial evidence matrix, unaffected by this
-   pass.
+```text
+production-claim-evidence-interface
+    → implementation correspondence CONFIRMED (general level)
+    → lifecycle / authority record STALE
+    → item-by-item acceptance audit NOT performed here
+    → user decision required before claiming acceptance
 
-Approving proposal *meaning* for both, at the same `approve_proposal_meaning`
+claim-maintenance-and-reliance-propagation
+    → proposal meaning UNDRIFTED
+    → semantic ownership SETTLED (claim-evidence / claim-maintenance)
+    → concrete nominate_impact / refresh operation contract UNFORMED
+    → implementation NOT YET AUTHORIZED
+    → original acceptance.md evidence bar RETAINED, untouched by this pass
+```
+
+For `production-claim-evidence-interface`, four distinct actions exist and
+should not collapse into one:
+
+```text
+A. approve current proposal meaning
+B. acknowledge that corresponding implementation already exists
+C. decide whether that existing implementation is accepted as satisfying
+   the proposal
+D. repair the stale lifecycle metadata
+```
+
+This reconciliation supports (A) and (B) directly. It does not support (C) —
+that requires the item-by-item audit against `proposal.md:230-246` this pass
+did not perform — and (D) is administrative, contingent on how (A)-(C) are
+resolved. The decision section below asks only for (A)/(B), and names the
+audit that would be needed before (C) could responsibly be decided.
+
+For `claim-maintenance-and-reliance-propagation`, this reconciliation found
+essentially no remaining *ownership* seam — the semantic architecture is
+settled and undrifted. What remains is a *design* gap beneath that settled
+owner: the `nominate_impact`/refresh-episode operation's own contract. The
+bounded next unit of work this reconciliation surfaces is exactly that: form
+the production operation contract for impact nomination and refresh
+admission, without revisiting the already-settled semantic architecture.
+Approving proposal *meaning* now, at the same `approve_proposal_meaning`
 disposition level already used for item 10
 (`agent-instruction-structure-placement-review/decision.json`), would let
-future work proceed straight to the operation's contract design (the
-genuinely bounded next unit of work after this one) without re-litigating
-whether the proposal's own shape is still right. It would not itself
-authorize implementation, and does not shortcut `acceptance.md`'s evidence
-bar.
+that contract-design work proceed without re-litigating whether the
+proposal's own shape is still right. It would not itself authorize
+implementation, and does not touch `acceptance.md`'s evidence bar.
 
 ## Acceptance
 
-Not yet decided. This section is intentionally left for an explicit ruling,
-not written unilaterally — matching this repository's own
-`decision.json` authority-evidence convention and the standing rule
-established during the sequel reconciliation queue's own acceptance event.
+**Decided 2026-09-15**, after Sol's review corrected two findings above
+(§1's collapse of implementation-existence with historical authorization,
+and §3's "unowned" mischaracterization of the operation-contract gap). The
+user ruled, via explicit statement on each of the two differently-shaped
+outcomes §4 restates:
+
+- **`claim-maintenance-and-reliance-propagation`**: proposal meaning
+  approved. Recorded in
+  [`decision.json`](../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/decision.json)
+  (`approve_proposal_meaning`, `implementation_authorized: false`). The next
+  bounded unit of work this reconciliation surfaces: form the production
+  operation contract for impact nomination and refresh admission, without
+  revisiting the already-settled semantic architecture.
+  `acceptance.md`'s full adversarial evidence matrix remains retained and
+  unmet.
+- **`production-claim-evidence-interface`**: proposal meaning approved and
+  implementation correspondence acknowledged (items A and B of §4's
+  four-way split). Recorded in
+  [`decision.json`](../../proposals/evidence-lineage/production-claim-evidence-interface/decision.json)
+  (`approve_proposal_meaning`, `implementation_authorized: false`). Item C —
+  whether the existing implementation is accepted as satisfying the
+  proposal — remains explicitly undecided, and would require a separate,
+  item-by-item audit against `proposal.md`'s own "Evidence and acceptance
+  needs" (`:230-246`) before it could responsibly be decided. Item D
+  (repairing the stale lifecycle metadata) is addressed by this decision
+  record and the corresponding `packet.json` lifecycle_state update to
+  `decided`.
+
+Neither decision authorizes implementation of anything. Both are meaning-level
+acceptances only, per this repository's own two-tier authority convention.

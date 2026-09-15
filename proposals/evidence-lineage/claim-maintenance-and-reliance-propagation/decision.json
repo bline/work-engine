@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.claim-maintenance-and-reliance-propagation",
+  "source": {
+    "repository_revision": "0e191d585d82f706f2dd9320c6e360417dd72e51",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions; a general control-plane capability may own cross-owner delivery without acquiring claim meaning; and Codebase Memory probably supplies the replaceable current-world projection after a bounded, reindex-safe synchronization extension.",
+    "rationale": "app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md reconciled this proposal against contract.mjs, claim-evidence-service.md, and evidence-anchor-observation-and-impact-nomination.md. No drift found: the proposal's semantic model, invariants, and ownership boundary remain accurate against everything reconciled or designed since formation. Semantic ownership of impact nomination, refresh, reliance, obligations, delivery, and recovery is settled under claim-evidence/claim-maintenance -- evidence-anchor-observation-and-impact-nomination.md's own section 9 independently confirms this, naming claim-evidence-service.md as the owner of the operation-contract work rather than treating it as unowned. This decision approves only the proposal's meaning as reconciled -- it does not authorize implementation and does not touch acceptance.md's evidence bar. Two things remain unformed: the nominate_impact/refresh-episode operation's own production contract (request shape, authority check, idempotency identity, publication semantics, persistence transition, result/failure vocabulary -- not specified by this proposal, claim-evidence-service.md, or evidence-anchor, and not attempted by this reconciliation), and acceptance.md's full end-to-end and adversarial evidence matrix, both explicitly retained and unmet.",
+    "reopening_conditions": [
+      "The production foundation cannot preserve the stable identities, revisions, profiles, and authority envelopes required by this phase.",
+      "Concurrent or branching refresh requires a different canonical-support model than explicit attributed selection among immutable revisions.",
+      "A real domain consumer cannot distinguish candidate impact, investigation, unchanged refresh, changed support, applicability, and reopening without collapsing owners.",
+      "The slice lifecycle cannot durably preserve or derive the exact attributed checkpoint subject needed for post-slice impact analysis before its terminal projection becomes lossy.",
+      "Stable code, test, schema, configuration, or documentation-anchor identity cannot be reconciled across rename, move, split, merge, deletion, and ambiguity without converting uncertain structural matching into semantic authority.",
+      "Codebase Memory cannot preserve owner isolation, content-bound generation identity, atomic projection publication, and truthful unresolved references through a bounded extension.",
+      "Cross-owner obligation delivery cannot be made lossless and idempotent without assigning semantic completion to transport acknowledgement.",
+      "Compaction, authority revocation, inactive recipients, or partial publication requires durable semantics outside the proposed claim, domain-workflow, and delivery ownership split."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user ruling via AskUserQuestion ('Approve proposal meaning (Recommended)') in response to app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md, at repository revision 0e191d585d82f706f2dd9320c6e360417dd72e51, following Sol's review confirming the reconciliation's corrected findings."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}

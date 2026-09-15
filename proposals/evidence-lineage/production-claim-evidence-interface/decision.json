@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "proposal_id": "work-engine.production-claim-evidence-interface",
+  "source": {
+    "repository_revision": "0e191d585d82f706f2dd9320c6e360417dd72e51",
+    "lifecycle_state": "formed",
+    "placement_state": "probable"
+  },
+  "decision": {
+    "disposition": "approve_proposal_meaning",
+    "lifecycle_state": "decided",
+    "placement_state": "probable",
+    "placement_claim": "A repository-local shared claim-evidence capability is the probable canonical owner of the closed production record contract and transport-neutral operations. Domain workflows own their judgments and profiles; a Codex skill and external MCP adapter are projections over the same owner.",
+    "rationale": "app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md found this proposal's own stated candidate and consequence correspond, at a general level, to what app-server/src/services/claim-evidence already is in production: six operations (create_claim, publish_revision, publish_lineage, record_reliance, retire_reliance, retract_revision), real distinct domain profiles (revision-bound-review-finding-v1, proposal-research-v1), and production consumers (native review's PPCE Slice 1 path). This proposal's evidence cutoff (2026-08-24) predates that implementation's first commit (2026-08-26) by two days; the lifecycle metadata was never updated afterward. This decision approves the proposal's meaning as still accurately describing the intended production consequence, and acknowledges that corresponding implementation exists. It explicitly does NOT decide that the existing implementation is accepted as satisfying the proposal (disposition item C in the reconciliation's four-way split of approve-meaning / acknowledge-correspondence / accept-implementation / repair-metadata) -- implementation existence is not proposal-meaning acceptance is not implementation authorization or acceptance, and this reconciliation did not perform the item-by-item audit against this proposal's own 'Evidence and acceptance needs' (proposal.md, closed schema/validator, deterministic identity/lineage/branch/migration/projection-completeness checks, authority-bound idempotent publication, Codex-role discovery without prior identity, external MCP consumer, one real proposal-research claim and one real review finding published/consumed, and named failure cases) that such acceptance would require. implementation_authorized remains false pending that audit.",
+    "reopening_conditions": [
+      "A real proposal-research or review consumer cannot discover applicable claims without domain semantics that would make the shared core misleading.",
+      "The minimum production schema cannot represent exact subjects, evidence baselines, authority, limitations, sensitivity, lineage, reliance, and truthful projection completeness without absorbing domain-owned judgment.",
+      "A transport-neutral operation cannot give Codex skills and external read-only MCP consumers equivalent state meaning and provenance.",
+      "Authority-bound publication cannot distinguish attribution from admission or prevent an unauthorized producer from exercising a domain transition.",
+      "Representative production queries require a canonical database or runtime service rather than a rebuildable projection over durable records.",
+      "An item-by-item audit of the built implementation against this proposal's own 'Evidence and acceptance needs' (proposal.md:230-246) finds a material gap -- this would require revisiting whether the proposal's meaning, not just implementation existence, is actually satisfied."
+    ]
+  },
+  "authority": {
+    "decision_owner": "user or future explicitly authorized portfolio owner",
+    "exercised_by": "user",
+    "evidence": "Explicit user ruling via AskUserQuestion ('Approve meaning + acknowledge correspondence (A+B) (Recommended)') in response to app-server/docs/claim-maintenance-and-reliance-propagation-reconciliation.md, at repository revision 0e191d585d82f706f2dd9320c6e360417dd72e51, following Sol's review distinguishing implementation existence, proposal-meaning acceptance, and implementation authorization/acceptance as three separate facts."
+  },
+  "constraints": {
+    "permanent_architecture_settled": false,
+    "roadmap_priority_changed": false,
+    "implementation_authorized": false
+  }
+}
