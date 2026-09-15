@@ -603,10 +603,13 @@ This idea does not currently propose: replacing current role manifests; replacin
 
 Not reconciled here — named so a future reconciliation pass has a starting map, per this idea's own discipline of not pre-deciding seams.
 
+- **`hierarchical-planning-and-multi-supervisor-orchestration.md` — the single most consequential relationship in this document, named here precisely because it has not been checked.** That idea already has a real, detailed `Orchestrator → Branch planner → Branch plan → Supervisor → Builder`, with integration treated as its own workstream — the same roles, the same recursive planner:orchestrator :: planner:supervisor relationship, and much of the same vocabulary (workstream, branch, supervisor, orchestrator, integration) that Part 13's `auto-org` execution mode uses. Part 13 was drafted without checking whether it duplicates, extends, or conflicts with that document's own already-designed hierarchy. It may turn out that `auto-org` is not a new organizational shape at all, but a specific *compilation mechanism* — authority projection and role-contract compilation — underneath a hierarchy that document already treats as authored structure. This is not decided here and should be the first thing checked before any of Part 13 is treated as more than a hypothesis.
+- **`proposal-decision-gated-implementation-compilation.md`** — Part 13's "branch" and "workstream" vocabulary sits directly downstream of the `routing.vs.admission` and `decision-gated.vs.hierarchical-orchestration` seams this same session already closed (recorded in both that document and `hierarchical-planning-and-multi-supervisor-orchestration.md` directly) — the sealed-decision-set / implementation-contract layer those rulings placed beneath the branch plan is exactly what Part 13's leaf-level "execution" step would compile down into. Not reconciled here, but the two already-closed rulings should be read before Part 13 is extended further.
 - **`organizational-execution-envelopes.md`** — Parts 2 and 5 of this idea (role-contract compilation, organizational admission) bear directly on how that envelope gets compiled and revised; this idea does not decide whether authority projection sits inside the envelope compiler, feeds it as a separate stage, or is a distinct architectural owner.
 - **`role-compiler-proposal.md`** — role contract compilation (Part 2.2) overlaps directly with whatever that proposal already owns regarding composition and inheritance; not reconciled.
 - **The semantic-context-lifecycle-manager design** — Parts 3, 4, and 7 directly extend and constrain that system; Part 4's findings are current-implementation facts, not proposed changes, and any future work here must be checked against that design document's own current text before this idea is treated as settled.
 - **claim-evidence's `expected_state`/heads mechanism and `review-episode`'s writer-generation mechanism** — Part 7's reasoning-environment transition lease is a direct generalization of a fencing/revision-binding pattern already proven in both; this is corroborating precedent, not a coincidence, and any future design should reuse rather than reinvent it.
+- **`claude-runtime-adapter-and-context-ownership-pilot.md`** — a real, code-grounded sibling consumer of the same context-lifecycle substrate Part 4 cites (`context-transition-lease.mjs`, `context-pressure-controller.mjs`, `context-lifecycle-evidence.mjs`), answering a different (empirical, provider-adapter) question. Not a joint-reconciliation candidate now, but worth checking once the Context Observer schema (Part 5.3) is concretized, since a Claude-shaped observation source would need to fit it.
 
 ---
 
@@ -636,6 +639,216 @@ Not reconciled here — named so a future reconciliation pass has a starting map
 19. Who realizes an admitted organizational/topology revision concretely — a projection/runtime owner distinct from context-lifecycle, or context-lifecycle itself acting in a narrower "realize this admitted projection" capacity kept separate from its own temporal-applicability judgment? Deliberately left open in Part 5.2 rather than assumed either way.
 20. What is the smallest real current workflow from which a deterministic authority projection could be reconstructed without changing behavior?
 21. Can the proposed abstraction be demonstrated across one non-software domain without adding domain-specific rules to the projection mechanism?
+22. Does `hierarchical-planning-and-multi-supervisor-orchestration.md`'s existing `Orchestrator/Branch planner/Branch plan/Supervisor/Builder` hierarchy already cover what Part 13 proposes, making `auto-org` a compilation mechanism underneath an already-authored shape rather than a new organizational structure? This is the single highest-priority question in this document and should be answered before any of Part 13 is extended further.
+23. Does that document's own topology allow a branch to recursively decompose further once accepted, or is its topology assumed fixed after the orchestration plan is admitted? Part 13's recursion depends on the answer.
+24. What exactly must a hierarchical plan expose (per Part 13's list — subject, dependencies, consequence, shared invariants, authority ceiling, required capabilities, independence requirements, integration boundary, continuity constraints) for the first organizational layer to be mechanically compiled rather than authored, and does the current planning/Plan-IR architecture already carry any of this?
+
+---
+
+## Part 13: The `auto-org` Execution Mode — A Worked Synthesis
+
+This section works through what Parts 1, 2, 5, and 6 imply when applied recursively to an admitted hierarchical plan. It is the most speculative and least-checked part of this document — see Part 11 and Open Question 22 above before treating any of it as more than a hypothesis.
+
+### 13.1 What `auto-org` does not mean
+
+It does not mean giving one orchestrator a goal and letting it invent arbitrary agents. It means: **given an admitted hierarchical plan plus an organizational-dynamics policy, recursively lower that plan into the smallest lawful execution organization, one layer at a time** — the same chain already established (semantic obligations → required vantages → role composition → bounded authority projection → ExecutionEnvelope → runtime realizations), applied more than once, at successively more local scope.
+
+### 13.2 The first organizational layer compiles mechanically from plan structure
+
+A root orchestrator does not need to understand each workstream deeply. If the plan already states each workstream's subject, dependencies, expected consequence, and constraints, the orchestrator can mechanically derive enough to instantiate distinct branch-supervisor contracts:
+
+```text
+Objective
+├── Workstream A (dependencies, expected consequence, constraints)
+├── Workstream B (dependencies, expected consequence, constraints)
+└── Integration
+
+Orchestrator
+    +-- Supervisor[A]   subject=A, observes=A-plan+shared contracts+dependency edges,
+    |                   authority ceiling=A, capabilities=required-by-A, continuity=A's execution lifetime
+    +-- Supervisor[B]   subject=B, observes=B-plan+shared contracts+dependency edges,
+    |                   authority ceiling=B, capabilities=required-by-B, continuity=B's execution lifetime
+    +-- Integration owner
+```
+
+The contracts differ because the plan surfaces differ — exactly the role-contract compilation Part 2.2 already describes, applied to the plan's own declared structure rather than to a role someone hand-authored.
+
+### 13.3 Role formation as a bounded reconnaissance phase, not immediate execution
+
+A newly instantiated supervisor need not begin executing immediately. It can be given a bounded formation phase first:
+
+```text
+instantiate Supervisor[A]
+        v
+branch-local reconnaissance
+        v
+gather evidence about A's actual world
+        v
+maintain that evidence durably for the run
+        v
+determine A's actual semantic shape
+        v
+decide whether/how A should decompose
+        v
+admit child topology (if any)
+        v
+same supervisor continues executing A
+```
+
+This is a materially better sequence than having a planner speculate about the complete execution organization before anyone has examined the actual work.
+
+### 13.4 The same retained context performs both reconnaissance and execution
+
+The supervisor that performs organizational reconnaissance should be the same retained logical role and context that subsequently executes or supervises the resulting branch — not a disposable scout that investigates, writes a summary, and is discarded before a cold supervisor reconstructs what it learned:
+
+```text
+Supervisor[A]
+  formation phase:  investigate branch structure, gather evidence,
+                     understand local risks/dependencies, decide child organization
+                          | (same retained vantage)
+                          v
+  execution phase:  supervise the resulting child organization
+```
+
+The evidence gathered must still be externalized to run-owned durable state — the context itself is never canonical — but retaining the supervisor's own accumulated understanding across the formation-to-execution boundary has independent value. Both together, not one instead of the other: durable evidence *and* retained context continuity.
+
+### 13.5 Organization recurses; agent spawning does not
+
+A supervisor's own reconnaissance may reveal further asymmetric structure:
+
+```text
+Supervisor[A]                          Supervisor[B]
+    +-- Builder[A-core]  (owns A1+A2,       +-- Builder[B]
+    |    which share heavy state)
+    +-- Specialist[A3]   (independently
+         coherent compatibility work)
+```
+
+Nothing requires symmetry between branches, and any resulting child role may itself later encounter enough structural pressure to warrant its own further decomposition:
+
+```text
+plan -> orchestrator -> compile first organizational layer -> supervisors investigate
+-> compile second organizational layer -> child roles investigate
+-> compile deeper layers only where warranted -> leaves execute
+```
+
+This is **recursive organizational compilation**, triggered by locally-discovered evidence at each layer — not recursive agent spawning for its own sake. The distinction matters: nothing here authorizes a role to create children merely because it can.
+
+### 13.6 Authority attenuates down the tree; depth never creates more of it
+
+Part 2.4's invariant (`child authority ⊆ delegable(parent authority)`) applies recursively without modification:
+
+```text
+Root authority
+      v
+Workstream A ceiling
+      v
+Supervisor[A]
+      v (delegable subset)
+Builder[A-core]
+```
+
+New organizational depth partitions existing authority into increasingly local vantages; it never manufactures new authority. Nondelegable surfaces stay wherever they are actually owned, at whatever depth that happens to be — depth is not itself a claim to authority.
+
+### 13.7 What this implies a hierarchical plan needs to expose
+
+Not `spawn 3 supervisors, spawn 7 builders`, but organizationally-relevant semantics per workstream, from which the organization is *compiled* rather than *authored*:
+
+```text
+workstream, subject, dependencies, consequence, shared invariants,
+authority ceiling, required capabilities, known independence requirements,
+integration boundary, known continuity constraints
+```
+
+The plan describes the semantic structure of the work; the organization is a derived consequence of that structure, not a separate thing the plan author must also specify by hand.
+
+### 13.8 This composes with event-scoped JIT organizational reasoning exactly as already designed
+
+Each supervisor runs normally, without permanently carrying auto-org machinery (per Part 2.7). During its formation phase, if the topology service's observer-derived evidence makes an organizational question material, a JIT decision surface is temporarily injected:
+
+```text
+Supervisor[A]'s normal context
+    + JIT organization skill
+    + branch-local topology metrics
+    + plan constraints
+    + available role/capability profiles
+```
+
+resolving a narrow question — does this branch require one retained implementation vantage or several, and why — after which the result persists, the temporary skill is removed, and the supervisor proceeds to steady-state supervision. Nothing about this requires a role to carry organizational-decision doctrine permanently.
+
+### 13.9 Role formation as a named phase, precisely scoped
+
+```text
+ROLE FORMATION
+provisional logical role instantiated
+        v
+bounded reconnaissance
+        v
+evidence accumulation
+        v
+organizational-fit analysis
+        v
+topology decision(s)
+        v
+ExecutionEnvelope revision
+        v
+ROLE EXECUTION
+```
+
+"Provisional" describes only the role's *downstream organization* — not its own authority, which is real and non-provisional from the moment of instantiation. Supervisor[A] already owns supervising A the instant it exists; what remains undecided is only whether, and how, A's own execution should further decompose.
+
+### 13.10 The natural stopping condition
+
+No role should recurse automatically merely "to see what's there" — that is organizational recursion for its own sake, and this document names it explicitly as something to avoid. Recursion should trigger only when evidence establishes genuine separation pressure, reusing the exact generative criterion already stated in Part 2.5: create another vantage only when a stable semantic boundary lets the resulting contexts know materially less while preserving or improving the required consequence. The resulting fixed point:
+
+> No unresolved obligation benefits from another legitimate vantage.
+
+At that point, decomposition stops — not because of a depth limit, but because no further split would be justified by the criterion itself.
+
+### 13.11 The full picture
+
+```text
+                 HIERARCHICAL PLAN
+                        v
+                 ROOT ORCHESTRATOR
+                        v
+             compile immediate workstreams
+             +----------+----------+
+             v                     v
+       Supervisor[A]         Supervisor[B]
+             v                     v
+      organizational        organizational
+      reconnaissance        reconnaissance
+             v                     v
+      local topology        local topology
+      judgment              judgment
+             v                     v
+      child organization    child organization
+             +----------+----------+
+                        v
+                    execution
+                        v
+                integration layer
+```
+
+resting throughout on the shared substrate already established in Parts 4, 5, and 7: Context Observer, authority state, run evidence, plan state, ExecutionEnvelope revisions, transition fencing, context lifecycle, capability resolution. The orchestrator stays structural; supervisors acquire local semantic understanding; the organization becomes more specific exactly where the evidence is most local.
+
+### 13.12 `auto-org` is a policy mode, not a second architecture
+
+Extending Part 6's organizational-dynamics-as-policy framing directly, rather than introducing new machinery:
+
+```text
+organization_mode: fixed              authored topology only, no compilation
+organization_mode: plan_compiled      compile only the first layer from the plan
+organization_mode: recursive_bounded  admitted roles may further decompose their own work
+organization_mode: auto               recursive organizational formation wherever policy permits
+```
+
+Same underlying machinery in every mode; no second architecture per mode; a fixed organization is simply the case where the transition set is constrained to `∅`, exactly as Part 6 already establishes for the non-recursive case.
+
+### 13.13 The operational payoff
+
+If this holds up under reconciliation (starting with Open Question 22), the payoff is that a hierarchical planner no longer needs to predict the entire execution organization from above. It describes the semantic structure of the work; the orchestrator compiles the first lawful organizational layer; and each resulting vantage, after actually examining its own local world, may recursively compile the next layer under an attenuated authority ceiling. The result is an organization that becomes more specific as evidence becomes more local, while remaining reconstructable, authority-bounded, and derived from one admitted plan throughout.
 
 ---
 
