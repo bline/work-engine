@@ -942,21 +942,37 @@ and 13 below were open when this document was first published; both are now
 resolved by explicit user ruling and are listed here for the historical
 record, not as open seams.
 
-**12. `routing.vs.admission`** — CLOSED 2026-09-15.
+**12. `routing.vs.admission`** — CLOSED 2026-09-15 (revised same day after
+review).
 Was: decision-gated compilation's executor-class routing and
 capability-resolution's admission were both claims on "which mechanism does
 this work," in incompatible vocabularies, with no stated composition order
 (carried forward from the pre-queue `architecture-direction-synthesis.md`
-§2.1, not part of the sequel queue's 2026-09-14 acceptance). Resolved: the
-user accepted the candidate composition §2.1 had drafted but not adopted —
-decision-gated compilation owns the semantic requirement/strategy question
-(does the compiled contract warrant Sol-class judgment, or admit a cheaper
-executor class at all); capability-resolution owns resolution/admission
-(given that class, which exact realization is admitted). Recorded in both
-owning documents: `proposal-decision-gated-implementation-compilation.md`'s
-"Relationship to capability resolution's admission boundary" and
-`pre-indexed-capability-resolution-and-frozen-runtime-realization.md` §4's
-own ruling note.
+§2.1, not part of the sequel queue's 2026-09-14 acceptance). A first ruling
+collapsed this into two stages (decision-gated compilation owning "semantic
+requirement/strategy," capability-resolution owning "resolution/admission");
+review found this quietly gave decision-gated compilation more authority
+than its own text claims, by conflating its compile-time executor-class
+*characterization* (plan-readiness only — it "does not authorize the slice")
+with the separate slice-level *routing decision* Stage 6 already reserves for
+"the supervisor" and "the appropriate authority." Resolved: three stages, not
+two —
+(1) **contract characterization** (decision-gated compilation's implementation
+compiler + plan-conformance gate: which executor classes are semantically
+supported by a compiled contract, with what evidence-backed readiness; plan
+readiness only, no slice authority);
+(2) **executor-class routing decision** (the supervisor / routing-policy
+authority named in decision-gated-compilation's own Stage 6: which supported
+class this slice actually uses, given evidence, cost, and policy — advisory
+until accepted for the slice);
+(3) **runtime resolution/admission** (capability-resolution §4: given that
+accepted class plus current capabilities and policy, which exact realization
+is admitted now).
+Recorded in both owning documents:
+`proposal-decision-gated-implementation-compilation.md`'s "Relationship to
+capability resolution's admission boundary" and
+`pre-indexed-capability-resolution-and-frozen-runtime-realization.md`'s own
+ruling note.
 
 **13. `decision-gated.vs.hierarchical-orchestration`** — CLOSED 2026-09-15.
 Was: hierarchical orchestration's "branch plan" had no stated relationship to

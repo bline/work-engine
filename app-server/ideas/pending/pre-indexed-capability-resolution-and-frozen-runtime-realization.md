@@ -337,17 +337,41 @@ Invalidation does not grant authority. In particular, it cannot by itself:
 After a valid decision exists, deterministic machinery materializes and admits
 the exact realization.
 
-**Ruling 2026-09-15** (resolves seam `routing.vs.admission`, previously left
-open by `architecture-direction-synthesis.md` §2.1): this resolution/admission
-boundary sits downstream of, not in competition with,
-`proposal-decision-gated-implementation-compilation.md`'s "execution model
-routing" section. That document decides the semantic requirement/strategy
-question — whether the compiled contract warrants Sol-class judgment or
-admits a cheaper executor class at all. This section's resolution/judgment/
-admission machinery then decides, given that class plus current capabilities
-and policy, which exact model/provider/harness/tool realization is admitted.
-This document's scope is otherwise unchanged by the ruling; it clarifies
-composition order between the two documents, not a new authority for either.
+**Ruling 2026-09-15, revised 2026-09-15** (resolves seam
+`routing.vs.admission`, previously left open by
+`architecture-direction-synthesis.md` §2.1). A first pass at this ruling
+placed this section directly downstream of
+`proposal-decision-gated-implementation-compilation.md`'s executor-class
+characterization. Sol's review found that collapses two distinct stages that
+document's own text keeps separate — see the corrected composition recorded
+there. This resolution/admission boundary is downstream of the corrected
+middle stage, not the characterization stage directly:
+
+```text
+contract characterization (decision-gated compilation: which executor
+    classes are semantically supported by this compiled contract, with
+    what evidence-backed readiness — plan readiness only, no slice
+    authority)
+            |
+            v
+executor-class routing decision (the supervisor / routing-policy authority:
+    which supported class should this slice actually use, given evidence,
+    cost, and policy — advisory until accepted for the slice)
+            |
+            v
+runtime resolution / admission (this section: given that accepted class
+    plus current capabilities and policy, which exact model/provider/
+    harness/tool realization is admitted now?)
+```
+
+This section's own resolution/judgment/admission machinery (above) already
+matches the third stage precisely: deterministic candidate filtering plus a
+decision owner for admissible-candidate judgment "the supervisor, another
+authorized model role, the operator, or the human who owns budget or product
+authority" (above) — the same set of possible owners Stage 6 names for the
+routing decision, consistent rather than competing. This document's scope is
+otherwise unchanged by the ruling; it clarifies composition order, not a new
+authority for any of the three stages.
 
 ## 5. Materialized realization
 

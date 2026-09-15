@@ -458,14 +458,17 @@ slice execution
 ```
 
 A single accepted branch plan may contain more than one implementation
-contract as the workstream is realized in successive bounded increments —
-"accept branch plan" (this section) authorizes the bounded branch
-implementation to proceed; it does not itself seal any material decision or
-compile any implementation contract, both of which remain
-decision-gated-compilation's own artifacts, produced and re-produced beneath
-an already-accepted branch plan.
-`proposal-decision-gated-implementation-compilation.md`'s own scope and text
-are unaffected by this ruling.
+contract as the workstream is realized in successive bounded increments.
+
+**Wording sharpened 2026-09-15** (Sol's review): "accept branch plan"
+authorizes the workstream to enter bounded implementation planning/execution
+subject to downstream decision-gated compilation and slice-level admission —
+not, as an earlier phrasing risked implying, sufficient execution authority
+on its own. It does not itself seal any material decision or compile any
+implementation contract, both of which remain decision-gated-compilation's
+own artifacts, produced and re-produced beneath an already-accepted branch
+plan. `proposal-decision-gated-implementation-compilation.md`'s own scope and
+text are unaffected by this ruling.
 
 ---
 

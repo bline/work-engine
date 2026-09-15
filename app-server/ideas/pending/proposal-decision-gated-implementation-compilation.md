@@ -354,35 +354,58 @@ pass.
 
 ### Relationship to capability resolution's admission boundary
 
-**Ruling 2026-09-15** (resolves seam `routing.vs.admission`, previously left
-open by `architecture-direction-synthesis.md` §2.1): this section's "execution
-model routing" and
-`pre-indexed-capability-resolution-and-frozen-runtime-realization.md` §4's
-"resolution, judgment, and admission" are two stages of one composition, not
-competing claims on the same question:
+**Ruling 2026-09-15, revised 2026-09-15** (resolves seam
+`routing.vs.admission`, previously left open by
+`architecture-direction-synthesis.md` §2.1). A first pass at this ruling
+collapsed two distinct questions this document's own text already keeps
+separate — Sol's review caught the collapse before it was allowed to stand:
+the implementation compiler's "proposed executor class with an evidence-backed
+readiness assessment" (Implementation-contract contents, above) and the
+plan-conformance gate checking that "the selected executor class is supported
+by prior evidence" establish only **plan readiness** ("Passing the gate
+establishes plan readiness only. It does not authorize the slice," above) —
+they do not themselves select or authorize an executor class for a specific
+slice. That authorization is Stage 6's own separate act: "allow the supervisor
+to nominate an executor class from contract characteristics and historical
+outcomes. Routing remains advisory until the appropriate authority accepts it
+for the slice" (Execution model routing / Stage 6, above). Treating the
+compiler's characterization as if it were that acceptance would quietly give
+this document more authority over routing than its own design ever claimed.
+
+The corrected composition is three stages, not two:
 
 ```text
-semantic requirement / strategy (this section: does the compiled contract
-                                  warrant Sol-class judgment, or is a cheaper
-                                  executor class admissible?)
+contract characterization (this document: the implementation compiler and
+    plan-conformance gate — given a compiled contract, which executor
+    classes are semantically supported, with what evidence-backed
+    readiness? Establishes plan readiness only; authorizes no class for
+    any specific slice.)
             |
             v
-resolution / admission (capability-resolution §4: given that class + current
-                         capabilities + policy, which exact model/provider/
-                         harness/tool realization is admitted?)
+executor-class routing decision (the supervisor / the routing-policy
+    authority named in Stage 6 — not this document alone: given the
+    compiler's supported-class assessment plus historical outcomes, cost,
+    and policy, the supervisor may nominate a class; that nomination
+    remains advisory until the appropriate authority accepts it for this
+    slice.)
+            |
+            v
+runtime resolution / admission (capability-resolution §4: given that
+    accepted class plus current capabilities and policy, which exact
+    model/provider/harness/tool realization is admitted now?)
             |
             v
 concrete realization
 ```
 
-This document owns the first question — the executor-class criteria above
-(exactness, closed/delegated decisions, local discretion, objective feedback,
-reversibility, detectability, cost) decide *whether* a cheaper executor class
-is warranted at all. It does not own *which* concrete realization within that
-class gets admitted; that is capability-resolution's own resolution/admission
-judgment, applied after this section's class-level decision, not instead of
-it. Neither document is amended in any other respect by this ruling — it
-states composition order, not new authority.
+This document owns contract characterization only — whether an executor
+class is *semantically supported* by a compiled contract's constraints, at
+compile time, with no runtime authority attached. It does not own the
+slice-level routing decision (Stage 6's own supervisor/authority act) or the
+concrete-realization admission (capability-resolution's). Neither
+neighboring document is amended in any other respect by this ruling — it
+states composition order among three already-present stages, not new
+authority for any of them.
 
 ## Context lifecycle boundary
 
