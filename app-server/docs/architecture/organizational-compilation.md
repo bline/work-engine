@@ -923,7 +923,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`semantic-planning-hierarchy.md`** — how semantic work topology is formed and revised.
 - **`authority-and-ownership.md`** — which roles may observe, nominate, decide, admit, and execute.
 - **`context-lifecycle-and-fencing.md`** — how reasoning environments transition safely while organizational state changes.
-- **`claim-evidence-refresh--planning-facts-emission.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
+- **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
 
 A durable-state/revisions view (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) does not exist yet as its own page. Whether it should be a standalone architecture dimension or stay distributed across the pages above is an open decomposition question, not resolved by this link list.
 

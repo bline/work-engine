@@ -656,7 +656,7 @@ The two pages therefore describe the same system from different dimensions.
 - **`semantic-planning-hierarchy.md`** — where semantic planning and replanning occur.
 - **`organizational-compilation.md`** — how accepted obligations become concrete execution vantages under bounded authority.
 - **`context-lifecycle-and-fencing.md`** — how reasoning environments change without violating ownership or revision consistency.
-- **`claim-evidence-refresh--planning-facts-emission.md`** — how materialized facts remain subordinate to their authoritative source.
+- **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 
 A durable-state/revisions view (where authoritative state, derived state, and lineage live across all of these) does not exist yet as its own page — an open decomposition question, not resolved by this link list.
 

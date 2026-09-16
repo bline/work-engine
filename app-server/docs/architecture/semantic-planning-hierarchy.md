@@ -300,7 +300,7 @@ The following atlas pages expand dimensions intentionally omitted here:
 - **`authority-and-ownership.md`** — which authority surfaces belong to which logical roles and services.
 - **`organizational-compilation.md`** — how accepted semantic structure is lowered into execution organization and recursively adapted.
 - **`context-lifecycle-and-fencing.md`** — how retained reasoning contexts are replaced safely.
-- **`claim-evidence-refresh--planning-facts-emission.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.
+- **`evidence-and-claims.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.
 
 A durable-state/revisions view (canonical revisioned state, derived state, evidence, and lineage across all of these) does not exist yet as its own page — an open decomposition question, not resolved by this link list.
 
