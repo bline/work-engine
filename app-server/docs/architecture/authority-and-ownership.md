@@ -589,7 +589,7 @@ The generative form, which subsumes all four:
 
 > **Failure of an authorized candidate does not authorize a previously unauthorized alternative.**
 
-If candidate A becomes invalid, Work Engine does not thereby conclude candidate B is authorized. It reruns candidate resolution and admission (see `organizational-compilation.md` and `runtime-realization.md` for two concrete instances of that shared mechanism) against the *same, unchanged* authority ceiling. No authority is manufactured by failure — only the candidate set changes; what may lawfully be selected from it does not.
+If candidate A becomes invalid, Work Engine does not thereby conclude candidate B is authorized. It reruns candidate resolution and admission (see `organizational-compilation.md`, `runtime-realization.md`, and `material-decision-selection.md` for three confirmed instances of that shared mechanism, plus `portfolio-selection.md` as a likely fourth) against the *same, unchanged* authority ceiling. No authority is manufactured by failure — only the candidate set changes; what may lawfully be selected from it does not.
 
 ---
 
