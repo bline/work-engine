@@ -300,6 +300,7 @@ The following atlas pages expand dimensions intentionally omitted here:
 - **`authority-and-ownership.md`** — which authority surfaces belong to which logical roles and services.
 - **`organizational-compilation.md`** — how accepted semantic structure is lowered into execution organization and recursively adapted.
 - **`runtime-realization.md`** — how an accepted executor/runtime requirement becomes a concrete provider/harness/model composition, several steps downstream of this page's own output.
+- **`role-and-contract-structure.md`** — what a logical role must observe, own, and avoid, sitting between organizational compilation and runtime realization.
 - **`context-lifecycle-and-fencing.md`** — how retained reasoning contexts are replaced safely.
 - **`evidence-and-claims.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.
 

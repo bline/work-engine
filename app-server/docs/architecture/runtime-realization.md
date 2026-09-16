@@ -337,6 +337,7 @@ Role/Contract Structure (not yet its own page) is the upstream owner of what thi
 
 - **`authority-and-ownership.md`** — the observe/nominate/decide/admit/execute vocabulary this dimension's decision-owner step depends on, and the invalidation invariant (§12) generalized partly from this page.
 - **`organizational-compilation.md`** — the sibling instance of Candidate Resolution and Admission, and the dimension whose relationship to §5's open executor-class-routing seam is not yet settled.
+- **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the other side of §5's open routing seam.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
 - **`context-lifecycle-and-fencing.md`** — where the shared revision/CAS and transition-fencing mechanisms this dimension reuses are treated as mechanisms, not duplicated here.
