@@ -8,16 +8,18 @@ This is a **mechanism view**, not a dimension view. It describes a reusable inva
 
 > **The mechanism preserves succession safety. It never decides what a revision means, what triggered it, or who was allowed to produce it — those are the owning dimension's own questions, every time.**
 
-Four independently owned dimensions have each reached for the identical shape without copying it from one another:
+Independently owned dimensions keep reaching for the identical shape without copying it from one another:
 
 ```text
 Semantic Planning        — branch-plan revisions (durable state, §16)
 Organizational Compilation — ExecutionEnvelope revisions (accepted admission mechanism)
 Evidence/Claims           — claim revisions (implemented, real code)
 Context Lifecycle         — checkpoint / lifecycle-ledger revisions (implemented, real code)
+Runtime Realization       — realization lineage (proposed)
+Material Decision Selection — sealed decision-set revisions (proposed)
 ```
 
-Four independent instances converging on one shape is the actual evidence for documenting it once, here — not a stylistic preference for consolidation.
+Six independent instances converging on one shape is the actual evidence for documenting it once, here — not a stylistic preference for consolidation. This count was last true to the page's own body as of 2026-09-16; if it drifts again, trust the "Confirmed Instances" section below over this summary.
 
 ---
 
@@ -89,6 +91,10 @@ Verified directly against `app-server/src/services/claim-evidence/service.mjs`: 
 
 `runtime-realization.md` §10: every execution record identifies its exact realization, and a successor after rematerialization names `predecessor_realization` and a `transition_reason`. Proposed shape, matching the same pattern; no implementation evidence found.
 
+### Material Decision Selection — proposed, not implemented
+
+`material-decision-selection.md` §6: "sealing makes that revision immutable; later changes create a successor and reopen every implementation contract that relied upon the superseded revision." The identical predecessor-chained, CAS-published shape, found independently by this dimension's own source document; no implementation evidence found.
+
 ---
 
 ## Key Invariants
@@ -127,7 +133,7 @@ Independent mechanisms answering different questions — Candidate Resolution an
 ## Related Architecture Views
 
 - **`evidence-and-claims.md`**, **`context-lifecycle.md`** — the two implemented instances.
-- **`organizational-compilation.md`**, **`semantic-planning-hierarchy.md`**, **`runtime-realization.md`** — accepted-design or proposed instances, not yet implemented.
+- **`organizational-compilation.md`**, **`semantic-planning-hierarchy.md`**, **`runtime-realization.md`**, **`material-decision-selection.md`** — accepted-design or proposed instances, not yet implemented.
 - **`authority-and-ownership.md`** — owns who may publish; this mechanism only owns whether a given publish is safe against the current head.
 
 ---

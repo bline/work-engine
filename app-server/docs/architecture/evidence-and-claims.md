@@ -303,6 +303,7 @@ Organizational Compilation's own admitted revision is the analogous future sourc
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's `service.mjs` as one of its two confirmed implemented instances.
 - **`substrates/evidence-anchor.md`** — the substrate producing this dimension's `may_affect` nomination candidates; this dimension remains the sole publisher of durable `may_affect` records and the sole judge of refresh consequence.
 - **`review.md`** — materializes that dimension's own review-judgment output as a durable claim (`review-finding-bridge.mjs`); this dimension never produces the judgment itself.
+- **`proposal-evaluation.md`**, **`decision-specific-readiness.md`**, **`portfolio-selection.md`**, **`implementation-contract-compilation.md`** — the proposal→decision front-end chain; each consumes this dimension's own evidence/claim/freshness primitives as an input, and none of them materializes or owns evidence directly.
 
 ---
 
