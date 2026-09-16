@@ -126,14 +126,7 @@ retract_revision     — publish a retraction lineage edge
 
 Three domain profiles currently exist (`contract.mjs`'s `PROFILES`): `proposal-research-v1`, `revision-bound-review-finding-v1`, `production-path-v1`. Every claim belongs to exactly one profile, which owns that domain's own proposition-identity and evidence-mode rules.
 
-```yaml
-status_override:
-  design: accepted
-  reconciliation: reconciled
-  authorization: implementation_authorized
-  implementation: implemented
-  source: app-server/docs/claim-evidence-service.md
-```
+No `status_override` here — **removed 2026-09-16**, found by the three-category audit's own mechanical metadata pass: this section's status was identical to the page default (see `Source and Status` below) in every field, which is a redundant restatement, not a genuine divergence. `status-grammar.md` §3 reserves overrides for sections that actually differ.
 
 ---
 

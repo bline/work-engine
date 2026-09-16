@@ -311,14 +311,29 @@ Revisioned state, predecessor lineage, CAS publication, and atomic visibility (c
 
 ## Source and Status
 
-This view is primarily grounded in the reconciled architecture expressed by:
+**Retrofitted 2026-09-16** — this page predates `status-grammar.md` and had no formal `architecture_status` block, discovered by the three-category structural audit's own metadata pass. Each field below is re-derived independently from cited evidence, not inferred from the others.
 
-- `hierarchical-planning-and-multi-supervisor-orchestration.md`
-- `proposal-decision-gated-implementation-compilation.md`
-- `deterministic-authority-projection-and-adaptive-organizational-topology.md`
+```yaml
+architecture_status:
+  design: proposed
+  reconciliation: reconciled
+  authorization: unrecorded
+  implementation: partial
+  owner: app-server/ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md
+  status_as_of: 2026-09-16
+```
 
-The planning hierarchy and the distinction between planning authority and downstream realization are treated here as established planned-architecture direction.
+`design: proposed`, not `accepted` — the source document's own Status header reads "Formed architectural direction," never an explicit adoption decision. `reconciliation: reconciled` — this page's content is checked directly against that source, `proposal-decision-gated-implementation-compilation.md`, and `deterministic-authority-projection-and-adaptive-organizational-topology.md`. `authorization: unrecorded` — the document was set as strategic priority (`post-migration-strategic-plan.md`, 2026-09-14), which is not the same speech-act as an authorization decision under this grammar; no citable "build this" decision was found, so this is silence, not a confirmed ceiling. `implementation: partial` — Supervisor/Builder execution is real and live in the current runtime; the newer upper layers this page depicts (Preplanner, Orchestrator, Branch Planner, concurrent multi-branch topology) are not.
 
-This page does **not** claim that every depicted role or transition is fully implemented in the current App Server runtime.
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
+  implementation: none
+  source: app-server/docs/work-engine-planned-architecture.md
+```
 
-Where later atlas views introduce organizational compilation, adaptive topology, planning-fact materialization, or other proposed mechanisms, those views should state their implementation and reconciliation status separately.
+Applies specifically to the two ownership rulings this page's own §4 (integration as a workstream) and the branch-plan/decision-gated-compilation boundary depend on: `routing.vs.admission` and `decision-gated.vs.hierarchical-orchestration`. The capstone's own text is explicit these "were not part of the 2026-09-14 acceptance but were separately resolved by explicit user ruling on 2026-09-15" — a real, dated, citable decision distinct from the surrounding document's own unaccepted status. `implementation: none` because a ruling that clarifies ownership boundaries builds nothing by itself.
+
+Where later atlas views introduce organizational compilation, adaptive topology, planning-fact materialization, or other proposed mechanisms, those views state their own implementation and reconciliation status separately, per each page's own `Source and Status` section.

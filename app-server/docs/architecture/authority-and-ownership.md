@@ -703,19 +703,27 @@ Revisioned state, predecessor lineage, CAS publication, and atomic visibility (w
 
 ## Source and Status
 
-This view synthesizes authority distinctions established across the planned Work Engine architecture, especially:
+**Retrofitted 2026-09-16** — this page predates `status-grammar.md` and had no formal `architecture_status` block, discovered by the three-category structural audit's own metadata pass. Each field below is re-derived independently, not summarized as one uniform value — this page mixes a mature, directly-settled invariant with proposed representation details, and the grammar exists precisely to keep those distinct.
 
-- the semantic ownership boundaries in `hierarchical-planning-and-multi-supervisor-orchestration.md`;
-- the decision/admission distinctions in `proposal-decision-gated-implementation-compilation.md`;
-- the authority/vantage decomposition in `deterministic-authority-projection-and-adaptive-organizational-topology.md`;
-- the emerging organizational contract model associated with role compilation and ExecutionEnvelope design;
-- claim-evidence's separation between evidence production, domain ownership, and publication authority;
-- `pre-indexed-capability-resolution-and-frozen-runtime-realization.md`'s invalidation model (§12 above).
+```yaml
+architecture_status:
+  design: proposed
+  reconciliation: reconciled
+  authorization: unrecorded
+  implementation: partial
+  owner: app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md
+  status_as_of: 2026-09-16
+```
 
-§12's generalization was settled 2026-09-16 specifically because the same invariant appeared independently in `evidence-and-claims.md` and the (then-unwritten) `runtime-realization.md` — two unrelated dimensions converging on one shape is itself the evidence for stating it once, here, rather than per dimension.
+This default describes §1–§11: the authority-projection model, the observe/nominate/decide/admit/execute vocabulary, delegation modes, and deterministic authority projection. `design: proposed`, not `accepted` — the source idea document's own top-level Authority line is explicit: "Exploratory only." `reconciliation: reconciled` — checked directly against `hierarchical-planning-and-multi-supervisor-orchestration.md`'s ownership boundaries, `proposal-decision-gated-implementation-compilation.md`'s decision/admission distinctions, and claim-evidence's own authority separation. `authorization: unrecorded` — no citable authorization decision names this vocabulary at its current scope. `implementation: partial` — the vocabulary itself is not one runtime type, but concrete instances of it are real: claim-evidence's own evidence-producer/domain-owner permission classes are live code (`app-server/src/services/claim-evidence/contract.mjs`'s `PERMISSIONS`); the general "decision requirements declared against role vantage, projected deterministically" model in §4–§5 is not built anywhere.
 
-The high-level authority principles are treated here as established planned-architecture direction.
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
+  implementation: none
+  source: app-server/docs/architecture/authority-and-ownership.md
+```
 
-The exact representation of authority grants, role primitives, deterministic authority projection, and organizational-realization ownership remains subject to the reconciliation work identified elsewhere in the architecture.
-
-This page therefore describes the intended ownership model without claiming that every authority primitive shown here already exists as a concrete runtime type or service.
+Applies to §12 (Invalidation Never Mints Authority) specifically. Explicitly settled through direct discussion 2026-09-16 — the same bar every mechanism-recognition elsewhere in this architecture is held to — after the identical invariant appeared independently in `evidence-and-claims.md` and `runtime-realization.md` before either was recognized as one shape. `authorization: design_work_authorized` because naming and generalizing the invariant is what was authorized; nothing about this page authorizes building anything. `implementation: none` — §12 is a stated invariant, not a buildable artifact in its own right; its concrete instances are each dimension's own content, already covered by their own pages.

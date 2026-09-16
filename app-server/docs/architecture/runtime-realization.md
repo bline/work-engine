@@ -308,7 +308,7 @@ The overlay is scoped hierarchically (global → workflow/campaign → role clas
 
 This page does not define:
 
-- role/contract semantics (owned by Role/Contract Structure, not yet its own page);
+- role/contract semantics (`role-and-contract-structure.md`);
 - which authority owns executor-class routing (§5, explicitly open);
 - organizational topology or admission (`organizational-compilation.md`);
 - semantic planning or replanning (`semantic-planning-hierarchy.md`);
@@ -321,7 +321,7 @@ This page does not define:
 
 ## Relationship to Role/Contract Structure
 
-Role/Contract Structure (not yet its own page) is the upstream owner of what this dimension calls "role contract" throughout — the semantic requirements, effect ceilings, and continuity requirements a realization must satisfy. This dimension never redefines those; it only tests candidate realizations against them.
+`role-and-contract-structure.md` is the upstream owner of what this dimension calls "role contract" throughout — the semantic requirements, effect ceilings, and continuity requirements a realization must satisfy. This dimension never redefines those; it only tests candidate realizations against them.
 
 ## Relationship to Authority and Ownership
 

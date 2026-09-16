@@ -939,30 +939,51 @@ Revisioned state, predecessor lineage, CAS publication, and atomic visibility (w
 
 ## Source and Status
 
-This view synthesizes planned architecture established or developed across:
+**Retrofitted 2026-09-16** — this page predates `status-grammar.md` and had no formal `architecture_status` block, discovered by the three-category structural audit's own metadata pass. This page combines at least four genuinely different maturity levels; summarizing it as one value would have been the exact status-washing the grammar exists to prevent. Page default plus three local overrides, each re-derived from cited evidence independently.
 
-- `deterministic-authority-projection-and-adaptive-organizational-topology.md`;
-- `hierarchical-planning-and-multi-supervisor-orchestration.md`;
-- `organizational-execution-envelopes.md` and its reconciliation, `organizational-execution-envelopes-reconciliation.md`;
-- `role-compiler-proposal.md`;
-- `proposal-decision-gated-implementation-compilation.md`.
+```yaml
+architecture_status:
+  design: proposed
+  reconciliation: reconciled
+  authorization: unrecorded
+  implementation: none
+  owner: app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md
+  status_as_of: 2026-09-16
+```
 
-Several important boundaries are already conceptually settled:
+This default describes the page as a whole: organizational compilation as an architecture — the compile-from-accepted-meaning shape (§1–§6), runtime-realization ordering (§8), and the fixed/adaptive policy-mode framing (§17–§18). `design: proposed` — the source idea document's own top-level Authority line: "Exploratory only." `reconciliation: reconciled` — checked directly against `hierarchical-planning-and-multi-supervisor-orchestration.md`, `organizational-execution-envelopes.md`/its reconciliation, and `role-compiler-proposal.md`. `authorization: unrecorded` — no citable decision authorizes this architecture at its current scope. `implementation: none` — no organizational compiler exists anywhere.
 
-- semantic planning and organizational realization are separate;
-- downstream realization does not acquire upstream planning authority;
-- authority attenuates through delegation;
-- semantic invalidation routes through replanning rather than being repaired locally.
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
+  implementation: none
+  source: app-server/docs/organizational-execution-envelopes-reconciliation.md
+```
 
-One admission-layer question has moved from open to accepted-design (2026-09-15, §7 above): organizational authority selects a candidate from `available ∩ authorized ∩ satisfies(required)`, and `ExecutionEnvelope` records — never makes — that selection. This is accepted design in `organizational-execution-envelopes-reconciliation.md`, not yet implemented anywhere.
+Applies to §7 (Admission Produces an Authoritative Organizational Revision). Explicit 2026-09-15 acceptance: organizational authority selects a candidate from `available ∩ authorized ∩ satisfies(required)`, and `ExecutionEnvelope` records — never makes — that selection. `authorization: design_work_authorized`, explicitly bounded per that reconciliation's own text — coupled to `role-compiler-proposal.md`'s own deferred composition question before implementation could even be considered.
 
-Several implementation and ownership questions remain open:
+```yaml
+status_override:
+  design: proposed
+  reconciliation: partial
+  authorization: exploration_only
+  implementation: none
+  source: app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md
+```
 
-- the exact durable schema an admitted organizational revision actually uses (ExecutionEnvelope proper, a distinct organizational-topology revision, or some composition);
-- the precise relationship between role compilation and ExecutionEnvelope construction, still coupled to `role-compiler-proposal.md`'s own deferred reusable-role-profile-composition question;
-- the final primitive representation of vantage and authority requirements;
-- how cross-cutting organizational realizations should be treated (§16 above);
-- whether deeper organizational layers consume source artifacts directly, claim materializations, or both;
-- whether any of this candidate design has been implemented — as of this writing, none of it has.
+Applies to §9–§13 (recursive organizational compilation and its stopping condition). `reconciliation: partial`, not `reconciled` — the idea document's own Open Question 22 states directly this "reframing" has not survived "a full, formal reconciliation pass against [the source document's] complete text." Matches `status-grammar.md` §10.3's own worked example.
 
-This page therefore represents the intended architectural cross-section while preserving those seams as unresolved rather than prematurely collapsing them.
+```yaml
+status_override:
+  design: exploratory
+  reconciliation: not_applicable
+  authorization: exploration_only
+  implementation: none
+  source: app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md
+```
+
+Applies to §16 (Cross-Cutting Realizations Remain an Open Boundary). The idea document's own Open Question 26 states the architecture "does not decide whether cross-cutting realizations should ever be permitted at all" — genuinely open in shape, not merely unaccepted. Matches `status-grammar.md` §10.4's own worked example.
+
+Several implementation and ownership questions remain open regardless of which override applies: the exact durable schema an admitted organizational revision actually uses (`ExecutionEnvelope` proper, a distinct organizational-topology revision, or some composition); the precise relationship between role compilation and `ExecutionEnvelope` construction; the final primitive representation of vantage and authority requirements; whether deeper organizational layers consume source artifacts directly, claim materializations, or both. This page represents the intended architectural cross-section while preserving those seams as unresolved rather than prematurely collapsing them.
