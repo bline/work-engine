@@ -288,6 +288,32 @@ The overlay is scoped hierarchically (global → workflow/campaign → role clas
 
 ---
 
+## 12. Fenced Active-Binding: This Dimension's Own Exclusivity Concern, Consuming a Shared Mechanism
+
+**Added 2026-09-16, resolving a gap named but not owned anywhere**: `control-plane-and-client-protocol-reconciliation.md` distinguishes "realization admission" (this dimension's own §4 — determines what may run) from "active-binding fence" (determines which admitted realization currently has authority to run as this role) and found no document owned the latter. Resolved by architectural synthesis: this dimension owns the *domain decision* — which realization generation currently holds authoritative right to execute as a given logical role instance — while `mechanisms/resource-lease-and-fencing.md` owns the *fencing mechanics* that make that decision race-safe and host-enforced, the same relationship this dimension already has to Candidate Resolution and Admission (§4) and Revision/CAS (§10).
+
+```text
+RoleRealization generation N exists (this dimension's own artifact, §6)
+        ↓
+acquire lease: resource = logical-role-instance:<id>:active-binding
+        ↓ (mechanisms/resource-lease-and-fencing.md)
+fencing generation F
+        ↓
+generation N may execute as the role
+        ↓
+generation N+1 supersedes N (this dimension's own rematerialization, §8)
+        ↓
+N+1 acquires fencing generation F+1
+        ↓
+N may remain alive physically, but F is stale
+        ↓
+N can no longer exercise role authority
+```
+
+This is stronger than the informal "kill the old realization" framing this dimension's own §9 (Safe Execution Boundaries) might otherwise suggest in isolation — active-binding fencing makes authority revocation enforceable by the host, not merely cooperative, and composes cleanly with rematerialization (§8): a successor's activation never requires pretending its predecessor ceased to exist, only that its predecessor's authority became unenforceable. Accepted for implementation 2026-09-14; the `role-active-binding-slot` resource type does not exist in `workspace-coordination`'s real `RESOURCE_TYPES` enum yet, so this remains a named, authorized gap, not yet built.
+
+---
+
 ## Key Invariants
 
 1. **Freeze each admitted realization, not its validity forever.**
@@ -301,6 +327,7 @@ The overlay is scoped hierarchically (global → workflow/campaign → role clas
 9. **Realization identity is an instance of the shared revision/CAS lineage pattern, not a new mechanism.**
 10. **The operator policy overlay is a manipulable control surface; it is not canonical workflow or runtime truth.**
 11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, closed by ruling — owned by the supervisor / routing-policy authority, not this dimension).**
+12. **Which realization generation currently holds authoritative active-binding is this dimension's own decision; the fencing mechanics that make it race-safe and host-enforced belong entirely to `mechanisms/resource-lease-and-fencing.md` (§12).**
 
 ---
 
@@ -315,6 +342,7 @@ This page does not define:
 - claim/evidence materialization (`evidence-and-claims.md`);
 - the exact revision/CAS mechanics this dimension reuses (`mechanisms/revision-cas-and-publication.md`, not duplicated here);
 - context-lifecycle transition fencing mechanics, beyond noting this dimension's own safe-boundary requirement composes with them;
+- the resource-lease/fencing mechanics that make active-binding exclusivity race-safe (`mechanisms/resource-lease-and-fencing.md`, §12 — consumed here, not duplicated);
 - concrete provider/harness implementation details for any specific runtime.
 
 ---
@@ -331,6 +359,10 @@ This page does not define:
 
 `organizational-compilation.md`'s own admission mechanism and this dimension's §4 are the same Candidate Resolution and Admission mechanism, independently arrived at, now named once rather than described twice.
 
+## Relationship to Resource Lease and Fencing
+
+This dimension owns the domain decision (§12: which realization generation currently holds authoritative active-binding); `mechanisms/resource-lease-and-fencing.md` owns the fencing mechanics that enforce it. Same division of labor this dimension already has with Candidate Resolution and Admission (§4) and Revision/CAS (§10) — a mechanism supplies a reusable shape, never the domain meaning.
+
 ---
 
 ## Related Architecture Views
@@ -345,6 +377,7 @@ This page does not define:
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the transition-fencing mechanism; owns none of them, same as this page.
 - **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own safe-execution-boundary requirement (§9 above) composes with it.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's own §10 as a proposed, not-yet-implemented instance.
+- **`mechanisms/resource-lease-and-fencing.md`** — the mechanism this dimension's own active-binding decision (§12) consumes for its fencing mechanics; citing this dimension as its second confirmed instance.
 
 ---
 
@@ -368,3 +401,14 @@ status_override:
 ```
 
 Applies narrowly to the concrete precursor pieces the source document itself names as already real (§12 there): pinned Codex capability negotiation (one real inventory adapter), the runtime manifest and compiled role environments, and the role binding registry. None of these is the complete materialized-realization architecture this page describes — each is a partial precursor the eventual design should feed from and reference, not become.
+
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: implementation_authorized
+  implementation: none
+  source: app-server/docs/control-plane-and-client-protocol-reconciliation.md
+```
+
+**Added 2026-09-16.** Applies to this page's own §12 (fenced active-binding) specifically — a genuine exception to the page default, confirmed by direct citation: `control-plane-and-client-protocol-reconciliation.md`'s own Acceptance section states "Accepted 2026-09-14 ... Implementation of the stated residue — fenced active-binding coordination for logical role instances — is authorized to proceed." `implementation: none` because the `role-active-binding-slot` resource type this decision depends on does not exist in `workspace-coordination`'s real `RESOURCE_TYPES` enum yet.

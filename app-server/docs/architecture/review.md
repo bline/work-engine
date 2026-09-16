@@ -181,11 +181,11 @@ Not smoothed into this dimension's own truth merely because they are adjacent to
    mechanism today).
 
 5. Protected-scope declaration for an active review, and the handoff to
-   `workspace-coordination` that enforces it (§9 below) — same shape as
-   items 2 and 4: an operational/coordination gap adjacent to this
-   dimension's own judgment, not judgment production itself, but
-   genuinely this dimension's own residue to carry, not a generic
-   mechanism and not latent in `workspace-coordination`'s own real code.
+   `mechanisms/resource-lease-and-fencing.md` that enforces it (§9
+   below) — same shape as items 2 and 4: an operational/coordination gap
+   adjacent to this dimension's own judgment, not judgment production
+   itself, but genuinely this dimension's own residue to carry, never
+   inferred from the mechanism's own shape.
 ```
 
 ---
@@ -204,11 +204,11 @@ The exact invariant this instance protects:
 
 > **A mutation to a scope an active review currently depends on must not be silently admitted without an attributed disposition from this dimension's own judgment layer — neither an old, unrelated reliance record (a false positive) nor an in-progress review with no finding yet (a false negative) may substitute for that judgment.**
 
-**Confirmed not a generic cross-cutting mechanism**, tested against the same bar this session's confirmed mechanisms all had to clear (independent domains converging on the identical shape without copying each other): no second domain in the 18 views demonstrably needs "declare protected scope, check mutations, get continue/wait/new-subject/adjudicate." `material-decision-selection.md` and `implementation-contract-compilation.md` have an adjacent-but-different need (stale evidence during compilation) and solve it differently, via `blocked_by_evidence`/`returned_for_decision` — not a lease-style protected-scope declaration. One domain needing a shape is evidence for that domain's own residue, not for a fourth mechanism.
+**The judgment itself is not a generic cross-cutting mechanism**, tested against the same bar this session's confirmed mechanisms all had to clear (independent domains converging on the identical shape without copying each other): no second domain in the 18 views demonstrably needs "does a mutation still leave my own active semantic episode valid?" `material-decision-selection.md` and `implementation-contract-compilation.md` have an adjacent-but-different need (stale evidence during compilation) and solve it differently, via `blocked_by_evidence`/`returned_for_decision` — not this dimension's own judgment shape. This part of the finding still holds: the *judgment* stays this dimension's own residue, not a fourth mechanism.
 
-**Confirmed not latent in `workspace-coordination`'s own real code**, checked directly: `admitMutation({lease, operationId, mutate})` takes no review-state parameter at all — it only checks lease/fencing-token validity. Its `RESOURCE_TYPES` enum already includes a `review-budget` kind, confirming the mechanism reaches into review-adjacent territory, but nothing in it declares *which* resource key an active review needs protected. The reconciliation's own finding stands: a review-workflow responsibility must declare protected scope and call `workspace-coordination`; that responsibility is this dimension's own, added here as residue item 5 (§7), not `workspace-coordination`'s to infer.
+**The *enforcement* half, corrected 2026-09-16, turned out to be exactly a missing mechanism** — `mechanisms/resource-lease-and-fencing.md`, written the same day this instance was found, generalizes `workspace-coordination`'s own real lease/fencing discipline and is confirmed to serve two independent consumers: this dimension's protected-scope declaration, and `runtime-realization.md`'s own fenced active-binding decision. Checked directly against `workspace-coordination`'s real code before that mechanism page existed: `admitMutation({lease, operationId, mutate})` takes no review-state parameter at all — it only checks lease/fencing-token validity. Its `RESOURCE_TYPES` enum already includes a `review-budget` kind, confirming the mechanism reaches into review-adjacent territory, but nothing in it declared *which* resource key an active review needs protected. That declaration remains this dimension's own residue (item 5, §7) — the mechanism enforces it once declared, it never infers it.
 
-**Confirmed not `mechanisms/transition-fencing-and-leases.md`'s territory either** — that mechanism's own shape is preparation-vs-publication for a transition being actively prepared toward activation; this is standing protection over an active, non-transitioning review episode. Different shape, not a fence class.
+**Confirmed not `mechanisms/transition-fencing-and-leases.md`'s territory either** — that mechanism's own shape is preparation-vs-publication for a transition being actively prepared toward activation; this is standing protection over an active, non-transitioning review episode. Different shape, not a fence class. See `mechanisms/resource-lease-and-fencing.md`'s own explicit contrast with that mechanism for the full reasoning.
 
 ---
 
@@ -233,7 +233,7 @@ This page does not define:
 - specialist selection, execution, or independence mechanics (`adaptive-review-panel-coordination`, not yet its own architecture view);
 - acceptance, disposition, or blocking authority (`authority-and-ownership.md`);
 - any domain-specific required-concern contract (e.g. a future `UIReviewProfile`) — this page states the shared judgment shape, not any one domain's own concern list;
-- lease/fencing-token mechanics themselves (`workspace-coordination`'s own real `admitMutation`, not yet its own architecture view) — this dimension declares what needs protecting (§7 item 5, §9); it does not implement the protection.
+- lease/fencing-token mechanics themselves (`mechanisms/resource-lease-and-fencing.md`) — this dimension declares what needs protecting (§7 item 5, §9); it does not implement the protection.
 
 ---
 
@@ -245,6 +245,10 @@ This page does not define:
 
 Acceptance and disposition authority is never this dimension's own. `strategic-planning-handoff.mjs` is one concrete, campaign-level instance of `authority-and-ownership.md`'s own decide/admit vocabulary (§7 there) applied to a review finding's consequence — not evidence that this dimension acquires that authority by proximity.
 
+## Relationship to Resource Lease and Fencing
+
+This dimension decides what scope requires protection (§7 item 5, §9); `mechanisms/resource-lease-and-fencing.md` enforces possession/exclusivity for the declared resource once that decision is made. This dimension never infers a resource key from the mechanism's own shape, and the mechanism never decides review validity.
+
 ---
 
 ## Related Architecture Views
@@ -253,6 +257,7 @@ Acceptance and disposition authority is never this dimension's own. `strategic-p
 - **`evidence-and-claims.md`** — the sole materializer of this dimension's findings as durable claims.
 - **`authority-and-ownership.md`** — owns acceptance, disposition, and blocking authority; this dimension never claims it.
 - **`semantic-planning-hierarchy.md`**, **`organizational-compilation.md`**, **`role-and-contract-structure.md`**, **`runtime-realization.md`**, **`context-lifecycle.md`** — any may be the subject a review judges; none of them perform or own the review judgment itself.
+- **`mechanisms/resource-lease-and-fencing.md`** — enforces this dimension's own protected-scope declaration (§7 item 5, §9) once made; `runtime-realization.md`'s own fenced active-binding decision is this mechanism's other confirmed consumer.
 
 ---
 

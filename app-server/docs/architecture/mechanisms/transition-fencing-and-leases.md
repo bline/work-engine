@@ -146,6 +146,27 @@ This mechanism is built directly on top of that one and does not restate its pre
 
 A stale, invalidated preparation is exactly `authority-and-ownership.md` §12's invalidation-never-mints-authority invariant in this mechanism's own terms: losing a fence race removes validity, never grants standing to activate anyway against the authority ceiling that was already in force.
 
+## Relationship to Resource Lease and Fencing
+
+**Added 2026-09-16, an explicit sibling-mechanism distinction, not a merge.** `mechanisms/resource-lease-and-fencing.md` shares this mechanism's fencing-token vocabulary but protects a structurally different invariant, confirmed by direct comparison rather than assumed from the shared word "fencing":
+
+```text
+THIS MECHANISM                              RESOURCE LEASE AND FENCING
+
+protects a one-shot preparation interval    protects a standing holder
+(bind -> prepare -> revalidate -> publish   relationship (acquire -> hold,
+-> activate -> release)                     renew, or release; no
+                                             preparation phase, no single
+staleness = the bound world revision        activation event)
+changed while preparing
+                                             staleness = an older
+                                             holder/token no longer
+                                             matches the current
+                                             generation
+```
+
+The fenced-active-binding gap this session found (`runtime-realization.md` §12) was tested against both mechanisms directly and belongs to the other one, not this one — a standing "who currently holds authority to execute as this role" relationship, not a bounded transition being prepared toward one activation. Same fencing-token machinery does not mean same architectural invariant.
+
 ---
 
 ## Related Architecture Views
@@ -154,6 +175,7 @@ A stale, invalidated preparation is exactly `authority-and-ownership.md` §12's 
 - **`organizational-compilation.md`** — the named, unimplemented instance (topology-transition fence).
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism this one is built on top of; defines the publication-safety half this page does not duplicate.
 - **`authority-and-ownership.md`** — the general invalidation-never-mints-authority invariant this mechanism's own stale-preparation rule instantiates.
+- **`mechanisms/resource-lease-and-fencing.md`** — the sibling mechanism; shares fencing-token vocabulary, protects a structurally different (standing-holder, not preparation-interval) invariant.
 
 ---
 
