@@ -149,9 +149,9 @@ Treating `strategic-planning-handoff.mjs` as the general acceptance owner would 
 
 ---
 
-## 7. The Residue: Five Pieces Still Genuinely Unowned
+## 7. The Residue: Six Pieces Still Genuinely Unowned
 
-Not smoothed into this dimension's own truth merely because they are adjacent to it — each is confirmed, by the reconciliation's own disposition table (items 1-4) or a targeted architectural synthesis (item 5, added 2026-09-16), as **not retired**:
+Not smoothed into this dimension's own truth merely because they are adjacent to it — each is confirmed, by the reconciliation's own disposition table (items 1-4), a targeted architectural synthesis (item 5, added 2026-09-16), or a pressure test against a strong null hypothesis (item 6, added 2026-09-16), as **not retired**:
 
 ```text
 1. The semantic correspondence-judgment's own owner and record shape,
@@ -187,13 +187,34 @@ Not smoothed into this dimension's own truth merely because they are adjacent to
    adjacent to this dimension's own judgment, not judgment production
    itself, but genuinely this dimension's own residue to carry, never
    inferred from the mechanism's own shape.
+
+6. Adaptive review-panel coordination — coverage accounting over a
+   required concern set, conflict preservation instead of premature
+   merge, and an attributed fan-out/fan-in protocol distinguishing
+   coordinator inference from specialist findings. Pressure-tested
+   2026-09-16 against a strong null hypothesis (domain-local
+   orchestration, not a shared mechanism) — the null held: none of
+   Proposal Evaluation, Implementation-Contract Compilation,
+   Organizational Compilation, or Material Decision Selection
+   independently need "one semantic episode -> multiple concern-
+   specialized independent judgments -> attributed aggregation ->
+   explicit coverage/conflict detection." One domain needing a
+   sophisticated internal workflow is not evidence for a mechanism.
+   Real residue, but genuinely less mature than items 1-5: the source
+   proposal's own state line reads "placement uncertain... not
+   closure-reviewed, evaluated, accepted, or authorized," and its own
+   "Boundary and placement" section admits "dogfooding has not
+   established whether panel selection and synthesis need separate
+   owners, context lifetimes, or durable-state lifecycles" — not yet
+   ready even as a fully-specified residue item, named here rather than
+   left uncited.
 ```
 
 ---
 
 ## 8. Authorization Split, Exactly as the Source Records It
 
-**Accepted 2026-09-14**, with an explicit split this page preserves rather than flattens: implementation of the mechanical seam-evidence adapter extensions is authorized to proceed — but that authorization belongs to `substrates/evidence-anchor.md`'s own anchor-kind taxonomy, not to this dimension. Residue items 1-4 (§7) are authorized for **design work only, not implementation** — each still requires an owner decision this reconciliation deliberately did not make for it. **Residue item 5 is a genuine exception, confirmed 2026-09-16 by direct citation, not assumed to match the other four**: `review-scope-coordination-reconciliation.md`'s own Acceptance section states "implementation of the stated residue — prospective review-scope coordination before mutation admission, including the design decision of which owner declares a scope protected before `workspace-coordination` enforces it — is authorized to proceed" — `implementation_authorized`, not `design_work_authorized`. See the dedicated `status_override` below.
+**Accepted 2026-09-14**, with an explicit split this page preserves rather than flattens: implementation of the mechanical seam-evidence adapter extensions is authorized to proceed — but that authorization belongs to `substrates/evidence-anchor.md`'s own anchor-kind taxonomy, not to this dimension. Residue items 1-4 (§7) are authorized for **design work only, not implementation** — each still requires an owner decision this reconciliation deliberately did not make for it. **Residue item 5 is a genuine exception, confirmed 2026-09-16 by direct citation, not assumed to match the other four**: `review-scope-coordination-reconciliation.md`'s own Acceptance section states "implementation of the stated residue — prospective review-scope coordination before mutation admission, including the design decision of which owner declares a scope protected before `workspace-coordination` enforces it — is authorized to proceed" — `implementation_authorized`, not `design_work_authorized`. See the dedicated `status_override` below. **Residue item 6 is weaker still than items 1-4, not merely equal to them**: its own source proposal has never gone through the sequel queue's 2026-09-14 acceptance pass at all — its own Identity-and-state line reads "not closure-reviewed, evaluated, accepted, or authorized." See its own dedicated `status_override` below.
 
 ---
 
@@ -276,14 +297,14 @@ architecture_status:
   status_as_of: 2026-09-16
 ```
 
-`design: accepted` — the reconciliation's own Acceptance section: "Accepted 2026-09-14 (explicit user decision...). This document's findings and disposition are confirmed accurate." `reconciliation: reconciled` — this page's content traces directly to that document, read in full this session, not carried forward from a prior summary. `authorization: design_work_authorized` — per §8 above, residue items 1-4 (§7) are authorized for design work only; the one implementation-authorized piece belonging to this dimension's own territory (residue item 5, §9) is carried in its own override below, and the mechanical seam-evidence adapter extensions' implementation authorization belongs to `substrates/evidence-anchor.md`'s own territory, not this dimension's. `implementation: partial` — this dimension's general operational form (a semantic-judgment owner role, a routing/disposition record, an architectural-finding profile, a routing mechanism, a protected-scope declaration) is unbuilt, but two real, concrete instances of the judgment-production shape itself already exist and run in production (§3).
+`design: accepted` — the reconciliation's own Acceptance section: "Accepted 2026-09-14 (explicit user decision...). This document's findings and disposition are confirmed accurate." `reconciliation: reconciled` — this page's content traces directly to that document, read in full this session, not carried forward from a prior summary. `authorization: design_work_authorized` — per §8 above, residue items 1-4 (§7) are authorized for design work only; the one implementation-authorized piece belonging to this dimension's own territory (residue item 5, §9) is carried in its own override below, and the mechanical seam-evidence adapter extensions' implementation authorization belongs to `substrates/evidence-anchor.md`'s own territory, not this dimension's. `implementation: partial` — this dimension's general operational form (a semantic-judgment owner role, a routing/disposition record, an architectural-finding profile, a routing mechanism, a protected-scope declaration, adaptive-panel coordination) is unbuilt, but three real, concrete instances of the judgment-production shape itself already exist and run in production (§3).
 
 ```yaml
 status_override:
   implementation: implemented
 ```
 
-Applies narrowly to §3: `review-finding-bridge.mjs` and `agent-instruction-review`'s `service.mjs`/`contract.mjs`, both real code, the latter fully dogfooded. Neither is the complete, general review-judgment mechanism this page describes — each is a concrete, working instance of the shape, not the shape's own general infrastructure.
+Applies narrowly to §3: `review-finding-bridge.mjs`, `agent-instruction-review`'s `service.mjs`/`contract.mjs`, and `native-review-host.mjs` — all real code, the second fully dogfooded. None is the complete, general review-judgment mechanism this page describes — each is a concrete, working instance of the shape, not the shape's own general infrastructure.
 
 ```yaml
 status_override:
@@ -292,3 +313,14 @@ status_override:
 ```
 
 **Added 2026-09-16.** Applies narrowly to §7 residue item 5 and §9 (review-scope validity, the protected-scope declaration and `workspace-coordination` handoff) — a genuine exception among the residue items, confirmed by direct citation rather than assumed to match items 1-4's `design_work_authorized`: `review-scope-coordination-reconciliation.md`'s own Acceptance section states "implementation of the stated residue — prospective review-scope coordination before mutation admission, including the design decision of which owner declares a scope protected before `workspace-coordination` enforces it — is authorized to proceed," accepted 2026-09-14. `implementation: none` (the page default, unchanged) — no code implements this instance yet.
+
+```yaml
+status_override:
+  design: exploratory
+  reconciliation: not_applicable
+  authorization: exploration_only
+  implementation: none
+  source: proposals/adaptive-specialized-review/adaptive-review-panel-coordination/proposal.md
+```
+
+**Added 2026-09-16.** Applies narrowly to §7 residue item 6 (adaptive review-panel coordination). Weaker than every other residue item's status, not flattened to match them: the source's own "Identity and state" reads "placement uncertain; revised after bootstrap review continuation and not closure-reviewed, evaluated, accepted, or authorized" — never went through the sequel queue's 2026-09-14 acceptance pass at all, unlike items 1-5. `design: exploratory`, not `proposed` — the source's own "Boundary and placement" section states final placement itself remains genuinely unresolved ("dogfooding has not established whether panel selection and synthesis need separate owners, context lifetimes, or durable-state lifecycles"), not merely unaccepted. `authorization: exploration_only` — the source's own Authority section: "does not perform review, declare semantic freshness... or authorize implementation." A confirmed ceiling, not silence.
