@@ -924,7 +924,7 @@ Those are separate acts even when one physical actor participates in more than o
 
 - **`semantic-planning-hierarchy.md`** — how semantic work topology is formed and revised.
 - **`authority-and-ownership.md`** — which roles may observe, nominate, decide, admit, and execute.
-- **`runtime-realization.md`** — the sibling instance of Candidate Resolution and Admission (§7 above); also carries the still-open question of who owns executor-class routing between this dimension and that one.
+- **`runtime-realization.md`** — the sibling instance of Candidate Resolution and Admission (§7 above); its own §5 records the `routing.vs.admission` ruling confirming executor-class routing belongs to neither this dimension nor that one, but to the supervisor / routing-policy authority named in decision-gated compilation's Stage 6.
 - **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §7 as one of its two confirmed instances.
 - **`role-and-contract-structure.md`** — the "semantic obligation → required vantage → logical role contract" chain (§5 above) grounds directly against that page's own §4.
 - **`context-lifecycle.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the temporal question this dimension's own topological question is deliberately kept separate from.

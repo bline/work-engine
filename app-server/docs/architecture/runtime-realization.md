@@ -10,7 +10,7 @@ The central rule:
 
 > **Freeze each admitted realization, not its validity forever.** A failed dependency can make a realization stale without changing what it meant while it was in use, and without granting anyone new authority merely because the old realization broke.
 
-This dimension owns capability observation, operator runtime policy, resolution of concrete runtime composition, the immutable `RoleRealization` artifact itself, its invalidation, and its rematerialization. It does **not** own what a logical role is required to do (Role/Contract Structure), which executor class an obligation should route to (an explicitly open seam, §5), organizational topology, or semantic planning.
+This dimension owns capability observation, operator runtime policy, resolution of concrete runtime composition, the immutable `RoleRealization` artifact itself, its invalidation, and its rematerialization. It does **not** own what a logical role is required to do (Role/Contract Structure), which executor class an obligation should route to (owned by the supervisor / routing-policy authority named in decision-gated compilation's own Stage 6, closed by ruling — §5), organizational topology, or semantic planning.
 
 ---
 
@@ -163,9 +163,9 @@ The mechanism reduces and validates the candidate space. It never owns the meani
 
 ---
 
-## 5. The Open Seam: Executor-Class Routing Is Not Resolved Here
+## 5. Executor-Class Routing: a Closed Seam This Dimension Only Consumes
 
-The source document names an explicit three-stage pipeline (its own ruling, resolving seam `routing.vs.admission`, revised after review):
+The source document names an explicit three-stage pipeline. This is a **ruling**, not an open question (`Ruling 2026-09-15, revised 2026-09-15`, resolving seam `routing.vs.admission`, previously left open by `architecture-direction-synthesis.md` §2.1):
 
 ```text
 contract characterization                executor-class routing /              runtime resolution / admission
@@ -177,11 +177,11 @@ no slice authority)                       a nomination, advisory until          
                                            accepted for the slice)                admitted now?)
 ```
 
-This dimension is squarely the third stage. **It deliberately does not decide where the second stage's ownership sits**, and neither does this page:
+This dimension is squarely the third stage. It consumes the first two stages' outputs as authoritative given facts:
 
 > **Runtime Realization consumes an accepted executor/runtime requirement or routing nomination. It does not own the upstream semantic reason that class was requested.**
 
-Whether executor-class routing belongs to Role/Contract Structure ("this logical role should be realized by class X"), a distinct routing-policy authority ("among eligible classes, route this obligation to X"), or Organizational Compilation (if it changes organizational boundaries or creates a vantage) is a real, unresolved question — assigning it by pipeline position alone would be a guess, not a finding. Carried forward explicitly as an open seam rather than silently resolved by this page.
+**Closed 2026-09-15, not an open seam of this dimension's own.** An earlier draft of this section restated the second stage's ownership as a live three-way question among Role/Contract Structure, a distinct routing-policy authority, and Organizational Compilation. That was a regression, not a fresh finding: the source document's own ruling already names the owner — "the supervisor / routing-policy authority" identified in `proposal-decision-gated-implementation-compilation.md`'s own Stage 6 — and nothing in this session's work supersedes that ruling. Reconciliation may discover an old ruling is inadequate, but it may not silently convert a settled ruling back into an open question without routing that finding back to the ruling's own owner. Restated correctly: the second stage belongs to that named authority, not to this dimension, Role/Contract Structure, or Organizational Compilation. See `work-engine-planned-architecture.md` §13 item 12 for the ruling's full text and `role-and-contract-structure.md` §6 for the corresponding correction there.
 
 ---
 
@@ -300,7 +300,7 @@ The overlay is scoped hierarchically (global → workflow/campaign → role clas
 8. **Rematerialization after invalidation is an ordinary rerun of resolution and admission, not a special failover path or a predefined graph.**
 9. **Realization identity is an instance of the shared revision/CAS lineage pattern, not a new mechanism.**
 10. **The operator policy overlay is a manipulable control surface; it is not canonical workflow or runtime truth.**
-11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, explicitly open).**
+11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, closed by ruling — owned by the supervisor / routing-policy authority, not this dimension).**
 
 ---
 
@@ -309,7 +309,7 @@ The overlay is scoped hierarchically (global → workflow/campaign → role clas
 This page does not define:
 
 - role/contract semantics (`role-and-contract-structure.md`);
-- which authority owns executor-class routing (§5, explicitly open);
+- the routing-policy authority's own routing/acceptance judgment (owned elsewhere, per the ruling recorded in §5);
 - organizational topology or admission (`organizational-compilation.md`);
 - semantic planning or replanning (`semantic-planning-hierarchy.md`);
 - claim/evidence materialization (`evidence-and-claims.md`);
@@ -325,7 +325,7 @@ This page does not define:
 
 ## Relationship to Authority and Ownership
 
-`authority-and-ownership.md` §12's invalidation-never-mints-authority invariant was generalized directly from this dimension's own §7, alongside Evidence/Claims' equivalent. The observe/nominate/decide/admit/execute vocabulary that dimension defines is exactly what §4's decision-owner step and §5's open routing seam both depend on.
+`authority-and-ownership.md` §12's invalidation-never-mints-authority invariant was generalized directly from this dimension's own §7, alongside Evidence/Claims' equivalent. The observe/nominate/decide/admit/execute vocabulary that dimension defines is exactly what §4's decision-owner step and §5's routing-policy authority both depend on.
 
 ## Relationship to Organizational Compilation
 
@@ -336,9 +336,9 @@ This page does not define:
 ## Related Architecture Views
 
 - **`authority-and-ownership.md`** — the observe/nominate/decide/admit/execute vocabulary this dimension's decision-owner step depends on, and the invalidation invariant (§12) generalized partly from this page.
-- **`organizational-compilation.md`** — the sibling instance of Candidate Resolution and Admission, and the dimension whose relationship to §5's open executor-class-routing seam is not yet settled.
+- **`organizational-compilation.md`** — the sibling instance of Candidate Resolution and Admission; §5's ruling confirms executor-class routing belongs to neither this dimension nor that one.
 - **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §4 as one of its two confirmed instances.
-- **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the other side of §5's open routing seam.
+- **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the corresponding correction to §5's ruling.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the transition-fencing mechanism; owns none of them, same as this page.
@@ -352,14 +352,14 @@ This page does not define:
 ```yaml
 architecture_status:
   design: proposed
-  reconciliation: partial
+  reconciliation: reconciled
   authorization: exploration_only
   implementation: partial
   owner: app-server/ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md
   status_as_of: 2026-09-16
 ```
 
-`design: proposed`, not `exploratory` — the source document's own text includes a real, dated ruling ("Ruling 2026-09-15, revised 2026-09-15," resolving seam `routing.vs.admission`, sharpened again after a follow-up review) showing this shape has survived direct scrutiny, even though no explicit acceptance decision has been made. `reconciliation: partial` — §5's routing-ownership seam is explicitly unresolved by design, not merely unchecked. `authorization: exploration_only`, per that document's own Authority line: "Exploratory only... does not amend the migration roadmap, admit a runtime, grant budget or provider authority, or authorize implementation."
+`design: proposed`, not `exploratory` — the source document's own text includes a real, dated ruling ("Ruling 2026-09-15, revised 2026-09-15," resolving seam `routing.vs.admission`, sharpened again after a follow-up review) showing this shape has survived direct scrutiny, even though no explicit acceptance decision has been made. `reconciliation: reconciled` — including §5, which was found on 2026-09-16 to have quietly restated the closed `routing.vs.admission` seam as open (a regression introduced while writing this page, not a property of the source document) and has since been corrected to match the source's own ruling directly. `authorization: exploration_only`, per that document's own Authority line: "Exploratory only... does not amend the migration roadmap, admit a runtime, grant budget or provider authority, or authorize implementation."
 
 ```yaml
 status_override:

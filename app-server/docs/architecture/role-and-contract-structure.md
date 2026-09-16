@@ -154,7 +154,7 @@ Part 2.2 proposes mechanically *deriving* a role contract's content from upstrea
 
 ---
 
-## 6. The Executor-Class-Routing Seam, Consistent With Runtime Realization's Own Framing
+## 6. The Executor-Class-Routing Boundary — Closed by Ruling, Not This Dimension's to Reopen
 
 A role contract may legitimately state a requirement such as:
 
@@ -164,7 +164,7 @@ requires: capability_set = [repository_read, shell_execution]
 requires: independence = { from: implementation_author }
 ```
 
-**That is a contract fact this dimension may own. It is not the same decision as "route this obligation to executor class X now," which `runtime-realization.md` §5 already names as an explicitly open seam** — whether that routing decision belongs to Role/Contract Structure, a distinct routing-policy authority, or Organizational Compilation remains unsettled there, and this page does not resolve it either. Stating a requirement and deciding how to satisfy it right now are kept distinct on purpose.
+**That is a contract fact this dimension may own. It is not the same decision as "route this obligation to executor class X now."** `runtime-realization.md` §5 records the governing ruling (`Ruling 2026-09-15`, resolving seam `routing.vs.admission`): that routing decision belongs to neither this dimension nor Organizational Compilation, but to "the supervisor / routing-policy authority" named in `proposal-decision-gated-implementation-compilation.md`'s own Stage 6. This page's earlier text treated that ownership as a live three-way question; it was not — the ruling had already named the owner, and this page's own uncertainty was a regression during synthesis, not a fresh finding. Stating a requirement and deciding how to satisfy it right now remain distinct on purpose, but only the first is this dimension's own truth.
 
 ---
 
@@ -182,7 +182,7 @@ This is not necessarily permanent. Part 2.2's own upstream-derivation direction 
 2. **This dimension derives the contract consequences of already-established semantic and organizational meaning; it does not author new semantic meaning.**
 3. **The Agent Environment Graph's read side is this dimension's own implemented truth; its authoring/admission path is not yet resolved.**
 4. **Role-contract derivation and role-contract compilation/rendering are adjacent pipeline stages, not the same operation — and any derivation stage must express itself in the Agent Environment Graph's existing relation vocabulary, never a parallel one.**
-5. **A contract requirement naming an executor class is not the same decision as routing to that class now — the routing decision's owner remains an open seam.**
+5. **A contract requirement naming an executor class is not the same decision as routing to that class now — the routing decision belongs to the supervisor / routing-policy authority named in decision-gated compilation's Stage 6, not to this dimension (closed by ruling, §6).**
 6. **Determinism in the current compiler proposal is a property of what's proposed today, not a structural guarantee this dimension can never require judgment.**
 
 ---
@@ -193,7 +193,7 @@ This page does not define:
 
 - the semantic obligation a role's contract ultimately serves (`semantic-planning-hierarchy.md`);
 - which logical vantages exist and how many (`organizational-compilation.md`);
-- who owns executor-class routing (explicitly open, §6);
+- the routing-policy authority's own routing/acceptance judgment (owned elsewhere by ruling, §6);
 - concrete provider/model/harness selection (`runtime-realization.md`);
 - the exact field-by-field mapping between Part 2.1's primitive vocabulary and AEG's relation vocabulary (§5, explicitly open);
 - the full `structure.yaml`/`interface.yaml` schema or the bootstrap-migration procedure (see `role-compiler-proposal.md` directly);
@@ -207,7 +207,7 @@ Organizational Compilation admits the logical vantage this dimension's contract 
 
 ## Relationship to Runtime Realization
 
-`runtime-realization.md` treats this dimension's output as a pure input: "a realization that cannot satisfy the role contract is invalid regardless of operator preference." That page's own open executor-class-routing seam (§5 there) is the same seam named here in §6 — carried consistently across both pages rather than resolved twice, differently.
+`runtime-realization.md` treats this dimension's output as a pure input: "a realization that cannot satisfy the role contract is invalid regardless of operator preference." That page's §5 records the same `routing.vs.admission` ruling named here in §6 — carried consistently across both pages, with the same named owner (the supervisor / routing-policy authority), rather than resolved twice, differently.
 
 ## Relationship to Authority and Ownership
 
@@ -218,7 +218,7 @@ The authority, effect-boundary, and independence fields in §1 are this dimensio
 ## Related Architecture Views
 
 - **`organizational-compilation.md`** — the upstream owner of which logical vantage this dimension's contract belongs to.
-- **`runtime-realization.md`** — the downstream consumer that reads this dimension's contract as a boundary constraint, and the other end of the still-open executor-class-routing seam (§6).
+- **`runtime-realization.md`** — the downstream consumer that reads this dimension's contract as a boundary constraint, and the page recording the same `routing.vs.admission` ruling as §6 here.
 - **`authority-and-ownership.md`** — the general authority-projection model this dimension's authority/effect/independence fields instantiate.
 - **`evidence-and-claims.md`** — materializes facts about planning and organizational state; does not materialize role-contract truth, which this dimension owns directly.
 - **`mechanisms/candidate-resolution-and-admission.md`** — used by both of this dimension's neighbors (§7 above); this dimension's own compiler currently has no judgment branch and does not use it.
@@ -277,4 +277,15 @@ status_override:
   source: app-server/ideas/pending/deterministic-authority-projection-and-adaptive-organizational-topology.md
 ```
 
-Applies to §5 (the Part 2.1-to-AEG vocabulary mapping) and §6's routing-seam statement specifically as it pertains to this dimension's own side of that seam — genuinely open, not merely unaccepted.
+Applies to §5 (the Part 2.1-to-AEG vocabulary mapping) specifically — genuinely open, not merely unaccepted.
+
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
+  implementation: none
+  source: app-server/docs/work-engine-planned-architecture.md
+```
+
+Applies to §6's `routing.vs.admission` statement. **Corrected 2026-09-16:** an earlier draft of this override grouped §6 with §5 above, treating the routing-ownership question as equally open. It is not — `routing.vs.admission` was closed by explicit user ruling on 2026-09-15 (`work-engine-planned-architecture.md` §13 item 12), naming the supervisor / routing-policy authority as the owner. §6 states this dimension's own side of that closed ruling (a contract may name a required executor class; it does not thereby own the routing decision), not an open question.
