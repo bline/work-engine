@@ -326,14 +326,14 @@ lifecycle
 terminal consequence
 ```
 
-The organizational compiler therefore moves toward:
+The organizational compiler therefore **derives**:
 
 ```text
 semantic obligation
-    ↓
+    ↓ derive
 required vantage
-    ↓
-logical role contract
+    ↓ derive
+logical role contract  (owned downstream by role-and-contract-structure.md)
 ```
 
 rather than:
@@ -926,7 +926,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`authority-and-ownership.md`** — which roles may observe, nominate, decide, admit, and execute.
 - **`runtime-realization.md`** — the sibling instance of Candidate Resolution and Admission (§7 above); also carries the still-open question of who owns executor-class routing between this dimension and that one.
 - **`role-and-contract-structure.md`** — the "semantic obligation → required vantage → logical role contract" chain (§5 above) grounds directly against that page's own §4.
-- **`context-lifecycle-and-fencing.md`** — how reasoning environments transition safely while organizational state changes.
+- **`context-lifecycle.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the temporal question this dimension's own topological question is deliberately kept separate from.
 - **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
 
 A durable-state/revisions view (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) does not exist yet as its own page. Whether it should be a standalone architecture dimension or stay distributed across the pages above is an open decomposition question, not resolved by this link list.

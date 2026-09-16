@@ -692,7 +692,7 @@ The two pages therefore describe the same system from different dimensions.
 - **`organizational-compilation.md`** — how accepted obligations become concrete execution vantages under bounded authority.
 - **`runtime-realization.md`** — the sibling instance of Candidate Resolution and Admission, and §12's other source for the invalidation-never-mints-authority invariant.
 - **`role-and-contract-structure.md`** — this dimension's authority/effect/independence model, instantiated concretely per logical role.
-- **`context-lifecycle-and-fencing.md`** — how reasoning environments change without violating ownership or revision consistency.
+- **`context-lifecycle.md`** — how reasoning environments change without violating ownership or revision consistency.
 - **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 
 A durable-state/revisions view (where authoritative state, derived state, and lineage live across all of these) does not exist yet as its own page — an open decomposition question, not resolved by this link list.

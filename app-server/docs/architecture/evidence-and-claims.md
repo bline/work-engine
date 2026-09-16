@@ -306,7 +306,7 @@ Organizational Compilation's own admitted revision is the analogous future sourc
 - **`runtime-realization.md`** — the sibling dimension whose own invalidation lifecycle independently converged on the same "invalidation never mints authority" shape as this dimension's refresh lifecycle.
 - **`role-and-contract-structure.md`** — a distinct source dimension a future domain profile could materialize claims from, symmetric to `planning-facts-v1` and `organizational-facts-v1` (not proposed).
 - **`authority-and-ownership.md`** — the evidence-producer / domain-owner authority split this dimension's operations depend on directly.
-- **`context-lifecycle-and-fencing.md`** — where the shared revision-chain/CAS/fencing mechanism this dimension reuses is treated as a mechanism, not duplicated.
+- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the still-homeless revision/CAS mechanism; owns none of it, same as this page.
 
 ---
 

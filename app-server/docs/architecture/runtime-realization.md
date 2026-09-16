@@ -340,7 +340,7 @@ Role/Contract Structure (not yet its own page) is the upstream owner of what thi
 - **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the other side of §5's open routing seam.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
-- **`context-lifecycle-and-fencing.md`** — where the shared revision/CAS and transition-fencing mechanisms this dimension reuses are treated as mechanisms, not duplicated here.
+- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the still-homeless revision/CAS and transition-fencing mechanisms; owns none of them, same as this page.
 
 ---
 
