@@ -247,7 +247,7 @@ status_override:
 
 Deliberately excluded, even though each is adjacent:
 
-- **Generic evidence production.** Any role or service may produce evidence (a builder observing shared state, a repository scanner, a context observer). Producing evidence is not this dimension's concern until that evidence becomes a claim through `nominate_impact` or claim materialization.
+- **Generic evidence production.** Any role or service may produce evidence (a builder observing shared state, a repository scanner, a context observer). Producing evidence is not this dimension's concern until that evidence becomes a claim through `nominate_impact` or claim materialization. `substrates/evidence-anchor.md` is the confirmed substrate behind exactly this boundary: it produces `may_affect` nomination *candidates*, never durable records — this dimension remains the only place a durable `may_affect` record actually comes into existence.
 - **The truth of a source's own fact.** Branch-plan truth belongs to Semantic Planning. `ExecutionEnvelope`/organizational truth belongs to Organizational Compilation. This dimension never decides those; it only materializes and refreshes copies of them.
 - **CAS, revision-chains, and atomic-publication mechanics in general.** Claim revisions use exactly the same predecessor-chained, CAS-published pattern every other dimension's own durable state uses. That pattern is a shared mechanism, not something this dimension invented or owns — see `mechanisms/revision-cas-and-publication.md`, which cites this dimension's own `service.mjs` as one of its two confirmed implemented instances.
 - **Transition fencing between concurrently changing authoritative revisions.** A shared concern across dimensions, not specific to claims.
@@ -301,6 +301,8 @@ Organizational Compilation's own admitted revision is the analogous future sourc
 - **`authority-and-ownership.md`** — the evidence-producer / domain-owner authority split this dimension's operations depend on directly.
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism; owns none of it, same as this page.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's `service.mjs` as one of its two confirmed implemented instances.
+- **`substrates/evidence-anchor.md`** — the substrate producing this dimension's `may_affect` nomination candidates; this dimension remains the sole publisher of durable `may_affect` records and the sole judge of refresh consequence.
+- **`review.md`** — materializes that dimension's own review-judgment output as a durable claim (`review-finding-bridge.mjs`); this dimension never produces the judgment itself.
 
 ---
 

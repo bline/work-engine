@@ -696,6 +696,7 @@ The two pages therefore describe the same system from different dimensions.
 - **`context-lifecycle.md`** — how reasoning environments change without violating ownership or revision consistency.
 - **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 - **`mechanisms/revision-cas-and-publication.md`** — the shared succession/publication discipline this dimension's own authority-to-publish model (§6 above) governs, without owning the mechanics itself.
+- **`review.md`** — produces judgments about fitness, correspondence, or acceptance-relevant properties, but never acceptance or disposition authority itself; `strategic-planning-handoff.mjs` is one concrete instance of this dimension's own decide/admit vocabulary (§7 above) applied to a review finding's consequence.
 
 Revisioned state, predecessor lineage, CAS publication, and atomic visibility (where authoritative state, derived state, and lineage live across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is `mechanisms/revision-cas-and-publication.md`.
 
