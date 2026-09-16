@@ -388,7 +388,9 @@ A derived role topology should not become real merely because a compiler propose
 
 The result must be admitted through the authority that owns organizational realization.
 
-**Accepted 2026-09-15** (`organizational-execution-envelopes-reconciliation.md`'s own "Candidate answer for the organizational-authority layer"): the admission step has a concrete candidate mechanism, not only a placeholder. Organizational authority is the authority domain that selects a candidate organization; `ExecutionEnvelope` is only the immutable materialization of that selection, never the authority that selects it:
+**Accepted 2026-09-15** (`organizational-execution-envelopes-reconciliation.md`'s own "Candidate answer for the organizational-authority layer"): the admission step has a concrete candidate mechanism, not only a placeholder. Organizational authority is the authority domain that selects a candidate organization; `ExecutionEnvelope` is only the immutable materialization of that selection, never the authority that selects it.
+
+**Named 2026-09-16**: this is one instance of **Candidate Resolution and Admission**, a cross-cutting mechanism, not something this dimension invented for itself — `runtime-realization.md`'s own resolution/admission step independently arrived at the identical shape before either was recognized as the same mechanism. The mechanism reduces and validates a candidate space; it never owns the meaning of what survives the reduction — see `authority-and-ownership.md` §12 for the general invariant this depends on (invalidation never mints authority; rerunning this mechanism after a candidate fails never expands the authority ceiling it resolves against):
 
 ```text
 derive candidate organizational realizations

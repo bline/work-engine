@@ -550,6 +550,37 @@ It may not invent new authority.
 
 ---
 
+## 12. Invalidation Never Mints Authority
+
+**Generalized 2026-09-16**, after the same shape appeared independently in two unrelated dimensions (claim refresh in Evidence/Claims; runtime-realization invalidation in Runtime Realization) — evidence this is a general property of this dimension, not a coincidence local to either.
+
+> **Negative evidence may contract what is currently valid, eligible, current, or relied-upon. It may not create or expand who is authorized.**
+
+Concrete instances, each independently arrived at before being recognized as one principle:
+
+```text
+a claim becomes changed/stale
+    != authority to rewrite the source truth it materialized
+
+a runtime realization becomes invalid
+    != authority to raise a cost ceiling, weaken an independence
+       requirement, expand tool access, or change evidence custody
+
+a plan realization fails
+    != the discovering role gaining planning authority
+
+a context becomes unfit
+    != the lifecycle service gaining organizational authority
+```
+
+The generative form, which subsumes all four:
+
+> **Failure of an authorized candidate does not authorize a previously unauthorized alternative.**
+
+If candidate A becomes invalid, Work Engine does not thereby conclude candidate B is authorized. It reruns candidate resolution and admission (see `organizational-compilation.md` and `runtime-realization.md` for two concrete instances of that shared mechanism) against the *same, unchanged* authority ceiling. No authority is manufactured by failure — only the candidate set changes; what may lawfully be selected from it does not.
+
+---
+
 ## Key Invariants
 
 1. **Authority comes from an upstream legitimate owner; projection does not mint authority.**
@@ -575,6 +606,10 @@ It may not invent new authority.
 11. **Same actor does not imply same role, same decision surface, or same authority.**
 
 12. **When no legitimate vantage owns a required decision, Work Engine should expose an organizational gap rather than silently assign authority to the nearest available actor.**
+
+13. **Negative evidence (invalidation, staleness, failure) may contract what is currently valid; it may never expand who is authorized.**
+
+14. **Failure of an authorized candidate does not authorize a previously unauthorized alternative — invalidation changes the candidate set, never the authority ceiling candidates are resolved against.**
 
 ---
 
@@ -670,7 +705,10 @@ This view synthesizes authority distinctions established across the planned Work
 - the decision/admission distinctions in `proposal-decision-gated-implementation-compilation.md`;
 - the authority/vantage decomposition in `deterministic-authority-projection-and-adaptive-organizational-topology.md`;
 - the emerging organizational contract model associated with role compilation and ExecutionEnvelope design;
-- claim-evidence's separation between evidence production, domain ownership, and publication authority.
+- claim-evidence's separation between evidence production, domain ownership, and publication authority;
+- `pre-indexed-capability-resolution-and-frozen-runtime-realization.md`'s invalidation model (§12 above).
+
+§12's generalization was settled 2026-09-16 specifically because the same invariant appeared independently in `evidence-and-claims.md` and the (then-unwritten) `runtime-realization.md` — two unrelated dimensions converging on one shape is itself the evidence for stating it once, here, rather than per dimension.
 
 The high-level authority principles are treated here as established planned-architecture direction.
 
