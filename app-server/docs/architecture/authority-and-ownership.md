@@ -690,6 +690,7 @@ The two pages therefore describe the same system from different dimensions.
 
 - **`semantic-planning-hierarchy.md`** — where semantic planning and replanning occur.
 - **`organizational-compilation.md`** — how accepted obligations become concrete execution vantages under bounded authority.
+- **`runtime-realization.md`** — the sibling instance of Candidate Resolution and Admission, and §12's other source for the invalidation-never-mints-authority invariant.
 - **`context-lifecycle-and-fencing.md`** — how reasoning environments change without violating ownership or revision consistency.
 - **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 

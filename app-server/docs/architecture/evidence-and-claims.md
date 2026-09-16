@@ -303,6 +303,7 @@ Organizational Compilation's own admitted revision is the analogous future sourc
 
 - **`semantic-planning-hierarchy.md`** — the authoritative source for planning-derived claims.
 - **`organizational-compilation.md`** — the authoritative source for organizational-derived claims, and the consumer of planning-derived ones during supervisor formation.
+- **`runtime-realization.md`** — the sibling dimension whose own invalidation lifecycle independently converged on the same "invalidation never mints authority" shape as this dimension's refresh lifecycle.
 - **`authority-and-ownership.md`** — the evidence-producer / domain-owner authority split this dimension's operations depend on directly.
 - **`context-lifecycle-and-fencing.md`** — where the shared revision-chain/CAS/fencing mechanism this dimension reuses is treated as a mechanism, not duplicated.
 
