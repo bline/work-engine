@@ -6,7 +6,7 @@
 
 This view shows Work Engine's **review dimension**: the one real, non-redundant truth this architecture calls "review" actually owns.
 
-**Stated plainly before anything else, per this session's own discipline against manufactured symmetry:** this is the thinnest-scoped of the eight confirmed dimensions. It owns exactly one step — semantic judgment production — and explicitly borrows everything around it: the mechanical half from `substrates/evidence-anchor.md`, finding materialization from `evidence-and-claims.md`, specialist coordination from a still-unresolved mechanism (`adaptive-review-panel-coordination`), and acceptance authority from `authority-and-ownership.md`. A page that tried to restate the full review topology as its own would misrepresent how little of it this dimension actually owns.
+**Stated plainly before anything else, per this session's own discipline against manufactured symmetry:** this is the thinnest-scoped of the 13 confirmed dimensions. It owns exactly one step — semantic judgment production — and explicitly borrows everything around it: the mechanical half from `substrates/evidence-anchor.md`, finding materialization from `evidence-and-claims.md`, specialist coordination from a still-unresolved mechanism (`adaptive-review-panel-coordination`), and acceptance authority from `authority-and-ownership.md`. A page that tried to restate the full review topology as its own would misrepresent how little of it this dimension actually owns.
 
 ```text
 Review owns:
@@ -61,7 +61,7 @@ Most of the boxes above are explicitly borrowed, and one is explicitly unowned. 
 
 ## 1. What This Dimension Owns
 
-One coherent class of truth, confirmed by `cross-cutting-seam-review-and-architectural-review-reconciliation.md`'s own direct comparison of its two named instances: the semantic judgment that a mechanical comparator's own design explicitly refuses to make and explicitly reserves for "a domain owner." Two concrete instances of the same shape, at different grain:
+One coherent class of truth, confirmed by `cross-cutting-seam-review-and-architectural-review-reconciliation.md`'s own direct comparison of its two named instances: the semantic judgment that a mechanical comparator's own design explicitly refuses to make and explicitly reserves for "a domain owner." **A third instance was found and added 2026-09-16**, by a targeted architectural synthesis of the `review-scope-coordination-reconciliation.md` gap — this page's own earlier claim of "two concrete instances" was an artifact of when it was first written, not a considered limit; corrected here rather than left stale, the same "audit the whole page" lesson `mechanisms/revision-cas-and-publication.md` already needed once this session. Three concrete instances of the same shape, at different grain:
 
 ```text
 seam review
@@ -73,9 +73,15 @@ architectural review
     question: is the system MODEL, ownership, decomposition, or
               placement itself wrong?
     scope: the architecture as a whole, or a subsystem's design
+
+review-scope validity judgment
+    question: does a planned mutation still leave an active review's
+              evidence world valid — does its scope still hold?
+    scope: one active review episode, checked against one incoming
+           mutation, at mutation time rather than on a schedule
 ```
 
-Neither is reducible to the other, and neither is reducible to any of the seven prior dimensions. `evidence-and-claims.md` §9 excludes "generic evidence production" and never claims judgment authorship. `authority-and-ownership.md` §7's observe/recommend/nominate/decide/admit/execute vocabulary says only who may act, never what a reviewer should conclude. This is a real gap those pages leave, not overlap with them.
+None of the three is reducible to another, and none is reducible to any of the twelve other dimensions. `evidence-and-claims.md` §9 excludes "generic evidence production" and never claims judgment authorship. `authority-and-ownership.md` §7's observe/recommend/nominate/decide/admit/execute vocabulary says only who may act, never what a reviewer should conclude. This is a real gap those pages leave, not overlap with them.
 
 ---
 
@@ -142,9 +148,9 @@ Treating `strategic-planning-handoff.mjs` as the general acceptance owner would 
 
 ---
 
-## 7. The Residue: Four Pieces Still Genuinely Unowned
+## 7. The Residue: Five Pieces Still Genuinely Unowned
 
-Not smoothed into this dimension's own truth merely because they are adjacent to it — each is confirmed, by the reconciliation's own disposition table, as **not retired**:
+Not smoothed into this dimension's own truth merely because they are adjacent to it — each is confirmed, by the reconciliation's own disposition table (items 1-4) or a targeted architectural synthesis (item 5, added 2026-09-16), as **not retired**:
 
 ```text
 1. The semantic correspondence-judgment's own owner and record shape,
@@ -173,13 +179,36 @@ Not smoothed into this dimension's own truth merely because they are adjacent to
    owning decision boundary actually applies (§6 above names four
    candidate boundaries; none of them is connected by a built routing
    mechanism today).
+
+5. Protected-scope declaration for an active review, and the handoff to
+   `workspace-coordination` that enforces it (§9 below) — same shape as
+   items 2 and 4: an operational/coordination gap adjacent to this
+   dimension's own judgment, not judgment production itself, but
+   genuinely this dimension's own residue to carry, not a generic
+   mechanism and not latent in `workspace-coordination`'s own real code.
 ```
 
 ---
 
 ## 8. Authorization Split, Exactly as the Source Records It
 
-**Accepted 2026-09-14**, with an explicit split this page preserves rather than flattens: implementation of the mechanical seam-evidence adapter extensions is authorized to proceed — but that authorization belongs to `substrates/evidence-anchor.md`'s own anchor-kind taxonomy, not to this dimension. Everything this dimension itself would need to operationalize (§7's four residue pieces) is authorized for **design work only, not implementation** — each still requires an owner decision this reconciliation deliberately did not make for it.
+**Accepted 2026-09-14**, with an explicit split this page preserves rather than flattens: implementation of the mechanical seam-evidence adapter extensions is authorized to proceed — but that authorization belongs to `substrates/evidence-anchor.md`'s own anchor-kind taxonomy, not to this dimension. Residue items 1-4 (§7) are authorized for **design work only, not implementation** — each still requires an owner decision this reconciliation deliberately did not make for it. **Residue item 5 is a genuine exception, confirmed 2026-09-16 by direct citation, not assumed to match the other four**: `review-scope-coordination-reconciliation.md`'s own Acceptance section states "implementation of the stated residue — prospective review-scope coordination before mutation admission, including the design decision of which owner declares a scope protected before `workspace-coordination` enforces it — is authorized to proceed" — `implementation_authorized`, not `design_work_authorized`. See the dedicated `status_override` below.
+
+---
+
+## 9. The Third Instance: Review-Scope Validity, Confirmed Not a Generic Mechanism
+
+**Added 2026-09-16**, by a targeted architectural synthesis of `review-scope-coordination-reconciliation.md`'s own gap (capstone §13 item 3, `ACCEPTED_AUTHORIZED_FOR_IMPLEMENTATION`, accepted 2026-09-14, previously cited by zero of the 18 architecture views). The reconciliation's own core act — "does a planned mutation still leave an active review's evidence world valid?" — is structurally identical to §1's existing two instances at a different grain and trigger: scheduled comparison for seam/architectural review, mutation-time check for this one.
+
+The exact invariant this instance protects:
+
+> **A mutation to a scope an active review currently depends on must not be silently admitted without an attributed disposition from this dimension's own judgment layer — neither an old, unrelated reliance record (a false positive) nor an in-progress review with no finding yet (a false negative) may substitute for that judgment.**
+
+**Confirmed not a generic cross-cutting mechanism**, tested against the same bar this session's confirmed mechanisms all had to clear (independent domains converging on the identical shape without copying each other): no second domain in the 18 views demonstrably needs "declare protected scope, check mutations, get continue/wait/new-subject/adjudicate." `material-decision-selection.md` and `implementation-contract-compilation.md` have an adjacent-but-different need (stale evidence during compilation) and solve it differently, via `blocked_by_evidence`/`returned_for_decision` — not a lease-style protected-scope declaration. One domain needing a shape is evidence for that domain's own residue, not for a fourth mechanism.
+
+**Confirmed not latent in `workspace-coordination`'s own real code**, checked directly: `admitMutation({lease, operationId, mutate})` takes no review-state parameter at all — it only checks lease/fencing-token validity. Its `RESOURCE_TYPES` enum already includes a `review-budget` kind, confirming the mechanism reaches into review-adjacent territory, but nothing in it declares *which* resource key an active review needs protected. The reconciliation's own finding stands: a review-workflow responsibility must declare protected scope and call `workspace-coordination`; that responsibility is this dimension's own, added here as residue item 5 (§7), not `workspace-coordination`'s to infer.
+
+**Confirmed not `mechanisms/transition-fencing-and-leases.md`'s territory either** — that mechanism's own shape is preparation-vs-publication for a transition being actively prepared toward activation; this is standing protection over an active, non-transitioning review episode. Different shape, not a fence class.
 
 ---
 
@@ -188,9 +217,10 @@ Not smoothed into this dimension's own truth merely because they are adjacent to
 1. **Review judgment ≠ acceptance authority ≠ disposition — never conflated, regardless of which concrete actor happens to hold more than one role.**
 2. **The mechanical half of any review retires entirely to `substrates/evidence-anchor.md`; this dimension never re-implements comparison machinery.**
 3. **A review finding is materialized by `evidence-and-claims.md`, never authored, stored, or versioned by this dimension.**
-4. **This dimension's own judgment is one shape at different grain (seam review, architectural review), not one universal function covering every possible review type.**
+4. **This dimension's own judgment is one shape at different grain (seam review, architectural review, review-scope validity), not one universal function covering every possible review type.**
 5. **Coordination and specialist-execution mechanics are borrowed from `adaptive-review-panel-coordination`, itself unresolved design — not owned or reinvented here.**
 6. **A reviewer's own authority flags are mechanically false by default (`selfCertificationAuthorized: false`) — never self-granted.**
+7. **A mutation to a scope an active review depends on requires this dimension's own attributed disposition — never an inferred pass from an unrelated reliance record, and never a silent block from an in-progress finding.**
 
 ---
 
@@ -202,7 +232,8 @@ This page does not define:
 - finding materialization, revision, or lineage mechanics (`evidence-and-claims.md`);
 - specialist selection, execution, or independence mechanics (`adaptive-review-panel-coordination`, not yet its own architecture view);
 - acceptance, disposition, or blocking authority (`authority-and-ownership.md`);
-- any domain-specific required-concern contract (e.g. a future `UIReviewProfile`) — this page states the shared judgment shape, not any one domain's own concern list.
+- any domain-specific required-concern contract (e.g. a future `UIReviewProfile`) — this page states the shared judgment shape, not any one domain's own concern list;
+- lease/fencing-token mechanics themselves (`workspace-coordination`'s own real `admitMutation`, not yet its own architecture view) — this dimension declares what needs protecting (§7 item 5, §9); it does not implement the protection.
 
 ---
 
@@ -237,7 +268,7 @@ architecture_status:
   status_as_of: 2026-09-16
 ```
 
-`design: accepted` — the reconciliation's own Acceptance section: "Accepted 2026-09-14 (explicit user decision...). This document's findings and disposition are confirmed accurate." `reconciliation: reconciled` — this page's content traces directly to that document, read in full this session, not carried forward from a prior summary. `authorization: design_work_authorized` — per §8 above, this dimension's own operational form (the four residue pieces) is authorized for design work only; the one implementation-authorized piece (mechanical seam-evidence adapter extensions) belongs to `substrates/evidence-anchor.md`'s own territory, not this dimension's. `implementation: partial` — this dimension's general operational form (a semantic-judgment owner role, a routing/disposition record, an architectural-finding profile, a routing mechanism) is unbuilt, but two real, concrete instances of the judgment-production shape itself already exist and run in production (§3).
+`design: accepted` — the reconciliation's own Acceptance section: "Accepted 2026-09-14 (explicit user decision...). This document's findings and disposition are confirmed accurate." `reconciliation: reconciled` — this page's content traces directly to that document, read in full this session, not carried forward from a prior summary. `authorization: design_work_authorized` — per §8 above, residue items 1-4 (§7) are authorized for design work only; the one implementation-authorized piece belonging to this dimension's own territory (residue item 5, §9) is carried in its own override below, and the mechanical seam-evidence adapter extensions' implementation authorization belongs to `substrates/evidence-anchor.md`'s own territory, not this dimension's. `implementation: partial` — this dimension's general operational form (a semantic-judgment owner role, a routing/disposition record, an architectural-finding profile, a routing mechanism, a protected-scope declaration) is unbuilt, but two real, concrete instances of the judgment-production shape itself already exist and run in production (§3).
 
 ```yaml
 status_override:
@@ -245,3 +276,11 @@ status_override:
 ```
 
 Applies narrowly to §3: `review-finding-bridge.mjs` and `agent-instruction-review`'s `service.mjs`/`contract.mjs`, both real code, the latter fully dogfooded. Neither is the complete, general review-judgment mechanism this page describes — each is a concrete, working instance of the shape, not the shape's own general infrastructure.
+
+```yaml
+status_override:
+  authorization: implementation_authorized
+  source: app-server/docs/review-scope-coordination-reconciliation.md
+```
+
+**Added 2026-09-16.** Applies narrowly to §7 residue item 5 and §9 (review-scope validity, the protected-scope declaration and `workspace-coordination` handoff) — a genuine exception among the residue items, confirmed by direct citation rather than assumed to match items 1-4's `design_work_authorized`: `review-scope-coordination-reconciliation.md`'s own Acceptance section states "implementation of the stated residue — prospective review-scope coordination before mutation admission, including the design decision of which owner declares a scope protected before `workspace-coordination` enforces it — is authorized to proceed," accepted 2026-09-14. `implementation: none` (the page default, unchanged) — no code implements this instance yet.
