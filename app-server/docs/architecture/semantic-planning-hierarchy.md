@@ -305,7 +305,7 @@ The following atlas pages expand dimensions intentionally omitted here:
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism branch-plan revisions (§16 of the source document) would use, once implemented; named as required durable state, not yet verified as built.
 - **`evidence-and-claims.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.
 
-Revisioned state, predecessor lineage, CAS publication, and atomic visibility (canonical revisioned state, derived state, evidence, and lineage across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (canonical revisioned state, derived state, evidence, and lineage across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is `mechanisms/revision-cas-and-publication.md`.
 
 ---
 

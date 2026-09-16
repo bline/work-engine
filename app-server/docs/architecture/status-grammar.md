@@ -135,7 +135,9 @@ Deliberately named `design_work_authorized` rather than `design_authorized` — 
 
 ### 4.4 Implementation status
 
-> How much of the authorized design actually exists?
+> How much of the described architecture is realized in the implementation?
+
+**Corrected 2026-09-16** — the original question ("how much of the *authorized* design actually exists?") quietly presumed authorization was established before implementation could be measured. Adding `unrecorded` to §4.3 exposed the dependency: `authorization: unrecorded` + `implementation: partial` is not a contradiction (`context-lifecycle.md`'s own real status), so this axis cannot be phrased as depending on the other. The two axes answer genuinely independent questions — what work was permitted, and what actually exists — and neither may be inferred from the other.
 
 ```text
 none

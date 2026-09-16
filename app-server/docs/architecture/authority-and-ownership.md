@@ -696,7 +696,7 @@ The two pages therefore describe the same system from different dimensions.
 - **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 - **`mechanisms/revision-cas-and-publication.md`** — the shared succession/publication discipline this dimension's own authority-to-publish model (§6 above) governs, without owning the mechanics itself.
 
-Revisioned state, predecessor lineage, CAS publication, and atomic visibility (where authoritative state, derived state, and lineage live across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (where authoritative state, derived state, and lineage live across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is `mechanisms/revision-cas-and-publication.md`.
 
 ---
 

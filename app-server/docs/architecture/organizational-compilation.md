@@ -930,7 +930,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism this dimension's own admission mechanism (§7 above) would publish through, once implemented; accepted design only, not yet built.
 
-Revisioned state, predecessor lineage, CAS publication, and atomic visibility (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is `mechanisms/revision-cas-and-publication.md`.
 
 ---
 
