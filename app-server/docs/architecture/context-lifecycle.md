@@ -177,6 +177,7 @@ Invariant 2 (a checkpoint cannot mint authority) is this dimension's own concret
 ## Related Architecture Views
 
 - **`organizational-compilation.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the topological question this page explicitly excludes.
+- **`substrates/context-observer.md`** — the substrate itself; this dimension derives `LifecycleEvidence` and its own replacement decision from it, owning both independently.
 - **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own transition-lease sequence (§6 above) is its one confirmed, implemented instance.
 - **`authority-and-ownership.md`** — the general invalidation-never-mints-authority invariant this dimension's own checkpoint-authority rule instantiates.
 - **`evidence-and-claims.md`** — a structurally similar revision/CAS consumer, unrelated in subject matter.
