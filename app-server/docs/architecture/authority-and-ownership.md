@@ -695,7 +695,7 @@ The two pages therefore describe the same system from different dimensions.
 - **`context-lifecycle.md`** — how reasoning environments change without violating ownership or revision consistency.
 - **`evidence-and-claims.md`** — how materialized facts remain subordinate to their authoritative source.
 
-A durable-state/revisions view (where authoritative state, derived state, and lineage live across all of these) does not exist yet as its own page — an open decomposition question, not resolved by this link list.
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (where authoritative state, derived state, and lineage live across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
 
 ---
 

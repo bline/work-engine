@@ -929,7 +929,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`context-lifecycle.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the temporal question this dimension's own topological question is deliberately kept separate from.
 - **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
 
-A durable-state/revisions view (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) does not exist yet as its own page. Whether it should be a standalone architecture dimension or stay distributed across the pages above is an open decomposition question, not resolved by this link list.
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
 
 ---
 

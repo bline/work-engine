@@ -304,7 +304,7 @@ The following atlas pages expand dimensions intentionally omitted here:
 - **`context-lifecycle.md`** — how retained reasoning contexts are replaced safely.
 - **`evidence-and-claims.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.
 
-A durable-state/revisions view (canonical revisioned state, derived state, evidence, and lineage across all of these) does not exist yet as its own page — an open decomposition question, not resolved by this link list.
+Revisioned state, predecessor lineage, CAS publication, and atomic visibility (canonical revisioned state, derived state, evidence, and lineage across all of these) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
 
 ---
 

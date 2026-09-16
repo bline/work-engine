@@ -112,7 +112,8 @@ not_applicable
 ```text
 exploration_only
     No standing authorization beyond continued exploration and
-    reconciliation.
+    reconciliation. A deliberate ceiling: this is the confirmed bound,
+    not an absence of information about the bound.
 
 design_work_authorized
     Further design work, profile formation, or proposal refinement is
@@ -120,9 +121,17 @@ design_work_authorized
 
 implementation_authorized
     Building the thing itself is explicitly authorized.
+
+unrecorded
+    No explicit authorization decision has been found for this claim.
+    Implementation may have proceeded through informal, piecemeal, or
+    untracked approval. This is a traceability gap, not an assertion
+    that authorization was absent.
 ```
 
 Deliberately named `design_work_authorized` rather than `design_authorized` — the latter reads as "the design has been accepted," which is already what `design_status: accepted` means. This axis answers a permission question, not a belief question. `design_status: accepted` and `authorization: design_work_authorized` can and do coexist on the same real artifact (§10.2) — being accepted as architecture does not automatically authorize building it.
+
+**`unrecorded` is deliberately distinct from `exploration_only`, added 2026-09-16 after `context-lifecycle.md` needed it and the difference between the two was checked, not assumed.** `exploration_only` is a confirmed, deliberate ceiling — checked, and nothing above it is authorized. `unrecorded` is silence — no authorization decision was found, which is not the same fact as confirming none exists. **Implementation having occurred is never sufficient by itself to justify `implementation_authorized`.** It proves implementation happened; it does not prove the architecture as currently scoped received an authorization decision at that level — code can predate an architecture's own current shape, be authorized piecemeal across many smaller decisions, or simply exist without any single recorded architecture-level authorization. Treating "implemented" as proof of "implementation was authorized" would make authorization an inference from implementation evidence, exactly what this axis exists to prevent (§8). Use `unrecorded`, not a guessed value, whenever no specific authorization source can be named.
 
 ### 4.4 Implementation status
 
@@ -286,6 +295,19 @@ status_override:
 ```
 
 Inherits `authorization: exploration_only` and `implementation: none` from the page default (10.3), since neither of those has changed. Traces to the same idea document's Open Question 26: whether organizational-realization authority may ever lawfully cut across an obligation's own internal boundaries "is not yet placed," and "does not decide whether cross-cutting realizations should ever be permitted at all." This is genuinely open in shape, not merely unaccepted — the §4.1 test for `exploratory` rather than `proposed`. `reconciliation: not_applicable` because there is no declared neighboring document this specific question has been checked against; the question hasn't crystallized into a concrete proposal yet for reconciliation to apply to.
+
+### 10.5 Context Lifecycle (page default, demonstrating `authorization: unrecorded`)
+
+```yaml
+architecture_status:
+  design: proposed
+  reconciliation: reconciled
+  authorization: unrecorded
+  implementation: partial
+  owner: app-server/docs/semantic-context-lifecycle-manager.md
+```
+
+The occasion for adding `unrecorded` to this grammar (§4.3): substantial real, tested, merged implementation exists for this architecture (schema-migrated SQLite adapters, a gated live strategic-planner test), and an earlier draft of this page read that as `authorization: implementation_authorized` — implementation having happened, therefore implementation must have been authorized. Corrected: no specific, citable authorization decision names this architecture at its current scope, so the honest value is `unrecorded`, not a value inferred from the implementation evidence itself. `implementation: partial` and `design: proposed` remain fully supported directly from the source document's own text; only `authorization` needed the new value.
 
 ---
 
