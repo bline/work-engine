@@ -209,6 +209,83 @@ It also follows the proposal-decision-gated implementation architecture: an
 event discovered during execution is captured as attributed intake rather than
 silently promoted into a general runtime contract.
 
+### Canonical-view reconciliation (2026-09-16)
+
+Checked directly against the 20 settled architecture views, not assumed
+compatible.
+
+**`runtime-realization.md` — the correct home, and the placement hypothesis
+holds.** Its `RoleRealization` artifact (§6) already separates role contract,
+policy-overlay revision, and capability-inventory generation as distinct
+inputs, and §1 states these "must not collapse into one runtime configuration
+object." Capability inventory (§2) is a dependency graph of what the
+environment *can provide*; nothing in it declares which process-environment
+variables a specific claim profile requires, forbids, or redacts. The
+artifact in §6 has no environment-projection field today, so this remains a
+genuinely unclaimed, non-conflicting addition — consistent with this
+document's own "does not... change a runtime manifest" authority ceiling. If
+ever accepted, it slots in as one more distinctly-owned input alongside the
+four §1 already names, not a reinterpretation of capabilities.
+
+**`authority-and-ownership.md` §7 (Participation Modes) — the "Ownership and
+evidence" section's distributed-ownership sentence already matches settled
+vocabulary, just written before that vocabulary existed (this document
+predates it: captured 2026-09-09, vocabulary finalized 2026-09-16).** "The
+runtime or harness owns observing and attesting" is exactly the **Observe**
+mode ("the role may perceive or produce evidence"); "the service consuming
+the production-path claim owns whether the evidence is adequate" is exactly
+the **Admit** mode ("the role or service boundary determines whether the
+consequence becomes authoritative"). No conflict — an opportunity to cite the
+settled vocabulary explicitly rather than re-derive it, not a correction.
+
+**`evidence-and-claims.md` — `production-path-v1`'s real schema does not yet
+carry this.** Verified directly against §2's citation of
+`production-path-contract.mjs`: the schema is `{subject: {candidate,
+reviewEpisodeId}, coveredState, consumptionBoundary, consumer, acceptance}` —
+no environment field. This confirms the idea remains a genuinely proposed,
+not-yet-integrated extension rather than something already silently absorbed.
+§9's own exclusion list ("generic evidence production... a context observer")
+independently confirms the attesting observer this idea calls for sits
+*outside* `evidence-and-claims.md`'s ownership too — the claim dimension
+would consume the resulting evidence, never produce or own the observation
+itself, matching this idea's own framing exactly.
+
+**Ruled out, deliberately: `substrates/evidence-anchor.md`.** Superficially
+adjacent (an independent, deterministic observer producing normalized facts
+without acquiring semantic authority — the same substrate shape), but not the
+same mechanism. Evidence Anchor's comparator checks a *declared-at-the-past*
+`bound_observation` against a current `observed_observation` for **drift**,
+feeding a refresh episode's staleness judgment. This idea's observer checks a
+**currently-required contract** (required/forbidden/exact/redacted
+variables) against the **realized child environment at launch time**, for
+**admission-time conformance**, feeding acceptance adequacy — not a refresh
+or staleness question at all. Extending Evidence Anchor's anchor-kind
+taxonomy (`TextAnchor`/`CodeStructureAnchor`/`ServiceStateAnchor`/
+`ImplementationRevisionAnchor`) to cover this would be a category error, not
+a natural fifth kind.
+
+**Ruled out, deliberately: `substrates/context-observer.md`.** Pure
+terminology collision, not territory overlap: that substrate's "reasoning
+environment" means retained conversational/session context (token pressure,
+continuity, the facts `context-lifecycle.md` and `organizational-
+compilation.md` each derive their own judgment from) — not OS-level process
+environment variables. Worth flagging so a future reader does not conflate
+the two senses of "environment," but no ownership question follows from it.
+
+**No mechanism implicated.** None of Transition Fencing and Leases, Resource
+Lease and Fencing, Authority-Preserving Intent Projection, Revision/CAS and
+Publication, or Candidate Resolution and Admission are engaged by this idea's
+core proposal — it is a declared-contract-plus-attestation schema question,
+not a mutual-exclusion, preparation-fencing, intent-bounding, or
+candidate-reduction concern.
+
+**Net:** this idea needs no new dimension, mechanism, or substrate. If
+accepted, it becomes `runtime-realization.md` domain detail (a new declared
+input/artifact field, alongside capability inventory) whose resulting
+evidence `evidence-and-claims.md` consumes for `production-path-v1`
+acceptance judgment (`authority-and-ownership.md`'s Admit mode) — a clean fit
+against the settled architecture, not a residue item.
+
 ## Questions for later intake
 
 1. Does the projection belong directly in each realization manifest, in a

@@ -253,6 +253,135 @@ accuracy of the model-visible action space. They share incident evidence and
 should cross-reference each other, but none should silently absorb another's
 scope or authority.
 
+## Canonical-view reconciliation (2026-09-16)
+
+Tested directly against `context-lifecycle.md`, `mechanisms/authority-
+preserving-intent-projection.md`, `mechanisms/transition-fencing-and-
+leases.md`, `mechanisms/resource-lease-and-fencing.md`, and `authority-and-
+ownership.md`. The document's own instinct not to bundle Candidates A, B, and
+C into one obligation is confirmed correct by this test: each maps to a
+different, non-overlapping subset of the five views, and the split tracks
+almost exactly onto **authoritative writes** (Work Engine's own canonical
+lifecycle state) versus **bounded operator ingress** (a human relaying intent
+to an already-authorized role without expanding what that role may do).
+
+### Candidate A is authoritative-write territory: an unfenced actuator, not a stale fence
+
+`context-lifecycle.md` §6 states this dimension "consumes, never owns"
+transition fencing, and its one confirmed live instance is the preparation-
+fence-then-transition-lease sequence `mechanisms/transition-fencing-and-
+leases.md`'s own "Confirmed Instances" section verifies directly against
+`semantic-context-lifecycle-manager.md`. The incident's defect —
+"the provider's token-budget boundary instructed the builder model to invoke
+`new_context`. No Work Engine retirement lease, accepted checkpoint, or
+rehydration request existed" — is not a *stale-fence* failure (the mechanism's
+usual concern: a fence invalidated by a competing revision during
+preparation). It is a **fence-bypass**: the actuator fired with no fence
+acquired at all, because the provider itself can invoke `new_context`
+independently of Work Engine's own lease sequence. Candidate A's own question
+— "Can the provider-side `new_context` actuator be admitted only under an
+exact Work Engine lease, or is it necessarily available throughout the
+process?" — asks exactly the right question of exactly the right mechanism:
+whether the actuator itself can be brought under `mechanisms/transition-
+fencing-and-leases.md`'s governing invariant ("No transition may activate a
+successor reasoning environment from a world revision that ceased to be
+authoritative while that transition was being prepared"), rather than only
+Work Engine-initiated transitions. If accepted, this strengthens Context
+Lifecycle's *existing* consumption of the mechanism — it does not require a
+new fence class beyond the two `transition-fencing-and-leases.md` already
+names (decision-episode, topology-transition), and does not make Context
+Lifecycle an owner of fencing it still correctly does not own.
+
+`authority-and-ownership.md` §12 ("Invalidation Never Mints Authority")
+governs the failure mode directly, already, without needing new text: "The
+emergency path must not manufacture a successful checkpoint, silently accept
+provider summaries as canonical state, or allow a fresh model window to infer
+that unresolved operator intent was completed" is this idea's own restatement
+of §12 applied to a provider-forced, unleased replacement — an emergency
+transition the Work Engine lifecycle did not admit must not be treated as
+having produced authoritative continuation, exactly as an invalidated
+realization may not silently keep exercising authority (`runtime-
+realization.md` §7, the same invariant's other confirmed instance).
+
+**This is squarely authoritative-write territory**: Candidate A is about who
+may actuate a change to Work Engine's own canonical lifecycle state, and
+under what fence — no operator or external intent is involved in the failure
+itself.
+
+### Candidate B is bounded-operator-ingress territory, and converges on an already-named gap
+
+`mechanisms/authority-preserving-intent-projection.md` names the exact shape
+Candidate B is asking for: "discovering and rendering available operations,
+collecting bounded operator/human intent, submitting it without manufacturing
+authority, and showing proposed / pending / admitted / refused / completed /
+stale lifecycle feedback." Candidate B's own bullets — one submission bound
+to one `clientUserMessageId` and one role turn, structured transfer of
+lifecycle/campaign references instead of copied terminal text,
+reconnection/idempotency/interruption/queued-input behavior — are the same
+lifecycle-feedback and bounded-submission concerns this mechanism's page
+already tracks as unbuilt.
+
+**This is not a coincidental resemblance.** The switchboard the incident
+actually used for the manual relay is `app-server/src/operator-
+switchboard.mjs` — the identical file `mechanisms/authority-preserving-
+intent-projection.md` already cites, by name, as a real but partial
+precursor: it "implements part of this shape (discovery, runtime-binding
+lookup, bounded projection routing)" but "explicitly lacks active-binding
+fencing or runtime-selection-policy-overlay machinery," and its
+lifecycle-feedback half "appears nowhere in `operator-switchboard.mjs`'s own
+text, confirmed by direct read." Candidate B is a second, independent
+pressure test — from an operational incident rather than an architectural
+reconciliation — landing on the same real gap in the same real file. Read
+together with `runtime-realization.md` §11 (the operator-policy-overlay,
+already a confirmed partial instance of this same mechanism), this is now a
+**three-way independent convergence** on one unbuilt mechanism, not two.
+
+The document's own care to distinguish "access to a writable builder" from
+"authority to expand its accepted implementation scope" is exactly the
+invariant this mechanism exists to enforce ("may constrain and encode
+authority; may never enlarge it"). It is also why `mechanisms/resource-
+lease-and-fencing.md`'s named-but-unbuilt **fenced active-binding for logical
+role instances** (`logical-role-instance:<id>:active-binding`) is the right
+consuming mechanism for the exclusivity half of Candidate B: an operator
+route that "attach[es] to an existing retained writable role without
+widening the supervisor's own sandbox or authority" must not create a second
+writer racing the builder's own realization for the same role — it must
+attach to the one currently-fenced authoritative generation, exactly the
+shape that resource type was accepted (2026-09-14) to express, not yet built.
+
+**This is squarely bounded-operator-ingress territory**: the operator
+supplies intent (`authority-and-ownership.md` §7's Observe/Recommend modes,
+never Decide or Admit on the ingress channel's own account); the retained
+role's own already-granted authority is what executes it, unchanged.
+
+### Candidate C is neither — it is authority-projection accuracy, and maps to a third view
+
+Advertising `require_escalated` to a role fixed at `approval_policy: "never"`
+is a projection that overstates the real authority ceiling — not by granting
+authority (runtime enforcement correctly fail-closed), but by depicting a
+candidate action the ceiling can never admit. `authority-and-ownership.md`
+§8's invariant — `child_authority ⊆ delegable(parent_authority)` — is the
+right frame: a role's visible action space should be a truthful projection of
+its own fixed ceiling, not a superset requiring the model to discover the
+boundary by attempting and failing. `runtime-realization.md` §11 already
+does exactly this classification for its own operator-policy-overlay
+candidate states (`selected`/`preferred`/`admissible`/
+`requires_operator_approval`/`prohibited`) — Candidate C is the same
+discipline applied to tool-schema generation instead of a UI view, and would
+reuse the identical, already-confirmed partial instance of
+`mechanisms/authority-preserving-intent-projection.md`, not invent a new one.
+Transition Fencing and Resource Lease and Fencing are not implicated at all:
+nothing here is a mutual-exclusion or preparation-safety concern.
+
+**Net:** the document's refusal to bundle A, B, and C is not just good
+hygiene — the three concerns land on disjoint subsets of the five tested
+views (A: Context Lifecycle + Transition Fencing + Authority & Ownership §12;
+B: Authority-Preserving Intent Projection + Resource Lease and Fencing +
+Authority & Ownership §7; C: Authority & Ownership §8 + Runtime Realization
+§11 via the same intent-projection mechanism), confirming they are three
+separate residue items against the settled architecture, not one obligation
+wearing three descriptions.
+
 ## Non-goals
 
 This idea does not:
