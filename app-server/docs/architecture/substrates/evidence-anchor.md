@@ -251,3 +251,14 @@ architecture_status:
 ```
 
 `design: proposed`, not `exploratory` — this document already supersedes an earlier draft and states directly which pieces are "kept, because they are genuinely new and not owned elsewhere" (§7): the anchor contract, the observer family and `AnchorObservation` shape, `CodeEvidenceAdapter`, and the `may_affect` nomination itself. That is a formed architectural direction with a corrected, coherent core, not content whose shape remains genuinely unresolved — the document's own "Open questions" (§10) are real but peripheral (locator choice, trigger model, comparator richness), not disputes over the kept core. `reconciliation: reconciled` — this page's content traces directly to the source document's own numbered sections, read in full this session, not carried forward from a prior summary. `authorization: exploration_only` — the source's own explicit Authority line: "Exploratory only. This document does not amend the migration roadmap, admit an implementation, or authorize a claim-evidence contract change." A confirmed ceiling, not silence. `implementation: none` — confirmed directly: `grep -rl "EvidenceAnchorObserver|AnchorObservation|CodeEvidenceAdapter|nominate_impact" src/` returns zero hits, and `claim-evidence`'s own `contract.mjs` has no `nominate_impact` operation among its six real operations (`create_claim`, `publish_revision`, `publish_lineage`, `record_reliance`, `retire_reliance`, `retract_revision`).
+
+```yaml
+status_override:
+  design: accepted
+  reconciliation: reconciled
+  authorization: implementation_authorized
+  implementation: none
+  source: app-server/docs/cross-cutting-seam-review-and-architectural-review-reconciliation.md
+```
+
+**Found by the §12 capstone-row audit, 2026-09-16 — a real drift, not a wording issue.** `review.md` §8 already states that "implementation of the mechanical seam-evidence adapter extensions is authorized to proceed" and that this authorization "belongs to `substrates/evidence-anchor.md`'s own territory, not to this dimension" — but this page never carried the corresponding override, so its default `exploration_only` silently understated the real, narrower authorization. Applies specifically to extending the anchor-kind taxonomy where existing kinds (`TextAnchor`/`CodeStructureAnchor`/`ServiceStateAnchor`/`ImplementationRevisionAnchor`) cannot truthfully express a declared seam dependency — per the joint reconciliation's own Acceptance section: "implementation of the mechanical seam-evidence adapter extensions (implementation-evidence-driven, per the existing extensible `EvidenceAnchorObserver` taxonomy) is authorized to proceed," accepted 2026-09-14. Does **not** extend to the rest of this substrate (the core observer/comparator/`may_affect` shape itself remains `exploration_only`, per the page default above) — only to adding new anchor kinds against evidence of need.
