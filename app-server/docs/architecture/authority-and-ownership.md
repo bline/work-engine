@@ -295,7 +295,8 @@ Examples include:
 - publishing a revised ExecutionEnvelope;
 - admitting an organizational-topology revision;
 - publishing a claim refresh judgment;
-- activating a successor context.
+- activating a successor context;
+- accepting an implementation's post-execution conformance (confirmed 2026-09-16: `capability-contract.mjs`'s real `capability.checkpoint_lifecycle/accept` and `/stop` capabilities, with `production-path-contract.mjs` mechanically enforcing that the accepting `owner` may never be `reviewer`/`builder`/`adapter`/`terminalizer` — self-authorization is a thrown error, not merely a documented rule).
 
 This gives Work Engine a recurring pattern:
 

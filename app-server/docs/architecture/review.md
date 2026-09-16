@@ -108,10 +108,11 @@ Seam review does not need, and should not get, a standalone mechanism for the me
 
 ## 3. The Implemented Substrate Today
 
-Two real instances of this dimension's own judgment-production shape, not merely proposed:
+Three real instances of this dimension's own judgment-production shape, not merely proposed:
 
 - **`review-finding-bridge.mjs`** (`app-server/src/services/claim-evidence/review-finding-bridge.mjs`, IMPLEMENTED) — its `revisionPayload` carries `assumptions`, `limitations`, `confidence`, `evidence_references`, and `reopening_conditions` for one domain profile (review findings), confirmed directly in source.
 - **`agent-instruction-review`** (`app-server/src/services/agent-instruction-review/{service.mjs,contract.mjs}`, IMPLEMENTED, fully dogfooded) — a distinct specialist skill delivered read-only, with `selfCertificationAuthorized: false` mechanically fixed in `contract.mjs:244`, alongside seven other independently false-by-default authority flags. This is this dimension's own semantic judgment running in production today, not a proposed shape.
+- **`native-review-host.mjs`** (`app-server/src/services/slice-campaign/native-review-host.mjs`, IMPLEMENTED — added 2026-09-16, found by a post-execution-implementation-acceptance pressure test, closing a real citation gap) — its `findingAuthority()` publishes findings under `permissions: ["create_claim", "publish_revision", "record_reliance"]` against `profile: "revision-bound-review-finding-v1"`, the **exact same profile** `review-finding-bridge.mjs` uses above. This is not an analogous shape — it is the identical mechanism, applied to implementation-contract conformance specifically (baseline-vs-candidate diff, per-file digests) rather than a generic review finding. Confirms this dimension does not need a fourth named judgment instance for post-execution conformance checking (§ Relationship to Evidence and Claims and Authority and Ownership, and `implementation-contract-compilation.md`'s own §5, below) — it is this same instance, one more concrete subject.
 
 ---
 
@@ -239,11 +240,11 @@ This page does not define:
 
 ## Relationship to Evidence and Claims
 
-`evidence-and-claims.md` materializes this dimension's judgment output as a durable claim (`review-finding-bridge.mjs`); the judgment itself remains this dimension's own, produced before materialization occurs, never inside the claim-evidence substrate itself.
+`evidence-and-claims.md` materializes this dimension's judgment output as a durable claim (`review-finding-bridge.mjs`, and — confirmed 2026-09-16 — `native-review-host.mjs` under the identical `revision-bound-review-finding-v1` profile); the judgment itself remains this dimension's own, produced before materialization occurs, never inside the claim-evidence substrate itself. **Post-execution implementation acceptance, pressure-tested 2026-09-16, fully composes from existing owners with no residue**: this dimension produces the conformance finding (via `native-review-host.mjs`, above); `evidence-and-claims.md` materializes the resulting acceptance fact (its own `production-path-v1` profile, §2 there — a claim schema whose `acceptance: {owner, source, unestablishedRoute}` field records exactly who accepted it); `authority-and-ownership.md` owns the accept/reject/stop consequence (below); `mechanisms/revision-cas-and-publication.md` publishes the successor accepted state (`completion-publication.mjs`'s real `prepared → sealed → published` lifecycle). No new dimension needed — the real code had already solved this composition before any of the 20 architecture views existed; it was simply never cited.
 
 ## Relationship to Authority and Ownership
 
-Acceptance and disposition authority is never this dimension's own. `strategic-planning-handoff.mjs` is one concrete, campaign-level instance of `authority-and-ownership.md`'s own decide/admit vocabulary (§7 there) applied to a review finding's consequence — not evidence that this dimension acquires that authority by proximity.
+Acceptance and disposition authority is never this dimension's own. `strategic-planning-handoff.mjs` is one concrete, campaign-level instance of `authority-and-ownership.md`'s own decide/admit vocabulary (§7 there) applied to a review finding's consequence — not evidence that this dimension acquires that authority by proximity. `capability-contract.mjs`'s real `capability.checkpoint_lifecycle/accept` and `/stop` capabilities are a second concrete instance, confirmed 2026-09-16: `production-path-contract.mjs` mechanically enforces that the accepting `owner` may never be `reviewer`/`builder`/`adapter`/`terminalizer` — the same producer/accepter separation this dimension's own boundary requires, enforced in real code, not merely stated as a principle.
 
 ## Relationship to Resource Lease and Fencing
 
@@ -258,6 +259,8 @@ This dimension decides what scope requires protection (§7 item 5, §9); `mechan
 - **`authority-and-ownership.md`** — owns acceptance, disposition, and blocking authority; this dimension never claims it.
 - **`semantic-planning-hierarchy.md`**, **`organizational-compilation.md`**, **`role-and-contract-structure.md`**, **`runtime-realization.md`**, **`context-lifecycle.md`** — any may be the subject a review judges; none of them perform or own the review judgment itself.
 - **`mechanisms/resource-lease-and-fencing.md`** — enforces this dimension's own protected-scope declaration (§7 item 5, §9) once made; `runtime-realization.md`'s own fenced active-binding decision is this mechanism's other confirmed consumer.
+- **`mechanisms/revision-cas-and-publication.md`** — publishes the successor accepted state once post-execution implementation acceptance composes this dimension's finding with `evidence-and-claims.md`'s and `authority-and-ownership.md`'s own outputs (Relationship to Evidence and Claims, above).
+- **`implementation-contract-compilation.md`** — its own §5 plan-conformance gate is the pre-execution symmetric counterpart to this dimension's own post-execution conformance finding (`native-review-host.mjs`, §3).
 
 ---
 

@@ -109,6 +109,8 @@ Before implementation, an independent gate checks that every material mechanism 
 
 **Quoted directly, because it is the single most important boundary this dimension exists to hold: "Passing the gate establishes plan readiness only. It does not authorize the slice or predict that implementation cannot fail."**
 
+**The symmetric post-execution question — did the implementation actually turn out to satisfy the contract — is deliberately not this dimension's own** (confirmed 2026-09-16): it belongs to `review.md` (the conformance finding), `evidence-and-claims.md` (materializing the acceptance fact), `authority-and-ownership.md` (the accept/reject/stop consequence), and `mechanisms/revision-cas-and-publication.md` (publishing the accepted successor state) — a composition, not a gap requiring this dimension to extend past compile time.
+
 ---
 
 ## 6. This Dimension Owns Stage 1 of the `routing.vs.admission` Ruling, Precisely
@@ -224,6 +226,7 @@ Consumes relevant claims and evidence cutoffs as part of the implementation basi
 - **`evidence-and-claims.md`** — the source of claims and evidence cutoffs this dimension's basis consumes.
 - **`context-lifecycle.md`** — a pure observable-signal consumer relationship; this dimension owns no context-management responsibility.
 - **`substrates/evidence-anchor.md`** — the same coverage discipline (§2) independently converged on: never claim completeness the underlying observation cannot support.
+- **`review.md`** — owns the symmetric, post-execution counterpart to this dimension's own §5 plan-conformance gate: did the produced implementation actually satisfy the accepted contract, confirmed 2026-09-16 to compose cleanly from `review.md` + `evidence-and-claims.md` + `authority-and-ownership.md` + `mechanisms/revision-cas-and-publication.md`, with no residue requiring a new dimension.
 
 ---
 

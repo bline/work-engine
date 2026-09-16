@@ -17,9 +17,12 @@ Evidence/Claims           — claim revisions (implemented, real code)
 Context Lifecycle         — checkpoint / lifecycle-ledger revisions (implemented, real code)
 Runtime Realization       — realization lineage (proposed)
 Material Decision Selection — sealed decision-set revisions (proposed)
+Post-execution implementation acceptance — completion-publication.mjs
+                            (implemented, composing three dimensions'
+                            outputs, owned by none of them alone)
 ```
 
-Six independent instances converging on one shape is the actual evidence for documenting it once, here — not a stylistic preference for consolidation. This count was last true to the page's own body as of 2026-09-16; if it drifts again, trust the "Confirmed Instances" section below over this summary.
+Seven independent instances converging on one shape is the actual evidence for documenting it once, here — not a stylistic preference for consolidation. This count was last true to the page's own body as of 2026-09-16; if it drifts again, trust the "Confirmed Instances" section below over this summary.
 
 ---
 
@@ -95,6 +98,10 @@ Verified directly against `app-server/src/services/claim-evidence/service.mjs`: 
 
 `material-decision-selection.md` §6: "sealing makes that revision immutable; later changes create a successor and reopen every implementation contract that relied upon the superseded revision." The identical predecessor-chained, CAS-published shape, found independently by this dimension's own source document; no implementation evidence found.
 
+### Post-execution implementation acceptance — implemented, composing multiple dimensions' outputs, not owned by any single one
+
+**Added 2026-09-16**, closing a real citation gap found by a pressure test that confirmed no new dimension is needed here (see `review.md`'s own Relationship to Evidence and Claims for the full composition). `app-server/src/services/slice-campaign/completion-publication.mjs`'s real `prepared → sealed → published` lifecycle checks `expectedParent`/`expectedHeadOid` against Git object state, computes a `preparationRevision` digest, and only publishes when the accepted checkpoint's digests match the authorized offer — textbook CAS-published succession. Unlike this mechanism's other confirmed instances, the accepted-checkpoint record itself owns no new semantic content — its fields (`gate_receipt_digest`, `plan_version`, `scope_revision`) *cite* `review.md`'s finding, `implementation-contract-compilation.md`'s plan, and `evidence-and-claims.md`'s `production-path-v1` acceptance claim, rather than asserting anything new. A genuine instance of this mechanism, composing three dimensions' outputs into one published succession, not a fourth dimension's own artifact.
+
 ---
 
 ## Key Invariants
@@ -132,8 +139,9 @@ Independent mechanisms answering different questions — Candidate Resolution an
 
 ## Related Architecture Views
 
-- **`evidence-and-claims.md`**, **`context-lifecycle.md`** — the two implemented instances.
+- **`evidence-and-claims.md`**, **`context-lifecycle.md`** — the two implemented instances owned by a single dimension.
 - **`organizational-compilation.md`**, **`semantic-planning-hierarchy.md`**, **`runtime-realization.md`**, **`material-decision-selection.md`** — accepted-design or proposed instances, not yet implemented.
+- **`review.md`** — its own Relationship to Evidence and Claims section names this mechanism as the publisher of post-execution implementation acceptance's successor accepted state, composing `review.md`, `evidence-and-claims.md`, and `authority-and-ownership.md`'s own outputs.
 - **`authority-and-ownership.md`** — owns who may publish; this mechanism only owns whether a given publish is safe against the current head.
 
 ---
