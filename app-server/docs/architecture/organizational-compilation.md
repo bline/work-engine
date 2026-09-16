@@ -928,6 +928,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §7 as one of its two confirmed instances.
 - **`role-and-contract-structure.md`** — the "semantic obligation → required vantage → logical role contract" chain (§5 above) grounds directly against that page's own §4.
 - **`context-lifecycle.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the temporal question this dimension's own topological question is deliberately kept separate from.
+- **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own topology-transition fence is named there conceptually, with no implementation yet.
 - **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism this dimension's own admission mechanism (§7 above) would publish through, once implemented; accepted design only, not yet built.
 

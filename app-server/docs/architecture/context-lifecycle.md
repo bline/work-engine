@@ -156,7 +156,7 @@ This page does not define:
 
 - organizational topology or vantage separation (`organizational-compilation.md`);
 - the executor-class-routing seam or any authority-reassignment question;
-- the exact mechanics of the transition-fencing mechanism it consumes (a future mechanism-level page);
+- the exact mechanics of the transition-fencing mechanism it consumes (`mechanisms/transition-fencing-and-leases.md`);
 - the exact mechanics of the revision/CAS mechanism it consumes (`mechanisms/revision-cas-and-publication.md`);
 - claim or evidence materialization (`evidence-and-claims.md`);
 - role-contract semantics (`role-and-contract-structure.md`);
@@ -177,6 +177,7 @@ Invariant 2 (a checkpoint cannot mint authority) is this dimension's own concret
 ## Related Architecture Views
 
 - **`organizational-compilation.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the topological question this page explicitly excludes.
+- **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own transition-lease sequence (§6 above) is its one confirmed, implemented instance.
 - **`authority-and-ownership.md`** — the general invalidation-never-mints-authority invariant this dimension's own checkpoint-authority rule instantiates.
 - **`evidence-and-claims.md`** — a structurally similar revision/CAS consumer, unrelated in subject matter.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism this dimension's checkpoint/ledger publication consumes directly (§7 above, one of its two implemented instances).

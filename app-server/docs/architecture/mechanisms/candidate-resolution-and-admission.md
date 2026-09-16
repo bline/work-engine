@@ -151,8 +151,10 @@ architecture_status:
   reconciliation: reconciled
   authorization: design_work_authorized
   implementation: none
-  owner: app-server/docs/architecture/status-grammar.md
+  owner: app-server/docs/architecture/mechanisms/candidate-resolution-and-admission.md
   status_as_of: 2026-09-16
 ```
 
-`design: accepted` — the mechanism's own recognition and naming was explicitly settled through direct discussion (2026-09-16), the same bar every other mechanism/dimension recognition in this architecture is held to. `reconciliation: reconciled` — confirmed across two independently owned dimensions. `implementation: none` — unlike Revision/CAS, neither confirmed instance (Organizational Compilation, Runtime Realization) has any implementation evidence at all; both remain accepted-design or proposed only. Each dimension's own page remains the authority on its own instance's status; this page does not restate or override either.
+**Corrected before finalizing:** an earlier draft named `status-grammar.md` as `owner`. That document defines what the status fields *mean*; it cannot be the semantic owner of this mechanism's own content, which would quietly violate the same dimension-vs-mechanism-vs-substrate ownership discipline this whole architecture is built on. This page is its own canonical owner. The acceptance provenance stays in prose rather than in the `owner` field, since `owner` names *what owns the claim*, not *what evidence justifies its current status* — a distinction worth watching for recurring elsewhere before it earns a fifth grammar field of its own: the mechanism's own recognition and naming was explicitly settled through direct discussion (2026-09-16), the same bar every other mechanism/dimension recognition in this architecture is held to.
+
+`reconciliation: reconciled` — confirmed across two independently owned dimensions. `implementation: none` — unlike Revision/CAS, neither confirmed instance (Organizational Compilation, Runtime Realization) has any implementation evidence at all; both remain accepted-design or proposed only. Each dimension's own page remains the authority on its own instance's status; this page does not restate or override either.

@@ -1,0 +1,172 @@
+# Transition Fencing and Leases
+
+> **Question:** How do concurrently prepared transitions, across independently owned dimensions, stay coherent against an authoritative world that keeps changing underneath them while they are being prepared?
+
+## Purpose
+
+This is a **mechanism view**, not a dimension view. It describes a reusable preparation-and-activation discipline that Context Lifecycle and Organizational Compilation both need and neither owns, not a class of architectural truth this page owns itself.
+
+> **This mechanism protects *concurrency* — whether a transition being prepared is still valid when it activates. It is not a second Revision/CAS page.**
+
+`mechanisms/revision-cas-and-publication.md` already answers whether a given publish is safe against the current head. This mechanism answers a different question: whether a transition that takes real preparation time (compiling a checkpoint candidate, compiling an admitted organization) is still preparing against a world that is still authoritative by the time it's ready to activate.
+
+```text
+REVISION / CAS / PUBLICATION                TRANSITION FENCING / LEASES
+    Is this successor based on the              May this transition proceed
+    authoritative predecessor/head?              concurrently with other
+    Can it publish atomically?                   transitions?
+    Is this write stale?                        What world revision is it
+                                                  preparing against?
+                                                 What must remain stable
+                                                  until activation?
+```
+
+---
+
+## Preparation vs Publication — the Central Distinction
+
+Confirmed 2026-09-16 directly against `deterministic-authority-projection-and-adaptive-organizational-topology.md` Part 7 and `semantic-context-lifecycle-manager.md`'s own implemented transition-lease sequence, not assumed from the mechanism's name alone:
+
+```text
+authoritative revision R
+        ↓
+transition preparation binds to R
+        ↓
+acquire the appropriate fence/lease
+        ↓
+prepare the successor (compile checkpoint candidate, or
+compile admitted organization — domain-specific work)
+        ↓
+revalidate the bound revision(s) / lease, immediately before activation
+        ├── changed  → stale; abort or recompute against the successor world
+        └── unchanged
+                ↓
+        publish through Revision/CAS
+                ↓
+            activate
+                ↓
+          release the fence
+```
+
+Preparation is the expensive, time-consuming part (compilation, verification). Publication is a single atomic CAS check (owned by Revision/CAS). This mechanism exists specifically to protect the *gap* between them — the window during which the world the preparation was based on could stop being authoritative before activation.
+
+---
+
+## The Governing Invariant
+
+Stated once, in `deterministic-authority-projection-and-adaptive-organizational-topology.md` Part 7.3, general enough to cover every instance of this mechanism:
+
+> **No transition may activate a successor reasoning environment from a world revision that ceased to be authoritative while that transition was being prepared.**
+
+**Revision binding, not service signaling, is the actual mechanism.** Preparation binds to an exact pair (or set) of authoritative revisions. If the authoritative source commits a new revision during that window, the prepared transition fails promotion as stale and must recompute — mechanically, from the changed revision itself, not because any service told it something happened. Nothing here is a new concept; it is the same CAS/fencing discipline `mechanisms/revision-cas-and-publication.md` already establishes, extended to cover a preparation interval rather than a single instantaneous publish.
+
+---
+
+## Two Fence Classes, Deliberately Not Collapsed Into One Lock Abstraction
+
+```text
+decision-episode fence
+    protects an unresolved semantic judgment in general — not only
+    organizational ones, any event-scoped semantic decision whose result
+    would be lost by context replacement. While the judgment remains
+    active, retirement admission stays closed, even though observation
+    and preparatory compilation may continue.
+
+topology-transition fence
+    protects the actual organizational state change itself: accept split
+    → acquire topology transition → compile authority/contracts/
+    projections → publish coherent successor organization → activate →
+    release. During this window, lifecycle cannot checkpoint or replace
+    the parent against a stale topology revision.
+```
+
+They share the generic revision-binding discipline above, but protect different things — one protects a judgment in progress from being lost, the other protects an in-progress world-changing transition from activating against a world that moved. Collapsing them into one generic "lock" would lose exactly the distinction that makes each fence's own release condition meaningful.
+
+**The reverse race matters too, and is resolved the same way, not by inventing a new rule:** topology should not inject a new organizational judgment while a lifecycle retirement is already in progress for that context. It either defers the organizational decision until the successor context reconciles, or — if policy ranks it higher — invalidates and aborts the lifecycle preparation and keeps the context. That arbitration may itself be partly deterministic (critical provider pressure with no safe deferral outranking an ordinary in-progress topology episode) without being permanently hard-coded.
+
+---
+
+## Neither Consumer Owns This Mechanism
+
+```text
+Context Lifecycle
+    consumes fencing — its own transition-lease sequence (below) is a
+    concrete instance, not an invention of the mechanism itself
+
+Organizational Compilation / topology transition
+    consumes fencing — the topology-transition fence above is the
+    concrete instance this dimension would use, once implemented
+
+neither owns fencing
+```
+
+This is the entire reason this page exists rather than living inside `context-lifecycle.md`. That page's own §6 already states it explicitly, correcting an earlier informal characterization that risked implying ownership: both dimensions are independent, equally-ranked consumers of one shared layer, neither senior to the other.
+
+---
+
+## Confirmed Instances
+
+### Context Lifecycle — implemented
+
+Re-verified directly against `semantic-context-lifecycle-manager.md`'s own text, not restated from memory: "begin a revision-bound preparation fence → ... → atomically publish checkpoint H → reread raw thread snapshot S' → if S' differs, retain the delta and recompile; repeat until stable → promote preparation to the final transition lease → start a semantically sterile retirement control turn → target model calls `new_context`..." Its own stated transition-lease invariant: "Retirement readiness and actuator delivery occur under one revision-bound transition lease. Any competing input, effect, or runtime-binding change revokes the lease before actuation." This is real, live machinery — the preparation-fence-then-transition-lease sequence above is not a hypothetical shape, it is this dimension's own implemented reality, generalized.
+
+### Organizational Compilation / topology transition — named, not implemented
+
+`deterministic-authority-projection-and-adaptive-organizational-topology.md` Part 7.3 names the topology-transition fence's own sequence (accept split → acquire transition → compile → publish → activate → release) conceptually. No organizational compiler exists yet (`organizational-compilation.md`'s own status), so this instance has no implementation evidence — the fence type is named and reasoned about, not built.
+
+---
+
+## Key Invariants
+
+1. **No transition may activate a successor reasoning environment from a world revision that ceased to be authoritative while that transition was being prepared.**
+2. **Preparation binds to an exact authoritative revision or revision set; a changed revision invalidates the prepared transition mechanically, without requiring the authoritative source to signal anything.**
+3. **Decision-episode fences and topology-transition fences protect different things and are not the same lock.**
+4. **A transition invalidated during preparation is not thereby granted new authority to activate anyway — it must recompute against the successor world (`authority-and-ownership.md` §12).**
+5. **Neither Context Lifecycle nor Organizational Compilation owns this mechanism; both are equally-ranked consumers.**
+6. **This mechanism protects concurrency of preparation, not publication safety — that remains `mechanisms/revision-cas-and-publication.md`'s own content, not duplicated here.**
+
+---
+
+## What This View Does Not Show
+
+This page does not define:
+
+- how a publish itself is made atomic and CAS-safe (`mechanisms/revision-cas-and-publication.md`);
+- the exact compiled-checkpoint schema or organizational-admission schema (each dimension's own page);
+- the arbitration policy for the reverse race beyond naming that it exists and is partly deterministic;
+- concrete lock, mutex, or database-transaction implementation details — this page describes the logical discipline, not a storage or concurrency-primitive implementation.
+
+---
+
+## Relationship to Revision/CAS/Publication
+
+This mechanism is built directly on top of that one and does not restate its predecessor/head semantics — a revalidation check in this mechanism's own flow ("changed → stale") *is* a Revision/CAS check, just performed at the end of a preparation interval rather than at the moment of an isolated publish.
+
+## Relationship to Authority and Ownership
+
+A stale, invalidated preparation is exactly `authority-and-ownership.md` §12's invalidation-never-mints-authority invariant in this mechanism's own terms: losing a fence race removes validity, never grants standing to activate anyway against the authority ceiling that was already in force.
+
+---
+
+## Related Architecture Views
+
+- **`context-lifecycle.md`** — the one confirmed, implemented instance (§6, §7 there).
+- **`organizational-compilation.md`** — the named, unimplemented instance (topology-transition fence).
+- **`mechanisms/revision-cas-and-publication.md`** — the mechanism this one is built on top of; defines the publication-safety half this page does not duplicate.
+- **`authority-and-ownership.md`** — the general invalidation-never-mints-authority invariant this mechanism's own stale-preparation rule instantiates.
+
+---
+
+## Source and Status
+
+```yaml
+architecture_status:
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
+  implementation: partial
+  owner: app-server/docs/architecture/mechanisms/transition-fencing-and-leases.md
+  status_as_of: 2026-09-16
+```
+
+`design: accepted` — the mechanism's own recognition and naming (both fence classes, the shared revision-binding discipline, and the governing invariant) was explicitly settled through direct discussion, matching this architecture's own established bar. `reconciliation: reconciled` — confirmed against `semantic-context-lifecycle-manager.md`'s own implemented sequence and `deterministic-authority-projection-and-adaptive-organizational-topology.md`'s own Part 7 text directly. `implementation: partial` at the mechanism level, not uniform across its two instances: the decision-episode/transition-lease sequence is real, implemented machinery in Context Lifecycle; the topology-transition fence is named conceptually only, with no organizational compiler yet to fence. Each consuming dimension's own page remains the authority on its own instance's status; this page does not restate or override either.
