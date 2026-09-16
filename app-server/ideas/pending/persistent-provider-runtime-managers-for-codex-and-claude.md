@@ -464,6 +464,8 @@ Those should be consequences of measured requirements rather than assumptions.
 
 Claude exposes a different runtime model.
 
+**Dependency noted 2026-09-16: this section implicitly assumes the Agent SDK as Claude's realization path.** Confirmed directly against real code that today's production path is CLI print mode, not the Agent SDK — see "Real-code findings," above. Whether Work Engine moves to the Agent SDK at all is [`claude-runtime-adapter-and-context-ownership-pilot.md`](claude-runtime-adapter-and-context-ownership-pilot.md)'s own open question (its H0/H1/H2 conditions, gated on that document's own Pilot 0), not something this document decides or should assume settled. If that pilot recommends staying on CLI print mode, the persistence mechanics below need re-deriving from CLI-level session/resume semantics (`--session-id`/`--resume` against on-disk transcripts, already confirmed real) rather than the Agent SDK's own session model described below. The two ideas should be read together, not in either direction's isolation.
+
 The Claude Agent SDK supports persistent conversation sessions, explicit session IDs, resume, continue, and forks. A resumed session restores previous conversational context including prior analysis and files read. citeturn802169search0turn802169search3
 
 It also supports external `SessionStore` implementations, allowing transcript state to be persisted independently of one process or host. citeturn802169search1

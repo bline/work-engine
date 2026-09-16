@@ -79,6 +79,23 @@ be worth investigating for reasons unrelated to context lifecycle — e.g.
 durable multi-process attach to a live thread — but that is a distinct
 question, tracked outside this idea, not folded into it.
 
+**That distinct question now has a home, found 2026-09-16:
+[`persistent-provider-runtime-managers-for-codex-and-claude.md`](persistent-provider-runtime-managers-for-codex-and-claude.md).**
+That idea is scoped to process/runtime persistence across turns (avoid
+relaunching a fresh harness per inference) — orthogonal to, and compatible
+with, whichever of H0/H1/H2 this document's own pilot recommends for Claude's
+*execution path*. A real-code investigation for that idea confirmed directly
+against `native-claude-code-adapter.mjs` that today's actual production
+Claude integration (the narrow, already-implemented reviewer path this
+document itself distinguishes from `ClaudeRuntime`, below) launches one
+fresh `python3`→`claude` CLI process per turn, with continuity achieved only
+through cold `--resume` against on-disk transcripts — no hot/live retention
+exists anywhere yet, for any Claude execution path. That is direct, current-
+state corroboration for this document's own rejection of the bare CLI as a
+sufficient long-term integration surface (above), not new information about
+which path to choose — it does not change H0/H1/H2 or this document's own
+pilot design.
+
 ## Production default
 
 Ship the **overlay** (Agent SDK + hooks), not bare native, as the default
@@ -309,7 +326,9 @@ own mechanism is an implementation bug, not evidence about the mechanism.
   API-parameter-mid-generation-pause respectively).
 - Whether Managed Agents' durable-session model is worth investigating on
   its own terms (independent of context lifecycle) — tracked separately,
-  not as part of this idea.
+  not as part of this idea, now at
+  [`persistent-provider-runtime-managers-for-codex-and-claude.md`](persistent-provider-runtime-managers-for-codex-and-claude.md)
+  (see "Relationship to neighboring owners," above).
 
 ## Non-authorization
 
