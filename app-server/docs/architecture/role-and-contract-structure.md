@@ -40,7 +40,7 @@ flowchart TB
 
     subgraph RCS["Role / Contract Structure"]
         SEM["Contract Semantics<br/>observes • owns • authority • effects •<br/>capabilities • independence • continuity •<br/>lifecycle • forbidden actions • mediated transitions"]
-        AEG["Agent Environment Graph<br/>(this dimension's own existing truth —<br/>read side IMPLEMENTED)"]
+        AEG["Agent Environment Graph<br/>canonical relation vocabulary = semantic truth<br/>generated views/projections = read surface"]
         AUTH["Authoring / Admission Path<br/>(UNRESOLVED — role-compiler-proposal.md's<br/>own proposed evolution)"]
     end
 
@@ -100,9 +100,9 @@ The architecturally important fact is never *which file format* expresses a role
 
 ---
 
-## 3. The Agent Environment Graph Is This Dimension's Own Truth, Not a Shared Substrate
+## 3. The Agent Environment Graph Belongs to This Dimension, Not to a Shared Substrate
 
-**This was an open question carried over from `runtime-realization.md`, resolved here by direct evidence rather than by assumption in either direction.**
+**This was an open question carried over from `runtime-realization.md`, resolved here by direct evidence — and corrected once more before being finalized, to avoid quietly contradicting §2's own rule.**
 
 The test proposed for it: if Role/Contract Structure writes/defines semantic relations while Runtime Realization merely reads them, AEG belongs here, not as a substrate. Checked directly against both sides:
 
@@ -110,7 +110,17 @@ The test proposed for it: if Role/Contract Structure writes/defines semantic rel
 - `runtime-realization.md`'s own source document treats AEG the other way: "The canonical Agent Environment Graph describes role contracts and effective configured environments... The dynamic capability inventory may project into an operator or analysis view associated with that graph, but it must not mutate generated views or checked-in baseline configuration into runtime truth." Runtime Realization *reads* AEG as a boundary its realizations must satisfy. It never authors, validates, or owns any part of it.
 - `work-engine-planned-architecture.md` independently confirms the asymmetry directly: "Agent Environment Graph / role-compiler-proposal.md (read side, IMPLEMENTED); an authoring/admission path back to those owners remains UNRESOLVED."
 
-One dimension writes it (or at least owns its meaning, however it is currently authored); the other only reads it as an input, exactly the same relationship Semantic Planning's branch plan has to every dimension downstream of it. That is not the shared-substrate pattern (Context Observer is consumed independently and equally by two dimensions, neither of which owns it) — it is ordinary upstream/downstream ownership. **The Context Observer remains the only confirmed substrate; the Agent Environment Graph is Role/Contract Structure's own truth, currently partially implemented rather than fully proposed.**
+**Correction before finalizing: "AEG is this dimension's truth" needs one more distinction, or it quietly violates §2's own rule that representation is never semantics.** The role-compiler-proposal.md citation above is explicit that the CLI *reproduces* a generated projection from canonical sources — the generated projection cannot simultaneously be the thing those sources are canonical relative to. So, precisely:
+
+```text
+canonical relation assertions / vocabulary          = semantic truth this dimension owns
+    (docs/workflow-invariants.md, docs/agent-environments.yaml)
+        ↓  role-compiler-proposal.md's own deterministic CLI
+generated Agent Environment Graph views / projections = representation / read surface
+    (e.g. docs/agent-environment-views/slice-builder.yaml)
+```
+
+The ownership conclusion is unchanged: one dimension owns the meaning (however it is currently authored, in either the sources or the generation tooling that validates and derives closure from them), the other only reads a generated projection as an input — the same relationship Semantic Planning's branch plan has to every dimension downstream of it, not the shared-substrate pattern (Context Observer is consumed independently and equally by two dimensions, neither of which owns it). What changes is only *which part* is being called this dimension's truth: the canonical relation vocabulary, not every generated view of it. **The Context Observer remains the only confirmed substrate; the Agent Environment Graph's relation semantics are Role/Contract Structure's own truth, currently partially implemented rather than fully proposed — its generated projections are a read surface, not a second semantic owner.**
 
 ---
 
@@ -216,17 +226,24 @@ The authority, effect-boundary, and independence fields in §1 are this dimensio
 
 ## Source and Status
 
+**Corrected before finalizing:** an earlier draft of this default set `implementation: implemented` at the page level, then explained it as actually describing "§1 and §3's read side specifically" — which is not a page default at all, and risks the exact status-washing the grammar exists to prevent (§4's, §5's, and §6's own overrides below are each complete 4-field blocks and are unaffected, but any *future* section added without its own override would have silently inherited `implemented`). The page-level default now describes this dimension as a whole — accepted as an architectural direction, with real but partial implementation — and the established relation-vocabulary/read-surface machinery gets its own explicit override instead of being folded into the default:
+
 ```yaml
 architecture_status:
   design: accepted
   reconciliation: reconciled
   authorization: implementation_authorized
-  implementation: implemented
+  implementation: partial
   owner: app-server/docs/workflow-invariants.md, app-server/docs/agent-environments.yaml
   status_as_of: 2026-09-16
 ```
 
-This default describes §1 and §3's read side specifically — the Agent Environment Graph's existing role vocabulary, catalogs, and generated projections, confirmed real per `work-engine-planned-architecture.md`'s own "read side, IMPLEMENTED" finding. It does **not** describe how new contracts get authored, derived, or admitted — that is where every override below lives.
+```yaml
+status_override:
+  implementation: implemented
+```
+
+Applies specifically to §1's relation-semantics list and §3's canonical relation vocabulary (`docs/workflow-invariants.md`, `docs/agent-environments.yaml`) and its generated read-surface projections, confirmed real per `work-engine-planned-architecture.md`'s own "read side, IMPLEMENTED" finding. It does **not** extend to how new contracts get authored, derived, or admitted — that is where every override below lives.
 
 ```yaml
 status_override:
