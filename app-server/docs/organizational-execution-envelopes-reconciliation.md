@@ -498,7 +498,7 @@ second, competing relation-truth owner, per that document's own warning.
 Full implementation authorization is deferred until that design question is
 resolved.
 
-## Candidate answer for the organizational-authority layer (proposed 2026-09-15, not yet accepted)
+## Candidate answer for the organizational-authority layer (accepted 2026-09-15)
 
 The residue diagram above names an explicit "missing" layer between
 existing orchestration and `ExecutionEnvelope`: "Organizational authority /
@@ -608,9 +608,18 @@ belongs only at the genuine N-candidate branch, or at deriving an
 unresolved required property — never at simply picking among options that
 were never actually narrowed.
 
-**Status: proposed, not accepted.** This candidate — corrected once already
-before being formally proposed — has not been evaluated against this
-document's own acceptance discipline (the same explicit-user-decision
-process that accepted the residue itself on 2026-09-14). It is recorded
-here so a future decision has a concrete candidate to accept, reject, or
-modify — not treated as settled by either document.
+**Accepted 2026-09-15** (explicit user decision, following the same
+acceptance discipline that accepted the residue itself on 2026-09-14, and
+after one further correction to the available/authorized/required/selected
+mapping caught on review before acceptance). The organizational-authority
+layer this document names as "missing" is now filled by this candidate:
+organizational authority is the authority domain that admits an
+organizational selection from `available ∩ authorized ∩ satisfies(required)`
+(0 candidates = organizational gap; 1 = mechanically determined; N = where
+a genuine selection judgment belongs); `ExecutionEnvelope` records the
+admitted selection and is never itself the deciding authority. This
+acceptance is for the design, not for implementation — the residue as a
+whole remains authorized for design work and proposal formation only, per
+the Acceptance section above; nothing here changes that implementation
+gate, including the outstanding coupling to `role-compiler-proposal.md`'s
+own deferred composition question.
