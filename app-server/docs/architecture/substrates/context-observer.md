@@ -4,7 +4,7 @@
 
 ## Purpose
 
-This is a **substrate view**, not a dimension or mechanism view. It describes the one confirmed shared substrate in this architecture: a source of normalized facts that more than one dimension consumes independently, without the substrate itself acquiring any of their semantic authority.
+This is a **substrate view**, not a dimension or mechanism view. It describes one of the two confirmed shared substrates in this architecture (alongside `substrates/evidence-anchor.md`, added 2026-09-16): a source of normalized facts that more than one dimension consumes independently, without the substrate itself acquiring any of their semantic authority.
 
 **Correction applied before writing this page, not after:** the idea document that first proposed this substrate says it should "own facts about the current reasoning environment." Taken literally, that overstates what it owns — the substrate does not own *external reality*; it owns the **observation records and normalization contract** by which that reality gets represented. This page is deliberately precise about that distinction throughout.
 
@@ -170,6 +170,7 @@ This page does not define:
 - **`context-lifecycle.md`** — one of two peer consumers.
 - **`organizational-compilation.md`** — the other peer consumer.
 - **`deterministic-authority-projection-and-adaptive-organizational-topology.md`** §5.1–§5.3 — the source material this page is grounded in directly.
+- **`substrates/evidence-anchor.md`** — the other confirmed substrate; same observation/normalization shape, unrelated subject matter.
 
 ---
 
