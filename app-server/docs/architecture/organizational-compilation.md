@@ -928,6 +928,7 @@ Those are separate acts even when one physical actor participates in more than o
 - **`role-and-contract-structure.md`** — the "semantic obligation → required vantage → logical role contract" chain (§5 above) grounds directly against that page's own §4.
 - **`context-lifecycle.md`** — the sibling, equally-ranked consumer of the shared Context Observer and transition-fencing mechanism; owns the temporal question this dimension's own topological question is deliberately kept separate from.
 - **`evidence-and-claims.md`** — how planning and execution facts are materialized without becoming their own semantic owners.
+- **`mechanisms/revision-cas-and-publication.md`** — the mechanism this dimension's own admission mechanism (§7 above) would publish through, once implemented; accepted design only, not yet built.
 
 Revisioned state, predecessor lineage, CAS publication, and atomic visibility (what becomes canonical durable state at each admitted transition, across all of planning, organizational admission, and claim-evidence) are treated as a shared cross-cutting mechanism, not a truth dimension — settled, not open. Its canonical mechanism view is pending (`mechanisms/revision-cas-and-publication.md`).
 

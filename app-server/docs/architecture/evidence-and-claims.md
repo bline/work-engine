@@ -256,7 +256,7 @@ Deliberately excluded, even though each is adjacent:
 
 - **Generic evidence production.** Any role or service may produce evidence (a builder observing shared state, a repository scanner, a context observer). Producing evidence is not this dimension's concern until that evidence becomes a claim through `nominate_impact` or claim materialization.
 - **The truth of a source's own fact.** Branch-plan truth belongs to Semantic Planning. `ExecutionEnvelope`/organizational truth belongs to Organizational Compilation. This dimension never decides those; it only materializes and refreshes copies of them.
-- **CAS, revision-chains, and atomic-publication mechanics in general.** Claim revisions use exactly the same predecessor-chained, CAS-published pattern every other dimension's own durable state uses. That pattern is a shared mechanism, not something this dimension invented or owns — see the Revision/CAS mechanism (not yet its own page; referenced, not duplicated, here).
+- **CAS, revision-chains, and atomic-publication mechanics in general.** Claim revisions use exactly the same predecessor-chained, CAS-published pattern every other dimension's own durable state uses. That pattern is a shared mechanism, not something this dimension invented or owns — see `mechanisms/revision-cas-and-publication.md`, which cites this dimension's own `service.mjs` as one of its two confirmed implemented instances.
 - **Transition fencing between concurrently changing authoritative revisions.** A shared concern across dimensions, not specific to claims.
 - **Authority to change the source artifact a claim describes.** Stated repeatedly in this page because it is the single most important boundary this dimension exists to preserve.
 
@@ -280,7 +280,7 @@ Deliberately excluded, even though each is adjacent:
 
 This page does not define:
 
-- exact revision/CAS mechanics (shared mechanism, not duplicated here);
+- exact revision/CAS mechanics (`mechanisms/revision-cas-and-publication.md`, not duplicated here);
 - transition fencing implementation;
 - branch-plan or `ExecutionEnvelope` schemas (owned by other dimensions);
 - the full cross-consistency matrix between episode disposition and trigger resolutions (see `operation-contract-surface.md` directly for the logically-forced subset that already exists);
@@ -306,7 +306,8 @@ Organizational Compilation's own admitted revision is the analogous future sourc
 - **`runtime-realization.md`** — the sibling dimension whose own invalidation lifecycle independently converged on the same "invalidation never mints authority" shape as this dimension's refresh lifecycle.
 - **`role-and-contract-structure.md`** — a distinct source dimension a future domain profile could materialize claims from, symmetric to `planning-facts-v1` and `organizational-facts-v1` (not proposed).
 - **`authority-and-ownership.md`** — the evidence-producer / domain-owner authority split this dimension's operations depend on directly.
-- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the still-homeless revision/CAS mechanism; owns none of it, same as this page.
+- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism; owns none of it, same as this page.
+- **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's `service.mjs` as one of its two confirmed implemented instances.
 
 ---
 

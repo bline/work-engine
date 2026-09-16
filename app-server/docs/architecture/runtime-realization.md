@@ -313,7 +313,7 @@ This page does not define:
 - organizational topology or admission (`organizational-compilation.md`);
 - semantic planning or replanning (`semantic-planning-hierarchy.md`);
 - claim/evidence materialization (`evidence-and-claims.md`);
-- the exact revision/CAS mechanics this dimension reuses (a shared mechanism, not duplicated here);
+- the exact revision/CAS mechanics this dimension reuses (`mechanisms/revision-cas-and-publication.md`, not duplicated here);
 - context-lifecycle transition fencing mechanics, beyond noting this dimension's own safe-boundary requirement composes with them;
 - concrete provider/harness implementation details for any specific runtime.
 
@@ -340,7 +340,8 @@ Role/Contract Structure (not yet its own page) is the upstream owner of what thi
 - **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the other side of §5's open routing seam.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
-- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the still-homeless revision/CAS and transition-fencing mechanisms; owns none of them, same as this page.
+- **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the still-homeless transition-fencing mechanism; owns none of them, same as this page.
+- **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's own §10 as a proposed, not-yet-implemented instance.
 
 ---
 
