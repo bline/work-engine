@@ -223,6 +223,7 @@ The authority, effect-boundary, and independence fields in §1 are this dimensio
 - **`evidence-and-claims.md`** — materializes facts about planning and organizational state; does not materialize role-contract truth, which this dimension owns directly.
 - **`mechanisms/candidate-resolution-and-admission.md`** — used by several of this dimension's neighbors (§7 above); this dimension's own compiler currently has no judgment branch and does not use it.
 - **`implementation-contract-compilation.md`** — owns stage 1 (contract characterization) of §6's own ruling, precisely — not this dimension.
+- **`mechanisms/authority-preserving-intent-projection.md`** — a mechanism partially serving the authoring/admission territory this dimension's own §2/§4 explicitly leaves unresolved; this dimension's own scope is unchanged by the mechanism's existence.
 
 ---
 

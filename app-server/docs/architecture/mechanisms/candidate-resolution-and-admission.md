@@ -149,6 +149,7 @@ The residual-judgment step depends directly on `authority-and-ownership.md`'s ob
 - **`portfolio-selection.md`** — a likely, not yet formally confirmed, fourth instance.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism a selection is published through once admitted.
 - **`authority-and-ownership.md`** — owns the vocabulary and the invalidation invariant this mechanism's own residual-judgment step and rerun behavior both depend on.
+- **`mechanisms/authority-preserving-intent-projection.md`** — a distinct, composable sibling mechanism; that one turns intent into a bounded candidate, this one decides whether/how a candidate set reduces and is admitted. Neither subsumes the other.
 
 ---
 

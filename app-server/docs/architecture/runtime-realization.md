@@ -286,6 +286,8 @@ This is a third confirmed instance of the predecessor-chained, generation-tracke
 
 The overlay is scoped hierarchically (global → workflow/campaign → role class → role instance/obligation → one operation); a narrower preference may override a broader preference, never a role contract, a stronger prohibition, an authority boundary, or an unavailable capability. A UI may project candidate states (`selected`, `preferred`, `admissible`, `requires_operator_approval`, `prohibited`, and similar) as a view over owned contracts, policy, and observations — it must not itself become the resolver, and it must not directly mutate the active adapter, provider thread, runtime session, or realization.
 
+**Confirmed 2026-09-16, by architectural synthesis, as this dimension's own real, partial instance of `mechanisms/authority-preserving-intent-projection.md`**: this paragraph was written independently, with no cross-reference to Studio or its own reconciliation, yet follows the identical shape (expose bounded candidates, never resolve, never mutate directly) that mechanism was later confirmed against as a second, independent consumer. This dimension owns the concrete policy content being projected; the mechanism owns the discipline that keeps the projection from becoming a second resolver.
+
 ---
 
 ## 12. Fenced Active-Binding: This Dimension's Own Exclusivity Concern, Consuming a Shared Mechanism
@@ -328,6 +330,7 @@ This is stronger than the informal "kill the old realization" framing this dimen
 10. **The operator policy overlay is a manipulable control surface; it is not canonical workflow or runtime truth.**
 11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, closed by ruling — owned by the supervisor / routing-policy authority, not this dimension).**
 12. **Which realization generation currently holds authoritative active-binding is this dimension's own decision; the fencing mechanics that make it race-safe and host-enforced belong entirely to `mechanisms/resource-lease-and-fencing.md` (§12).**
+13. **The operator policy overlay projects bounded candidate states; it never becomes the resolver — a real, partial instance of `mechanisms/authority-preserving-intent-projection.md` (§11).**
 
 ---
 
@@ -363,6 +366,10 @@ This page does not define:
 
 This dimension owns the domain decision (§12: which realization generation currently holds authoritative active-binding); `mechanisms/resource-lease-and-fencing.md` owns the fencing mechanics that enforce it. Same division of labor this dimension already has with Candidate Resolution and Admission (§4) and Revision/CAS (§10) — a mechanism supplies a reusable shape, never the domain meaning.
 
+## Relationship to Authority-Preserving Intent Projection
+
+The operator policy overlay (§11) is this mechanism's own real, partial instance — this dimension owns the concrete policy content projected; the mechanism owns the discipline that keeps a UI projection from becoming a second resolver or mutating the active realization directly.
+
 ---
 
 ## Related Architecture Views
@@ -378,6 +385,7 @@ This dimension owns the domain decision (§12: which realization generation curr
 - **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own safe-execution-boundary requirement (§9 above) composes with it.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's own §10 as a proposed, not-yet-implemented instance.
 - **`mechanisms/resource-lease-and-fencing.md`** — the mechanism this dimension's own active-binding decision (§12) consumes for its fencing mechanics; citing this dimension as its second confirmed instance.
+- **`mechanisms/authority-preserving-intent-projection.md`** — the mechanism this dimension's own operator policy overlay (§11) is a confirmed, partial instance of.
 
 ---
 

@@ -252,6 +252,29 @@ Deliberately excluded, even though each is adjacent:
 - **CAS, revision-chains, and atomic-publication mechanics in general.** Claim revisions use exactly the same predecessor-chained, CAS-published pattern every other dimension's own durable state uses. That pattern is a shared mechanism, not something this dimension invented or owns — see `mechanisms/revision-cas-and-publication.md`, which cites this dimension's own `service.mjs` as one of its two confirmed implemented instances.
 - **Transition fencing between concurrently changing authoritative revisions.** A shared concern across dimensions, not specific to claims.
 - **Authority to change the source artifact a claim describes.** Stated repeatedly in this page because it is the single most important boundary this dimension exists to preserve.
+- **The truth of a diagnosis, or which competing explanation is warranted.** This dimension owns the durable representation/profile contract an attributed diagnostic finding is materialized through (§10) — never the diagnosis itself.
+
+---
+
+## 10. Attributed Diagnostic Findings: a Domain-Profile Pattern, Never a Second Semantic Owner
+
+**Added 2026-09-16, by architectural synthesis of two independently-arrived-at findings, checked directly rather than assumed compatible**: `review.md`'s own architectural-finding profile (§7 item 3) and the research/calibration domain's own attributed calibration diagnosis (`closed-loop-engineering-learning-reconciliation.md`) each independently describe the identical representation shape, arrived at from opposite directions — one from architecture-correctness judgment, the other from prediction-accuracy judgment:
+
+```text
+correspondence basis
+    what was compared against what
+competing / contributing explanations
+    more than one candidate cause, not a single reflexive verdict
+evidence, confidence, and limitations per explanation
+consequence linkage
+    reopening conditions / what this diagnosis warrants downstream
+```
+
+This is real, load-bearing convergence — but it licenses only a **representation pattern** this dimension may host as a domain profile, exactly as `review-finding-bridge.mjs`'s own `revisionPayload` already does for review findings and `proposal-research-v1` already does for proposal evidence. It does **not** license this dimension acquiring the diagnosis semantics themselves:
+
+> **Attributed diagnostic findings may be represented through domain profiles that preserve correspondence basis, competing/contributing explanations, evidence/confidence/limitations, and consequence linkage. This dimension owns the durable representation/profile contract, not the truth of the diagnosis or which explanation is warranted.**
+
+`review.md` authors review judgment; the research/calibration domain authors calibration diagnosis; this dimension materializes either as durable claims, exactly the same "materialization, never the source" boundary §1 and §3 already state for every other domain's own truth. Whether "attributed multi-cause diagnosis" deserves its own named sub-pattern distinct from a generic domain profile (the way Candidate Resolution and Admission was named once two mechanism instances converged) is a real, open question this page does not resolve — noted, not decided.
 
 ---
 
@@ -266,6 +289,7 @@ Deliberately excluded, even though each is adjacent:
 7. **Materialization must be pure projection of declared source fields — never inference of a semantic conclusion the source did not itself assert.**
 8. **A materializing transition and its claim emission must be one atomically-visible admission, not two sequenced ones, when the source dimension's own transition is what produces the claim.**
 9. **No currency check can ever prove absence of impact nobody has yet observed and nominated — only absence of *known* unprocessed impact.**
+10. **An attributed diagnostic finding's representation may be hosted here as a domain profile; the diagnosis truth itself, and which explanation is warranted, always belongs to the producing domain (§10).**
 
 ---
 
