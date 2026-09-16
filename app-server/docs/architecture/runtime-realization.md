@@ -169,8 +169,8 @@ The source document names an explicit three-stage pipeline. This is a **ruling**
 
 ```text
 contract characterization                executor-class routing /              runtime resolution / admission
-(decision-gated compilation: which        acceptance                            (THIS DIMENSION: given the
-executor classes are semantically         (supervisor / routing-policy           accepted class plus current
+(implementation-contract-compilation.md:  acceptance                            (THIS DIMENSION: given the
+which executor classes are semantically   (supervisor / routing-policy           accepted class plus current
 supported, with what evidence-backed      authority: which supported class       capabilities and policy,
 readiness — plan readiness only,          should this slice actually use —       which exact model/provider/
 no slice authority)                       a nomination, advisory until           harness/tool realization is
@@ -181,7 +181,7 @@ This dimension is squarely the third stage. It consumes the first two stages' ou
 
 > **Runtime Realization consumes an accepted executor/runtime requirement or routing nomination. It does not own the upstream semantic reason that class was requested.**
 
-**Closed 2026-09-15, not an open seam of this dimension's own.** An earlier draft of this section restated the second stage's ownership as a live three-way question among Role/Contract Structure, a distinct routing-policy authority, and Organizational Compilation. That was a regression, not a fresh finding: the source document's own ruling already names the owner — "the supervisor / routing-policy authority" identified in `proposal-decision-gated-implementation-compilation.md`'s own Stage 6 — and nothing in this session's work supersedes that ruling. Reconciliation may discover an old ruling is inadequate, but it may not silently convert a settled ruling back into an open question without routing that finding back to the ruling's own owner. Restated correctly: the second stage belongs to that named authority, not to this dimension, Role/Contract Structure, or Organizational Compilation. See `work-engine-planned-architecture.md` §13 item 12 for the ruling's full text and `role-and-contract-structure.md` §6 for the corresponding correction there.
+**Closed 2026-09-15, not an open seam of this dimension's own.** An earlier draft of this section restated the second stage's ownership as a live three-way question among Role/Contract Structure, a distinct routing-policy authority, and Organizational Compilation. That was a regression, not a fresh finding: the source document's own ruling already names the owner — "the supervisor / routing-policy authority" identified in `proposal-decision-gated-implementation-compilation.md`'s own Implementation Track, "Stage 6: Adaptive routing" — and nothing in this session's work supersedes that ruling. Reconciliation may discover an old ruling is inadequate, but it may not silently convert a settled ruling back into an open question without routing that finding back to the ruling's own owner. Restated correctly, and now precisely attributed rather than left as "decision-gated compilation" generically: the first stage belongs to `implementation-contract-compilation.md` (confirmed 2026-09-16, not `role-and-contract-structure.md` or Organizational Compilation), the second belongs to the named routing-policy authority, and this dimension owns only the third. See `work-engine-planned-architecture.md` §13 item 12 for the ruling's full text and `role-and-contract-structure.md` §6 for the corresponding correction there.
 
 ---
 
@@ -337,8 +337,9 @@ This page does not define:
 
 - **`authority-and-ownership.md`** — the observe/nominate/decide/admit/execute vocabulary this dimension's decision-owner step depends on, and the invalidation invariant (§12) generalized partly from this page.
 - **`organizational-compilation.md`** — the sibling instance of Candidate Resolution and Admission; §5's ruling confirms executor-class routing belongs to neither this dimension nor that one.
-- **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §4 as one of its two confirmed instances.
+- **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §4 as one of its three confirmed instances.
 - **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the corresponding correction to §5's ruling.
+- **`implementation-contract-compilation.md`** — owns stage 1 (contract characterization) of §5's own three-stage pipeline, precisely, not this dimension and not Role/Contract Structure.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the transition-fencing mechanism; owns none of them, same as this page.

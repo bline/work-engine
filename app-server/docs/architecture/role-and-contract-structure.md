@@ -221,7 +221,8 @@ The authority, effect-boundary, and independence fields in §1 are this dimensio
 - **`runtime-realization.md`** — the downstream consumer that reads this dimension's contract as a boundary constraint, and the page recording the same `routing.vs.admission` ruling as §6 here.
 - **`authority-and-ownership.md`** — the general authority-projection model this dimension's authority/effect/independence fields instantiate.
 - **`evidence-and-claims.md`** — materializes facts about planning and organizational state; does not materialize role-contract truth, which this dimension owns directly.
-- **`mechanisms/candidate-resolution-and-admission.md`** — used by both of this dimension's neighbors (§7 above); this dimension's own compiler currently has no judgment branch and does not use it.
+- **`mechanisms/candidate-resolution-and-admission.md`** — used by several of this dimension's neighbors (§7 above); this dimension's own compiler currently has no judgment branch and does not use it.
+- **`implementation-contract-compilation.md`** — owns stage 1 (contract characterization) of §6's own ruling, precisely — not this dimension.
 
 ---
 

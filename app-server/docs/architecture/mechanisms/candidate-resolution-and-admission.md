@@ -8,7 +8,7 @@ This is a **mechanism view**, not a dimension view. It describes a reusable redu
 
 > **The mechanism reduces and validates a candidate space. It never supplies the domain meaning of what survives the reduction.**
 
-Two independently owned dimensions reached for the identical shape without copying it from one another — `organizational-compilation.md` §7 (accepted design, 2026-09-15) and `runtime-realization.md` §4 (proposed, checked against source 2026-09-16). Two independent instances converging on one shape, each with its own decision owner but the identical reduction structure, is the evidence for documenting it once, here.
+Independently owned dimensions keep reaching for the identical shape without copying it from one another — `organizational-compilation.md` §7 (accepted design, 2026-09-15), `runtime-realization.md` §4 (proposed, checked against source 2026-09-16), and, confirmed by direct falsifier testing during the front-end proposal→decision chain's own pressure-testing (2026-09-16), `material-decision-selection.md`'s own final selection step. A fourth, `portfolio-selection.md`'s own final disposition step, is named as likely but not yet formally confirmed (§ Confirmed Instances). Independent instances converging on one shape, each with its own decision owner but the identical reduction structure, is the evidence for documenting it once, here.
 
 ---
 
@@ -100,6 +100,14 @@ Rematerialization after invalidation (`runtime-realization.md` §8) and recursiv
 
 `runtime-realization.md` §4: deterministic machinery rejects candidates that fail requirements or exceed ceilings, applies explicit prohibitions and budget bounds, tests dependency validity against the current capability generation, and ranks candidates when policy gives a complete ordering. A decision owner — "the supervisor, another authorized role, the operator, or the human who owns budget or product authority" — resolves the remainder only when admissible candidates differ in genuinely undetermined meaning (review independence, evidence strength, continuity loss, latency, a new cost/authority tradeoff). Zero candidates = explicit gap; one = mechanically determined; N = the decision-owner's residual judgment.
 
+### Material Decision Selection — proposed, not implemented (third confirmed instance)
+
+`material-decision-selection.md` §7, confirmed by direct falsifier test 2026-09-16: the dimension's own materiality test and authority classification (reserved/delegated) are irreducible domain content the mechanism cannot supply, but the final act — genuinely admissible routes → disposition (`selected`/`rejected`/`delegated`/`deferred`) — matches this mechanism's shape precisely, with the named decision owner supplying the residual N-case judgment. `AVAILABLE` = routes compatible with the proposal's current meaning, invariants, placement, and evidence; `AUTHORIZED` = the reserved/delegated authority ceiling; `SATISFIES(REQUIRED)` = the route-invariance materiality test. Zero candidates = no material choice remains; one = mechanically determined; N = the decision owner's residual judgment, exactly as this mechanism's shape predicts.
+
+### Portfolio Selection — proposed, not implemented (likely fourth instance, not yet formally confirmed)
+
+`portfolio-selection.md` §8, per its own falsifier test 2026-09-16: `PortfolioDecision`'s final dispositions (`select_for_campaign`/`defer`/`exclude`) over the set of ready/eligible proposals structurally match this mechanism's shape, with capacity/policy/authority as the filtering predicates. Flagged as likely, not confirmed, by that page's own text — the basis-binding and cross-proposal-analysis content is real dimension truth regardless of whether the final selection act is ever formally recorded as this mechanism's instance.
+
 ---
 
 ## Key Invariants
@@ -137,7 +145,8 @@ The residual-judgment step depends directly on `authority-and-ownership.md`'s ob
 
 ## Related Architecture Views
 
-- **`organizational-compilation.md`**, **`runtime-realization.md`** — the two confirmed instances.
+- **`organizational-compilation.md`**, **`runtime-realization.md`**, **`material-decision-selection.md`** — three confirmed instances.
+- **`portfolio-selection.md`** — a likely, not yet formally confirmed, fourth instance.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism a selection is published through once admitted.
 - **`authority-and-ownership.md`** — owns the vocabulary and the invalidation invariant this mechanism's own residual-judgment step and rerun behavior both depend on.
 
@@ -157,4 +166,4 @@ architecture_status:
 
 **Corrected before finalizing:** an earlier draft named `status-grammar.md` as `owner`. That document defines what the status fields *mean*; it cannot be the semantic owner of this mechanism's own content, which would quietly violate the same dimension-vs-mechanism-vs-substrate ownership discipline this whole architecture is built on. This page is its own canonical owner. The acceptance provenance stays in prose rather than in the `owner` field, since `owner` names *what owns the claim*, not *what evidence justifies its current status* — a distinction worth watching for recurring elsewhere before it earns a fifth grammar field of its own: the mechanism's own recognition and naming was explicitly settled through direct discussion (2026-09-16), the same bar every other mechanism/dimension recognition in this architecture is held to.
 
-`reconciliation: reconciled` — confirmed across two independently owned dimensions. `implementation: none` — unlike Revision/CAS, neither confirmed instance (Organizational Compilation, Runtime Realization) has any implementation evidence at all; both remain accepted-design or proposed only. Each dimension's own page remains the authority on its own instance's status; this page does not restate or override either.
+`reconciliation: reconciled` — confirmed across three independently owned dimensions, with a fourth likely. `implementation: none` — unlike Revision/CAS, none of the confirmed instances (Organizational Compilation, Runtime Realization, Material Decision Selection) has any implementation evidence at all; all remain accepted-design or proposed only. Each dimension's own page remains the authority on its own instance's status; this page does not restate or override any of them.
