@@ -16,8 +16,13 @@ and its relationship to
 
 ```yaml
 idea_status:
-  architectural_supersession: unknown
-  architectural_supersession_note: "Corrected 2026-09-17, per review: previously none with no supporting note -- neither term-grepped nor semantically compared. This is a research note interpreting external prior-art systems for Work Engine, not itself asserting settled architecture, so much of it plausibly has no canonical owner at all; but its 5 unchecked RESIDUE-kind items and 6 unchecked BACKLOG-kind items were never compared against canonical-view text this pass (only kind-classified), so whether any 'Work Engine interpretation' among them duplicates or contradicts settled architecture is genuinely unknown, not confirmed absent."
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/context-lifecycle.md
+      scope: "'Implications for Work Engine''s claim that context lifecycle 'may preserve or reference exact plan revisions but does not make context canonical state' is the same claim as SS1's ownership list, which explicitly excludes 'canonical claims, decisions, receipts, schedules, or repository state' from what this dimension owns."
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "'Implications for Work Engine''s claim that 'empirical model profiles describe demonstrated execution capability rather than permanent properties inferred from a model name' is the same attributed-observation-not-assumed principle as SS3 (capability facts are attributed observations, never inferred from a static label); the general representation-does-not-acquire-authority pattern in the same section is the same invariant already confirmed at SS11 and in mechanisms/authority-preserving-intent-projection.md."
+  architectural_supersession_note: "Corrected 2026-09-17, per unknown-drain campaign: checked 'Implications for Work Engine' (the document's own claim-bearing synthesis, distinct from the prior-art surveys and the still-hypothetical Plan IR schema models) against context-lifecycle.md and runtime-realization.md directly. Two of its ownership-boundary claims are the same claims those canonical views already make, just applied to a not-yet-existing artifact. NOT superseded: the prior-art surveys themselves (Tree-sitter/Roslyn/SCIP/CPG/MLIR/GumTree observations), and the candidate identity/layering/projection-fidelity/serialization models -- these are either external-system research or technical schema detail no architecture-ownership-level canonical view operates at (the same finding already made for the sibling execution-profile-scoring addendum), genuinely this document's own sole source. partial, not full or not_applicable: real, checked coverage exists for part of the document, and the rest is not out-of-domain -- it is simply un-adopted, hypothetical Plan IR detail."
   residue: unknown
   residue_ledger: "'Unresolved questions' (11 items) tagged by kind: 5 RESIDUE, 6 BACKLOG. All 11 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
   backlog: unknown
