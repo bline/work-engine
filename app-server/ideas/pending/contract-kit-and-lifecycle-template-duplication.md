@@ -159,6 +159,44 @@ the order least likely to disturb in-flight work:
    strategy function for the live/shadow lifecycle runtimes, with `run` vs
    `observe` (and their differing inputs) as the only injected difference.
 
+## Relationship to the architecture views (2026-09-16)
+
+**Findings 1 and 2 have no dimension, mechanism, or substrate connection at
+all — verified, not assumed.** None of `canonicalJson`, `requireText`,
+`exactFields`, `freeze`, `digest`, `nonempty`, or `requireCondition` appears
+anywhere in `app-server/docs/architecture/` or `app-server/docs/`. The word
+"contract" in each service's own `contract.mjs` names that service's
+operation surface (permissions, schema validation, operation names) — a
+different concept from `role-and-contract-structure.md`'s "role contract"
+(a role's semantic requirements, effect ceilings, and evidence obligations).
+Worth stating explicitly so a future reader does not conflate the two
+"contract" senses: this idea's `contract-kit` proposal is pure shared-utility
+extraction with zero architectural meaning, and the SQLite hardening
+inconsistency (Finding 2) is a security-hygiene question, not an
+architecture question. Both remain squarely engineering backlog.
+
+**Finding 3 sits entirely inside `context-lifecycle.md`'s own already-owned
+territory — real code, no ownership boundary crossed.** The live/shadow pair
+this finding names is the same real machinery that dimension's own §4
+already references, if only descriptively: "a shadow-mode evidence loop now
+exists (integrity-bound per-observation episodes, revision-bound
+pressure-policy comparison)." `ShadowContextLifecycleCoordinator`
+(`app-server/src/shadow-context-lifecycle-coordinator.mjs:220`) confirms
+this directly — its own `policyRevision: pressure.policyRevision` field
+(line 439) is exactly the "revision-bound pressure-policy comparison" that
+sentence names. `context-lifecycle.md` §4 already correctly acknowledges
+this loop exists; it just doesn't cite the exact files, which is a minor
+documentation nicety, not a stale or incorrect claim — nothing here rises to
+the citation-gap bar that warranted editing `runtime-realization.md` earlier
+this session. Extracting a shared live/shadow base or strategy function, as
+this idea proposes, would be Context Lifecycle's own dimension detail:
+implementation cleanup within a boundary that dimension already owns,
+changing no architectural meaning and requiring no new dimension, mechanism,
+or substrate.
+
+**Net:** engineering backlog throughout. No residue against the settled
+architecture; no settled view needs editing.
+
 ## Non-goals
 
 This idea does not propose:
