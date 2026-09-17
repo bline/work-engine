@@ -215,6 +215,43 @@ supervisor formation consumes them directly, per Organizational Compilation
 
 Constrained to pure projection: a `planning-facts-v1` claim's proposition must trace to an explicitly declared branch-plan field by direct restatement, never by inference from the plan's evidence — otherwise the profile becomes a second, unaccountable planner.
 
+**Worked example, added 2026-09-16 — composing §6's now-accepted refresh operations with this profile, and Key Invariant 3 with the conflict-escalation path.** Recovered from an untracked draft found sitting directly in `app-server/docs/architecture/` (removed after this integration, per the discipline that nothing lives in this directory unless it is canonical or explicitly subordinate to a canonical view); checked against current content and found consistent, not stale — nothing here was rewritten, only cited and placed.
+
+```mermaid
+sequenceDiagram
+    participant BP as Branch planner
+    participant PA as Planning authority
+    participant DS as Durable plan state
+    participant CE as Claim-evidence
+    participant SUP as Supervisor
+    participant EP as Evidence producer
+
+    BP->>PA: propose branch plan
+    PA->>DS: publish accepted branch-plan revision R
+    PA->>CE: emit mandatory planning-fact claims bound to R
+
+    Note over DS,CE: Admission-visibility invariant (this section, above):<br/>no consumer may observe R as complete unless<br/>mandatory derived claims for R are also admitted.
+
+    SUP->>CE: consume planning-fact claims bound to R during formation
+    SUP->>SUP: use claims to reduce fresh reconnaissance cost
+
+    EP->>CE: nominate_impact (§6)
+    CE->>CE: open_refresh_episode (§6)
+    CE->>CE: publish_refresh_judgment (§6)
+
+    alt claim remains current
+        CE-->>SUP: claim still usable
+    else claim changed or superseded
+        CE-->>SUP: claim no longer current
+        SUP->>PA: nominate conflict through the source's own route (Key Invariant 3)
+        Note over SUP,PA: A changed claim motivates a nomination;<br/>it cannot repair the source directly (§9).
+        PA->>DS: publish new accepted branch-plan revision R'
+        PA->>CE: emit fresh planning-fact claims bound to R'
+    end
+```
+
+Nothing in this diagram introduces new architecture: the admission-visibility step is this section's own constraint restated as a sequence; the refresh cycle is §6's three real, accepted operations applied to this profile specifically; and the escalation on a falsified plan is Key Invariant 3 ("a changed claim can motivate a conflict nomination through the source's own existing route; it cannot repair the source directly") instantiated for exactly this case, not a new rule.
+
 ```yaml
 status_override:
   design: proposed
