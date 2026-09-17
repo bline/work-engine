@@ -14,6 +14,27 @@ and its relationship to
 - Intended use: preserve representation lessons for post-migration proposal
   formation and experimental design
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: unknown
+  residue_ledger: "'Unresolved questions' (11 items) tagged by kind: 5 RESIDUE, 6 BACKLOG. All 11 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
+  backlog: unknown
+  backlog_note: "6 KIND: BACKLOG items exist, all UNCHECKED; no confirmed-open item and no dedicated staged-plan section, so backlog cannot be set to none or present."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: partial
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - structural-plan-ir-for-capability-aware-multi-model-execution.md
+    - proposal-decision-gated-implementation-compilation.md
+```
+
 The source systems below solve different problems. Their documented behavior is
 evidence; correspondence to Work Engine is an interpretation. No analogy grants
 authority, establishes semantic preservation, or makes a candidate structure
@@ -423,23 +444,23 @@ the following owners distinct:
 
 ## Unresolved questions
 
-- Is the first Plan IR an implementation-contract representation, a slice-plan
+- [KIND: RESIDUE] [UNCHECKED — a placement/scope decision] Is the first Plan IR an implementation-contract representation, a slice-plan
   representation, or a shared substrate with separately closed dialects?
-- Which node and edge kinds are necessary to distinguish valid from invalid plan
+- [KIND: BACKLOG] [UNCHECKED — schema design detail] Which node and edge kinds are necessary to distinguish valid from invalid plan
   states?
-- Which relationships must be canonical and which may be rebuildable projections?
-- What authority is required to establish or revise lineage correspondence?
-- How should split and merge lineage affect downstream acceptance and evidence?
-- Is semantic addressing deterministic, author-selected, or both?
-- What constitutes lossless projection when explanation can be elaborated but not
+- [KIND: RESIDUE] [UNCHECKED — placement among durable states (canonical vs. rebuildable projection)] Which relationships must be canonical and which may be rebuildable projections?
+- [KIND: RESIDUE] [UNCHECKED — an authority question, named as such] What authority is required to establish or revise lineage correspondence?
+- [KIND: RESIDUE] [UNCHECKED — touches evidence-and-claims.md's own lineage/acceptance territory] How should split and merge lineage affect downstream acceptance and evidence?
+- [KIND: BACKLOG] [UNCHECKED — design detail] Is semantic addressing deterministic, author-selected, or both?
+- [KIND: BACKLOG] [UNCHECKED — a technical property definition] What constitutes lossless projection when explanation can be elaborated but not
   invented?
-- How is a capability profile admitted, versioned, invalidated, and kept separate
+- [KIND: RESIDUE] [UNCHECKED — bears directly on runtime-realization.md's own capability-inventory/admission territory, not independently cross-checked this pass] How is a capability profile admitted, versioned, invalidated, and kept separate
   from a model slug?
-- Can a compact projection safely use references, or must every causally required
+- [KIND: BACKLOG] [UNCHECKED — implementation/schema design detail] Can a compact projection safely use references, or must every causally required
   explanation be materialized at the effective loading boundary?
-- Which historical accepted slices provide sufficiently strong truth for a
+- [KIND: BACKLOG] [UNCHECKED — pilot-design/investigation question] Which historical accepted slices provide sufficiently strong truth for a
   representation-fidelity and builder-capability pilot?
-- What serialization and compatibility format best matches the repository's
+- [KIND: BACKLOG] [UNCHECKED — implementation detail] What serialization and compatibility format best matches the repository's
   existing canonical JSON, YAML authoring, digest, and migration practices?
 
 ## Explicit non-decisions

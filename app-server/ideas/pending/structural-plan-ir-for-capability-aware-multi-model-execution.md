@@ -4,6 +4,28 @@
 
 Design hypothesis for repository validation.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  residue_note: "SS17 (Risks) and SS19 (Suggested Validation Outcome A/B/C) are the document's own risk/outcome framing, not an open-question ledger; no formal ledger found this pass."
+  backlog: present
+  backlog_ledger: "SS20 ('Suggested First Pilot') tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, comparisons, or campaigns found anywhere."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "1003-line document; SS18's own 'Repository Validation Before Design Commitment' section (whether the primitives it names already exist) was not independently re-verified this pass."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - proposal-decision-gated-implementation-compilation.md (distinct, related hypothesis)
+```
+
 ## Relationship to Decision-Gated Implementation Compilation
 
 This is a distinct post-migration representation and execution hypothesis related
@@ -895,6 +917,8 @@ The validation should prefer reuse and convergence over introducing parallel con
 ---
 
 # 20. Suggested First Pilot
+
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` and `planning/` (grepped for "structural plan representation", "Plan IR", "compact structural representation" — zero hits), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan).]**
 
 If repository validation supports the idea, the first experiment should remain small.
 

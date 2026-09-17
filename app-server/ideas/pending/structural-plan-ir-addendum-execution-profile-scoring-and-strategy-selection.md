@@ -6,6 +6,26 @@ Design hypothesis subordinate to the Structural Plan IR pilot.
 
 This addendum does not establish a permanent task taxonomy, scoring formula, model-routing policy, Plan IR resolution mapping, or executor admission rule. Its purpose is to identify the minimum additional structure needed to test whether different implementation tasks benefit from different combinations of planning resolution, executor capability, and verification strategy.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: present
+  backlog_ledger: "'Pilot use' (SS190) describes data to collect during the SAME first Plan IR pilot structural-plan-ir-for-capability-aware-multi-model-execution.md SS20 already covers -- not an independent staged plan. Inherits that document's [PLAN: OPEN] finding (zero real fixtures or campaigns found) rather than a separate PLAN tag here."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document (241 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - structural-plan-ir-for-capability-aware-multi-model-execution.md
+```
+
 ### Motivation
 
 If Plan IR can be projected at different levels of explicitness for different executor capability profiles, then no single planning and implementation strategy should be assumed optimal for all engineering work.

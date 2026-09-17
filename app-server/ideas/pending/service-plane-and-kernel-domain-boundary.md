@@ -14,6 +14,29 @@ domains — not what any one domain (currently: software engineering) needs.
 roadmap, admit an implementation, rename anything in the codebase, or
 authorize a refactor of any existing directory.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Confirmed: no canonical view under app-server/docs/architecture cites this document. Its own Coordinate/service_state content is explicitly named as one of work-engine-planned-architecture.md's 5 deliberately-deferred architecture items -- deferred, not absorbed."
+  residue: present
+  residue_ledger: "SS10 (11 'still open' items, batch-tagged KIND: RESIDUE, OPEN) -- already confirmed open by this document's own reconciliation pass. 3 other items in the same section are marked resolved and folded into SS1-9, not part of the open ledger."
+  backlog: none
+  backlog_note: "No dedicated staged-plan section; this document is a reconciliation-stage architecture direction, not an implementation rollout."
+  audit_scope:
+    - open-question-ledger
+    - close-read: "SS1, SS10"
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "SS1-9 (the reconciled architectural content itself) were not close-read section by section this pass, only SS10's own ledger and the document's header."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - app-server/docs/service-plane-reconciliation.md
+```
+
 ## Summary
 
 Work Engine should generalize the *way* it hosts and consumes services, not
@@ -407,6 +430,8 @@ section separates the two rather than presenting all twelve as equally open.
   sit outside plane classification entirely.
 
 ### Still open
+
+**[KIND: RESIDUE, batch] [OPEN — all 11 items below are architectural placement/ownership questions (kernel-vs-service boundary, operation-envelope shape, coverage vocabulary, domain-tag granularity), already confirmed open by this document's own reconciliation pass against `service-plane-reconciliation.md`. Consistent with this content being one of `work-engine-planned-architecture.md`'s own 5 deliberately-deferred architecture items (Coordinate/service_state).]**
 
 1. What belongs in kernel/control versus an ordinary service, as a general
    rule? Reconciliation found a repeated shape across three independent

@@ -1,5 +1,25 @@
 ### Planner-owned execution characterization
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: none
+  backlog_note: "No dedicated staged-plan section or open-question ledger; this is a short (85-line) design-hypothesis addendum, fully consumed by structural-plan-ir-for-capability-aware-multi-model-execution.md's own pilot design."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document (85 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - structural-plan-ir-for-capability-aware-multi-model-execution.md
+```
+
 Execution-profile characterization should ordinarily be produced as a derived output of implementation planning rather than reconstructed later by a separate classification role.
 
 The planner already possesses the repository evidence and semantic understanding required to judge properties such as:
