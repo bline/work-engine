@@ -362,6 +362,113 @@ authority:
 Some reports concern other platforms or versions. They justify exact testing,
 not generalized behavior claims.
 
+## Real-code findings (2026-09-16 investigation)
+
+The access-only extraction this document tested manually on 2026-09-09 is now
+real, shipped code — confirmed directly, not assumed. `readClaudeLoginAccessProjection`
+(`app-server/src/services/reviewer-runtime/native-claude-code-adapter.mjs:54-83`)
+opens the owner-only `.credentials.json`, refuses it unless the file mode and
+uid match the current owner, extracts only `claudeAiOauth.accessToken` and
+`expiresAt`, refuses an already-expired token, and returns exactly
+`{mechanism: "claude_login_access_projection", token, expiresAt,
+refreshCapable: false}` — the literal `refreshCapable: false` field this
+document's own "Access-only realization result" and "Candidate receipts"
+sections propose. `directAnthropicEnvironment` (lines 41-52) strips exactly
+the cloud-routing variables this document's "Removed to prevent route or
+billing drift" section names, and separately deletes any inherited
+`CLAUDE_CODE_OAUTH_TOKEN` before re-injecting the extracted one.
+
+**The broker itself remains entirely unbuilt, exactly as this document's own
+status claims.** A repository-wide search for credential/OAuth handling
+(`grep -rli "credential.*broker\|CLAUDE_CODE_OAUTH_TOKEN\|refreshCapable"
+app-server/src`) returns only this one file. There is no generation counter,
+no lineage, no CAS, no drain sequence, no singleflight, and no multi-reader
+tracking anywhere — every call to `readClaudeLoginAccessProjection` is an
+independent, stateless read with no coordination between concurrent
+reviewers, which is exactly the unrecoverable race this document's own
+"Recognition event" describes. This confirms the compatibility mechanism
+without establishing the refresh protocol, matching the document's own
+"Access-only realization result" closing caveat precisely.
+
+## Relationship to the architecture views (2026-09-16)
+
+None of this is implemented, so nothing here is added to any settled view's
+confirmed-instances list — these are candidate correspondences for a future
+proposal, not citations of real code, and are recorded here rather than in
+any of the 20 views.
+
+**`mechanisms/transition-fencing-and-leases.md` — the refresh transition is
+this mechanism's shape, precisely, and would be a strong future candidate
+instance.** `STABLE(N) → DRAINING(N) → REFRESHING(N, fence F) → STABLE(N+1)`
+is bind (fence F on generation N) → close new admission → drain active
+readers → prepare (refresh through the sole credential worker) → revalidate
+(CAS expected tip N) → publish (N+1) → release — the identical sequence this
+session confirmed today for the executable-generation reload, which this
+mechanism's own page now names as a real, implemented second instance
+alongside Context Lifecycle. This document's own singleflight suspect/refresh
+fence ("exactly one broker-owned transition may validate or refresh it")
+is the same "may this transition proceed concurrently with other
+transitions?" question that mechanism exists to answer. Like the
+executable-generation instance, it protects neither an unresolved semantic
+judgment nor an organizational topology change — a third kind of thing
+credential-tip authority — reinforcing, not deciding, today's open question
+about whether the "two fence classes" framing needs a third named class or
+should read "at least two, not exhaustive."
+
+**`mechanisms/resource-lease-and-fencing.md` — deliberately ruled out,
+despite surface vocabulary overlap.** Reviewer "access-only projection N"
+is held concurrently by multiple readers (reviewer A, B, C simultaneously)
+against one generation — a shared-read broadcast, not the single-current-
+holder mutual exclusion that mechanism's own `acquire`/`admitMutation` shape
+defines. "Fenced," "generation," and "lease" all appear in both, but the
+underlying invariant differs, the same discipline used elsewhere this
+session to keep this mechanism distinct from Transition Fencing.
+
+**`runtime-realization.md` §2/§3 — the credential tip's own state is already
+this dimension's own vocabulary, just with a different concrete subject.**
+"`identity: claude-oauth-access/reviewer-boundary, generation: 43, state:
+available`" is structurally identical to that section's own worked example
+(`identity: codex/openai/account-A/provider-access, state: available,
+generation: 184, ...`). If ever built, the credential tip's generation state
+is naturally domain detail under this dimension's existing capability-
+observation pattern, not new architecture — the same "one more concrete
+subject of an already-owned pattern" shape found repeatedly this session,
+not yet a citable instance because nothing is built.
+
+**`authority-and-ownership.md` — two independent, already-correct
+instances, uncited by name.** §12 (Invalidation Never Mints Authority):
+"Crossing `notAfter` does not authorize the credential service to choose a
+workflow response. The workflow owner decides..." is this document's own,
+independently-arrived-at restatement of §12, joining the session's growing
+confirmed-instance list (claim refresh, runtime-realization invalidation,
+plan failure, context unfitness, resource-lease supersession, intent
+projection). §7 (Participation Modes): reviewers only **Observe** (receive
+an access-only projection); the dedicated credential worker alone may
+**Execute** refresh; workflow owners **Decide**/**Admit** the consequence of
+unavailability — this document's own "Ownership boundaries" section already
+enforces this separation without using the settled vocabulary.
+
+**`claim-relative-environment-projections.md` — this document is a concrete,
+detailed elaboration of that idea, reconciled earlier in this same session.**
+That document's own illustrative `environmentProjection` YAML names
+`CLAUDE_CODE_OAUTH_TOKEN` with `evidence: presence` and
+`secretSourceOwner: operator-credential-store` almost exactly as a smaller
+version of what this document works out in full (generation lineage,
+receipts, drain, singleflight). The existing cross-reference (above, under
+"Relationship to other pending ideas") is accurate; strengthened here now
+that both documents have had their own architecture-view reconciliation
+pass.
+
+**`mechanisms/revision-cas-and-publication.md` — the generation lineage
+itself is a clean, additional proposed instance, nested under Runtime
+Realization, not an independent new dimension-level row.** Predecessor/
+successor generation numbers, CAS-published transitions, and lineage-epoch
+replacement making "every in-flight CAS bound to lineage L... stale" all
+match this mechanism's shape — the same nested-instance-under-an-existing-
+dimension pattern used today for the executable-generation substrate, not a
+reason to add an eighth top-level instance to that mechanism's confirmed
+count.
+
 ## Relationship to other pending ideas
 
 This idea complements:
