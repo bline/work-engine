@@ -11,6 +11,25 @@ or make environment variables authoritative workflow state. The associated
 operational incident remains documented in
 `app-server/docs/native-claude-isolated-review-authentication.md`.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "The 2026-09-16 canonical-view reconciliation below found a clean fit against runtime-realization.md, authority-and-ownership.md, and evidence-and-claims.md, but nothing has been literally absorbed into any canonical view -- this idea remains proposed, not accepted."
+  residue: unknown
+  residue_ledger: "'Questions for later intake' (8 items) -- 6 tagged KIND: RESIDUE (placement, ownership, admission-boundary, semantic-honesty questions), 2 tagged KIND: BACKLOG (cross-platform normalization, allowlist feasibility). All 8 UNCHECKED against current canonical-view text this pass -- see inline tags. residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
+  backlog: unknown
+  backlog_note: "2 KIND: BACKLOG items exist, both UNCHECKED; no confirmed-open backlog item and no dedicated staged-plan section, so backlog cannot be set to none or present."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: partial
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Recognition event
 
 The native-review host supplied a durable Claude setup token to its transport,
@@ -288,21 +307,21 @@ against the settled architecture, not a residue item.
 
 ## Questions for later intake
 
-1. Does the projection belong directly in each realization manifest, in a
+1. [KIND: RESIDUE] [UNCHECKED — placement question; the 2026-09-16 canonical-view reconciliation below found this "slots in as one more distinctly-owned input" but did not settle manifest-vs-separate-profile-vs-both] Does the projection belong directly in each realization manifest, in a
    separately revisioned environment profile referenced by it, or both?
-2. Which environment facts affect realization admission, production-path
+2. [KIND: RESIDUE] [UNCHECKED — scope/admission-boundary question] Which environment facts affect realization admission, production-path
    claims, deterministic reproduction, or only diagnosis?
-3. What observer can establish the final child environment independently of
+3. [KIND: RESIDUE] [UNCHECKED — independent-observer ownership question] What observer can establish the final child environment independently of
    the launcher without exposing secrets?
-4. How should secret-source ownership and rotation revision be identified
+4. [KIND: RESIDUE] [UNCHECKED — ownership question, named as such] How should secret-source ownership and rotation revision be identified
    without creating a correlatable credential fingerprint?
-5. How should `PATH`, locale, proxy, certificate, and filesystem-location
+5. [KIND: BACKLOG] [UNCHECKED — cross-platform normalization is an engineering task, not an ownership question] How should `PATH`, locale, proxy, certificate, and filesystem-location
    dependencies be normalized across providers and operating systems?
-6. Is an allowlist feasible, or should admission combine required, forbidden,
+6. [KIND: BACKLOG] [UNCHECKED — implementation-feasibility question] Is an allowlist feasible, or should admission combine required, forbidden,
    and explicitly ignored classes?
-7. How does the projection distinguish reproducible starting conditions from
+7. [KIND: RESIDUE] [UNCHECKED — a semantic-boundary question about what the projection can honestly claim] How does the projection distinguish reproducible starting conditions from
    an impossible promise of deterministic model output?
-8. Which redacted environment-admission facts belong on the scoped event
+8. [KIND: RESIDUE] [UNCHECKED — placement among durable states (scoped event surface vs. receipt-only)] Which redacted environment-admission facts belong on the scoped event
    surface and which remain receipt-only evidence?
 
 ## Non-goals

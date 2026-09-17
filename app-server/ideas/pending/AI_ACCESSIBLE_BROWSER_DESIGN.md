@@ -26,6 +26,30 @@ claim-evidence
 **Date:** 2026-08-26  
 **Implementation status:** Not yet implemented  
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "SS7-23 (capture/normalization/identity/coordinate-spaces/indexes/projections) is real, unclaimed territory no canonical Work Engine view or sibling document owns -- confirmed by ai-accessible-browser-seam-reconciliation.md. This is a different subsystem from the 13/5/2 Work Engine orchestration taxonomy, not architecture superseded by it."
+  residue: present
+  residue_ledger: "SS38's 12 items are tagged KIND: BACKLOG (empirical/engineering-tuning questions for this system's own eventual implementation, not ownership questions), so residue derives from elsewhere: ai-accessible-browser-seam-reconciliation.md's own seam records name 4 correspondences still explicitly UNRESOLVED -- epistemic-status coverage vocabulary; browser-dependency-invalidation vs. EvidenceAnchorObserver identity; browser-evidence-revisions vs. the revisioned-state kernel primitive; browser-projection-planner vs. evidence-calibrated-projection profiles. All 4 are KIND: RESIDUE, OPEN, per that reconciliation's own explicit disposition, not independently re-verified this pass."
+  backlog: present
+  backlog_ledger: "SS38's 12 items (KIND: BACKLOG, OPEN, batch-tagged) plus SS37's staged implementation sequence, tagged [PLAN: OPEN] on direct evidence."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
+    - close-read: "SS1-6, SS24, SS30, SS37-40"
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "This is a 1386-line document; sections outside those close-read were covered only by keyword scan, not read in full this pass."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - app-server/docs/ai-accessible-browser-seam-reconciliation.md (already applied directly to this document per its own "What changes" section)
+```
+
 ## 1. Abstract
 
 The AI-Accessible Browser is an accessibility layer that makes browser reality navigable, inspectable, operable, and verifiable by AI agents.
@@ -1258,6 +1282,8 @@ The prototype succeeds only if the combined interface provides measurable benefi
 
 ## 37. Implementation sequence
 
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` (grepped for "CDP adapter", "Chrome DevTools Protocol", "normalized component SVG" — zero hits), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan). Consistent with this document's own header: "Implementation status: Not yet implemented."]**
+
 ### Phase 0 — Doctrine and contracts
 
 - freeze ontology and invariants;
@@ -1313,6 +1339,8 @@ The prototype succeeds only if the combined interface provides measurable benefi
 - optimized incremental capture.
 
 ## 38. Open design questions
+
+**[KIND: BACKLOG, batch] [OPEN — this document's own header states "Implementation status: Not yet implemented"; every item below is an empirical/engineering-tuning question this system's own future implementation would resolve by building and measuring, not an ownership or architecture-placement question. None has been resolved by anything built so far.]**
 
 The following questions require implementation evidence:
 

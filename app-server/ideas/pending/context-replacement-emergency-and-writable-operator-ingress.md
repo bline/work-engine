@@ -9,6 +9,27 @@ operator access, and operator-message framing
 migration, authorize a runtime restart, alter context-lifecycle policy, or
 authorize implementation.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "The 2026-09-16 canonical-view test below found each of Candidates A/B/C maps cleanly to existing mechanisms (Transition Fencing, Authority-Preserving Intent Projection, Authority Projection SS8) but nothing has been absorbed into any canonical view -- all three remain proposed, not accepted."
+  residue: present
+  residue_ledger: "Candidate A's 'Questions for proposal formation' (SS168-192, un-numbered) include the exact-invariant question this session's own reconciliation flagged as a genuine extension to mechanisms/transition-fencing-and-leases.md not yet decided (whether the new_context actuator can be admitted only under an exact Work Engine lease) -- KIND: RESIDUE, OPEN, not independently re-verified item-by-item this pass. Candidates B and C were not re-audited as a formal ledger this pass; their own bullet lists were not individually tagged."
+  backlog: none
+  backlog_note: "No dedicated staged-plan section in any of Candidates A/B/C; each remains a proposal-formation direction, not an operative plan with named stages."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "Canonical-view reconciliation section (2026-09-16)"
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "Candidate A's own bullet list was checked at a summary level, not item-by-item; Candidates B and C's own bullet lists were not re-audited this pass at all."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Summary
 
 The migration should first restore the intended live semantic-context lifecycle:
