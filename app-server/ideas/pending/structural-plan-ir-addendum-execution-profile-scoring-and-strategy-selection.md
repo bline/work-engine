@@ -17,7 +17,7 @@ idea_status:
     - keyword-scan: full_document
     - close-read: "full document (241 lines)"
   audit_scope_completeness: complete
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

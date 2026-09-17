@@ -27,7 +27,7 @@ idea_status:
     - close-read: "SS1, SS10"
   audit_scope_completeness: partial
   audit_scope_completeness_note: "SS1-9 (the reconciled architectural content itself) were not close-read section by section this pass, only SS10's own ledger and the document's header."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

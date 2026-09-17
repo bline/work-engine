@@ -20,7 +20,7 @@ idea_status:
     - keyword-scan: full_document
     - close-read: "SS1-6"
   audit_scope_completeness: complete
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

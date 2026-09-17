@@ -24,7 +24,7 @@ idea_status:
     - open-question-ledger
     - keyword-scan: full_document
   audit_scope_completeness: partial
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

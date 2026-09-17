@@ -22,7 +22,7 @@ idea_status:
     - open-question-ledger
   audit_scope_completeness: complete
   audit_scope_completeness_note: "Corrected 2026-09-17: all 15 SS27 items now individually classified with a checked (OPEN) disposition; zero UNCHECKED tags remain anywhere in the document."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

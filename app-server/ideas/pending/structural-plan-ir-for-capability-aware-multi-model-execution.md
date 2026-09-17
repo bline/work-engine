@@ -23,7 +23,7 @@ idea_status:
     - keyword-scan: full_document
   audit_scope_completeness: complete
   audit_scope_completeness_note: "Corrected 2026-09-17: SS18's ~25 items are now individually classified with a checked disposition (each confirmed OPEN -- the repository-reconnaissance pass itself has not been run); zero UNCHECKED tags remain anywhere in the document."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

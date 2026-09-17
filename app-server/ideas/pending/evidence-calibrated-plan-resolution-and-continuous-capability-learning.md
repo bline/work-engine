@@ -13,11 +13,8 @@ The proposed mechanisms and economic effects need pilot evidence.
 
 ```yaml
 idea_status:
-  architectural_supersession: partial
-  superseded_by:
-    - view: app-server/docs/architecture/evidence-and-claims.md
-      scope: "SS10 ('Attributed Diagnostic Findings: a Domain-Profile Pattern, Never a Second Semantic Owner') already establishes a general representation contract (correspondence basis, competing/contributing explanations, evidence/confidence/limitations per explanation, consequence linkage) for calibration-diagnosis-shaped content -- this dimension 'owns the durable representation/profile contract, not the truth of the diagnosis.' This document's own capability-learning evidence, if ever materialized as durable claims, would need to use this already-established pattern."
-  architectural_supersession_note: "Corrected 2026-09-17, per re-audit: not_applicable was wrong. The prior note's own words ('new, unaccepted, speculative MECHANISM') already admit this document proposes real architectural content -- not_applicable is reserved for documents with no dimension/mechanism/substrate-level claim at all, and 'nothing currently owns this because it does not exist yet' is exactly the fallacy that would make all genuinely new architecture disappear from this axis. Rechecked properly: evidence-and-claims.md SS10 explicitly names 'the research/calibration domain's own attributed calibration diagnosis' and states a general representation pattern real enough to cite by name -- a genuine, checked partial match, not the 'no plausible owner exists' finding the prior note claimed. NOT covered: the document's own specific mechanism (dimension-specific resolution profiles, cost/reliability formulas, decision-closure/rendering economics, continuation economics, splitting execution across realizations) -- that remains this document's own sole source. Note also that closed-loop-engineering-learning-reconciliation.md's own text distinguishes this document's calibration target (execution-strategy learning) from its own (proposal-prediction-accuracy learning) as non-competing -- SS10's general representation pattern is not specific to either target, so this remains a real match, not a borrowed citation."
+  architectural_supersession: none
+  architectural_supersession_note: "Corrected 2026-09-17, then verified again per review: not_applicable was wrong (the prior note's own words -- 'new, unaccepted, speculative MECHANISM' -- already admitted real architectural content; 'nothing owns this because it doesn't exist yet' would make all genuinely new architecture disappear from this axis). The immediately-following 'partial' finding is now ALSO corrected to none: citing evidence-and-claims.md SS10 was composition, not supersession. SS10's specific representation pattern (correspondence basis, competing/contributing explanations, evidence/confidence/limitations PER explanation, consequence linkage) does not actually appear anywhere in this document's own text -- checked directly. This document's own closest passage ('Continuous learning and authority': 'fifteen first-pass acceptances, one repair, and one authority-boundary violation... would not establish a universal capability claim or permit the severe failure to disappear inside an average acceptance rate') describes evidentiary-class PRESERVATION (don't average distinct outcome types together), a narrower and different claim from SS10's multi-explanation diagnostic-finding shape. SS10 would supply infrastructure this document's evidence COULD flow through if the mechanism were ever built and materialized as durable claims -- a real but compositional relationship, not a claim already stated. none is correct: a real architectural claim (evidence-calibrated resolution, continuous capability learning), checked against the most plausible canonical owner, with zero actual content match found."
   residue: none
   residue_note: "Corrected 2026-09-17, per re-audit using the normalized-truth/route-invariance test: item 12 (previously the sole RESIDUE survivor) is retracted and reclassified BACKLOG -- see inline tag for the split-and-recheck reasoning. Zero RESIDUE-kind items now exist in this ledger."
   backlog: present
@@ -25,7 +22,7 @@ idea_status:
   audit_scope:
     - open-question-ledger
   audit_scope_completeness: partial
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

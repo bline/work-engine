@@ -21,7 +21,7 @@ idea_status:
     - open-question-ledger
   audit_scope_completeness: partial
   audit_scope_completeness_note: "Items 2, 3, 8 remain UNCHECKED within the declared open-question-ledger scope; the other 5 items now have a checked disposition."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

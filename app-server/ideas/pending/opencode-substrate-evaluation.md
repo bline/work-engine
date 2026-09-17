@@ -21,7 +21,7 @@ idea_status:
     - close-read: "SS 'Repository Evaluation' through 'Reopening conditions' (already close-read earlier this session)"
   audit_scope_completeness: partial
   audit_scope_completeness_note: "The document's own SS1-11 (the original hypothesis, before the 2026-09-05 repository evaluation) were not re-close-read this pass, only the repository-evaluation portion already investigated this session."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml

@@ -40,7 +40,7 @@ idea_status:
     - close-read: "SS1-6, SS24, SS30, SS37-40"
   audit_scope_completeness: partial
   audit_scope_completeness_note: "This is a 1386-line document; sections outside those close-read were covered only by keyword scan, not read in full this pass."
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-17
 ```
 
 ```yaml
