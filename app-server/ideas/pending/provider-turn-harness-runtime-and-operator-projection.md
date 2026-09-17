@@ -9,6 +9,33 @@ and the boundaries through which Work Engine composes them
 roadmap, admit an implementation, select a provider, authorize spending, or
 authorize implementation.
 
+```yaml
+idea_status:
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "SS2-3 (ProviderTurnPort/HarnessRuntimePort as execution-time contracts for provider_turn/harness_runtime ownership fields), SS11 (operator policy overlay, confirmed 2026-09-16 as this dimension's own real partial instance)"
+    - view: app-server/docs/architecture/mechanisms/authority-preserving-intent-projection.md
+      scope: "OperatorProjection (SS4) is this mechanism's own confirmed precursor (via operator-switchboard.mjs), origin restored 2026-09-16"
+  residue: none
+  residue_note: "No formal open-question ledger in this document; SS12 Non-goals and SS'Relationship to the settled architecture' close out the reconciliation this session already performed in depth."
+  backlog: none
+  backlog_note: "SS10 'Candidate migration shape' explicitly states 'this ordering is illustrative rather than roadmap authority' -- not a committed staged plan, so PLAN disposition does not apply. Noted: items 3 and 5 already have real-world realization (runtime-realization.md SS6's ownership fields; SS11's operator policy overlay) achieved independently, not because this migration shape was executed as a plan."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document, extensively reconciled this session"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - app-server/docs/architecture-direction-seam-map.md (ports.companion-binding, ALIGNED, predates this session)
+    - app-server/docs/control-plane-and-client-protocol-reconciliation.md (OperatorProjection ownership, accepted 2026-09-14)
+```
+
 ## Summary
 
 Work Engine should preserve three independently replaceable architectural

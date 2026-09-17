@@ -6,6 +6,27 @@ Raw operator-authored direction captured for idea intake. This file records the
 operator's statements without deciding proposal shape, implementation scope,
 priority, acceptance, or authority beyond the stated workflow.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: none
+  backlog_note: "This document is a raw, verbatim operator-statement capture, not itself a plan -- the real, still-active PPCE (Production-Path Claim Evidence) workstream it originated is tracked in the referenced planning/ documents, which own their own backlog state, not this one."
+  audit_scope:
+    - close-read: "full document (35 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: operator_authored
+  related_reconciliations:
+    - planning/production-path-claim-evidence-transition.md
+    - planning/production-path-claim-evidence-audit-round-1.md
+    - planning/production-path-claim-evidence-strategic-handoff.md
+```
+
 ## Operator statements
 
 > I approve the successor design. I guess we should plan to fix these issues

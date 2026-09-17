@@ -2,6 +2,25 @@
 
 **Status:** Post-migration proposal input; deterministic attribution hot fix implemented
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "classifySkillsMigrationIntegrity (attribution.mjs) is real evidence the underlying idea is sound, structurally close to substrates/evidence-anchor.md's AnchorObservation shape -- but confirmed 2026-09-16 as a parallel, independently-built instance, not this document's provenance for that substrate. Nothing has been absorbed into any canonical view from this document itself."
+  residue: none
+  backlog: none
+  backlog_note: "The document proposes a future domain profile (skills-migration-integrity-v1 under evidence-and-claims.md) as a natural home if accepted, not a committed staged plan with named stages -- no PLAN disposition applies. The described 'bounded hot fix' is already real and shipped (attribution.mjs), so nothing here is pending construction; what remains is only the larger 'separate storage architecture' question, not itemized into stages."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document, extensively investigated this session"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 The skills migration portfolio currently combines authored semantic decisions
 with exact-byte SHA-256 bindings in one repository-wide document. A change to
 one skill can therefore make the shared inventory stale, and later repair of
