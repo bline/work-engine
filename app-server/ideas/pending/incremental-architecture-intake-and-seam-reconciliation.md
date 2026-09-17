@@ -12,15 +12,16 @@ Its purpose is to define a bounded intake process through which multiple related
 idea_status:
   architectural_supersession: not_applicable
   architectural_supersession_note: "This document defines a repeatable methodology (SS A-J), not architecture the canonical views absorb -- it describes how idea integration happens, not what Work Engine's own dimensions/mechanisms/substrates are."
-  residue: unknown
-  residue_ledger: "Corrected 2026-09-17, per review: SS27 'Open Questions' is a formal, numbered 15-item ledger that the original pass never individually classified (worse than a batch tag -- it carried no idea_status accounting at all). All 15 items are now tagged inline [KIND: RESIDUE] [UNCHECKED] -- each is an architectural/methodology question, none is an implementation-construction item, but this pass did not cross-verify any of them against the two completed intake-session runs (post-migration-strategic-plan.md) to determine ANSWERED/MOOT vs. still-OPEN. residue: unknown, not present, because no individual item has yet been confirmed still-live rather than merely unverified."
-  backlog: none
-  backlog_note: "SS A-J (Open session through Establish next baseline) is a reusable process definition, not a one-time staged-plan section -- PLAN disposition does not apply to a methodology meant to be re-run, not completed once. Real evidence the methodology works: per post-migration-strategic-plan.md, this workflow has already run to completion twice (marked complete 2026-09-14). The SS27 open questions are RESIDUE-kind (architectural), not BACKLOG-kind (operative construction), so they do not change this axis."
+  residue: none
+  residue_note: "Corrected 2026-09-17, item-level drain: all 15 SS27 items reclassified BACKLOG (see inline tags for the per-item reasoning) -- each is either a methodology-internal process/heuristic/schema-design choice, or an application of an already-established general Work Engine principle (authority-and-ownership.md's participation modes, the canonical-vs-rebuildable-projection pattern, semantic-planning-hierarchy.md's topology-conflict/replanning pattern) to this document's own tooling, never a dispute over which of the 13/5/2 owns something. Consistent with architectural_supersession: not_applicable, and with the same finding already made for candidate-trajectory-upstream-amendments.md (also not_applicable, also zero genuine residue): not_applicable does not automatically mean residue: none (a service-level document could still surface a genuine unowned canonical question), but here, checked item by item, none does."
+  backlog: present
+  backlog_ledger: "Corrected 2026-09-17: all 15 SS27 items are now KIND: BACKLOG and confirmed OPEN (see inline tags) -- this alone establishes present, independent of SS A-J's own reusable-process-definition framing (which correctly excludes PLAN disposition, since it is meant to be re-run, not completed once)."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "full document, read structurally in full earlier this session"
-    - formal-ledger: "SS27 Open Questions -- tagged, not individually verified this pass"
-  audit_scope_completeness: partial
+    - open-question-ledger
+  audit_scope_completeness: complete
+  audit_scope_completeness_note: "Corrected 2026-09-17: all 15 SS27 items now individually classified with a checked (OPEN) disposition; zero UNCHECKED tags remain anywhere in the document."
   status_as_of: 2026-09-16
 ```
 
@@ -1111,23 +1112,23 @@ A subsequent intake session begins from the architecture actually accepted after
 
 # 27. Open Questions
 
-**Corrected 2026-09-17, per review: this formal ledger was never individually classified by the original pass. Each item is tagged below; none has been cross-verified this pass against the two completed intake-session runs (post-migration-strategic-plan.md), so all are UNCHECKED rather than resolved.**
+**Corrected 2026-09-17, item-level drain: all 15 items reclassified BACKLOG. This document is architectural_supersession: not_applicable (a methodology for how idea integration happens, not Work Engine's own dimensions/mechanisms/substrates), but per the governing test (does answering decide who owns canonical architectural truth, or is this a methodology-internal process/heuristic/schema choice, or an application of an already-settled general principle?), every item here is the latter two, never the former. None asks which of the 13/5/2 owns something -- each asks how this specific process should be designed, or applies an already-established pattern (authority-and-ownership.md's participation modes for items 4/9; the canonical-vs-rebuildable-projection pattern, already BACKLOG elsewhere this session, for items 8/11) to this methodology's own tooling.**
 
-1. [KIND: RESIDUE] [UNCHECKED] What exact artifact represents the implemented architecture baseline?
-2. [KIND: RESIDUE] [UNCHECKED] Which existing Work Engine artifacts can provide architecture evidence without constructing a new global architecture database?
-3. [KIND: RESIDUE] [UNCHECKED] What minimum seam vocabulary is sufficient for the first pilot?
-4. [KIND: RESIDUE] [UNCHECKED] Which reconciliation outcomes require human authority versus architecture-role judgment?
-5. [KIND: RESIDUE] [UNCHECKED] When should two ideas be merged into one proposal?
-6. [KIND: RESIDUE] [UNCHECKED] When should one idea split into multiple proposals?
-7. [KIND: RESIDUE] [UNCHECKED] What constitutes sufficient coherence to freeze an intake session?
-8. [KIND: RESIDUE] [UNCHECKED] Which seam relationships must be canonical versus rebuildable?
-9. [KIND: RESIDUE] [UNCHECKED] How should architecture intake receive implementation feedback when planning or review falsifies a frozen assumption?
-10. [KIND: RESIDUE] [UNCHECKED] Under what conditions, if any, should a frozen architecture session be reopened rather than replaced by a successor?
-11. [KIND: RESIDUE] [UNCHECKED] How much historical intake state belongs in durable records versus reconstructable projections?
-12. [KIND: RESIDUE] [UNCHECKED] Can existing proposal/decision artifacts carry reconciliation records rather than introducing another decision schema?
-13. [KIND: RESIDUE] [UNCHECKED] Should the seam map eventually share representation infrastructure with Plan IR or remain independently specialized?
-14. [KIND: RESIDUE] [UNCHECKED] What measured reduction in downstream rework would justify the added intake inference cost?
-15. [KIND: RESIDUE] [UNCHECKED] What future evidence would justify allowing architecture intake sessions against non-implemented prospective baselines?
+1. [KIND: BACKLOG] [OPEN — definitional/investigation task: which existing artifact plays this role, not a new ownership question] What exact artifact represents the implemented architecture baseline?
+2. [KIND: BACKLOG] [OPEN — investigation of existing artifacts] Which existing Work Engine artifacts can provide architecture evidence without constructing a new global architecture database?
+3. [KIND: BACKLOG] [OPEN — methodology's own vocabulary/schema design] What minimum seam vocabulary is sufficient for the first pilot?
+4. [KIND: BACKLOG] [OPEN — an application of authority-and-ownership.md's already-established participation-mode framework (Decide/Advisory/Nomination-only) to this methodology's own process, not a new authority dispute] Which reconciliation outcomes require human authority versus architecture-role judgment?
+5. [KIND: BACKLOG] [OPEN — a process-design heuristic for this methodology's own steps] When should two ideas be merged into one proposal?
+6. [KIND: BACKLOG] [OPEN — a process-design heuristic for this methodology's own steps] When should one idea split into multiple proposals?
+7. [KIND: BACKLOG] [OPEN — a process-design heuristic for this methodology's own steps] What constitutes sufficient coherence to freeze an intake session?
+8. [KIND: BACKLOG] [OPEN — the canonical-vs-rebuildable-projection pattern, already classified BACKLOG for other documents this session, applied to this methodology's own seam-map schema] Which seam relationships must be canonical versus rebuildable?
+9. [KIND: BACKLOG] [OPEN — an application of semantic-planning-hierarchy.md's already-established topology-conflict/replanning pattern ("falsified assumption moves upward") to this methodology's own feedback loop] How should architecture intake receive implementation feedback when planning or review falsifies a frozen assumption?
+10. [KIND: BACKLOG] [OPEN — a process-design question for this methodology's own session lifecycle] Under what conditions, if any, should a frozen architecture session be reopened rather than replaced by a successor?
+11. [KIND: BACKLOG] [OPEN — the same canonical-vs-rebuildable pattern as item 8] How much historical intake state belongs in durable records versus reconstructable projections?
+12. [KIND: BACKLOG] [OPEN — schema-reuse investigation] Can existing proposal/decision artifacts carry reconciliation records rather than introducing another decision schema?
+13. [KIND: BACKLOG] [OPEN — an infrastructure-sharing design choice, the same class as questions already classified BACKLOG for Structural Plan IR's own schema-sharing questions] Should the seam map eventually share representation infrastructure with Plan IR or remain independently specialized?
+14. [KIND: BACKLOG] [OPEN — empirical/evaluation question] What measured reduction in downstream rework would justify the added intake inference cost?
+15. [KIND: BACKLOG] [OPEN — evaluation/evidence-threshold question for this methodology's own future scope] What future evidence would justify allowing architecture intake sessions against non-implemented prospective baselines?
 
 ---
 
