@@ -242,6 +242,8 @@ new immutable realization
 
 The successor might use a different provider entirely, the same provider under different credentials, or nothing at all. Work Engine does not predict that outcome when admitting the original realization — the operator policy's `failover` section constrains or suggests the candidate space and required decision behavior; it does not pre-admit a concrete successor graph.
 
+**A nested substrate implements this shape today, one layer below `RoleRealization` itself — checked directly, 2026-09-16, and deliberately not conflated with the dimension's own artifact.** `ExecutableGenerationManager#advance` (`app-server/src/executable-generation-manager.mjs:367-475`) runs snapshot → build → validate → activate against the App Server host process itself: on success it disposes the stale `harness_runtime` process only after its successor is active, and on a fingerprint mismatch it fails closed into `bootstrap_restart_required` or `environment_migration_required` rather than guessing. This is rematerialization-shaped, and real. It is **not**, however, an implementation of this section's own rematerialization step: it never re-runs Candidate Resolution and Admission (§4) against current role requirements, policy overlay, and capability inventory, and it never chooses a different provider, harness, or model — it only replaces the concrete process instance realizing whichever `harness_runtime` a `RoleRealization` already named. `RoleRealization`'s own rematerialization, as this section describes it, remains unbuilt; what exists is a substrate-level analogue underneath it, not an instance of it.
+
 ---
 
 ## 9. Safe Execution Boundaries
@@ -264,6 +266,8 @@ realization B admitted; next operation executes under B
 
 Switching provider or harness may require a successor context or execution identity rather than reuse of the prior provider thread — Work Engine must not splice incompatible runtimes into one logical operation.
 
+**Confirmed implemented, 2026-09-16, at the executable-generation substrate layer.** `ExecutableGenerationManager.openAdmission` (`app-server/src/executable-generation-manager.mjs:160-187`) binds every admitted turn to the currently active generation and refuses new generation-bound admission once a reload is fenced (`reload_fence_active`, lines 164-170). `requestReload` (lines 260-319) installs that in-memory fence — `this.reload = context`, line 298, with its own comment that "the in-memory fence must exist before the first durable write yields" — *before* the first durable write (`store.beginReload`, line 300), then transitions to `draining` and calls `#advanceIfDrained` (lines 321-338), which blocks until `this.admissions.size === 0`. Only after that global quiescence does `#advance` (§8, above) snapshot, build, validate, and activate the successor; the predecessor is disposed and its retirement recorded (lines 491-499) only after the successor is active and the fence is released. This is a real, tested instance of exactly this section's own sequence — admit under A, observe the change, drain A to a safe boundary, admit B — applied to the host process rather than to a role's provider selection.
+
 ---
 
 ## 10. Realization Identity Reuses Revision/CAS Lineage, Not a New Mechanism
@@ -279,6 +283,8 @@ transition_reason: openai.account-A.access invalidated
 ```
 
 This is a third confirmed instance of the predecessor-chained, generation-tracked pattern already shared by branch-plan revisions and claim revisions — not something this dimension needed to invent. Reconciliation should be able to reconstruct which mechanisms were used, what requirements and policy applied, what capabilities Work Engine believed existed and on what evidence, what made a realization stale, and who owned and authorized its successor.
+
+**This citation upgrades from proposed to partially implemented, 2026-09-16 — at the executable-generation substrate layer, not yet for `RoleRealization` itself.** `executable-generation-store.mjs` carries the identical shape as real, durable code: `beginReload({reloadId, requestedByTurnId, predecessorGenerationId})` (lines 204-239) names the exact predecessor generation a reload is prepared against and rejects the write if `state.activeGeneration?.generationId !== predecessorGenerationId` (line 213); `activate({reloadId, expectedActiveGenerationId, successor})` (lines 292-338) re-checks that same expected identity immediately before publishing the successor (lines 300-302, `"active generation changed before activation"` on mismatch) and increments a durable `revision` counter on every write. `recordPredecessorRetirement` (lines 431-458) durably records the outcome of retiring the predecessor. This is a real compare-and-swap over an explicit predecessor/successor chain — this section's own pattern, working, for the executable substrate that realizes a `RoleRealization`'s `harness_runtime`. It is not yet evidence that `RoleRealization`'s own lineage (`predecessor_realization`, `transition_reason`, as sketched above) is implemented — that remains this dimension's own unbuilt artifact, one layer up from what is verified here.
 
 ---
 
@@ -383,7 +389,7 @@ The operator policy overlay (§11) is this mechanism's own real, partial instanc
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the transition-fencing mechanism; owns none of them, same as this page.
 - **`mechanisms/transition-fencing-and-leases.md`** — the mechanism itself; this dimension's own safe-execution-boundary requirement (§9 above) composes with it.
-- **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself, citing this dimension's own §10 as a proposed, not-yet-implemented instance.
+- **`mechanisms/revision-cas-and-publication.md`** — the mechanism itself; `RoleRealization`'s own lineage (§10) remains a proposed, not-yet-implemented instance, now with a partially implemented nested instance at the executable-generation substrate layer (§9, §10, above).
 - **`mechanisms/resource-lease-and-fencing.md`** — the mechanism this dimension's own active-binding decision (§12) consumes for its fencing mechanics; citing this dimension as its second confirmed instance.
 - **`mechanisms/authority-preserving-intent-projection.md`** — the mechanism this dimension's own operator policy overlay (§11) is a confirmed, partial instance of.
 
@@ -409,6 +415,8 @@ status_override:
 ```
 
 Applies narrowly to the concrete precursor pieces the source document itself names as already real (§12 there): pinned Codex capability negotiation (one real inventory adapter), the runtime manifest and compiled role environments, and the role binding registry. None of these is the complete materialized-realization architecture this page describes — each is a partial precursor the eventual design should feed from and reference, not become.
+
+**Strengthened 2026-09-16, by direct code verification, not restated from the source document.** The precursor list above understated what already exists: `app-server/src/executable-generation-manager.mjs` and `executable-generation-store.mjs` implement, as real and tested code, the safe-execution-boundary sequence of §9 (generation-bound admission, a fence installed before the first durable write, drain to zero active admissions, then activate) and the revision/CAS lineage of §10 (`beginReload`'s predecessor CAS, `activate`'s expected-identity CAS, a durable revision counter, predecessor-retirement receipts) — see §9 and §10 above for exact citations. This is substantive, not merely a "precursor piece" in the earlier sense of static configuration or a registry. It applies to the executable substrate that realizes a `RoleRealization`'s `harness_runtime`, not to `RoleRealization` resolution or rematerialization through Candidate Resolution and Admission (§4/§8), which remain unbuilt, and it says nothing about §12's fenced active-binding, addressed separately below.
 
 ```yaml
 status_override:

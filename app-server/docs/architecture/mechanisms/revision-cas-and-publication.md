@@ -15,7 +15,9 @@ Semantic Planning        — branch-plan revisions (durable state, §16)
 Organizational Compilation — ExecutionEnvelope revisions (accepted admission mechanism)
 Evidence/Claims           — claim revisions (implemented, real code)
 Context Lifecycle         — checkpoint / lifecycle-ledger revisions (implemented, real code)
-Runtime Realization       — realization lineage (proposed)
+Runtime Realization       — realization lineage (proposed; partially
+                            implemented via a nested executable-generation
+                            substrate instance, real code)
 Material Decision Selection — sealed decision-set revisions (proposed)
 Post-execution implementation acceptance — completion-publication.mjs
                             (implemented, composing three dimensions'
@@ -90,9 +92,9 @@ Verified directly against `app-server/src/services/claim-evidence/service.mjs`: 
 
 `hierarchical-planning-and-multi-supervisor-orchestration.md` §16 names "branch-plan revisions" as required durable state directly, alongside "orchestration-plan revision." No implementation evidence has been checked for this dimension specifically — named as required, not yet verified as built.
 
-### Runtime Realization — proposed, not implemented
+### Runtime Realization — proposed for `RoleRealization` itself; partially implemented via a nested substrate instance
 
-`runtime-realization.md` §10: every execution record identifies its exact realization, and a successor after rematerialization names `predecessor_realization` and a `transition_reason`. Proposed shape, matching the same pattern; no implementation evidence found.
+`runtime-realization.md` §10: every execution record identifies its exact realization, and a successor after rematerialization names `predecessor_realization` and a `transition_reason`. That shape, for `RoleRealization` itself, remains proposed — no implementation evidence found. **Upgraded 2026-09-16**, one layer beneath it: `executable-generation-store.mjs`'s `beginReload`/`activate` pair (verified directly, cited in full at `runtime-realization.md` §10) implements the identical predecessor-chained, CAS-published shape as real, durable code, for the executable substrate that realizes a `RoleRealization`'s `harness_runtime`. This does not add an eighth instance to the count below — it is the same dimension's own instance, with stronger evidence for a nested part of it and no new evidence yet for the dimension's own top-level artifact.
 
 ### Material Decision Selection — proposed, not implemented
 
@@ -140,7 +142,8 @@ Independent mechanisms answering different questions — Candidate Resolution an
 ## Related Architecture Views
 
 - **`evidence-and-claims.md`**, **`context-lifecycle.md`** — the two implemented instances owned by a single dimension.
-- **`organizational-compilation.md`**, **`semantic-planning-hierarchy.md`**, **`runtime-realization.md`**, **`material-decision-selection.md`** — accepted-design or proposed instances, not yet implemented.
+- **`organizational-compilation.md`**, **`semantic-planning-hierarchy.md`**, **`material-decision-selection.md`** — accepted-design or proposed instances, not yet implemented.
+- **`runtime-realization.md`** — proposed for `RoleRealization` itself; partially implemented via a nested executable-generation substrate instance, real code (§10 there).
 - **`review.md`** — its own Relationship to Evidence and Claims section names this mechanism as the publisher of post-execution implementation acceptance's successor accepted state, composing `review.md`, `evidence-and-claims.md`, and `authority-and-ownership.md`'s own outputs.
 - **`authority-and-ownership.md`** — owns who may publish; this mechanism only owns whether a given publish is safe against the current head.
 
@@ -158,4 +161,4 @@ architecture_status:
   status_as_of: 2026-09-16
 ```
 
-**Corrected 2026-09-16, same fix applied to `mechanisms/candidate-resolution-and-admission.md`:** an earlier draft named `status-grammar.md` as `owner`. That document defines what the status fields mean; it is never the semantic owner of any specific architectural claim, mechanism included. This page owns itself. `design: accepted` — the mechanism itself (as a recognized, named, cross-cutting pattern rather than one dimension's private implementation detail) was explicitly settled through direct discussion. `reconciliation: reconciled` — confirmed across seven independently owned or composed instances (found by the final mechanical audit to be undercounted here as "four" — corrected), two by direct code verification of a single dimension's own state, plus a seventh (post-execution implementation acceptance) verified by direct code that composes three dimensions' outputs rather than belonging to one alone. `authorization: design_work_authorized` — documenting and naming the mechanism is what's authorized here; nothing about this page authorizes implementation in any dimension that doesn't already have its own. `implementation: partial` at the mechanism level: real in Evidence/Claims, Context Lifecycle, and post-execution implementation acceptance; accepted-design-only in Organizational Compilation; merely named or proposed in Semantic Planning, Runtime Realization, and Material Decision Selection — each dimension's own page remains the authority on its own instance's status; this page does not restate or override any of them.
+**Corrected 2026-09-16, same fix applied to `mechanisms/candidate-resolution-and-admission.md`:** an earlier draft named `status-grammar.md` as `owner`. That document defines what the status fields mean; it is never the semantic owner of any specific architectural claim, mechanism included. This page owns itself. `design: accepted` — the mechanism itself (as a recognized, named, cross-cutting pattern rather than one dimension's private implementation detail) was explicitly settled through direct discussion. `reconciliation: reconciled` — confirmed across seven independently owned or composed instances (found by the final mechanical audit to be undercounted here as "four" — corrected), two by direct code verification of a single dimension's own state, plus a seventh (post-execution implementation acceptance) verified by direct code that composes three dimensions' outputs rather than belonging to one alone. `authorization: design_work_authorized` — documenting and naming the mechanism is what's authorized here; nothing about this page authorizes implementation in any dimension that doesn't already have its own. `implementation: partial` at the mechanism level: real in Evidence/Claims, Context Lifecycle, and post-execution implementation acceptance; accepted-design-only in Organizational Compilation; merely named or proposed in Semantic Planning and Material Decision Selection; and — updated 2026-09-16 — real at a nested substrate layer in Runtime Realization (executable-generation lineage) while its own top-level `RoleRealization` lineage remains proposed. Each dimension's own page remains the authority on its own instance's status; this page does not restate or override any of them.

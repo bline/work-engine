@@ -111,11 +111,25 @@ understate the truth: the executable-generation lifecycle (`ready` →
 explicit stale-transition outcome) looks like a working, tested,
 independently-arrived-at instance of §8/§9/§10 together, applied to
 rematerializing the `harness_runtime` implementation itself (a concrete
-`codex_app_server` process) rather than to a role's provider selection. This
-is a citation-gap finding for the settled view, not something this idea
-document can resolve on its own — flagged here for a deliberate decision
-about whether `runtime-realization.md` should name it as a confirmed
-instance, not applied to that page directly.
+`codex_app_server` process) rather than to a role's provider selection.
+
+**Resolved 2026-09-16, following operator review that sharpened the initial
+finding.** `runtime-realization.md` now cites this real code directly at §9
+(safe execution boundaries) and §10 (revision/CAS lineage) as confirmed,
+implemented instances at the executable-generation substrate layer — while
+explicitly stating this is **not** an implementation of `RoleRealization`'s
+own rematerialization through Candidate Resolution and Admission (§8, §4),
+which remains unbuilt. The operator's own correction mattered: the initial
+finding here risked crediting §8-§10 wholesale, when only §9 and §10 are
+strongly evidenced and §8 is a nested, narrower analogue rather than the
+dimension's own artifact. `mechanisms/transition-fencing-and-leases.md` was
+separately pressure-tested and now names this as a third confirmed,
+implemented instance — protecting a third kind of thing (which executable
+substrate generation may currently realize a role's `harness_runtime`)
+distinct from both named fence classes. `mechanisms/revision-cas-and-
+publication.md`'s "Runtime Realization" row was upgraded in place (proposed
+→ partially implemented via a nested instance) without adding an eighth
+instance to its confirmed count of seven.
 
 **`context-lifecycle.md` — the rollover already respects, and never
 duplicates, that dimension's ownership.** `semantic-context.sqlite3` is

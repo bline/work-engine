@@ -4,7 +4,7 @@
 
 ## Purpose
 
-This is a **mechanism view**, not a dimension view. It describes a reusable preparation-and-activation discipline that Context Lifecycle and Organizational Compilation both need and neither owns, not a class of architectural truth this page owns itself.
+This is a **mechanism view**, not a dimension view. It describes a reusable preparation-and-activation discipline that Context Lifecycle, Organizational Compilation, and (confirmed 2026-09-16) Runtime Realization's own executable-generation substrate all need and none owns, not a class of architectural truth this page owns itself.
 
 > **This mechanism protects *concurrency* — whether a transition being prepared is still valid when it activates. It is not a second Revision/CAS page.**
 
@@ -82,6 +82,8 @@ topology-transition fence
 
 They share the generic revision-binding discipline above, but protect different things — one protects a judgment in progress from being lost, the other protects an in-progress world-changing transition from activating against a world that moved. Collapsing them into one generic "lock" would lose exactly the distinction that makes each fence's own release condition meaningful.
 
+**A third, real instance protects a different kind of thing than either named class, found 2026-09-16 — noted here as an open naming question, not resolved.** The executable-generation host-process reload (Confirmed Instances, below) fences a preparation interval the same way these two do, but what it protects is neither an unresolved semantic judgment nor an organizational topology change — it is which concrete executable/host-process generation currently holds authority to realize a role's `harness_runtime`. Whether this warrants naming a third fence class (an "executable-substrate fence") or whether "two fence classes" should simply become "at least two, not exhaustive" is left open rather than decided by this edit.
+
 **The reverse race matters too, and is resolved the same way, not by inventing a new rule:** topology should not inject a new organizational judgment while a lifecycle retirement is already in progress for that context. It either defers the organizational decision until the successor context reconciles, or — if policy ranks it higher — invalidates and aborts the lifecycle preparation and keeps the context. That arbitration may itself be partly deterministic (critical provider pressure with no safe deferral outranking an ordinary in-progress topology episode) without being permanently hard-coded.
 
 ---
@@ -97,10 +99,15 @@ Organizational Compilation / topology transition
     consumes fencing — the topology-transition fence above is the
     concrete instance this dimension would use, once implemented
 
-neither owns fencing
+Runtime Realization / executable-generation substrate
+    consumes fencing — a real, implemented instance (below), one layer
+    beneath RoleRealization itself, protecting a third kind of thing
+    neither named fence class above describes
+
+none of the three owns fencing
 ```
 
-This is the entire reason this page exists rather than living inside `context-lifecycle.md`. That page's own §6 already states it explicitly, correcting an earlier informal characterization that risked implying ownership: both dimensions are independent, equally-ranked consumers of one shared layer, neither senior to the other.
+This is the entire reason this page exists rather than living inside `context-lifecycle.md`. That page's own §6 already states it explicitly, correcting an earlier informal characterization that risked implying ownership: all three dimensions are independent, equally-ranked consumers of one shared layer, none senior to the others.
 
 ---
 
@@ -114,6 +121,10 @@ Re-verified directly against `semantic-context-lifecycle-manager.md`'s own text,
 
 `deterministic-authority-projection-and-adaptive-organizational-topology.md` Part 7.3 names the topology-transition fence's own sequence (accept split → acquire transition → compile → publish → activate → release) conceptually. No organizational compiler exists yet (`organizational-compilation.md`'s own status), so this instance has no implementation evidence — the fence type is named and reasoned about, not built.
 
+### Runtime Realization / executable-generation substrate — implemented, protecting a third kind of thing
+
+Verified directly against `app-server/src/executable-generation-manager.mjs` and `executable-generation-store.mjs`, 2026-09-16. `ExecutableGenerationManager.requestReload` binds preparation to an exact predecessor generation and installs an in-memory admission fence — `this.reload = context` (`executable-generation-manager.mjs:298`), by the code's own comment "before the first durable write yields" — then calls `store.beginReload({predecessorGenerationId})` (line 300), which itself rejects the durable write if the store's own active generation no longer matches (`executable-generation-store.mjs:213`). While the fence holds, `openAdmission` refuses new generation-bound work (`reload_fence_active`, `executable-generation-manager.mjs:164-170`) and a second concurrent reload is refused outright (`reload_already_requested`) — the same "may this transition proceed concurrently with other transitions" question this mechanism exists to answer, answered: no, exactly one at a time. Preparation (snapshot → build → validate, real wall-clock time) only advances once admission drains to zero (`#advanceIfDrained`, lines 321-338), and the bound predecessor identity is revalidated immediately before publication (`store.activate`'s `expectedActiveGenerationId` check, `executable-generation-store.mjs:300-302`) — the exact bind → prepare → revalidate → publish → activate → release sequence this page's own Relationship to Resource Lease and Fencing table describes, matched step for step. Unlike the other two instances, what this fence protects is neither an unresolved semantic judgment nor an organizational topology change — see the note above.
+
 ---
 
 ## Key Invariants
@@ -122,7 +133,7 @@ Re-verified directly against `semantic-context-lifecycle-manager.md`'s own text,
 2. **Preparation binds to an exact authoritative revision or revision set; a changed revision invalidates the prepared transition mechanically, without requiring the authoritative source to signal anything.**
 3. **Decision-episode fences and topology-transition fences protect different things and are not the same lock.**
 4. **A transition invalidated during preparation is not thereby granted new authority to activate anyway — it must recompute against the successor world (`authority-and-ownership.md` §12).**
-5. **Neither Context Lifecycle nor Organizational Compilation owns this mechanism; both are equally-ranked consumers.**
+5. **None of Context Lifecycle, Organizational Compilation, or Runtime Realization's executable-generation substrate owns this mechanism; all three are equally-ranked consumers.**
 6. **This mechanism protects concurrency of preparation, not publication safety — that remains `mechanisms/revision-cas-and-publication.md`'s own content, not duplicated here.**
 
 ---
@@ -171,8 +182,9 @@ The fenced-active-binding gap this session found (`runtime-realization.md` §12)
 
 ## Related Architecture Views
 
-- **`context-lifecycle.md`** — the one confirmed, implemented instance (§6, §7 there).
+- **`context-lifecycle.md`** — a confirmed, implemented instance (§6, §7 there).
 - **`organizational-compilation.md`** — the named, unimplemented instance (topology-transition fence).
+- **`runtime-realization.md`** — a second confirmed, implemented instance, at the executable-generation substrate layer beneath `RoleRealization` itself (§9, §10 there); protects a third kind of thing neither named fence class above describes.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism this one is built on top of; defines the publication-safety half this page does not duplicate.
 - **`authority-and-ownership.md`** — the general invalidation-never-mints-authority invariant this mechanism's own stale-preparation rule instantiates.
 - **`mechanisms/resource-lease-and-fencing.md`** — the sibling mechanism; shares fencing-token vocabulary, protects a structurally different (standing-holder, not preparation-interval) invariant.
@@ -191,4 +203,4 @@ architecture_status:
   status_as_of: 2026-09-16
 ```
 
-`design: accepted` — the mechanism's own recognition and naming (both fence classes, the shared revision-binding discipline, and the governing invariant) was explicitly settled through direct discussion, matching this architecture's own established bar. `reconciliation: reconciled` — confirmed against `semantic-context-lifecycle-manager.md`'s own implemented sequence and `deterministic-authority-projection-and-adaptive-organizational-topology.md`'s own Part 7 text directly. `implementation: partial` at the mechanism level, not uniform across its two instances: the decision-episode/transition-lease sequence is real, implemented machinery in Context Lifecycle; the topology-transition fence is named conceptually only, with no organizational compiler yet to fence. Each consuming dimension's own page remains the authority on its own instance's status; this page does not restate or override either.
+`design: accepted` — the mechanism's own recognition and naming (both fence classes, the shared revision-binding discipline, and the governing invariant) was explicitly settled through direct discussion, matching this architecture's own established bar. `reconciliation: reconciled` — confirmed against `semantic-context-lifecycle-manager.md`'s own implemented sequence, `deterministic-authority-projection-and-adaptive-organizational-topology.md`'s own Part 7 text, and (added 2026-09-16) direct verification of `executable-generation-manager.mjs`/`executable-generation-store.mjs`. `implementation: partial` at the mechanism level, not uniform across its three instances: the decision-episode/transition-lease sequence is real, implemented machinery in Context Lifecycle; the executable-generation host-process reload is likewise real, implemented machinery, one layer beneath `RoleRealization` itself; the topology-transition fence remains named conceptually only, with no organizational compiler yet to fence. Each consuming dimension's own page remains the authority on its own instance's status; this page does not restate or override any of them.
