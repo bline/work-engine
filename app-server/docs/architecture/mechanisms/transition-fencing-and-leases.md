@@ -107,7 +107,7 @@ Runtime Realization / executable-generation substrate
 none of the three owns fencing
 ```
 
-This is the entire reason this page exists rather than living inside `context-lifecycle.md`. That page's own §6 already states it explicitly, correcting an earlier informal characterization that risked implying ownership: all three dimensions are independent, equally-ranked consumers of one shared layer, none senior to the others.
+This is the entire reason this page exists rather than living inside `context-lifecycle.md`. That page's own §6 already states it explicitly, correcting an earlier informal characterization that risked implying ownership: Context Lifecycle and Organizational Compilation are peer dimension-level consumers; Runtime Realization also consumes the mechanism, but through its executable-generation substrate specifically, not as a third dimension-level consumer in its own right. None owns the mechanism.
 
 ---
 
