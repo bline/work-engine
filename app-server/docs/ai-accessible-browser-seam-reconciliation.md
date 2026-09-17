@@ -258,6 +258,21 @@ is too flat, with a named example (`contradictory`'s mechanical/semantic
 split) of exactly the danger to avoid when eventually designing the richer
 version.
 
+## Citation currency note (2026-09-16)
+
+`evidence-anchor-observation-and-impact-nomination.md`, cited throughout
+this reconciliation as an idea, has since been formalized into
+`substrates/evidence-anchor.md` — one of the 2 confirmed shared substrates
+in the now-settled 20-view architecture (`app-server/docs/architecture/`).
+No conclusion here changes: the `epistemic-status.richer-but-not-directly-
+portable` and `browser-dependency-invalidation.vs.evidence-anchor-observer`
+seams both remain correctly `UNRESOLVED` — the settled substrate's own text
+confirms it "does not enumerate a final closed set" of anchor kinds, which
+is stronger, settled evidence for the same open question this document
+already declined to decide, not a reason to decide it now. Readers should
+treat the settled substrate page as the authoritative description of that
+side of each seam; this document's own analysis and dispositions stand.
+
 ## What this document does not decide
 
 - It does not decide the final coverage-state vocabulary for either

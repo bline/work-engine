@@ -1107,6 +1107,17 @@ for the full reconciliation and the open question of whether that observer
 is literally an instance of `EvidenceAnchorObserver` or a distinct
 mechanism.
 
+**Citation currency note, 2026-09-16:** `evidence-anchor-observation-and-
+impact-nomination.md` has since been formalized into
+[`substrates/evidence-anchor.md`](../../docs/architecture/substrates/evidence-anchor.md),
+one of the 2 confirmed shared substrates in the now-settled 20-view
+architecture. That page's own text confirms "the anchor contract is
+extensible by kind — the source document does not enumerate a final closed
+set, and this page does not either," which is stronger, settled evidence for
+the same optionality this section already left open — a `browser_fact_
+evidence`-shaped anchor kind remains a live candidate, still not decided
+here or there.
+
 ## 31. Storage and transport
 
 ### 31.1 Canonical store
@@ -1356,11 +1367,12 @@ The environment owns capture, indexing, projection, caching, and invalidation. T
   claim identity, revisions, `may_affect` publication, and refresh judgment.
   This document produces evidence a claim may cite; it does not publish
   claims.
-- [`evidence-anchor-observation-and-impact-nomination.md`](evidence-anchor-observation-and-impact-nomination.md)
-  owns the generic dependency-observation and non-authoritative
-  impact-nomination boundary this document's §30 now defers to, and is the
-  candidate (not confirmed) generalization of this document's own
-  dependency-digest comparison mechanics.
+- [`evidence-anchor-observation-and-impact-nomination.md`](evidence-anchor-observation-and-impact-nomination.md),
+  now formalized as [`substrates/evidence-anchor.md`](../../docs/architecture/substrates/evidence-anchor.md)
+  (2026-09-16) — owns the generic dependency-observation and
+  non-authoritative impact-nomination boundary this document's §30 now
+  defers to, and is the candidate (not confirmed) generalization of this
+  document's own dependency-digest comparison mechanics.
 
 ## 40. Conclusion
 
