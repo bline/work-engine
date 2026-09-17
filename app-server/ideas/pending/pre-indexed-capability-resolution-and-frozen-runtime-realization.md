@@ -22,7 +22,7 @@ idea_status:
   audit_scope:
     - open-question-ledger
     - keyword-scan: full_document
-  audit_completeness: partial
+  audit_scope_completeness: partial
   status_as_of: 2026-09-16
 ```
 

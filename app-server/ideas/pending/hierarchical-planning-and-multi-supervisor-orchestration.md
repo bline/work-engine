@@ -24,7 +24,7 @@ idea_status:
   audit_scope:
     - staged-plan-section
     - keyword-scan: full_document
-  audit_completeness: complete
+  audit_scope_completeness: complete
   status_as_of: 2026-09-16
 ```
 
@@ -865,7 +865,7 @@ This architecture should be implemented incrementally and primarily by recomposi
 
 A plausible progression is:
 
-**[PLAN: OPEN — 2026-09-16, checked against `semantic-planning-hierarchy.md`'s own text: "Supervisor/Builder execution is real and live in the current runtime; the newer upper layers this page depicts (Preplanner, Orchestrator, Branch Planner, concurrent multi-branch topology) are not." None of Sections A-I below have been started.]**
+**[PLAN: OPEN — 2026-09-16, checked directly against the plan's own stages, not merely the target architecture's status: `grep`-checked `app-server/src` for `orchestration-plan contract`, `OrchestrationPlan`, `Preplanner`, and `Orchestrator` class definitions — zero hits outside architecture-documentation prose; no worktree or campaign named for this workstream exists under `/home/bline/.local/state/work-engine`. Section A's own deliverable (a defined orchestration-plan contract) has no evidence of ever being attempted, not merely of being unbuilt in `semantic-planning-hierarchy.md`. None of Sections A-I below has real evidence of execution.]**
 
 ## A. Define the orchestration-plan contract
 

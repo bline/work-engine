@@ -38,7 +38,7 @@ idea_status:
     - open-question-ledger
     - keyword-scan: full_document
     - close-read: "SS1-9"
-  audit_completeness: complete
+  audit_scope_completeness: complete
   status_as_of: 2026-09-16
 ```
 

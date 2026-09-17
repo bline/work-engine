@@ -8,7 +8,7 @@
 
 Documents under `app-server/ideas/pending/` are not inside settled architecture — they are its source material, in every state from raw capture to fully-drained provenance. The canonical grammar's axes do not fit them: a pending idea has no "design: accepted" of its own (acceptance belongs to whatever it feeds), and "reconciliation: reconciled" turned out, on inspection, to mean something dangerously weaker than most readers would assume — it means *the canonical view's content was checked against the idea*, not that *the idea has nothing left to say*. Reusing that grammar here would either understate real, still-open content or overstate how settled an idea is merely because something was built from it.
 
-This document defines a separate grammar for exactly this corpus: **three independent status axes**, an **audit-completeness flag**, and **provenance**, which is metadata rather than a lifecycle status.
+This document defines a separate grammar for exactly this corpus: **three independent status axes**, an **`audit_scope_completeness` flag** (explicitly a claim about coverage of a declared scope, not about exhaustive document understanding — §5), and **provenance**, which is metadata rather than a lifecycle status.
 
 ## 2. The Governing Distinctions
 
@@ -83,18 +83,19 @@ none
     ledger item (if any) is ANSWERED or MOOT.
 
 present
-    A dedicated staged-plan section exists with disposition OPEN
-    (§4.3), OR at least one BACKLOG-kind ledger item is confirmed
-    OPEN.
+    A dedicated staged-plan section exists with disposition OPEN or
+    PARTIAL (§4.3), OR at least one BACKLOG-kind ledger item is
+    confirmed OPEN.
 
 active
     present, and a live campaign or worktree is currently executing
-    it (staged-plan disposition ACTIVE, or the specific backlog item
-    is confirmed to have one). Distinguish "someone should do this"
-    from "someone is doing this."
+    it (staged-plan disposition ACTIVE specifically — not PARTIAL,
+    which by definition has nothing currently advancing it). Distinguish
+    "someone should do this," "someone did some of this," and "someone
+    is doing this" as three different claims.
 
 unknown
-    No staged-plan section with disposition OPEN/ACTIVE and no
+    No staged-plan section with disposition OPEN/PARTIAL/ACTIVE and no
     confirmed-open BACKLOG-kind ledger item, but at least one staged-
     plan section or BACKLOG-kind ledger item is UNCHECKED.
 ```
@@ -155,15 +156,22 @@ A reclassification must cite the specific decision, canonical-view section, or p
 A dedicated staged-plan section (migration steps, pilot stages) is not a ledger of independently decidable items — it is normally one sequenced whole — so it carries one disposition tag for the section, not one per stage, unless there is actual evidence that individual stages have diverged (some executed, others not):
 
 ```text
-[PLAN: OPEN — not yet started, per <evidence: e.g. a citing canonical view stating the described layer is unbuilt>]
-[PLAN: ACTIVE — <campaign/worktree citation>]
-[PLAN: COMPLETED — <evidence the staged work finished>]
+[PLAN: OPEN — no stage has started]
+[PLAN: PARTIAL — some stages have real evidence of execution (fixtures,
+    campaigns, landed code, a recorded pilot result), others do not, and
+    no live campaign is currently advancing it]
+[PLAN: ACTIVE — <campaign/worktree citation>, currently advancing it]
+[PLAN: COMPLETED — every stage has evidence of execution]
 [PLAN: SUPERSEDED — <what replaced it>]
 [PLAN: MOOT — <why the plan's goal no longer applies>]
 [PLAN: UNCHECKED — not verified this pass]
 ```
 
-Only `OPEN` and `ACTIVE` set `backlog: present`/`active` (§3.3). `COMPLETED`, `SUPERSEDED`, and `MOOT` establish that this particular source does *not* currently contribute to backlog — the document could still be `backlog: present` from a ledger's own BACKLOG-kind items, checked independently. `UNCHECKED` contributes only to audit incompleteness (§5), exactly like an unchecked ledger item.
+`ACTIVE` means current, ongoing execution — it must not be stretched to cover a plan with real historical partial progress but nothing presently advancing it; that is `PARTIAL`, a materially different claim ("some real work happened, then stopped or paused") from either `OPEN` ("nothing has happened") or `ACTIVE` ("something is happening now").
+
+**The evidence for any of these dispositions must be about the plan's own named stages, not merely the implementation status of the architecture the plan targets.** A target view reporting `implementation: none` does not by itself establish `PLAN: OPEN` — the target being unbuilt is consistent with an early stage (a baseline measurement, a drafted contract schema, a shadow-mode pilot) having been attempted or even completed without ever changing the target view's own status. Check for the plan's own deliverables directly: real code, fixtures, campaign or worktree records, a recorded pilot result, a drafted schema — for each stage the plan names. Only cite the target's implementation status as corroborating context, never as the disposition's sole evidence.
+
+Only `OPEN`, `PARTIAL`, and `ACTIVE` set `backlog: present`/`active` (§3.3) — `PARTIAL` sets `present`, the same as `OPEN`, since real remaining work exists but nothing is currently advancing it. `COMPLETED`, `SUPERSEDED`, and `MOOT` establish that this particular source does *not* currently contribute to backlog — the document could still be `backlog: present` from a ledger's own BACKLOG-kind items, checked independently. `UNCHECKED` contributes only to audit incompleteness (§5), exactly like an unchecked ledger item.
 
 ### 4.4 Combined tag format
 
@@ -178,7 +186,7 @@ Prepended to each ledger item:
 
 ## 5. Audit Scope and Completeness
 
-**"No formal ledger" is not evidence of nothing left to check — it is silence, and silence must not read as clean.** A document with no "Open Questions" heading can still carry `TBD`s, hedged "future work" asides, or an unresolved closing line in ordinary prose. Treating the absence of a ledger as automatic `audit_completeness: complete` recreates, at the document level, exactly the omission failure `UNCHECKED` exists to prevent at the item level.
+**"No formal ledger" is not evidence of nothing left to check — it is silence, and silence must not read as clean.** A document with no "Open Questions" heading can still carry `TBD`s, hedged "future work" asides, or an unresolved closing line in ordinary prose. Treating the absence of a ledger as automatic `audit_scope_completeness: complete` recreates, at the document level, exactly the omission failure `UNCHECKED` exists to prevent at the item level.
 
 ### 5.1 Audit scope (declared, not assumed)
 
@@ -199,21 +207,23 @@ A document with neither a ledger nor a staged-plan section still requires at lea
 
 ### 5.2 Completeness
 
+**`audit_scope_completeness` is a claim about coverage of the declared `audit_scope`, never about the scope's own depth and never about exhaustive understanding of the document.** A document audited only by `keyword-scan: full_document` can be legitimately `complete` — every item that scan could find got a disposition — while still missing residue only a full close-read would surface. That is not a defect in the `complete` value; it is exactly why `audit_scope` is declared as its own field (§5.1) rather than folded into one number. Read the two fields together: `audit_scope_completeness` says whether the declared method was actually finished; `audit_scope` says how strong a method it was.
+
 ```text
 complete
     Every source named in the declared audit_scope has a checked
     disposition — every ledger item and every staged-plan section is
-    ANSWERED/OPEN/MOOT/COMPLETED/SUPERSEDED/ACTIVE (never UNCHECKED),
-    and a declared keyword-scan or close-read was actually carried out
-    (not merely asserted).
+    ANSWERED/OPEN/PARTIAL/MOOT/COMPLETED/SUPERSEDED/ACTIVE (never
+    UNCHECKED), and any declared keyword-scan or close-read was
+    actually carried out (not merely asserted).
 
 partial
     At least one source within the declared audit_scope remains
-    UNCHECKED, or the declared scope itself is bounded (e.g. a
-    keyword-scan rather than a full close-read) and is stated as such.
+    UNCHECKED. (A narrow or shallow audit_scope is not, by itself, a
+    reason for `partial` — see above.)
 ```
 
-`audit_completeness: partial` is not a defect to be hidden — it is the honest state of a bounded pass, and `residue`/`backlog` values of `unknown` are exactly what should follow from it rather than a guessed `present` or `none`. A `complete` rating is only as strong as its declared `audit_scope` — a `keyword-scan: full_document` pass that is complete on its own terms can still miss residue a full close-read would find; the scope declaration exists precisely so a reader can tell which kind of `complete` they are looking at.
+`audit_scope_completeness: partial` is not a defect to be hidden — it is the honest state of a bounded pass, and `residue`/`backlog` values of `unknown` are exactly what should follow from it rather than a guessed `present` or `none`.
 
 ## 6. Provenance (Metadata, Not a Status Axis)
 
@@ -261,7 +271,7 @@ idea_status:
   audit_scope:
     - open-question-ledger
     - keyword-scan: full_document
-  audit_completeness: partial
+  audit_scope_completeness: partial
   status_as_of: 2026-09-16
 ```
 
@@ -278,5 +288,5 @@ A document not yet audited under this grammar carries no `idea_status` block —
 - It does not decide whether a document's *architecture* is correct — that is exactly what `architectural_supersession` points to, and the canonical view remains the authority on its own content, per `status-grammar.md`.
 - It does not authorize implementation of anything in `backlog: present` — that remains whatever authorization the document's own Authority section already states, unchanged by this grammar.
 - It does not retire a document, delete it, or move it out of `app-server/ideas/pending/`. `architectural_supersession: full` plus `residue: none` plus `backlog: none` is the condition under which a document is a pure historical/provenance artifact going forward — a judgment call for whoever reads that combination, not an automatic file operation this grammar triggers.
-- It does not require every `[UNCHECKED]` item to be resolved before a document can be audited under this grammar. A partial pass, honestly labeled `audit_completeness: partial` with `residue`/`backlog: unknown` where that is the honest derivation, is a valid outcome — not a reason to guess dispositions merely to leave no `[UNCHECKED]` tags behind.
+- It does not require every `[UNCHECKED]` item to be resolved before a document can be audited under this grammar. A partial pass, honestly labeled `audit_scope_completeness: partial` with `residue`/`backlog: unknown` where that is the honest derivation, is a valid outcome — not a reason to guess dispositions merely to leave no `[UNCHECKED]` tags behind.
 - It does not treat a kind assignment as permanent. A later pass may find that an architectural decision collapsed a RESIDUE item into BACKLOG (or, in principle, the reverse, if a prior decision is itself reopened) — provided the reclassification cites what changed.

@@ -24,7 +24,7 @@ idea_status:
   audit_scope:
     - staged-plan-section
     - keyword-scan: full_document
-  audit_completeness: complete
+  audit_scope_completeness: complete
   status_as_of: 2026-09-16
 ```
 
@@ -525,7 +525,7 @@ to the implementation track's measured evidence.
 
 # Implementation Track
 
-**[PLAN: OPEN — 2026-09-16, checked against `material-decision-selection.md` and `implementation-contract-compilation.md`'s own status blocks: both `implementation: none`, confirmed directly (no `DecisionSet`, `MaterialDecision`, implementation-basis, implementation-compiler, or implementation-contract shape found anywhere in `app-server/src`). None of Stage 0-6 below has been started.]**
+**[PLAN: OPEN — 2026-09-16, checked directly against the plan's own stages, not merely the target architecture's status: `grep`-checked `app-server/src`, `planning/`, and `app-server/docs` for `decision-surface shadow`, `sealed decision-set`, `DecisionSet`, `material decision surface`, `comparative pilot matrix`, and `implementation-compiler shadow` — every hit is architecture-documentation prose citing this idea, none is a real fixture, pilot record, or landed code; no worktree or campaign named for this workstream exists under `/home/bline/.local/state/work-engine`. Stage 0's own deliverable (a baseline/measurement contract) has no evidence of ever being attempted, not merely of being unbuilt in `material-decision-selection.md`/`implementation-contract-compilation.md`. None of Stage 0-6 below has real evidence of execution.]**
 
 ## Track objective
 
