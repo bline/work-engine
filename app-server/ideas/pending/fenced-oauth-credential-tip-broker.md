@@ -12,6 +12,25 @@ a production credential service, or endorse dependence on undocumented Claude
 credential internals. Formal Idea Intake is deferred until this raw source has
 an immutable Git revision under separate commit authority.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "The 2026-09-16 canonical-view reconciliation below found strong future correspondences (Transition Fencing, Runtime Realization capability-observation vocabulary, Authority & Ownership) but nothing built yet -- broker itself confirmed unbuilt this session (only access-only extraction is real, in native-claude-code-adapter.mjs)."
+  residue: present
+  residue_ledger: "'Unresolved refresh hinge' plus 'Questions for later intake' (9 items) tagged by kind: 6 RESIDUE (budget-boundary policy, provider-neutral placement, subsystem lifecycle, containment boundary, lineage-classification authority, plus the hinge itself), 4 BACKLOG (empirical/implementation questions). All confirmed OPEN, none re-verified against current canonical-view text beyond this session's own broader reconciliation."
+  backlog: present
+  backlog_ledger: "4 of 9 'Questions for later intake' items are KIND: BACKLOG and confirmed OPEN; no dedicated staged-plan section exists."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Recognition event
 
 Claude's setup-token path was reproduced failing outside Work Engine on both
@@ -325,6 +344,8 @@ artifacts.
 
 ## Unresolved refresh hinge
 
+**[KIND: RESIDUE] [OPEN — a mechanism-choice gap that determines whether unattended refresh is possible at all, not merely an implementation detail; the document's own text: "this hinge must be resolved before the broker can claim unattended operation."]**
+
 The broker still needs a supported way to advance the canonical credential.
 Claude appears to refresh `/login` credentials lazily during authenticated
 operation. A design cannot assume `claude auth status` performs refresh or that
@@ -484,19 +505,19 @@ This idea complements:
 
 ## Questions for later intake
 
-1. What scopes and account metadata are required for native review beyond the
+1. [KIND: BACKLOG] [OPEN — an empirical investigation, no evidence this was checked] What scopes and account metadata are required for native review beyond the
    tested login realization?
-2. Does refresh invalidate already-issued access tokens?
-3. What execution budget is admissible against `expiresAt`?
-4. How are crashed consumers removed from active-reader counts safely?
-5. What supported operation lets the broker refresh without unrelated work?
-6. Can the broker remain provider-specific behind a provider-neutral
+2. [KIND: BACKLOG] [OPEN — a provider-behavior empirical question] Does refresh invalidate already-issued access tokens?
+3. [KIND: RESIDUE] [OPEN — an authority/budget-boundary policy question] What execution budget is admissible against `expiresAt`?
+4. [KIND: BACKLOG] [OPEN — an implementation-mechanism detail] How are crashed consumers removed from active-reader counts safely?
+5. [KIND: BACKLOG] [OPEN — an implementation-mechanism design question] What supported operation lets the broker refresh without unrelated work?
+6. [KIND: RESIDUE] [OPEN — bears directly on ProviderTurnPort/HarnessRuntimePort placement, an architecture-boundary question] Can the broker remain provider-specific behind a provider-neutral
    credential capability contract?
-7. If setup-token authentication is repaired, should this subsystem retire,
+7. [KIND: RESIDUE] [OPEN — a scope/lifecycle-ownership decision for the whole subsystem] If setup-token authentication is repaired, should this subsystem retire,
    remain fallback, or generalize?
-8. Which Claude-launched descendants inherit the access-token environment
+8. [KIND: RESIDUE] [OPEN — an authority/evidence-boundary containment question] Which Claude-launched descendants inherit the access-token environment
    projection, and what containment or admission boundary is required?
-9. What evidence distinguishes an operator login that continues a credential
+9. [KIND: RESIDUE] [OPEN — a lineage-classification/authority question] What evidence distinguishes an operator login that continues a credential
    lineage from one that must advance the lineage epoch?
 
 ## Non-goals

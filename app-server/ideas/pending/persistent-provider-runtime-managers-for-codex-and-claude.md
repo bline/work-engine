@@ -14,6 +14,30 @@ The proposal does **not** require the two providers to share the same runtime im
 
 **Also found 2026-09-16: the two providers are not starting from the same place.** Codex already has a real, working generation-manager layer (`executable-generation-bootstrap.mjs`, `executable-generation-dispatch.mjs`) that implements most of what this document asks for, under a different name. Claude has none of it — every turn is still a fresh CLI process. The "Migration strategy" and "Initial spike questions" sections below are corrected accordingly, not left as originally drafted.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Real Codex code (executable-generation-bootstrap.mjs/-dispatch.mjs) independently implements most of this proposal's Codex half, and runtime-realization.md's own ProviderTurnPort/HarnessRuntimePort fields already are the abstract port this document argues for -- but nothing here was absorbed as this document's own provenance; it is a second observer of the same real code, same relationship as executable-generation-maintenance-rollover.md."
+  residue: present
+  residue_ledger: "30 spike questions (Codex/Claude/Shared, 10 each) previously tagged [ANSWERED]/[OPEN]; re-tagged this pass with KIND. Codex #4 (thread-termination semantics) and Claude #6 (should Work Engine provide its own SessionStore) are KIND: RESIDUE, both confirmed OPEN -> residue: present. Codex #9 and Shared #8 were reworded from OPEN to UNCHECKED under the current grammar (their own text says 'unconfirmed, needs investigation' rather than 'checked, no owner found'); Claude #4 stays KIND: BACKLOG, OPEN, on confirmed-gap evidence (no comparison path exists)."
+  backlog: present
+  backlog_ledger: "Claude #4 (KIND: BACKLOG, confirmed OPEN: no hot-retention path exists to compare against). Migration strategy (Phase 1-5) tagged [PLAN: PARTIAL] -- Phase 1-2 (Codex) has real landed-code evidence, Phase 3-5 (Claude, common service) has none, nothing currently advancing either half as this proposal's own effort."
+  audit_scope:
+    - open-question-ledger
+    - staged-plan-section
+    - close-read: "full document, extensively investigated and rewritten this session"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - claude-runtime-adapter-and-context-ownership-pilot.md (cross-linked 2026-09-16)
+    - fenced-oauth-credential-tip-broker.md (cross-linked, credential-broker dependency for Claude's Phase 3)
+```
+
 ---
 
 ## Problem
@@ -1299,6 +1323,8 @@ Exact structures should come from code evidence rather than this sketch.
 
 This should probably be introduced incrementally.
 
+**[PLAN: PARTIAL — 2026-09-16. Durable execution evidence confirmed for Phase 1-2 (Codex): `executable-generation-bootstrap.mjs`/`executable-generation-dispatch.mjs` are real, landed code providing one managed app-server per generation with multi-turn/multi-thread tracking. No durable execution evidence found for Phase 3-5 (Claude manager, reviewer continuity, common service extraction) within `app-server/src` or Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine`. No workstream is currently advancing any remaining phase as this proposal's own effort — the Codex evidence predates and is independent of this document, not a sign of active work on this specific plan.]**
+
 **Corrected 2026-09-16, against the real-code findings above: Phase 1 and most of Phase 2 already exist for Codex.** The original phasing assumed both providers started from zero. They don't — do not schedule work that already exists.
 
 ## Phase 1 — Codex manager — **largely already built**
@@ -1339,12 +1365,12 @@ The implementation investigation should answer these with code evidence.
 1. `[ANSWERED]` What is the current app-server launch and ownership path in Work Engine? — `executable-generation-bootstrap.mjs`/`executable-generation-dispatch.mjs`, one worker/app-server pair per generation.
 2. `[ANSWERED, by design not measurement]` Can one app-server safely service the expected number of simultaneous Work Engine threads? — the architecture already assumes yes (`turnThreads`/`turnAdmissions` as real `Map`s); not load-tested.
 3. `[ANSWERED]` Which notifications must be demultiplexed by thread and turn? — `turn/completed` by `turnId`, cross-checked against `threadId`.
-4. `[OPEN]` What native thread termination or archival semantics exist? — confirmed absent; termination is implicit today.
+4. `[KIND: RESIDUE] [OPEN]` What native thread termination or archival semantics exist? — confirmed absent; termination is implicit today.
 5. `[ANSWERED]` What survives app-server restart? — operator-facing thread identity is designed to survive generation replacement (`operatorThreadIds`); ordinary turn/thread admission state does not.
 6. `[ANSWERED]` Which thread state is disk-persisted versus runtime-only? — Codex's own rollout file plus a bounded `RetainedTurnOutputStore` (256 completions); everything else is runtime-only.
 7. `[ANSWERED]` How should app-server generation be represented? — already represented, exactly as "generation," matching `runtime-realization.md`'s own schema field.
 8. `[ANSWERED]` What authentication/configuration state is process-global? — confirmed process-global, inherited via `...process.env` spread; not thread-scoped.
-9. `[OPEN]` How does current context lifecycle behavior interact with retained threads? — not confirmed either way; needs a dedicated read of `context-transition-lease.mjs`.
+9. `[KIND: BACKLOG] [UNCHECKED — reworded from the original [OPEN] tag under the current grammar: "not confirmed either way; needs a dedicated read" is nobody-has-checked, not checked-and-found-no-owner]` How does current context lifecycle behavior interact with retained threads? — not confirmed either way; needs a dedicated read of `context-transition-lease.mjs`.
 10. `[ANSWERED]` Can the existing provider-turn harness be redirected to a manager without changing higher-level contracts? — yes, by construction; the seam already exists (`transport` is already constructor-injected).
 
 ## Claude
@@ -1352,9 +1378,9 @@ The implementation investigation should answer these with code evidence.
 1. `[ANSWERED]` Is Work Engine currently using CLI print mode, Agent SDK, or a wrapper? — CLI print mode (`-p` flag); no Agent SDK usage anywhere.
 2. `[ANSWERED]` What exact process is created for each current inference? — one `python3`→`claude` process per `execute()` call, every turn.
 3. `[ANSWERED]` Can the existing transport retain a live session across turns? — no; only cold reuse via `--resume` against on-disk transcripts exists.
-4. `[OPEN]` When should live retention be preferred over session resume? — no hot-retention path exists yet to compare against; needs telemetry.
+4. `[KIND: BACKLOG] [OPEN — confirmed no comparison path exists to answer this, a real gap, not merely unchecked]` When should live retention be preferred over session resume? — no hot-retention path exists yet to compare against; needs telemetry.
 5. `[ANSWERED]` Where are session transcripts currently persisted? — `<stateRoot>/native-claude/<digest(instanceId)>/<sessionUuid>.jsonl`.
-6. `[OPEN]` Should Work Engine provide its own `SessionStore`? — no such abstraction exists today either way.
+6. `[KIND: RESIDUE] [OPEN]` Should Work Engine provide its own `SessionStore`? — no such abstraction exists today either way.
 7. `[ANSWERED]` How does `CLAUDE_CONFIG_DIR` isolation interact with resumed sessions? — already fully isolated per review instance; `--resume` only works within the same instance's config root.
 8. `[ANSWERED — the broker doesn't exist]` How does the credential-tip broker interact with a runtime that survives credential-generation changes? — it doesn't yet; today's auth is a one-time snapshot at process launch (see `fenced-oauth-credential-tip-broker.md`).
 9. `[ANSWERED]` Can sessions be resumed safely after runtime replacement? — yes, via cold reconstruction from the transport receipt + session JSONL; no live-state-loss risk exists because nothing is kept live today.
@@ -1369,7 +1395,7 @@ The implementation investigation should answer these with code evidence.
 5. `[ANSWERED]` Which events are telemetry only? — the observability list this document already proposes (start counts, latencies, token counts).
 6. `[ANSWERED]` What is the minimum interface needed by the provider-turn harness? — `ProviderTurnPort`/`HarnessRuntimePort`, unchanged; role code needs zero changes.
 7. `[ANSWERED]` Does session affinity belong in execution characterization or runtime realization? — Runtime Realization owns the admission decision; execution characterization may only emit a hint.
-8. `[OPEN]` Which current process-launch assumptions leak into supervisors/builders/reviewers? — genuinely unconfirmed; needs direct investigation of role code itself, not assumed from this document's own "zero changes" design principle.
+8. `[KIND: BACKLOG] [UNCHECKED — reworded from the original [OPEN] tag under the current grammar: "genuinely unconfirmed; needs direct investigation" is nobody-has-checked, not checked-and-found-no-owner]` Which current process-launch assumptions leak into supervisors/builders/reviewers? — genuinely unconfirmed; needs direct investigation of role code itself, not assumed from this document's own "zero changes" design principle.
 9. `[ANSWERED]` Can provider-session identity become evidence in the existing state-packet machinery? — yes, as another `dependencies` entry on `RoleRealization`, not a new concept.
 10. `[ANSWERED]` What invariant prevents stale provider state from becoming authoritative? — `authority-and-ownership.md` §12's invalidation-never-mints-authority invariant, concretely realized via `mechanisms/resource-lease-and-fencing.md`'s fencing-token pattern.
 

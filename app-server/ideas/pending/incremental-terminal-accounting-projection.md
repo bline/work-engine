@@ -2,6 +2,26 @@
 
 Status: pending post-migration proposal
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "'Ownership shape' names ProviderTurnPort/HarnessRuntimePort/OperatorProjection consistent with this session's ports-doc reconciliation, but nothing here has been absorbed into any canonical view -- remains its own proposal."
+  residue: none
+  backlog: present
+  backlog_ledger: "'Migration sketch' (5 numbered steps) tagged [PLAN: OPEN] on direct evidence -- zero real code or campaigns found."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
+    - close-read: "full document (71 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Problem
 
 Terminal receipt assembly currently reconstructs provider, evidence, fallback,
@@ -57,6 +77,8 @@ provider adapter or UI transport.
   used for newly instrumented work.
 
 ## Migration sketch
+
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` (grepped for "accounting-event store", "accounting projector", "terminal accounting" — zero hits), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan).]**
 
 1. Define the provider/harness event vocabulary and semantic classification
    owner for every currently ambiguous S13 event class.

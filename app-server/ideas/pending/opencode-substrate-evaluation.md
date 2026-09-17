@@ -7,6 +7,30 @@
 
 ## Summary
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Pure reconnaissance for a third-party dependency; the ports-doc gap this document originally flagged was resolved 2026-09-16 (provider-turn-harness-runtime-and-operator-projection.md now co-owns runtime-realization.md) -- this document's own conclusions are unaffected by that resolution."
+  residue: none
+  residue_note: "All open items found (Admission gates, SS12 verification tasks) are BACKLOG-kind evaluation criteria for an external system, not Work Engine ownership/architecture-placement questions."
+  backlog: present
+  backlog_ledger: "'Admission gates' (8 items, batch-tagged KIND: BACKLOG, OPEN) plus 'Candidate bounded pilots' A/B/C, tagged [PLAN: OPEN] on the document's own explicit confirmation that no pilot was run."
+  audit_scope:
+    - staged-plan-section
+    - open-question-ledger
+    - close-read: "SS 'Repository Evaluation' through 'Reopening conditions' (already close-read earlier this session)"
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "The document's own SS1-11 (the original hypothesis, before the 2026-09-05 repository evaluation) were not re-close-read this pass, only the repository-evaluation portion already investigated this session."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - provider-turn-harness-runtime-and-operator-projection.md (this document's own flagged gap, resolved 2026-09-16)
+```
+
 Evaluate OpenCode as one possible implementation source for Work Engine's
 provider-turn, harness-runtime, and operator-projection ports rather than
 treating it as a wholesale replacement for either Work Engine or Codex App
@@ -1217,6 +1241,8 @@ as separately authorized research.
 
 ## Candidate bounded pilots
 
+**[PLAN: OPEN — 2026-09-16. This document's own "Repository Evaluation" section states directly: "No live provider call, runtime compatibility test, dependency installation, or OpenCode execution pilot was performed." No workstream for any of Pilots A/B/C exists under `/home/bline/.local/state/work-engine`.]**
+
 ### A. Provider-turn contract pilot
 
 Use fixtures before paid inference. Exercise:
@@ -1265,6 +1291,8 @@ fetch/events, a server plugin, or a source fork, and estimate the maintenance
 surface of that route.
 
 ## Admission gates
+
+**[KIND: BACKLOG, batch] [OPEN — all 8 items are evaluation criteria for a third-party dependency (OpenCode), confirmed unresolved by the document's own text: "No live provider call, runtime compatibility test, dependency installation, or OpenCode execution pilot was performed." These are investigation tasks about an external system, not ownership/architecture-placement questions about Work Engine's own dimensions.]**
 
 OpenCode component adoption should remain unresolved until evidence answers:
 

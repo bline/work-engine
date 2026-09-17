@@ -8,6 +8,25 @@ This document does not accept any constituent idea, authorize implementation, am
 
 Its purpose is to define a bounded intake process through which multiple related ideas may be integrated into one coherent prospective architectural model before independent proposal formation or implementation planning begins.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "This document defines a repeatable methodology (SS A-J), not architecture the canonical views absorb -- it describes how idea integration happens, not what Work Engine's own dimensions/mechanisms/substrates are."
+  residue: none
+  backlog: none
+  backlog_note: "SS A-J (Open session through Establish next baseline) is a reusable process definition, not a one-time staged-plan section -- PLAN disposition does not apply to a methodology meant to be re-run, not completed once. Real evidence the methodology works: per post-migration-strategic-plan.md, this workflow has already run to completion twice (marked complete 2026-09-14)."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document, read structurally in full earlier this session"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ---
 
 ## Summary
