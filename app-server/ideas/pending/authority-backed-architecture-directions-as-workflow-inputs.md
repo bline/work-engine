@@ -13,15 +13,15 @@ implementation, or designate an architecture decision owner.
 idea_status:
   architectural_supersession: none
   architectural_supersession_note: "Corrected 2026-09-17, per unknown-drain campaign: close-read SS1-18 against the plausible canonical owners. The single closest candidate is status-grammar.md, which already tracks design/reconciliation/authorization/implementation status per architectural claim -- genuinely adjacent territory, checked directly, not assumed. But status-grammar.md's own scope is claim-status bookkeeping within canonical docs themselves; it says nothing about propagating a direction change into in-flight downstream workflow artifacts (ideas mid-intake, proposals mid-formation, plans mid-compilation), which is this document's actual novel contribution (SS6-13). authority-and-ownership.md SS12 ('Invalidation Never Mints Authority') is a related but distinct claim -- about negative evidence never expanding authority, not about historical-reconstructability/supersession-doesn't-rewrite-meaning, which is closer to mechanisms/revision-cas-and-publication.md's immutable-lineage shape but was not itself found stated there for this specific artifact. SS14 ('Relationship to current Work Engine machinery') confirms this proposal integrates with existing SKILLS (idea-intake, proposal-former, strategic-planner) and sibling PENDING ideas, not with the 13 canonical dimensions/5 mechanisms/2 substrates directly -- similar in kind to incremental-architecture-intake-and-seam-reconciliation.md's workflow-methodology framing, but this document's ArchitectureDirection/AdoptionState/TransitionContract concept is close enough to status-grammar.md's real, existing claim-status machinery that none (a real claim, checked, not found) is more accurate than not_applicable (no plausible owner) -- status-grammar.md is a plausible owner, it simply does not state this."
-  residue: unknown
-  residue_ledger: "SS18 'Questions for proposal formation' (16 items) tagged by kind: 12 RESIDUE, 4 BACKLOG. All 16 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, item-level drain: 4 of 12 RESIDUE-kind items (2, 3, 5, 6) reclassified BACKLOG -- schema-representation and application-of-already-settled-pattern choices, not ownership disputes. 8 items (1, 7, 8, 9, 10, 11, 13, 14) stay RESIDUE, each confirmed OPEN: this document's own architectural_supersession: none finding already establishes no canonical view owns any part of the ArchitectureDirection/AdoptionState/TransitionContract proposal, so none of these sub-questions within that confirmed-uncovered territory has an owner either. Item 9 in particular is exactly the 'propagate a direction change into in-flight downstream work' gap the supersession note names as this document's real contribution."
   backlog: present
-  backlog_ledger: "SS15 'Candidate initial vertical' (10-step illustrative plan) tagged [PLAN: OPEN] on direct evidence -- backlog: present derives from this confirmed-open plan disposition, independent of the 4 unchecked BACKLOG-kind ledger items."
+  backlog_ledger: "SS15 'Candidate initial vertical' (10-step illustrative plan) tagged [PLAN: OPEN] on direct evidence. Plus 8 KIND: BACKLOG items after reclassification (2, 3, 4, 5, 6, 12, 15, 16); 4 confirmed OPEN (2, 3, 5, 6 -- schema/design choices for a confirmed-unbuilt concept), 4 remain UNCHECKED (4, 12, 15, 16 -- empirical/pilot-sequencing questions not specifically verified this pass)."
   audit_scope:
     - open-question-ledger
     - staged-plan-section
   audit_scope_completeness: partial
-  audit_scope_completeness_note: "1035-line document; SS1-14 (the architecture content itself) were not close-read section by section this pass, only SS15 and SS18."
+  audit_scope_completeness_note: "Corrected 2026-09-17: items 4, 12, 15, 16 of SS18's ledger remain UNCHECKED (empirical/pilot-sequencing questions not specifically verified this pass); SS15's plan is checked. Items 1-3, 5-11, 13-14 all now have a checked disposition."
   status_as_of: 2026-09-16
 ```
 
@@ -1015,32 +1015,32 @@ This idea does not propose:
 
 ## 18. Questions for proposal formation
 
-1. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] Who owns architecture decisions, and how is that authority represented and
+1. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: architectural_supersession: none above establishes no canonical view (status-grammar.md checked directly as the closest candidate) owns any part of this proposal; this is the ownership question at its center] Who owns architecture decisions, and how is that authority represented and
    verified?
-2. [KIND: RESIDUE] [UNCHECKED — representation/placement question] Should accepted directions be independent records, a specialized proposal
+2. [KIND: BACKLOG, reclassified 2026-09-17 — a representation-format choice (which durable-object shape to use), the same class as a "manifest field vs. separate profile" question elsewhere this session, not itself the ownership question (item 1 already covers that)] [OPEN — no such record format is designed anywhere] Should accepted directions be independent records, a specialized proposal
    decision, ADRs with closed metadata, or another durable object?
-3. [KIND: RESIDUE] [UNCHECKED — placement/completeness question] Which lifecycle states are required beyond candidate, accepted, superseded,
+3. [KIND: BACKLOG, reclassified 2026-09-17 — a state-machine completeness/schema question, not an authority dispute] [OPEN — not yet designed] Which lifecycle states are required beyond candidate, accepted, superseded,
    retired, and reopened?
 4. [KIND: BACKLOG] [UNCHECKED — schema/design detail] What minimum applicability language is expressive without becoming an
    unmaintainable policy engine?
-5. [KIND: RESIDUE] [UNCHECKED — authority-boundary question, same shape as evidence-anchor.md's own nomination boundary] Which relationships can be nominated mechanically, and which require an
+5. [KIND: BACKLOG, reclassified 2026-09-17 — confirmed: evidence-anchor.md's already-established nomination-boundary discipline (mechanical comparator nominates, semantic materiality judgment stays with the claim author) is a general principle; this item applies that already-settled pattern to a new context, not a new ownership dispute] [OPEN — not yet applied/designed for this context] Which relationships can be nominated mechanically, and which require an
    attributed semantic judgment?
-6. [KIND: RESIDUE] [UNCHECKED — placement/ownership question] Where should conformance live in intake and proposal packet schemas without
+6. [KIND: BACKLOG, reclassified 2026-09-17 — a schema-placement question explicitly scoped to avoid creating a competing owner, i.e. respecting ownership rather than deciding it] [OPEN — not yet designed] Where should conformance live in intake and proposal packet schemas without
    creating a competing owner?
-7. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] What canonical owner and evidence contract should produce
+7. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: `ArchitectureAdoptionState` is a hypothetical artifact with no existing canonical owner anywhere (same finding as item 1, applied to this specific sub-artifact)] What canonical owner and evidence contract should produce
    `ArchitectureAdoptionState`?
-8. [KIND: RESIDUE] [UNCHECKED — authority question] Which transition constraints require architecture-decision authority, roadmap
+8. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: genuinely unresolved authority-placement question within the confirmed-uncovered proposal territory] Which transition constraints require architecture-decision authority, roadmap
    authority, plan acceptance, or another owner?
-9. [KIND: RESIDUE] [UNCHECKED — authority/consequence question] Which direction, adoption, or transition changes stale proposals, plans,
+9. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: this is exactly the "propagate a direction change into in-flight downstream work" gap the architectural_supersession_note above identifies as this document's real, uncovered contribution] Which direction, adoption, or transition changes stale proposals, plans,
    reviews, or active campaigns, and who decides the operational consequence?
-10. [KIND: RESIDUE] [UNCHECKED — authority-boundary question] How should exception requests relate to proposal decisions and implementation
+10. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: genuinely unresolved authority-boundary question, no existing mechanism addresses exception-request routing for this hypothetical artifact] How should exception requests relate to proposal decisions and implementation
    authority?
-11. [KIND: RESIDUE] [UNCHECKED — authority/process question] How are conflicting accepted directions detected, adjudicated, and ordered?
+11. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: genuinely unresolved adjudication-authority question] How are conflicting accepted directions detected, adjudicated, and ordered?
 12. [KIND: BACKLOG] [UNCHECKED — implementation/design detail] Which accepted directions should be projected into role prompts, and which
     should remain on-demand references?
-13. [KIND: RESIDUE] [UNCHECKED — classification-authority question] Which invariant classes are continuous, target-state, or transition-specific,
+13. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: "who may change that classification" is an authority question with no existing owner, part of the same confirmed-uncovered territory] Which invariant classes are continuous, target-state, or transition-specific,
     and who may change that classification?
-14. [KIND: RESIDUE] [UNCHECKED — authority-boundary and placement question] When may an enabling detour cross an accepted slice boundary, and what
+14. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: "when may X cross a boundary" is an authority-boundary question genuinely unresolved anywhere; the trailing schema-field question is a secondary detail riding on the same unresolved authority question] When may an enabling detour cross an accepted slice boundary, and what
     minimum containment, expiry, restoration, and admissibility fields are
     required?
 15. [KIND: BACKLOG] [UNCHECKED — empirical/evaluation question] What evidence demonstrates that the direction layer improves design quality
