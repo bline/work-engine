@@ -13,7 +13,7 @@ duplication seams in the tree — only the ones this pass found evidence for.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Confirmed 2026-09-16: zero footprint in app-server/docs/architecture -- pure engineering-hygiene content (shared utility duplication, SQLite hardening inconsistency, live/shadow lifecycle template), no dimension/mechanism/substrate connection."
   residue: none
   backlog: present

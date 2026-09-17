@@ -13,7 +13,7 @@ explicitly authorized portfolio owner retains decision authority.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against, so this needs no additional semantic-coverage check to earn none rather than unknown -- this is App Server slice-campaign implementation detail, an unaccepted proposal for a checkpoint-diffing primitive internal to that service, not the kind of content any of the 13 dimensions, 5 mechanisms, or 2 substrates tracks."
   residue: none
   backlog: none

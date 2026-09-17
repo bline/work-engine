@@ -8,7 +8,7 @@ This addendum does not establish a permanent task taxonomy, scoring formula, mod
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed (not term-absence alone): searched runtime-realization.md, semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-profile-scoring, strategy-selection, or task-taxonomy concept under any name -- none of these architecture-ownership-level views operate at the technical scoring-schema detail this addendum proposes. Genuinely none, not unknown, since the document itself was fully close-read (241 lines) and the plausible-owner check was real, not skipped."
   residue: none
   backlog: present

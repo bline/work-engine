@@ -11,7 +11,7 @@ roadmap, admit an implementation, or authorize spending.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against, so this needs no additional semantic-coverage check to earn none rather than unknown -- this is App Server slice-campaign/native-review implementation detail consuming the (also-none) Candidate Trajectory primitive, not the kind of content any of the 13 dimensions, 5 mechanisms, or 2 substrates tracks."
   residue: none
   backlog: present

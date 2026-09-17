@@ -14,7 +14,7 @@ import { parse as parseYaml } from "yaml";
 
 const GRAMMAR_FILE = "idea-status-grammar.md";
 
-const SUPERSESSION_VALUES = new Set(["none", "partial", "full", "unknown"]);
+const SUPERSESSION_VALUES = new Set(["none", "partial", "full", "unknown", "not_applicable"]);
 const RESIDUE_VALUES = new Set(["none", "present", "unknown"]);
 const BACKLOG_VALUES = new Set(["none", "present", "active", "unknown"]);
 const COMPLETENESS_VALUES = new Set(["complete", "partial"]);
@@ -144,8 +144,8 @@ function validateDocument(relativePath, text) {
         if (!entry || !isNonEmptyString(entry.view)) {
           errors.push(`superseded_by[${index}] is missing a view`);
         }
-        if (supersession === "partial" && !isNonEmptyString(entry?.scope)) {
-          errors.push(`superseded_by[${index}] is missing scope, required for architectural_supersession: partial`);
+        if (!isNonEmptyString(entry?.scope)) {
+          errors.push(`superseded_by[${index}] is missing scope, required for architectural_supersession: ${supersession}`);
         }
       });
     }
@@ -238,8 +238,8 @@ function validateDocument(relativePath, text) {
   }
 
   // --- Informational flags (not errors) ----------------------------------------------
-  if (supersession === "full" && residue === "none" && backlog === "none") {
-    infos.push("retirement-candidate: architectural_supersession: full + residue: none + backlog: none");
+  if ((supersession === "full" || supersession === "not_applicable") && residue === "none" && backlog === "none") {
+    infos.push(`retirement-candidate: architectural_supersession: ${supersession} + residue: none + backlog: none`);
   }
 
   return { path: relativePath, unaudited: false, errors, infos, status: { supersession, residue, backlog, completeness } };
@@ -262,7 +262,7 @@ async function collectMarkdownFiles(root) {
 
 function tally(results) {
   const counts = {
-    architectural_supersession: { none: 0, partial: 0, full: 0, unknown: 0 },
+    architectural_supersession: { none: 0, partial: 0, full: 0, unknown: 0, not_applicable: 0 },
     residue: { none: 0, present: 0, unknown: 0 },
     backlog: { none: 0, present: 0, active: 0, unknown: 0 },
     audit_scope_completeness: { complete: 0, partial: 0 },

@@ -8,7 +8,7 @@ priority, acceptance, or authority beyond the stated workflow.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against, so this needs no semantic-coverage check to earn none rather than unknown -- this is a raw, verbatim operator-statement transcript (see Status above), not an architectural proposal. It makes no claim of its own for a canonical view to state or fail to state; it only records what was said, with the real workstream owned by the referenced planning/ documents."
   residue: none
   backlog: none

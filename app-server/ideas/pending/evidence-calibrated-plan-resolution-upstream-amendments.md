@@ -13,7 +13,7 @@ and ownership need confirmation when an amendment is formed or applied.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against -- this is an editorial amendment sheet proposing changes to other pending idea documents' own text (see residue_note below); it asserts no architecture of its own for a canonical view to state or fail to state."
   residue: none
   residue_note: "Editorial amendment sheet; proposes changes to other pending ideas' text, never asserts new ownership itself. Confirmed clean 2026-09-16 (see 'Citation currency note' below)."

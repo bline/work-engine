@@ -28,7 +28,7 @@ claim-evidence
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "SS7-23 (capture/normalization/identity/coordinate-spaces/indexes/projections) is real, unclaimed territory no canonical Work Engine view or sibling document owns -- confirmed by ai-accessible-browser-seam-reconciliation.md. This is a different subsystem from the 13/5/2 Work Engine orchestration taxonomy, not architecture superseded by it."
   residue: present
   residue_ledger: "SS38's 12 items individually re-classified 2026-09-17 (was a single batch tag): 11 are KIND: BACKLOG (empirical/engineering-tuning), 1 (item 8, cross-navigation identity reliance) is KIND: RESIDUE, confirmed OPEN -- a genuine reliance/authority-boundary question the original batch tag would have hidden. Separately, ai-accessible-browser-seam-reconciliation.md's own seam records name 4 more correspondences still explicitly UNRESOLVED (epistemic-status coverage vocabulary; browser-dependency-invalidation vs. EvidenceAnchorObserver identity; browser-evidence-revisions vs. the revisioned-state kernel primitive; browser-projection-planner vs. evidence-calibrated-projection profiles), also KIND: RESIDUE, OPEN, per that reconciliation's own explicit disposition, not independently re-verified this pass."

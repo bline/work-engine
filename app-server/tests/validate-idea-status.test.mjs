@@ -104,6 +104,72 @@ test("architectural_supersession: unknown does not require audit_scope_completen
   assert.deepEqual(result.errors, []);
 });
 
+test("architectural_supersession: full requires scope on every superseded_by entry", () => {
+  // scope was previously required only for partial; full's claim to cover the whole
+  // document makes the scope no less necessary to state than partial's narrower one.
+  const status = `architectural_supersession: full
+architectural_supersession_note: "Every claim checked and covered."
+superseded_by:
+  - view: app-server/docs/architecture/some-view.md
+residue: none
+backlog: none
+audit_scope:
+  - keyword-scan: full_document
+audit_scope_completeness: complete
+status_as_of: 2026-09-17`;
+  const result = validateDocument("fixture.md", fixture({ status }));
+  assert.ok(
+    result.errors.some((error) => error.includes("superseded_by[0] is missing scope, required for architectural_supersession: full")),
+    `expected a missing-scope error for full, got: ${JSON.stringify(result.errors)}`,
+  );
+});
+
+test("architectural_supersession: full passes when superseded_by carries scope", () => {
+  const status = `architectural_supersession: full
+architectural_supersession_note: "Every claim checked and covered."
+superseded_by:
+  - view: app-server/docs/architecture/some-view.md
+    scope: "The whole document, section by section."
+residue: none
+backlog: none
+audit_scope:
+  - keyword-scan: full_document
+audit_scope_completeness: complete
+status_as_of: 2026-09-17`;
+  const result = validateDocument("fixture.md", fixture({ status }));
+  assert.deepEqual(result.errors, []);
+});
+
+test("retirement-candidate query fires for not_applicable + residue: none + backlog: none, same as full", () => {
+  const notApplicable = fixture({ status: BASE_STATUS.replace("architectural_supersession: none", "architectural_supersession: not_applicable") });
+  const notApplicableResult = validateDocument("fixture.md", notApplicable);
+  assert.deepEqual(notApplicableResult.errors, []);
+  assert.ok(
+    notApplicableResult.infos.some((info) => info.includes("retirement-candidate: architectural_supersession: not_applicable")),
+    `expected a retirement-candidate info for not_applicable, got: ${JSON.stringify(notApplicableResult.infos)}`,
+  );
+
+  const full = fixture({
+    status: `architectural_supersession: full
+architectural_supersession_note: "Every claim checked and covered."
+superseded_by:
+  - view: app-server/docs/architecture/some-view.md
+    scope: "The whole document, section by section."
+residue: none
+backlog: none
+audit_scope:
+  - keyword-scan: full_document
+audit_scope_completeness: complete
+status_as_of: 2026-09-17`,
+  });
+  const fullResult = validateDocument("fixture.md", full);
+  assert.deepEqual(fullResult.errors, []);
+  assert.ok(
+    fullResult.infos.some((info) => info.includes("retirement-candidate: architectural_supersession: full")),
+    `expected a retirement-candidate info for full, got: ${JSON.stringify(fullResult.infos)}`,
+  );
+});
+
 test("a clean minimal fixture has zero errors", () => {
   const result = validateDocument("fixture.md", fixture());
   assert.deepEqual(result.errors, []);

@@ -10,7 +10,7 @@ Its purpose is to define a bounded intake process through which multiple related
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: not_applicable
   architectural_supersession_note: "This document defines a repeatable methodology (SS A-J), not architecture the canonical views absorb -- it describes how idea integration happens, not what Work Engine's own dimensions/mechanisms/substrates are."
   residue: unknown
   residue_ledger: "Corrected 2026-09-17, per review: SS27 'Open Questions' is a formal, numbered 15-item ledger that the original pass never individually classified (worse than a batch tag -- it carried no idea_status accounting at all). All 15 items are now tagged inline [KIND: RESIDUE] [UNCHECKED] -- each is an architectural/methodology question, none is an implementation-construction item, but this pass did not cross-verify any of them against the two completed intake-session runs (post-migration-strategic-plan.md) to determine ANSWERED/MOOT vs. still-OPEN. residue: unknown, not present, because no individual item has yet been confirmed still-live rather than merely unverified."

@@ -36,13 +36,28 @@ The grammar below exists to make all three distinctions explicit instead of forc
 
 > Does a canonical architecture view now state this document's architectural claims better than the document itself?
 
-This is a **semantic-coverage** question, not a vocabulary-matching one. A canonical view can state the same architectural content this document argues for using entirely different nouns, examples, or section structure — checking whether the canonical corpus merely fails to *cite* this document, or fails to contain its exact *terms*, answers a different, weaker question than whether it now *states the same claim*. `none` is only correct once semantic coverage was actually checked and found absent for the document's claims as a whole; a document where only a term-absence check (a grep for this document's own vocabulary) was performed, with no read of what the candidate canonical view(s) actually claim, has not earned `none` — it has earned `unknown`.
+This is a **semantic-coverage** question, not a vocabulary-matching one, and it presupposes the document makes an architectural claim to check coverage for in the first place. A canonical view can state the same architectural content this document argues for using entirely different nouns, examples, or section structure — checking whether the canonical corpus merely fails to *cite* this document, or fails to contain its exact *terms*, answers a different, weaker question than whether it now *states the same claim*. `none` is only correct once semantic coverage was actually checked and found absent for the document's claims as a whole; a document where only a term-absence check (a grep for this document's own vocabulary) was performed, with no read of what the candidate canonical view(s) actually claim, has not earned `none` — it has earned `unknown`. `none` is reserved exclusively for documents that *do* make an architectural claim within the canonical architecture's semantic domain and were checked against plausible canonical owners with zero coverage found — a document making no such claim at all is `not_applicable`, not `none`.
 
 ```text
 none
-    Semantic coverage was checked, not merely term absence, and no
-    canonical view states this document's architectural claims. It
-    remains the sole source for whatever architecture it describes.
+    This document makes an architectural claim within the canonical
+    architecture's semantic domain (the kind of content a dimension,
+    mechanism, or substrate would plausibly own). Semantic coverage was
+    checked against plausible canonical owners, not merely term
+    absence, and no canonical view states the claim. It remains the
+    sole source for whatever architecture it describes.
+
+not_applicable
+    This document makes no architectural claim within the canonical
+    architecture's semantic domain at all — no dimension, mechanism, or
+    substrate is a plausible owner to check coverage against (pure
+    software-engineering/implementation detail internal to a service,
+    an editorial amendment sheet proposing changes to other idea
+    documents' own text, a raw operator-statement transcript, a
+    methodology describing how idea integration happens rather than
+    what Work Engine's architecture is). Distinguish this from `none`:
+    `none` still required a real comparison and came back empty;
+    `not_applicable` has nothing to compare.
 
 partial
     Named sections are superseded by named canonical view(s), verified
@@ -64,7 +79,7 @@ unknown
     vocabulary was found.
 ```
 
-`partial` and `full` must name the canonical view(s) and, for `partial`, exactly which sections are covered — a bare "superseded by X" with no scope is not enough to prevent a reader from either over- or under-trusting the rest of the document. Superseded sections should carry a short note pointing to the canonical view rather than being deleted — the idea document is not being rewritten, only labeled. `full` is a claim about the *whole* document, so it must be re-checked independently of whatever prompted a `partial` finding — a document can accumulate several `partial` scope entries over separate audit passes while never actually being re-examined for whether the *remaining* sections have, in the meantime, also been covered elsewhere; `full` requires that check to have actually been done, not merely inferred from an accumulating `superseded_by` list.
+`partial` and `full` must both name the canonical view(s) and exactly which sections are covered — a bare "superseded by X" with no scope is not enough to prevent a reader from either over- or under-trusting the rest of the document, and `full`'s claim to cover the *whole* document makes the scope no less necessary to state than `partial`'s narrower one. Superseded sections should carry a short note pointing to the canonical view rather than being deleted — the idea document is not being rewritten, only labeled. `full` is a claim about the *whole* document, so it must be re-checked independently of whatever prompted a `partial` finding — a document can accumulate several `partial` scope entries over separate audit passes while never actually being re-examined for whether the *remaining* sections have, in the meantime, also been covered elsewhere; `full` requires that check to have actually been done, not merely inferred from an accumulating `superseded_by` list.
 
 **This axis is independent of residue and backlog — neither may be used as evidence for or against `full`.** An open residue item is, by construction, a question the document itself has not answered; it is not a *claim* the document makes, so canonical architecture cannot be faulted for failing to state it, and its being open says nothing about whether the document's actual claims are covered. Likewise a backlog item is operative content ("something needs to be built"), not an architectural claim a canonical view would ever restate. A document can therefore be `architectural_supersession: full` while still carrying `residue: present` and `backlog: present` — these track whether the document's own open questions and operative gaps are resolved, a materially different question from whether its architecture is now stated elsewhere. Conversely, a residue or backlog item that turns out to reveal an actual unstated claim (not merely an acknowledged open question) is real evidence against `full` or `none` — the test is whether the specific content is a claim or a question, never which axis happened to surface it.
 
@@ -311,8 +326,8 @@ A document not yet audited under this grammar carries no `idea_status` block —
 `app-server/scripts/validate-idea-status.mjs` mechanically checks every document under this directory against the rules above:
 
 - exactly one `idea_status` and one `idea_provenance` block per document (a document with neither is reported separately as `UNAUDITED`, per §7 — not an error);
-- only the enum values in §3/§6, including `architectural_supersession: unknown`;
-- `architectural_supersession: partial`/`full` requires a non-empty `superseded_by` list, each entry naming a `view` (`scope` also required when `partial`);
+- only the enum values in §3/§6, including `architectural_supersession: unknown`/`not_applicable`;
+- `architectural_supersession: partial`/`full` requires a non-empty `superseded_by` list, each entry naming a `view` and a `scope` (required for both, not just `partial`);
 - `architectural_supersession` (every value: `none`/`partial`/`full`/`unknown`) requires a non-empty `architectural_supersession_note` recording what was actually compared against what — a value with no note is indistinguishable from one nobody checked (§3.1);
 - **KIND/PLAN evidence must come from the document's own body, never from inside its `idea_status`/`idea_provenance` YAML blocks.** The validator blanks both blocks before scanning for tags, so a `residue_ledger` or `backlog_note` that merely *describes* or *quotes* a `[KIND: ...]`/`[PLAN: ...]` tag ("...tagged inline as `[KIND: BACKLOG] [OPEN]`") can no longer satisfy the axis it is describing — a status block must not be able to validate its own claim by restating it inside the very field that claim is supposed to be evidenced by. The tag has to actually be placed at the cited location in the body;
 - `residue: present` requires a `[KIND: RESIDUE] ... [OPEN ...]` tag (bracketed or the prose `KIND: RESIDUE, OPEN` form) actually present in the document body — never merely asserted by the axis value or described in the status block; `residue: none` is flagged as contradicted if such a tag exists;
@@ -320,7 +335,7 @@ A document not yet audited under this grammar carries no `idea_status` block —
 - `backlog: active` requires a `[PLAN: ACTIVE ...]` tag;
 - `residue`/`backlog: unknown` requires `audit_scope_completeness: partial` (this coupling is specific to residue/backlog, whose `unknown` derivation SS3.2/3.3 define directly in terms of unchecked ledger/plan items — it does not apply to `architectural_supersession`, whose `unknown` is a semantic-coverage question §5's scope-completeness machinery does not track at all; see §3.1);
 - `audit_scope_completeness` is checked **scope-relatively** (SS5.2), not against the whole document: a document is `complete` only if every source its own declared `audit_scope` actually names has no `UNCHECKED` item — a `[PLAN: UNCHECKED]` tag does not count against `complete` unless `audit_scope` declares `staged-plan-section` (or a full-document `keyword-scan`, which by definition would have found it too), and symmetrically for ledger `[KIND: ...] [UNCHECKED ...]` tags against `open-question-ledger`. The validator separately flags it as an error, independent of the `complete`/`partial` value, when a document carries ledger or plan tags of a kind its own `audit_scope` never declared at all — that is silence misrepresented as a checked scope, the same failure SS5.1 names for the scope declaration itself;
-- and it flags (informationally, not as an error) any `architectural_supersession: full` + `residue: none` + `backlog: none` combination as a retirement-candidate query per §9 below.
+- and it flags (informationally, not as an error) any `architectural_supersession: full` or `not_applicable` combined with `residue: none` + `backlog: none` as a retirement-candidate query per §9 below.
 
 `app-server/tests/validate-idea-status.test.mjs` carries the regression suite, including the exact circular-evidence case above: a document asserting `residue: present` with only `residue_ledger: "KIND: RESIDUE, OPEN"` in its status block, and no tag anywhere in its body, must fail validation.
 
@@ -332,6 +347,6 @@ It validates internal consistency and evidence, never the semantic classificatio
 
 - It does not decide whether a document's *architecture* is correct — that is exactly what `architectural_supersession` points to, and the canonical view remains the authority on its own content, per `status-grammar.md`.
 - It does not authorize implementation of anything in `backlog: present` — that remains whatever authorization the document's own Authority section already states, unchanged by this grammar.
-- It does not retire a document, delete it, or move it out of `app-server/ideas/pending/`. `architectural_supersession: full` plus `residue: none` plus `backlog: none` is the condition under which a document is a pure historical/provenance artifact going forward — a judgment call for whoever reads that combination, not an automatic file operation this grammar triggers.
+- It does not retire a document, delete it, or move it out of `app-server/ideas/pending/`. `architectural_supersession: full` or `not_applicable`, plus `residue: none` plus `backlog: none`, is the condition under which a document is a pure historical/provenance artifact going forward — a judgment call for whoever reads that combination, not an automatic file operation this grammar triggers.
 - It does not require every `[UNCHECKED]` item to be resolved before a document can be audited under this grammar. A partial pass, honestly labeled `audit_scope_completeness: partial` with `residue`/`backlog: unknown` where that is the honest derivation, is a valid outcome — not a reason to guess dispositions merely to leave no `[UNCHECKED]` tags behind.
 - It does not treat a kind assignment as permanent. A later pass may find that an architectural decision collapsed a RESIDUE item into BACKLOG (or, in principle, the reverse, if a prior decision is itself reopened) — provided the reclassification cites what changed.
