@@ -21,9 +21,12 @@ idea_status:
     - view: app-server/docs/architecture/authority-and-ownership.md
       scope: "Parts 1, 6, 8-9 (authority-projection formula, participation modes, delegation modes, invalidation-never-mints-authority)"
   residue: present
-  residue_ledger: "Part 12, KIND: RESIDUE items (22 of 27, after reclassifying item 3 from BACKLOG) — see inline tags. 2026-09-16 audit: 9 answered, 6 confirmed open (items 1, 11, 17, 19, 26, 27 -> residue: present), 7 unchecked (partial pass, not exhaustive)."
+  residue_ledger: "Part 12, KIND: RESIDUE items (22 of 27, after reclassifying item 3 from BACKLOG) — see inline tags. 2026-09-16 audit: 9 answered, 6 confirmed open (items 1, 11, 17, 19, 26, 27), 7 unchecked (partial pass, not exhaustive). Plus one item found outside Part 12 by full-document keyword scan (the document's own closing line: \"Whether Work Engine should actually reach that destination remains open\") -- confirmed open, tagged inline. residue: present from the confirmed-open items."
   backlog: present
   backlog_ledger: "Part 12, KIND: BACKLOG items (5 of 27: items 20-23, 25) — proving-vertical and existing-document-verification questions. 3 confirmed open (21, 22, 25 -> backlog: present), 2 unchecked."
+  audit_scope:
+    - open-question-ledger
+    - keyword-scan: full_document
   audit_completeness: partial
   status_as_of: 2026-09-16
 ```
@@ -1203,4 +1206,4 @@ workflow and ExecutionEnvelope
 runtime realizations
 ```
 
-compiled around the semantic conditions required for trustworthy judgment rather than primarily around agent identities. A possible long-term formulation: **given a body of work and its semantic, evidentiary, authority, continuity, and independence requirements, compile the smallest truthful organization capable of judging it correctly** — while ensuring that organizational plasticity itself remains a governed, auditable policy surface rather than an emergent property of model behavior. Whether Work Engine should actually reach that destination remains open. The immediate purpose of this idea is narrower: determine whether the repeated role-authority and context-management patterns already present in Work Engine are instances of one common, domain-transferable model.
+compiled around the semantic conditions required for trustworthy judgment rather than primarily around agent identities. A possible long-term formulation: **given a body of work and its semantic, evidentiary, authority, continuity, and independence requirements, compile the smallest truthful organization capable of judging it correctly** — while ensuring that organizational plasticity itself remains a governed, auditable policy surface rather than an emergent property of model behavior. **[KIND: RESIDUE] [OPEN — found 2026-09-16 by full-document keyword scan, outside Part 12's numbered ledger; no scope/ambition decision found anywhere in settled architecture]** Whether Work Engine should actually reach that destination remains open. The immediate purpose of this idea is narrower: determine whether the repeated role-authority and context-management patterns already present in Work Engine are instances of one common, domain-transferable model.

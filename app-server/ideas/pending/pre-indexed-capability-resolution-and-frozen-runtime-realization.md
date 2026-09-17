@@ -19,6 +19,9 @@ idea_status:
   residue_ledger: "SS16, KIND: RESIDUE items (11 of 14, after reclassifying items 9 and 11 from BACKLOG) -- see inline tags. 2026-09-16 audit: 4 answered, 3 confirmed open (items 3, 6, 13 -> residue: present), 4 unchecked (partial pass, not exhaustive)."
   backlog: present
   backlog_ledger: "SS16, KIND: BACKLOG items (3 of 14: items 5, 10, 14) -- schema-completion, component-implementation-detail, and proving-vertical questions. All 3 confirmed open -> backlog: present."
+  audit_scope:
+    - open-question-ledger
+    - keyword-scan: full_document
   audit_completeness: partial
   status_as_of: 2026-09-16
 ```

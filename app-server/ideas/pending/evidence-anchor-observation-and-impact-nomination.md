@@ -34,6 +34,10 @@ idea_status:
   residue_ledger: "SS10, KIND: RESIDUE items (5 of 7: items 2, 3, 5, 6, 7) -- see inline tags. 2026-09-16 audit: all 5 confirmed open, 0 answered, 0 unchecked -> residue: present."
   backlog: present
   backlog_ledger: "SS10, KIND: BACKLOG items (2 of 7: items 1, 4) -- locator-choice investigation and shadow-mode review-surface sequencing. Both confirmed open, 0 unchecked -> backlog: present."
+  audit_scope:
+    - open-question-ledger
+    - keyword-scan: full_document
+    - close-read: "SS1-9"
   audit_completeness: complete
   status_as_of: 2026-09-16
 ```

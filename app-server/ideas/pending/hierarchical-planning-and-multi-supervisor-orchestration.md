@@ -20,7 +20,10 @@ idea_status:
       scope: "Preplanner/Orchestrator/Branch Planner ownership contracts (Objective/Owns/Does-not-own sections); the routing.vs.admission and decision-gated.vs.hierarchical-orchestration rulings"
   residue: none
   backlog: present
-  backlog_description: "Sections A-I (Define the orchestration-plan contract; add preplanner/orchestrator roles; move operator interface upward; bind branch planners to supervisors; demonstrate concurrency, dependency release, topology conflict, integration branch) — a staged migration/demonstration plan with no other home. Canonical views describe ownership contracts, not this rollout sequence."
+  backlog_description: "Sections A-I (Define the orchestration-plan contract; add preplanner/orchestrator roles; move operator interface upward; bind branch planners to supervisors; demonstrate concurrency, dependency release, topology conflict, integration branch) — a staged migration/demonstration plan with no other home. Canonical views describe ownership contracts, not this rollout sequence. Section disposition: [PLAN: OPEN], tagged inline above SS A -- backlog: present derives from this checked disposition, not from the section's mere presence."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
   audit_completeness: complete
   status_as_of: 2026-09-16
 ```
@@ -861,6 +864,8 @@ In particular:
 This architecture should be implemented incrementally and primarily by recomposing existing Work Engine machinery.
 
 A plausible progression is:
+
+**[PLAN: OPEN — 2026-09-16, checked against `semantic-planning-hierarchy.md`'s own text: "Supervisor/Builder execution is real and live in the current runtime; the newer upper layers this page depicts (Preplanner, Orchestrator, Branch Planner, concurrent multi-branch topology) are not." None of Sections A-I below have been started.]**
 
 ## A. Define the orchestration-plan contract
 

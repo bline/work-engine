@@ -78,25 +78,28 @@ unknown
 
 ```text
 none
-    No dedicated staged-plan section exists, and every BACKLOG-kind
+    No dedicated staged-plan section exists (or every one present is
+    COMPLETED, SUPERSEDED, or MOOT — §4.3), and every BACKLOG-kind
     ledger item (if any) is ANSWERED or MOOT.
 
 present
-    A dedicated staged-plan section exists (migration steps, pilot
-    stages — named), OR at least one BACKLOG-kind ledger item is
-    confirmed OPEN.
+    A dedicated staged-plan section exists with disposition OPEN
+    (§4.3), OR at least one BACKLOG-kind ledger item is confirmed
+    OPEN.
 
 active
     present, and a live campaign or worktree is currently executing
-    it. Distinguish "someone should do this" from "someone is doing
-    this."
+    it (staged-plan disposition ACTIVE, or the specific backlog item
+    is confirmed to have one). Distinguish "someone should do this"
+    from "someone is doing this."
 
 unknown
-    No dedicated staged-plan section and no confirmed-open BACKLOG-
-    kind item, but at least one BACKLOG-kind item is UNCHECKED.
+    No staged-plan section with disposition OPEN/ACTIVE and no
+    confirmed-open BACKLOG-kind ledger item, but at least one staged-
+    plan section or BACKLOG-kind ledger item is UNCHECKED.
 ```
 
-A dedicated staged-plan section (e.g. `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §A-I, `proposal-decision-gated-implementation-compilation.md`'s Stage 0-6) sets `present` on its own, independent of any ledger — most documents with this kind of section have no formal ledger at all.
+**A staged-plan section's mere existence never sets this axis by itself — its own disposition (§4.3) does.** A `Stage 0-6` or `§A-I` block sitting in the document proves nothing about whether that plan is still operative: six months on it could be executed, superseded by a different approach, or abandoned, while the text itself is unchanged. Checking a staged-plan section's disposition is exactly as mandatory as checking a ledger item's — mere presence of content is never itself evidence of current liveness, for either.
 
 ## 4. Ledgers: Per-Item Kind and Disposition
 
@@ -147,7 +150,22 @@ A reclassification must cite the specific decision, canonical-view section, or p
 
 `[UNCHECKED]` must not be used as a substitute for doing the check when time permits; it exists so a partial audit is honestly labeled partial rather than silently rounding unchecked items into `[OPEN]`. **`[UNCHECKED]` never by itself sets `residue: present` or `backlog: present`** — see §3.2/§3.3. An `[UNCHECKED]` item still gets a kind tag; classifying what *sort* of question it is does not require resolving whether it is currently answered, and doing so is not "resolving it for completeness."
 
-### 4.3 Combined tag format
+### 4.3 Staged-Plan Section Disposition
+
+A dedicated staged-plan section (migration steps, pilot stages) is not a ledger of independently decidable items — it is normally one sequenced whole — so it carries one disposition tag for the section, not one per stage, unless there is actual evidence that individual stages have diverged (some executed, others not):
+
+```text
+[PLAN: OPEN — not yet started, per <evidence: e.g. a citing canonical view stating the described layer is unbuilt>]
+[PLAN: ACTIVE — <campaign/worktree citation>]
+[PLAN: COMPLETED — <evidence the staged work finished>]
+[PLAN: SUPERSEDED — <what replaced it>]
+[PLAN: MOOT — <why the plan's goal no longer applies>]
+[PLAN: UNCHECKED — not verified this pass]
+```
+
+Only `OPEN` and `ACTIVE` set `backlog: present`/`active` (§3.3). `COMPLETED`, `SUPERSEDED`, and `MOOT` establish that this particular source does *not* currently contribute to backlog — the document could still be `backlog: present` from a ledger's own BACKLOG-kind items, checked independently. `UNCHECKED` contributes only to audit incompleteness (§5), exactly like an unchecked ledger item.
+
+### 4.4 Combined tag format
 
 Prepended to each ledger item:
 
@@ -158,20 +176,44 @@ Prepended to each ledger item:
 [KIND: BACKLOG, reclassified 2026-09-16 — <cited reason>] [OPEN — ...]
 ```
 
-## 5. Audit Completeness
+## 5. Audit Scope and Completeness
 
-A document-level flag, independent of the three status axes, stating whether every ledger item has a checked disposition:
+**"No formal ledger" is not evidence of nothing left to check — it is silence, and silence must not read as clean.** A document with no "Open Questions" heading can still carry `TBD`s, hedged "future work" asides, or an unresolved closing line in ordinary prose. Treating the absence of a ledger as automatic `audit_completeness: complete` recreates, at the document level, exactly the omission failure `UNCHECKED` exists to prevent at the item level.
+
+### 5.1 Audit scope (declared, not assumed)
+
+Every audited document declares what was actually examined:
+
+```yaml
+audit_scope:
+  - open-question-ledger        # a formal, numbered ledger, if one exists
+  - staged-plan-section          # a dedicated plan/pilot/migration section, if one exists
+  - keyword-scan: full_document  # a pattern search (TBD, unresolved, remains
+                                  # open, undecided, etc.) across the entire
+                                  # text, catching prose residue outside any
+                                  # formal ledger
+  - close-read: <section list>   # sections read in full, beyond a keyword scan
+```
+
+A document with neither a ledger nor a staged-plan section still requires at least a `keyword-scan: full_document` entry before `residue`/`backlog: none` can be claimed — a bare "no ledger found" is not itself a completed scope.
+
+### 5.2 Completeness
 
 ```text
 complete
-    No ledger, or every ledger item carries ANSWERED, OPEN, or MOOT —
-    zero UNCHECKED items remain.
+    Every source named in the declared audit_scope has a checked
+    disposition — every ledger item and every staged-plan section is
+    ANSWERED/OPEN/MOOT/COMPLETED/SUPERSEDED/ACTIVE (never UNCHECKED),
+    and a declared keyword-scan or close-read was actually carried out
+    (not merely asserted).
 
 partial
-    At least one ledger item is UNCHECKED.
+    At least one source within the declared audit_scope remains
+    UNCHECKED, or the declared scope itself is bounded (e.g. a
+    keyword-scan rather than a full close-read) and is stated as such.
 ```
 
-`audit_completeness: partial` is not a defect to be hidden — it is the honest state of a bounded pass, and `residue`/`backlog` values of `unknown` are exactly what should follow from it rather than a guessed `present` or `none`.
+`audit_completeness: partial` is not a defect to be hidden — it is the honest state of a bounded pass, and `residue`/`backlog` values of `unknown` are exactly what should follow from it rather than a guessed `present` or `none`. A `complete` rating is only as strong as its declared `audit_scope` — a `keyword-scan: full_document` pass that is complete on its own terms can still miss residue a full close-read would find; the scope declaration exists precisely so a reader can tell which kind of `complete` they are looking at.
 
 ## 6. Provenance (Metadata, Not a Status Axis)
 
@@ -216,6 +258,9 @@ idea_status:
   residue_ledger: "Part 12 (27 items) — see inline KIND/disposition tags"
   backlog: present
   backlog_ledger: "Part 12 items tagged KIND: BACKLOG — see inline tags"
+  audit_scope:
+    - open-question-ledger
+    - keyword-scan: full_document
   audit_completeness: partial
   status_as_of: 2026-09-16
 ```

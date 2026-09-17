@@ -20,7 +20,10 @@ idea_status:
   residue: none
   residue_note: "The 'Uncertainty and evidence needs' list (9 items) is not unowned architectural residue -- every item is an empirical/measurement target the Stage 0-6 pilot track (below) is itself designed to answer (e.g. 'whether plan-conformance review costs less than Sol implementation work it displaces' is exactly Stage 5's comparative pilot matrix). Distinguished from residue: these are pilot questions, not undecided architecture."
   backlog: present
-  backlog_description: "Stage 0 (baseline/measurement contract) through Stage 6 (adaptive routing), plus track stop conditions and initial success criteria -- a full staged pilot track with no other home. material-decision-selection.md and implementation-contract-compilation.md describe the structure this track would validate, never the rollout sequence itself."
+  backlog_description: "Stage 0 (baseline/measurement contract) through Stage 6 (adaptive routing), plus track stop conditions and initial success criteria -- a full staged pilot track with no other home. material-decision-selection.md and implementation-contract-compilation.md describe the structure this track would validate, never the rollout sequence itself. Section disposition: [PLAN: OPEN], tagged inline above the Implementation Track heading -- backlog: present derives from this checked disposition, not from the section's mere presence."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
   audit_completeness: complete
   status_as_of: 2026-09-16
 ```
@@ -521,6 +524,8 @@ Acceptance does not establish that Spark is economical. That conclusion belongs
 to the implementation track's measured evidence.
 
 # Implementation Track
+
+**[PLAN: OPEN — 2026-09-16, checked against `material-decision-selection.md` and `implementation-contract-compilation.md`'s own status blocks: both `implementation: none`, confirmed directly (no `DecisionSet`, `MaterialDecision`, implementation-basis, implementation-compiler, or implementation-contract shape found anywhere in `app-server/src`). None of Stage 0-6 below has been started.]**
 
 ## Track objective
 
