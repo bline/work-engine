@@ -865,7 +865,7 @@ This architecture should be implemented incrementally and primarily by recomposi
 
 A plausible progression is:
 
-**[PLAN: OPEN — 2026-09-16, checked directly against the plan's own stages, not merely the target architecture's status: `grep`-checked `app-server/src` for `orchestration-plan contract`, `OrchestrationPlan`, `Preplanner`, and `Orchestrator` class definitions — zero hits outside architecture-documentation prose; no worktree or campaign named for this workstream exists under `/home/bline/.local/state/work-engine`. Section A's own deliverable (a defined orchestration-plan contract) has no evidence of ever being attempted, not merely of being unbuilt in `semantic-planning-hierarchy.md`. None of Sections A-I below has real evidence of execution.]**
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found for Sections A-I within the surfaces checked: `app-server/src` (grepped for `orchestration-plan contract`, `OrchestrationPlan`, `Preplanner`, `Orchestrator` class definitions — every hit is architecture-documentation prose citing this idea, none is code), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan). This checks the plan's own stages directly, not merely `semantic-planning-hierarchy.md`'s target-architecture status, which is consistent with but does not by itself establish this finding.]**
 
 ## A. Define the orchestration-plan contract
 

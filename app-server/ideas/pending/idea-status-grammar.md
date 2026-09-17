@@ -156,18 +156,24 @@ A reclassification must cite the specific decision, canonical-view section, or p
 A dedicated staged-plan section (migration steps, pilot stages) is not a ledger of independently decidable items — it is normally one sequenced whole — so it carries one disposition tag for the section, not one per stage, unless there is actual evidence that individual stages have diverged (some executed, others not):
 
 ```text
-[PLAN: OPEN — no stage has started]
-[PLAN: PARTIAL — some stages have real evidence of execution (fixtures,
-    campaigns, landed code, a recorded pilot result), others do not, and
-    no live campaign is currently advancing it]
-[PLAN: ACTIVE — <campaign/worktree citation>, currently advancing it]
-[PLAN: COMPLETED — every stage has evidence of execution]
+[PLAN: OPEN — no stage has durable evidence of execution in the
+    authoritative or declared evidence surfaces checked by this audit]
+[PLAN: PARTIAL — at least one stage has durable evidence of execution
+    (fixtures, campaigns, landed code, a recorded pilot result), while
+    at least one remaining operative stage does not, and no campaign is
+    currently advancing the plan]
+[PLAN: ACTIVE — durable evidence identifies a current campaign/worktree
+    advancing at least one operative stage; cite it]
+[PLAN: COMPLETED — every required stage has durable evidence satisfying
+    its completion condition]
 [PLAN: SUPERSEDED — <what replaced it>]
 [PLAN: MOOT — <why the plan's goal no longer applies>]
 [PLAN: UNCHECKED — not verified this pass]
 ```
 
-`ACTIVE` means current, ongoing execution — it must not be stretched to cover a plan with real historical partial progress but nothing presently advancing it; that is `PARTIAL`, a materially different claim ("some real work happened, then stopped or paused") from either `OPEN` ("nothing has happened") or `ACTIVE` ("something is happening now").
+**These are observational claims about evidence found, never historical claims about what did or didn't happen.** "No durable execution evidence found in the surfaces checked" is what a repository search, a worktree listing, and a keyword scan can actually establish; "this stage was never attempted" is a stronger claim those same searches cannot support, unless Work Engine already guarantees every execution attempt leaves one of the checked traces — a guarantee this grammar does not assume. This is the same invariant the rest of the grammar already enforces at every other layer (`missing derived state is not authority to reconstruct history`), applied here rather than left as the one place it was implicit. Phrasing a disposition as "OPEN" therefore always means "checked; found nothing" — never "confirmed nothing occurred" — so a later discovery of prior, unrecorded execution moves `OPEN → PARTIAL` as new evidence, not as a retraction of a false claim.
+
+`ACTIVE` means durable evidence of current, ongoing execution — it must not be stretched to cover a plan with only durable evidence of past partial progress and no such current evidence; that is `PARTIAL`, a materially different observation ("evidence of some prior work, no evidence of anything ongoing") from either `OPEN` ("no evidence of any work") or `ACTIVE` ("evidence of ongoing work").
 
 **The evidence for any of these dispositions must be about the plan's own named stages, not merely the implementation status of the architecture the plan targets.** A target view reporting `implementation: none` does not by itself establish `PLAN: OPEN` — the target being unbuilt is consistent with an early stage (a baseline measurement, a drafted contract schema, a shadow-mode pilot) having been attempted or even completed without ever changing the target view's own status. Check for the plan's own deliverables directly: real code, fixtures, campaign or worktree records, a recorded pilot result, a drafted schema — for each stage the plan names. Only cite the target's implementation status as corroborating context, never as the disposition's sole evidence.
 

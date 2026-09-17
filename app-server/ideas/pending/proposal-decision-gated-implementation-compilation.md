@@ -525,7 +525,7 @@ to the implementation track's measured evidence.
 
 # Implementation Track
 
-**[PLAN: OPEN — 2026-09-16, checked directly against the plan's own stages, not merely the target architecture's status: `grep`-checked `app-server/src`, `planning/`, and `app-server/docs` for `decision-surface shadow`, `sealed decision-set`, `DecisionSet`, `material decision surface`, `comparative pilot matrix`, and `implementation-compiler shadow` — every hit is architecture-documentation prose citing this idea, none is a real fixture, pilot record, or landed code; no worktree or campaign named for this workstream exists under `/home/bline/.local/state/work-engine`. Stage 0's own deliverable (a baseline/measurement contract) has no evidence of ever being attempted, not merely of being unbuilt in `material-decision-selection.md`/`implementation-contract-compilation.md`. None of Stage 0-6 below has real evidence of execution.]**
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found for Stage 0-6 within the surfaces checked: `app-server/src`, `planning/`, and `app-server/docs` (grepped for `decision-surface shadow`, `sealed decision-set`, `DecisionSet`, `material decision surface`, `comparative pilot matrix`, `implementation-compiler shadow` — every hit is architecture-documentation prose citing this idea, none is a fixture, pilot record, or landed code), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan). This checks the plan's own stages directly, not merely `material-decision-selection.md`/`implementation-contract-compilation.md`'s target-architecture status, which is consistent with but does not by itself establish this finding.]**
 
 ## Track objective
 
