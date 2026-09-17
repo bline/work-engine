@@ -14,7 +14,7 @@ import { parse as parseYaml } from "yaml";
 
 const GRAMMAR_FILE = "idea-status-grammar.md";
 
-const SUPERSESSION_VALUES = new Set(["none", "partial", "full"]);
+const SUPERSESSION_VALUES = new Set(["none", "partial", "full", "unknown"]);
 const RESIDUE_VALUES = new Set(["none", "present", "unknown"]);
 const BACKLOG_VALUES = new Set(["none", "present", "active", "unknown"]);
 const COMPLETENESS_VALUES = new Set(["complete", "partial"]);
@@ -52,6 +52,30 @@ function findPlanDispositions(text) {
 
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim() !== "";
+}
+
+// A declared audit_scope entry is either a bare string ("open-question-ledger") or a
+// single-key object ({"keyword-scan": "full_document"}, {"close-read": "SS1-6"}).
+// "formal-ledger" is a synonym for "open-question-ledger" seen once in the corpus
+// (incremental-architecture-intake-and-seam-reconciliation.md) for a ledger discovered
+// outside the usual "Open Questions" heading convention -- treated as equivalent scope
+// declaration, not a distinct scope kind.
+function scopeHas(auditScope, key, exactValue) {
+  return (auditScope ?? []).some((entry) => {
+    if (typeof entry === "string") return entry === key;
+    if (entry && typeof entry === "object" && key in entry) {
+      return exactValue === undefined || entry[key] === exactValue;
+    }
+    return false;
+  });
+}
+
+function scopeDeclaresLedgerCoverage(auditScope) {
+  return scopeHas(auditScope, "open-question-ledger") || scopeHas(auditScope, "formal-ledger") || scopeHas(auditScope, "keyword-scan", "full_document");
+}
+
+function scopeDeclaresPlanCoverage(auditScope) {
+  return scopeHas(auditScope, "staged-plan-section") || scopeHas(auditScope, "keyword-scan", "full_document");
 }
 
 function validateDocument(relativePath, text) {
@@ -118,6 +142,10 @@ function validateDocument(relativePath, text) {
   }
 
   // --- Cross-field: residue/backlog must be backed by evidence in the document ------
+  // KIND tags only carry ANSWERED/OPEN/MOOT/UNCHECKED (never ACTIVE -- SS4.2); PLAN tags
+  // carry the fuller staged-plan set including ACTIVE/COMPLETED/SUPERSEDED (SS4.3). Only
+  // PLAN's OPEN/PARTIAL/ACTIVE feed the backlog axis (SS4.3); PLAN tags never feed residue
+  // -- a staged plan is never itself an architectural-ownership question.
   const residueDispositions = findKindDispositions(text, "RESIDUE");
   const backlogDispositions = findKindDispositions(text, "BACKLOG");
   const planDispositions = findPlanDispositions(text);
@@ -134,7 +162,7 @@ function validateDocument(relativePath, text) {
 
   const backlogHasOpenSupport = backlogDispositions.includes("OPEN") || planDispositions.includes("OPEN") || planDispositions.includes("PARTIAL");
   if (backlog === "present" && !backlogHasOpenSupport) {
-    errors.push("backlog: present has no [KIND: BACKLOG] ... OPEN or [PLAN: OPEN/PARTIAL] tag anywhere in the document to support it");
+    errors.push("backlog: present has no [KIND: BACKLOG] ... OPEN tag or [PLAN: OPEN/PARTIAL] tag anywhere in the document to support it");
   }
   if (backlog === "active" && !planDispositions.includes("ACTIVE")) {
     errors.push("backlog: active requires a [PLAN: ACTIVE] tag citing current execution evidence");
@@ -143,13 +171,39 @@ function validateDocument(relativePath, text) {
     errors.push("backlog: unknown requires audit_scope_completeness: partial (an unresolved audit cannot be a completed one)");
   }
   if (backlog === "none" && backlogHasOpenSupport) {
-    errors.push("backlog: none contradicts a [KIND: BACKLOG] ... OPEN or [PLAN: OPEN/PARTIAL] tag found in the document");
+    errors.push("backlog: none contradicts a [KIND: BACKLOG] ... OPEN tag or [PLAN: OPEN/PARTIAL] tag found in the document");
   }
 
-  // --- Cross-field: completeness: complete requires zero UNCHECKED in scope --------
-  const anyUnchecked = residueDispositions.includes("UNCHECKED") || backlogDispositions.includes("UNCHECKED") || planDispositions.includes("UNCHECKED");
-  if (completeness === "complete" && anyUnchecked) {
-    errors.push("audit_scope_completeness: complete but an UNCHECKED tag exists in the document");
+  // --- Cross-field: architectural_supersession: unknown ------------------------------
+  if (supersession === "unknown" && completeness !== "partial") {
+    errors.push("architectural_supersession: unknown requires audit_scope_completeness: partial (a semantic-coverage check that was not completed cannot be a completed audit)");
+  }
+
+  // --- Cross-field: audit_scope_completeness is scope-relative (SS5.2), not global --
+  // "complete" means every source actually NAMED in audit_scope has no UNCHECKED item --
+  // a document that never declared staged-plan-section (and never keyword-scanned the
+  // full document) is not made incomplete by an UNCHECKED tag inside some section it
+  // never claimed to have checked; conversely, a document IS incomplete if it carries
+  // ledger/plan tags of a kind its own declared audit_scope does not cover at all -- that
+  // is silence being misrepresented as a checked scope (SS5.1's own "silence must not read
+  // as clean" rule, applied to the scope declaration itself, not just to residue/backlog).
+  const auditScope = status.audit_scope;
+  const ledgerScopeDeclared = scopeDeclaresLedgerCoverage(auditScope);
+  const planScopeDeclared = scopeDeclaresPlanCoverage(auditScope);
+  const hasLedgerTags = residueDispositions.length > 0 || backlogDispositions.length > 0;
+  const hasPlanTags = planDispositions.length > 0;
+
+  if (hasLedgerTags && !ledgerScopeDeclared) {
+    errors.push("document has [KIND: RESIDUE/BACKLOG] tags but audit_scope declares neither open-question-ledger nor keyword-scan: full_document");
+  }
+  if (hasPlanTags && !planScopeDeclared) {
+    errors.push("document has [PLAN: ...] tags but audit_scope declares neither staged-plan-section nor keyword-scan: full_document");
+  }
+
+  const ledgerUnchecked = ledgerScopeDeclared && (residueDispositions.includes("UNCHECKED") || backlogDispositions.includes("UNCHECKED"));
+  const planUnchecked = planScopeDeclared && planDispositions.includes("UNCHECKED");
+  if (completeness === "complete" && (ledgerUnchecked || planUnchecked)) {
+    errors.push("audit_scope_completeness: complete but a source named in audit_scope (ledger and/or staged-plan section) still carries an UNCHECKED tag");
   }
 
   // --- Provenance -------------------------------------------------------------------
@@ -190,7 +244,7 @@ async function collectMarkdownFiles(root) {
 
 function tally(results) {
   const counts = {
-    architectural_supersession: { none: 0, partial: 0, full: 0 },
+    architectural_supersession: { none: 0, partial: 0, full: 0, unknown: 0 },
     residue: { none: 0, present: 0, unknown: 0 },
     backlog: { none: 0, present: 0, active: 0, unknown: 0 },
     audit_scope_completeness: { complete: 0, partial: 0 },

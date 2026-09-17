@@ -15,8 +15,8 @@ explicitly authorized portfolio owner retains decision authority.
 idea_status:
   architectural_supersession: none
   residue: none
-  backlog: present
-  backlog_ledger: "Corrected 2026-09-17, per review: 'no staged plan exists' (SS6) is not the same test as 'no backlog exists.' The document's own core proposal -- the Candidate Trajectory primitive itself, explicitly 'not accepted, prioritized, or authorized for implementation' -- is a single confirmed-unbuilt implementation obligation with a concrete, buildable shape (SS1-5), independent of whether it is ever staged as a named multi-step plan. Tagged inline in the Summary as [KIND: BACKLOG] [OPEN]."
+  backlog: none
+  backlog_note: "Corrected 2026-09-17, per re-audit: the 2026-09-17 correction above was itself wrong, and is retracted. BACKLOG requires the surrounding architecture to already be settled, with only construction/choice/checking remaining (SS2's own definition: 'its architecture is not in question'). This document's core primitive is not that -- its whole premise ('not accepted, prioritized, or authorized for implementation') means adoption itself, not merely construction, is undecided; there is no settled architecture this primitive extends the way, e.g., executable-generation-maintenance-rollover.md's SS52 extends already-confirmed executable-generation-lifecycle architecture. A concretely-specified, buildable design is not the same claim as operative backlog -- conflating 'this proposal is detailed enough to build' with 'this is confirmed unbuilt work' was exactly the error Predicate D was checking for, and this document is itself an instance of it, not an escape from it. The inline KIND/BACKLOG-OPEN tag previously placed in the Summary is removed accordingly; this is an unaccepted proposal, which is the corpus's baseline condition for an idea document, not itself a status this grammar's backlog axis tracks."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "SS1-7"
@@ -30,8 +30,6 @@ idea_provenance:
 ```
 
 ## Summary
-
-**[KIND: BACKLOG] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: this document's own core primitive is a confirmed-unbuilt, concretely-specified implementation obligation, not merely an unstaged direction.]**
 
 App Server already derives a deterministic physical profile for every
 candidate checkpoint it binds, but it keeps only the current profile. The

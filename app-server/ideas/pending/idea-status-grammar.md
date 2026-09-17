@@ -36,22 +36,35 @@ The grammar below exists to make all three distinctions explicit instead of forc
 
 > Does a canonical architecture view now state this document's architectural claims better than the document itself?
 
+This is a **semantic-coverage** question, not a vocabulary-matching one. A canonical view can state the same architectural content this document argues for using entirely different nouns, examples, or section structure — checking whether the canonical corpus merely fails to *cite* this document, or fails to contain its exact *terms*, answers a different, weaker question than whether it now *states the same claim*. `none` is only correct once semantic coverage was actually checked and found absent for the document's claims as a whole; a document where only a term-absence check (a grep for this document's own vocabulary) was performed, with no read of what the candidate canonical view(s) actually claim, has not earned `none` — it has earned `unknown`.
+
 ```text
 none
-    No canonical view derives from this document. It remains the sole
-    source for whatever architecture it describes.
+    Semantic coverage was checked, not merely term absence, and no
+    canonical view states this document's architectural claims. It
+    remains the sole source for whatever architecture it describes.
 
 partial
-    Named sections are superseded by named canonical view(s); other
-    named sections remain the sole source for their own content.
+    Named sections are superseded by named canonical view(s), verified
+    by reading what those views actually claim; other named sections
+    remain the sole source for their own content because the same
+    check found no canonical statement of them either.
 
 full
     Every architectural claim in this document is now represented in
-    canonical view(s). The document is provenance for architecture, not
-    a live architecture source.
+    canonical view(s), verified section by section. The document is
+    provenance for architecture, not a live architecture source.
+
+unknown
+    No canonical-view semantic-coverage check was completed for at
+    least one of this document's architectural claims — only a
+    term-absence check (or no check at all), which cannot rule
+    coverage in or out. Requires audit_scope_completeness: partial;
+    must never be rounded up to a specific supersession scope or down
+    to none merely because no matching vocabulary was found.
 ```
 
-`partial` and `full` must name the canonical view(s) and, for `partial`, exactly which sections are covered — a bare "superseded by X" with no scope is not enough to prevent a reader from either over- or under-trusting the rest of the document. Superseded sections should carry a short note pointing to the canonical view rather than being deleted — the idea document is not being rewritten, only labeled.
+`partial` and `full` must name the canonical view(s) and, for `partial`, exactly which sections are covered — a bare "superseded by X" with no scope is not enough to prevent a reader from either over- or under-trusting the rest of the document. Superseded sections should carry a short note pointing to the canonical view rather than being deleted — the idea document is not being rewritten, only labeled. `full` is a claim about the *whole* document, so it must be re-checked independently of whatever prompted a `partial` finding — a document can accumulate several `partial` scope entries over separate audit passes while never actually being re-examined for whether the *remaining* sections have, in the meantime, also been covered elsewhere; `full` requires that check to have actually been done, not merely inferred from an accumulating `superseded_by` list.
 
 ### 3.2 Residue
 
@@ -291,7 +304,20 @@ A document not yet audited under this grammar carries no `idea_status` block —
 
 ## 8. Deterministic Validation
 
-`app-server/scripts/validate-idea-status.mjs` mechanically checks every document under this directory against the rules above: exactly one `idea_status` and one `idea_provenance` block; only the enum values in §3/§6; `architectural_supersession: partial`/`full` requires `superseded_by` (with `scope` for `partial`); `residue`/`backlog: present` requires a `[KIND: ...] [OPEN ...]` tag actually present in the document; `residue`/`backlog: unknown` requires `audit_scope_completeness: partial`; `backlog: active` requires a `[PLAN: ACTIVE ...]` tag; `audit_scope_completeness: complete` requires zero `UNCHECKED` tags anywhere in the document; and it flags (informationally, not as an error) any `architectural_supersession: full` + `residue: none` + `backlog: none` combination as a retirement-candidate query per §9 below. It also computes exact per-axis corpus counts — run it (`node app-server/scripts/validate-idea-status.mjs`) instead of maintaining summary counts by hand.
+`app-server/scripts/validate-idea-status.mjs` mechanically checks every document under this directory against the rules above:
+
+- exactly one `idea_status` and one `idea_provenance` block per document (a document with neither is reported separately as `UNAUDITED`, per §7 — not an error);
+- only the enum values in §3/§6, including `architectural_supersession: unknown`;
+- `architectural_supersession: partial`/`full` requires a non-empty `superseded_by` list, each entry naming a `view` (`scope` also required when `partial`);
+- `architectural_supersession: unknown` requires `audit_scope_completeness: partial`;
+- `residue: present` requires a `[KIND: RESIDUE] ... [OPEN ...]` tag (bracketed or the prose `KIND: RESIDUE, OPEN` form) actually present in the document — never merely asserted by the axis value; `residue: none` is flagged as contradicted if such a tag exists;
+- `backlog: present` requires either a `[KIND: BACKLOG] ... [OPEN ...]` tag, or a `[PLAN: OPEN ...]`/`[PLAN: PARTIAL ...]` tag — `PLAN` tags feed `backlog` only, never `residue` (SS4.3, only a staged plan's own disposition sets backlog, and a plan is never itself an ownership question); `backlog: none` is flagged as contradicted if either exists;
+- `backlog: active` requires a `[PLAN: ACTIVE ...]` tag;
+- `residue`/`backlog: unknown` requires `audit_scope_completeness: partial`;
+- `audit_scope_completeness` is checked **scope-relatively** (SS5.2), not against the whole document: a document is `complete` only if every source its own declared `audit_scope` actually names has no `UNCHECKED` item — a `[PLAN: UNCHECKED]` tag does not count against `complete` unless `audit_scope` declares `staged-plan-section` (or a full-document `keyword-scan`, which by definition would have found it too), and symmetrically for ledger `[KIND: ...] [UNCHECKED ...]` tags against `open-question-ledger`. The validator separately flags it as an error, independent of the `complete`/`partial` value, when a document carries ledger or plan tags of a kind its own `audit_scope` never declared at all — that is silence misrepresented as a checked scope, the same failure SS5.1 names for the scope declaration itself;
+- and it flags (informationally, not as an error) any `architectural_supersession: full` + `residue: none` + `backlog: none` combination as a retirement-candidate query per §9 below.
+
+It also computes exact per-axis corpus counts — run it (`node app-server/scripts/validate-idea-status.mjs`) instead of maintaining summary counts by hand.
 
 It validates internal consistency and evidence, never the semantic classification itself — whether a given item is genuinely RESIDUE vs. BACKLOG, or genuinely OPEN vs. ANSWERED, remains a per-document judgment call this script cannot and does not make.
 

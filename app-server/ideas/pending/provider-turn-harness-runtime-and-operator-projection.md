@@ -17,6 +17,7 @@ idea_status:
       scope: "SS2-3 (ProviderTurnPort/HarnessRuntimePort as execution-time contracts for provider_turn/harness_runtime ownership fields), SS11 (operator policy overlay, confirmed 2026-09-16 as this dimension's own real partial instance)"
     - view: app-server/docs/architecture/mechanisms/authority-preserving-intent-projection.md
       scope: "OperatorProjection (SS4) is this mechanism's own confirmed precursor (via operator-switchboard.mjs), origin restored 2026-09-16"
+  architectural_supersession_note: "Checked 2026-09-17, per review, for full-supersession eligibility: not eligible. runtime-realization.md's own 'Relationship to Provider Turn, Harness Runtime, and Operator Projection' section states directly that it consumes SS2-3's port contracts 'without redefining' this document's own composition patterns (SS5), invalidation-consequences-by-port (SS7), evidence/event ownership (SS8), or invariants (SS11) -- a canonical view's own text confirming non-coverage, not a term-absence inference. SS1, SS5-10, SS11-13 remain this document's sole source."
   residue: none
   residue_note: "No formal open-question ledger in this document; SS12 Non-goals and SS'Relationship to the settled architecture' close out the reconciliation this session already performed in depth."
   backlog: none
