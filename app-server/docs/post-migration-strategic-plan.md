@@ -459,7 +459,7 @@ remain valuable even if a lower-cost execution strategy fails its pilot.
 
 | Source | Distinct contribution |
 | --- | --- |
-| [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md) | Material decision closure, reserved/delegated authority, implementation-contract workflow, conformance, and baseline measurement |
+| [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md) | **Architecture absorbed/settled (confirmed 2026-09-17 — see Revision 2026-09-17 below): material decision closure, reserved/delegated authority, implementation-contract workflow, and conformance are already stated by `material-decision-selection.md` and `implementation-contract-compilation.md`, including this idea's own "Invariants" section restated near-verbatim.** Only its Stage 0-6 pilot/validation track remains open backlog — do not treat this idea's architectural placement as still undecided. |
 | [Structural Plan IR](../ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md) | Candidate canonical representation and faithful executor-specific projections |
 | [Prior-art study](../ideas/pending/structural-plan-ir-prior-art.md) | Candidate revision/node identity, layering, lineage correspondence, and projection fidelity; not an accepted schema |
 | [Planner characterization](../ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md) | Derived description of the remaining judgment surface, with incremental characterization cost measured separately |
@@ -479,7 +479,17 @@ Recommended workstream stages:
    projection, material decision versus faithful rendering, characterization
    versus executor capability, and branch independence versus safe integration.
    Use the prior-art questions to bound schema investigation rather than accept
-   a general IR schema in advance.
+   a general IR schema in advance. **Concrete entry procedure (added
+   2026-09-17 — see Revision 2026-09-17 below): Structural Plan IR's own §18
+   ("Repository Validation Before Design Commitment") is a 25-item repository-
+   reconnaissance ledger, confirmed not yet run, covering exactly this
+   reconciliation — treat it as this stage's checklist rather than starting
+   investigation from scratch. This stage must also explicitly resolve or
+   deliberately defer one confirmed open architecture question: who owns
+   lineage-correspondence judgment (whether a structural element in one Plan
+   IR revision is "the same" element in another) across Plan IR revisions —
+   no existing mechanism decides this, and the prior-art study's own residue
+   names it directly.**
 2. Establish baseline and shadow evidence using the decision-gated track's
    measurement, decision-surface, sealed-decision, and compiler investigations.
    Preserve distinctions between prospective and outcome-informed evidence.
@@ -699,4 +709,59 @@ revisit_when:
   - Hierarchical orchestration is formed into an actual proposal.
   - The production-claim-evidence-interface acceptance audit is performed, resolving item C of its decision split one way or the other.
   - Actual Pro 20x capacity and usable throughput are confirmed, changing the urgency of the eleven secondary residues.
+```
+
+### Revision 2026-09-17 (appended, not a replacement)
+
+The block above is preserved as the 2026-09-15 handoff. This revision does
+not change the priorities it sets (claim-evidence impact/refresh vertical,
+hierarchical-orchestration proposal formation) — it refines the separate Plan
+IR workstream's Stage 1, following a deterministic idea-status audit of
+`app-server/ideas/pending/` completed the same day (grammar, validator, and
+corpus at commit `ecfaf73f276af4f0a6e7a00f155e5d97294cf611`). The audit found
+one status correction, one bounded reconnaissance improvement, and one
+legitimate Stage 1 architectural decision — not a reason to reopen the
+roadmap. Both affected passages (the Plan IR source table and Stage 1 of its
+workstream, above) carry inline `2026-09-17` annotations pointing back here.
+
+```yaml
+schema_version: 1
+strategic_objective: Complete the claim-evidence impact/refresh vertical and resolve hierarchical planning/workflow's open seams as basic working blocks, so expanded Codex capacity can be spent on ready, well-scoped parallel work rather than bottlenecked by a single sequential thread or missing shared substrate
+evidence_cutoff:
+  roadmap_revision: "ecfaf73f276af4f0a6e7a00f155e5d97294cf611:app-server/ideas/pending/idea-status-grammar.md"
+  repository_revision: "ecfaf73f276af4f0a6e7a00f155e5d97294cf611"
+  campaign_terminals: []
+continuity: retained
+verdict: revise
+current_rationale: The two named priorities (impact/refresh vertical, hierarchical-orchestration seam resolution) are unchanged and unaffected by this revision. A separate, deterministic idea-status audit of the full app-server/ideas/pending/ corpus (idea-status-grammar.md plus scripts/validate-idea-status.mjs) completed the same day and surfaced three findings specific to the Plan IR workstream named above, none of which block starting that workstream or either named priority. First, proposal-decision-gated-implementation-compilation.md's architectural_supersession is now confirmed full -- material-decision-selection.md and implementation-contract-compilation.md already state its core claims, including a near-verbatim restatement of its own "Invariants" section -- so its architectural placement is settled; only its Stage 0-6 pilot/validation track remains open backlog. Second, structural-plan-ir-for-capability-aware-multi-model-execution.md's own SS18 ("Repository Validation Before Design Commitment") turned out to be a genuine, previously-untagged 25-item repository-reconnaissance ledger -- confirmed not yet run -- that is substantively the same reconciliation Stage 1 already calls for, just not previously named as its concrete entry procedure. Third, structural-plan-ir-prior-art.md carries a confirmed-open residue item (no existing mechanism, including mechanisms/revision-cas-and-publication.md, decides who owns lineage-correspondence judgment across Plan IR revisions) that Stage 1 is guaranteed to encounter, since lineage correspondence is already named in the Plan IR source table above as that document's own contribution.
+assumptions:
+  confirmed:
+    - The staging table's own framing (stages express useful release consequences, not a compulsory execution procedure; exact dependencies remain to be verified) continues to hold and is exactly why these three findings refine Stage 1 rather than block or reorder the roadmap.
+    - Neither of this revision's own two prior priorities (impact/refresh vertical, hierarchical-orchestration proposal formation) is affected by the idea-status audit.
+  changed:
+    - proposal-decision-gated-implementation-compilation.md moves from "uncommitted candidate architecture" to "architecture settled, pilot remains backlog" -- a status correction, not a scope change, for the Plan IR source table above.
+    - Stage 1 of the Plan IR workstream now has a named, concrete reconnaissance basis (Structural Plan IR's own SS18 ledger) rather than an unbounded instruction to "use the prior-art questions."
+  invalidated: []
+route_changes:
+  priorities:
+    - No change to this revision's own two named priorities. Within the separate Plan IR workstream specifically, Stage 1 should begin from Structural Plan IR's SS18 ledger rather than open-ended reconnaissance.
+  dependencies:
+    - Stage 1 must explicitly resolve or deliberately defer lineage-correspondence-judgment ownership before the Plan IR pilot's revision/lineage machinery can be built against a settled contract -- deferring it is a legitimate outcome of this stage, silently assuming an answer is not.
+    - Decision-gated compilation's now-settled architecture means later Plan IR stages that reference "material decision versus faithful rendering" (Stage 1) or "the decision-gated track's measurement, decision-surface, sealed-decision, and compiler investigations" (Stage 2) can cite material-decision-selection.md and implementation-contract-compilation.md directly as the authoritative source, rather than the idea document alone.
+  newly_important: []
+  deferred: []
+recommended_campaign:
+  disposition: none
+  objective: null
+  work_source: null
+  reason: This revision refines one stage of an already-recommended workstream; it does not itself constitute or authorize a bounded implementation packet.
+open_uncertainties:
+  - Whether lineage-correspondence-judgment ownership should be resolved by Structural Plan IR's own eventual owning document, by a canonical mechanism extension, or deliberately left open through the pilot -- not decided by this revision.
+  - Whether Structural Plan IR's SS18 reconnaissance, once run, confirms or revises the document's own candidate representation hypothesis.
+authority_required:
+  - Running Structural Plan IR's SS18 reconnaissance and deciding the lineage-correspondence-ownership question are not authorized by this revision -- it names them as Stage 1's own concrete content, not who performs them or under what authority.
+revisit_when:
+  - Structural Plan IR's SS18 reconnaissance is run, producing findings that confirm, narrow, or revise the candidate representation hypothesis.
+  - Lineage-correspondence-judgment ownership is resolved or explicitly, deliberately deferred.
+  - Decision-gated compilation's Stage 0-6 pilot track is scoped or begun, now that its architectural placement is no longer in question.
 ```
