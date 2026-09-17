@@ -9,6 +9,26 @@ remediation candidate replaces the candidate it previously reviewed.
 **Authority:** Exploratory only. This document does not amend the migration
 roadmap, admit an implementation, or authorize spending.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: present
+  backlog_ledger: "SS4 ('Evaluation before defaulting') names a two-stage plan (1: three-way controlled historical replay A/B/C; 2: shadow production comparison). Section disposition below."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "SS1-6"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - candidate-trajectory-durable-foundation.md (upstream dependency, itself architectural_supersession: none)
+```
+
 ## Summary
 
 Today, when remediation produces a new candidate C2 after a reviewer found
@@ -136,6 +156,8 @@ delta becomes authoritative (i.e., before the reviewer is told it may rely on
 the delta instead of re-deriving continuity itself).
 
 ## 4. Evaluation before defaulting
+
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` and `planning/` (grepped for "controlled historical replay", "shadow production", "Candidate Trajectory" — zero hits outside this idea-document family), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan). Consistent with this document's own dependency on `candidate-trajectory-durable-foundation.md`, which is itself not accepted or authorized.]**
 
 This does not need a registered controlled pilot in the sense of the
 representation-effect studies under `app-server/ideas/pending/pilots/` (those

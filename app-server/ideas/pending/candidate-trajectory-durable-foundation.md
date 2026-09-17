@@ -11,6 +11,24 @@ later replacement candidates).
 roadmap, admit an implementation, or authorize spending. The user or an
 explicitly authorized portfolio owner retains decision authority.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: none
+  backlog_note: "SS6 ('Why this does not need a pilot') explicitly argues against staged-plan content; no dedicated plan section exists."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "SS1-7"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Summary
 
 App Server already derives a deterministic physical profile for every

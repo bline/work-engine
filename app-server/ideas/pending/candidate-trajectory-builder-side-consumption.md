@@ -15,6 +15,26 @@ candidate-ready projection.
 roadmap, admit an implementation, select a builder contract change, or
 authorize implementation.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: none
+  backlog_note: "SS3 states a general compare-before-retiring discipline, not a dedicated staged plan with named stages; no PLAN disposition applies."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "SS1-6"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - candidate-trajectory-durable-foundation.md (upstream dependency, itself architectural_supersession: none)
+```
+
 ## Summary
 
 Candidate Trajectory (once it exists) is bound from an immutable candidate

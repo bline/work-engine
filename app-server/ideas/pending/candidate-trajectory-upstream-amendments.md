@@ -13,6 +13,24 @@ The entries identify possible changes to existing pending idea documents (or,
 where noted, to Candidate Trajectory's own documents). They are design
 hypotheses about how each document's evidence sourcing should change now that
 a Candidate Trajectory primitive has been proposed, not execution findings.
+
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  backlog: present
+  backlog_ledger: "One item tagged KIND: BACKLOG (the shared event-store implementation question near A2), confirmed open, no dedicated staged-plan section otherwise."
+  audit_scope:
+    - keyword-scan: full_document
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "Full document not close-read line-by-line this pass (744+ lines across A-G sections); keyword scan only."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
 Section A targets Deterministic Refactor Pressure; section B targets
 Evidence-Calibrated Plan Resolution and Continuous Capability Learning;
 section C targets Revisioned Research and Execution Architecture (mostly
@@ -516,7 +534,7 @@ infrastructure.
 - It does not propose merging Candidate Trajectory's storage with the
   terminal-accounting event store, or making terminal accounting a default
   consumer of trajectory facts (see D2/D3's explicit guardrail).
-- It does not propose a shared event-store implementation; D2 identifies that
+- [KIND: BACKLOG] [OPEN — an implementation-choice question for whoever eventually implements either proposal, not an ownership/architecture question] It does not propose a shared event-store implementation; D2 identifies that
   as an open question for whoever implements either proposal, not a decision
   this document makes.
 - It does not touch the target document's provider/harness/campaign ownership
