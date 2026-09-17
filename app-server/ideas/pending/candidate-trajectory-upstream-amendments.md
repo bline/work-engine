@@ -18,14 +18,14 @@ a Candidate Trajectory primitive has been proposed, not execution findings.
 idea_status:
   architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against -- this is an editorial amendment sheet proposing changes to other pending idea documents' own text; it asserts no architecture of its own for a canonical view to state or fail to state."
-  residue: unknown
-  residue_note: "Corrected 2026-09-17, per review: a keyword-scan-only pass on a 744+ line document is not sufficient scope to support the universal negative 'no residue exists.' residue: unknown, not none, until a full close-read or a broader targeted check is done."
+  residue: none
+  residue_note: "Corrected 2026-09-17, item-level drain: performed the broader check the prior note called for -- full keyword scan (remains open/unresolved/not yet decided/TBD/open question/still open/genuinely open) across the whole document plus targeted reads of every section whose heading suggested a boundary or open point (B7 'What this section does not establish', E1-E5). Found exactly one genuine open item, already tagged [KIND: BACKLOG] [OPEN] under Target D (a shared-event-store implementation choice, not an ownership question) -- already reflected in backlog: present below. Zero RESIDUE-kind items exist: consistent with this document's own nature as an editorial amendment sheet (architectural_supersession: not_applicable) -- it proposes changes to other documents' text and explicitly declines to resolve implications it surfaces (B7: 'does not resolve B6's versioning question, only records that it exists'), so any genuine open architecture question it surfaces belongs to the target document, not this one."
   backlog: present
   backlog_ledger: "One item tagged KIND: BACKLOG (the shared event-store implementation question near A2), confirmed open, no dedicated staged-plan section otherwise. backlog: present stands because this is an existential (one confirmed source suffices), unlike residue: none's universal claim above."
   audit_scope:
     - keyword-scan: full_document
-  audit_scope_completeness: partial
-  audit_scope_completeness_note: "Full document not close-read line-by-line this pass (744+ lines across A-G sections); keyword scan only."
+  audit_scope_completeness: complete
+  audit_scope_completeness_note: "Corrected 2026-09-17: full-document keyword scan plus targeted section reads performed this pass; zero UNCHECKED tags remain anywhere in the document."
   status_as_of: 2026-09-16
 ```
 

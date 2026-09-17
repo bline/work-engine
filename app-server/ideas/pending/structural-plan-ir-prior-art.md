@@ -23,10 +23,10 @@ idea_status:
     - view: app-server/docs/architecture/runtime-realization.md
       scope: "'Implications for Work Engine''s claim that 'empirical model profiles describe demonstrated execution capability rather than permanent properties inferred from a model name' is the same attributed-observation-not-assumed principle as SS3 (capability facts are attributed observations, never inferred from a static label); the general representation-does-not-acquire-authority pattern in the same section is the same invariant already confirmed at SS11 and in mechanisms/authority-preserving-intent-projection.md."
   architectural_supersession_note: "Corrected 2026-09-17, per unknown-drain campaign: checked 'Implications for Work Engine' (the document's own claim-bearing synthesis, distinct from the prior-art surveys and the still-hypothetical Plan IR schema models) against context-lifecycle.md and runtime-realization.md directly. Two of its ownership-boundary claims are the same claims those canonical views already make, just applied to a not-yet-existing artifact. NOT superseded: the prior-art surveys themselves (Tree-sitter/Roslyn/SCIP/CPG/MLIR/GumTree observations), and the candidate identity/layering/projection-fidelity/serialization models -- these are either external-system research or technical schema detail no architecture-ownership-level canonical view operates at (the same finding already made for the sibling execution-profile-scoring addendum), genuinely this document's own sole source. partial, not full or not_applicable: real, checked coverage exists for part of the document, and the rest is not out-of-domain -- it is simply un-adopted, hypothetical Plan IR detail."
-  residue: unknown
-  residue_ledger: "'Unresolved questions' (11 items) tagged by kind: 5 RESIDUE, 6 BACKLOG. All 11 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
-  backlog: unknown
-  backlog_note: "6 KIND: BACKLOG items exist, all UNCHECKED; no confirmed-open item and no dedicated staged-plan section, so backlog cannot be set to none or present."
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, item-level drain: 2 of 5 RESIDUE-kind items (3, 8) reclassified BACKLOG -- schema-design/attributed-observation-application choices within already-settled ownership. 3 items (1, 4, 5) stay RESIDUE, each confirmed OPEN by checking canonical contracts directly: item 1's 3-way placement choice is explicitly hedged as undecided by this document's own sibling; item 4's lineage-correspondence authority question is not addressed by revision-cas-and-publication.md's monotonic-versioning mechanism; item 5's split/merge lineage question has zero hits anywhere in evidence-and-claims.md."
+  backlog: present
+  backlog_ledger: "8 KIND: BACKLOG items after reclassification. Item 8 confirmed OPEN (no capability-profile concept exists yet to apply the already-established attributed-observation pattern to) -> backlog: present. Items 2, 3, 6, 7, 9, 10, 11 remain UNCHECKED (schema/pilot/serialization design details not specifically verified this pass)."
   audit_scope:
     - open-question-ledger
   audit_scope_completeness: partial
@@ -450,17 +450,17 @@ the following owners distinct:
 
 ## Unresolved questions
 
-- [KIND: RESIDUE] [UNCHECKED — a placement/scope decision] Is the first Plan IR an implementation-contract representation, a slice-plan
+- [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: this document's own sibling ('Relationship to Decision-Gated Implementation Compilation') hedges 'IF both directions advance, the Plan IR is a candidate representation... rather than a parallel semantic or authority owner' -- explicitly not decided anywhere. A genuine 3-way placement choice, unresolved.] Is the first Plan IR an implementation-contract representation, a slice-plan
   representation, or a shared substrate with separately closed dialects?
 - [KIND: BACKLOG] [UNCHECKED — schema design detail] Which node and edge kinds are necessary to distinguish valid from invalid plan
   states?
-- [KIND: RESIDUE] [UNCHECKED — placement among durable states (canonical vs. rebuildable projection)] Which relationships must be canonical and which may be rebuildable projections?
-- [KIND: RESIDUE] [UNCHECKED — an authority question, named as such] What authority is required to establish or revise lineage correspondence?
-- [KIND: RESIDUE] [UNCHECKED — touches evidence-and-claims.md's own lineage/acceptance territory] How should split and merge lineage affect downstream acceptance and evidence?
+- [KIND: BACKLOG, reclassified 2026-09-17 — a schema-design/performance choice within a not-yet-owned artifact (item 1 above is still open), the same "materialize vs. project" pattern already classified BACKLOG elsewhere this session, not a cross-dimension ownership dispute] [UNCHECKED] Which relationships must be canonical and which may be rebuildable projections?
+- [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: checked mechanisms/revision-cas-and-publication.md directly. It governs monotonic revision succession (predecessor CAS, successor naming) but says nothing about semantic/structural correspondence judgment across revisions (whether element A in revision N is "the same lineage" as element B in revision N+1) -- a genuinely different, harder problem no existing mechanism addresses.] What authority is required to establish or revise lineage correspondence?
+- [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: checked evidence-and-claims.md directly for split/merge lineage handling -- no hits, no existing claim-acceptance machinery addresses this.] How should split and merge lineage affect downstream acceptance and evidence?
 - [KIND: BACKLOG] [UNCHECKED — design detail] Is semantic addressing deterministic, author-selected, or both?
 - [KIND: BACKLOG] [UNCHECKED — a technical property definition] What constitutes lossless projection when explanation can be elaborated but not
   invented?
-- [KIND: RESIDUE] [UNCHECKED — bears directly on runtime-realization.md's own capability-inventory/admission territory, not independently cross-checked this pass] How is a capability profile admitted, versioned, invalidated, and kept separate
+- [KIND: BACKLOG, reclassified 2026-09-17 — checked runtime-realization.md SS2-3 directly: capability facts are already admitted/versioned/invalidated as attributed observations, generically, independent of what produces them. This item asks how to correctly apply that already-established pattern to an empirical execution-capability profile specifically (a new consumer of an existing mechanism), not a new ownership question -- the same "attributed observation, not assumed from a name" principle already found covering this document's own "Implications for Work Engine" section.] [OPEN — no capability-profile concept has been built to apply this pattern to yet] How is a capability profile admitted, versioned, invalidated, and kept separate
   from a model slug?
 - [KIND: BACKLOG] [UNCHECKED — implementation/schema design detail] Can a compact projection safely use references, or must every causally required
   explanation be materialized at the effective loading boundary?

@@ -18,15 +18,15 @@ The proposed mechanism does **not** ask a builder whether code is ugly, complex,
 idea_status:
   architectural_supersession: not_applicable
   architectural_supersession_note: "Corrected 2026-09-17, per unknown-drain campaign: close-read all 16 sections. SS1-4 ground the proposal in existing skills/-layer evidence (Code Change Profile, slice-supervisor receipts, telemetry ingress) without making any new ownership claim -- they cite what already exists. SS6-15 (the five pressure-dimension scoring formulas, the proposed derivation pipeline, weighting/admission/falsification mechanics) are deterministic-analytics detail entirely within the skills/code-change-profile and slice-supervisor service layer, the same register as the Candidate Trajectory family and structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md -- no dimension, mechanism, or substrate is a plausible owner for a scoring-formula proposal built entirely on top of already-existing App Server skills. SS16's 'architectural conclusion' is a positioning summary of the same analytics content, not a new claim. not_applicable, not none: this was a real read of every section (not a term grep), and it found no architectural-domain claim to check coverage for in the first place."
-  residue: unknown
-  residue_note: "Corrected 2026-09-17, per review: SS1.1's own explicit ownership boundary ('physical observations,' not semantics/architecture/outcomes/policy) is real, checked evidence, but SS2-14 (the bulk of the 710-line document, describing the actual pressure dimensions and mechanism) were not close-read this pass -- a keyword-scan-plus-one-section check is not sufficient scope to support the universal negative 'no residue exists anywhere in this document.' residue: unknown, not none."
+  residue: none
+  residue_note: "Corrected 2026-09-17, item-level drain: the full-document close-read the prior note called for was completed as part of the supersession recheck (all 16 sections, see architectural_supersession_note above), plus a dedicated keyword scan for open-question markers (remains/should/needs/future/recommended/unresolved/undecided/TBD) across the whole document. Zero genuine open architectural questions found -- the few hits are either a receipt-schema field name ('unresolved concerns') or descriptive prose about what the pressure score informs later ('future remediation/refactors'), not live questions. Consistent with architectural_supersession: not_applicable: a pure scoring-formula proposal has no dimension/mechanism/substrate stake to leave unresolved."
   backlog: present
   backlog_ledger: "'Recommended first experiment' (SS15, Phase A-D) tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, backfill runs, or campaigns found anywhere."
   audit_scope:
     - staged-plan-section
     - keyword-scan: full_document
-  audit_scope_completeness: partial
-  audit_scope_completeness_note: "710-line document; keyword-scanned in full but not close-read section by section beyond SS1, SS6, and SS15."
+  audit_scope_completeness: complete
+  audit_scope_completeness_note: "Corrected 2026-09-17: full document now close-read section by section (supersession recheck) plus a dedicated residue keyword scan; zero UNCHECKED tags remain anywhere in the document."
   status_as_of: 2026-09-16
 ```
 
