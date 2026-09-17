@@ -11,6 +11,26 @@ This document is exploratory. It does not amend `DESIGN.md`, change the
 migration roadmap, authorize implementation, or claim these are the only
 duplication seams in the tree — only the ones this pass found evidence for.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Confirmed 2026-09-16: zero footprint in app-server/docs/architecture -- pure engineering-hygiene content (shared utility duplication, SQLite hardening inconsistency, live/shadow lifecycle template), no dimension/mechanism/substrate connection."
+  residue: none
+  backlog: present
+  backlog_ledger: "'Candidate direction' (3 numbered items) tagged [PLAN: OPEN] on direct evidence -- no contract-kit module exists, openPrivateSqliteDatabase remains single-store-local, not shared."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
+    - close-read: "full document (174 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Summary
 
 Three duplication patterns recur across `app-server/src` and
@@ -144,6 +164,8 @@ to the port split — they are utility-layer hygiene that would be worth doing
 regardless of how the ports idea resolves.
 
 ## Candidate direction
+
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` has no `contract-kit` module anywhere, and `openPrivateSqliteDatabase` remains local to `slice-campaign/sqlite-store.mjs` alone, not shared across the five stores item 2 names. No workstream for this plan exists under `/home/bline/.local/state/work-engine`.]**
 
 Introduce narrow, additive extractions without a big-bang rewrite, in roughly
 the order least likely to disturb in-flight work:

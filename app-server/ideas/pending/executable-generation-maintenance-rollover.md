@@ -2,6 +2,26 @@
 
 **Status:** Post-migration proposal input with an emergency helper implemented
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "This document's own real-code finding was folded into runtime-realization.md SS9/SS10, mechanisms/transition-fencing-and-leases.md, and mechanisms/revision-cas-and-publication.md this session -- but those citations point directly to the real source files (executable-generation-manager.mjs/-store.mjs), not to this idea document as their provenance. This document is a second, independent observer of the same real code, not the canonical views' owner."
+  residue: none
+  residue_note: "The one open citation-gap question this document raised is explicitly marked 'Resolved 2026-09-16' in its own text, following operator review."
+  backlog: none
+  backlog_note: "The 'first-class maintenance operation' recommendation is a general direction, not a staged plan with named, sequenced steps -- no PLAN disposition applies."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document (159 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 Repeated migration repairs change the executable environment fingerprint and
 therefore require a fresh generation-state root. The semantic context should
 survive that maintenance boundary, while the predecessor generation identity,

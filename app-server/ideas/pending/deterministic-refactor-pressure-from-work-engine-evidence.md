@@ -14,6 +14,29 @@ The purpose is to determine when implementation structure is creating enough rep
 
 The proposed mechanism does **not** ask a builder whether code is ugly, complex, or in need of refactoring. It derives refactor pressure after execution from immutable Work Engine evidence.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Derived-analysis proposal building on real, already-owned evidence sources (Code Change Profile, checkpoint manifests); no canonical view derives from this document itself."
+  residue: none
+  residue_note: "This document explicitly owns 'physical observations,' deliberately not semantics/architecture/outcomes/policy (SS1.1's own boundary) -- no ownership/placement questions found this pass beyond what candidate-trajectory-upstream-amendments.md already tracks as a coupled relationship."
+  backlog: present
+  backlog_ledger: "'Recommended first experiment' (SS15, Phase A-D) tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, backfill runs, or campaigns found anywhere."
+  audit_scope:
+    - staged-plan-section
+    - keyword-scan: full_document
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "710-line document; keyword-scanned in full but not close-read section by section beyond SS1, SS6, and SS15."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - candidate-trajectory-upstream-amendments.md (proposes SS6.3 amendment, not accepted or applied)
+```
+
 The central question is:
 
 > Does a structural region repeatedly impose more implementation cost, spread, rework, or validation burden than the bounded change being executed would predict?
@@ -639,6 +662,8 @@ But graph integration is not necessary to prove the idea.
 ---
 
 # 15. Recommended first experiment
+
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` and `planning/` (grepped for "historical backfill", "Refactor Pressure Score", "deterministic component observations" — zero hits), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan).]**
 
 Rather than immediately making RPS part of production decision-making:
 

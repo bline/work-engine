@@ -6,6 +6,26 @@ Adopted raw architectural direction awaiting independent intake and proposal
 formation. This document does not authorize implementation, roadmap
 priority, or pilot execution.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: present
+  residue_ledger: "'Unresolved questions' (4 items) tagged by kind: 1 RESIDUE (capability-negotiation shape, bears on runtime-realization.md SS2-3), 3 BACKLOG (2 pilot-gating investigations, 1 MOOT/redirected). The RESIDUE item is confirmed OPEN."
+  backlog: present
+  backlog_ledger: "2 of the 4 items are KIND: BACKLOG and confirmed OPEN (Agent SDK hooks investigation, JS/TS agenttoolset investigation); 'Pilot 0' (SS121) is a single proposed test, not a multi-stage sequence, and is captured by the first backlog item rather than a separate PLAN disposition."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - persistent-provider-runtime-managers-for-codex-and-claude.md (cross-linked 2026-09-16, this session)
+```
+
 ## Objective
 
 Add Claude as a second realization of the provider-neutral runtime-adapter
@@ -312,19 +332,19 @@ own mechanism is an implementation bug, not evidence about the mechanism.
 
 ## Unresolved questions
 
-- Whether the Agent SDK exposes hooks as programmatic callbacks distinct
+- [KIND: BACKLOG] [OPEN — a pilot-gating investigation, no evidence this was checked] Whether the Agent SDK exposes hooks as programmatic callbacks distinct
   from `settings.json`-defined shell hooks, and whether either form fires
   under headless/programmatic invocation — gates Pilot 0.
-- Whether a JS/TS equivalent of `anthropic-sdk-go`'s `agenttoolset` exists,
+- [KIND: BACKLOG] [OPEN — a build-vs-reuse investigation, no evidence this was checked] Whether a JS/TS equivalent of `anthropic-sdk-go`'s `agenttoolset` exists,
   or whether H2's Bash/Read/Write/Edit/Glob/Grep tools must be built from
   scratch.
-- The exact capability-negotiation shape for three `ClaudeRuntime` variants
+- [KIND: RESIDUE] [OPEN — this bears on `runtime-realization.md`'s own capability-negotiation shape (SS2-3), not merely this pilot's own scope, since it questions whether the existing single mechanism/invocation-pair-per-provider assumption holds] The exact capability-negotiation shape for three `ClaudeRuntime` variants
   under one profile, given `capabilities.mjs`'s existing
   `MODEL_CONTEXT_REPLACEMENT_CAPABILITY` assumes a single `mechanism`/
   `invocation` pair per provider; H0/H1/H2 have three different mechanism
   shapes (opaque-and-unobserved, hook-triggered-host-owned, and
   API-parameter-mid-generation-pause respectively).
-- Whether Managed Agents' durable-session model is worth investigating on
+- [KIND: BACKLOG] [MOOT — redirected to a separate, already-reconciled document] Whether Managed Agents' durable-session model is worth investigating on
   its own terms (independent of context lifecycle) — tracked separately,
   not as part of this idea, now at
   [`persistent-provider-runtime-managers-for-codex-and-claude.md`](persistent-provider-runtime-managers-for-codex-and-claude.md)
