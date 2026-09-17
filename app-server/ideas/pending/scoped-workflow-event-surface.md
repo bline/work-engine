@@ -12,6 +12,7 @@ or make telemetry or an execution provider authoritative for workflow state.
 ```yaml
 idea_status:
   architectural_supersession: none
+  architectural_supersession_note: "Checked on content grounds 2026-09-17: grep-confirmed zero occurrences of 'scoped workflow event' or 'provider-neutral event vocabulary' anywhere in app-server/docs/architecture -- this document's own proposed surface is not stated by any canonical view's own text."
   residue: unknown
   residue_ledger: "'Questions for later intake' (8 items) tagged by kind: 5 RESIDUE, 3 BACKLOG. All 8 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: unknown

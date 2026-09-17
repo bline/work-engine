@@ -4,12 +4,17 @@
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "This document's own real-code finding was folded into runtime-realization.md SS9/SS10, mechanisms/transition-fencing-and-leases.md, and mechanisms/revision-cas-and-publication.md this session -- but those citations point directly to the real source files (executable-generation-manager.mjs/-store.mjs), not to this idea document as their provenance. This document is a second, independent observer of the same real code, not the canonical views' owner."
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "SS9 (safe execution boundaries -- generation-bound admission, fence-before-first-write, drain-to-zero, then activate) and SS10 (revision/CAS lineage -- beginReload's predecessor CAS, activate's expected-identity CAS) now state, as confirmed implemented architecture, the same invariant this document's own 'semantic context should survive that maintenance boundary' proposal calls for."
+    - view: app-server/docs/architecture/mechanisms/transition-fencing-and-leases.md
+      scope: "Names the executable-generation reload as a third confirmed instance of the fencing mechanism this document's own 'fresh generation-state root' requirement implicitly needs."
+  architectural_supersession_note: "Corrected 2026-09-17, per review: citation lineage (whether the canonical page's text was DERIVED FROM this idea document) is a provenance question, not a supersession question. The correct test is whether canonical architecture NOW STATES this document's architectural claims -- it does, at SS9/SS10 above, regardless of which document the canonical page cites as its own source. idea_provenance (below) correctly records that this document was not itself that source; that is a separate fact from supersession."
   residue: none
   residue_note: "The one open citation-gap question this document raised is explicitly marked 'Resolved 2026-09-16' in its own text, following operator review."
-  backlog: none
-  backlog_note: "The 'first-class maintenance operation' recommendation is a general direction, not a staged plan with named, sequenced steps -- no PLAN disposition applies."
+  backlog: present
+  backlog_ledger: "Corrected 2026-09-17, per review: 'not a staged plan' is not the same test as 'not backlog.' The SS52 recommendation ('make this a first-class maintenance operation... stage, attest, activate, and surface rollback/continuation evidence') is a single confirmed-unbuilt implementation obligation -- no PLAN disposition applies since there is no staged/sequenced plan, but the item itself is real and tagged inline as [KIND: BACKLOG] [OPEN]. The SS74 passage generalizing active_unexercised's semantics is the same obligation elaborated further, not a second item."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "full document (159 lines)"
@@ -20,6 +25,8 @@ idea_status:
 ```yaml
 idea_provenance:
   origin: direct_capture
+  canonical_source: false
+  canonical_source_note: "The canonical views crediting this territory (runtime-realization.md SS9/SS10, mechanisms/transition-fencing-and-leases.md) cite the real source code directly (executable-generation-manager.mjs/-store.mjs), not this idea document. This document is a second, independent observer of the same real code -- true regardless of architectural_supersession's own value above."
 ```
 
 Repeated migration repairs change the executable environment fingerprint and
@@ -42,7 +49,7 @@ the destination digest matches, and emits a machine-readable receipt. It does
 not activate the generation, rewrite shell variables, copy bindings, or start
 the proxy.
 
-Post-migration proposal work should make this a first-class maintenance
+**[KIND: BACKLOG] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: a confirmed-unbuilt implementation obligation, independent of whether it is ever staged as a named plan.]** Post-migration proposal work should make this a first-class maintenance
 operation owned by executable-generation lifecycle rather than a shell-level
 deployment convention. That operation should stage, attest, activate, and
 surface rollback/continuation evidence while preserving ProviderTurnPort,

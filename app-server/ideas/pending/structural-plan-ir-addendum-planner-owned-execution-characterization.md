@@ -3,9 +3,10 @@
 ```yaml
 idea_status:
   architectural_supersession: none
-  residue: none
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, per review: a free-form live architectural question found in prose (outside any formal ledger) -- whether a separate execution-characterization classification role should ever be introduced, explicitly conditioned on future pilot evidence not yet gathered. Tagged inline [KIND: RESIDUE] [OPEN]."
   backlog: none
-  backlog_note: "No dedicated staged-plan section or open-question ledger; this is a short (85-line) design-hypothesis addendum, fully consumed by structural-plan-ir-for-capability-aware-multi-model-execution.md's own pilot design."
+  backlog_note: "No dedicated staged-plan section or open-question ledger; this is a short (85-line) design-hypothesis addendum, fully consumed by structural-plan-ir-for-capability-aware-multi-model-execution.md's own pilot design. The one open item above is RESIDUE-kind (architectural placement, contingent on future evidence), not BACKLOG-kind (operative construction), so it does not change this axis."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "full document (85 lines)"
@@ -102,4 +103,4 @@ The pilot should therefore record:
 - which dimensions required genuine additional investigation rather than reuse of existing planning understanding; and
 - whether any characterization dimension materially improved strategy prediction.
 
-A separate classification role should be introduced only if evidence shows that planner-produced characterization is systematically biased, unstable, or too costly.
+**[KIND: RESIDUE] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: whether this role should ever exist is explicitly gated on future pilot evidence, not decided now.]** A separate classification role should be introduced only if evidence shows that planner-produced characterization is systematically biased, unstable, or too costly.

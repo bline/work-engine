@@ -15,8 +15,8 @@ explicitly authorized portfolio owner retains decision authority.
 idea_status:
   architectural_supersession: none
   residue: none
-  backlog: none
-  backlog_note: "SS6 ('Why this does not need a pilot') explicitly argues against staged-plan content; no dedicated plan section exists."
+  backlog: present
+  backlog_ledger: "Corrected 2026-09-17, per review: 'no staged plan exists' (SS6) is not the same test as 'no backlog exists.' The document's own core proposal -- the Candidate Trajectory primitive itself, explicitly 'not accepted, prioritized, or authorized for implementation' -- is a single confirmed-unbuilt implementation obligation with a concrete, buildable shape (SS1-5), independent of whether it is ever staged as a named multi-step plan. Tagged inline in the Summary as [KIND: BACKLOG] [OPEN]."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "SS1-7"
@@ -30,6 +30,8 @@ idea_provenance:
 ```
 
 ## Summary
+
+**[KIND: BACKLOG] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: this document's own core primitive is a confirmed-unbuilt, concretely-specified implementation obligation, not merely an unstaged direction.]**
 
 App Server already derives a deterministic physical profile for every
 candidate checkpoint it binds, but it keeps only the current profile. The

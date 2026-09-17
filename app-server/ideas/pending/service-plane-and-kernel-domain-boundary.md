@@ -19,9 +19,9 @@ idea_status:
   architectural_supersession: none
   architectural_supersession_note: "Confirmed: no canonical view under app-server/docs/architecture cites this document. Its own Coordinate/service_state content is explicitly named as one of work-engine-planned-architecture.md's 5 deliberately-deferred architecture items -- deferred, not absorbed."
   residue: present
-  residue_ledger: "SS10 (11 'still open' items, batch-tagged KIND: RESIDUE, OPEN) -- already confirmed open by this document's own reconciliation pass. 3 other items in the same section are marked resolved and folded into SS1-9, not part of the open ledger."
-  backlog: none
-  backlog_note: "No dedicated staged-plan section; this document is a reconciliation-stage architecture direction, not an implementation rollout."
+  residue_ledger: "SS10 (11 items) individually re-classified 2026-09-17 after review caught the original batch tag's own error: item 3 reads as ANSWERED in its own text ('answered unit by unit in the reconciliation pass'), not OPEN. Final: 9 RESIDUE-kind OPEN (items 1,2,4-10), 1 RESIDUE-kind ANSWERED (item 3), 1 BACKLOG-kind OPEN (item 11, domain-tag granularity -- missed by the original batch tag entirely)."
+  backlog: present
+  backlog_note: "Corrected 2026-09-17: item 11 (domain-tag granularity) is BACKLOG-kind and confirmed OPEN, missed by the original all-RESIDUE batch tag. backlog: present derives from this single ledger item, not from a staged-plan section (none exists)."
   audit_scope:
     - open-question-ledger
     - close-read: "SS1, SS10"
@@ -431,9 +431,9 @@ section separates the two rather than presenting all twelve as equally open.
 
 ### Still open
 
-**[KIND: RESIDUE, batch] [OPEN — all 11 items below are architectural placement/ownership questions (kernel-vs-service boundary, operation-envelope shape, coverage vocabulary, domain-tag granularity), already confirmed open by this document's own reconciliation pass against `service-plane-reconciliation.md`. Consistent with this content being one of `work-engine-planned-architecture.md`'s own 5 deliberately-deferred architecture items (Coordinate/service_state).]**
+**Corrected 2026-09-17, per review: batch-tagging hid a real error (item 3 below reads as answered, not open) and a missed item (item 11 is BACKLOG-kind, not RESIDUE). Re-classified independently:**
 
-1. What belongs in kernel/control versus an ordinary service, as a general
+1. [KIND: RESIDUE] [OPEN] What belongs in kernel/control versus an ordinary service, as a general
    rule? Reconciliation found a repeated shape across three independent
    units — `claim-evidence`'s ledger, `review-episode`, and `slice-campaign`'s
    campaign state all combine durable revisioned state, an admitted
@@ -442,25 +442,25 @@ section separates the two rather than presenting all twelve as equally open.
    independent implementations converging on one shape is exactly the kind of
    evidence such a primitive should eventually be extracted from, not a
    reason to design it prospectively now.
-2. What is the minimal common operation envelope? Sharper than before:
+2. [KIND: RESIDUE] [OPEN] What is the minimal common operation envelope? Sharper than before:
    evidence now suggests the answer may not be `ServiceOperation` alone but a
    broader `OwnedOperation` supertype covering both `KernelOperation` and
    `ServiceOperation` as distinct kinds (section 3). Retain all three existing
    precedents (`claim-evidence`, `admitMutation`, `slice-campaign`'s
    dispatcher) as evidence when eventually forming this — do not template on
    whichever currently looks most generic.
-3. Which existing services are true semantic owners versus derivations,
+3. [KIND: RESIDUE] [ANSWERED -- the item's own text: "Answered unit by unit in the reconciliation pass; no unit resisted this classification once plane assignment was separated from it."] Which existing services are true semantic owners versus derivations,
    adapters, or coordinators? Answered unit by unit in the reconciliation
    pass; no unit resisted this classification once plane assignment was
    separated from it.
-4. Which workflow-private units should remain workflow-local rather than
+4. [KIND: RESIDUE] [OPEN -- mostly resolved for the units named in the item's own text (slice-campaign native-review host, review-bench), but the general question for future units remains unaddressed] Which workflow-private units should remain workflow-local rather than
    become services? Confirmed for `slice-campaign`'s native-review host and
    legacy adapters. `review-bench` turned out not to be this kind of question
    at all — see the resolved scope-boundary item above.
-5. How does service state participate in coordinates and reconstruction,
+5. [KIND: RESIDUE] [OPEN] How does service state participate in coordinates and reconstruction,
    concretely? Still open — refinement 11 (coverage vocabulary, below) is the
    concrete gap.
-6. How are provider/harness realization services represented without leaking
+6. [KIND: RESIDUE] [OPEN] How are provider/harness realization services represented without leaking
    their implementations upward? Still open. `reviewer-runtime` and
    `slice-campaign`'s legacy adapters are both honestly
    `inherited_transitional_state` (borrowing
@@ -468,14 +468,14 @@ section separates the two rather than presenting all twelve as equally open.
    adoption vocabulary) pending
    `pre-indexed-capability-resolution-and-frozen-runtime-realization.md`'s
    admission mechanism — that is outside this document's scope to resolve.
-7. How do capability grants authorize service operations without
+7. [KIND: RESIDUE] [OPEN] How do capability grants authorize service operations without
    reintroducing the naming conflation section 4 identifies? Still open — no
    unit's implementation forced a decision either way.
-8. Which current representations duplicate another owner's state and need an
+8. [KIND: RESIDUE] [OPEN -- one confirmed instance found, no exhaustive sweep done] Which current representations duplicate another owner's state and need an
    explicit projection relationship? One confirmed instance
    (`completion-publication.mjs`'s checkpoint-field redeclaration); no
    exhaustive sweep has been done for others.
-9. **A third inference case**, still open. Section 7's rule (`owned →
+9. [KIND: RESIDUE] [OPEN] **A third inference case**, still open. Section 7's rule (`owned →
    service fact`, `unowned + semantic → model judgment`) is missing a middle
    state: mechanically knowable but currently unowned by any service. That
    should be recognized as an architectural gap or a temporary fallback with
@@ -489,7 +489,7 @@ section separates the two rather than presenting all twelve as equally open.
    The closest existing precedent is `code-change-profile`'s
    `unsupported`/`failed` measurement states — per-field, not
    per-fact-ownership, but establishing the right discipline to build from.
-10. **Coverage, not just presence**, still open. Section 5's illustrative
+10. [KIND: RESIDUE] [OPEN] **Coverage, not just presence**, still open. Section 5's illustrative
     coordinate map only answers which owned states are present. The concept it
     concretizes is explicitly "world-state basis *and coverage*"
     (`revisioned-research-and-execution-architecture.md` §2). A coverage-state
@@ -507,7 +507,7 @@ section separates the two rather than presenting all twelve as equally open.
     [Evidence-Anchor Observation and Impact Nomination](evidence-anchor-observation-and-impact-nomination.md)'s
     proposed anchor contract and observation boundary. Not accepted or
     applied.
-11. **Domain-tag granularity**, newly surfaced. `product-development`'s
+11. [KIND: BACKLOG] [OPEN -- a schema/tagging refinement, not an ownership question] **Domain-tag granularity**, newly surfaced. `product-development`'s
     delivery adapters do not fit the coarse "code domain" label used for
     triage in the inventory — `domain` needs to be a namespaced tag
     (`product-development`, `code.review`, `code.candidate-trajectory`, …)

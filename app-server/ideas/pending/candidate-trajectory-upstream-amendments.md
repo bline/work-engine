@@ -17,9 +17,10 @@ a Candidate Trajectory primitive has been proposed, not execution findings.
 ```yaml
 idea_status:
   architectural_supersession: none
-  residue: none
+  residue: unknown
+  residue_note: "Corrected 2026-09-17, per review: a keyword-scan-only pass on a 744+ line document is not sufficient scope to support the universal negative 'no residue exists.' residue: unknown, not none, until a full close-read or a broader targeted check is done."
   backlog: present
-  backlog_ledger: "One item tagged KIND: BACKLOG (the shared event-store implementation question near A2), confirmed open, no dedicated staged-plan section otherwise."
+  backlog_ledger: "One item tagged KIND: BACKLOG (the shared event-store implementation question near A2), confirmed open, no dedicated staged-plan section otherwise. backlog: present stands because this is an existential (one confirmed source suffices), unlike residue: none's universal claim above."
   audit_scope:
     - keyword-scan: full_document
   audit_scope_completeness: partial

@@ -12,7 +12,7 @@ implementation, or designate an architecture decision owner.
 ```yaml
 idea_status:
   architectural_supersession: none
-  architectural_supersession_note: "Reconciled against deterministic-authority-projection-and-adaptive-organizational-topology.md (Wave 2, 2026-09-15, 'genuinely independent, nothing further to reconcile') but not absorbed into any canonical view -- confirmed no citation in app-server/docs/architecture."
+  architectural_supersession_note: "Corrected 2026-09-17, per review: checked on content grounds, not citation absence. grep-confirmed zero occurrences of 'ArchitectureDirection' or 'ArchitectureAdoptionState' anywhere in app-server/docs/architecture -- this document's own artifact vocabulary is not stated by any canonical view's own text. Separately reconciled against deterministic-authority-projection-and-adaptive-organizational-topology.md (Wave 2, 2026-09-15, 'genuinely independent, nothing further to reconcile'), which is a sibling-idea fact, not evidence toward this document's own supersession value."
   residue: unknown
   residue_ledger: "SS18 'Questions for proposal formation' (16 items) tagged by kind: 12 RESIDUE, 4 BACKLOG. All 16 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: present

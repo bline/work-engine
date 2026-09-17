@@ -16,8 +16,11 @@ The proposal does **not** require the two providers to share the same runtime im
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "Real Codex code (executable-generation-bootstrap.mjs/-dispatch.mjs) independently implements most of this proposal's Codex half, and runtime-realization.md's own ProviderTurnPort/HarnessRuntimePort fields already are the abstract port this document argues for -- but nothing here was absorbed as this document's own provenance; it is a second observer of the same real code, same relationship as executable-generation-maintenance-rollover.md."
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "The abstract, provider-neutral port concept this document argues for (SS'Reframed 2026-09-16') is now stated as settled architecture via ProviderTurnPort/HarnessRuntimePort (SS2-3, SS6's provider_turn/harness_runtime fields). NOT superseded: the launch-efficiency POLICY itself (persistent runtime managers, hot/cold reuse, retention lifetime) -- runtime-realization.md states the port, not this document's specific policy sitting behind it."
+  architectural_supersession_note: "Corrected 2026-09-17, per review: citation lineage does not decide this axis. Real Codex code (executable-generation-bootstrap.mjs/-dispatch.mjs) independently implements most of this proposal's Codex half, and runtime-realization.md's own port fields state the same abstract-port concept this document argues for, regardless of which document those pages cite as their source (they cite the real code, not this idea document -- see idea_provenance)."
   residue: present
   residue_ledger: "30 spike questions (Codex/Claude/Shared, 10 each) previously tagged [ANSWERED]/[OPEN]; re-tagged this pass with KIND. Codex #4 (thread-termination semantics) and Claude #6 (should Work Engine provide its own SessionStore) are KIND: RESIDUE, both confirmed OPEN -> residue: present. Codex #9 and Shared #8 were reworded from OPEN to UNCHECKED under the current grammar (their own text says 'unconfirmed, needs investigation' rather than 'checked, no owner found'); Claude #4 stays KIND: BACKLOG, OPEN, on confirmed-gap evidence (no comparison path exists)."
   backlog: present
@@ -33,6 +36,8 @@ idea_status:
 ```yaml
 idea_provenance:
   origin: direct_capture
+  canonical_source: false
+  canonical_source_note: "runtime-realization.md's port fields cite the real Codex code and this dimension's own design directly, not this idea document, as their source -- true independently of architectural_supersession's own value above."
   related_reconciliations:
     - claude-runtime-adapter-and-context-ownership-pilot.md (cross-linked 2026-09-16)
     - fenced-oauth-credential-tip-broker.md (cross-linked, credential-broker dependency for Claude's Phase 3)

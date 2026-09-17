@@ -31,7 +31,7 @@ idea_status:
   architectural_supersession: none
   architectural_supersession_note: "SS7-23 (capture/normalization/identity/coordinate-spaces/indexes/projections) is real, unclaimed territory no canonical Work Engine view or sibling document owns -- confirmed by ai-accessible-browser-seam-reconciliation.md. This is a different subsystem from the 13/5/2 Work Engine orchestration taxonomy, not architecture superseded by it."
   residue: present
-  residue_ledger: "SS38's 12 items are tagged KIND: BACKLOG (empirical/engineering-tuning questions for this system's own eventual implementation, not ownership questions), so residue derives from elsewhere: ai-accessible-browser-seam-reconciliation.md's own seam records name 4 correspondences still explicitly UNRESOLVED -- epistemic-status coverage vocabulary; browser-dependency-invalidation vs. EvidenceAnchorObserver identity; browser-evidence-revisions vs. the revisioned-state kernel primitive; browser-projection-planner vs. evidence-calibrated-projection profiles. All 4 are KIND: RESIDUE, OPEN, per that reconciliation's own explicit disposition, not independently re-verified this pass."
+  residue_ledger: "SS38's 12 items individually re-classified 2026-09-17 (was a single batch tag): 11 are KIND: BACKLOG (empirical/engineering-tuning), 1 (item 8, cross-navigation identity reliance) is KIND: RESIDUE, confirmed OPEN -- a genuine reliance/authority-boundary question the original batch tag would have hidden. Separately, ai-accessible-browser-seam-reconciliation.md's own seam records name 4 more correspondences still explicitly UNRESOLVED (epistemic-status coverage vocabulary; browser-dependency-invalidation vs. EvidenceAnchorObserver identity; browser-evidence-revisions vs. the revisioned-state kernel primitive; browser-projection-planner vs. evidence-calibrated-projection profiles), also KIND: RESIDUE, OPEN, per that reconciliation's own explicit disposition, not independently re-verified this pass."
   backlog: present
   backlog_ledger: "SS38's 12 items (KIND: BACKLOG, OPEN, batch-tagged) plus SS37's staged implementation sequence, tagged [PLAN: OPEN] on direct evidence."
   audit_scope:
@@ -1340,25 +1340,25 @@ The prototype succeeds only if the combined interface provides measurable benefi
 
 ## 38. Open design questions
 
-**[KIND: BACKLOG, batch] [OPEN — this document's own header states "Implementation status: Not yet implemented"; every item below is an empirical/engineering-tuning question this system's own future implementation would resolve by building and measuring, not an ownership or architecture-placement question. None has been resolved by anything built so far.]**
+**Corrected 2026-09-17, per review: batch-tagging risks hiding an oddly-shaped item. Re-classified independently -- this document's own header ("Implementation status: Not yet implemented") supports OPEN as a shared disposition, but kind varies:**
 
 The following questions require implementation evidence:
 
-1. Which spatial index and tile addressing scheme provides the best balance of update cost and query clarity?
-2. Which computed-style properties belong in the baseline capture for each lens?
-3. How accurately can normalized SVG improve model structural understanding compared with raster-only and DOM-plus-raster interfaces?
-4. What deterministic grouping algorithms produce useful coarse projections without smuggling in model judgment?
-5. How should style, layout, and pixel invalidation be narrowed safely after browser events?
-6. What stabilization policy best preserves transient defects without flooding history?
-7. How much stateful evidence-view continuity reduces agent tokens without creating hidden dependencies?
-8. What cross-navigation identity matching is reliable enough for an
+1. [KIND: BACKLOG] [OPEN] Which spatial index and tile addressing scheme provides the best balance of update cost and query clarity?
+2. [KIND: BACKLOG] [OPEN] Which computed-style properties belong in the baseline capture for each lens?
+3. [KIND: BACKLOG] [OPEN] How accurately can normalized SVG improve model structural understanding compared with raster-only and DOM-plus-raster interfaces?
+4. [KIND: BACKLOG] [OPEN] What deterministic grouping algorithms produce useful coarse projections without smuggling in model judgment?
+5. [KIND: BACKLOG] [OPEN] How should style, layout, and pixel invalidation be narrowed safely after browser events?
+6. [KIND: BACKLOG] [OPEN] What stabilization policy best preserves transient defects without flooding history?
+7. [KIND: BACKLOG] [OPEN] How much stateful evidence-view continuity reduces agent tokens without creating hidden dependencies?
+8. [KIND: RESIDUE] [OPEN — explicitly a reliance/authority-boundary question: this document supplies a mechanical fact, another owner decides whether to rely on it] What cross-navigation identity matching is reliable enough for an
    upstream claim owner to rely on for automatic evidence continuity —
    this document only supplies the identity matching, not the continuity
    decision itself?
-9. Which causal relationships can be captured without invasive page instrumentation?
-10. How should opaque dynamic surfaces be sampled and summarized?
-11. What projection budget policy best balances orientation, precision, and token cost?
-12. Which parts of the eventual system provide measurable leverage, and which add unnecessary machinery?
+9. [KIND: BACKLOG] [OPEN] Which causal relationships can be captured without invasive page instrumentation?
+10. [KIND: BACKLOG] [OPEN] How should opaque dynamic surfaces be sampled and summarized?
+11. [KIND: BACKLOG] [OPEN] What projection budget policy best balances orientation, precision, and token cost?
+12. [KIND: BACKLOG] [OPEN] Which parts of the eventual system provide measurable leverage, and which add unnecessary machinery?
 
 These are experimental questions, not reasons to delay the first vertical slice.
 

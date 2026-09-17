@@ -7,8 +7,8 @@ Design hypothesis for repository validation.
 ```yaml
 idea_status:
   architectural_supersession: none
-  residue: none
-  residue_note: "SS17 (Risks) and SS19 (Suggested Validation Outcome A/B/C) are the document's own risk/outcome framing, not an open-question ledger; no formal ledger found this pass."
+  residue: unknown
+  residue_note: "Corrected 2026-09-17, per review: SS17 (Risks) and SS19 (Suggested Validation Outcome A/B/C) were checked and are the document's own risk/outcome framing, not an open-question ledger -- but this is a 1003-line document and SS1-16 (the bulk of the architecture proposal) were not close-read this pass, only headers checked. Absence of a formal ledger in the sections examined is not sufficient scope to support the universal negative 'no residue exists anywhere.' residue: unknown, not none."
   backlog: present
   backlog_ledger: "SS20 ('Suggested First Pilot') tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, comparisons, or campaigns found anywhere."
   audit_scope:

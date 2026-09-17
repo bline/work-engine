@@ -17,9 +17,9 @@ The proposed mechanism does **not** ask a builder whether code is ugly, complex,
 ```yaml
 idea_status:
   architectural_supersession: none
-  architectural_supersession_note: "Derived-analysis proposal building on real, already-owned evidence sources (Code Change Profile, checkpoint manifests); no canonical view derives from this document itself."
-  residue: none
-  residue_note: "This document explicitly owns 'physical observations,' deliberately not semantics/architecture/outcomes/policy (SS1.1's own boundary) -- no ownership/placement questions found this pass beyond what candidate-trajectory-upstream-amendments.md already tracks as a coupled relationship."
+  architectural_supersession_note: "Corrected 2026-09-17, per review: checked on content grounds, not citation absence. grep-confirmed zero occurrences of 'Refactor Pressure', 'Scope Spill', or 'Historical Recurrence' anywhere in app-server/docs/architecture -- this document's specific pressure-dimension vocabulary (A/S/R/V/H) is not stated by any canonical view's own text, not merely uncited by one."
+  residue: unknown
+  residue_note: "Corrected 2026-09-17, per review: SS1.1's own explicit ownership boundary ('physical observations,' not semantics/architecture/outcomes/policy) is real, checked evidence, but SS2-14 (the bulk of the 710-line document, describing the actual pressure dimensions and mechanism) were not close-read this pass -- a keyword-scan-plus-one-section check is not sufficient scope to support the universal negative 'no residue exists anywhere in this document.' residue: unknown, not none."
   backlog: present
   backlog_ledger: "'Recommended first experiment' (SS15, Phase A-D) tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, backfill runs, or campaigns found anywhere."
   audit_scope:

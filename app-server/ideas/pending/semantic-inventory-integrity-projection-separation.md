@@ -6,9 +6,10 @@
 idea_status:
   architectural_supersession: none
   architectural_supersession_note: "classifySkillsMigrationIntegrity (attribution.mjs) is real evidence the underlying idea is sound, structurally close to substrates/evidence-anchor.md's AnchorObservation shape -- but confirmed 2026-09-16 as a parallel, independently-built instance, not this document's provenance for that substrate. Nothing has been absorbed into any canonical view from this document itself."
-  residue: none
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, per review: two free-form live questions found in prose (outside any formal ledger, which is why the original pass missed them) and now tagged inline -- (1) whether the classifier's comparator should migrate onto substrates/evidence-anchor.md if that substrate is ever built; (2) whether a skills-migration-integrity-v1 domain profile should be formed under evidence-and-claims.md. Both KIND: RESIDUE, confirmed OPEN (each explicitly 'not decided now' in the document's own words, which is itself confirmation the question remains open, not evidence it doesn't exist)."
   backlog: none
-  backlog_note: "The document proposes a future domain profile (skills-migration-integrity-v1 under evidence-and-claims.md) as a natural home if accepted, not a committed staged plan with named stages -- no PLAN disposition applies. The described 'bounded hot fix' is already real and shipped (attribution.mjs), so nothing here is pending construction; what remains is only the larger 'separate storage architecture' question, not itemized into stages."
+  backlog_note: "The described 'bounded hot fix' is already real and shipped (attribution.mjs), so nothing here is pending construction as a staged plan -- no PLAN disposition applies. The two open placement questions above are RESIDUE-kind (architectural placement), not BACKLOG-kind (operative construction), so they do not change this axis."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "full document, extensively investigated this session"
@@ -106,7 +107,7 @@ substrate being named (2026-09-16, this session) and does not use its
 vocabulary or a shared observer, so it is a parallel, domain-specific
 instance of the same idea, not an implementation of `EvidenceAnchorObserver`.
 `evidence-anchor.md`'s own `implementation: none` status is unaffected; this
-finding does not license reclassifying it. If that substrate is ever built,
+finding does not license reclassifying it. **[KIND: RESIDUE] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: a genuine, if conditional, future-placement question — should this classifier's own comparator migrate onto substrates/evidence-anchor.md if that substrate is ever built?]** If that substrate is ever built,
 this classifier's per-path digest comparison is the more natural candidate
 to migrate onto it than to keep reinventing — noted here for that future
 reconciliation, not decided now.
@@ -117,7 +118,7 @@ projections," if this is ever accepted.** The three real domain profiles
 path-v1`) and the two named-but-unbuilt ones (§7 `planning-facts-v1`, §8
 `organizational-facts-v1`) are exactly the pattern this idea's own "candidate
 and review projections that distinguish derived integrity changes from
-authored semantic changes" is asking for — a `skills-migration-integrity-v1`
+authored semantic changes" is asking for — **[KIND: RESIDUE] [OPEN — found 2026-09-17 by review, previously recorded as prose without a formal tag: a genuine placement question -- should a skills-migration-integrity-v1 domain profile be formed under evidence-and-claims.md?]** a `skills-migration-integrity-v1`
 domain profile materializing `classifySkillsMigrationIntegrity`'s receipt as
 a durable claim would follow the identical shape, with the dimension's own
 non-authority boundary (§9) applying unchanged: the claim would materialize

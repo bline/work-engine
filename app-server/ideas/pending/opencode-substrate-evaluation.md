@@ -14,7 +14,7 @@ idea_status:
   residue: none
   residue_note: "All open items found (Admission gates, SS12 verification tasks) are BACKLOG-kind evaluation criteria for an external system, not Work Engine ownership/architecture-placement questions."
   backlog: present
-  backlog_ledger: "'Admission gates' (8 items, batch-tagged KIND: BACKLOG, OPEN) plus 'Candidate bounded pilots' A/B/C, tagged [PLAN: OPEN] on the document's own explicit confirmation that no pilot was run."
+  backlog_ledger: "'Admission gates' (8 items, individually re-classified 2026-09-17 -- all confirmed KIND: BACKLOG, OPEN, no RESIDUE item found on individual re-examination) plus 'Candidate bounded pilots' A/B/C, tagged [PLAN: OPEN] on the document's own explicit confirmation that no pilot was run."
   audit_scope:
     - staged-plan-section
     - open-question-ledger
@@ -1292,25 +1292,25 @@ surface of that route.
 
 ## Admission gates
 
-**[KIND: BACKLOG, batch] [OPEN — all 8 items are evaluation criteria for a third-party dependency (OpenCode), confirmed unresolved by the document's own text: "No live provider call, runtime compatibility test, dependency installation, or OpenCode execution pilot was performed." These are investigation tasks about an external system, not ownership/architecture-placement questions about Work Engine's own dimensions.]**
+**Corrected 2026-09-17, per review: re-classified independently rather than batch-tagged. All 8 confirmed unresolved by the document's own text: "No live provider call, runtime compatibility test, dependency installation, or OpenCode execution pilot was performed."**
 
 OpenCode component adoption should remain unresolved until evidence answers:
 
-1. What stable distribution and update policy replaces the current private
+1. [KIND: BACKLOG] [OPEN] What stable distribution and update policy replaces the current private
    workspace-package relationship?
-2. Can provider requests and responses preserve every field needed for Work
+2. [KIND: BACKLOG] [OPEN — checks whether an external system satisfies an already-settled internal evidence requirement, not a new ownership question] Can provider requests and responses preserve every field needed for Work
    Engine lifecycle evidence, including explicit authorized omissions?
-3. Are cancellation, streamed tool calls, tool results, errors, and retry
+3. [KIND: BACKLOG] [OPEN] Are cancellation, streamed tool calls, tool results, errors, and retry
    boundaries deterministic enough for Work Engine reconciliation?
-4. Can OpenCode session compaction and continuation be completely bypassed when
+4. [KIND: BACKLOG] [OPEN] Can OpenCode session compaction and continuation be completely bypassed when
    Work Engine owns lifecycle policy?
-5. Can the server/SDK contract be version-pinned without importing unstable V1
+5. [KIND: BACKLOG] [OPEN] Can the server/SDK contract be version-pinned without importing unstable V1
    and V2 session ownership?
-6. Can the TUI present Work Engine state and commands without a large permanent
+6. [KIND: BACKLOG] [OPEN] Can the TUI present Work Engine state and commands without a large permanent
    fork or a false OpenCode-session source of truth?
-7. Does the selected route preserve Work Engine's stronger admission, fencing,
+7. [KIND: BACKLOG] [OPEN — checks compatibility with already-settled WE invariants, not a new ownership question] Does the selected route preserve Work Engine's stronger admission, fencing,
    restart, and post-crash reconciliation semantics?
-8. Is each provider- or harness-native capability still directly reachable and
+8. [KIND: BACKLOG] [OPEN] Is each provider- or harness-native capability still directly reachable and
    truthfully attributed?
 
 ## Revised strategic hypothesis

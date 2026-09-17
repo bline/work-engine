@@ -12,13 +12,15 @@ Its purpose is to define a bounded intake process through which multiple related
 idea_status:
   architectural_supersession: none
   architectural_supersession_note: "This document defines a repeatable methodology (SS A-J), not architecture the canonical views absorb -- it describes how idea integration happens, not what Work Engine's own dimensions/mechanisms/substrates are."
-  residue: none
+  residue: unknown
+  residue_ledger: "Corrected 2026-09-17, per review: SS27 'Open Questions' is a formal, numbered 15-item ledger that the original pass never individually classified (worse than a batch tag -- it carried no idea_status accounting at all). All 15 items are now tagged inline [KIND: RESIDUE] [UNCHECKED] -- each is an architectural/methodology question, none is an implementation-construction item, but this pass did not cross-verify any of them against the two completed intake-session runs (post-migration-strategic-plan.md) to determine ANSWERED/MOOT vs. still-OPEN. residue: unknown, not present, because no individual item has yet been confirmed still-live rather than merely unverified."
   backlog: none
-  backlog_note: "SS A-J (Open session through Establish next baseline) is a reusable process definition, not a one-time staged-plan section -- PLAN disposition does not apply to a methodology meant to be re-run, not completed once. Real evidence the methodology works: per post-migration-strategic-plan.md, this workflow has already run to completion twice (marked complete 2026-09-14)."
+  backlog_note: "SS A-J (Open session through Establish next baseline) is a reusable process definition, not a one-time staged-plan section -- PLAN disposition does not apply to a methodology meant to be re-run, not completed once. Real evidence the methodology works: per post-migration-strategic-plan.md, this workflow has already run to completion twice (marked complete 2026-09-14). The SS27 open questions are RESIDUE-kind (architectural), not BACKLOG-kind (operative construction), so they do not change this axis."
   audit_scope:
     - keyword-scan: full_document
     - close-read: "full document, read structurally in full earlier this session"
-  audit_scope_completeness: complete
+    - formal-ledger: "SS27 Open Questions -- tagged, not individually verified this pass"
+  audit_scope_completeness: partial
   status_as_of: 2026-09-16
 ```
 
@@ -1109,21 +1111,23 @@ A subsequent intake session begins from the architecture actually accepted after
 
 # 27. Open Questions
 
-1. What exact artifact represents the implemented architecture baseline?
-2. Which existing Work Engine artifacts can provide architecture evidence without constructing a new global architecture database?
-3. What minimum seam vocabulary is sufficient for the first pilot?
-4. Which reconciliation outcomes require human authority versus architecture-role judgment?
-5. When should two ideas be merged into one proposal?
-6. When should one idea split into multiple proposals?
-7. What constitutes sufficient coherence to freeze an intake session?
-8. Which seam relationships must be canonical versus rebuildable?
-9. How should architecture intake receive implementation feedback when planning or review falsifies a frozen assumption?
-10. Under what conditions, if any, should a frozen architecture session be reopened rather than replaced by a successor?
-11. How much historical intake state belongs in durable records versus reconstructable projections?
-12. Can existing proposal/decision artifacts carry reconciliation records rather than introducing another decision schema?
-13. Should the seam map eventually share representation infrastructure with Plan IR or remain independently specialized?
-14. What measured reduction in downstream rework would justify the added intake inference cost?
-15. What future evidence would justify allowing architecture intake sessions against non-implemented prospective baselines?
+**Corrected 2026-09-17, per review: this formal ledger was never individually classified by the original pass. Each item is tagged below; none has been cross-verified this pass against the two completed intake-session runs (post-migration-strategic-plan.md), so all are UNCHECKED rather than resolved.**
+
+1. [KIND: RESIDUE] [UNCHECKED] What exact artifact represents the implemented architecture baseline?
+2. [KIND: RESIDUE] [UNCHECKED] Which existing Work Engine artifacts can provide architecture evidence without constructing a new global architecture database?
+3. [KIND: RESIDUE] [UNCHECKED] What minimum seam vocabulary is sufficient for the first pilot?
+4. [KIND: RESIDUE] [UNCHECKED] Which reconciliation outcomes require human authority versus architecture-role judgment?
+5. [KIND: RESIDUE] [UNCHECKED] When should two ideas be merged into one proposal?
+6. [KIND: RESIDUE] [UNCHECKED] When should one idea split into multiple proposals?
+7. [KIND: RESIDUE] [UNCHECKED] What constitutes sufficient coherence to freeze an intake session?
+8. [KIND: RESIDUE] [UNCHECKED] Which seam relationships must be canonical versus rebuildable?
+9. [KIND: RESIDUE] [UNCHECKED] How should architecture intake receive implementation feedback when planning or review falsifies a frozen assumption?
+10. [KIND: RESIDUE] [UNCHECKED] Under what conditions, if any, should a frozen architecture session be reopened rather than replaced by a successor?
+11. [KIND: RESIDUE] [UNCHECKED] How much historical intake state belongs in durable records versus reconstructable projections?
+12. [KIND: RESIDUE] [UNCHECKED] Can existing proposal/decision artifacts carry reconciliation records rather than introducing another decision schema?
+13. [KIND: RESIDUE] [UNCHECKED] Should the seam map eventually share representation infrastructure with Plan IR or remain independently specialized?
+14. [KIND: RESIDUE] [UNCHECKED] What measured reduction in downstream rework would justify the added intake inference cost?
+15. [KIND: RESIDUE] [UNCHECKED] What future evidence would justify allowing architecture intake sessions against non-implemented prospective baselines?
 
 ---
 
