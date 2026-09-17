@@ -289,7 +289,13 @@ idea_provenance:
 
 A document not yet audited under this grammar carries no `idea_status` block — absence means "not yet run through this process," never "clean." This mirrors the canonical grammar's own discipline: nothing gets an implicit status by omission.
 
-## 8. What This Grammar Does Not Decide
+## 8. Deterministic Validation
+
+`app-server/scripts/validate-idea-status.mjs` mechanically checks every document under this directory against the rules above: exactly one `idea_status` and one `idea_provenance` block; only the enum values in §3/§6; `architectural_supersession: partial`/`full` requires `superseded_by` (with `scope` for `partial`); `residue`/`backlog: present` requires a `[KIND: ...] [OPEN ...]` tag actually present in the document; `residue`/`backlog: unknown` requires `audit_scope_completeness: partial`; `backlog: active` requires a `[PLAN: ACTIVE ...]` tag; `audit_scope_completeness: complete` requires zero `UNCHECKED` tags anywhere in the document; and it flags (informationally, not as an error) any `architectural_supersession: full` + `residue: none` + `backlog: none` combination as a retirement-candidate query per §9 below. It also computes exact per-axis corpus counts — run it (`node app-server/scripts/validate-idea-status.mjs`) instead of maintaining summary counts by hand.
+
+It validates internal consistency and evidence, never the semantic classification itself — whether a given item is genuinely RESIDUE vs. BACKLOG, or genuinely OPEN vs. ANSWERED, remains a per-document judgment call this script cannot and does not make.
+
+## 9. What This Grammar Does Not Decide
 
 - It does not decide whether a document's *architecture* is correct — that is exactly what `architectural_supersession` points to, and the canonical view remains the authority on its own content, per `status-grammar.md`.
 - It does not authorize implementation of anything in `backlog: present` — that remains whatever authorization the document's own Authority section already states, unchanged by this grammar.

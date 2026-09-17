@@ -29,7 +29,8 @@ idea_status:
     - open-question-ledger
     - staged-plan-section
     - close-read: "full document, extensively investigated and rewritten this session"
-  audit_scope_completeness: complete
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "Corrected 2026-09-17, per the deterministic validator (scripts/validate-idea-status.mjs): Codex #9 and Shared #8 are tagged [KIND: BACKLOG] [UNCHECKED] in the ledger below, which is incompatible with 'complete.' backlog stays present regardless (Claude #4's confirmed OPEN item and the Migration strategy's [PLAN: PARTIAL] already establish it independently of these two UNCHECKED items)."
   status_as_of: 2026-09-16
 ```
 
