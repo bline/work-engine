@@ -12,6 +12,22 @@ The central change is:
 
 > Plan the topology of the work first. Then plan and execute each coherent branch independently under its own supervisor.
 
+```yaml
+idea_status:
+  supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/semantic-planning-hierarchy.md
+      scope: "Preplanner/Orchestrator/Branch Planner ownership contracts (Objective/Owns/Does-not-own sections); the routing.vs.admission and decision-gated.vs.hierarchical-orchestration rulings"
+  residue: none
+  backlog: present
+  backlog_description: "Sections A-I (Define the orchestration-plan contract; add preplanner/orchestrator roles; move operator interface upward; bind branch planners to supervisors; demonstrate concurrency, dependency release, topology conflict, integration branch) — a staged migration/demonstration plan with no other home. Canonical views describe ownership contracts, not this rollout sequence."
+  provenance:
+    origin: direct_capture
+  status_as_of: 2026-09-16
+```
+
+**Residue check, 2026-09-16**: no open-question ledger found (no "Open Questions" section, no unresolved/TBD markers beyond two already-closed rulings this session verified — `routing.vs.admission` and `decision-gated.vs.hierarchical-orchestration`, both explicitly dated and resolved in this document's own text). The document reads as settled architecture plus an unexecuted migration plan, not an open design surface — `residue: none` is a direct finding, not an assumption from `supersession: partial`.
+
 ---
 
 ## Motivation

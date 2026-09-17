@@ -9,6 +9,22 @@ runtime changes, and executable generations
 roadmap, admit a runtime, grant budget or provider authority, or authorize
 implementation.
 
+```yaml
+idea_status:
+  supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "SS1-11 nearly verbatim (distinct authoritative inputs, capability inventory, resolution/admission, materialized realization, invalidation, rematerialization, operator policy overlay, safe execution boundaries, realization identity); SS12 fenced active-binding added 2026-09-16"
+  residue: mixed
+  residue_ledger: "SS16 (14 items) -- see inline [ANSWERED]/[OPEN]/[UNCHECKED] tags. 2026-09-16 audit: 4 answered, 6 open, 4 unchecked (partial pass, not exhaustive)."
+  backlog: none
+  provenance:
+    origin: direct_capture
+    related_reconciliations:
+      - app-server/docs/architecture-direction-seam-map.md (ports.companion-binding, ALIGNED, restored into runtime-realization.md 2026-09-16)
+  status_as_of: 2026-09-16
+```
+
 ## Summary
 
 Work Engine should treat runtime realization as a derived artifact over a
@@ -898,33 +914,33 @@ This idea does not:
 
 ## 16. Questions for proposal formation
 
-1. Which service owns capability-observation identity, supersession, expiry,
+1. [ANSWERED — `runtime-realization.md` SS2-3: "This inventory is dimension-owned, not a shared substrate," confirmed directly against `substrates/context-observer.md`'s different (multi-consumer) shape.] Which service owns capability-observation identity, supersession, expiry,
    and dependency propagation?
-2. Which realization semantics belong per role instance, executable generation,
+2. [ANSWERED — `runtime-realization.md` SS6 (role/instance/generation identity) plus 2026-09-16's executable-generation findings (SS8-10) sharply separate role-instance realization semantics from the executable-generation substrate layer; `context-lifecycle.md` separately and explicitly owns retained-session semantics ("consumes, never owns" the mechanisms this idea touches).] Which realization semantics belong per role instance, executable generation,
    retained session, and admitted operation?
-3. What exact conditions allow an in-flight operation to drain after a
+3. [OPEN — `runtime-realization.md` SS9 gives the general shape (drain under A, mark stale, return to boundary) but not exact per-dependency drain-vs-interrupt-vs-reconcile conditions.] What exact conditions allow an in-flight operation to drain after a
    dependency becomes stale, and which require interruption or reconciliation?
-4. Which resolution results are fully determined by policy, and which require
+4. [ANSWERED — `runtime-realization.md` SS4's 0/1/N decision tree.] Which resolution results are fully determined by policy, and which require
    supervisor, operator, or human judgment?
-5. How are policy-overlay scopes, precedence, expiry, conflict, and authority
+5. [OPEN — SS11's hierarchical scoping (global -> workflow -> role class -> instance -> operation) and override rules answer scope/precedence conceptually; no concrete representation schema for expiry/conflict/authority-reference fields exists.] How are policy-overlay scopes, precedence, expiry, conflict, and authority
    references represented?
-6. Which changes are preferences, constraints, authority grants, and pins, and
+6. [OPEN — SS1 names the four categories (constraints/preferences/authority grants/pins); which owners may publish each kind is not specified.] Which changes are preferences, constraints, authority grants, and pins, and
    which owners may publish each kind?
-7. How are budget consumption and remaining authority reconciled atomically
+7. [UNCHECKED] How are budget consumption and remaining authority reconciled atomically
    across concurrent realizations?
-8. How are reviewer alternatives compared without flattening independence,
+8. [ANSWERED — `runtime-realization.md` SS4 names exactly these as N-branch decision-owner judgment inputs ("review independence, evidence strength, continuity loss, latency... none of which the mechanism itself may decide") — confirmed not flattened into one score.] How are reviewer alternatives compared without flattening independence,
    continuity, tool access, latency, evidence strength, and review class?
-9. Which capability observations require probes, authenticated runtime
+9. [UNCHECKED] Which capability observations require probes, authenticated runtime
    evidence, expiration, or manual operator attestation?
-10. How does the role binding registry reference successor realizations while
+10. [OPEN — implementation-level; no canonical view specifies this.] How does the role binding registry reference successor realizations while
     preserving provider-thread and context lineage?
-11. Which realization and invalidation evidence belongs in operation receipts,
+11. [UNCHECKED] Which realization and invalidation evidence belongs in operation receipts,
     durable lifecycle state, and operator projections?
-12. What bounded composite mechanisms are legitimately one realization rather
+12. [UNCHECKED] What bounded composite mechanisms are legitimately one realization rather
     than hidden future admissions?
-13. How should a pin behave when its target becomes unavailable, prohibited, or
+13. [OPEN — no canonical view addresses pin-failure behavior specifically.] How should a pin behave when its target becomes unavailable, prohibited, or
     semantically insufficient?
-14. What initial vertical proves invalidation, safe-boundary transition, and
+14. [OPEN — a pilot-sequencing question; no initial proving vertical has been chosen anywhere.] What initial vertical proves invalidation, safe-boundary transition, and
     successor admission without requiring multiple live paid providers?
 
 ## Core principle
