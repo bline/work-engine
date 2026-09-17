@@ -13,15 +13,16 @@ idea_status:
     - view: app-server/docs/architecture/implementation-contract-compilation.md
       scope: "SS6 ('Explicit Judgment Boundaries') restates the same mechanically-constrained/delegated-discretion/escalate-upstream three-way split this view's own Key Invariants and decision-gated-implementation-compilation.md's already-covered 'Candidate and consequence' section state; this document's own DECIDED/OPEN/ESCALATE/FORBIDDEN four-state schema is its own technical elaboration of that already-covered principle, not a new ownership claim."
   architectural_supersession_note: "Corrected 2026-09-17, per unknown-drain campaign: close-read SS1-22 against the plausible canonical owners already established for this document's own family (Structural Plan IR Prior Art and Decision-Gated Implementation Compilation, both processed this same campaign). Two genuine ownership-boundary claims (SS6, SS11) turned out to be already-covered general principles applied to this document's own vocabulary. The rest (SS1-5, 7-10, 12-22: structural-vs-narrative representation, semantic normalization, typed categories, dependency-graph encoding, traceability, model-specific compilation, resolution levels, economics hypothesis, risks, validation, pilot design) is Plan IR's own technical representation schema -- the same 'no architecture-ownership-level view operates at this detail' finding already made for the sibling execution-profile-scoring addendum and the prior-art note. partial, not full or not_applicable: real coverage exists for two sections, and the rest is un-adopted schema detail, not out-of-domain content."
-  residue: unknown
-  residue_note: "Corrected 2026-09-17, per review: SS17 (Risks) and SS19 (Suggested Validation Outcome A/B/C) were checked and are the document's own risk/outcome framing, not an open-question ledger -- but this is a 1003-line document and SS1-16 (the bulk of the architecture proposal) were not close-read this pass, only headers checked. Absence of a formal ledger in the sections examined is not sufficient scope to support the universal negative 'no residue exists anywhere.' residue: unknown, not none."
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, item-level drain: SS18 ('Repository Validation Before Design Commitment') turned out to be a genuine, previously-untagged formal ledger of ~25 items across 7 subsections -- missed by the original pass, which checked SS17 and SS19 but skipped SS18 between them. All items individually classified; 24 are BACKLOG (repository reconnaissance, not yet run). One is RESIDUE and confirmed OPEN: 'What component should own canonical plan construction?' -- SS11's already-covered planner/builder boundary (semantic-planning-hierarchy.md SS6) settles which ROLE owns planning judgment, but not which SOFTWARE COMPONENT would construct this not-yet-built artifact; no existing skill or service is named anywhere as its owner."
   backlog: present
-  backlog_ledger: "SS20 ('Suggested First Pilot') tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, comparisons, or campaigns found anywhere."
+  backlog_ledger: "SS20 ('Suggested First Pilot') tagged [PLAN: OPEN] on direct evidence -- zero real fixtures, comparisons, or campaigns found anywhere. SS18's 24 BACKLOG-kind items (repository-reconnaissance questions, all confirmed OPEN -- the validation pass itself has not been run) independently establish present as well."
   audit_scope:
+    - open-question-ledger
     - staged-plan-section
     - keyword-scan: full_document
-  audit_scope_completeness: partial
-  audit_scope_completeness_note: "1003-line document; SS18's own 'Repository Validation Before Design Commitment' section (whether the primitives it names already exist) was not independently re-verified this pass."
+  audit_scope_completeness: complete
+  audit_scope_completeness_note: "Corrected 2026-09-17: SS18's ~25 items are now individually classified with a checked disposition (each confirmed OPEN -- the repository-reconnaissance pass itself has not been run); zero UNCHECKED tags remain anywhere in the document."
   status_as_of: 2026-09-16
 ```
 
@@ -843,62 +844,66 @@ The validation should answer at least the following.
 
 ### Existing planning representation
 
-- How are plans represented today?
-- Which existing structures already approximate a Plan IR?
-- Which semantics currently exist only in prose?
-- Are objectives, invariants, consequences, decisions, acceptance conditions, or judgment boundaries already represented separately?
+Individually classified 2026-09-17, per item-level drain -- investigation of current system state, not ownership questions:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] How are plans represented today?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Which existing structures already approximate a Plan IR?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Which semantics currently exist only in prose?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Are objectives, invariants, consequences, decisions, acceptance conditions, or judgment boundaries already represented separately?
 
 ### Workflow placement
 
-- Where is the current planner output consumed?
-- What component should own canonical plan construction?
-- Is there already a natural compiler/adapter boundary between planning and builder execution?
-- Would introducing a Plan IR conflict with current planner/supervisor responsibilities?
+- [KIND: BACKLOG] [OPEN — investigation of current system state] Where is the current planner output consumed?
+- [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: this is a genuine, unassigned ownership question for a hypothetical new artifact. SS11's already-covered planner/builder boundary (semantic-planning-hierarchy.md SS6) settles WHICH ROLE owns planning judgment, but not which SOFTWARE COMPONENT would construct the Plan IR artifact itself if built -- no existing skill or service is named anywhere as this artifact's owner.] What component should own canonical plan construction?
+- [KIND: BACKLOG] [OPEN — investigation of current system state] Is there already a natural compiler/adapter boundary between planning and builder execution?
+- [KIND: BACKLOG] [OPEN — investigation of current system state, though the answer is likely no per SS11's already-covered boundary] Would introducing a Plan IR conflict with current planner/supervisor responsibilities?
 
 ### Builder contract
 
-- Which parts of builder input are shared role semantics?
-- Which parts are currently model-specific or prompt-specific?
-- Could model-specific execution profiles be introduced without changing the builder contract?
+Individually classified 2026-09-17 -- investigation of current system state:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Which parts of builder input are shared role semantics?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Which parts are currently model-specific or prompt-specific?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could model-specific execution profiles be introduced without changing the builder contract?
 
 ### Supervisor integration
 
-- Could a supervisor consume the same structural plan?
-- Could findings reference stable plan identifiers?
-- Could acceptance evidence be traced directly to Plan IR nodes?
+Individually classified 2026-09-17 -- investigation of current system state:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could a supervisor consume the same structural plan?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could findings reference stable plan identifiers?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could acceptance evidence be traced directly to Plan IR nodes?
 
 ### Existing schemas and abstractions
 
-- What existing repository schemas should be reused rather than duplicated?
-- Does the repository already have typed concepts corresponding to:
-  - objectives;
-  - invariants;
-  - decisions;
-  - constraints;
-  - implementation changes;
-  - acceptance;
-  - dependencies;
-  - escalation;
-  - judgment authority;
-  - verification?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] What existing repository schemas should be reused rather than duplicated?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Does the repository already have typed concepts corresponding to:
+  objectives, invariants, decisions, constraints, implementation changes,
+  acceptance, dependencies, escalation, judgment authority, or verification?
 
 ### Context and lifecycle integration
 
-- Can the Plan IR participate in current handoff/context lifecycle mechanisms?
-- Would structural references improve successor reconciliation?
-- Are there provenance or checkpoint requirements the design must preserve?
+Individually classified 2026-09-17 -- context-lifecycle.md's own ownership is already settled; these ask compatibility/investigation questions within it, not new ownership:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Can the Plan IR participate in current handoff/context lifecycle mechanisms?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Would structural references improve successor reconciliation?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Are there provenance or checkpoint requirements the design must preserve?
 
 ### Orchestration implications
 
-- Could the Plan IR support the emerging planner → orchestrator → supervisor architecture?
-- Could dependency information support supervisor decomposition or parallel branch construction?
-- Should orchestration consume the canonical Plan IR directly or a separate orchestration projection?
+Individually classified 2026-09-17 -- semantic-planning-hierarchy.md's own ownership is already settled (SS11 above is confirmed covered); these ask compatibility/schema-placement questions within it:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could the Plan IR support the emerging planner → orchestrator → supervisor architecture?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Could dependency information support supervisor decomposition or parallel branch construction?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run, the same "materialize vs. project" pattern classified BACKLOG elsewhere this session] Should orchestration consume the canonical Plan IR directly or a separate orchestration projection?
 
 ### Cost and complexity
 
-- What new infrastructure would actually be required?
-- Which parts could initially remain plain structured text or existing document formats?
-- Can the concept be piloted without committing to a large schema or runtime subsystem?
+Individually classified 2026-09-17 -- estimation/scoping questions:
+
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] What new infrastructure would actually be required?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Which parts could initially remain plain structured text or existing document formats?
+- [KIND: BACKLOG] [OPEN — reconnaissance not run] Can the concept be piloted without committing to a large schema or runtime subsystem?
 
 ---
 
