@@ -1321,6 +1321,38 @@ Revisit direct package admission if `@opencode-ai/llm` or
 accepts a versioned vendoring/upstream-maintenance policy with a bounded patch
 surface.
 
+## Relationship to the settled architecture (2026-09-16)
+
+This document remains squarely reconnaissance, not architecture — evaluating
+a third-party OSS dependency (OpenCode) as a candidate implementation for
+ports this document's own "Architecture dependency" line correctly assigns
+to a *different* pending idea, `provider-turn-harness-runtime-and-operator-
+projection.md`. No dimension, mechanism, or substrate needs updating as a
+result of this evaluation itself; its conclusions (best-supported candidate
+is the provider-turn layer, full session runtime not admissible, TUI a
+credible pilot) stand unchanged.
+
+**Flagged, not resolved: the ports document it depends on has not itself
+been absorbed into the now-settled `runtime-realization.md`, despite
+overlapping territory.** A direct check found zero occurrences of
+`ProviderTurnPort`, `HarnessRuntimePort`, or `OperatorProjection` anywhere in
+`app-server/docs/architecture/` or the capstone — `runtime-realization.md`
+independently arrived at its own vocabulary for the same concerns
+(`provider_turn: owner = codex_harness` and `harness_runtime: implementation
+= codex_app_server` as `RoleRealization` fields, §6; the safe-execution-
+boundary and rematerialization sequences, §8-§9) without citing or being
+cross-checked against `provider-turn-harness-runtime-and-operator-
+projection.md` by name. Both pending documents already cross-reference the
+*same* upstream idea (`pre-indexed-capability-resolution-and-frozen-runtime-
+realization.md`, which is `runtime-realization.md`'s own cited source) at
+their own §6, so this is not an isolated coincidence — it looks like a
+genuine, unreconciled sibling-idea gap left over from Thread B's
+decomposition, not something this OpenCode evaluation itself should resolve.
+Reconciling `provider-turn-harness-runtime-and-operator-projection.md`
+against the settled `runtime-realization.md` directly is a separate,
+larger task than this evaluation's own scope — noted here as a pointer for
+whoever next works that document, not undertaken as part of this pass.
+
 Unknown until execution evidence exists:
 
 - real provider cancellation behavior across supported transports;
