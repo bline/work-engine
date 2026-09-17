@@ -10,8 +10,8 @@ Its purpose is to make the emerging concept explicit enough to reason about, tes
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "Corrected 2026-09-17, per review: checked on content grounds, not citation absence. grep-confirmed zero occurrences of 'historical coordinate' or 'Recovery Frontier' anywhere in app-server/docs/architecture -- this document's own vocabulary is not stated by any canonical view's own text. Separately, it is cited by service-plane-and-kernel-domain-boundary.md's own SS10 item 10 as a candidate source for a still-open question there, which is a fact about that document's own residue, not evidence toward this document's own supersession value."
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review (twice now): the check above only established term-absence, which the current standard no longer treats as sufficient for none. This 1639-line document's own architecture content was never close-read against a plausible canonical owner's actual claims -- only SS28's own ledger was close-read (same insufficient-scope finding already applied to residue below). Being cited by service-plane-and-kernel-domain-boundary.md's SS10 item 10 as a candidate source remains a fact about that document's own residue, not evidence toward this document's own supersession value. unknown, not none, until the full document gets an actual semantic comparison."
   residue: unknown
   residue_ledger: "SS28 'Open Architectural Questions' (25 items) tagged by kind: 15 RESIDUE, 10 BACKLOG. All 25 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: unknown

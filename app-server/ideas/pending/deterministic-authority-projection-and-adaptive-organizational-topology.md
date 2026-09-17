@@ -14,12 +14,13 @@ This document is the one that evolves going forward; the source material does no
 
 ```yaml
 idea_status:
-  architectural_supersession: partial
+  architectural_supersession: unknown
   superseded_by:
     - view: app-server/docs/architecture/organizational-compilation.md
       scope: "Parts 1, 3, 5.2, 6-9 (organizational-realization thesis, independence-driven vantage separation, transition-fencing consumption)"
     - view: app-server/docs/architecture/authority-and-ownership.md
       scope: "Parts 1, 6, 8-9 (authority-projection formula, participation modes, delegation modes, invalidation-never-mints-authority)"
+  architectural_supersession_note: "Corrected 2026-09-17, per full-supersession recheck using only settled architectural claims (residue/backlog excluded per SS3.1): downgraded from partial to unknown, not upgraded to full. Confirmed-covered: Parts 1, 3, 5.2, 6-9 (organizational-compilation.md) and Parts 1, 6, 8-9 (authority-and-ownership.md). Never checked against any canonical view, in either direction: Part 2 (Roles as Compiled Compositions), Part 4 (Grounding Against the Current Implementation), most of Part 5 (Proposed Architecture -- Observer, Lifecycle, and Topology, beyond the cited 5.2), Part 7 (Transition Coordination), Part 10 (Non-Goals), Part 11 (Relationship to Other Work Engine Ideas), and Part 13 (the 'auto-org' Execution Mode worked synthesis, ~350 lines, the single largest section in the document). 'partial' as previously recorded implicitly claimed these remaining parts were checked and found uncovered; they were not checked at all, which is exactly the unknown case SS3.1 now names (unknown must never be rounded down to a specific partial scope merely because no comparison was attempted). This is independent of Part 12's residue ledger, which tracks open questions, not unchecked claims."
   residue: present
   residue_ledger: "Part 12, KIND: RESIDUE items (22 of 27, after reclassifying item 3 from BACKLOG) — see inline tags. 2026-09-16 audit: 9 answered, 6 confirmed open (items 1, 11, 17, 19, 26, 27), 7 unchecked (partial pass, not exhaustive). Plus one item found outside Part 12 by full-document keyword scan (the document's own closing line: \"Whether Work Engine should actually reach that destination remains open\") -- confirmed open, tagged inline. residue: present from the confirmed-open items."
   backlog: present

@@ -14,6 +14,7 @@ The proposed mechanisms and economic effects need pilot evidence.
 ```yaml
 idea_status:
   architectural_supersession: none
+  architectural_supersession_note: "Checked 2026-09-17, per review: this document's own text explicitly disclaims ownership overlap with already-settled dimensions ('extends the Structural Plan IR family without taking ownership of planning, routing, admission, or context lifecycle') -- its own novel contribution (evidence-calibrated resolution, continuous capability learning) is new, unaccepted, speculative mechanism, not a restatement of something a plausible canonical owner would already state. No canonical view is a plausible owner for content its own source document says does not yet exist anywhere."
   residue: unknown
   residue_ledger: "'Research questions' (12 items) tagged by kind: 2 RESIDUE, 10 BACKLOG. All 12 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: unknown

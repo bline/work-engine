@@ -11,12 +11,13 @@
 
 ```yaml
 idea_status:
-  architectural_supersession: partial
+  architectural_supersession: unknown
   superseded_by:
     - view: app-server/docs/architecture/material-decision-selection.md
       scope: "Material decision surface, decision-set artifact schema, sealing invariant"
     - view: app-server/docs/architecture/implementation-contract-compilation.md
       scope: "Implementation basis, implementation compiler, plan-conformance gate"
+  architectural_supersession_note: "Corrected 2026-09-17, per full-supersession recheck using only settled architectural claims (residue/backlog excluded per SS3.1): downgraded from partial to unknown, not upgraded to full. Confirmed-covered (real content comparison, not term-matching): Material decision surface / decision-set / sealing invariant sections; Implementation basis / implementation compiler / plan-conformance gate sections; 'Relationship to capability resolution's admission boundary' (its own 2026-09-15 ruling is the same three-stage composition runtime-realization.md's own Related Views section already credits to implementation-contract-compilation.md); 'Context lifecycle boundary' (its 'task models do not own context replacement' claim matches context-lifecycle.md SS1's ownership/non-ownership lists at the conceptual level). Never checked against any canonical view: Identity and state, Related pending representation hypothesis, Candidate and consequence, Problem, Proposed workflow, Relationship among claims/decisions/plans, Invariants, Boundary, Acceptance consequence -- roughly half the document's sections. Stage 0-6 (the pilot track) and Track stop conditions/Initial success criteria are backlog, correctly excluded from this test rather than counted against it. 'partial' as previously recorded checked only 2 of ~11 claim-bearing section groups; the rest were never compared in either direction, which is the unknown case, not a confirmed remainder."
   residue: none
   residue_note: "The 'Uncertainty and evidence needs' list (9 items) is not unowned architectural residue -- every item is an empirical/measurement target the Stage 0-6 pilot track (below) is itself designed to answer (e.g. 'whether plan-conformance review costs less than Sol implementation work it displaces' is exactly Stage 5's comparative pilot matrix). Distinguished from residue: these are pilot questions, not undecided architecture."
   backlog: present

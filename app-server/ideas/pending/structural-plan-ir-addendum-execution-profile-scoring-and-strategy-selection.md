@@ -9,6 +9,7 @@ This addendum does not establish a permanent task taxonomy, scoring formula, mod
 ```yaml
 idea_status:
   architectural_supersession: none
+  architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed (not term-absence alone): searched runtime-realization.md, semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-profile-scoring, strategy-selection, or task-taxonomy concept under any name -- none of these architecture-ownership-level views operate at the technical scoring-schema detail this addendum proposes. Genuinely none, not unknown, since the document itself was fully close-read (241 lines) and the plausible-owner check was real, not skipped."
   residue: none
   backlog: present
   backlog_ledger: "'Pilot use' (SS190) describes data to collect during the SAME first Plan IR pilot structural-plan-ir-for-capability-aware-multi-model-execution.md SS20 already covers -- not an independent staged plan. Inherits that document's [PLAN: OPEN] finding (zero real fixtures or campaigns found) rather than a separate PLAN tag here."
@@ -209,7 +210,7 @@ Historical execution evidence can then associate combinations of execution profi
 
 ### Pilot use
 
-The first Plan IR pilot should record the candidate execution-profile dimensions but should not use them as an automatic routing gate.
+**[PLAN: OPEN — inherits structural-plan-ir-for-capability-aware-multi-model-execution.md SS20's own confirmed-open finding (zero real fixtures, comparisons, or campaigns found anywhere); this is the same pilot, not an independent plan of this addendum's own.]** The first Plan IR pilot should record the candidate execution-profile dimensions but should not use them as an automatic routing gate.
 
 For each experimental slice, record:
 

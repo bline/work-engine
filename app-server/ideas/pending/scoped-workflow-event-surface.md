@@ -11,8 +11,8 @@ or make telemetry or an execution provider authoritative for workflow state.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "Checked on content grounds 2026-09-17: grep-confirmed zero occurrences of 'scoped workflow event' or 'provider-neutral event vocabulary' anywhere in app-server/docs/architecture -- this document's own proposed surface is not stated by any canonical view's own text."
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review (twice now): the check above only established term-absence, which the current standard no longer treats as sufficient for none. This 221-line document's own architecture content was never close-read against a plausible canonical owner's actual claims (only the open-question ledger, SS16 above, was close-read) -- the same insufficient-scope finding already applied to residue below. unknown, not none, until that close read happens."
   residue: unknown
   residue_ledger: "'Questions for later intake' (8 items) tagged by kind: 5 RESIDUE, 3 BACKLOG. All 8 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: unknown

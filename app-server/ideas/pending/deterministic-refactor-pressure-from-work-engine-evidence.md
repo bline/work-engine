@@ -16,8 +16,8 @@ The proposed mechanism does **not** ask a builder whether code is ugly, complex,
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "Corrected 2026-09-17, per review: checked on content grounds, not citation absence. grep-confirmed zero occurrences of 'Refactor Pressure', 'Scope Spill', or 'Historical Recurrence' anywhere in app-server/docs/architecture -- this document's specific pressure-dimension vocabulary (A/S/R/V/H) is not stated by any canonical view's own text, not merely uncited by one."
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review (twice now): the 2026-09-17 fix above still only established term-absence for this document's specific vocabulary, which the current standard no longer treats as sufficient for none. SS2-14 (the bulk of the 710-line document, describing the actual pressure dimensions and mechanism) were never close-read against any plausible canonical owner's actual claims -- the same insufficient-scope finding already applied to residue below. unknown, not none, until SS2-14 get an actual semantic comparison rather than a vocabulary grep."
   residue: unknown
   residue_note: "Corrected 2026-09-17, per review: SS1.1's own explicit ownership boundary ('physical observations,' not semantics/architecture/outcomes/policy) is real, checked evidence, but SS2-14 (the bulk of the 710-line document, describing the actual pressure dimensions and mechanism) were not close-read this pass -- a keyword-scan-plus-one-section check is not sufficient scope to support the universal negative 'no residue exists anywhere in this document.' residue: unknown, not none."
   backlog: present

@@ -11,10 +11,11 @@ implementation.
 
 ```yaml
 idea_status:
-  architectural_supersession: partial
+  architectural_supersession: full
   superseded_by:
     - view: app-server/docs/architecture/runtime-realization.md
-      scope: "SS1-11 nearly verbatim (distinct authoritative inputs, capability inventory, resolution/admission, materialized realization, invalidation, rematerialization, operator policy overlay, safe execution boundaries, realization identity); SS12 fenced active-binding added 2026-09-16"
+      scope: "SS1-11 nearly verbatim (distinct authoritative inputs, capability inventory, resolution/admission, materialized realization, invalidation, rematerialization, operator policy overlay, safe execution boundaries, realization identity); SS12 fenced active-binding added 2026-09-16; SS13 (relationship to the operator UI) is the same claim as SS8/canonical SS11 illustrated with a mockup -- canonical SS11's closing sentence ('must not directly mutate the active adapter, provider thread, runtime session, or realization') is near-verbatim identical to this document's own SS13 closing sentence. SS14 (Benefits) and SS15 (Non-goals) restate already-covered content rhetorically and add no new claim."
+  architectural_supersession_note: "Corrected 2026-09-17, per full-supersession recheck using only settled architectural claims, residue/backlog excluded from this test per SS2/SS3.1: every claim-bearing section (SS1-15) is now checked against runtime-realization.md's actual text and found covered, including SS13 (not previously credited). SS16's open-question ledger is the only remaining section, and by construction is not itself a claim this document asserts -- confirmed for each of its 3 confirmed-OPEN items (3, 6, 13): SS9's own text gives only the general drain/stale/admit shape, not per-dependency conditions (item 3); SS1 names policy-change categories without specifying which owners may publish each (item 6); no section anywhere addresses pin-failure behavior (item 13) -- in each case the idea document's own text does not make the claim the residue item asks about, so there is no unstated claim for canonical architecture to fail to cover. full is therefore warranted despite residue: present and backlog: present below, which track separately whether this document's own open questions and operative gaps are resolved -- a materially different claim from whether its architecture is now stated elsewhere (SS3.1: 'independently of residue/backlog')."
   residue: present
   residue_ledger: "SS16, KIND: RESIDUE items (11 of 14, after reclassifying items 9 and 11 from BACKLOG) -- see inline tags. 2026-09-16 audit: 4 answered, 3 confirmed open (items 3, 6, 13 -> residue: present), 4 unchecked (partial pass, not exhaustive)."
   backlog: present

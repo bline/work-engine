@@ -14,7 +14,7 @@ idea_status:
   architectural_supersession: none
   architectural_supersession_note: "The 2026-09-16 canonical-view test below found each of Candidates A/B/C maps cleanly to existing mechanisms (Transition Fencing, Authority-Preserving Intent Projection, Authority Projection SS8) but nothing has been absorbed into any canonical view -- all three remain proposed, not accepted."
   residue: present
-  residue_ledger: "Candidate A's 'Questions for proposal formation' (SS168-192, un-numbered) include the exact-invariant question this session's own reconciliation flagged as a genuine extension to mechanisms/transition-fencing-and-leases.md not yet decided (whether the new_context actuator can be admitted only under an exact Work Engine lease) -- KIND: RESIDUE, OPEN, not independently re-verified item-by-item this pass. Candidates B and C were not re-audited as a formal ledger this pass; their own bullet lists were not individually tagged."
+  residue_ledger: "Candidate A's 'Questions for proposal formation' (SS168-192, un-numbered) include the exact-invariant question this session's own reconciliation flagged as a genuine extension to mechanisms/transition-fencing-and-leases.md not yet decided (whether the new_context actuator can be admitted only under an exact Work Engine lease), now tagged inline [KIND: RESIDUE] [OPEN] (corrected 2026-09-17 -- previously only described here, not tagged in the document body, which the deterministic validator correctly flagged as unsupported). Candidates B and C were not re-audited as a formal ledger this pass; their own bullet lists were not individually tagged."
   backlog: unknown
   backlog_note: "Corrected 2026-09-17, per review: confirmed no dedicated staged-plan section in any of Candidates A/B/C (each is a proposal-formation direction, not an operative plan with named stages) -- but Candidates B and C's own bullet lists were never individually classified for BACKLOG-kind items, the same way Candidate A's bullet list turned out to hide a RESIDUE-kind item. Absence of a staged-plan section rules out one source of backlog, not all of them. backlog: unknown, not none."
   audit_scope:
@@ -196,7 +196,7 @@ Questions for proposal formation include:
 
 - How can the host distinguish a Work Engine-leased retirement request from a
   provider-originated emergency reminder?
-- Can the provider-side `new_context` actuator be admitted only under an exact
+- **[KIND: RESIDUE] [OPEN — this session's own reconciliation flagged this as a genuine extension to mechanisms/transition-fencing-and-leases.md not yet decided.]** Can the provider-side `new_context` actuator be admitted only under an exact
   Work Engine lease, or is it necessarily available throughout the process?
 - What durable state can still be captured if an emergency arrives during an
   active domain turn?

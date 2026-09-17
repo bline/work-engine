@@ -16,7 +16,8 @@ and its relationship to
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review: previously none with no supporting note -- neither term-grepped nor semantically compared. This is a research note interpreting external prior-art systems for Work Engine, not itself asserting settled architecture, so much of it plausibly has no canonical owner at all; but its 5 unchecked RESIDUE-kind items and 6 unchecked BACKLOG-kind items were never compared against canonical-view text this pass (only kind-classified), so whether any 'Work Engine interpretation' among them duplicates or contradicts settled architecture is genuinely unknown, not confirmed absent."
   residue: unknown
   residue_ledger: "'Unresolved questions' (11 items) tagged by kind: 5 RESIDUE, 6 BACKLOG. All 11 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
   backlog: unknown

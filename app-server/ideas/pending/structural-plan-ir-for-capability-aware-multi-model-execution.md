@@ -6,7 +6,8 @@ Design hypothesis for repository validation.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review: this proposes a specific, detailed structural-representation schema (Plan IR node shape, loss-aware executor projections, capability compensation) that no canonical architecture view operates at this level of technical detail to begin with (checked implementation-contract-compilation.md and material-decision-selection.md directly: neither mentions Plan IR, a structural representation, or capability compensation by any name). That absence is real evidence for this document's own claims specifically, but SS1-16 (the bulk of the 1003-line proposal) were never close-read against those views section by section -- only headers and the already-checked SS17-20 were examined. Given the same insufficient-scope concern already applied to residue below, none would overstate confidence; unknown is the honest value pending an actual close read of SS1-16."
   residue: unknown
   residue_note: "Corrected 2026-09-17, per review: SS17 (Risks) and SS19 (Suggested Validation Outcome A/B/C) were checked and are the document's own risk/outcome framing, not an open-question ledger -- but this is a 1003-line document and SS1-16 (the bulk of the architecture proposal) were not close-read this pass, only headers checked. Absence of a formal ledger in the sections examined is not sufficient scope to support the universal negative 'no residue exists anywhere.' residue: unknown, not none."
   backlog: present

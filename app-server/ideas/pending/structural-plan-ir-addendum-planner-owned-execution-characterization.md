@@ -3,6 +3,7 @@
 ```yaml
 idea_status:
   architectural_supersession: none
+  architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed: searched semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-characterization or planner-owned-classification concept under any name -- none state it. Genuinely none, not unknown, since this 85-line document was fully close-read and the plausible-owner check was real."
   residue: present
   residue_ledger: "Corrected 2026-09-17, per review: a free-form live architectural question found in prose (outside any formal ledger) -- whether a separate execution-characterization classification role should ever be introduced, explicitly conditioned on future pilot evidence not yet gathered. Tagged inline [KIND: RESIDUE] [OPEN]."
   backlog: none

@@ -17,6 +17,7 @@ a Candidate Trajectory primitive has been proposed, not execution findings.
 ```yaml
 idea_status:
   architectural_supersession: none
+  architectural_supersession_note: "Checked 2026-09-17, per review: no plausible canonical owner exists to compare against -- this is an editorial amendment sheet proposing changes to other pending idea documents' own text; it asserts no architecture of its own for a canonical view to state or fail to state."
   residue: unknown
   residue_note: "Corrected 2026-09-17, per review: a keyword-scan-only pass on a 744+ line document is not sufficient scope to support the universal negative 'no residue exists.' residue: unknown, not none, until a full close-read or a broader targeted check is done."
   backlog: present

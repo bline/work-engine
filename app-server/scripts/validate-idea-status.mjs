@@ -30,6 +30,15 @@ function findYamlBlocks(text) {
   return blocks;
 }
 
+// KIND/PLAN evidence must come from the document's own body -- a status block's prose
+// (residue_ledger, backlog_note, architectural_supersession_note, ...) describing or
+// quoting a tag is not itself the tag, and must not let a document validate its own
+// claim by restating it inside the very field that claim is supposed to be evidence for.
+// Blanking (not deleting) the yaml blocks keeps every other character offset unchanged.
+function stripYamlBlocks(text) {
+  return text.replace(/```yaml\n[\s\S]*?\n```/g, (block) => block.replace(/[^\n]/g, " "));
+}
+
 // Finds every "KIND: <kind>" tag (bracketed `[KIND: X] [DISPOSITION ...]` or prose
 // `KIND: X, DISPOSITION`) and returns the disposition word immediately attached to it.
 function findKindDispositions(text, kind) {
@@ -81,6 +90,7 @@ function scopeDeclaresPlanCoverage(auditScope) {
 function validateDocument(relativePath, text) {
   const errors = [];
   const infos = [];
+  const bodyText = stripYamlBlocks(text);
 
   const statusBlocks = [];
   const provenanceBlocks = [];
@@ -146,9 +156,9 @@ function validateDocument(relativePath, text) {
   // carry the fuller staged-plan set including ACTIVE/COMPLETED/SUPERSEDED (SS4.3). Only
   // PLAN's OPEN/PARTIAL/ACTIVE feed the backlog axis (SS4.3); PLAN tags never feed residue
   // -- a staged plan is never itself an architectural-ownership question.
-  const residueDispositions = findKindDispositions(text, "RESIDUE");
-  const backlogDispositions = findKindDispositions(text, "BACKLOG");
-  const planDispositions = findPlanDispositions(text);
+  const residueDispositions = findKindDispositions(bodyText, "RESIDUE");
+  const backlogDispositions = findKindDispositions(bodyText, "BACKLOG");
+  const planDispositions = findPlanDispositions(bodyText);
 
   if (residue === "present" && !residueDispositions.includes("OPEN")) {
     errors.push("residue: present has no [KIND: RESIDUE] ... OPEN tag anywhere in the document to support it");
@@ -174,9 +184,17 @@ function validateDocument(relativePath, text) {
     errors.push("backlog: none contradicts a [KIND: BACKLOG] ... OPEN tag or [PLAN: OPEN/PARTIAL] tag found in the document");
   }
 
-  // --- Cross-field: architectural_supersession: unknown ------------------------------
-  if (supersession === "unknown" && completeness !== "partial") {
-    errors.push("architectural_supersession: unknown requires audit_scope_completeness: partial (a semantic-coverage check that was not completed cannot be a completed audit)");
+  // --- Cross-field: architectural_supersession requires recorded evidence -----------
+  // audit_scope_completeness tracks ledger/plan-item coverage (SS5) -- a categorically
+  // different question from whether canonical views were actually read for semantic
+  // coverage of this document's claims (SS3.1). Coupling supersession: unknown to
+  // completeness: partial conflated those two independent checks; removed. The
+  // mechanical proxy for "semantic coverage was actually checked" is that the check's
+  // reasoning was recorded, not merely that a value was asserted -- so every value on
+  // this axis requires a non-empty architectural_supersession_note explaining what was
+  // compared against what.
+  if (!isNonEmptyString(status.architectural_supersession_note)) {
+    errors.push(`architectural_supersession: ${JSON.stringify(supersession)} requires a non-empty architectural_supersession_note recording what semantic-coverage check was performed (or, for unknown, what was not)`);
   }
 
   // --- Cross-field: audit_scope_completeness is scope-relative (SS5.2), not global --

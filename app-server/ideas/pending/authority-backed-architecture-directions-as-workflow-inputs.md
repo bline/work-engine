@@ -11,8 +11,8 @@ implementation, or designate an architecture decision owner.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
-  architectural_supersession_note: "Corrected 2026-09-17, per review: checked on content grounds, not citation absence. grep-confirmed zero occurrences of 'ArchitectureDirection' or 'ArchitectureAdoptionState' anywhere in app-server/docs/architecture -- this document's own artifact vocabulary is not stated by any canonical view's own text. Separately reconciled against deterministic-authority-projection-and-adaptive-organizational-topology.md (Wave 2, 2026-09-15, 'genuinely independent, nothing further to reconcile'), which is a sibling-idea fact, not evidence toward this document's own supersession value."
+  architectural_supersession: unknown
+  architectural_supersession_note: "Corrected 2026-09-17, per review (twice now): the 2026-09-17 fix above still only established term-absence (a grep for this document's own artifact names), which the current standard no longer treats as sufficient for none -- semantic coverage requires actually reading what a plausible canonical owner claims. authority-and-ownership.md and deterministic-authority-projection-and-adaptive-organizational-topology.md's own now-partially-covered participation/delegation-mode content are plausible owners for this document's SS1-14 architecture content, given the shared subject matter (authority-backed direction, workflow input), but SS1-14 were never close-read against them this pass (see audit_scope_completeness_note below, already admitted). unknown, not none, until that close read happens."
   residue: unknown
   residue_ledger: "SS18 'Questions for proposal formation' (16 items) tagged by kind: 12 RESIDUE, 4 BACKLOG. All 16 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
   backlog: present

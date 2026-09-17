@@ -59,12 +59,16 @@ unknown
     No canonical-view semantic-coverage check was completed for at
     least one of this document's architectural claims — only a
     term-absence check (or no check at all), which cannot rule
-    coverage in or out. Requires audit_scope_completeness: partial;
-    must never be rounded up to a specific supersession scope or down
-    to none merely because no matching vocabulary was found.
+    coverage in or out. Must never be rounded up to a specific
+    supersession scope or down to none merely because no matching
+    vocabulary was found.
 ```
 
 `partial` and `full` must name the canonical view(s) and, for `partial`, exactly which sections are covered — a bare "superseded by X" with no scope is not enough to prevent a reader from either over- or under-trusting the rest of the document. Superseded sections should carry a short note pointing to the canonical view rather than being deleted — the idea document is not being rewritten, only labeled. `full` is a claim about the *whole* document, so it must be re-checked independently of whatever prompted a `partial` finding — a document can accumulate several `partial` scope entries over separate audit passes while never actually being re-examined for whether the *remaining* sections have, in the meantime, also been covered elsewhere; `full` requires that check to have actually been done, not merely inferred from an accumulating `superseded_by` list.
+
+**This axis is independent of residue and backlog — neither may be used as evidence for or against `full`.** An open residue item is, by construction, a question the document itself has not answered; it is not a *claim* the document makes, so canonical architecture cannot be faulted for failing to state it, and its being open says nothing about whether the document's actual claims are covered. Likewise a backlog item is operative content ("something needs to be built"), not an architectural claim a canonical view would ever restate. A document can therefore be `architectural_supersession: full` while still carrying `residue: present` and `backlog: present` — these track whether the document's own open questions and operative gaps are resolved, a materially different question from whether its architecture is now stated elsewhere. Conversely, a residue or backlog item that turns out to reveal an actual unstated claim (not merely an acknowledged open question) is real evidence against `full` or `none` — the test is whether the specific content is a claim or a question, never which axis happened to surface it.
+
+**Every value on this axis requires a recorded `architectural_supersession_note`** explaining what was actually compared against what (or, for `unknown`, what was not) — a value with no note is indistinguishable from one nobody checked. `audit_scope_completeness` (§5) is a different, narrower question — whether every ledger item and staged-plan section named in the declared `audit_scope` has a checked disposition — and must not be used as a proxy for whether semantic-coverage checking happened on this axis; a document can be `audit_scope_completeness: complete` (every ledger item resolved) while `architectural_supersession: unknown` (canonical views were never actually read for this document's claims), and the reverse.
 
 ### 3.2 Residue
 
@@ -309,13 +313,16 @@ A document not yet audited under this grammar carries no `idea_status` block —
 - exactly one `idea_status` and one `idea_provenance` block per document (a document with neither is reported separately as `UNAUDITED`, per §7 — not an error);
 - only the enum values in §3/§6, including `architectural_supersession: unknown`;
 - `architectural_supersession: partial`/`full` requires a non-empty `superseded_by` list, each entry naming a `view` (`scope` also required when `partial`);
-- `architectural_supersession: unknown` requires `audit_scope_completeness: partial`;
-- `residue: present` requires a `[KIND: RESIDUE] ... [OPEN ...]` tag (bracketed or the prose `KIND: RESIDUE, OPEN` form) actually present in the document — never merely asserted by the axis value; `residue: none` is flagged as contradicted if such a tag exists;
-- `backlog: present` requires either a `[KIND: BACKLOG] ... [OPEN ...]` tag, or a `[PLAN: OPEN ...]`/`[PLAN: PARTIAL ...]` tag — `PLAN` tags feed `backlog` only, never `residue` (SS4.3, only a staged plan's own disposition sets backlog, and a plan is never itself an ownership question); `backlog: none` is flagged as contradicted if either exists;
+- `architectural_supersession` (every value: `none`/`partial`/`full`/`unknown`) requires a non-empty `architectural_supersession_note` recording what was actually compared against what — a value with no note is indistinguishable from one nobody checked (§3.1);
+- **KIND/PLAN evidence must come from the document's own body, never from inside its `idea_status`/`idea_provenance` YAML blocks.** The validator blanks both blocks before scanning for tags, so a `residue_ledger` or `backlog_note` that merely *describes* or *quotes* a `[KIND: ...]`/`[PLAN: ...]` tag ("...tagged inline as `[KIND: BACKLOG] [OPEN]`") can no longer satisfy the axis it is describing — a status block must not be able to validate its own claim by restating it inside the very field that claim is supposed to be evidenced by. The tag has to actually be placed at the cited location in the body;
+- `residue: present` requires a `[KIND: RESIDUE] ... [OPEN ...]` tag (bracketed or the prose `KIND: RESIDUE, OPEN` form) actually present in the document body — never merely asserted by the axis value or described in the status block; `residue: none` is flagged as contradicted if such a tag exists;
+- `backlog: present` requires either a `[KIND: BACKLOG] ... [OPEN ...]` tag, or a `[PLAN: OPEN ...]`/`[PLAN: PARTIAL ...]` tag, in the document body — `PLAN` tags feed `backlog` only, never `residue` (SS4.3, only a staged plan's own disposition sets backlog, and a plan is never itself an ownership question); `backlog: none` is flagged as contradicted if either exists;
 - `backlog: active` requires a `[PLAN: ACTIVE ...]` tag;
-- `residue`/`backlog: unknown` requires `audit_scope_completeness: partial`;
+- `residue`/`backlog: unknown` requires `audit_scope_completeness: partial` (this coupling is specific to residue/backlog, whose `unknown` derivation SS3.2/3.3 define directly in terms of unchecked ledger/plan items — it does not apply to `architectural_supersession`, whose `unknown` is a semantic-coverage question §5's scope-completeness machinery does not track at all; see §3.1);
 - `audit_scope_completeness` is checked **scope-relatively** (SS5.2), not against the whole document: a document is `complete` only if every source its own declared `audit_scope` actually names has no `UNCHECKED` item — a `[PLAN: UNCHECKED]` tag does not count against `complete` unless `audit_scope` declares `staged-plan-section` (or a full-document `keyword-scan`, which by definition would have found it too), and symmetrically for ledger `[KIND: ...] [UNCHECKED ...]` tags against `open-question-ledger`. The validator separately flags it as an error, independent of the `complete`/`partial` value, when a document carries ledger or plan tags of a kind its own `audit_scope` never declared at all — that is silence misrepresented as a checked scope, the same failure SS5.1 names for the scope declaration itself;
 - and it flags (informationally, not as an error) any `architectural_supersession: full` + `residue: none` + `backlog: none` combination as a retirement-candidate query per §9 below.
+
+`app-server/tests/validate-idea-status.test.mjs` carries the regression suite, including the exact circular-evidence case above: a document asserting `residue: present` with only `residue_ledger: "KIND: RESIDUE, OPEN"` in its status block, and no tag anywhere in its body, must fail validation.
 
 It also computes exact per-axis corpus counts — run it (`node app-server/scripts/validate-idea-status.mjs`) instead of maintaining summary counts by hand.
 

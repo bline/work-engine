@@ -14,10 +14,11 @@ The central change is:
 
 ```yaml
 idea_status:
-  architectural_supersession: partial
+  architectural_supersession: full
   superseded_by:
     - view: app-server/docs/architecture/semantic-planning-hierarchy.md
-      scope: "Preplanner/Orchestrator/Branch Planner ownership contracts (Objective/Owns/Does-not-own sections); the routing.vs.admission and decision-gated.vs.hierarchical-orchestration rulings"
+      scope: "Preplanner/Orchestrator/Branch Planner ownership contracts (Objective/Owns/Does-not-own sections); the routing.vs.admission and decision-gated.vs.hierarchical-orchestration rulings; SS5 ('The Supervisor realizes an accepted branch plan') covers this document's own 4th role block ('7. Supervisor' -- branch-local campaign state, slice selection, builder lifecycle, etc.) at the same conceptual level, not verbatim vocabulary; the 'Relationship to decision-gated compilation's sealed decision set' ruling is independently confirmed cited in semantic-planning-hierarchy.md's own Source and Status section as a real, dated 2026-09-15 ruling, not merely asserted here."
+  architectural_supersession_note: "Corrected 2026-09-17, per full-supersession recheck using only settled architectural claims (residue/backlog excluded per SS3.1): every claim-bearing section is now checked. Previously credited only 3 of 4 role blocks; the Supervisor block (SS'7. Supervisor') was unchecked and is now confirmed covered by semantic-planning-hierarchy.md SS5, matched at the conceptual-authority level (bounded by accepted plan, may not redefine topology, moves conflicts upward) even though the idea document's bullet bertail (slice selection, checkpoint lifecycle, etc.) is not verbatim restated there -- that is exactly the semantic-coverage, not term-matching, test this axis now requires. Sections A-I remain backlog (a staged demonstration plan with no other home) and are correctly excluded from this test rather than counted against it. Motivation (background/problem framing) introduces no claim beyond what the now-fully-checked ownership contracts already state."
   residue: none
   backlog: present
   backlog_description: "Sections A-I (Define the orchestration-plan contract; add preplanner/orchestrator roles; move operator interface upward; bind branch planners to supervisors; demonstrate concurrency, dependency release, topology conflict, integration branch) — a staged migration/demonstration plan with no other home. Canonical views describe ownership contracts, not this rollout sequence. Section disposition: [PLAN: OPEN], tagged inline above SS A -- backlog: present derives from this checked disposition, not from the section's mere presence."

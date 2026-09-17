@@ -8,7 +8,11 @@ priority, or pilot execution.
 
 ```yaml
 idea_status:
-  architectural_supersession: none
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/runtime-realization.md
+      scope: "The abstract provider-neutral runtime-adapter contract this document restates from ideas/runtime-adapter.md ('Runtime adapters answer where and how computation is executing; Work Engine remains the owner of what that computation means') is now stated as settled architecture via ProviderTurnPort/HarnessRuntimePort (SS2-3), the same finding already made for persistent-provider-runtime-managers-for-codex-and-claude.md. NOT superseded: the Claude-specific execution-path analysis (Agent SDK vs. CLI, Pilot 0), and the context-ownership research question (whether Work Engine-owned continuation state measurably improves long-horizon Claude execution) -- neither is stated anywhere in runtime-realization.md or context-lifecycle.md."
+  architectural_supersession_note: "Corrected 2026-09-17, per review: previously none with no note, established by neither grep nor semantic comparison. Real comparison now performed: the abstract boundary this document quotes verbatim from ideas/runtime-adapter.md is content-identical to the already-settled port contract, so none understated it. partial, not full, because the document's own specific contribution (the Claude adapter analysis and the context-ownership question) is not this shared boundary claim and is not stated anywhere canonical."
   residue: present
   residue_ledger: "'Unresolved questions' (4 items) tagged by kind: 1 RESIDUE (capability-negotiation shape, bears on runtime-realization.md SS2-3), 3 BACKLOG (2 pilot-gating investigations, 1 MOOT/redirected). The RESIDUE item is confirmed OPEN."
   backlog: present
