@@ -8,6 +8,27 @@ This document describes an architectural consequence emerging from several Work 
 
 Its purpose is to make the emerging concept explicit enough to reason about, test, and relate to the rest of Work Engine without prematurely turning it into normative product structure.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Confirmed 2026-09-16: no canonical view under app-server/docs/architecture cites this document. It is cited by other pending ideas (e.g. service-plane-and-kernel-domain-boundary.md's own SS10 item 10) as a candidate source for still-open questions, not as an accepted architecture."
+  residue: unknown
+  residue_ledger: "SS28 'Open Architectural Questions' (25 items) tagged by kind: 15 RESIDUE, 10 BACKLOG. All 25 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
+  backlog: unknown
+  backlog_note: "10 KIND: BACKLOG items exist, all UNCHECKED; no confirmed-open item and no dedicated staged-plan section found (no Pilot/Phase/Migration heading anywhere in this 1639-line document)."
+  audit_scope:
+    - open-question-ledger
+    - keyword-scan: "staged-plan section headers only, not full-document TBD/unresolved scan"
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "1639-line document; only SS28's own ledger was close-read this pass, not the full document."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 The central observation is:
 
 > **If the state required for model judgment is externally owned, revisioned, and reconstructable, then a meaningful point in an agent workflow can become a recovery coordinate and a candidate fixture for reproducible experiments.**
@@ -1342,33 +1363,33 @@ the projection omitted.
 
 Several important questions remain unresolved.
 
-1. What exact durable object defines a historical coordinate?
-2. Is a coordinate an explicit artifact or a derived tuple over other revision identities?
-3. Which workflow events are sufficiently meaningful to become reconstructable coordinates?
-4. What minimum state is required for safe role recovery?
-5. What additional state is required for controlled experimentation?
-6. How should claim-relative projection falsifications be attached to projection
+1. [KIND: RESIDUE] [UNCHECKED — authoritative-source-object question] What exact durable object defines a historical coordinate?
+2. [KIND: RESIDUE] [UNCHECKED — representation/placement question] Is a coordinate an explicit artifact or a derived tuple over other revision identities?
+3. [KIND: BACKLOG] [UNCHECKED — investigation/classification task] Which workflow events are sufficiently meaningful to become reconstructable coordinates?
+4. [KIND: RESIDUE] [UNCHECKED — placement among durable states] What minimum state is required for safe role recovery?
+5. [KIND: BACKLOG] [UNCHECKED — research/pilot design detail] What additional state is required for controlled experimentation?
+6. [KIND: RESIDUE] [UNCHECKED — bears on evidence-and-claims.md's own placement territory, not independently cross-checked this pass] How should claim-relative projection falsifications be attached to projection
    revisions and made available to later admission decisions?
-7. Which context elements must be materialized versus referenced?
-8. How should unavailable historical capabilities be represented during replay?
-9. How should experiments handle provider features that cannot be reproduced exactly?
-10. How should stochastic variation be separated from model, harness, or projection effects?
-11. What execution branches should be retained permanently?
-12. Which experimental results should become durable model-capability evidence?
-13. How are research branches isolated from production authority and mutation?
-14. How should model capability evidence expire when model versions or harnesses change?
-15. Which historical coordinates are suitable for benchmark reuse?
-16. How should privacy, credential, cost, and external-network authority be handled during replay?
-17. Can a coordinate remain useful when repository state has advanced substantially?
-18. Should historical source state be reconstructed in an isolated worktree or another content-addressed environment?
-19. How are Plan IR revisions and historical repository state bound together?
-20. Which aspects of this architecture are genuinely domain-general versus artifacts of software engineering?
-21. What artifact owns experiment specification, preregistration, and amendment?
-22. How are coordinate candidates sampled without post-outcome selection bias?
-23. Which acceptance or scoring oracle is valid for each admission profile and
+7. [KIND: BACKLOG] [UNCHECKED — implementation/schema detail] Which context elements must be materialized versus referenced?
+8. [KIND: BACKLOG] [UNCHECKED — representation/schema design] How should unavailable historical capabilities be represented during replay?
+9. [KIND: BACKLOG] [UNCHECKED — research-design detail] How should experiments handle provider features that cannot be reproduced exactly?
+10. [KIND: BACKLOG] [UNCHECKED — research-methodology detail] How should stochastic variation be separated from model, harness, or projection effects?
+11. [KIND: RESIDUE] [UNCHECKED — retention/ownership policy question] What execution branches should be retained permanently?
+12. [KIND: RESIDUE] [UNCHECKED — bears on evidence-and-claims.md's own admission territory] Which experimental results should become durable model-capability evidence?
+13. [KIND: RESIDUE] [UNCHECKED — authority-boundary question, named as such] How are research branches isolated from production authority and mutation?
+14. [KIND: RESIDUE] [UNCHECKED — bears on runtime-realization.md's own invalidation territory] How should model capability evidence expire when model versions or harnesses change?
+15. [KIND: BACKLOG] [UNCHECKED — investigation/classification task] Which historical coordinates are suitable for benchmark reuse?
+16. [KIND: RESIDUE] [UNCHECKED — authority question, named as such] How should privacy, credential, cost, and external-network authority be handled during replay?
+17. [KIND: BACKLOG] [UNCHECKED — a definitional/practical question] Can a coordinate remain useful when repository state has advanced substantially?
+18. [KIND: BACKLOG] [UNCHECKED — implementation detail] Should historical source state be reconstructed in an isolated worktree or another content-addressed environment?
+19. [KIND: RESIDUE] [UNCHECKED — placement/binding-ownership question, ties to the Structural Plan IR family] How are Plan IR revisions and historical repository state bound together?
+20. [KIND: RESIDUE] [UNCHECKED — a scope/generality architecture question] Which aspects of this architecture are genuinely domain-general versus artifacts of software engineering?
+21. [KIND: RESIDUE] [UNCHECKED — ownership question, named as such] What artifact owns experiment specification, preregistration, and amendment?
+22. [KIND: BACKLOG] [UNCHECKED — methodology/implementation detail] How are coordinate candidates sampled without post-outcome selection bias?
+23. [KIND: RESIDUE] [UNCHECKED — admission/authority question] Which acceptance or scoring oracle is valid for each admission profile and
     bounded claim?
-24. What effects and messages belong to the recovery frontier after a coordinate?
-25. Which realization owns admissible observation for each required
+24. [KIND: RESIDUE] [UNCHECKED — placement among durable states] What effects and messages belong to the recovery frontier after a coordinate?
+25. [KIND: RESIDUE] [UNCHECKED — explicit ownership question, ties directly to evidence-and-claims.md's production-path-v1 and runtime-realization.md] Which realization owns admissible observation for each required
     production-path claim, and how is `unestablished` routed to its consumer?
 
 ---

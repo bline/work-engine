@@ -9,6 +9,29 @@ compilation, review, and durable product-direction ownership
 direction, amend the roadmap, change instruction precedence, authorize
 implementation, or designate an architecture decision owner.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  architectural_supersession_note: "Reconciled against deterministic-authority-projection-and-adaptive-organizational-topology.md (Wave 2, 2026-09-15, 'genuinely independent, nothing further to reconcile') but not absorbed into any canonical view -- confirmed no citation in app-server/docs/architecture."
+  residue: unknown
+  residue_ledger: "SS18 'Questions for proposal formation' (16 items) tagged by kind: 12 RESIDUE, 4 BACKLOG. All 16 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
+  backlog: present
+  backlog_ledger: "SS15 'Candidate initial vertical' (10-step illustrative plan) tagged [PLAN: OPEN] on direct evidence -- backlog: present derives from this confirmed-open plan disposition, independent of the 4 unchecked BACKLOG-kind ledger items."
+  audit_scope:
+    - open-question-ledger
+    - staged-plan-section
+  audit_scope_completeness: partial
+  audit_scope_completeness_note: "1035-line document; SS1-14 (the architecture content itself) were not close-read section by section this pass, only SS15 and SS18."
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - deterministic-authority-projection-and-adaptive-organizational-topology.md (Wave 2, 2026-09-15)
+```
+
 ## Summary
 
 Work Engine should represent accepted architectural direction as a durable,
@@ -883,6 +906,8 @@ direction revision rather than relying on stronger wording in the idea file.
 
 ## 15. Candidate initial vertical
 
+**[PLAN: OPEN — 2026-09-16. No durable execution evidence found within the surfaces checked: `app-server/src` (grepped for "ArchitectureDirection", "ArchitectureAdoptionState", "architecture-decision record" — zero hits), and Work Engine campaign/worktree state under `/home/bline/.local/state/work-engine` (no workstream named for this plan).]**
+
 A bounded first vertical could:
 
 1. define one closed architecture-direction record and authority-decision
@@ -990,37 +1015,37 @@ This idea does not propose:
 
 ## 18. Questions for proposal formation
 
-1. Who owns architecture decisions, and how is that authority represented and
+1. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] Who owns architecture decisions, and how is that authority represented and
    verified?
-2. Should accepted directions be independent records, a specialized proposal
+2. [KIND: RESIDUE] [UNCHECKED — representation/placement question] Should accepted directions be independent records, a specialized proposal
    decision, ADRs with closed metadata, or another durable object?
-3. Which lifecycle states are required beyond candidate, accepted, superseded,
+3. [KIND: RESIDUE] [UNCHECKED — placement/completeness question] Which lifecycle states are required beyond candidate, accepted, superseded,
    retired, and reopened?
-4. What minimum applicability language is expressive without becoming an
+4. [KIND: BACKLOG] [UNCHECKED — schema/design detail] What minimum applicability language is expressive without becoming an
    unmaintainable policy engine?
-5. Which relationships can be nominated mechanically, and which require an
+5. [KIND: RESIDUE] [UNCHECKED — authority-boundary question, same shape as evidence-anchor.md's own nomination boundary] Which relationships can be nominated mechanically, and which require an
    attributed semantic judgment?
-6. Where should conformance live in intake and proposal packet schemas without
+6. [KIND: RESIDUE] [UNCHECKED — placement/ownership question] Where should conformance live in intake and proposal packet schemas without
    creating a competing owner?
-7. What canonical owner and evidence contract should produce
+7. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] What canonical owner and evidence contract should produce
    `ArchitectureAdoptionState`?
-8. Which transition constraints require architecture-decision authority, roadmap
+8. [KIND: RESIDUE] [UNCHECKED — authority question] Which transition constraints require architecture-decision authority, roadmap
    authority, plan acceptance, or another owner?
-9. Which direction, adoption, or transition changes stale proposals, plans,
+9. [KIND: RESIDUE] [UNCHECKED — authority/consequence question] Which direction, adoption, or transition changes stale proposals, plans,
    reviews, or active campaigns, and who decides the operational consequence?
-10. How should exception requests relate to proposal decisions and implementation
+10. [KIND: RESIDUE] [UNCHECKED — authority-boundary question] How should exception requests relate to proposal decisions and implementation
    authority?
-11. How are conflicting accepted directions detected, adjudicated, and ordered?
-12. Which accepted directions should be projected into role prompts, and which
+11. [KIND: RESIDUE] [UNCHECKED — authority/process question] How are conflicting accepted directions detected, adjudicated, and ordered?
+12. [KIND: BACKLOG] [UNCHECKED — implementation/design detail] Which accepted directions should be projected into role prompts, and which
     should remain on-demand references?
-13. Which invariant classes are continuous, target-state, or transition-specific,
+13. [KIND: RESIDUE] [UNCHECKED — classification-authority question] Which invariant classes are continuous, target-state, or transition-specific,
     and who may change that classification?
-14. When may an enabling detour cross an accepted slice boundary, and what
+14. [KIND: RESIDUE] [UNCHECKED — authority-boundary and placement question] When may an enabling detour cross an accepted slice boundary, and what
     minimum containment, expiry, restoration, and admissibility fields are
     required?
-15. What evidence demonstrates that the direction layer improves design quality
+15. [KIND: BACKLOG] [UNCHECKED — empirical/evaluation question] What evidence demonstrates that the direction layer improves design quality
     without suppressing valuable contrary ideas?
-16. What is the smallest first vertical that can use a real accepted direction
+16. [KIND: BACKLOG] [UNCHECKED — pilot-sequencing question] What is the smallest first vertical that can use a real accepted direction
     without prematurely generalizing a policy language?
 
 ## Core principle

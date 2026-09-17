@@ -11,6 +11,28 @@ structure exposed to an executor. It extends the Structural Plan IR family
 without taking ownership of planning, routing, admission, or context lifecycle.
 The proposed mechanisms and economic effects need pilot evidence.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: unknown
+  residue_ledger: "'Research questions' (12 items) tagged by kind: 2 RESIDUE, 10 BACKLOG. All 12 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
+  backlog: unknown
+  backlog_note: "10 KIND: BACKLOG items exist, all UNCHECKED; no dedicated staged-plan section in this document itself (it references Structural Plan IR's own SS20 pilot and decision-gated compilation's own Stage 5, both belonging to those documents)."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: partial
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - evidence-calibrated-plan-resolution-upstream-amendments.md
+    - structural-plan-ir-for-capability-aware-multi-model-execution.md
+    - proposal-decision-gated-implementation-compilation.md
+```
+
 Related changes are collected in the
 [upstream amendments](evidence-calibrated-plan-resolution-upstream-amendments.md).
 
@@ -356,26 +378,26 @@ establish a measurement schema.
 
 ## Research questions
 
-1. Do dimension-specific profiles outperform scalar presets, and which
+1. [KIND: BACKLOG] [UNCHECKED — empirical question] Do dimension-specific profiles outperform scalar presets, and which
    dimensions have independently measurable effects?
-2. Which capability limits can structural elaboration compensate for?
-3. How much projection work is deterministic, and can a check distinguish
+2. [KIND: BACKLOG] [UNCHECKED — empirical question] Which capability limits can structural elaboration compensate for?
+3. [KIND: BACKLOG] [UNCHECKED — design/schema detail] How much projection work is deterministic, and can a check distinguish
    faithful rendering from new material decisions in structured text?
-4. Does additional decision closure predict accepted-work cost better than
+4. [KIND: BACKLOG] [UNCHECKED — empirical question] Does additional decision closure predict accepted-work cost better than
    projection resolution, and can its cost be estimated before doing it?
-5. How should context burden be measured alongside token use and quality?
-6. How much do review intervals, prefix changes, and realization changes each
+5. [KIND: BACKLOG] [UNCHECKED — measurement design] How should context burden be measured alongside token use and quality?
+6. [KIND: BACKLOG] [UNCHECKED — empirical question] How much do review intervals, prefix changes, and realization changes each
    affect observed cache reuse?
-7. Does stability-based ordering improve reuse without harming comprehension?
-8. How do replay and production cost comparisons differ under declared
+7. [KIND: BACKLOG] [UNCHECKED — empirical question] Does stability-based ordering improve reuse without harming comprehension?
+8. [KIND: BACKLOG] [UNCHECKED — methodology question] How do replay and production cost comparisons differ under declared
    continuation conditions?
-9. Does the candidate separability filter predict successful composition, and
+9. [KIND: BACKLOG] [UNCHECKED — empirical question] Does the candidate separability filter predict successful composition, and
    can failures be attributed across plan, projection, executor, harness,
    verification, and integration?
-10. How stable are capability findings across model and harness revisions?
-11. What evidence would justify consulting a cost predictor during admission,
+10. [KIND: BACKLOG] [UNCHECKED — empirical question] How stable are capability findings across model and harness revisions?
+11. [KIND: RESIDUE] [UNCHECKED — an admission/authority governance question] What evidence would justify consulting a cost predictor during admission,
     and how should exploration allocation be governed?
-12. Which owner should define continuation identity and warmth observations,
+12. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] Which owner should define continuation identity and warmth observations,
     and how should pricing changes affect future use of historical predictions?
 
 These questions leave profile dimensions, renderability checks, partitioning,

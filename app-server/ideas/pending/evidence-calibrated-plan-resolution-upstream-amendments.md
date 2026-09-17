@@ -11,6 +11,27 @@ The entries identify possible changes to existing proposal and architecture
 documents. They are design hypotheses, not execution findings. Target content
 and ownership need confirmation when an amendment is formed or applied.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: none
+  residue_note: "Editorial amendment sheet; proposes changes to other pending ideas' text, never asserts new ownership itself. Confirmed clean 2026-09-16 (see 'Citation currency note' below)."
+  backlog: none
+  backlog_note: "No dedicated staged-plan section; amendments target other documents' own pilot/backlog content, not this document's."
+  audit_scope:
+    - keyword-scan: full_document
+    - close-read: "full document (286 lines)"
+  audit_scope_completeness: complete
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  related_reconciliations:
+    - evidence-calibrated-plan-resolution-and-continuous-capability-learning.md
+```
+
 ## Amendment map
 
 | Target | Candidate changes |

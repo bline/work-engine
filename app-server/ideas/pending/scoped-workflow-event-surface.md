@@ -9,6 +9,24 @@ This document is exploratory. It does not accept a design, amend `DESIGN.md`,
 change the migration roadmap, authorize implementation, select infrastructure,
 or make telemetry or an execution provider authoritative for workflow state.
 
+```yaml
+idea_status:
+  architectural_supersession: none
+  residue: unknown
+  residue_ledger: "'Questions for later intake' (8 items) tagged by kind: 5 RESIDUE, 3 BACKLOG. All 8 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
+  backlog: unknown
+  backlog_note: "3 KIND: BACKLOG items exist, all UNCHECKED; no confirmed-open item and no dedicated staged-plan section."
+  audit_scope:
+    - open-question-ledger
+  audit_scope_completeness: partial
+  status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+```
+
 ## Recognition event
 
 The current App Server operator client can observe the supervisor's thread, but
@@ -171,21 +189,21 @@ Following Codex child threads would be a useful temporary bridge at most.
 
 ## Questions for later intake
 
-1. Does an existing telemetry/event component already own enough transport
+1. [KIND: RESIDUE] [UNCHECKED — ownership/placement question] Does an existing telemetry/event component already own enough transport
    machinery to host the surface without also acquiring semantic ownership?
-2. Which current service transitions can emit owner-authored committed events,
+2. [KIND: BACKLOG] [UNCHECKED — investigation of current system state] Which current service transitions can emit owner-authored committed events,
    and which are presently reconstructable only from logs or telemetry?
-3. What is the minimum provider-neutral event vocabulary that preserves native
+3. [KIND: BACKLOG] [UNCHECKED — schema design] What is the minimum provider-neutral event vocabulary that preserves native
    facts without false equivalence?
-4. Should durable semantic events and high-volume advisory events share one
+4. [KIND: RESIDUE] [UNCHECKED — placement among durable states] Should durable semantic events and high-volume advisory events share one
    physical log, separate logs behind one subscription API, or another shape?
-5. How are authorization and redaction applied when one workflow includes roles
+5. [KIND: RESIDUE] [UNCHECKED — authority/evidence-boundary question] How are authorization and redaction applied when one workflow includes roles
    with different evidence custody or capability ceilings?
-6. Which summaries should be materialized, and which should be generated as
+6. [KIND: RESIDUE] [UNCHECKED — placement among durable states] Which summaries should be materialized, and which should be generated as
    consumer-specific projections from retained events?
-7. How does the event surface bind current realization fencing and context
+7. [KIND: RESIDUE] [UNCHECKED — bears directly on mechanisms/transition-fencing-and-leases.md and context-lifecycle.md ownership boundaries, not independently cross-checked this pass] How does the event surface bind current realization fencing and context
    replacement without making a session or thread authoritative?
-8. What bounded compatibility bridge is worthwhile before the provider-neutral
+8. [KIND: BACKLOG] [UNCHECKED — implementation/sequencing question] What bounded compatibility bridge is worthwhile before the provider-neutral
    surface exists?
 
 ## Non-goals
