@@ -26,18 +26,22 @@ change.
 
 ```yaml
 idea_status:
-  supersession: partial
+  architectural_supersession: partial
   superseded_by:
     - view: app-server/docs/architecture/substrates/evidence-anchor.md
       scope: "SS1-3, 8 (AnchorObservation schema, anchor-kind extensibility, five-state comparator, may_affect nomination boundary)"
-  residue: mixed
-  residue_ledger: "SS10 (7 items) -- see inline tags. 2026-09-16 audit: 0 answered, 7 open. The settled substrate's own text already confirms 2 of these open by name (locator, registry authorship); this pass checked the remaining 5 and found none resolved either."
-  backlog: none
-  provenance:
-    origin: direct_capture
-    supersedes:
-      - "an earlier draft of this idea (\"Architecture-Fact Invalidation and Staleness\"), per this document's own Status line"
+  residue: open
+  residue_ledger: "SS10, KIND: RESIDUE items (5 of 7: items 2, 3, 5, 6, 7) -- see inline tags. 2026-09-16 audit: 0 answered, 5 open among residue-kind items. residue: open, not mixed, because none of the residue-kind items are answered."
+  backlog: present
+  backlog_ledger: "SS10, KIND: BACKLOG items (2 of 7: items 1, 4) -- locator-choice investigation and shadow-mode review-surface sequencing, both open. No dedicated staged-plan section; backlog derived entirely from ledger items."
   status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
+  supersedes:
+    - "an earlier draft of this idea (\"Architecture-Fact Invalidation and Staleness\"), per this document's own Status line"
 ```
 
 ## Summary
@@ -476,31 +480,31 @@ consumer here, not a reason to build a separate architecture-only mechanism.
 
 ## 10. Open questions
 
-1. [OPEN — `substrates/evidence-anchor.md` names this by its own admission: "investigation, not invention (source §2, §10 open question 1)."] What is the right `CodeStructureAnchor` locator against
+1. [KIND: BACKLOG] [OPEN — `substrates/evidence-anchor.md` names this by its own admission: "investigation, not invention (source §2, §10 open question 1)."] What is the right `CodeStructureAnchor` locator against
    codebase-memory-mcp's actual node identity — `qualified_name` alone, or
    something that also survives a rename?
-2. [OPEN — not addressed by the settled substrate, which explicitly does not own consumer-triggering mechanics.] Should `EvidenceAnchorObserver`s be invoked per the same trigger model
+2. [KIND: RESIDUE] [OPEN — not addressed by the settled substrate, which explicitly does not own consumer-triggering mechanics.] Should `EvidenceAnchorObserver`s be invoked per the same trigger model
    `claim-evidence-service.md` §"Impact, refresh, and reliance propagation"
    already prefers (on-demand, when a real consumer needs a decision), or
    does a family of narrow adapters change that calculus?
-3. [OPEN — `substrates/evidence-anchor.md` names this by its own admission: "who authors anchor registry entries, or where that state durably lives — open (source §6, §10 open question 3)."] Who authors the anchor registry entries for a given claim — the claim's
+3. [KIND: RESIDUE] [OPEN — `substrates/evidence-anchor.md` names this by its own admission: "who authors anchor registry entries, or where that state durably lives — open (source §6, §10 open question 3)."] Who authors the anchor registry entries for a given claim — the claim's
    own producer at declaration time, or a separate authorized step? This
    document assumes the claim/fact owns its dependency declarations (§1) but
    does not specify the mechanism, and §6 leaves open whether that state
    lives inside a claim revision or as its own revisioned artifact.
-6. [OPEN — not addressed; closely related to item 3's own open authorship question.] Who authors the mechanically-decidable observation/comparator semantics
+6. [KIND: RESIDUE] [OPEN — not addressed; closely related to item 3's own open authorship question.] Who authors the mechanically-decidable observation/comparator semantics
    an anchor declaration must include (§5) — is that part of the same
    dependency-declaration act as naming the anchor itself, or a separate
    step with its own authority?
-4. [OPEN — an implementation-sequencing question; no shadow-mode review surface has been designed anywhere.] What does shadow-mode output (§6) actually get consumed by, before a real
+4. [KIND: BACKLOG] [OPEN — an implementation-sequencing question; no shadow-mode review surface has been designed anywhere.] What does shadow-mode output (§6) actually get consumed by, before a real
    `nominate_impact` operation exists — is an inert log sufficient evidence
    to justify building the contract change, or does shadow mode need its own
    minimal review surface?
-5. [OPEN — `service-plane-and-kernel-domain-boundary.md`'s own `Coordinate`/`service_state` content is itself one of the capstone's 5 deliberately-deferred architecture items; this question is downstream of that unresolved upstream choice.] Does this boundary's `AnchorObservation` shape want to become part of a
+5. [KIND: RESIDUE] [OPEN — `service-plane-and-kernel-domain-boundary.md`'s own `Coordinate`/`service_state` content is itself one of the capstone's 5 deliberately-deferred architecture items; this question is downstream of that unresolved upstream choice.] Does this boundary's `AnchorObservation` shape want to become part of a
    future `ServiceOperation`/`OwnedOperation` grammar
    (`service-plane-and-kernel-domain-boundary.md` §3) as a standard output
    type, or remain a separate concept?
-7. [OPEN — the settled substrate keeps exactly the five-state comparator unchanged (Key Invariant 2); richness remains undecided, and `ai-accessible-browser-seam-reconciliation.md`'s own seam on this question is itself still `UNRESOLVED (deliberately)`.] Is the five-state comparator (§5: `matches`/`differs`/`unknown`/
+7. [KIND: RESIDUE] [OPEN — the settled substrate keeps exactly the five-state comparator unchanged (Key Invariant 2); richness remains undecided, and `ai-accessible-browser-seam-reconciliation.md`'s own seam on this question is itself still `UNRESOLVED (deliberately)`.] Is the five-state comparator (§5: `matches`/`differs`/`unknown`/
    `unsupported`/`failed`) too flat? Seam reconciliation against
    `AI_ACCESSIBLE_BROWSER_DESIGN.md`'s independently-designed eight-state
    epistemic vocabulary (`ai-accessible-browser-seam-reconciliation.md`)

@@ -11,7 +11,7 @@
 
 ```yaml
 idea_status:
-  supersession: partial
+  architectural_supersession: partial
   superseded_by:
     - view: app-server/docs/architecture/material-decision-selection.md
       scope: "Material decision surface, decision-set artifact schema, sealing invariant"
@@ -21,9 +21,12 @@ idea_status:
   residue_note: "The 'Uncertainty and evidence needs' list (9 items) is not unowned architectural residue -- every item is an empirical/measurement target the Stage 0-6 pilot track (below) is itself designed to answer (e.g. 'whether plan-conformance review costs less than Sol implementation work it displaces' is exactly Stage 5's comparative pilot matrix). Distinguished from residue: these are pilot questions, not undecided architecture."
   backlog: present
   backlog_description: "Stage 0 (baseline/measurement contract) through Stage 6 (adaptive routing), plus track stop conditions and initial success criteria -- a full staged pilot track with no other home. material-decision-selection.md and implementation-contract-compilation.md describe the structure this track would validate, never the rollout sequence itself."
-  provenance:
-    origin: direct_capture
   status_as_of: 2026-09-16
+```
+
+```yaml
+idea_provenance:
+  origin: direct_capture
 ```
 
 This proposal introduces a durable compilation boundary between an accepted
