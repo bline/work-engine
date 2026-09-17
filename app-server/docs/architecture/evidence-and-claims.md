@@ -217,6 +217,8 @@ Constrained to pure projection: a `planning-facts-v1` claim's proposition must t
 
 **Worked example, added 2026-09-16 — composing §6's now-accepted refresh operations with this profile, and Key Invariant 3 with the conflict-escalation path.** Recovered from an untracked draft found sitting directly in `app-server/docs/architecture/` (removed after this integration, per the discipline that nothing lives in this directory unless it is canonical or explicitly subordinate to a canonical view); checked against current content and found consistent, not stale — nothing here was rewritten, only cited and placed.
 
+**Proposed profile behavior, not implementation-authorized architecture.** `planning-facts-v1` itself remains `design: proposed` / `authorization: exploration_only` (below) even though §6's refresh operations are separately accepted. The imperative phrasing below (`emit`, `consume`, `publish`) describes the intended sequence *if this profile is accepted*, not a currently operative admission rule.
+
 ```mermaid
 sequenceDiagram
     participant BP as Branch planner
