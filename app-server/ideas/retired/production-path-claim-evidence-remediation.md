@@ -1,5 +1,20 @@
 # Production-Path Claim Evidence Remediation
 
+## Retired 2026-09-17
+
+Moved out of `ideas/pending/` per the idea-status-grammar.md retirement-candidate
+query (`architectural_supersession: not_applicable`, `residue: none`,
+`backlog: none`). Audited against the four retirement blockers with none
+applying: the formal Work Engine intake pipeline already processed this exact
+document (`ideas/intake/work-engine.idea.production-path-claim-evidence-remediation/`,
+pinned to git blob `4ecad07d756eef4b370295d03af7c9616cebe0c8` at this path) and
+its own `assessment.md` already calls the raw source "provenance"; nothing
+under `planning/`, `proposals/`, or `docs/` references this document's live
+path, only its content by name; and the intake record reads source text via
+an exact `repository_revision`/blob OID, never the live working-tree path, so
+moving this file changes nothing any tooling depends on. No architectural
+content was reopened or re-judged during this move.
+
 ## Status
 
 Raw operator-authored direction captured for idea intake. This file records the
