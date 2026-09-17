@@ -8,17 +8,27 @@
 
 Documents under `app-server/ideas/pending/` are not inside settled architecture — they are its source material, in every state from raw capture to fully-drained provenance. The canonical grammar's axes do not fit them: a pending idea has no "design: accepted" of its own (acceptance belongs to whatever it feeds), and "reconciliation: reconciled" turned out, on inspection, to mean something dangerously weaker than most readers would assume — it means *the canonical view's content was checked against the idea*, not that *the idea has nothing left to say*. Reusing that grammar here would either understate real, still-open content or overstate how settled an idea is merely because something was built from it.
 
-This document defines a separate grammar for exactly this corpus: **three independent status axes**, plus **provenance**, which is metadata rather than a lifecycle status.
+This document defines a separate grammar for exactly this corpus: **three independent status axes**, an **audit-completeness flag**, and **provenance**, which is metadata rather than a lifecycle status.
 
-## 2. The Governing Distinction
+## 2. The Governing Distinctions
 
 > **A canonical view citing an idea as its `owner` is not the same claim as the idea having nothing left to say.**
 
 This session found five idea documents cited as the literal `owner:` field of a canonical view, all marked `reconciliation: reconciled` there. A first pass treated that as evidence the ideas were retirement-ready. A closer check — auditing each idea's own open-question ledger against the *current* text of what it produced — found that **none of the five retire cleanly as whole documents**. Every one has a real split: a core that a canonical view now states better than the idea does, and a remainder that exists nowhere else and would be lost if the file were discarded or waved off as "done."
 
-A second distinction, found while applying the grammar rather than anticipated in its first draft: **that remainder is not one kind of thing.** An open question can be *architectural residue* — a real gap in the 13 dimensions, 5 mechanisms, or 2 substrates, something no owner has decided — or it can be *operative backlog* — a proving vertical, a schema-completion task, an investigation of an existing document's own text, something whose architecture is already settled and only needs doing or checking. A bare `[OPEN]` tag collapses these into one bucket. That is a real loss: a reader deciding what to do next needs to know whether the next step is "someone must decide an architecture question" or "someone must go build or verify something" — those have different owners and different urgency. §5 below requires every live ledger item to carry that distinction.
+> **An open question can be architectural residue or operative backlog, and a bare `[OPEN]` tag hides which.**
 
-The grammar below exists to make both splits explicit instead of forcing a single verdict, or a single kind of open-ness, onto a document that contains more than one.
+Architectural residue is a real gap in the 13 dimensions, 5 mechanisms, or 2 substrates — something no owner has decided. Operative backlog is a proving vertical, a schema-completion task, an investigation of an existing document's own text — something whose architecture is already settled and only needs doing or checking. These have different owners and different urgency; collapsing them into one `[OPEN]` bucket loses that.
+
+> **`UNCHECKED` proves incomplete audit coverage. It proves nothing about whether residue or backlog exists.**
+
+An item that was never re-verified against current architecture is not evidence that its question is still live — it is evidence that nobody looked. Treating unchecked items as if they prove presence (`residue: present` or `backlog: present` merely because unchecked items exist) is the same failure mode this whole grammar exists to catch elsewhere: state getting inflated by absence of a check rather than by a check's actual result. §4 makes this the derivation rule, not a stylistic preference.
+
+> **Kind describes a question's current unresolved-consequence class, not a permanent property of its wording.**
+
+The same textual question can start as an architectural question ("which object should own X?") and, once an authoritative decision answers it, reduce to an implementation or schema question ("how do we represent X in the object that now owns it?") — with no change to the question's own text. Kind tracks what is *currently* unresolved about the question, and must be re-examined, not assumed frozen, at each audit pass. Reclassification is real work, not drift: it requires a cited reason (§4.1).
+
+The grammar below exists to make all three distinctions explicit instead of forcing one verdict, one flavor of open-ness, and one immutable classification onto content that has none of those properties.
 
 ## 3. The Three Status Axes
 
@@ -45,61 +55,129 @@ full
 
 ### 3.2 Residue
 
-> Does this document contain **architectural** open questions or design content that no dimension, mechanism, or substrate owns?
+> Is there *confirmed* architectural residue — an item asking what a dimension, mechanism, or substrate should own or decide, currently open?
 
 ```text
 none
-    Every architectural-kind question this document ever posed is now
-    answered elsewhere or no longer applies. Checked directly, not
-    assumed from architectural_supersession — a document can be
-    `architectural_supersession: full` and still carry `residue: open`
-    if its own question ledger was never re-swept against what got
-    built.
+    Every RESIDUE-kind item (§4) is ANSWERED or MOOT. No confirmed
+    open architectural question remains, and none is unchecked.
 
-mixed
-    The document's ledger contains at least one item tagged
-    residue-kind (§5) whose disposition is answered, and at least one
-    tagged residue-kind whose disposition is open or unchecked.
-    Requires the itemized ledger — see §5.
+present
+    At least one RESIDUE-kind item is confirmed OPEN.
 
-open
-    At least one residue-kind item remains open or unchecked, and none
-    of the ledger's residue-kind items are answered — or the document's
-    own content is itself an active, undecided architectural question
-    surface (a raw capture, an unevaluated hypothesis) rather than a
-    settled design with a separate open-questions appendix.
+unknown
+    No RESIDUE-kind item is confirmed OPEN, but at least one is
+    UNCHECKED. The audit cannot currently rule residue in or out.
 ```
 
-**`residue` is derived only from ledger items tagged residue-kind (§5.1).** Backlog-kind items never move this axis, regardless of their own disposition — a document with twelve open backlog-kind questions and zero open residue-kind questions is `residue: none`, not `residue: mixed`.
+`present` and `unknown` are not the same claim. `present` means a check found a live architectural question. `unknown` means no check was completed — it must never be silently rounded up to `present` or down to `none`. See §4 for the exact derivation.
 
 ### 3.3 Backlog
 
-> Does this document contain operative, non-architectural content — a staged plan, a proving vertical, a schema-completion task, an investigation of another document's text — that no canonical view or other document duplicates?
+> Is there *confirmed* operative backlog — a staged plan, a proving vertical, a schema-completion task, or a BACKLOG-kind ledger item, currently open?
 
 ```text
 none
-    No operative content of this kind, staged or itemized.
+    No dedicated staged-plan section exists, and every BACKLOG-kind
+    ledger item (if any) is ANSWERED or MOOT.
 
 present
-    Operative content exists (name it: a staged-plan section, or
-    ledger items tagged backlog-kind with an open or unchecked
-    disposition) with no other home. Canonical views describe what a
-    dimension owns, never a rollout sequence, a proving vertical, or a
-    verification task — this content is categorically different from
-    architecture and is lost if the idea is discarded.
+    A dedicated staged-plan section exists (migration steps, pilot
+    stages — named), OR at least one BACKLOG-kind ledger item is
+    confirmed OPEN.
 
 active
-    Present, and a live campaign or worktree is currently executing it.
-    Distinguish "someone should do this" from "someone is doing this."
+    present, and a live campaign or worktree is currently executing
+    it. Distinguish "someone should do this" from "someone is doing
+    this."
+
+unknown
+    No dedicated staged-plan section and no confirmed-open BACKLOG-
+    kind item, but at least one BACKLOG-kind item is UNCHECKED.
 ```
 
-**`backlog` is derived from two independent sources, either of which is sufficient on its own:** a dedicated staged-plan section (migration steps, pilot stages — as in `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §A-I or `proposal-decision-gated-implementation-compilation.md`'s Stage 0-6), **or** one or more ledger items tagged backlog-kind (§5.1) whose disposition is open or unchecked. A document can be `backlog: present` from ledger items alone, with no dedicated plan section at all — do not require a staged-plan section before setting this axis.
+A dedicated staged-plan section (e.g. `hierarchical-planning-and-multi-supervisor-orchestration.md`'s §A-I, `proposal-decision-gated-implementation-compilation.md`'s Stage 0-6) sets `present` on its own, independent of any ledger — most documents with this kind of section have no formal ledger at all.
 
-## 4. Provenance (Metadata, Not a Status Axis)
+## 4. Ledgers: Per-Item Kind and Disposition
+
+When a document has a formal open-question ledger, every item gets two independent tags.
+
+### 4.1 Kind (reclassifiable)
+
+```text
+RESIDUE
+    An architectural question: what should a dimension, mechanism, or
+    substrate own or decide? Ownership, authoritative-source-object,
+    placement-among-durable-states, and authority/evidence-boundary
+    questions default to RESIDUE. Feeds the `residue` axis (§3.2).
+
+BACKLOG
+    An operative question: a proving vertical, a schema or
+    representation still to be authored for an already-placed concept,
+    a concrete component's implementation detail, or an investigation
+    of what another document's own text already says. Its architecture
+    is not in question; something needs to be built, chosen, or
+    checked. Feeds the `backlog` axis (§3.3).
+```
+
+**Default to RESIDUE, not BACKLOG, whenever a question turns on ownership, an authoritative source object, placement among durable states, or an authority/evidence boundary — even when its surface wording sounds implementation-flavored.** "Which realization and invalidation evidence belongs in operation receipts, durable lifecycle state, and operator projections?" is not schema detail merely because the nouns are concrete artifacts — it is asking which of three distinct owners holds a given fact, unresolved until an authority places it. Reclassify only when a canonical view has actually collapsed the ownership question into an implementation detail — cite the view and section that did so.
+
+**Kind is not frozen across audit passes.** Re-examine it every time, because an upstream architectural decision can change a question's unresolved-consequence class without the question's own wording changing at all:
+
+```text
+"Which object should own X?"          (RESIDUE)
+        ↓ architecture decides: Runtime Realization owns X
+"How do we represent X in
+ Runtime Realization?"                 (now BACKLOG — same question,
+                                         same wording is possible, but
+                                         the ownership choice it once
+                                         asked for no longer exists)
+```
+
+A reclassification must cite the specific decision, canonical-view section, or prior audit finding that changed the consequence class — `[KIND: BACKLOG, reclassified 2026-09-16 — runtime-realization.md SS4 now settles the ownership question this item originally asked]`. A kind carried forward unchanged needs no such citation; only a change does.
+
+### 4.2 Disposition
+
+```text
+[ANSWERED — <canonical view §, one line of why>]
+[OPEN — no owner found]
+[MOOT — <why the question no longer applies>]
+[UNCHECKED — not verified this pass]
+```
+
+`[UNCHECKED]` must not be used as a substitute for doing the check when time permits; it exists so a partial audit is honestly labeled partial rather than silently rounding unchecked items into `[OPEN]`. **`[UNCHECKED]` never by itself sets `residue: present` or `backlog: present`** — see §3.2/§3.3. An `[UNCHECKED]` item still gets a kind tag; classifying what *sort* of question it is does not require resolving whether it is currently answered, and doing so is not "resolving it for completeness."
+
+### 4.3 Combined tag format
+
+Prepended to each ledger item:
+
+```text
+[KIND: RESIDUE] [OPEN — no owner found]
+[KIND: BACKLOG] [UNCHECKED — not verified this pass]
+[KIND: RESIDUE] [ANSWERED — authority-and-ownership.md SS9, delegation modes]
+[KIND: BACKLOG, reclassified 2026-09-16 — <cited reason>] [OPEN — ...]
+```
+
+## 5. Audit Completeness
+
+A document-level flag, independent of the three status axes, stating whether every ledger item has a checked disposition:
+
+```text
+complete
+    No ledger, or every ledger item carries ANSWERED, OPEN, or MOOT —
+    zero UNCHECKED items remain.
+
+partial
+    At least one ledger item is UNCHECKED.
+```
+
+`audit_completeness: partial` is not a defect to be hidden — it is the honest state of a bounded pass, and `residue`/`backlog` values of `unknown` are exactly what should follow from it rather than a guessed `present` or `none`.
+
+## 6. Provenance (Metadata, Not a Status Axis)
 
 > Where did this document come from, and what does it supersede or get superseded by?
 
-Provenance answers factual questions about origin and lineage. It has no maturity ordering, no "better" or "worse" value, and does not participate in the derivation rules in §3 — it is recorded because architecture archaeology keeps re-deriving it from scratch otherwise, not because it describes where the document sits in a lifecycle.
+Provenance answers factual questions about origin and lineage. It has no maturity ordering, no "better" or "worse" value, and does not participate in the derivation rules in §3-5 — it is recorded because architecture archaeology keeps re-deriving it from scratch otherwise, not because it describes where the document sits in a lifecycle.
 
 ```text
 origin
@@ -122,53 +200,9 @@ related_reconciliations
     already names)
 ```
 
-## 5. Ledgers: Per-Item Kind and Disposition
+## 7. Format
 
-When a document has a formal open-question ledger, every item gets two independent tags: a **kind** (§5.1, permanent — what sort of question this is) and a **disposition** (§5.2, checked per audit pass — where that question currently stands).
-
-### 5.1 Kind
-
-```text
-RESIDUE
-    An architectural question: what should a dimension, mechanism, or
-    substrate own or decide? Answering it changes or completes settled
-    architecture. Feeds the `residue` axis (§3.2).
-
-BACKLOG
-    An operative question: a proving vertical, a schema or
-    representation still to be authored, a concrete component's
-    implementation detail, or an investigation of what another
-    document's own text already says. Its architecture is not in
-    question; something needs to be built, chosen, or checked. Feeds
-    the `backlog` axis (§3.3).
-```
-
-Kind is a property of the *question itself*, not of its current disposition — a RESIDUE question does not become BACKLOG merely because it turns out to be answered, and an item's kind does not change between audit passes unless the question itself is later reworded.
-
-### 5.2 Disposition
-
-```text
-[ANSWERED — <canonical view §, one line of why>]
-[OPEN — no owner found]
-[MOOT — <why the question no longer applies>]
-[UNCHECKED — not verified this pass]
-```
-
-`[UNCHECKED]` must not be used as a substitute for doing the check when time permits; it exists so a partial audit is honestly labeled partial rather than silently rounding unchecked items into `[OPEN]`. **An `[UNCHECKED]` item still gets a kind tag** — classifying what *sort* of question it is does not require resolving whether it is currently answered, and doing so is not "resolving it for completeness."
-
-### 5.3 Combined tag format
-
-Prepended to each ledger item:
-
-```text
-[KIND: RESIDUE] [OPEN — no owner found]
-[KIND: BACKLOG] [UNCHECKED — not verified this pass]
-[KIND: RESIDUE] [ANSWERED — authority-and-ownership.md SS9, delegation modes]
-```
-
-## 6. Format
-
-Every idea document under `app-server/ideas/pending/` that has been through this audit declares two blocks in its own `Status` section — status and provenance kept visibly separate, per §4:
+Every idea document under `app-server/ideas/pending/` that has been through this audit declares two blocks in its own `Status` section — status and provenance kept visibly separate, per §6:
 
 ```yaml
 idea_status:
@@ -178,10 +212,11 @@ idea_status:
       scope: "Parts 1-6, 8 (core thesis)"
     - view: app-server/docs/architecture/authority-and-ownership.md
       scope: "Parts 1-6, 8 (core thesis)"
-  residue: mixed
+  residue: present
   residue_ledger: "Part 12 (27 items) — see inline KIND/disposition tags"
   backlog: present
   backlog_ledger: "Part 12 items tagged KIND: BACKLOG — see inline tags"
+  audit_completeness: partial
   status_as_of: 2026-09-16
 ```
 
@@ -193,9 +228,10 @@ idea_provenance:
 
 A document not yet audited under this grammar carries no `idea_status` block — absence means "not yet run through this process," never "clean." This mirrors the canonical grammar's own discipline: nothing gets an implicit status by omission.
 
-## 7. What This Grammar Does Not Decide
+## 8. What This Grammar Does Not Decide
 
 - It does not decide whether a document's *architecture* is correct — that is exactly what `architectural_supersession` points to, and the canonical view remains the authority on its own content, per `status-grammar.md`.
 - It does not authorize implementation of anything in `backlog: present` — that remains whatever authorization the document's own Authority section already states, unchanged by this grammar.
 - It does not retire a document, delete it, or move it out of `app-server/ideas/pending/`. `architectural_supersession: full` plus `residue: none` plus `backlog: none` is the condition under which a document is a pure historical/provenance artifact going forward — a judgment call for whoever reads that combination, not an automatic file operation this grammar triggers.
-- It does not require every `[UNCHECKED]` item to be resolved before a document can be audited under this grammar. A partial pass, honestly labeled, is a valid outcome — not a reason to guess dispositions merely to leave no `[UNCHECKED]` tags behind.
+- It does not require every `[UNCHECKED]` item to be resolved before a document can be audited under this grammar. A partial pass, honestly labeled `audit_completeness: partial` with `residue`/`backlog: unknown` where that is the honest derivation, is a valid outcome — not a reason to guess dispositions merely to leave no `[UNCHECKED]` tags behind.
+- It does not treat a kind assignment as permanent. A later pass may find that an architectural decision collapsed a RESIDUE item into BACKLOG (or, in principle, the reverse, if a prior decision is itself reopened) — provided the reclassification cites what changed.

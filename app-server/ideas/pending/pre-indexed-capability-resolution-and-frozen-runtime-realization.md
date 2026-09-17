@@ -15,10 +15,11 @@ idea_status:
   superseded_by:
     - view: app-server/docs/architecture/runtime-realization.md
       scope: "SS1-11 nearly verbatim (distinct authoritative inputs, capability inventory, resolution/admission, materialized realization, invalidation, rematerialization, operator policy overlay, safe execution boundaries, realization identity); SS12 fenced active-binding added 2026-09-16"
-  residue: mixed
-  residue_ledger: "SS16, KIND: RESIDUE items (9 of 14) -- see inline tags. 2026-09-16 audit of residue-kind items: 4 answered, 3 open, 2 unchecked (partial pass, not exhaustive)."
+  residue: present
+  residue_ledger: "SS16, KIND: RESIDUE items (11 of 14, after reclassifying items 9 and 11 from BACKLOG) -- see inline tags. 2026-09-16 audit: 4 answered, 3 confirmed open (items 3, 6, 13 -> residue: present), 4 unchecked (partial pass, not exhaustive)."
   backlog: present
-  backlog_ledger: "SS16, KIND: BACKLOG items (5 of 14: items 5, 9-11, 14) -- schema-completion, component-implementation-detail, and proving-vertical questions, all open or unchecked, none answered. No dedicated staged-plan section; backlog derived entirely from ledger items."
+  backlog_ledger: "SS16, KIND: BACKLOG items (3 of 14: items 5, 10, 14) -- schema-completion, component-implementation-detail, and proving-vertical questions. All 3 confirmed open -> backlog: present."
+  audit_completeness: partial
   status_as_of: 2026-09-16
 ```
 
@@ -934,11 +935,11 @@ This idea does not:
    across concurrent realizations?
 8. [KIND: RESIDUE] [ANSWERED — `runtime-realization.md` SS4 names exactly these as N-branch decision-owner judgment inputs ("review independence, evidence strength, continuity loss, latency... none of which the mechanism itself may decide") — confirmed not flattened into one score.] How are reviewer alternatives compared without flattening independence,
    continuity, tool access, latency, evidence strength, and review class?
-9. [KIND: BACKLOG] [UNCHECKED] Which capability observations require probes, authenticated runtime
+9. [KIND: RESIDUE, reclassified 2026-09-16 — which observations require which evidentiary strength determines admission/authority semantics (what counts as trustworthy evidence for a resolution decision), not merely adapter design; no canonical view has placed this] [UNCHECKED] Which capability observations require probes, authenticated runtime
    evidence, expiration, or manual operator attestation?
 10. [KIND: BACKLOG] [OPEN — implementation-level; no canonical view specifies this.] How does the role binding registry reference successor realizations while
     preserving provider-thread and context lineage?
-11. [KIND: BACKLOG] [UNCHECKED] Which realization and invalidation evidence belongs in operation receipts,
+11. [KIND: RESIDUE, reclassified 2026-09-16 — this is ownership placement among three distinct durable-state owners (operation receipts vs. lifecycle state vs. operator projections), not schema detail, until an authority decides where each fact belongs] [UNCHECKED] Which realization and invalidation evidence belongs in operation receipts,
     durable lifecycle state, and operator projections?
 12. [KIND: RESIDUE] [UNCHECKED] What bounded composite mechanisms are legitimately one realization rather
     than hidden future admissions?

@@ -21,6 +21,7 @@ idea_status:
   residue: none
   backlog: present
   backlog_description: "Sections A-I (Define the orchestration-plan contract; add preplanner/orchestrator roles; move operator interface upward; bind branch planners to supervisors; demonstrate concurrency, dependency release, topology conflict, integration branch) — a staged migration/demonstration plan with no other home. Canonical views describe ownership contracts, not this rollout sequence."
+  audit_completeness: complete
   status_as_of: 2026-09-16
 ```
 

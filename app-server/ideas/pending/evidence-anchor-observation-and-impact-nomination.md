@@ -30,10 +30,11 @@ idea_status:
   superseded_by:
     - view: app-server/docs/architecture/substrates/evidence-anchor.md
       scope: "SS1-3, 8 (AnchorObservation schema, anchor-kind extensibility, five-state comparator, may_affect nomination boundary)"
-  residue: open
-  residue_ledger: "SS10, KIND: RESIDUE items (5 of 7: items 2, 3, 5, 6, 7) -- see inline tags. 2026-09-16 audit: 0 answered, 5 open among residue-kind items. residue: open, not mixed, because none of the residue-kind items are answered."
+  residue: present
+  residue_ledger: "SS10, KIND: RESIDUE items (5 of 7: items 2, 3, 5, 6, 7) -- see inline tags. 2026-09-16 audit: all 5 confirmed open, 0 answered, 0 unchecked -> residue: present."
   backlog: present
-  backlog_ledger: "SS10, KIND: BACKLOG items (2 of 7: items 1, 4) -- locator-choice investigation and shadow-mode review-surface sequencing, both open. No dedicated staged-plan section; backlog derived entirely from ledger items."
+  backlog_ledger: "SS10, KIND: BACKLOG items (2 of 7: items 1, 4) -- locator-choice investigation and shadow-mode review-surface sequencing. Both confirmed open, 0 unchecked -> backlog: present."
+  audit_completeness: complete
   status_as_of: 2026-09-16
 ```
 

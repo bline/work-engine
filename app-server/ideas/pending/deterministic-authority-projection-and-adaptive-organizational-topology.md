@@ -20,10 +20,11 @@ idea_status:
       scope: "Parts 1, 3, 5.2, 6-9 (organizational-realization thesis, independence-driven vantage separation, transition-fencing consumption)"
     - view: app-server/docs/architecture/authority-and-ownership.md
       scope: "Parts 1, 6, 8-9 (authority-projection formula, participation modes, delegation modes, invalidation-never-mints-authority)"
-  residue: mixed
-  residue_ledger: "Part 12, KIND: RESIDUE items (21 of 27) — see inline tags. 2026-09-16 audit of residue-kind items: 9 answered, 6 open, 6 unchecked (partial pass, not exhaustive)."
+  residue: present
+  residue_ledger: "Part 12, KIND: RESIDUE items (22 of 27, after reclassifying item 3 from BACKLOG) — see inline tags. 2026-09-16 audit: 9 answered, 6 confirmed open (items 1, 11, 17, 19, 26, 27 -> residue: present), 7 unchecked (partial pass, not exhaustive)."
   backlog: present
-  backlog_ledger: "Part 12, KIND: BACKLOG items (6 of 27: items 3, 20-23, 25) — proving-vertical and existing-document-verification questions, all open or unchecked, none answered. No dedicated staged-plan section; backlog derived entirely from ledger items."
+  backlog_ledger: "Part 12, KIND: BACKLOG items (5 of 27: items 20-23, 25) — proving-vertical and existing-document-verification questions. 3 confirmed open (21, 22, 25 -> backlog: present), 2 unchecked."
+  audit_completeness: partial
   status_as_of: 2026-09-16
 ```
 
@@ -652,7 +653,7 @@ The relationships below record the reconciliation status reached through the 202
 **On authority and vantage:**
 1. [KIND: RESIDUE] [OPEN — the never-mint-authority half is answered (`authority-and-ownership.md` §12, §8's `child_authority ⊆ delegable(parent_authority)`); no specific durable object naming "the ceiling" is identified anywhere] What durable object grants the authority ceiling from which projected role authority is derived, and how is projection prevented from minting authority?
 2. [KIND: RESIDUE] [UNCHECKED — 2026-09-16 pass found no hit for "decision type" in `role-and-contract-structure.md` or `semantic-planning-hierarchy.md`; not conclusively resolved either way] Where are semantic decision types defined — domain-owned contracts, workflow artifacts, plan-IR structures, role contracts, or another object?
-3. [KIND: BACKLOG] [UNCHECKED] Does the existing role manifest already contain sufficient vantage structure, or does this require a new source object?
+3. [KIND: RESIDUE, reclassified 2026-09-16 — this asks which object owns authoritative vantage structure and whether a new source object is architecturally necessary; that is an ownership/source-object question, not implementation detail, unless a canonical view already settles it, which none does] [UNCHECKED] Does the existing role manifest already contain sufficient vantage structure, or does this require a new source object?
 4. [KIND: RESIDUE] [UNCHECKED] Can authority projection change during execution as evidence, context, or role availability changes — and if so, which decisions can move and which are continuity-bound?
 5. [KIND: RESIDUE] [ANSWERED — `authority-and-ownership.md` §9 (Delegation Modes: Non-transferable) plus `runtime-realization.md` §10 (realization identity confirmed distinct from role identity) together] How is genuinely non-transferable semantic authority represented, and does runtime replacement preserve logical-role authority without transferring it?
 6. [KIND: RESIDUE] [ANSWERED — `authority-and-ownership.md` §7 (Participation Modes: observe/recommend/nominate/decide/admit/execute) and §9 (Delegation Modes: non-transferable/delegable/nomination-only/advisory), together] What distinctions are required among delegate, nominate, advise, admit, and execute, concretely?
