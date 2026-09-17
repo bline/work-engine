@@ -15,13 +15,14 @@ operational incident remains documented in
 idea_status:
   architectural_supersession: none
   architectural_supersession_note: "The 2026-09-16 canonical-view reconciliation below found a clean fit against runtime-realization.md, authority-and-ownership.md, and evidence-and-claims.md, but nothing has been literally absorbed into any canonical view -- this idea remains proposed, not accepted."
-  residue: unknown
-  residue_ledger: "'Questions for later intake' (8 items) -- 6 tagged KIND: RESIDUE (placement, ownership, admission-boundary, semantic-honesty questions), 2 tagged KIND: BACKLOG (cross-platform normalization, allowlist feasibility). All 8 UNCHECKED against current canonical-view text this pass -- see inline tags. residue: unknown, not present, since no RESIDUE-kind item was confirmed open, only unchecked."
-  backlog: unknown
-  backlog_note: "2 KIND: BACKLOG items exist, both UNCHECKED; no confirmed-open backlog item and no dedicated staged-plan section, so backlog cannot be set to none or present."
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, item-level drain applying the ownership-vs-enforcement test: 5 of the 6 previously RESIDUE-kind items (1, 2, 4, 7, 8) reclassified to BACKLOG -- each turned on a schema-representation, categorization, or documentation-clarity choice within already-settled ownership (runtime-realization.md, evidence-and-claims.md, the credential store), not a dispute over who owns it. Item 3 (independent environment observer) stays RESIDUE and is confirmed OPEN: the document's own reconciliation actively searched for an owner and explicitly ruled out both candidate substrates (evidence-anchor.md, context-observer.md) as category errors -- a genuine, checked gap, not merely unchecked."
+  backlog: present
+  backlog_ledger: "7 KIND: BACKLOG items after reclassification (1, 2, 4, 5, 6, 7, 8). 4 confirmed OPEN (1, 2, 4, 8 -- each tied to a specific unbuilt design/placement choice, real evidence checked per inline tags) -> backlog: present. Items 5, 6, 7 remain UNCHECKED (broader engineering-judgment questions not specifically verified this pass)."
   audit_scope:
     - open-question-ledger
   audit_scope_completeness: partial
+  audit_scope_completeness_note: "Items 5, 6, 7 remain UNCHECKED within the declared open-question-ledger scope."
   status_as_of: 2026-09-16
 ```
 
@@ -307,21 +308,21 @@ against the settled architecture, not a residue item.
 
 ## Questions for later intake
 
-1. [KIND: RESIDUE] [UNCHECKED — placement question; the 2026-09-16 canonical-view reconciliation below found this "slots in as one more distinctly-owned input" but did not settle manifest-vs-separate-profile-vs-both] Does the projection belong directly in each realization manifest, in a
+1. [KIND: BACKLOG, reclassified 2026-09-17 — the reconciliation below already settles ownership ('slots in as one more distinctly-owned input' to runtime-realization.md); manifest-field vs. separate-revisioned-profile is a schema-representation choice within that already-decided ownership, the same class as a storage-topology question, not a dispute over who owns it] [OPEN — not yet decided; the existing pattern (role contract, policy-overlay revision, and capability-inventory generation are each their own distinct, referenced input per SS1) suggests a separately revisioned profile by analogy, but this document does not commit to that] Does the projection belong directly in each realization manifest, in a
    separately revisioned environment profile referenced by it, or both?
-2. [KIND: RESIDUE] [UNCHECKED — scope/admission-boundary question] Which environment facts affect realization admission, production-path
+2. [KIND: BACKLOG, reclassified 2026-09-17 — a categorization/investigation task over which specific variables matter for which already-owned purpose (admission is runtime-realization.md's, production-path claims are evidence-and-claims.md's), not a question of which dimension owns the category itself] [OPEN — not yet investigated] Which environment facts affect realization admission, production-path
    claims, deterministic reproduction, or only diagnosis?
-3. [KIND: RESIDUE] [UNCHECKED — independent-observer ownership question] What observer can establish the final child environment independently of
+3. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: unlike item 7 of scoped-workflow-event-surface.md (fencing), this is not a new consumer of an already-designed-for-extension mechanism. The reconciliation below actively searched for an existing owner and explicitly ruled out both candidate substrates as category errors (evidence-anchor.md: drift-detection, not admission-time conformance; context-observer.md: terminology collision, different 'environment' sense entirely) -- no dimension, mechanism, or substrate currently owns independent process-environment attestation. This is a genuine evidence-authority placement gap (does the launcher's self-report suffice, and if not, what qualifies as independent?), not an implementation-placement question.] What observer can establish the final child environment independently of
    the launcher without exposing secrets?
-4. [KIND: RESIDUE] [UNCHECKED — ownership question, named as such] How should secret-source ownership and rotation revision be identified
+4. [KIND: BACKLOG, reclassified 2026-09-17 — 'secret-source ownership' here means which reference-format field identifies the secret's owner, a data-representation choice; WHICH dimension owns secret material is already settled ('the credential store owns secret material,' SS'Ownership and evidence')] [OPEN — not yet designed] How should secret-source ownership and rotation revision be identified
    without creating a correlatable credential fingerprint?
 5. [KIND: BACKLOG] [UNCHECKED — cross-platform normalization is an engineering task, not an ownership question] How should `PATH`, locale, proxy, certificate, and filesystem-location
    dependencies be normalized across providers and operating systems?
 6. [KIND: BACKLOG] [UNCHECKED — implementation-feasibility question] Is an allowlist feasible, or should admission combine required, forbidden,
    and explicitly ignored classes?
-7. [KIND: RESIDUE] [UNCHECKED — a semantic-boundary question about what the projection can honestly claim] How does the projection distinguish reproducible starting conditions from
+7. [KIND: BACKLOG, reclassified 2026-09-17 — the document's own Non-Goals section already states the principle ('treating environment equality as trajectory reproducibility' is explicitly not proposed); what remains is how the schema/documentation communicates that boundary to a reader, a documentation/schema-clarity task, not a dispute over which dimension gets to decide the boundary] [UNCHECKED — not verified whether the existing Non-Goals framing already suffices as an answer] How does the projection distinguish reproducible starting conditions from
    an impossible promise of deterministic model output?
-8. [KIND: RESIDUE] [UNCHECKED — placement among durable states (scoped event surface vs. receipt-only)] Which redacted environment-admission facts belong on the scoped event
+8. [KIND: BACKLOG, reclassified 2026-09-17 — a placement choice between two service-level artifacts (scoped-workflow-event-surface.md's transport, itself architectural_supersession: not_applicable service/interface design, and this document's own receipt, already runtime-realization.md domain detail), not a dimension-ownership dispute] [UNCHECKED — depends on scoped-workflow-event-surface.md's own unbuilt schema, not independently resolvable yet] Which redacted environment-admission facts belong on the scoped event
    surface and which remain receipt-only evidence?
 
 ## Non-goals

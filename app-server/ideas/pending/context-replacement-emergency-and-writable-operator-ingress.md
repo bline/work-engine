@@ -15,13 +15,14 @@ idea_status:
   architectural_supersession_note: "The 2026-09-16 canonical-view test below found each of Candidates A/B/C maps cleanly to existing mechanisms (Transition Fencing, Authority-Preserving Intent Projection, Authority Projection SS8) but nothing has been absorbed into any canonical view -- all three remain proposed, not accepted."
   residue: present
   residue_ledger: "Candidate A's 'Questions for proposal formation' (SS168-192, un-numbered) include the exact-invariant question this session's own reconciliation flagged as a genuine extension to mechanisms/transition-fencing-and-leases.md not yet decided (whether the new_context actuator can be admitted only under an exact Work Engine lease), now tagged inline [KIND: RESIDUE] [OPEN] (corrected 2026-09-17 -- previously only described here, not tagged in the document body, which the deterministic validator correctly flagged as unsupported). Candidates B and C were not re-audited as a formal ledger this pass; their own bullet lists were not individually tagged."
-  backlog: unknown
-  backlog_note: "Corrected 2026-09-17, per review: confirmed no dedicated staged-plan section in any of Candidates A/B/C (each is a proposal-formation direction, not an operative plan with named stages) -- but Candidates B and C's own bullet lists were never individually classified for BACKLOG-kind items, the same way Candidate A's bullet list turned out to hide a RESIDUE-kind item. Absence of a staged-plan section rules out one source of backlog, not all of them. backlog: unknown, not none."
+  backlog: present
+  backlog_ledger: "Corrected 2026-09-17, item-level drain: Candidates B (7 items) and C (5 items) individually classified -- all 12 are KIND: BACKLOG (protocol/transport/schema/testing detail applying already-established authority/capability-projection/delegation principles, none proposing new ownership) and confirmed OPEN (checked against real code: clientUserMessageId/custody plumbing exists in src/operator-switchboard.mjs and src/context-input-custody.mjs, but the retained-role-specific writable-ingress feature this candidate needs is not built). No dedicated staged-plan section in any of Candidates A/B/C (each is a proposal-formation direction, not an operative plan with named stages), but that no longer matters -- the individually-classified BACKLOG items establish present on their own."
   audit_scope:
+    - open-question-ledger
     - keyword-scan: full_document
     - close-read: "Canonical-view reconciliation section (2026-09-16)"
-  audit_scope_completeness: partial
-  audit_scope_completeness_note: "Candidate A's own bullet list was checked at a summary level, not item-by-item; Candidates B and C's own bullet lists were not re-audited this pass at all."
+  audit_scope_completeness: complete
+  audit_scope_completeness_note: "Corrected 2026-09-17: Candidates A, B, and C's bullet lists are now all individually classified with a checked disposition (zero UNCHECKED tags remain anywhere in the document)."
   status_as_of: 2026-09-16
 ```
 
@@ -219,20 +220,20 @@ attachment with the access required by the selected role. An operator should
 not have to choose between an inaccessible retained role and a standalone
 terminal relay that changes message boundaries.
 
-Proposal formation should consider:
+Proposal formation should consider (individually classified 2026-09-17, per item-level drain -- each is protocol/transport/implementation detail; the last bullet is already governed by runtime-realization.md SS11 / mechanisms/authority-preserving-intent-projection.md's already-established "projection may never mutate directly or enlarge authority" invariant, so this candidate must correctly apply that existing discipline, not invent a new one):
 
-- a proxy-owned route to attach to an existing retained writable role without
+- [KIND: BACKLOG] [OPEN] a proxy-owned route to attach to an existing retained writable role without
   widening the supervisor's own sandbox or authority;
-- explicit authorization and audit evidence for who may send writable-role
+- [KIND: BACKLOG] [OPEN — checked: `clientUserMessageId`/custody plumbing already exists (`src/operator-switchboard.mjs`, `src/context-input-custody.mjs`), but the retained-role-specific writable attachment this candidate needs is not built] explicit authorization and audit evidence for who may send writable-role
   input;
-- one submission, one `clientUserMessageId`, and one role turn, including text
+- [KIND: BACKLOG] [OPEN — checked: `clientUserMessageId` already exists as a real concept in `src/operator-switchboard.mjs`, but not yet bound to one submission/one role turn for a retained role specifically] one submission, one `clientUserMessageId`, and one role turn, including text
   containing embedded newlines;
-- a framed CLI protocol such as length-delimited JSON or an explicit
+- [KIND: BACKLOG] [OPEN] a framed CLI protocol such as length-delimited JSON or an explicit
   begin/send/end operation rather than readline-defined message identity;
-- structured transfer of lifecycle and campaign references rather than copying
+- [KIND: BACKLOG] [OPEN] structured transfer of lifecycle and campaign references rather than copying
   terminal-rendered text;
-- reconnection, idempotency, interruption, and queued-input behavior; and
-- preservation of the distinction between access to a writable builder and
+- [KIND: BACKLOG] [OPEN] reconnection, idempotency, interruption, and queued-input behavior; and
+- [KIND: BACKLOG] [OPEN — this is an application of the already-established "projection never enlarges authority" invariant (runtime-realization.md SS11), not a new ownership question] preservation of the distinction between access to a writable builder and
   authority to expand its accepted implementation scope.
 
 ## Candidate C: policy-conditioned tool affordances
@@ -242,18 +243,18 @@ approval escalation. Advertising `require_escalated` in that role's tool schema
 creates an invalid apparent action even though runtime enforcement remains
 fail-closed.
 
-Proposal formation should consider:
+Proposal formation should consider (individually classified 2026-09-17, per item-level drain -- schema/attribution/testing detail applying already-established capability-projection (runtime-realization.md's capability inventory, authority-preserving-intent-projection.md's discovery/rendering territory) and delegation (authority-and-ownership.md SS9's "nomination-only" mode) concepts to this specific tool-schema case, not proposing new ownership):
 
-- whether tool schemas can omit escalation arguments and approval-question
+- [KIND: BACKLOG] [OPEN] whether tool schemas can omit escalation arguments and approval-question
   fields when the effective policy can never admit them;
-- whether sandbox and approval policy should be projected as explicit
+- [KIND: BACKLOG] [OPEN — an application of the already-established capability-discovery/projection territory (mechanisms/authority-preserving-intent-projection.md) to sandbox/approval-policy capabilities specifically] whether sandbox and approval policy should be projected as explicit
   machine-readable capability constraints rather than left for repeated model
   inference;
-- how a rejected impossible request is attributed and surfaced without
+- [KIND: BACKLOG] [OPEN] how a rejected impossible request is attributed and surfaced without
   misclassifying it as command execution or user denial;
-- when a blocked operation should nominate another role or a host-owned
+- [KIND: BACKLOG] [OPEN — an application of authority-and-ownership.md SS9's already-established "nomination-only" delegation mode, not a new one] when a blocked operation should nominate another role or a host-owned
   capability rather than suggest policy escape; and
-- tests proving that `approval_policy: "never"` roles cannot construct an
+- [KIND: BACKLOG] [OPEN] tests proving that `approval_policy: "never"` roles cannot construct an
   escalation request while write-capable roles can execute already-admitted
   operations without asking for escalation.
 

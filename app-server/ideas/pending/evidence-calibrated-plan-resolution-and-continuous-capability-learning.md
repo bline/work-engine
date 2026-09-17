@@ -15,10 +15,10 @@ The proposed mechanisms and economic effects need pilot evidence.
 idea_status:
   architectural_supersession: not_applicable
   architectural_supersession_note: "Checked 2026-09-17, per review: this document's own text explicitly disclaims ownership overlap with already-settled dimensions ('extends the Structural Plan IR family without taking ownership of planning, routing, admission, or context lifecycle') -- its own novel contribution (evidence-calibrated resolution, continuous capability learning) is new, unaccepted, speculative mechanism, not a restatement of something a plausible canonical owner would already state. No canonical view is a plausible owner for content its own source document says does not yet exist anywhere."
-  residue: unknown
-  residue_ledger: "'Research questions' (12 items) tagged by kind: 2 RESIDUE, 10 BACKLOG. All 12 UNCHECKED against current canonical-view text this pass -- residue: unknown, not present."
-  backlog: unknown
-  backlog_note: "10 KIND: BACKLOG items exist, all UNCHECKED; no dedicated staged-plan section in this document itself (it references Structural Plan IR's own SS20 pilot and decision-gated compilation's own Stage 5, both belonging to those documents)."
+  residue: present
+  residue_ledger: "Corrected 2026-09-17, item-level drain: item 11 reclassified BACKLOG (the document's own text already settles admission's ownership; this is a threshold/budget-policy detail, not an ownership question). Item 12 stays RESIDUE and is confirmed OPEN: grepped all canonical views for 'continuation identity'/'warmth' -- zero hits, no existing dimension owns this."
+  backlog: present
+  backlog_ledger: "11 KIND: BACKLOG items after reclassification. Item 11 confirmed OPEN (no evidence-sufficiency threshold or exploration-budget policy exists anywhere) -> backlog: present. Items 1-10 remain UNCHECKED (empirical/measurement-design questions not specifically verified this pass); no dedicated staged-plan section in this document itself (it references Structural Plan IR's own SS20 pilot and decision-gated compilation's own Stage 5, both belonging to those documents)."
   audit_scope:
     - open-question-ledger
   audit_scope_completeness: partial
@@ -396,9 +396,9 @@ establish a measurement schema.
    can failures be attributed across plan, projection, executor, harness,
    verification, and integration?
 10. [KIND: BACKLOG] [UNCHECKED — empirical question] How stable are capability findings across model and harness revisions?
-11. [KIND: RESIDUE] [UNCHECKED — an admission/authority governance question] What evidence would justify consulting a cost predictor during admission,
+11. [KIND: BACKLOG, reclassified 2026-09-17 — the document's own 'Continuous learning and authority' section already settles that admission's ownership is unaffected ('an admission should remain explainable through the policy... used at the time'; 'these are judgment affordances within existing authorization, not a routing table'). This item asks for a specific evidence-sufficiency threshold and exploration budget within that already-settled authority boundary, not a new ownership assignment] [OPEN — no such threshold or budget policy is designed anywhere] What evidence would justify consulting a cost predictor during admission,
     and how should exploration allocation be governed?
-12. [KIND: RESIDUE] [UNCHECKED — explicit ownership question] Which owner should define continuation identity and warmth observations,
+12. [KIND: RESIDUE] [OPEN — confirmed 2026-09-17: grepped runtime-realization.md and all other canonical views directly for 'continuation identity' and 'warmth' -- zero hits. Unlike item 11, this is explicitly phrased as, and actually is, a placement question with no existing candidate owner: no dimension currently owns tracking which execution's continuation/warm-start state justifies reuse.] Which owner should define continuation identity and warmth observations,
     and how should pricing changes affect future use of historical predictions?
 
 These questions leave profile dimensions, renderability checks, partitioning,
