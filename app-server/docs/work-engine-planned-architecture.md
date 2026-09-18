@@ -45,24 +45,7 @@ reserved for unresolved semantic consequence.
        "candidate resolution reduces to 0/1/N" pattern
 ```
 
-**A sixth principle, different in kind from the five above, governs how any of them — or a future mechanism or substrate — gets recognized in the first place. It has been applied throughout this document without ever being stated as its own rule, which is exactly the risk worth naming:**
-
-```text
-Convergence promotes a pattern to a mechanism or substrate. A single
-instance, however architecturally clean, stays domain detail until an
-independently-arrived-at second one appears.
-    -- applied directly in §5 (revision-cas-and-publication.md's
-       executable-generation finding is explicitly "not an 8th instance";
-       resource-lease-and-fencing.md stays "structurally distinct from
-       Transition Fencing" rather than merged on thematic similarity) and
-       in §11 (items 1, 3, and 4 are each blocked specifically on "a
-       second independent domain," not on any argument against the
-       pattern's own merit); substrates/context-observer.md and
-       substrates/evidence-anchor.md were each named only once two
-       independent consumers existed, never on the strength of the first
-```
-
-This is a genuine, load-bearing epistemic guard — it is what tells "coincidental adjacency" apart from "identity" everywhere that distinction appears across the 20 views, and every mechanism/substrate promotion in this document survived exactly this test. But naming it exposes what it actually is: a test of **how well-evidenced a pattern is**, not a test of **whether Work Engine architecturally needs it**. Those are different questions, and the rule can only answer the first one. By construction, it can never promote a genuinely novel, singular, load-bearing invariant on its first appearance — it has no way to distinguish "this is coincidence" from "this is real but its second consumer hasn't been built yet." §11 item 5 already uses the correct escape valve for exactly that case: when convergence is the wrong test, resolve by an explicit owner decision instead of waiting on a second instance that may never arrive on its own. That escape valve should be reached for deliberately, not treated as a fallback used only when the convergence test happens to fail.
+**A sixth principle, different in kind from the five above, governs how any of them — or a future mechanism or substrate — gets recognized in the first place.** It was applied throughout this document from the 2026-09-16 rebuild onward without ever being stated as its own rule; it is now a canonical page in its own right rather than capstone prose, so it is cited here, not restated: [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md). In short — a candidate pattern is promoted to a mechanism or substrate only after clearing a stated eligibility test and showing typed evidence of cross-domain need; an instance count alone is bookkeeping, never the criterion. Every mechanism and substrate in §5–§6 was pressure-tested against that page directly (its own §10); the result, including two real documentation gaps the test exposed, is recorded there rather than summarized twice here.
 
 ---
 
@@ -225,7 +208,7 @@ Each owns a class of architectural truth no other dimension, mechanism, or subst
 
 ## 5. The 5 Cross-Cutting Mechanisms
 
-Each preserves a reusable invariant across independently owned truth domains — never supplying the domain meaning itself. Every entry below satisfies §1's sixth principle: named only after independent convergence, never on one instance's own strength.
+Each preserves a reusable invariant across independently owned truth domains — never supplying the domain meaning itself. All five pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own eligibility test (§10 there); that page also records each mechanism's actual typed evidence and two documentation gaps the pressure test exposed — not reclassifications.
 
 | Mechanism | Reusable shape | Confirmed instances |
 |---|---|---|
@@ -315,7 +298,7 @@ For every item not listed here, consult the owning view's own "Source and Status
 
 ## 11. Deferred Architecture
 
-Real, confirmed residue the 20 views do not yet own — correctly left open, not smoothed over. Each was pressure-tested against an explicit null hypothesis before being placed here; none is a brainstorm. Items 1, 3, and 4 are held open specifically by §1's sixth principle — no second independent domain has converged on them yet; that is a claim about current evidence, not about whether the pattern is real. Item 5 deliberately uses that principle's own named escape valve instead: an owner decision, not a wait for convergence that may never come.
+Real, confirmed residue the 20 views do not yet own — correctly left open, not smoothed over. Each was pressure-tested against an explicit null hypothesis before being placed here; none is a brainstorm. Items 1, 3, and 4 are held open specifically by the cross-domain-evidence route named in [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md) §4 — no second independent domain has converged on them yet; that is a claim about current evidence, not about whether the pattern is real. Item 5 deliberately uses that page's own owner-decision escape valve instead of waiting on convergence that may never come.
 
 **1. `Coordinate` / `service_state`** (`service-plane-and-kernel-domain-boundary.md`). `service_state` itself is substrate-shaped (purely referential, no consumer-specific derivation) but blocked on two things: a stated population/inclusion rule for what belongs in one given coordinate instance (no primary source answers this), and confirmed shared-consumer evidence beyond one named candidate. `coverage` is explicitly "not accepted or applied" per its own source. `frontier`'s own membership is an open numbered question in its own source document. Resolved by: a stated inclusion rule, plus either `coverage`'s acceptance or its replacement.
 

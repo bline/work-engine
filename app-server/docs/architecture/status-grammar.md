@@ -191,6 +191,14 @@ That last case matters more than the others in practice: Work Engine reuses exis
 
 This is the property that makes it safe to include provisional material in an architecture view at all: assembling several claims into one page or one diagram can never quietly launder the weakest one into looking as settled as the strongest.
 
+### 7.1 Corollary: Authorization Does Not Inherit Through Composition
+
+Stated explicitly because a shared mechanism or substrate and its distinct consumers is a recurring, specific case of §7's general rule, not merely a restatement of it:
+
+> **Authorization does not inherit upward or downward through composition. A consumer's implementation authorization does not imply implementation authorization for the shared dependency as a whole; dependency-level authorization does not authorize any consumer instance. Each authorization claim remains bound to its own authority source and scope.**
+
+`mechanisms/resource-lease-and-fencing.md` is the worked case (§10.6): the generic mechanism and each of its consumers carry independently-sourced authorization, in both directions at once, on one real page.
+
 ---
 
 ## 8. Status Is Declarative, Not Inferred
@@ -310,6 +318,34 @@ architecture_status:
 ```
 
 The occasion for adding `unrecorded` to this grammar (§4.3): substantial real, tested, merged implementation exists for this architecture (schema-migrated SQLite adapters, a gated live strategic-planner test), and an earlier draft of this page read that as `authorization: implementation_authorized` — implementation having happened, therefore implementation must have been authorized. Corrected: no specific, citable authorization decision names this architecture at its current scope, so the honest value is `unrecorded`, not a value inferred from the implementation evidence itself. `implementation: partial` and `design: proposed` remain fully supported directly from the source document's own text; only `authorization` needed the new value.
+
+### 10.6 Resource Lease and Fencing (page default plus two consumer overrides, demonstrating §7.1)
+
+```yaml
+architecture_status:
+  design: accepted
+  reconciliation: reconciled
+  authorization: unrecorded
+  implementation: implemented
+  owner: app-server/docs/architecture/mechanisms/resource-lease-and-fencing.md
+  status_as_of: 2026-09-16
+```
+
+```yaml
+status_override:
+  authorization: implementation_authorized
+  implementation: none
+  source: app-server/docs/control-plane-and-client-protocol-reconciliation.md
+```
+
+```yaml
+status_override:
+  authorization: implementation_authorized
+  implementation: none
+  source: app-server/docs/review-scope-coordination-reconciliation.md
+```
+
+The generic `workspace-coordination` mechanism carries `authorization: unrecorded` — real, shipped code with no citable "build this" decision found for the mechanism itself. Its two prospective consumers (fenced active-binding, review-scope protection) each carry `authorization: implementation_authorized` through their own `status_override`, sourced to their own distinct reconciliation documents, neither citing the other. The mechanism's own `unrecorded` value is not raised by either consumer's `implementation_authorized`, and neither consumer's authorization was granted by the mechanism's own page — exactly §7.1's corollary, on one real artifact, in both directions at once.
 
 ---
 
