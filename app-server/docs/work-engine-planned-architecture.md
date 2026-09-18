@@ -222,7 +222,7 @@ Each preserves a reusable invariant across independently owned truth domains —
 
 ## 6. The 2 Shared Substrates
 
-Each supplies normalized observations to multiple independent consumers without acquiring their semantic authority. Both pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own substrate eligibility test (§6 there); §14 there records each substrate's actual typed evidence, including a real documentation gap found in `substrates/evidence-anchor.md`'s own "Multiple Independent Consumers" claim — not a reclassification.
+Each supplies normalized observations to multiple independent consumers without acquiring their semantic authority. Both pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own substrate eligibility test (§6 there), and Context Observer also clears that page's canonical admission rule (§7.1) cleanly. `substrates/evidence-anchor.md` does not currently clear §7.1: its own "Multiple Independent Consumers" claim turns out, on inspection, to be one dimension's own domain-profile parameterizations (`architecture`/`plan`/`research` claim, all owned by `evidence-and-claims.md`) rather than independent cross-domain convergence, and its one genuine cross-domain candidate is a passing mention, not an accepted design (§14 there, in full). Not a reclassification — this catalog entry stands unless and until that page's or this capstone's own owner resolves the gap.
 
 | Substrate | Owns | Consumers |
 |---|---|---|
