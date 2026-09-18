@@ -717,12 +717,22 @@ The block above is preserved as the 2026-09-15 handoff. This revision does
 not change the priorities it sets (claim-evidence impact/refresh vertical,
 hierarchical-orchestration proposal formation) — it refines the separate Plan
 IR workstream's Stage 1, following a deterministic idea-status audit of
-`app-server/ideas/pending/` completed the same day (grammar, validator, and
-corpus at commit `ecfaf73f276af4f0a6e7a00f155e5d97294cf611`). The audit found
-one status correction, one bounded reconnaissance improvement, and one
-legitimate Stage 1 architectural decision — not a reason to reopen the
-roadmap. Both affected passages (the Plan IR source table and Stage 1 of its
-workstream, above) carry inline `2026-09-17` annotations pointing back here.
+`app-server/ideas/pending/` completed the same day. The three findings below
+were each established at a specific point in that audit, not at its final
+commit: decision-gated compilation's `full` supersession at `60ca23b`;
+Structural Plan IR's SS18 reconnaissance ledger at `58ded03`; and
+prior-art's lineage-correspondence residue at `533cbc6`. The audit continued
+after that, through a further correction round at `942c7b2` (which
+reclassified one SS18 ledger item's own kind tag from an architectural
+question to an implementation one, without changing the ledger's role as
+Stage 1's checklist) and closed at `ecfaf73f276af4f0a6e7a00f155e5d97294cf611`
+(cited below as this revision's evidence cutoff) — verified directly: none
+of the corpus-wide corrections between establishing these three findings and
+that closing commit altered any of them. The audit found one status
+correction, one bounded reconnaissance improvement, and one legitimate
+Stage 1 architectural decision — not a reason to reopen the roadmap. Both
+affected passages (the Plan IR source table and Stage 1 of its workstream,
+above) carry inline `2026-09-17` annotations pointing back here.
 
 ```yaml
 schema_version: 1
