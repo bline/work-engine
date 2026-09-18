@@ -45,7 +45,7 @@ reserved for unresolved semantic consequence.
        "candidate resolution reduces to 0/1/N" pattern
 ```
 
-**A sixth principle, different in kind from the five above, governs how any of them — or a future mechanism or substrate — gets recognized in the first place.** It was applied throughout this document from the 2026-09-16 rebuild onward without ever being stated as its own rule; it is now a canonical page in its own right rather than capstone prose, so it is cited here, not restated: [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md). In short — a candidate pattern is promoted to a mechanism or substrate only after clearing a stated eligibility test and showing typed evidence of cross-domain need; an instance count alone is bookkeeping, never the criterion. Every mechanism and substrate in §5–§6 was pressure-tested against that page directly (its own §10); the result, including two real documentation gaps the test exposed, is recorded there rather than summarized twice here.
+**A sixth principle, different in kind from the five above, governs how any of them — or a future mechanism or substrate — gets recognized in the first place.** It was applied throughout this document from the 2026-09-16 rebuild onward without ever being stated as its own rule; it is now a canonical page in its own right rather than capstone prose, so it is cited here, not restated: [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md). In short — a candidate pattern is sorted by kind through an explicit classifier, then promoted only after clearing that kind's own eligibility test and showing typed evidence of cross-domain need; an instance count alone is bookkeeping, never the criterion. Every mechanism and substrate in §5–§6 was pressure-tested against that page directly (§13 there for the five mechanisms, §14 for the two substrates); the result, including four real documentation gaps the tests exposed, is recorded there rather than summarized twice here.
 
 ---
 
@@ -208,7 +208,7 @@ Each owns a class of architectural truth no other dimension, mechanism, or subst
 
 ## 5. The 5 Cross-Cutting Mechanisms
 
-Each preserves a reusable invariant across independently owned truth domains — never supplying the domain meaning itself. All five pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own eligibility test (§10 there); that page also records each mechanism's actual typed evidence and two documentation gaps the pressure test exposed — not reclassifications.
+Each preserves a reusable invariant across independently owned truth domains — never supplying the domain meaning itself. All five pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own mechanism eligibility test (§5 there); §13 there records each mechanism's actual typed evidence and two documentation gaps the pressure test exposed — not reclassifications.
 
 | Mechanism | Reusable shape | Confirmed instances |
 |---|---|---|
@@ -222,7 +222,7 @@ Each preserves a reusable invariant across independently owned truth domains —
 
 ## 6. The 2 Shared Substrates
 
-Each supplies normalized observations to multiple independent consumers without acquiring their semantic authority.
+Each supplies normalized observations to multiple independent consumers without acquiring their semantic authority. Both pass [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md)'s own substrate eligibility test (§6 there); §14 there records each substrate's actual typed evidence, including a real documentation gap found in `substrates/evidence-anchor.md`'s own "Multiple Independent Consumers" claim — not a reclassification.
 
 | Substrate | Owns | Consumers |
 |---|---|---|
@@ -298,7 +298,7 @@ For every item not listed here, consult the owning view's own "Source and Status
 
 ## 11. Deferred Architecture
 
-Real, confirmed residue the 20 views do not yet own — correctly left open, not smoothed over. Each was pressure-tested against an explicit null hypothesis before being placed here; none is a brainstorm. Items 1, 3, and 4 are held open specifically by the cross-domain-evidence route named in [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md) §4 — no second independent domain has converged on them yet; that is a claim about current evidence, not about whether the pattern is real. Item 5 deliberately uses that page's own owner-decision escape valve instead of waiting on convergence that may never come.
+Real, confirmed residue the 20 views do not yet own — correctly left open, not smoothed over. Each was pressure-tested against an explicit null hypothesis before being placed here; none is a brainstorm. Items 1, 3, and 4 are held open specifically by the cross-domain-evidence route named in [`architecture/architectural-kind-recognition.md`](architecture/architectural-kind-recognition.md) §7 — no second independent domain has converged on them yet; that is a claim about current evidence, not about whether the pattern is real. Item 5 deliberately uses that page's own owner-decision escape valve instead of waiting on convergence that may never come.
 
 **1. `Coordinate` / `service_state`** (`service-plane-and-kernel-domain-boundary.md`). `service_state` itself is substrate-shaped (purely referential, no consumer-specific derivation) but blocked on two things: a stated population/inclusion rule for what belongs in one given coordinate instance (no primary source answers this), and confirmed shared-consumer evidence beyond one named candidate. `coverage` is explicitly "not accepted or applied" per its own source. `frontier`'s own membership is an open numbered question in its own source document. Resolved by: a stated inclusion rule, plus either `coverage`'s acceptance or its replacement.
 

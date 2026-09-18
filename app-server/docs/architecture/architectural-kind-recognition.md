@@ -14,13 +14,16 @@ before this page:
 
 after this page:
     X is a mechanism because it satisfies the criterion stated here.
-    Existing mechanisms are retained because they also satisfy it — see §10,
-    the pressure test that checks this directly rather than assuming it.
+    Existing mechanisms are retained because they also satisfy it — see
+    §13, the pressure test that checks this directly rather than assuming
+    it.
 ```
+
+**Revised 2026-09-18, after direct review of the first version.** That version defined a real, sophisticated eligibility test for exactly one kind (mechanism), then declared dimensions untested and substrates "structurally eligible for the identical test" without ever checking — reintroducing, at the level of this page itself, the hidden category coupling it exists to prevent. Fixed here by giving each of the three promotable kinds its own classifier branch (§3) and its own eligibility test (§4–§6), rather than generalizing the mechanism test outward. The same review caught a second, subtler leak (recognition evidence silently implying `status-grammar.md` values, §7), an overclaim in the origin-independence ladder (§8), and a real evidentiary conflation inside the Resource Lease pressure test that this revision also finds, once named, in Evidence Anchor (§13–§14).
 
 `app-server/docs/work-engine-planned-architecture.md` §1 states this page exists and links here; it does not restate the criterion. Any future capstone edit that finds itself re-deriving eligibility or evidence rules belongs here instead.
 
-This page does not reopen the 13-dimension / 5-mechanism / 2-substrate decomposition, and does not reclassify anything merely because it now exists. §10 pressure-tests the current five mechanisms against the criterion below and reports what it finds — including real documentation gaps — without repairing them here.
+This page does not reopen the 13-dimension / 5-mechanism / 2-substrate decomposition, and does not reclassify anything merely because it now exists or because §14 pressure-tests the substrates for the first time.
 
 ---
 
@@ -46,11 +49,66 @@ DOMAIN / IMPLEMENTATION DETAIL
     architecture without establishing another architectural truth owner.
 ```
 
-The fourth kind is not a residual "everything else" bucket — it is the default. A candidate pattern starts here and is promoted only by clearing §3 and §4 below. Most real, concrete artifacts in Work Engine correctly stay in this kind permanently (capstone §9's own domain instantiations: `CodeEvidenceAdapter`, `UIReviewProfile`, `control-plane-causal-observability-ui.md`) — promotion is the exception, not the default trajectory of a useful pattern.
+The fourth kind is not a residual "everything else" bucket — it is the default. A candidate pattern starts here and is promoted only by clearing §3's classifier and its target kind's own eligibility section. Most real, concrete artifacts in Work Engine correctly stay in this kind permanently (capstone §9's own domain instantiations: `CodeEvidenceAdapter`, `UIReviewProfile`, `control-plane-causal-observability-ui.md`) — promotion is the exception, not the default trajectory of a useful pattern.
+
+**§4, §5, and §6 below are deliberately not one generalized test reused across all three promotable kinds.** A mechanism's defining property (preserves a transition/admission invariant) and a substrate's (supplies facts, and specifically triggers no admission or transition on its own standing) are different claims with different failure modes; testing a substrate candidate against a mechanism's own criteria would silently import an admission question a substrate is defined not to answer, which is exactly the coupling this page exists to prevent.
 
 ---
 
-## 3. Mechanism Eligibility — Necessary Conditions
+## 3. Kind Classifier
+
+Checked in this order, because truth-ownership outranks the other two whenever it is genuinely present, and "supplies facts" is checked before "preserves an invariant" since a substrate that also enables reuse across domains is still classified by *what it supplies*, never by the reuse itself:
+
+```text
+CANDIDATE NORMALIZED TRUTH
+
+Does it own a class of semantic architectural truth?
+    yes → DIMENSION candidate → §4
+
+no:
+Does it supply facts/capability while remaining
+semantically neutral to consumers?
+    yes → SUBSTRATE candidate → §6
+
+no:
+Does it preserve a reusable invariant/protocol
+across independently owned truths?
+    yes → MECHANISM candidate → §5
+
+otherwise:
+    DOMAIN / IMPLEMENTATION DETAIL
+```
+
+A candidate can look superficially like more than one branch — `substrates/context-observer.md` enforces a real boundary discipline (what belongs to the observer vs. to each consumer's own derivation), which could be misread as mechanism-shaped. It classifies as SUBSTRATE, not MECHANISM, because its defining act is supplying a normalized fact schema, and both substrate pages state directly, as their own Key Invariant, that the substrate "triggers no admission, transition, or publication on its own standing" — the one thing every mechanism in §5 exists specifically to govern. The classifier resolves this by asking what the candidate's own defining act is, not by counting surface similarities to an already-recognized kind.
+
+---
+
+## 4. Dimension Eligibility
+
+Lighter than §5–§6 because dimension recognition was not the ambiguity this page's originating review found, and no dimension pressure test is run here (§13–§14 cover the five mechanisms and two substrates only; applying this section to the 13 dimensions is a legitimate future use of this page, not attempted in this revision).
+
+```text
+1. TRUTH OWNERSHIP
+   The candidate changes what Work Engine believes or is committed to
+   about its own subject matter — not a derived view of a truth another
+   page already owns.
+
+2. NON-DUPLICATION
+   No existing dimension, mechanism, or substrate already answers the
+   same question for the same subject matter — the capstone's own §4
+   test, stated there as "no other dimension, mechanism, or substrate
+   supplies" this.
+
+3. AUTHORITY-BEARING CONTENT
+   It answers at least one question whose answer is a commitment or
+   belief, not merely an observation — the line that separates a
+   dimension from a substrate, which answers only "what is currently
+   true," never "what ought to hold" or "what is decided."
+```
+
+---
+
+## 5. Mechanism Eligibility
 
 Eligibility answers *can this candidate be a mechanism at all* — a category question. It is checked once per candidate and does not scale with how many times the candidate has been observed. A candidate that fails any one of these is not a mechanism regardless of how much reuse evidence exists for it.
 
@@ -70,25 +128,72 @@ Eligibility answers *can this candidate be a mechanism at all* — a category qu
    invariant, not a thin naming convention left standing after everything
    else was refused away.
 
-4. ROUTE INVARIANCE
-   Materially different lawful consumers or realizations can use the
-   candidate without changing what it means. The same mechanism answers
-   the same question regardless of which domain is asking it.
+4. CROSS-ROUTE INVARIANCE
+   Materially different lawful consumers or realizations, owned by
+   different domains, can use the candidate without changing what it
+   means. The same mechanism answers the same question regardless of
+   which owning domain is asking it.
 
 5. DISTINCTNESS
    The candidate cannot collapse into an existing dimension, mechanism,
    substrate, or domain detail without moving semantic ownership or
    destroying an invariant that currently holds. Shared vocabulary between
-   two candidates is not, by itself, evidence against distinctness (§7).
+   two candidates is not, by itself, evidence against distinctness (§10).
 ```
 
-**The refusal test (criterion 3) is necessary, not sufficient, and must never be read as the whole test.** A "What This Mechanism/View Does Not Decide" section that leaves substantial residue proves the candidate *can* be an authority-neutral abstraction. It does not prove Work Engine *benefits* from canonizing it as one — a beautifully bounded abstraction with a single consumer can still be a domain-local helper that will never be reused. Eligibility (this section) establishes that a candidate is the right *shape*; §4 establishes that canonizing it is actually *warranted*. Both are required; neither substitutes for the other.
+**Criterion 4 must be kept sharply distinct from a weaker, adjacent claim: parametric invariance.** A single implementation surviving many parameterizations of one resource, configuration, or subject space — all still owned by one domain — is real, useful evidence that the implementation generalizes cleanly within its own territory. It is not, by itself, cross-route invariance, and does not by itself satisfy this criterion; §7 types it as its own evidence kind (`parametric_invariance`), and §13's Resource Lease entry is the worked case where the corpus's own text originally let the two get conflated.
+
+**The refusal test (criterion 3) is necessary, not sufficient, and must never be read as the whole test.** A "What This Mechanism/View Does Not Decide" section that leaves substantial residue proves the candidate *can* be an authority-neutral abstraction. It does not prove Work Engine *benefits* from canonizing it as one — a beautifully bounded abstraction with a single consumer can still be a domain-local helper that will never be reused. Eligibility (this section) establishes that a candidate is the right *shape*; §7 establishes that canonizing it is actually *warranted*. Both are required; neither substitutes for the other.
 
 ---
 
-## 4. Evidence Toward Canonical Admission — Confidence, Not Eligibility
+## 6. Substrate Eligibility
 
-A candidate that clears §3 is eligible. Whether it should actually be admitted to canonical `accepted`/`reconciled` status is a separate, evidentiary question, and **instance counts are supporting bookkeeping, never the criterion itself.** `mechanisms/revision-cas-and-publication.md`'s own status history is the direct proof: its confirmed-instance count moved from four to seven on 2026-09-16 ("found by the final mechanical audit to be undercounted here as 'four' — corrected") with zero change to `design: accepted` — the mechanism was never *made* real by reaching seven; the correction only repaired the record of evidence that was already there.
+Eligibility answers *can this candidate be a substrate at all*. A substrate's defining property is different in kind from a mechanism's: a mechanism preserves an invariant governing transition or admission; a substrate supplies facts or capability and triggers no admission, transition, or publication on its own standing — both `substrates/context-observer.md` and `substrates/evidence-anchor.md` state this directly as their own Key Invariant. Reusing §5's mechanism test here would silently import an admission/transition question a substrate is specifically defined not to answer — exactly the coupling this page exists to prevent.
+
+```text
+1. NORMALIZED OBSERVATION CONTRACT
+   After removing consumer-specific derivation, a real, source-grounded
+   fact or capability schema remains — not merely "whatever a consumer
+   happens to want."
+
+2. SEMANTIC NEUTRALITY
+   The candidate supplies facts/capability but never a consumer-specific
+   derived metric, admission, transition, or judgment. Materially
+   different consumers may derive materially different conclusions from
+   the identical supplied fact without contradiction.
+
+3. SUBSTANTIAL RESIDUE AFTER "DOES NOT OWN"
+   After stating precisely what it does not own — derived metrics,
+   admission, transition, dependency/consequence judgment — a real,
+   complete, checkable observation or capability contract remains, not a
+   thin passthrough of raw reality.
+
+4. CROSS-CONSUMER INVARIANCE
+   Materially different, independently-owned consumers can consume the
+   identical contract as peers — none gating another's applicability
+   question — without the substrate changing what it supplies for either.
+   Subject to the identical parametric-vs-cross-route distinction as
+   §5.4: several claim or resource *types* owned by one dimension are
+   parametric invariance, not several independently-owned consumers.
+
+5. DISTINCTNESS
+   Cannot collapse into an existing dimension, mechanism, or the other
+   substrate without moving semantic ownership. Two substrates sharing an
+   observation/normalization shape but differing subject matter remain
+   distinct under §10's sibling-vs-merge test — shared shape is not
+   shared invariant.
+```
+
+The refusal test (criterion 3) is necessary, not sufficient, here exactly as in §5: a substrate's "Does Not Own" list leaving real residue proves it can stay semantically neutral; it does not by itself prove Work Engine needs a named, canonical substrate rather than letting each consumer read raw reality itself. §7's evidence typing applies identically to substrate candidates.
+
+---
+
+## 7. Typed Recognition Evidence — Confidence, Not Eligibility, Not Status
+
+A candidate that clears §4, §5, or §6 is eligible to its respective kind. Whether it should actually be **admitted to the canonical taxonomy as a dimension, mechanism, or substrate** is a separate, evidentiary question, and **instance counts are supporting bookkeeping, never the criterion itself.** `mechanisms/revision-cas-and-publication.md`'s own status history is the direct proof: its confirmed-instance count moved from four to seven on 2026-09-16 ("found by the final mechanical audit to be undercounted here as 'four' — corrected") with zero change to `design: accepted` — the mechanism was never *made* real by reaching seven; the correction only repaired the record of evidence that was already there.
+
+**Recognition does not assign `design`, `reconciliation`, `authorization`, or `implementation` status.** Those remain independent status assertions whose authority and evidence are governed entirely by `status-grammar.md`. A candidate can be canonically recognized here as mechanism-shaped or substrate-shaped and still be `design: proposed`, `authorization: exploration_only`, or `implementation: none` — exactly what `mechanisms/candidate-resolution-and-admission.md` and both current substrates already are. Recognition answers "is this the right kind, with enough evidence to name it" — never "has this been accepted, authorized, or built."
 
 Evidence is typed, not counted. At minimum, distinguish:
 
@@ -108,68 +213,77 @@ implemented_cross_domain_consumer
 proposed_cross_domain_consumer
     A materially distinct domain has accepted the candidate as its own
     instance but has not yet built it.
+
+parametric_invariance
+    The same implementation survives multiple parameterizations of one
+    resource, configuration, or subject space within a single owning
+    domain. Real, useful evidence of clean generalization within that
+    domain; never sufficient on its own for cross-route invariance
+    (§5.4, §6.4) or for independent_domain_convergence.
 ```
 
-These are not mutually exclusive, and a single mechanism typically carries more than one at once — see §10 for how each of the current five actually breaks down. Three things must be stated explicitly, because the existing corpus has blurred exactly these distinctions under one undifferentiated "Confirmed Instances" heading (§10 names where):
+These are not mutually exclusive, and a single candidate typically carries more than one at once — see §13–§14 for how each current mechanism and substrate actually breaks down. Three things must be stated explicitly, because the existing corpus has blurred exactly these distinctions under one undifferentiated "Confirmed Instances" heading in more than one page (§13, §14 name where):
 
-- **Resource types parameterizing one generic implementation are not independent domain convergence.** `mechanisms/resource-lease-and-fencing.md`'s seven `RESOURCE_TYPES` (`directory, git-ref, git-index, port, index, review-budget, database`, verified against `contract.mjs:4-6`) are seven parameterizations of one already-generic `workspace-coordination` service, not seven independently-arrived-at domains that separately discovered the need. That is real, legitimate evidence — `preexisting_generic_implementation` — but it is a different evidentiary claim than convergence, and conflating the two overstates how many independent reasoning processes actually endorsed the shape.
+- **Resource types parameterizing one generic implementation are `parametric_invariance`, not `independent_domain_convergence`.** `mechanisms/resource-lease-and-fencing.md`'s seven `RESOURCE_TYPES` (`directory, git-ref, git-index, port, index, review-budget, database`, verified against `contract.mjs:4-6`) are seven parameterizations of one already-generic `workspace-coordination` service, not seven independently-arrived-at domains that separately discovered the need. That is real, legitimate evidence, but it is a different evidentiary claim than convergence, and conflating the two overstates how many independent reasoning processes actually endorsed the shape.
 
-- **"Zero cross-reference" is evidence of textual independence, not necessarily independent origin.** `mechanisms/authority-preserving-intent-projection.md` states its Runtime Realization instance "was written with **zero cross-reference to Studio or its reconciliation**, yet follows the identical shape" — real evidence that one author didn't copy the other's prose. It is not evidence that the two reasoning processes were separated by anything more than authorship, since both are products of the same 2026-09-16 architectural-decomposition campaign. See §5's origin-independence ladder for why this distinction has to be kept explicit rather than collapsed into a single "independent" label.
+- **"Zero cross-reference" is evidence of textual independence, not necessarily independent origin.** `mechanisms/authority-preserving-intent-projection.md` states its Runtime Realization instance "was written with **zero cross-reference to Studio or its reconciliation**, yet follows the identical shape" — real evidence that one author didn't copy the other's prose. It is not evidence that the two reasoning processes were separated by anything more than authorship, since both are products of the same 2026-09-16 architectural-decomposition campaign. See §8's origin-independence ladder for why this distinction has to be kept explicit rather than collapsed into a single "independent" label.
 
 - **Instance counts are supporting evidence, never the recognition criterion itself** (restated from the opening of this section because it is the single most load-bearing sentence on this page).
 
 ---
 
-## 5. Origin Independence — An Ordinal Ladder, Not a Score
+## 8. Origin Independence — An Ordinal Ladder, Not a Score
 
-Distinct from *how many* consumers exist (§4) is *how independently* each one arose. This is not a scalar to compute and compare numerically — it is an ordinal ranking used to judge whether a given piece of convergence evidence is as strong as it is being treated:
+Distinct from *how many* consumers exist (§7) is *how independently* each one arose. This is not a scalar to compute and compare numerically — it is an ordinal ranking:
 
 ```text
 same claim / same document
     < separate documents, same design campaign
     < independently developed subsystem or domain
-    < implementation predating architectural synthesis
+    < implementation predating the synthesis that recognized the pattern
 ```
 
-An instance at the top of this ladder (a real, running system built for its own reasons before anyone was looking for a shared mechanism — `workspace-coordination` predating the reconciliation-queue process entirely, or `semantic-context-lifecycle-manager.md`'s own implemented transition-lease sequence) is categorically stronger evidence than two documents drafted days apart in the same synthesis effort, even when both are honestly reported as "independent" in the narrower textual sense. §10 states, per mechanism, where its actual instances sit on this ladder rather than treating all "confirmed instances" as equivalent.
+**Higher placement means stronger evidence that the apparent convergence was not manufactured by the recognition process. It does not, by itself, mean stronger evidence that the abstraction is architecturally general.** These are different claims, and treating the ladder as measuring the second collapses it back into the same kind of scalar score this page exists to avoid. A preexisting implementation at the top of the ladder may simply be a locally generalized utility that has never encountered a second semantic domain — real, but possibly still domain-bound in every way that matters architecturally. Two same-campaign documents lower on the ladder, converging independently on an identical shape neither copied, can be exactly the signal of a genuine architectural joint, even though same-campaign placement makes the *non-manufactured* claim weaker. §13 and §14 report ladder placement strictly as evidence against manufactured convergence, never restated as a claim about generality.
 
 ---
 
-## 6. The Falsifier / Demotion Rule
+## 9. The Falsifier / Demotion Rule
 
-A recognized mechanism (or substrate) is not permanently settled by having once cleared §3–§4. It should be reconsidered — not silently, through an explicit re-check against this page — if later evidence shows any of:
+A recognized mechanism or substrate is not permanently settled by having once cleared §5 or §6. It should be reconsidered — not silently, through an explicit re-check against this page — if later evidence shows any of:
 
 ```text
 - the supposed invariant turns out to be domain-specific after all
-  (§3.1 fails on closer inspection);
+  (the normalized-invariant/observation-contract criterion fails on
+  closer inspection);
 - the refusal boundary leaves only a thin vocabulary or schema once
-  restated precisely (§3.3 fails);
+  restated precisely (the residue-after-refusals criterion fails);
 - its consumers require materially different semantics from one another,
-  not merely different implementation shape (§3.4 fails);
+  not merely different implementation shape (the cross-route/cross-
+  consumer criterion fails);
 - an existing canonical owner already owns the normalized truth being
-  claimed (§3.5 fails).
+  claimed (the distinctness criterion fails).
 ```
 
-Each recognized mechanism should be able to name what observation would demote it. §10 states one per mechanism, drawn from that mechanism's own weakest currently-cited evidence rather than invented generically.
+Each recognized mechanism or substrate should be able to name what observation would demote it. §13–§14 state one per candidate, drawn from that candidate's own weakest currently-cited evidence rather than invented generically.
 
 ---
 
-## 7. Sibling-versus-Merge Test
+## 10. Sibling-versus-Merge Test
 
-Two candidate mechanisms sharing vocabulary, implementation substrate, or superficial shape stay **separate** only when one of these holds:
+Two candidates sharing vocabulary, implementation substrate, or superficial shape stay **separate** only when one of these holds:
 
 ```text
 - they preserve materially different invariants; or
 - a rule one must enforce is a rule the other must NOT hold.
 ```
 
-Differences only in lifetime, naming, calling convention, storage engine, or implementation shape are **insufficient** to justify a merge, and are equally insufficient, by themselves, to justify keeping two pages separate — the test cuts both ways. §8 applies this directly and checks the source text rather than deciding from analogy.
+Differences only in lifetime, naming, calling convention, storage engine, or implementation shape are **insufficient** to justify a merge, and are equally insufficient, by themselves, to justify keeping two pages separate — the test cuts both ways. §11 applies this directly and checks the source text rather than deciding from analogy.
 
 ---
 
-## 8. Worked Pressure Test: Resource Lease vs. Transition Fencing
+## 11. Worked Pressure Test: Resource Lease vs. Transition Fencing
 
-Both mechanism pages already carry a direct, explicit "Relationship to [sibling]" section rather than assuming compatibility from shared fencing-token vocabulary — that much reconciliation work is already done. What was not yet stated as a sharp, enforceable rule is the §7 test itself: a concrete "X must, Y must not" pair.
+Both mechanism pages already carry a direct, explicit "Relationship to [sibling]" section rather than assuming compatibility from shared fencing-token vocabulary — that much reconciliation work is already done. What was not yet stated as a sharp, enforceable rule is §10's own test applied as a concrete "X must, Y must not" pair.
 
 Checked directly against both pages' own text (not decided from analogy):
 
@@ -196,74 +310,99 @@ Transition Fence:
 
 **Result: supported, with one distinction worth stating precisely.** Resource Lease's own text directly states the reusable-exercise half: `admitMutation` is checked "exactly once per operationId" but the same lease may back any number of distinct operation IDs while it remains current — a "standing relationship... may renew over time" is not a one-shot grant. Transition Fencing's own text never states a literal "must not confer reusable authority" prohibition in those words, but its entire documented shape supports the reciprocal directly: every stated instance of this mechanism (Context Lifecycle's transition-lease, the topology-transition fence, the executable-generation reload) is described as a single linear sequence terminating at "release the fence," with no renewal step, no "hold" state, and no second activation ever described against the same fence acquisition — explicitly contrasted, in the sibling comparison table itself, against Resource Lease's "no preparation phase, no single activation event." A one-shot preparation interval that always terminates at release, with no renewal path stated anywhere in its own page, is what "must not leave reusable standing authority" means in this document's own vocabulary; it is a direct reading of the page's stated shape, not an inference from a different mechanism's behavior.
 
-This strengthens, rather than manufactures, the existing split: §7's test is satisfied (a rule Resource Lease must enforce — repeat exercise under one currency is lawful — is a rule Transition Fencing's own stated shape never permits), so the two pages should remain separate mechanisms. Because neither page states the reciprocal as its own explicit "must / must not" sentence, that is a real, minor strengthening opportunity for both pages' own text — noted here, not applied there; editing those two pages is outside this page's own scope.
+This strengthens, rather than manufactures, the existing split: §10's test is satisfied (a rule Resource Lease must enforce — repeat exercise under one currency is lawful — is a rule Transition Fencing's own stated shape never permits), so the two pages should remain separate mechanisms. Because neither page states the reciprocal as its own explicit "must / must not" sentence, that is a real, minor strengthening opportunity for both pages' own text — noted here, not applied there; editing those two pages is outside this page's own scope.
 
-The **third-instance question already flagged inside `transition-fencing-and-leases.md` itself** ("a third, real instance protects a different kind of thing than either named class... left open rather than decided by this edit," referring to the executable-generation reload) is a distinct, open question about that mechanism's own *internal* fence-class taxonomy — not a question about whether it should merge with Resource Lease. The page's own text already resolves the cross-mechanism question directly ("tested against both mechanisms directly and belongs to the other one, not this one"). §10 records the internal taxonomy question as still open, exactly as the source page states it, without resolving it here.
-
----
-
-## 9. Authorization Is Not Inherited Through Composition
-
-Recognition (this page) and authorization (`status-grammar.md`) are independent axes, and composing a candidate mechanism with its consumers must not blur that independence in either direction. `status-grammar.md` §7 already states the general rule ("implementation-authorized input → does not grant implementation authorization to what consumes it"); this page's own worked example (§8, `mechanisms/resource-lease-and-fencing.md`'s status block) is the sharpest concrete case: the generic mechanism itself carries `authorization: unrecorded`, while two of its consumer instances each carry an independent `status_override` of `authorization: implementation_authorized`, sourced to their own distinct reconciliation documents — neither direction inherited. `status-grammar.md` §7 has been given an explicit corollary and a sixth worked example (§10.6 there) recording this case by name, so the rule is stated where authorization itself is defined rather than duplicated here.
+The **third-instance question already flagged inside `transition-fencing-and-leases.md` itself** ("a third, real instance protects a different kind of thing than either named class... left open rather than decided by this edit," referring to the executable-generation reload) is a distinct, open question about that mechanism's own *internal* fence-class taxonomy — not a question about whether it should merge with Resource Lease. The page's own text already resolves the cross-mechanism question directly ("tested against both mechanisms directly and belongs to the other one, not this one"). §13 records the internal taxonomy question as still open, exactly as the source page states it, without resolving it here.
 
 ---
 
-## 10. Pressure Test: The Current Five Mechanisms
+## 12. Authorization Is Not Inherited Through Composition
 
-Checked against §3–§6 directly. **No reclassification is made or implied by this section** — all five clear eligibility. What follows is the evidentiary and documentation picture the criterion exposes, including real gaps, reported rather than repaired.
+Recognition (this page) and authorization (`status-grammar.md`) are independent axes, and composing a candidate mechanism with its consumers must not blur that independence in either direction — restated with emphasis here because §7 already forbids recognition from assigning authorization directly, and this section covers the adjacent case of authorization moving sideways between a mechanism and its consumers. `status-grammar.md` §7 already states the general rule ("implementation-authorized input → does not grant implementation authorization to what consumes it"); this page's own worked example (§11, `mechanisms/resource-lease-and-fencing.md`'s status block) is the sharpest concrete case: the generic mechanism itself carries `authorization: unrecorded`, while two of its consumer instances each carry an independent `status_override` of `authorization: implementation_authorized`, sourced to their own distinct reconciliation documents — neither direction inherited. `status-grammar.md` §7 has been given an explicit corollary and a sixth worked example (§10.6 there) recording this case by name, so the rule is stated where authorization itself is defined rather than duplicated here.
+
+---
+
+## 13. Pressure Test: The Current Five Mechanisms
+
+Checked against §5, §7, §8, and §9 directly. **No reclassification is made or implied by this section** — all five clear eligibility. What follows is the evidentiary and documentation picture the criterion exposes, including real gaps, reported rather than repaired.
 
 ### `mechanisms/revision-cas-and-publication.md`
 
-- **Eligibility:** 1–5 all pass. Normalized shape (identity/predecessor/head/CAS/atomic-publish/stale-rejection) verified domain-blind; explicit "Does Not Decide" list; substantial residue (the six-item reusable shape); route invariance across five materially different owning dimensions; distinctness stated directly against both Candidate Resolution ("different questions, frequently composed") and Transition Fencing ("built directly on top of that one and does not restate its predecessor/head semantics").
+- **Eligibility:** 1–5 all pass. Normalized shape (identity/predecessor/head/CAS/atomic-publish/stale-rejection) verified domain-blind; explicit "Does Not Decide" list; substantial residue (the six-item reusable shape); cross-route invariance across five materially different owning dimensions; distinctness stated directly against both Candidate Resolution ("different questions, frequently composed") and Transition Fencing ("built directly on top of that one and does not restate its predecessor/head semantics").
 - **Evidence kinds present:** `independent_domain_convergence` (Evidence/Claims, Context Lifecycle, Organizational Compilation, Semantic Planning, Material Decision Selection, Runtime Realization — six dimensions, each citing its own source text); `implemented_cross_domain_consumer` (Evidence/Claims, Context Lifecycle, and Runtime Realization's nested executable-generation substrate, all verified against real code); `proposed_cross_domain_consumer` (Organizational Compilation, Semantic Planning, Material Decision Selection, Runtime Realization's own top-level `RoleRealization` lineage).
-- **Origin independence:** mixed. Evidence/Claims and Context Lifecycle's *code* sits at "implementation predating architectural synthesis" (real, running services checked directly); the *naming of the shared mechanism* across all seven cited instances sits at "separate documents, same design campaign" (all reconciled within the 2026-09-15/16 decomposition window).
+- **Origin independence:** mixed. Evidence/Claims and Context Lifecycle's *code* sits at "implementation predating the synthesis that recognized the pattern" (real, running services checked directly) — strong evidence the convergence wasn't manufactured, not itself a claim about generality; the *naming of the shared mechanism* across all seven cited instances sits at "separate documents, same design campaign."
 - **Falsifier:** an instance whose "publish" can silently merge, reorder, or last-write-win against a stale head is not this mechanism's shape regardless of how it is labeled.
-- **Documentation gap exposed:** the "post-execution implementation acceptance" instance (`completion-publication.mjs`) composes three already-recognized dimensions' outputs rather than belonging to any one dimension — a genuine fifth evidence shape (a *composite* instance) that §4's four typed kinds do not name. Flagged as an open extension to this page's own taxonomy, not resolved here.
+- **Documentation gap exposed:** the "post-execution implementation acceptance" instance (`completion-publication.mjs`) composes three already-recognized dimensions' outputs rather than belonging to any one dimension — a genuine fifth evidence shape (a *composite* instance) that §7's typed kinds do not name. Flagged as an open extension to this page's own taxonomy, not resolved here.
 
 ### `mechanisms/candidate-resolution-and-admission.md`
 
-- **Eligibility:** 1–5 all pass. Domain-neutral `AVAILABLE ∩ AUTHORIZED ∩ SATISFIES(REQUIRED) → {0/1/N}` shape; explicit "Does Not Decide" list; substantial residue (the zero/one/many distinction itself, stated as "the central fact this mechanism exists to establish"); route invariance across three materially different candidate universes; distinctness stated directly against both Revision/CAS and `mechanisms/authority-preserving-intent-projection.md` ("Neither subsumes the other").
+- **Eligibility:** 1–5 all pass. Domain-neutral `AVAILABLE ∩ AUTHORIZED ∩ SATISFIES(REQUIRED) → {0/1/N}` shape; explicit "Does Not Decide" list; substantial residue (the zero/one/many distinction itself, stated as "the central fact this mechanism exists to establish"); cross-route invariance across three materially different candidate universes; distinctness stated directly against both Revision/CAS and `mechanisms/authority-preserving-intent-projection.md` ("Neither subsumes the other").
 - **Evidence kinds present:** `independent_domain_convergence` (Organizational Compilation, Runtime Realization, Material Decision Selection — three dimensions; a fourth, Portfolio Selection, is explicitly self-labeled by its own source as "likely, not yet formally confirmed," i.e. `proposed_cross_domain_consumer`, correctly hedged already). No `implemented_cross_domain_consumer` evidence at all — `implementation: none` across every confirmed instance.
-- **Origin independence:** all three confirmed instances sit at "separate documents, same design campaign" (all reconciled or falsifier-tested within the 2026-09-15/16 window); none reaches "independently developed subsystem" or "predates synthesis," since none has running code.
+- **Origin independence:** all three confirmed instances sit at "separate documents, same design campaign" (all reconciled or falsifier-tested within the 2026-09-15/16 window); none reaches "independently developed subsystem" or "predates synthesis," since none has running code — a weaker non-manufactured-convergence signal than Revision/CAS's, independent of either mechanism's actual generality.
 - **Falsifier:** a claimed instance whose residual N-case judgment cannot actually be reduced to a domain-supplied decision (e.g., needing the mechanism itself to supply a domain predicate, or producing a fourth outcome class) does not confirm this mechanism.
-- **Documentation gap exposed:** none structural. Worth stating plainly as an evidentiary-confidence note (not a failure): this mechanism's entire canonical status currently rests on same-campaign, zero-implementation convergence — a materially thinner evidentiary base than Revision/CAS's, even though both pass eligibility identically. The criterion in §3 does not distinguish them; only §4's typed evidence does, which is exactly the separation this page exists to make visible.
+- **Documentation gap exposed:** none structural. Worth stating plainly as an evidentiary-confidence note (not a failure): this mechanism's entire canonical status currently rests on same-campaign, zero-implementation convergence — a materially thinner evidentiary base than Revision/CAS's, even though both pass eligibility identically. §5's criteria do not distinguish them; only §7's typed evidence does, which is exactly the separation this page exists to make visible.
 
 ### `mechanisms/transition-fencing-and-leases.md`
 
-- **Eligibility:** 1, 2, 3, 5 pass cleanly. Criterion 4 (route invariance) is **partially open, by the page's own admission**: the shared revision-binding discipline (bind → prepare → revalidate → publish → activate → release) is confirmed invariant across all three consumers, but whether "two named fence classes plus a third, unclassified instance" is a settled taxonomy or an incomplete one is explicitly unresolved in the source page itself ("left open rather than decided by this edit"). This does not fail eligibility — the base invariant clears criterion 4 — but the internal fence-class taxonomy built on top of it is not yet a closed question.
+- **Eligibility:** 1, 2, 3, 5 pass cleanly. Criterion 4 (cross-route invariance) is **partially open, by the page's own admission**: the shared revision-binding discipline (bind → prepare → revalidate → publish → activate → release) is confirmed invariant across all three consumers — three genuinely separate owning dimensions, not parameterizations of one — but whether "two named fence classes plus a third, unclassified instance" is a settled taxonomy or an incomplete one is explicitly unresolved in the source page itself ("left open rather than decided by this edit"). This does not fail eligibility — the base invariant clears criterion 4 — but the internal fence-class taxonomy built on top of it is not yet a closed question.
 - **Evidence kinds present:** `implemented_cross_domain_consumer` (Context Lifecycle's real transition-lease sequence; Runtime Realization's real executable-generation reload, verified directly against `executable-generation-manager.mjs`/`executable-generation-store.mjs`); `proposed_cross_domain_consumer` (Organizational Compilation's topology-transition fence, named but no compiler exists).
-- **Origin independence:** Context Lifecycle's and the executable-generation reload's implementations both sit at "implementation predating architectural synthesis" — both are real, pre-existing code the mechanism's own naming discovered rather than invented (the executable-generation instance explicitly "found 2026-09-16" as a symptom, not authored to fit). Organizational Compilation's topology-transition fence sits at "separate documents, same design campaign," the weakest of the three.
-- **Falsifier:** an instance that turns out to confer standing, renewable exercise authority (violating §8's reciprocal rule) is a Resource Lease instance mis-filed here, not a third fence class.
+- **Origin independence:** Context Lifecycle's and the executable-generation reload's implementations both sit at "implementation predating the synthesis that recognized the pattern" — both are real, pre-existing code the mechanism's own naming discovered rather than invented (the executable-generation instance explicitly "found 2026-09-16" as a symptom, not authored to fit) — strong evidence against manufactured convergence for those two. Organizational Compilation's topology-transition fence sits at "separate documents, same design campaign," the weakest of the three.
+- **Falsifier:** an instance that turns out to confer standing, renewable exercise authority (violating §11's reciprocal rule) is a Resource Lease instance mis-filed here, not a third fence class.
 - **Documentation gap:** the internal two-vs-three-fence-class question is real but already correctly hedged in both the source page and the capstone's own §5 table ("a third real instance protecting neither, never collapsed into one lock") — no overstatement found, no new gap to report; recorded here as an open item this page inherits rather than resolves.
 
 ### `mechanisms/resource-lease-and-fencing.md`
 
-- **Eligibility:** 1–5 all pass, including route invariance — the seven resource-type parameterizations are themselves valid, confirmed route-invariance evidence (many materially different resource kinds pass through the identical acquire/`admitMutation` shape without changing its meaning). Route invariance being satisfied is a separate fact from which §4 evidence kind that satisfaction counts as (below).
-- **Evidence kinds present:** `preexisting_generic_implementation` is this mechanism's actual, primary basis for recognition — `workspace-coordination`'s seven real resource types, verified against `contract.mjs`, predating the reconciliation-queue process entirely. This is legitimate, strong evidence in its own right (§4 names it as a first-class route, not a lesser one), but it is **not** `independent_domain_convergence`, and the source page's own "Confirmed Instances" heading currently lists it under the same undifferentiated label as its two genuinely cross-domain (but unbuilt) consumers. `proposed_cross_domain_consumer` ×2 (fenced active-binding, review-scope protection — both "accepted for implementation, not yet built"). No `implemented_cross_domain_consumer` evidence exists yet beyond the generic mechanism itself.
-- **Origin independence:** `workspace-coordination` sits at "implementation predating architectural synthesis" (independently named elsewhere as "the strongest kernel-shaped primitive found anywhere in the inventory," per its own status block). The two prospective consumers sit at "separate documents, same design campaign" (both accepted 2026-09-14, within the decomposition effort).
+- **Eligibility:** 1, 2, 3, 5 pass cleanly. Criterion 4 (cross-route invariance) does **not** pass on the seven resource-type parameterizations directly — `directory/git-ref/git-index/port/index/review-budget/database` are one generic `workspace-coordination` implementation's own parametric invariance (§5's own note under criterion 4), not materially different owning domains. It passes instead, more thinly, on the two prospective consumers: fenced active-binding (owned by Runtime Realization) and review-scope protection (owned by `review.md`) are genuinely different owning domains reusing the identical acquire/`admitMutation` shape without changing its meaning — both real, accepted-for-implementation designs, neither built. Eligibility is a category question, not a confidence one, so an accepted-but-unbuilt cross-domain design is sufficient to clear criterion 4; the evidence typing below is where the resulting confidence is honestly recorded as thinner than "seven confirmed instances" suggests.
+- **Evidence kinds present:** `preexisting_generic_implementation` (the `workspace-coordination` core itself, verified against `contract.mjs`, predating the reconciliation-queue process entirely) plus `parametric_invariance` (its seven resource types — real implementation-robustness evidence, not cross-domain evidence) plus `proposed_cross_domain_consumer` ×2 (fenced active-binding, review-scope protection). No `implemented_cross_domain_consumer` evidence exists yet beyond the generic mechanism's own resource types.
+- **Origin independence:** `workspace-coordination` sits at "implementation predating the synthesis that recognized the pattern" (independently named elsewhere as "the strongest kernel-shaped primitive found anywhere in the inventory," per its own status block) — strong evidence the recognition wasn't manufactured; not itself evidence that the two prospective consumers will pan out. The two prospective consumers sit at "separate documents, same design campaign" (both accepted 2026-09-14, within the decomposition effort).
 - **Falsifier:** if, once built, either prospective consumer needs a materially different admission or staleness rule than `admitMutation`'s exactly-once-per-operation-id CAS check (e.g., multi-holder shared exercise, or non-monotonic fencing), that consumer would reveal coincidentally reused vocabulary, not confirmed cross-domain identity.
-- **Documentation gap exposed:** real. The page's single "Confirmed Instances" heading flattens three evidentially distinct claims — one real preexisting generic implementation and two accepted-but-unbuilt cross-domain consumers — into one undifferentiated list, exactly the flattening §4 exists to prevent. Flagged for that page's own maintenance, not corrected here.
+- **Documentation gap exposed:** real. The page's single "Confirmed Instances" heading flattens three evidentially distinct claims — one `preexisting_generic_implementation` claim with real `parametric_invariance` support (the seven types) and two `proposed_cross_domain_consumer` claims (the two new consumers) — into one undifferentiated list, exactly the flattening §7 exists to prevent. As this revision's own eligibility check makes explicit, the seven types alone never actually satisfied criterion 4's cross-route requirement; only the two new consumers do. Flagged for that page's own maintenance, not corrected here.
 
 ### `mechanisms/authority-preserving-intent-projection.md`
 
-- **Eligibility:** 1–5 all pass. Domain-neutral discover/render/collect-intent/submit/lifecycle-feedback shape; explicit "Does Not Decide" list; substantial residue (the shared lifecycle vocabulary itself); route invariance across Studio (UI mutation) and Runtime Realization (execution policy) — materially different domains; distinctness stated directly against Candidate Resolution and Admission ("composable, never subsuming or subsumed").
-- **Evidence kinds present:** `independent_domain_convergence` (Studio, Runtime Realization) — subject to the §4 caveat this page states by name: both are same-campaign artifacts (2026-09-16), so their origin-independence sits at "separate documents, same design campaign," not "independently developed subsystem," despite the source page's own "zero cross-reference" framing. `proposed_cross_domain_consumer` (Studio's command/edit projection, accepted design, not implemented).
-- **Origin independence:** neither instance reaches above "same design campaign" — this mechanism currently has the thinnest origin-independence evidence of the five, even though it passes eligibility identically to the other four.
+- **Eligibility:** 1–5 all pass. Domain-neutral discover/render/collect-intent/submit/lifecycle-feedback shape; explicit "Does Not Decide" list; substantial residue (the shared lifecycle vocabulary itself); cross-route invariance across Studio (UI mutation) and Runtime Realization (execution policy) — materially different domains; distinctness stated directly against Candidate Resolution and Admission ("composable, never subsuming or subsumed").
+- **Evidence kinds present:** `independent_domain_convergence` (Studio, Runtime Realization) — subject to the §7 caveat this page states by name: both are same-campaign artifacts (2026-09-16), so their origin-independence sits at "separate documents, same design campaign," not "independently developed subsystem," despite the source page's own "zero cross-reference" framing. `proposed_cross_domain_consumer` (Studio's command/edit projection, accepted design, not implemented).
+- **Origin independence:** neither instance reaches above "same design campaign" — this mechanism currently has the thinnest non-manufactured-convergence evidence of the five, even though it passes eligibility identically to the other four; that is a statement about evidentiary confidence, not about whether the mechanism is architecturally real.
 - **Falsifier:** if Runtime Realization's operator-policy-overlay, once built, does not implement the shared lifecycle vocabulary (`proposed`/`pending`/`admitted`/`refused`/`completed`/`stale`) but a domain-bespoke state machine instead, the claimed instance demotes to "inspired by," not "an instance of."
 - **Documentation gaps exposed — two, both real:**
-  1. The page's own "Confirmed Instances" subheading calls the Runtime Realization overlay a "**real, partial instance**," while the same page's own Status section states `implementation: none` and explicitly clarifies that what exists (`operator-switchboard.mjs`) is "a real but partial **precursor**... not an implementation of this mechanism itself." These two characterizations are in direct tension within one page. Applying §4's typed-evidence discipline forces the disambiguation the current prose blurs: this is `proposed_cross_domain_consumer` evidence with a strong precursor, not `implemented_cross_domain_consumer` evidence — the subheading's own wording should say so.
+  1. The page's own "Confirmed Instances" subheading calls the Runtime Realization overlay a "**real, partial instance**," while the same page's own Status section states `implementation: none` and explicitly clarifies that what exists (`operator-switchboard.mjs`) is "a real but partial **precursor**... not an implementation of this mechanism itself." These two characterizations are in direct tension within one page. Applying §7's typed-evidence discipline forces the disambiguation the current prose blurs: this is `proposed_cross_domain_consumer` evidence with a strong precursor, not `implemented_cross_domain_consumer` evidence — the subheading's own wording should say so.
   2. This page's `owner` field names `app-server/docs/work-engine-studio-reconciliation.md`. Both `mechanisms/revision-cas-and-publication.md` and `mechanisms/candidate-resolution-and-admission.md` record an explicit correction of the identical mistake ("an earlier draft named `status-grammar.md` as `owner`... This page is its own canonical owner") and now self-own. This page never received that same correction and still names an external reconciliation document as `owner` for its own recognition status — an inconsistency across the five mechanism pages' own stated convention, not a new question this page invents.
 
 Neither gap changes this mechanism's eligibility or its `design: accepted` status; both are reportable documentation inconsistencies within the existing corpus, surfaced by applying this page's own criterion rather than repaired by it.
 
 ---
 
-## 11. Related Architecture Views
+## 14. Pressure Test: The Two Substrates
 
-- **`work-engine-planned-architecture.md`** §1 — names this page and links here rather than restating the criterion; §5 and §11 cite this page's pressure-test result directly.
-- **`status-grammar.md`** §7, §10.6 — the authorization-composition corollary and worked example this page's §9 depends on; recognition (this page) and authorization (that page) remain independent axes.
-- **`mechanisms/revision-cas-and-publication.md`, `mechanisms/candidate-resolution-and-admission.md`, `mechanisms/transition-fencing-and-leases.md`, `mechanisms/resource-lease-and-fencing.md`, `mechanisms/authority-preserving-intent-projection.md`** — the five pressure-tested in §10; none reclassified.
-- **`substrates/context-observer.md`, `substrates/evidence-anchor.md`** — structurally eligible for the identical §3–§4 test (both were named only after two independent consumers existed); not pressure-tested here, since this page's brief was the five mechanisms specifically, and reopening the substrates was not requested.
+Requested directly by review, checked against §6's own substrate-specific criteria rather than assumed identical to §5's mechanism test. **No reclassification is made or implied** — both clear eligibility.
+
+### `substrates/context-observer.md`
+
+- **Eligibility:** 1–5 all pass. The `ContextObservation` schema (identity/usage/composition/activity/lifetime/relationships) is real and source-grounded (`deterministic-authority-projection-and-adaptive-organizational-topology.md` §5.3); explicit "does NOT own" list (lifecycle pressure, replacement applicability, topology/separation pressure, semantic-width interpretation, organizational judgment, any transition decision), governed by its own stated sentence, "metrics like semantic-width pressure, coupling, or projection reduction therefore do not belong in the observer itself"; substantial residue (the full six-category schema survives refusal intact); cross-consumer invariance — Context Lifecycle and Organizational Compilation are explicitly stated peers ("neither gates the other's applicability question"), each deriving materially different downstream evidence (`LifecycleEvidence` vs. `VantageSeparationEvidence`) from the identical observation contract; distinctness stated directly against Evidence Anchor ("same observation/normalization shape, unrelated subject matter... neither substrate is a generalization of the other").
+- **Evidence kinds present:** `independent_domain_convergence` (Context Lifecycle, Organizational Compilation — two genuinely separately-owned dimensions, each with their own derivation layer). Notably weaker in one respect than Evidence Anchor's own sourcing: this substrate's multi-consumer case had to be assembled by the architecture-decomposition effort itself from two separate dimension pages, rather than being diagrammed as multi-consumer by a single source document — a calibration note, not a flaw.
+- **Origin independence:** both consumers sit at "separate documents, same design campaign" — moderate evidence against manufactured convergence, no claim made here about the substrate's architectural generality beyond that (§8).
+- **Falsifier:** if `ContextObservation`'s fields turned out to be populable only with foreknowledge of which consumer would derive from them — i.e., the schema silently encoding lifecycle- or topology-specific meaning — the substrate would fail semantic neutrality (§6.2) and collapse into whichever consumer it secretly serves.
+- **Documentation gap:** none structural. One nuance checked and resolved, not a contradiction: this page's own "What This View Does Not Show" bullet says a generic "observer framework" abstraction "would only be justified if a second, independent substrate later converged on the same shape, which has not happened yet." `substrates/evidence-anchor.md` is now that second substrate, and its own text calls the two "the same shape." Read carefully, these are not in tension — Evidence Anchor's claim is that both independently satisfy the *substrate-kind* shape (observation/normalization only, no derivation, no admission), which is true and is exactly what §6 confirms; Context Observer's hedge is about a separate, still-unaddressed question — whether a *third*, more generic mechanism/base-abstraction unifying substrate-construction itself is warranted. That question remains open; it is not answered or contradicted by either substrate's own recognition.
+
+### `substrates/evidence-anchor.md`
+
+- **Eligibility:** 1, 2, 3, 5 pass cleanly. The `AnchorObservation` schema and exact-revision-binding invariant are real and source-grounded (`evidence-anchor-observation-and-impact-nomination.md` §3); explicit "does NOT own" list (dependency/anchor registry, semantic materiality, durable record publication, refresh-episode consequence, reopening downstream work), with its own corrected leak already documented ("'relevant' smuggles semantic materiality back into the observer"); substantial residue (the five-state comparator plus the bound/observed revision invariant survives refusal intact); distinctness stated directly against Context Observer. **Criterion 4 (cross-consumer invariance) passes, but only thinly, and for a different reason than the page's own text suggests.**
+- **The finding:** this page's own §4, "Multiple Independent Consumers, Already Named by the Source," presents architecture claim, plan claim, and research claim as its confirming multi-consumer evidence — but `evidence-and-claims.md` §1 ("What This Dimension Owns") states directly that this single dimension owns "claim identity, revision chains, provenance, lineage relationships... [answering] what proposition does this claim assert" generically, regardless of subject matter. Architecture/plan/research claims are domain profiles of *one* owning dimension's own generic claim schema, not three independently-owned consumers — exactly the `parametric_invariance` pattern §7 already names for Resource Lease's seven resource types, found here in a second page by applying the same discipline consistently. The substrate's actual cross-domain evidence rests entirely on the fourth candidate named in the same source document's own Relationships table — the coordinate/service-state map (`service-plane-and-kernel-domain-boundary.md`, a genuinely different owning dimension) — which that source itself describes only as "not something this document builds a parallel mechanism for": closer to a passing mention than an accepted design, thinner even than Resource Lease's two accepted-for-implementation consumers.
+- **Evidence kinds present:** `parametric_invariance` (architecture/plan/research claim, all domain profiles of the single Evidence/Claims dimension); one very thin `proposed_cross_domain_consumer` (the coordinate/service-state map candidate, named but not accepted). No `independent_domain_convergence` and no `implemented_cross_domain_consumer` evidence currently exists for genuine cross-domain reuse.
+- **Origin independence:** the parametric claim-type evidence sits entirely within one already-implemented dimension (Evidence/Claims); the one real candidate for cross-domain evidence has no ladder placement yet, since it has not been adopted in any form.
+- **Falsifier:** if the coordinate/service-state map candidate is never adopted and no other genuinely different-domain consumer ever emerges, this substrate's real cross-domain evidence reduces to zero — its practical scope would need to be recognized as domain-specific to Evidence/Claims after all, the cross-consumer criterion (§6.4) failing exactly as §9 anticipates.
+- **Documentation gap exposed:** real, and structurally identical to Resource Lease's. This page's own §4 heading overstates cross-domain convergence by presenting one dimension's own domain-profile parameterizations as "multiple independent consumers." Flagged for that page's own maintenance, not corrected here.
+
+Net for §14: both substrates clear eligibility cleanly. Context Observer's evidence is honestly moderate and already stated without overclaim. Evidence Anchor's canonical confidence is weaker than its own "already named by the source" framing suggests, for the identical structural reason Resource Lease's was — the same conflation, found twice by applying one consistent test.
+
+---
+
+## 15. Related Architecture Views
+
+- **`work-engine-planned-architecture.md`** §1 — names this page and links here rather than restating the criterion; §5 and §11 cite this page's pressure-test results directly.
+- **`status-grammar.md`** §7, §10.6 — the authorization-composition corollary and worked example this page's §12 depends on; recognition (this page) and authorization (that page) remain independent axes.
+- **`mechanisms/revision-cas-and-publication.md`, `mechanisms/candidate-resolution-and-admission.md`, `mechanisms/transition-fencing-and-leases.md`, `mechanisms/resource-lease-and-fencing.md`, `mechanisms/authority-preserving-intent-projection.md`** — the five pressure-tested in §13; none reclassified.
+- **`substrates/context-observer.md`, `substrates/evidence-anchor.md`** — the two pressure-tested in §14; none reclassified.
 
 ---
 
@@ -279,4 +418,6 @@ architecture_status:
   status_as_of: 2026-09-18
 ```
 
-`design: accepted` — this page's own recognition criterion, eligibility/evidence split, origin-independence ladder, falsifier rule, and sibling-versus-merge test were explicitly settled through direct discussion (2026-09-18), the same bar every mechanism and dimension recognition in this architecture is held to. `reconciliation: reconciled` — pressure-tested directly against all five current mechanism pages' own text, `status-grammar.md`, and `work-engine-planned-architecture.md` §1/§5/§11, this session, not restated from summary; two real documentation gaps were found and are recorded in §10 rather than corrected on the pressure-tested pages. `authorization: design_work_authorized` — this page is a documentation and taxonomy convention, not a buildable artifact; nothing here authorizes reclassifying or rebuilding anything it pressure-tests. `implementation: none` — not applicable to a taxonomy page. `owner`: self, following the corrected convention `mechanisms/revision-cas-and-publication.md` and `mechanisms/candidate-resolution-and-admission.md` already use, and the correction §10 recommends for `mechanisms/authority-preserving-intent-projection.md`.
+`design: accepted` — this page's own recognition criterion, including this revision's kind classifier, three kind-specific eligibility sections, the parametric/cross-route distinction, and the substrate pressure test, was explicitly settled through direct discussion (2026-09-18), the same bar every mechanism and dimension recognition in this architecture is held to. `reconciliation: reconciled` — pressure-tested directly against all five current mechanism pages, both substrate pages, `status-grammar.md`, and `work-engine-planned-architecture.md` §1/§5/§11, this session; four real documentation gaps were found across the two pressure tests and are recorded in §13–§14 rather than corrected on the pressure-tested pages. `authorization: design_work_authorized` — this page is a documentation and taxonomy convention, not a buildable artifact; nothing here authorizes reclassifying or rebuilding anything it pressure-tests. `implementation: none` — not applicable to a taxonomy page. `owner`: self, following the corrected convention `mechanisms/revision-cas-and-publication.md` and `mechanisms/candidate-resolution-and-admission.md` already use, and the correction §13 recommends for `mechanisms/authority-preserving-intent-projection.md`.
+
+**Revised 2026-09-18** from the same-day first version, per direct review: (1) split the single, mechanism-shaped eligibility test into a kind classifier (§3) plus three kind-specific eligibility sections (§4–§6), rather than declaring substrates "structurally eligible for the identical test" without checking; (2) made explicit that recognition evidence (§7) never assigns `status-grammar.md`'s own design/reconciliation/authorization/implementation values; (3) narrowed the origin-independence ladder (§8) to claim only that higher placement is evidence against manufactured convergence, not evidence of architectural generality; (4) separated `parametric_invariance` from cross-route/cross-consumer invariance (§5, §6, §7) and corrected Resource Lease's §13 entry accordingly; (5) added the substrate pressure test (§14), which found the identical parametric-vs-cross-route conflation in Evidence Anchor's own "Multiple Independent Consumers" section that Resource Lease already had — the same discipline, applied consistently, catching the same mistake twice.
