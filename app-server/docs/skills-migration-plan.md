@@ -9,7 +9,7 @@ conditions. It does not itself migrate canonical ownership, accept a semantic
 classification, authorize a contract change, approve a slice plan, or make a
 generated projection authoritative.
 
-Evidence cutoff: repository `HEAD`
+Original planning evidence cutoff: repository `HEAD`
 `b4d749672990aadb51bab391a2e286b057128ea4` plus the directly inspected working
 tree on 2026-08-29. The working tree already contained unrelated and ongoing
 App Server, product-development, experiment, and instruction-review changes.
@@ -21,6 +21,136 @@ an immutable checkpoint before a slice relies on them as a migration subject.
 The campaign may revise, split, combine, or reorder candidate slices when new
 evidence supports a better route. It must preserve every governing invariant,
 real dependency, authority boundary, and required acceptance consequence.
+
+## Approved pre-S14 roadmap amendment — 2026-09-12
+
+**Authority:** The operator explicitly requested amendment of this plan after
+reviewing the bounded-exit recommendation, adding Plan IR and its required
+pilot, and supplying the four clarifications preserved below. This authorizes
+the roadmap changes in this section. It does not unpause the migration, launch
+a pilot, accept an implementation slice, change an accepted repair plan, or
+authorize retirement or publication. The current pause and separately owned
+out-of-band lifecycle repair remain in effect.
+
+This section supersedes conflicting priority or scope language for the
+remaining S14-S17 work. Historical accepted outcomes and exact acceptance
+contracts remain intact. Status reconciliation and roadmap changes are
+deliberately separate.
+
+### Status reconciliation
+
+- S13's Review Bench foundation is accepted and published at
+  `8abc57ba9b140b1c30367364572c8f10b55da842`. The
+  [post-S13 strategic handoff](../../planning/production-path-claim-evidence-strategic-handoff.md)
+  preserves that acceptance while recording remaining research responsibilities.
+  Publication does not mean every responsibility under the S13 heading is done.
+- The operator reports migration paused before S14 while approved PPCE-03/04
+  remediation and ongoing context-lifecycle repairs proceed. The
+  [PPCE plan decision](../../planning/production-path-claim-evidence-plan-decision.json)
+  binds the accepted implementation plan; current execution and repair outcomes
+  remain with their campaign owners. This amendment is not a new audit of their
+  terminal state.
+- The [post-S13 audit](../../planning/production-path-claim-evidence-audit-round-1.md)
+  and [active doctrine transition](../../planning/production-path-claim-evidence-transition.md)
+  retain their findings, scopes, and completion authority. A roadmap status
+  update neither closes those findings nor reinterprets historical acceptance.
+
+### Exact activity gates
+
+| Condition | Activity affected | Release evidence and owner |
+| --- | --- | --- |
+| Current operator-directed pause | Resuming the paused migration campaign | The campaign owner records the applicable operator continuation authority; this amendment does not resume it |
+| PPCE-03/04 evidence-admission defect | S14 acceptance and other acceptance that consumes the affected native-review path | Accepted remediation and the applicable transition-audit dispositions, established through the owning repair and acceptance authorities |
+| An unresolved lifecycle defect | Only the planning, execution, recovery, or acceptance activity whose required behavior it prevents, in addition to the current pause | The repair owner identifies the affected behavior and exact evidence; the dependent acceptance owner determines sufficiency |
+| PPCE-01 comparison-identity defect | Producing or relying on affected Review Bench comparisons | An accepted correction and truthful disposition of historical comparison evidence |
+| PPCE-02 and S13 research residuals | Profile admission, routing, coverage, or research claims that require that evidence | The relevant evidence and owning admission decision; unrelated S14 work does not acquire these dependencies |
+
+PPCE-03/04 before S14 **acceptance** is not a blanket requirement to finish that
+repair before every S14 planning or implementation activity. Any such activity
+still respects the current pause, its own authorization, and the evidence it
+actually consumes. Recording an unresolved repair includes the activity it
+blocks and the consequence needed to release that dependency; an incident name
+alone is not a global gate.
+
+### Approved priority and scope changes
+
+The preferred allocation of remaining migration effort is:
+
+1. Resolve the applicable acceptance and operational blockers under their
+   existing repair scopes.
+2. Keep S14's native intake, proposal formation, and strategic planning imports;
+   use bounded planning work to exercise them without importing future
+   architecture into their role contracts.
+3. Prioritize S15 service responsibilities needed by those roles, reliable
+   continuation, and the service foundations of upcoming concurrent workflows.
+   Establish their ownership and bounded consumer evidence; implementing the
+   broader concurrency behavior is successor work.
+4. Give every remaining S16 responsibility an explicit consumer-aware
+   disposition, migrating the retained active responsibilities that need a
+   successor and recording deliberate retention, deferral, or authorized
+   retirement for the rest.
+5. Close the S17 obligations listed below and hand off remaining product and
+   research work with exact sources and dependencies.
+
+This is a priority order, not a blanket dependency chain. Independent planning,
+service work, or pilot preparation may proceed when its actual prerequisites,
+authority, and the current pause permit it. Production cutover and pilot
+execution each depend on their own acceptance conditions.
+
+### Successor roadmap and required IR pilot
+
+The successor roadmap includes three connected bodies of work:
+
+- [Provider/harness/operator ports](../ideas/pending/provider-turn-harness-runtime-and-operator-projection.md)
+  and [materialized runtime realization](../ideas/pending/pre-indexed-capability-resolution-and-frozen-runtime-realization.md).
+- [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md),
+  [Structural Plan IR](../ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md),
+  its [prior-art investigation](../ideas/pending/structural-plan-ir-prior-art.md),
+  [planner characterization](../ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md),
+  and [execution-profile scoring](../ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md).
+- [Revisioned research and execution](revisioned-research-and-execution-architecture.md),
+  initially tested through bounded recovery and research consequences.
+
+[Hierarchical orchestration](../ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md)
+is a candidate accelerator across these workstreams.
+[Architecture intake](../ideas/pending/incremental-architecture-intake-and-seam-reconciliation.md)
+informs reconciliation of their shared semantics. Neither is silently added to
+S14's existing role-import obligations.
+
+The operator requires a bounded IR/plan-resolution pilot on this roadmap before
+production adoption of the proposed resolution-based execution strategy. Pilot
+planning coordinates the compilation track's direct-versus-compiled baseline
+with IR's representation and compact-versus-elaborated comparisons, preserving
+distinct decision, representation, executor, and integration failure causes.
+The exact matrix, schema, subjects, review requirements, budget, and execution
+authority belong to a separately accepted pilot plan. A general replay platform
+is not an assumed prerequisite; a prospective pilot can establish bounded
+evidence. Basic independent workflows do not require adaptive IR routing.
+
+The two currently uncommitted sources,
+[evidence-calibrated resolution](../ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md)
+and its [upstream amendments](../ideas/pending/evidence-calibrated-plan-resolution-upstream-amendments.md),
+are substantive inputs to that pilot and architecture reconciliation. They
+introduce dimension-specific resolution, decision-closure versus rendering
+cost, context burden, continuation/cache observations, safe composition, and
+continuous capability learning. Their hypotheses require evidence; inclusion
+does not apply the proposed amendments to their separate owners. Bind their
+exact source revisions when forming the pilot rather than relying on mutable
+working-tree text.
+
+The pilot evaluates total accepted-work consequences, including planning,
+characterization, context ingestion, supervision, review, repair, latency, and
+operator attention. Unknown continuation/cache state stays unknown; production
+observations and controlled comparisons retain their distinct evidence classes.
+Predictions and scores initially inform investigation rather than automatically
+routing production. Pilot results can retain useful contract or IR structure
+even if cheaper-executor economics fail.
+
+These are successor roadmap commitments and research questions, not additional
+migration completion conditions. The [central strategic plan](post-migration-strategic-plan.md)
+develops their staging; this migration plan owns the migration amendment and
+exit conditions. Anticipated greater subscription capacity motivates readiness,
+but grants no provider or pilot spending authority.
 
 ## Campaign objective
 
@@ -1483,6 +1613,15 @@ host capabilities are narrow enough to verify independently.
 **Candidate set:** `idea-intake`, `proposal-former`, and `strategic-planner`.
 Each remains its own slice if their evidence or ownership differs materially.
 
+**Amended priority and dogfood:** Retain this candidate set. Bounded intake,
+proposal formation, and strategic reconciliation for the successor roadmap are
+useful real consumers of the imported roles. Their outputs keep existing
+decision and artifact ownership. Multi-idea architecture intake, a new
+implementation compiler or Plan IR, hierarchical orchestration, and adaptive
+routing are not part of these imports. Apply the exact activity gates in the
+2026-09-12 amendment; do not interpret its priority order as a new blanket
+implementation dependency.
+
 **Independently valuable outcome:** Product-development judgment runs through
 generic compiled role packages and manifest composition rather than additional
 handcrafted gateways.
@@ -1511,6 +1650,14 @@ retaining only necessary agent-facing semantics and authorized clients.
 whose server-service destination is accepted. Context lifecycle remains hidden
 service infrastructure rather than an ordinary reviewer or agent skill.
 
+**Amended selection priority:** Prefer accepted service responsibilities needed
+by S14 consumers, reliable continuation, and future concurrent-workflow service
+foundations. This imports responsibilities and establishes canonical ownership;
+it does not require implementing multi-supervisor orchestration, new concurrency
+policy, or the successor pilot. Existing service concurrency tests remain
+applicable to their own contracts. Other ledger responsibilities receive an
+explicit S16 disposition rather than disappearing through deprioritization.
+
 **Independently valuable outcome:** Each accepted import removes one
 agent-local state or mechanics owner without copying it behind a new path.
 
@@ -1528,9 +1675,29 @@ mechanics as cognitive work.
 
 ### S16 — Evidence-driven remaining portfolio batches
 
-**Objective:** Migrate all remaining retained responsibilities in coherent
-batches selected from the S0 ledger, using the proven non-role, reviewer,
-service-backed, product-role, and retained-workflow patterns.
+**Objective:** Reconcile every remaining responsibility from the S0 ledger and
+migrate the active retained responsibilities that require successors in coherent
+batches, using the proven non-role, reviewer, service-backed, product-role, and
+retained-workflow patterns.
+
+**Amended disposition contract:** Every remaining responsibility has an exact
+source, owner, current-consumer account, and one explicit disposition:
+
+- **Migrate:** identify the successor owner, required parity or authorized
+  difference, and acceptance evidence.
+- **Retain with an owner:** identify the deliberate canonical owner, supported
+  consumers, compatibility boundary, and any later reconsideration condition.
+- **Defer:** identify the future work owner and trigger, plus the current
+  supported disposition of every existing consumer. Deferring an enhancement
+  cannot defer the ownership or safe operation of a live responsibility.
+- **Retire under authorization:** identify the retirement authority, consumer
+  clearance, evidence-retention obligations, and eventual retirement receipt.
+
+These are roadmap dispositions recorded through the existing migration records,
+not an amendment to a persisted schema. Proposed dispositions remain proposals
+until their owning authority accepts them. An unresolved responsibility keeps
+an explicit decision owner; neither `optional` nor `deferred` closes an
+unaccounted active consumer or satisfies S17 by itself.
 
 **Independently valuable outcome:** Each batch removes a bounded class of
 legacy dependency while preserving a functioning predecessor until acceptance.
@@ -1556,7 +1723,8 @@ completion pressure.
 
 **Objective:** Complete explicit ownership transitions and remove legacy
 execution paths only after every active consumer uses accepted generated
-projections, manifest roles, services, or capabilities.
+projections, manifest roles, services, capabilities, or an explicitly retained
+canonical path. Remove only the obsolete paths cleared for retirement.
 
 **Independently valuable outcome:** The repository has one active semantic and
 runtime architecture, with historical migration evidence but no ambiguous
@@ -1584,6 +1752,32 @@ test; and separately authorized retirement changes.
 
 **Excluded:** Deleting historical evidence, rewriting immutable subjects, or
 inferring authority from technical completion.
+
+### S17 exit-obligation register
+
+This register makes the finish visible before S17 begins. Owners below name
+existing responsibilities, not newly launched roles. The campaign supervisor
+coordinates evidence references; implementation and acceptance judgments remain
+with their named owners. Each missing item means **not yet bound to an exact
+exit subject in this amendment**, not that no earlier evidence exists. Reuse
+applicable accepted receipts and record their remaining coverage gaps.
+
+| Exit obligation | Responsible owner / acceptance owner | Acceptance condition | Evidence still to bind or obtain |
+| --- | --- | --- | --- |
+| Complete responsibility disposition | Migration supervisor with each responsibility's semantic owner / owning decision authority | Every ledger responsibility has an accepted disposition, carried forward from prior accepted migration records or established through S16, and every active consumer is accounted for; deferred work leaves no ownerless live consumer | Reconciled exit-revision ledger, consumer inventory, accepted disposition references, and unresolved-decision closure |
+| Canonical instruction and projection ownership | Compiler/package owners / migration acceptance owner | One canonical meaning owner per active instruction; generated projections and environment views reproduce without drift | Exact accepted source/compiler/environment revisions, package ownership records, and exit-tree generation/drift results |
+| Role imports and runtime bindings | Role and runtime owners / role-import acceptance owner | Retained roles satisfy compiled requirements and use accepted environments with truthful restart/binding behavior | S14 and other retained-role vertical receipts, negative-authority evidence, and final manifest/binding reconciliation |
+| Service ownership and compatibility | Each service owner / service-transition authority | Promoted mechanics/state have one server owner, bounded clients, and supported consumers with no active duplicate owner | S15/S16 service receipts, compatibility or authorized-difference records, restart/concurrency evidence, and duplicate-consumer clearance |
+| Production-path claim establishment | PPCE repair and affected claim owners / dependent acceptance and doctrine-transition owners | Exit acceptance consumes admissible evidence for each required claim or its exact authorized owner disposition; PPCE closure is not inferred from workload completion | PPCE-03/04 accepted remediation and audit dispositions, remaining transition coverage applicable to S14-S17, and exact exit-claim bindings |
+| Exercised lifecycle behavior | Lifecycle repair/runtime owners / retained-role acceptance owners | Required continuation, queued-input, authority, and recovery properties hold for the retained roles and supported operations | Dogfood records binding repaired revision, role/operation, exercised behavior, outcome, and limitation; map coverage to required exit claims |
+| Lifecycle emergency and failure cases | Lifecycle repair owners / affected acceptance owners | Each known case has an explicit blocked activity and a resolved or authorized bounded disposition; routine success does not establish emergency coverage | Separate case inventory, applicable fault/recovery evidence, remaining gaps, and owner decisions; no general-replay requirement is added |
+| Legacy cutover and retirement | Consumer/package owners / explicit retirement authority | Active consumers use accepted successors or explicitly retained canonical paths; obsolete paths are removed only with authority and historical identity preserved | Exit-tree consumer/discovery checks, retirement grants and receipts, rollback or reconstruction evidence, and historical-reference checks |
+| Terminal acceptance and successor handoff | Migration supervisor / authorized campaign acceptance owner | Exact terminal subject satisfies the migration conditions; residual product/research work has owners and does not masquerade as completed work | Consolidated exit evidence references, named residual dependencies and pilot sources, historical reconstruction result, and terminal acceptance decision |
+
+Routine dogfood and emergency/failure evidence remain separate even when one
+incident contributes to both. Full runtime-port generalization, general-purpose
+replay, IR compilation, multi-supervisor orchestration, and pilot completion
+are not S17 acceptance requirements.
 
 ## Slice entry contract
 
@@ -1661,8 +1855,10 @@ authority.
 
 The skills migration campaign is complete when:
 
-- every legacy responsibility has an accepted destination or explicit retained
-  status;
+- every legacy responsibility has an accepted disposition, carried forward
+  from prior accepted migration records or established through S16; any deferred
+  successor work preserves a supported, owned current consumer state, and
+  authorized retirement has its required receipts;
 - every active model-facing instruction is generated from or deliberately
   retained under one canonical semantic owner;
 - every role realization satisfies compiled requirements through the runtime
@@ -1671,12 +1867,16 @@ The skills migration campaign is complete when:
   active agent-local duplicate;
 - every retained role participates safely in hidden context lifecycle without
   owning its mechanics;
-- every active consumer uses accepted successor paths;
+- every active consumer uses accepted successor paths or explicitly retained
+  canonical paths, with no ambiguous or duplicate ownership;
 - generated artifacts and environment views are reproducible and drift-free;
 - compatibility paths scheduled for removal have been retired with receipts;
 - unresolved ownership, authority, and semantic questions remain explicitly
   owned rather than hidden; and
 - the authorized campaign owner accepts the terminal evidence.
+
+The S17 exit-obligation register binds evidence to these conditions. It does not
+require completing separately scoped successor architecture or research pilots.
 
 ## Neighboring authoritative and planning material
 
