@@ -27,6 +27,11 @@ idea_status:
     - keyword-scan: full_document
   audit_scope_completeness: complete
   status_as_of: 2026-09-17
+  canonicalization_correction:
+    found: "A documentation-only reconnaissance session (2026-09-25) found that this document's own SS10-11 (dependency-release / prerequisite-satisfaction semantics: Preplanner declares what depends on what and what consequence releases it; the owning workstream establishes the consequence; the Orchestrator mechanically observes it and coordinates the now-runnable vantage) were not represented anywhere in semantic-planning-hierarchy.md, despite the 2026-09-17 full-supersession audit's own architectural_supersession: full / residue: none disposition above. That audit re-checked the Preplanner/Orchestrator/Branch-Planner ownership contracts and the Supervisor block at a conceptual level; it did not separately re-verify SS10-11 against the replacement text, and the content was genuinely absent there, not merely reworded."
+    disposition: "Restored into semantic-planning-hierarchy.md's own 'Dependency Release and Runnability' section and Key Invariants 8-9, 2026-09-25. architectural_supersession: full and residue: none above are accurate again as of that restoration; they were not accurate for the period between 2026-09-17 and 2026-09-25, a gap this entry records rather than silently closes."
+    not_restored: "The exact mechanism by which release evidence is represented or delivered to the Orchestrator (direct observation vs. a claim-evidence reliance/refresh path vs. something else) was not decided by this document and remains undecided by the restoration."
+    status_as_of: 2026-09-25
 ```
 
 ```yaml

@@ -47,6 +47,9 @@ flowchart TB
     CONFLICT["Typed Topology Conflict"]
     REPLAN["Replanning / Owning Authority"]
 
+    RUND{"Declared prerequisite<br/>for D satisfied?"}
+    BLOCKD["D declared, not yet runnable"]
+
     OBJ -->|"planning input"| PRE
     PRE -->|"produces"| OP
 
@@ -54,7 +57,9 @@ flowchart TB
 
     ORCH -->|"realizes branch-planning topology"| BPA
     ORCH -->|"realizes branch-planning topology"| BPB
-    ORCH -->|"realizes branch-planning topology"| BPD
+    ORCH -->|"observes declared release evidence"| RUND
+    RUND -->|"yes"| BPD
+    RUND -.->|"not yet"| BLOCKD
 
     BPA -->|"produces"| BPA_PLAN
     BPB -->|"produces"| BPB_PLAN
@@ -81,6 +86,8 @@ flowchart TB
 ```
 
 Branch D is drawn with the identical `planner → accepted branch plan → supervisor → builder` shape as branches A and B — deliberately. Per "Integration is its own workstream" below, integration is not a distinct role class; it is the same pipeline applied to a workstream the orchestration plan happened to declare as integration.
+
+Branch D is also drawn gated, not automatic: the Orchestrator realizes A's and B's branch-planning topology immediately because the orchestration plan declared no prerequisite for them, but it only realizes D's once it has observed that D's own declared prerequisite is satisfied. Restored 2026-09-25 — see "Dependency Release and Runnability" below.
 
 ---
 
@@ -182,6 +189,58 @@ It has not thereby gained authority to rewrite the planning topology.
 
 ---
 
+## Dependency Release and Runnability
+
+**Restored 2026-09-25.** This section did not survive the canonicalization pass that superseded `hierarchical-planning-and-multi-supervisor-orchestration.md` (`architectural_supersession: full`, `residue: none`, audited 2026-09-17) into this page. That source document's own §§10–11 name an explicit mechanism for one thing this page otherwise leaves silent: **when does a workstream the orchestration plan already declared actually become eligible for its own planning vantage?** The 2026-09-17 audit re-checked the Preplanner/Orchestrator/Branch-Planner ownership contracts and the Supervisor block at a conceptual level, but did not separately re-verify this mechanic against the replacement text — it is genuinely absent here, not merely reworded elsewhere. This section restores it as content the source document already carried, not as new architecture; see that document's own `canonicalization_correction` entry for the audit-record side of this fix.
+
+An accepted orchestration plan may declare a workstream whose planning vantage should not begin immediately — not because the plan is incomplete, but because the plan itself makes that workstream's start conditional on a named consequence of another workstream. Dependencies should be expressed as **required consequences** rather than incidental process completion — the source's own strength, preserved rather than sharpened into a stronger rule here:
+
+```text
+Branch B declares:
+    requires: accepted runtime-provider contract R
+
+Branch A declares:
+    releases: accepted runtime-provider contract R
+```
+
+rather than:
+
+```text
+Branch B requires: Branch A to finish
+```
+
+The consequence form preserves route independence — a different branch, or a revised implementation of the same branch, may satisfy the same declared consequence without changing dependent work.
+
+The ownership split, restored directly from the source:
+
+```text
+Preplanner
+    declares what depends on what, and what consequence releases it
+        (semantic content — part of the accepted orchestration plan itself)
+
+The domain/authority that owns the declared release consequence
+    establishes that consequence under its own rules
+        (that domain's own semantic authority, not the Orchestrator's —
+         which may itself require review or acceptance, not merely
+         production of an artifact)
+
+Orchestrator
+    observes the already-established consequence and mechanically
+    determines that the plan-declared prerequisite is satisfied
+        -- never judges whether an undeclared or partial consequence is
+           "close enough"
+    coordinates instantiation or resumption of the now-runnable
+    planning vantage
+```
+
+This is coordination of already-accepted topology, not new semantic planning — the same boundary §2 above already states for the Orchestrator generally. The source document's own integration example names the mechanical half precisely: "the orchestrator only determines that the declared prerequisites for Integration D have become satisfied. It does not decide how the implementations should be reconciled." Discovering that a dependency structure itself should change — a previously undeclared dependency, integration required before its declared release point, and similar — is not mechanical observation; it is a topology falsification and routes upward through the same replanning path as any other, below.
+
+**What this restores, precisely:** a workstream may be **declared and durable — part of the accepted orchestration plan — before it is runnable.** Runnability is a distinct, later, evidence-gated fact the Orchestrator observes, not something acceptance grants unconditionally. The diagram above should not be read as implying every declared branch's planning vantage begins the moment the orchestration plan is accepted.
+
+**What this does not restore:** the exact mechanism by which release evidence is represented or delivered to the Orchestrator — a direct observation, a claim-evidence reliance/refresh path, or something else — is not decided by the source document and is not decided here. Left open on purpose.
+
+---
+
 ## Topology Conflict and Replanning
 
 The hierarchy is not a one-way waterfall.
@@ -229,6 +288,10 @@ The important property is not the physical messaging route. It is the preservati
 7. **The same actor class may participate at multiple stages without collapsing those stages into one authority.**
 
    Same actor does not imply same decision, same role, or same authority.
+
+8. **Dependency release is evidence-bearing and mechanically derived from already-established consequences.** The Orchestrator determines that the orchestration plan's declared prerequisite is satisfied; it does not establish the underlying consequence or decide whether partial or undeclared evidence is close enough.
+
+9. **A workstream's declared dependencies are semantic content owned by the Preplanner.** Discovering that a dependency should change routes through topology conflict like any other planning revision, never through the Orchestrator's own judgment.
 
 ---
 
@@ -320,10 +383,12 @@ architecture_status:
   authorization: unrecorded
   implementation: partial
   owner: app-server/ideas/pending/hierarchical-planning-and-multi-supervisor-orchestration.md
-  status_as_of: 2026-09-16
+  status_as_of: 2026-09-25
 ```
 
 `design: proposed`, not `accepted` — the source document's own Status header reads "Formed architectural direction," never an explicit adoption decision. `reconciliation: reconciled` — this page's content is checked directly against that source, `proposal-decision-gated-implementation-compilation.md`, and `deterministic-authority-projection-and-adaptive-organizational-topology.md`. `authorization: unrecorded` — the document was set as strategic priority (`post-migration-strategic-plan.md`, 2026-09-14), which is not the same speech-act as an authorization decision under this grammar; no citable "build this" decision was found, so this is silence, not a confirmed ceiling. `implementation: partial` — Supervisor/Builder execution is real and live in the current runtime; the newer upper layers this page depicts (Preplanner, Orchestrator, Branch Planner, concurrent multi-branch topology) are not.
+
+**Restored 2026-09-25** — "Dependency Release and Runnability" above and Key Invariants 8–9 close a gap a documentation-only reconnaissance session found: `reconciliation: reconciled` had been true of this page's content in general but was not actually true of the source document's own §§10–11, which a prior full-supersession audit (dated 2026-09-17, on the source document itself) did not separately re-verify. No new design axis is introduced — the restored content shares this page's own default status exactly: `design: proposed` (the source's own "Formed architectural direction" ceiling, never elevated), `authorization: unrecorded`, `implementation: none` for this specific mechanic (narrower than the page-level `partial`, since dependency release has no live analogue the way Supervisor/Builder execution does).
 
 ```yaml
 status_override:
