@@ -37,6 +37,18 @@
       "evidence": ["app-server/runtime-manifest.yaml#roles.slice-builder.developer_instructions", "skills/slice-builder/SKILL.md"],
       "changes_contract": false,
       "human_approval": null
+    },
+    {
+      "id": "s16-disposition-bounded-plan-acceptance",
+      "category": "ownership",
+      "subject": "bounded-plan acceptance (accept-or-escalate-the-plan)",
+      "conclusion": "Bounded-plan acceptance is retained for migration compatibility under the branch-local coordinating vantage presently realized by the slice-supervisor profile, until post-migration Material Decision Selection / Implementation-Contract Compilation integration explicitly reconsiders and supersedes it. This is an S16 'retain with an owner' disposition, not a contract change: it names an existing responsibility's owner, supported consumers, compatibility boundary, and reconsideration condition without altering slice-supervisor's current behavior.",
+      "evidence": ["skills/slice-supervisor/SKILL.md#accept-or-escalate-the-plan", "app-server/docs/skills-migration-plan.md#s16--evidence-driven-remaining-portfolio-batches", "app-server/migrations/skills/portfolio-inventory-v1.json"],
+      "changes_contract": false,
+      "human_approval": {
+        "approver": "repository user",
+        "reference": "app-server/docs/skills-migration-plan.md#s16--evidence-driven-remaining-portfolio-batches"
+      }
     }
   ]
 }

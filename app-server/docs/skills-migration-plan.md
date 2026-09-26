@@ -1699,6 +1699,58 @@ until their owning authority accepts them. An unresolved responsibility keeps
 an explicit decision owner; neither `optional` nor `deferred` closes an
 unaccounted active consumer or satisfies S17 by itself.
 
+**Accepted disposition, 2026-09-26 — bounded-plan acceptance
+(`accept-or-escalate-the-plan`).** Found unclassified by a documentation-only
+reconnaissance pass tracing `slice-campaign.acceptedBoundary` against the S0
+ledger (`app-server/migrations/skills/portfolio-inventory-v1.json`'s
+`slice-supervisor` entry: `classification_state: provisional`,
+`authority_status: not_accepted`, first `unresolved_authority_question`
+exactly this). The operator's disposition:
+
+> Retain bounded-plan acceptance for migration compatibility under the
+> branch-local coordinating vantage presently realized by the
+> `slice-supervisor` profile, until post-migration Material Decision
+> Selection / Implementation-Contract Compilation integration explicitly
+> reconsiders and supersedes that responsibility.
+
+Disposition: **Retain with an owner.**
+
+- **Deliberate canonical owner:** the branch-local coordinating vantage
+  presently realized, for migration-compatibility purposes, by the
+  `slice-supervisor` profile — named this way deliberately, not as
+  `slice-supervisor` unqualified, per `organizational-compilation.md` §5's
+  ruling that named roles are reusable profiles over the deeper logical-
+  vantage-contract primitive, not fixed types.
+- **Supported consumers:** the slice-supervisor workflow's own retained
+  builder, per slice; `slice-campaign.admit()`, which records this
+  responsibility's output as `acceptedBoundary`; and downstream
+  review/gate/checkpoint stages that depend on an already-accepted boundary
+  existing before they run.
+- **Compatibility boundary:** this responsibility may evaluate whether a
+  proposed bounded slice preserves the accepted campaign objective, scope,
+  authority, evidence, invariants, and approval requirements; procedurally
+  or humanly admit that bounded plan under its existing authority; and
+  establish the boundary `slice-campaign.admit()` subsequently records. It
+  may not change campaign/product meaning, resolve reserved material
+  decisions, mint authority, make Material-Decision-Selection or
+  Implementation-Contract-Compilation judgments on its own behalf, expand
+  the accepted branch/workstream, or treat plan acceptance as
+  implementation acceptance.
+- **Reconsideration condition:** reconsider when post-migration
+  decision-gated-compilation work (Material Decision Selection +
+  Implementation-Contract Compilation) is integrated with bounded execution
+  and the slice-campaign lifecycle. That integration is settled
+  architecture but scheduled as post-migration roadmap/pilot work (see
+  `post-migration-strategic-plan.md`'s Revision 2026-09-17 block), not a
+  migration-completion condition — this disposition is not blocked on it
+  and does not anticipate it.
+
+This closes the specific gap the S17 exit-obligation register's "Complete
+responsibility disposition" row exists to catch, for this one responsibility.
+It does not itself constitute S16 batch acceptance evidence, migrate any
+code, or authorize Material Decision Selection / Implementation-Contract
+Compilation implementation.
+
 **Independently valuable outcome:** Each batch removes a bounded class of
 legacy dependency while preserving a functioning predecessor until acceptance.
 
