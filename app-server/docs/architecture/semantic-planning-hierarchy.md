@@ -35,14 +35,9 @@ flowchart TB
     BPB_PLAN["Accepted Branch Plan B"]
     BPD_PLAN["Accepted Branch Plan D (integration workstream)"]
 
-    SUPA["Supervisor A"]
-    SUPB["Supervisor B"]
-    SUPD["Supervisor D (integration workstream)"]
-
-    BA1["Builder / Execution Vantage A1"]
-    BA2["Builder / Execution Vantage A2"]
-    BB1["Builder / Execution Vantage B1"]
-    BD1["Builder / Execution Vantage D1"]
+    REALA["Downstream organizational + execution realization A<br/>(shape determined by Organizational Compilation)"]
+    REALB["Downstream organizational + execution realization B<br/>(shape determined by Organizational Compilation)"]
+    REALD["Downstream organizational + execution realization D<br/>(shape determined by Organizational Compilation)"]
 
     CONFLICT["Typed Topology Conflict"]
     REPLAN["Replanning / Owning Authority"]
@@ -65,18 +60,13 @@ flowchart TB
     BPB -->|"produces"| BPB_PLAN
     BPD -->|"produces"| BPD_PLAN
 
-    BPA_PLAN -->|"realized by"| SUPA
-    BPB_PLAN -->|"realized by"| SUPB
-    BPD_PLAN -->|"realized by"| SUPD
+    BPA_PLAN -->|"organizationally realized by"| REALA
+    BPB_PLAN -->|"organizationally realized by"| REALB
+    BPD_PLAN -->|"organizationally realized by"| REALD
 
-    SUPA -->|"bounded execution"| BA1
-    SUPA -->|"bounded execution"| BA2
-    SUPB -->|"bounded execution"| BB1
-    SUPD -->|"bounded execution"| BD1
-
-    SUPA -.->|"accepted topology falsified"| CONFLICT
-    SUPB -.->|"accepted topology falsified"| CONFLICT
-    SUPD -.->|"accepted topology falsified"| CONFLICT
+    REALA -.->|"accepted topology falsified"| CONFLICT
+    REALB -.->|"accepted topology falsified"| CONFLICT
+    REALD -.->|"accepted topology falsified"| CONFLICT
     BPA -.->|"planning discovers conflict"| CONFLICT
     BPB -.->|"planning discovers conflict"| CONFLICT
     BPD -.->|"planning discovers conflict"| CONFLICT
@@ -85,7 +75,7 @@ flowchart TB
     REPLAN -->|"new or revised semantic topology"| PRE
 ```
 
-Branch D is drawn with the identical `planner → accepted branch plan → supervisor → builder` shape as branches A and B — deliberately. Per "Integration is its own workstream" below, integration is not a distinct role class; it is the same pipeline applied to a workstream the orchestration plan happened to declare as integration.
+Branch D is drawn with the identical `planner → accepted branch plan → downstream organizational/execution realization` shape as branches A and B — deliberately. Per "Integration is its own workstream" below, integration is not a distinct role class; it is the same pipeline applied to a workstream the orchestration plan happened to declare as integration.
 
 Branch D is also drawn gated, not automatic: the Orchestrator realizes A's and B's branch-planning topology immediately because the orchestration plan declared no prerequisite for them, but it only realizes D's once it has observed that D's own declared prerequisite is satisfied. Restored 2026-09-25 — see "Dependency Release and Runnability" below.
 
@@ -131,7 +121,7 @@ The Branch Planner answers questions such as:
 - What consequences must the implementation preserve?
 - What decisions must be resolved before execution may proceed?
 
-The Branch Planner is not simply a preparatory version of the Supervisor. It occupies a different semantic authority boundary.
+The Branch Planner is not simply a preparatory version of downstream organizational/execution realization. It occupies a different semantic authority boundary.
 
 ---
 
@@ -139,24 +129,32 @@ The Branch Planner is not simply a preparatory version of the Supervisor. It occ
 
 Integration is not an incidental final step performed automatically after independent branches complete.
 
-Where the orchestration topology establishes integration as distinct work, that work receives its own planning and realization path — the same `planner → accepted branch plan → supervisor → builder` pipeline every other branch uses, not a separate role class. Integration is a workstream, not a new kind of authority.
+Where the orchestration topology establishes integration as distinct work, that work receives its own planning and realization path — the same `planner → accepted branch plan → downstream organizational/execution realization` pipeline every other branch uses, not a separate role class. Integration is a workstream, not a new kind of authority.
 
 This prevents integration consequences from being silently absorbed into one branch merely because that branch happens to finish last or possess relevant implementation context, and it prevents the architecture from implying that integration work needs — or gets — a different authority model than any other accepted branch.
 
 ---
 
-### 5. The Supervisor realizes an accepted branch plan
+### 5. Downstream organizational/execution realization begins from an accepted branch plan
 
-A **Supervisor** begins from an accepted branch plan.
+Once a branch plan is accepted, downstream organizational and execution
+realization begins from it.
 
 Its authority is therefore bounded by semantic structure that already exists.
 
-The Supervisor may:
+How many vantages that realization involves, and how authority is composed
+among them, is `organizational-compilation.md`'s own territory — this page
+names neither a count nor a fixed profile. Current deployment happens to
+realize some of these responsibilities through Supervisor and Builder
+profiles; that is an implementation fact, not a required organizational
+shape.
+
+That downstream realization may:
 
 - coordinate execution of the accepted branch;
 - inspect local implementation and runtime evidence;
 - judge how accepted obligations should be realized within its permitted organizational authority;
-- supervise one or more execution vantages;
+- supervise one or more further execution vantages, recursively, where organizationally justified;
 - nominate a topology conflict when evidence falsifies assumptions of the accepted plan.
 
 It may not silently redefine the branch's semantic topology.
@@ -183,7 +181,7 @@ Builders or equivalent execution vantages perform bounded implementation work un
 
 Execution may produce new evidence. That evidence can reveal that the plan's assumptions no longer hold, but proximity to the evidence does not itself create planning authority.
 
-A Builder or Supervisor discovering that two supposedly independent obligations are actually coupled has discovered a **fact relevant to replanning**.
+Any execution or organizational-realization vantage discovering that two supposedly independent obligations are actually coupled has discovered a **fact relevant to replanning**.
 
 It has not thereby gained authority to rewrite the planning topology.
 
@@ -252,7 +250,7 @@ When that occurs, Work Engine uses an explicit **topology-conflict path** rather
 Conceptually:
 
 ```text
-Branch Planner / Supervisor
+Branch Planner / downstream organizational-execution realization
         ↓
 typed topology conflict
         ↓
@@ -277,7 +275,7 @@ The important property is not the physical messaging route. It is the preservati
 
 2. **The Orchestrator realizes orchestration topology; it does not become the Preplanner.**
 
-3. **The Supervisor realizes an accepted branch plan; it does not become the Branch Planner.**
+3. **Downstream organizational/execution realization does not thereby become the Branch Planner, regardless of how many vantages that realization involves.**
 
 4. **Local evidence may invalidate an accepted topology without granting the discovering actor authority to replace it.**
 
@@ -301,7 +299,7 @@ This diagram deliberately does **not** describe:
 
 - how an accepted branch plan is compiled into a concrete execution organization;
 - `auto-org` or recursive organizational realization;
-- how many Supervisors, Builders, Specialists, or retained contexts should exist;
+- how many organizational-realization or execution vantages (e.g., Supervisors, Builders, Specialists) or retained contexts should exist;
 - role-contract compilation;
 - ExecutionEnvelope construction;
 - capability or provider resolution;
