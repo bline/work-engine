@@ -358,6 +358,58 @@ It may not silently change **what those obligations are**.
 
 ---
 
+## Relationship to Decision-Gated Compilation
+
+**Restored 2026-09-26**, closing the same canonicalization gap already found
+and fixed twice this session for this page's own source material: the
+2026-09-15 ruling that an accepted branch plan is a distinct artifact,
+strictly upstream of decision-gated compilation's sealed decision set and
+implementation contract(s), has been cited only in this page's own
+Source-and-Status metadata until now — never stated in its body text.
+
+```text
+Accepted Branch Plan
+    ├── distinct from and strictly upstream of ──> Sealed Decision Set
+    └── may be realized through ─────────────────> Implementation Contract(s)
+
+Accepted, portfolio-selected proposal
+    └── Material Decision Selection ─────────────> Sealed Decision Set
+
+Sealed Decision Set
+    └── supplies ────────────────────────────────> Implementation-Contract Compilation
+
+Exact Branch Plan ↔ Proposal mapping: unresolved.
+Exact ICC ↔ durable slice/campaign ordering: unresolved.
+```
+
+An accepted branch plan is not the sealed decision set or the compiled
+implementation contract, and does not absorb their authority — it sits
+strictly upstream of both. A single accepted branch plan may be realized
+through multiple implementation contracts, produced in successive bounded
+increments over time; it is not an artifact that embeds or pre-specifies
+contracts that do not yet exist at the branch plan's own acceptance time.
+
+Accepting a branch plan authorizes the workstream to enter bounded
+implementation planning/execution subject to downstream decision-gated
+compilation and slice-level admission; it is not sufficient execution
+authority on its own. Downstream, Material Decision Selection retains
+ownership of the accepted proposal's material route-decision surface, while
+Implementation-Contract Compilation derives exact bounded repository
+transformations from accepted meaning, decisions, claims, and repository
+evidence — neither judgment belongs to this page.
+
+**What this section does not decide:** which grain of accepted work a
+decision-gated-compilation cycle addresses (`material-decision-selection.md`
+states its own grain directly — an accepted, portfolio-selected proposal, not
+a branch plan or a bounded increment — and this section does not equate the
+two); whether or how `implementation-contract-compilation.md`'s own
+bounded-increment output relates in time to any durable slice/campaign
+identity a downstream workflow maintains; or which vantage profile realizes
+any of this — `organizational-compilation.md` §5's own ruling that named
+roles are reusable profiles, not mandatory stages, is not reopened here.
+
+---
+
 ## Related Architecture Views
 
 The following atlas pages expand dimensions intentionally omitted here:
@@ -366,6 +418,8 @@ The following atlas pages expand dimensions intentionally omitted here:
 - **`organizational-compilation.md`** — how accepted semantic structure is lowered into execution organization and recursively adapted.
 - **`runtime-realization.md`** — how an accepted executor/runtime requirement becomes a concrete provider/harness/model composition, several steps downstream of this page's own output.
 - **`role-and-contract-structure.md`** — what a logical role must observe, own, and avoid, sitting between organizational compilation and runtime realization.
+- **`material-decision-selection.md`** — owns the sealed decision set that sits strictly downstream of an accepted branch plan; operates at proposal grain, not this page's branch/workstream grain.
+- **`implementation-contract-compilation.md`** — owns the compiled implementation contract(s) a single accepted branch plan may yield, over time, in bounded increments.
 - **`context-lifecycle.md`** — how retained reasoning contexts are replaced safely.
 - **`mechanisms/revision-cas-and-publication.md`** — the mechanism branch-plan revisions (§16 of the source document) would use, once implemented; named as required durable state, not yet verified as built.
 - **`evidence-and-claims.md`** — how accepted planning facts are materialized and maintained without becoming planning authority.

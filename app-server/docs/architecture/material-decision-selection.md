@@ -171,6 +171,18 @@ This page does not define:
 
 ---
 
+## Relationship to Semantic Planning Hierarchy
+
+Distinct grain, not yet mapped. This dimension operates on an accepted,
+portfolio-selected proposal (§1 above); `semantic-planning-hierarchy.md`'s
+accepted branch plan is a distinct workstream-level semantic-planning
+artifact, confirmed strictly upstream of this dimension's sealed decision set
+by the 2026-09-15 ruling recorded there. Whether, or how, a given accepted
+branch plan's own objective traces back to the proposal this dimension
+operates on is not decided by either page — this dimension's own grain
+remains the proposal it already states, not the branch plan and not any
+bounded increment.
+
 ## Relationship to Portfolio Selection
 
 Consumes an already-selected, campaign-accepted proposal as its own starting point — strictly downstream, never overlapping.
@@ -191,6 +203,7 @@ Reuses the mechanism for its own final selection step (§7) — the mechanism's 
 
 ## Related Architecture Views
 
+- **`semantic-planning-hierarchy.md`** — a distinct, workstream-level semantic-planning grain; confirmed strictly upstream of this dimension's own sealed decision set, not yet mapped to this dimension's proposal-grained input.
 - **`portfolio-selection.md`** — the upstream source of the accepted proposal this dimension operates on.
 - **`implementation-contract-compilation.md`** — the `SUPPLIES` consumer of this dimension's sealed decision-set revision.
 - **`role-and-contract-structure.md`** — a distinct, adjacent fact (§8), never collapsed with this dimension's own route selection.

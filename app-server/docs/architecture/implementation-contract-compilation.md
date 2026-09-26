@@ -199,6 +199,17 @@ This page does not define:
 
 ---
 
+## Relationship to Semantic Planning Hierarchy
+
+`semantic-planning-hierarchy.md`'s own 2026-09-15 ruling states this
+dimension's compiled contract sits strictly downstream of, and distinct from,
+an accepted branch plan — one accepted branch plan may be realized through
+multiple contracts this dimension compiles over time. This dimension's own
+grain remains the bounded increment/slice it already states (§2, §4); this
+relationship does not make it branch-grained. Whether this dimension's own
+compilation precedes, follows, or is otherwise ordered against any durable
+slice/campaign identity a downstream workflow maintains is not decided here.
+
 ## Relationship to Material Decision Selection
 
 `SUPPLIES`: a sealed decision-set revision feeds this dimension's implementation basis; newly discovered material decisions return there, never resolved here.
@@ -219,6 +230,7 @@ Consumes relevant claims and evidence cutoffs as part of the implementation basi
 
 ## Related Architecture Views
 
+- **`semantic-planning-hierarchy.md`** — the upstream semantic-planning view whose accepted branch plan is distinct from and strictly above this dimension's compiled contract(s), per the 2026-09-15 ruling; the exact artifact mapping into this dimension's accepted-proposal and sealed-decision-set input basis remains unresolved.
 - **`material-decision-selection.md`** — the `SUPPLIES` source of the sealed decision-set revision this dimension's basis depends on.
 - **`runtime-realization.md`** — the downstream stage-3 owner; §5 there names this dimension precisely as stage 1's owner.
 - **`role-and-contract-structure.md`** — a distinct, adjacent fact; never the owner of stage 1.
