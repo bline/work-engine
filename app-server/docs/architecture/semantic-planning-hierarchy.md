@@ -341,18 +341,20 @@ Accepted Branch Plan
 
 ORGANIZATIONAL / EXECUTION REALIZATION
 
-Organizational compilation
+Organizational Compilation
     ↓
-Supervisor contract
+Admitted execution organization / ExecutionEnvelope
     ↓
-Execution vantages
+Logical vantage contract(s)
     ↓
-Runtime realization
+Runtime Realization
 ```
 
 The lower system may determine **how** accepted semantic obligations should be distributed across legitimate execution vantages.
 
 It may not silently change **what those obligations are**.
+
+**Corrected 2026-09-25** — this diagram previously named `Supervisor contract` as a required, singular intermediate stage between `Organizational compilation` and generic `Execution vantages`, asymmetric with every other named role. That was a stale fixed-role assumption, in tension with `organizational-compilation.md` §5's own ruling ("Work Engine roles are not fundamentally fixed names such as Builder / Reviewer / Supervisor... the deeper object is a logical vantage contract") and §12's recursion (which occurs "at deeper execution layers" without requiring any named stage first). The corrected chain restates the same page's own §7/§8 admission mechanism (`available ∩ authorized ∩ satisfies(required) → ExecutionEnvelope`) and `role-and-contract-structure.md`'s own "logical vantage contract" vocabulary directly, rather than a name this page happened to use before either of those pages existed. No semantic content changes: a Supervisor remains one legitimate, reusable profile a logical vantage contract may take — it is simply no longer drawn as a mandatory stage.
 
 ---
 
