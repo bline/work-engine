@@ -459,7 +459,7 @@ remain valuable even if a lower-cost execution strategy fails its pilot.
 
 | Source | Distinct contribution |
 | --- | --- |
-| [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md) | **Architecture absorbed/settled (confirmed 2026-09-17 — see Revision 2026-09-17 below): material decision closure, reserved/delegated authority, implementation-contract workflow, and conformance are already stated by `material-decision-selection.md` and `implementation-contract-compilation.md`, including this idea's own "Invariants" section restated near-verbatim.** Only its Stage 0-6 pilot/validation track remains open backlog — do not treat this idea's architectural placement as still undecided. |
+| [Decision-gated compilation](../ideas/pending/proposal-decision-gated-implementation-compilation.md) | **Architecture partially absorbed (confirmed 2026-09-17, narrowed 2026-09-26 — see Revision 2026-09-26 below): material decision closure, reserved/delegated authority, implementation-contract workflow, and conformance are stated by `material-decision-selection.md` and `implementation-contract-compilation.md`, including this idea's own "Invariants" section restated near-verbatim.** Stage 5-6's own normative routing/strategy-selection judgment is not absorbed by either canonical view and remains a surviving architectural residue (candidate dimension: Execution Strategy Selection, not yet canonicalized); Stage 0-6's remaining experimental/validation procedure is open backlog as before. |
 | [Structural Plan IR](../ideas/pending/structural-plan-ir-for-capability-aware-multi-model-execution.md) | Candidate canonical representation and faithful executor-specific projections |
 | [Prior-art study](../ideas/pending/structural-plan-ir-prior-art.md) | Candidate revision/node identity, layering, lineage correspondence, and projection fidelity; not an accepted schema |
 | [Planner characterization](../ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md) | Derived description of the remaining judgment surface, with incremental characterization cost measured separately |
@@ -774,4 +774,55 @@ revisit_when:
   - Structural Plan IR's SS18 reconnaissance is run, producing findings that confirm, narrow, or revise the candidate representation hypothesis.
   - Lineage-correspondence-judgment ownership is resolved or explicitly, deliberately deferred.
   - Decision-gated compilation's Stage 0-6 pilot track is scoped or begun, now that its architectural placement is no longer in question.
+```
+
+### Revision 2026-09-26 (appended, not a replacement)
+
+The block above is preserved as the 2026-09-17 handoff. This revision does
+not change either named priority (claim-evidence impact/refresh vertical,
+hierarchical-orchestration proposal formation) — it narrows one of that
+revision's own three findings, following a documentation-and-code falsifier
+pass conducted this session.
+
+```yaml
+schema_version: 1
+strategic_objective: Complete the claim-evidence impact/refresh vertical and resolve hierarchical planning/workflow's open seams as basic working blocks, so expanded Codex capacity can be spent on ready, well-scoped parallel work rather than bottlenecked by a single sequential thread or missing shared substrate
+evidence_cutoff:
+  roadmap_revision: "e3cbf9bd43be41637393a74582ca415807d2c4a6:app-server/docs/architecture/organizational-compilation.md"
+  repository_revision: "e3cbf9bd43be41637393a74582ca415807d2c4a6"
+  campaign_terminals: []
+continuity: retained
+verdict: revise
+current_rationale: The two named priorities (impact/refresh vertical, hierarchical-orchestration seam resolution) are unchanged and unaffected by this revision. A documentation-and-code falsifier pass re-audited the 2026-09-17 finding that proposal-decision-gated-implementation-compilation.md's architectural_supersession is full. That finding correctly absorbed the material-decision surface, decision authority/delegation, implementation basis/compiler/schema, and plan-conformance gate into material-decision-selection.md and implementation-contract-compilation.md respectively -- unchanged by this revision. It incorrectly bucketed Stage 5-6's own normative content (the routing profile's unsupported-classes/confidence/failure-consequence fields, the evidence-backed execution-strategy-selection judgment, routing-specific escalation/reopening triggers, and capability/outcome-evidence requirements) entirely under "Stage 0-6 pilot track," without separately testing whether that normative content -- as opposed to its experimental validation procedure -- had a canonical owner. It does not. Nine candidate homes were tested (eight canonical dimensions plus the Structural Plan IR execution-profile/strategy-selection family): implementation-contract-compilation.md, material-decision-selection.md, runtime-realization.md, proposal-evaluation.md, portfolio-selection.md, decision-specific-readiness.md, evidence-and-claims.md, authority-and-ownership.md, and the Structural Plan IR execution-profile/strategy-selection family itself; all nine fail absorption on their own terms, several by their own already-published self-exclusion. Independently, three companion documents dated the identical day as the "full" finding (evidence-calibrated-plan-resolution-and-continuous-capability-learning.md and its upstream amendments, both status_as_of 2026-09-17) explicitly name decision-gated compilation as the live, current owner of "execution model routing" -- a direct, dated internal contradiction within the same reconciliation campaign that the 2026-09-17 audit did not catch.
+assumptions:
+  confirmed:
+    - The staging table's own framing (stages express useful release consequences, not a compulsory execution procedure) continues to hold; this revision narrows a status finding, it does not reopen the roadmap.
+    - Neither of this revision's own two prior priorities (impact/refresh vertical, hierarchical-orchestration proposal formation) is affected.
+  changed:
+    - proposal-decision-gated-implementation-compilation.md's architectural_supersession moves from full to partial. Its own idea_status block (corrected 2026-09-26) now separates absorbed content (material decision surface, decision authority, implementation basis/compiler/schema, plan-conformance gate) from surviving residue (execution-strategy-selection judgment, routing-specific escalation semantics, capability-evidence requirements) and from pilot backlog (Stage 0-6's own experimental/validation procedure, unchanged).
+    - The Plan IR source table above (Decision-gated compilation row) is corrected to reflect partial, not full, absorption.
+  invalidated:
+    - The 2026-09-17 finding's own closing claim, "its architectural placement is settled," no longer holds for Stage 5-6's normative content specifically. It still holds for everything material-decision-selection.md and implementation-contract-compilation.md actually state.
+route_changes:
+  priorities:
+    - No change to this revision's own two named priorities. A candidate dimension provisionally named "Execution Strategy Selection" has been identified for the surviving residue; forming, adversarially pressure-testing, and (if it survives) admitting it into the canonical atlas is now-named future work, not yet scheduled against either named priority.
+  dependencies:
+    - Branch Plan <-> Proposal artifact-mapping reconciliation and Implementation-Contract-Compilation <-> slice-campaign ordering (both previously identified as open seams) are deliberately deferred until the Execution Strategy Selection candidate is placed, since it sits in the same lowering chain and canonicalizing it first should clarify both.
+  newly_important:
+    - Whether Execution Strategy Selection's own boundary (what it consumes, what it owns, what it explicitly does not own, its relationship to routing/strategy policy, capability evidence, acceptance authority, and Runtime Realization) survives adversarial pressure-testing before any atlas admission.
+  deferred:
+    - Branch Plan <-> Proposal mapping.
+    - Implementation-Contract-Compilation <-> slice-campaign admission ordering.
+recommended_campaign:
+  disposition: none
+  objective: null
+  work_source: null
+  reason: This revision corrects a status finding and identifies a candidate dimension; it does not itself constitute or authorize a bounded implementation packet, and does not authorize canonicalizing the candidate dimension without a separate adversarial pressure-test pass.
+open_uncertainties:
+  - Whether Execution Strategy Selection is better placed as a new sibling dimension in the existing proposal-decision front-end lineage, or resolves some other way once its boundary is pressure-tested -- not decided by this revision.
+authority_required:
+  - Forming and adversarially pressure-testing the Execution Strategy Selection candidate, and any eventual atlas admission, are not authorized by this revision -- it names the candidate and corrects a status finding, nothing more.
+revisit_when:
+  - The Execution Strategy Selection candidate's boundary pass completes and either survives adversarial pressure-testing (proceed to admission) or is falsified (fold its residue elsewhere or reclassify).
+  - Branch Plan <-> Proposal or ICC <-> slice-campaign reconciliation is resumed, once Execution Strategy Selection's placement is settled.
 ```
