@@ -67,7 +67,7 @@ flowchart TB
 
     ENV["Admitted Organizational / Execution Revision<br/>ExecutionEnvelope / topology state"]
 
-    RUNTIME["Runtime Realization<br/>Supervisor • Builder • Specialist • contexts • capabilities"]
+    RUNTIME["Runtime Realization<br/>admitted vantage(s), contexts, capabilities"]
 
     EVID["Local Execution / Reconnaissance Evidence"]
 
@@ -563,25 +563,41 @@ This prevents organizational recursion from becoming recursive planning authorit
 
 The same process may occur at deeper execution layers.
 
-A Supervisor may receive an accepted branch and later determine that its realization should contain multiple child vantages.
+An already-admitted execution organization may, once operating, produce new
+organizational-pressure evidence — for example, that its realization should
+contain multiple child vantages where it currently has one.
 
-One child vantage may later encounter its own organizational pressure.
+An active vantage within that organization may supply such evidence, or host
+a bounded, event-scoped organizational judgment (§4) — it does not thereby
+acquire decomposition or admission authority merely by existing. That
+authority remains organizational compilation's own process and organizational
+authority's own admission act (§7), exercised again — not delegated to
+whichever vantage happens to be running.
+
+One child vantage may later encounter its own organizational pressure in the
+same way.
 
 Conceptually:
 
 ```text
-Accepted Branch Plan
+Admitted Execution Organization
     ↓
-Supervisor
+an active vantage supplies organizational-pressure evidence
+    (or hosts a bounded, event-scoped organizational judgment, §4)
     ↓
-organizational compilation
+organizational compilation (recursed)
     ↓
-Builder A + Specialist B
+organizational authority admits
     ↓
-local evidence
-    ↓
-deeper organizational compilation where justified
+deeper Admitted Execution Organization, where justified
 ```
+
+**Corrected 2026-09-26** — this chain previously began recursion from "a
+Supervisor" performing "its own organizational compilation," which
+misattributed decomposition/admission authority to the vantage itself rather
+than to organizational compilation and organizational authority, exercised
+again. Recursion now begins from an already-admitted organization producing
+evidence, matching §4, §7, and §9's own already-stated ownership exactly.
 
 But recursion is always bounded by accepted semantic structure.
 
@@ -865,11 +881,11 @@ Orchestrator
 Branch Planner
     ↓
 Accepted Branch Plan
-    ↓
-Supervisor
 ```
 
-This page expands the lower boundary:
+This page expands the lower boundary, ending at this dimension's own
+terminal artifact — not at runtime realization, which remains a separate,
+downstream dimension:
 
 ```text
 Accepted Branch Plan
@@ -882,8 +898,18 @@ authority projection
     ↓
 organizational admission
     ↓
-Supervisor / Builder / Specialist realization
+Admitted Execution Organization / ExecutionEnvelope
+    ↓
+Runtime Realization  (downstream — owned by runtime-realization.md, not this page)
 ```
+
+**Corrected 2026-09-26** — both chains previously ended at a fixed named
+profile (`Supervisor`, or `Supervisor / Builder / Specialist`). This page's
+own §7–§8 already establish `ExecutionEnvelope` as this dimension's terminal
+artifact and runtime realization as strictly downstream of it; updated both
+chains to match, and to match `semantic-planning-hierarchy.md`'s own
+"Boundary With Organizational Compilation" section, which ends its own
+semantic-planning half at Accepted Branch Plan.
 
 The planning hierarchy decides **what work means**.
 
