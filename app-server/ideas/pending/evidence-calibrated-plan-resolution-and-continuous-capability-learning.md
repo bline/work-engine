@@ -22,8 +22,10 @@ idea_status:
   audit_scope:
     - open-question-ledger
   audit_scope_completeness: partial
-  status_as_of: 2026-09-17
+  status_as_of: 2026-09-27
 ```
+
+**Relationship table updated 2026-09-27** (below) following `execution-strategy-selection.md`'s admission — a pointer to that dimension's own new ownership of the "routing or policy candidate" step this document's own authority-flow diagram already named without assigning an owner, not a supersession of anything this document itself claims. `architectural_supersession` and `residue` above are unchanged and remain accurate.
 
 ```yaml
 idea_provenance:
@@ -333,7 +335,8 @@ rewriting the basis of an earlier one.
 | Owner or direction | Relationship |
 | --- | --- |
 | Structural Plan IR | Owns the representation hypothesis, semantic layering, and projection identity. This direction proposes evidence for choosing projections. |
-| Decision-gated compilation | Owns the proposed workflow, material decisions, conformance gate, routing, and measurement contract. This direction supplies candidate inputs. |
+| Decision-gated compilation | Owns the proposed workflow, material decisions, and conformance gate. This direction supplies candidate inputs. Routing itself is now split -- see the next row, corrected 2026-09-27. |
+| Execution Strategy Selection | **Added 2026-09-27**, following that dimension's admission as `app-server/docs/architecture/execution-strategy-selection.md`. Owns the residual class-warrant judgment this document's own "proposed authority flow" (Continuous learning and authority, above) names as "routing or policy candidate -> authorized policy revision -> future admission" without assigning an owner. This document's own capability-evidence and continuous-learning content remains entirely its own; that dimension consumes capability/outcome evidence by reference only, and explicitly does not resolve this document's own evidence-ownership question (its own text marks capability_evidence "[owner unresolved]" throughout). |
 | Hierarchical orchestration | Owns branch partitioning. Resolution profiles may differ across branches. |
 | Provider/harness runtime | Owns realization and runtime boundaries. Continuation observations need a defined relationship to those identities. |
 | Context lifecycle | Owns retention and replacement decisions. Cache observations may inform them. |

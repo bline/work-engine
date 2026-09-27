@@ -10,7 +10,7 @@ The central rule:
 
 > **Freeze each admitted realization, not its validity forever.** A failed dependency can make a realization stale without changing what it meant while it was in use, and without granting anyone new authority merely because the old realization broke.
 
-This dimension owns capability observation, operator runtime policy, resolution of concrete runtime composition, the immutable `RoleRealization` artifact itself, its invalidation, and its rematerialization. It does **not** own what a logical role is required to do (Role/Contract Structure), which executor class an obligation should route to (owned by the supervisor / routing-policy authority named in decision-gated compilation's own Stage 6, closed by ruling — §5), organizational topology, or semantic planning.
+This dimension owns capability observation, operator runtime policy, resolution of concrete runtime composition, the immutable `RoleRealization` artifact itself, its invalidation, and its rematerialization. It does **not** own what a logical role is required to do (Role/Contract Structure), which executor class an obligation should route to (owned by `execution-strategy-selection.md`, admitted 2026-09-27 — §5), organizational topology, or semantic planning.
 
 ---
 
@@ -170,18 +170,19 @@ The source document names an explicit three-stage pipeline. This is a **ruling**
 ```text
 contract characterization                executor-class routing /              runtime resolution / admission
 (implementation-contract-compilation.md:  acceptance                            (THIS DIMENSION: given the
-which executor classes are semantically   (supervisor / routing-policy           accepted class plus current
-supported, with what evidence-backed      authority: which supported class       capabilities and policy,
-readiness — plan readiness only,          should this slice actually use —       which exact model/provider/
-no slice authority)                       a nomination, advisory until           harness/tool realization is
-                                           accepted for the slice)                admitted now?)
+which executor classes are semantically   (execution-strategy-selection.md,      accepted class plus current
+supported, with what evidence-backed      admitted 2026-09-27: which             capabilities and policy,
+readiness — plan readiness only,          supported class -- if any -- is        which exact model/provider/
+no slice authority)                       warranted now -- a nomination,         harness/tool realization is
+                                           advisory until accepted for the        admitted now?)
+                                           slice)
 ```
 
 This dimension is squarely the third stage. It consumes the first two stages' outputs as authoritative given facts:
 
 > **Runtime Realization consumes an accepted executor/runtime requirement or routing nomination. It does not own the upstream semantic reason that class was requested.**
 
-**Closed 2026-09-15, not an open seam of this dimension's own.** An earlier draft of this section restated the second stage's ownership as a live three-way question among Role/Contract Structure, a distinct routing-policy authority, and Organizational Compilation. That was a regression, not a fresh finding: the source document's own ruling already names the owner — "the supervisor / routing-policy authority" identified in `proposal-decision-gated-implementation-compilation.md`'s own Implementation Track, "Stage 6: Adaptive routing" — and nothing in this session's work supersedes that ruling. Reconciliation may discover an old ruling is inadequate, but it may not silently convert a settled ruling back into an open question without routing that finding back to the ruling's own owner. Restated correctly, and now precisely attributed rather than left as "decision-gated compilation" generically: the first stage belongs to `implementation-contract-compilation.md` (confirmed 2026-09-16, not `role-and-contract-structure.md` or Organizational Compilation), the second belongs to the named routing-policy authority, and this dimension owns only the third. See `work-engine-planned-architecture.md` §13 item 12 for the ruling's full text and `role-and-contract-structure.md` §6 for the corresponding correction there.
+**Closed 2026-09-15, and now homed 2026-09-27 — not an open seam of this dimension's own.** An earlier draft of this section restated the second stage's ownership as a live three-way question among Role/Contract Structure, a distinct routing-policy authority, and Organizational Compilation. That was a regression, not a fresh finding: the source document's own ruling already named an owner class — "the supervisor / routing-policy authority" identified in `proposal-decision-gated-implementation-compilation.md`'s own Implementation Track, "Stage 6: Adaptive routing" — and nothing in this session's work supersedes that ruling. `execution-strategy-selection.md`, admitted 2026-09-27, is that owner: the canonical dimension now architecturally homing the second stage the ruling had only named. Restated correctly, and now precisely attributed rather than left as "decision-gated compilation" generically: the first stage belongs to `implementation-contract-compilation.md` (confirmed 2026-09-16, not `role-and-contract-structure.md` or Organizational Compilation), the second belongs to `execution-strategy-selection.md`, and this dimension owns only the third. See `work-engine-planned-architecture.md` §13 item 12 for the ruling's full text and `role-and-contract-structure.md` §6 for the corresponding correction there.
 
 ---
 
@@ -336,7 +337,7 @@ This is stronger than the informal "kill the old realization" framing this dimen
 8. **Rematerialization after invalidation is an ordinary rerun of resolution and admission, not a special failover path or a predefined graph.**
 9. **Realization identity is an instance of the shared revision/CAS lineage pattern, not a new mechanism.**
 10. **The operator policy overlay is a manipulable control surface; it is not canonical workflow or runtime truth.**
-11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, closed by ruling — owned by the supervisor / routing-policy authority, not this dimension).**
+11. **This dimension consumes an accepted executor/runtime requirement or routing nomination; it does not own the upstream semantic reason that class was requested (§5, closed by ruling — owned by `execution-strategy-selection.md`, admitted 2026-09-27, not this dimension).**
 12. **Which realization generation currently holds authoritative active-binding is this dimension's own decision; the fencing mechanics that make it race-safe and host-enforced belong entirely to `mechanisms/resource-lease-and-fencing.md` (§12).**
 13. **The operator policy overlay projects bounded candidate states; it never becomes the resolver — a real, partial instance of `mechanisms/authority-preserving-intent-projection.md` (§11).**
 
@@ -347,7 +348,7 @@ This is stronger than the informal "kill the old realization" framing this dimen
 This page does not define:
 
 - role/contract semantics (`role-and-contract-structure.md`);
-- the routing-policy authority's own routing/acceptance judgment (owned elsewhere, per the ruling recorded in §5);
+- executor-class routing/acceptance itself (`execution-strategy-selection.md`, per the ruling recorded in §5);
 - organizational topology or admission (`organizational-compilation.md`);
 - semantic planning or replanning (`semantic-planning-hierarchy.md`);
 - claim/evidence materialization (`evidence-and-claims.md`);
@@ -362,9 +363,13 @@ This page does not define:
 
 `role-and-contract-structure.md` is the upstream owner of what this dimension calls "role contract" throughout — the semantic requirements, effect ceilings, and continuity requirements a realization must satisfy. This dimension never redefines those; it only tests candidate realizations against them.
 
+## Relationship to Execution Strategy Selection
+
+`execution-strategy-selection.md`, admitted 2026-09-27, owns stage 2 of the `routing.vs.admission` pipeline (§5, above): given ICC's own `Supported(C,X)` fact, revision-bound capability/outcome evidence, and an applicable `RoutingPolicy` revision, which supported class — if any — is warranted now. This dimension consumes only that dimension's own advisory routing nomination, once separately accepted, as an authoritative given fact — it never owns or re-derives the upstream semantic reason a class was requested. That dimension's own `RoutingPolicy` ownership is modeled directly on this dimension's own Operator Runtime Policy Overlay (§1, above) and Key Invariants 10/13: a dimension may own a policy overlay's content as domain state without ever holding the authority to author it. `RoutingPolicy` never reaches downstream into this dimension's own concrete provider/model/harness/tool selection — that remains entirely this dimension's own territory.
+
 ## Relationship to Authority and Ownership
 
-`authority-and-ownership.md` §12's invalidation-never-mints-authority invariant was generalized directly from this dimension's own §7, alongside Evidence/Claims' equivalent. The observe/nominate/decide/admit/execute vocabulary that dimension defines is exactly what §4's decision-owner step and §5's routing-policy authority both depend on.
+`authority-and-ownership.md` §12's invalidation-never-mints-authority invariant was generalized directly from this dimension's own §7, alongside Evidence/Claims' equivalent. The observe/nominate/decide/admit/execute vocabulary that dimension defines is exactly what §4's decision-owner step and `execution-strategy-selection.md`'s own routing judgment (§5, above) both depend on.
 
 ## Relationship to Organizational Compilation
 
@@ -391,6 +396,7 @@ The operator policy overlay (§11) is this mechanism's own real, partial instanc
 - **`mechanisms/candidate-resolution-and-admission.md`** — the mechanism itself, citing this dimension's §4 as one of its three confirmed instances.
 - **`role-and-contract-structure.md`** — owns what this dimension calls "role contract" throughout; that page's own §6 carries the corresponding correction to §5's ruling.
 - **`implementation-contract-compilation.md`** — owns stage 1 (contract characterization) of §5's own three-stage pipeline, precisely, not this dimension and not Role/Contract Structure.
+- **`execution-strategy-selection.md`** — owns stage 2 (executor-class routing/acceptance) of §5's own three-stage pipeline, admitted 2026-09-27; this dimension consumes only its accepted advisory nomination, never its upstream judgment; the source of this dimension's own `RoutingPolicy`-ownership precedent.
 - **`semantic-planning-hierarchy.md`** — upstream of the entire pipeline in §5.
 - **`evidence-and-claims.md`** — the sibling dimension whose refresh lifecycle independently converged on the same invalidation shape as this page's §7.
 - **`context-lifecycle.md`** — another consumer, alongside this dimension, of the revision/CAS mechanism and the transition-fencing mechanism; owns none of them, same as this page.

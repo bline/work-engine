@@ -3,7 +3,7 @@
 ```yaml
 idea_status:
   architectural_supersession: none
-  architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed: searched semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-characterization or planner-owned-classification concept under any name -- none state it. Genuinely none, not unknown, since this 85-line document was fully close-read and the plausible-owner check was real."
+  architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed: searched semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-characterization or planner-owned-classification concept under any name -- none state it. Genuinely none, not unknown, since this 85-line document was fully close-read and the plausible-owner check was real. Re-checked 2026-09-27 against execution-strategy-selection.md's own admission: still none -- that dimension owns the residual class-warrant judgment this document's own diagram names but never claims (a pointer, not a supersession, added inline below), not any of this document's own execution-characterization-production content."
   residue: present
   residue_ledger: "Corrected 2026-09-17, per review: a free-form live architectural question found in prose (outside any formal ledger) -- whether a separate execution-characterization classification role should ever be introduced, explicitly conditioned on future pilot evidence not yet gathered. Tagged inline [KIND: RESIDUE] [OPEN]."
   backlog: none
@@ -12,7 +12,7 @@ idea_status:
     - keyword-scan: full_document
     - close-read: "full document (85 lines)"
   audit_scope_completeness: complete
-  status_as_of: 2026-09-17
+  status_as_of: 2026-09-27
 ```
 
 ```yaml
@@ -66,6 +66,8 @@ This preserves separate ownership:
 - **Capability evidence** records demonstrated executor performance.
 - **Runtime admission** determines which currently available strategy can realize the selected execution requirements.
 - **The appropriate authority owner** resolves any remaining material tradeoff not determined by policy.
+
+**Pointer added 2026-09-27, not a supersession** — this document never claimed ownership of "the scoring mechanism" or "strategy admission/routing" above; both remained deliberately unnamed placeholders. `app-server/docs/architecture/execution-strategy-selection.md`, admitted 2026-09-27, is now the canonical home for the residual judgment those two boxes name: given a planner-derived characterization (by reference, never re-derived), capability evidence, and a `RoutingPolicy` revision, which supported executor class — if any — is warranted now. That dimension's own scope is narrower than this diagram's full pipeline: it does not own execution-characterization production (this document's own "the planner" box) or Plan IR's own structural representation, only the residual class-warrant judgment.
 
 Execution characterization should be treated as derived, revision-bound metadata rather than canonical implementation meaning. Its schema may evolve as experiments reveal which dimensions actually predict executor success, required Plan IR resolution, review burden, and total accepted-work cost.
 

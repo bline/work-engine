@@ -4,7 +4,9 @@
 
 **Rebuilt 2026-09-16 from the 20 canonical architecture views** under [`app-server/docs/architecture/`](architecture/) — 13 truth dimensions, 5 cross-cutting mechanisms, 2 shared substrates. This document supersedes the prior version of this capstone, which synthesized directly from the original reconciliation-queue source documents. That synthesis work is not discarded — it is exactly what produced the 20 views, through an extended architecture-decomposition effort that pressure-tested every candidate dimension, mechanism, and substrate against explicit falsifiers before recognizing it, and ran a full residue audit before this rebuild was authorized. This document's own job now is narrower and more honest: **tell a reader where truth lives and how the pieces compose — not restate everything the views already say.**
 
-**The governing writing rule this document holds itself to, without exception:** every substantive architectural statement here must either (a) derive from a canonical view, cited at the point of use, (b) identify itself as domain detail — a real, concrete instantiation the 20 views were never meant to catalog exhaustively, or (c) appear in §11's explicit deferred-residue ledger. Nothing may be asserted here that isn't traceable to one of those three. If a future addition can't clear that bar, it belongs in a view or in the ledger, not in prose here.
+**Amended 2026-09-27**: `execution-strategy-selection.md` admitted as the 14th truth dimension, canonicalized from `app-server/ideas/pending/execution-strategy-selection.md` (commit `f566c47`) by explicit operator decision, closing the executor-class-routing seam this document previously named as its one deliberately-unresolved gap (§3, §4, §8, below). Not a rebuild — a targeted, cited amendment following this document's own governing writing rule immediately below. The corpus now totals **21 canonical architecture views** — 14 truth dimensions, 5 cross-cutting mechanisms, 2 shared substrates.
+
+**The governing writing rule this document holds itself to, without exception:** every substantive architectural statement here must either (a) derive from a canonical view, cited at the point of use, (b) identify itself as domain detail — a real, concrete instantiation the 21 views were never meant to catalog exhaustively, or (c) appear in §11's explicit deferred-residue ledger. Nothing may be asserted here that isn't traceable to one of those three. If a future addition can't clear that bar, it belongs in a view or in the ledger, not in prose here.
 
 **Authority:** Exploratory synthesis only. This document does not accept any idea, authorize implementation, amend a migration roadmap, or select a permanent schema. It does not resolve anything the views themselves leave open. §10 states, per item, what already has production evidence versus what remains a document — derived from each view's own four-axis status, never from a flat restated label.
 
@@ -14,7 +16,7 @@
 
 > Work Engine is a governed execution substrate for model-mediated semantic work. It externalizes mechanically knowable state, preserves the authority and consequences of semantic judgment, and reconstructs the smallest sufficient world for each bounded decision.
 
-Five principles recur across every one of the 20 views, independently arrived at rather than imposed from above — each is cited here against its now-formal home, not restated as free-floating doctrine:
+Five principles recur across every one of the 21 views, independently arrived at rather than imposed from above — each is cited here against its now-formal home, not restated as free-floating doctrine:
 
 ```text
 Contracts constrain what must remain true. Models choose how to make it true.
@@ -75,7 +77,7 @@ DOMAIN — software engineering, browser/UI, research, review-profile
     not a fourth architectural kind. See §9.
 ```
 
-A prior, coarser "four functional systems" axis (Realization / Planning-Compilation / Orchestration / Evidence-History) is retired here — it was found to be a redundant, coarser regrouping of the same territory the 13 dimensions already divide precisely, not an independent question.
+A prior, coarser "four functional systems" axis (Realization / Planning-Compilation / Orchestration / Evidence-History) is retired here — it was found to be a redundant, coarser regrouping of the same territory the 14 dimensions already divide precisely, not an independent question.
 
 **Status is four independent axes, never one flat label**, per [`status-grammar.md`](architecture/status-grammar.md):
 
@@ -89,7 +91,7 @@ implementation:  none | planned | partial | implemented
 
 `unrecorded` authorization is not silence treated as a ceiling — it means no citable "build this" decision was found, distinct from `exploration_only`'s confirmed ceiling. Implementation having occurred is never sufficient by itself to justify `implementation_authorized` — this is the single most-repeated correction across the whole decomposition effort. §10 uses these four axes directly, per item, never a restated flat enum.
 
-**Residue disposition**, used in §11 for everything the 20 views don't own: `HOMED` (a view owns it, cited), `DOMAIN_DETAIL` (a real instantiation, no top-level owner warranted), `DEFERRED` (real, confirmed residue, correctly left open), `ABSORBED` (looked separate, fully reduced into an existing owner), and content genuinely out of this scheme's scope (meta-process commentary, §12).
+**Residue disposition**, used in §11 for everything the 21 views don't own: `HOMED` (a view owns it, cited), `DOMAIN_DETAIL` (a real instantiation, no top-level owner warranted), `DEFERRED` (real, confirmed residue, correctly left open), `ABSORBED` (looked separate, fully reduced into an existing owner), and content genuinely out of this scheme's scope (meta-process commentary, §12).
 
 ---
 
@@ -133,11 +135,14 @@ implementation-contract compilation
     |
     v
 executor-class routing / acceptance
-    -> the supervisor / routing-policy authority named in the
-       routing.vs.admission ruling (2026-09-15, closed) -- stage 2 of
-       that same pipeline. Named, but not architecturally homed by any
-       of the 20 views. A nomination, advisory until accepted for the
+    -> execution-strategy-selection.md: given ICC's own Supported(C,X)
+       fact, revision-bound capability/outcome evidence, and an
+       applicable RoutingPolicy revision, which supported executor
+       class -- if any -- is warranted now. Stage 2 of the
+       routing.vs.admission ruling (2026-09-15, closed; stage 2 homed
+       2026-09-27). A nomination, advisory until accepted for the
        slice.
+       ACCEPTED, design_work_authorized, none built.
     |
     v
 runtime resolution / admission
@@ -184,7 +189,7 @@ revisioned history / evidence / future impact
 
 ---
 
-## 4. The 13 Truth Dimensions
+## 4. The 14 Truth Dimensions
 
 Each owns a class of architectural truth no other dimension, mechanism, or substrate supplies.
 
@@ -203,6 +208,7 @@ Each owns a class of architectural truth no other dimension, mechanism, or subst
 | [`portfolio-selection.md`](architecture/portfolio-selection.md) | The `PortfolioDecision` record: basis, cross-proposal analysis, priority/sequencing/exclusion — never mutating a proposal's own lifecycle. | accepted / implementation_authorized / none |
 | [`material-decision-selection.md`](architecture/material-decision-selection.md) | The materiality test, decision-authority classification (reserved/delegated), the decision-set schema for an accepted proposal's unresolved route choices. | proposed / exploration_only / none |
 | [`implementation-contract-compilation.md`](architecture/implementation-contract-compilation.md) | The implementation basis, compiler, contract schema, plan-conformance gate — contract characterization only, no slice-level or runtime authority. | proposed / exploration_only / none |
+| [`execution-strategy-selection.md`](architecture/execution-strategy-selection.md) | Stage 2 of the `routing.vs.admission` ruling: the subject-specific `Warranted(C,X\|E,P)` judgment and its immutable artifact; the `RoutingPolicy` domain artifact (identity/lineage/schema/scope/adopted content), never the authority to author its content. Admitted 2026-09-27. | accepted / design_work_authorized / none |
 
 ---
 
@@ -251,7 +257,7 @@ Each supplies normalized observations to multiple independent consumers without 
 
 `runtime-realization.md` composes with `mechanisms/resource-lease-and-fencing.md` for fenced active-binding (which realization generation currently holds authoritative right to execute as a role — the dimension's own decision; the mechanism's own fencing mechanics make it race-safe and host-enforced) and with `mechanisms/authority-preserving-intent-projection.md` for its own operator-policy-overlay (a real, partial instance, independently arrived at with zero cross-reference to the mechanism's other consumer, Studio).
 
-The executor-class-routing seam remains the one deliberately-unresolved gap in this otherwise-complete chain: stage 2 (executor-class routing/acceptance) is named — "the supervisor / the routing-policy authority" in the `routing.vs.admission` ruling's own Stage 6 — but not architecturally homed by any of the 20 views. Named consistently wherever it appears (`runtime-realization.md` §5, `role-and-contract-structure.md` §6, `implementation-contract-compilation.md` §6), never silently resolved.
+**Amended 2026-09-27** — the executor-class-routing seam was, until this admission, the one deliberately-unresolved gap in this otherwise-complete chain: stage 2 (executor-class routing/acceptance), named — "the supervisor / the routing-policy authority" in the `routing.vs.admission` ruling's own Stage 6 — but not architecturally homed by any view. Named consistently wherever it appeared (`runtime-realization.md` §5, `role-and-contract-structure.md` §6, `implementation-contract-compilation.md` §6), never silently resolved. `execution-strategy-selection.md`, admitted 2026-09-27, is now that home; all three pages cited above carry the corresponding correction. Two things this admission does **not** resolve, preserved exactly as the admitted dimension's own text states them: `implementation-contract-compilation.md`'s own Stage-1 singular/plural representation tension (that page's own open question, not this seam's), and capability/outcome-evidence ownership, Plan-IR projection-resolution ownership, verification/review-strength ownership, and exploration-versus-exploitation governance (all four explicitly unresolved by `execution-strategy-selection.md`'s own text, not silently settled by its admission).
 
 ---
 
@@ -261,10 +267,10 @@ The DOMAIN axis (§2) composes onto the 13-dimension grid without requiring a ne
 
 - **Software engineering** — code evidence via `codebase-memory-mcp` (confirmed permanently read-only), `CodeEvidenceAdapter`, Candidate Trajectory family (real-code evidence, not yet architecturally homed beyond `substrates/evidence-anchor.md`'s own general observer pattern).
 - **Browser/UI** — AI-Accessible Browser, `ui-experience-evidence-interface` (formed, undecided), `UIReviewProfile` (a domain-specific instantiation of `review.md`'s own judgment shape, explicitly self-excluded by that page as "not any one domain's own concern list" — confirmed `DOMAIN_DETAIL`, not a competing dimension).
-- **Research** — historical execution coordinates, capability learning, `incremental-terminal-accounting-projection.md` — real, execution-observation infrastructure, uncited by any of the 13 dimensions by design.
+- **Research** — historical execution coordinates, capability learning, `incremental-terminal-accounting-projection.md` — real, execution-observation infrastructure, uncited by any of the 14 dimensions by design.
 - **Operator/Studio** — `control-plane-causal-observability-ui.md` (an already-accepted, uncited-elsewhere design), `mechanisms/authority-preserving-intent-projection.md`'s own Studio instance (§5).
 
-None of these require their own dimension — the 13 dimensions were never meant to be an exhaustive implementation ledger, and inventing an architectural home for every real code artifact would turn the views into a directory index rather than a truth map.
+None of these require their own dimension — the 14 dimensions were never meant to be an exhaustive implementation ledger, and inventing an architectural home for every real code artifact would turn the views into a directory index rather than a truth map.
 
 ---
 
@@ -285,6 +291,7 @@ Per-item four-axis status, derived directly from each item's own canonical view 
 | Seam-evidence adapter extensions | `substrates/evidence-anchor.md` | accepted | reconciled | implementation_authorized | none |
 | Proposal evaluation / readiness / portfolio (front-end chain) | respective views | accepted | reconciled | implementation_authorized | none |
 | Material decision selection / implementation-contract compilation | respective views | proposed | reconciled | exploration_only | none |
+| Execution Strategy Selection (Stage 2, `routing.vs.admission`) | `execution-strategy-selection.md` | accepted | reconciled | design_work_authorized | none |
 | Studio command/edit projection | `mechanisms/authority-preserving-intent-projection.md` | accepted | reconciled | design_work_authorized | none |
 | `pre-indexed-capability-resolution-and-frozen-runtime-realization.md` | `runtime-realization.md` | proposed | reconciled | **exploration_only** | partial |
 
@@ -348,7 +355,7 @@ projection                 a rendering of whichever state currently
 
 Distinct from §11: not an unresolved architectural boundary, but a standing process risk this decomposition effort caught repeatedly, not once — independently evolving pages can drift into stale counts, one-directional cross-references, and silently-regressed rulings even when each page's own content is individually sound. Concrete evidence from this session alone: a closed ruling (`routing.vs.admission`) was found quietly restated as open in two views after a later synthesis pass rewrote them without checking the closure; three separate stale instance-counts were found in mechanism pages after new instances were added elsewhere; one status page understated its own authorization tier after a sibling reconciliation narrowed it.
 
-There is no single fix. The 20-view structure and its four-axis status grammar are the current mitigation — every page owning itself, every cross-reference checked bidirectionally, every count independently re-derived rather than restated — not a one-time correction. Any future addition to `app-server/docs/architecture/` should be checked against the existing 20 views for overlap and against this document's own §4–§9 before being treated as independent.
+There is no single fix. The 21-view structure and its four-axis status grammar are the current mitigation — every page owning itself, every cross-reference checked bidirectionally, every count independently re-derived rather than restated — not a one-time correction. Any future addition to `app-server/docs/architecture/` should be checked against the existing 21 views for overlap and against this document's own §4–§9 before being treated as independent.
 
 ---
 
@@ -356,7 +363,7 @@ There is no single fix. The 20-view structure and its four-axis status grammar a
 
 | Layer | Role |
 |---|---|
-| [`app-server/docs/architecture/`](architecture/) (20 views) | The primary, canonical layer. Every architectural claim in this document traces here first. |
+| [`app-server/docs/architecture/`](architecture/) (21 views) | The primary, canonical layer. Every architectural claim in this document traces here first. |
 | [`status-grammar.md`](architecture/status-grammar.md) | Defines what the four status axes mean; never the semantic owner of any specific claim. |
 | The original sequel reconciliation queue (`*-reconciliation.md` documents in `app-server/docs/`) | The deepest source layer each view's own "Source and Status" section cites directly. Retains its own full disposition tables and evidence; this document does not restate their reasoning. |
 | `app-server/ideas/pending/` source proposals | Where a view's own content is still `proposed`/`exploratory`, its owning idea document is the authority on open questions, not this capstone. |
@@ -368,7 +375,7 @@ There is no single fix. The 20-view structure and its four-axis status grammar a
 
 - This document is not itself a proposal and authorizes no implementation.
 - It does not establish decision authority, priority, or sequencing beyond what each cited view or source document already states.
-- It does not claim completeness beyond the 20 views' own declared scope — real domain systems, root-substrate code, and pending ideas outside that scope may exist and are not represented here except as named `DOMAIN_DETAIL`.
+- It does not claim completeness beyond the 21 views' own declared scope — real domain systems, root-substrate code, and pending ideas outside that scope may exist and are not represented here except as named `DOMAIN_DETAIL`.
 - It does not resolve anything listed in §11. Naming a residue item is not deciding it.
 - It does not treat the dimension/mechanism/substrate taxonomy, the plane×DOMAIN axes, or the status grammar as permanently final — each may need revision under further reconciliation, exactly as this rebuild itself was produced by revising the taxonomy that preceded it.
 - It does not restate any view's own reasoning where a citation suffices — see §13.

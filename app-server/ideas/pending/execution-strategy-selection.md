@@ -1,10 +1,23 @@
-# Execution Strategy Selection — Candidate Dimension
+# Execution Strategy Selection — Candidate Dimension (ADMITTED)
+
+**Admitted 2026-09-27** as the 14th Work Engine truth dimension, by explicit
+operator decision, from this candidate at commit `f566c47`. The canonical
+view is now [`app-server/docs/architecture/execution-strategy-selection.md`](../../docs/architecture/execution-strategy-selection.md)
+— read that page for the current, canonical statement of this dimension.
+This file is retained as the historical candidate record: five original
+bounding rounds, one independent adversarial review (`REVISE_CANDIDATE`,
+incorporated), two reconciliation rounds settling the predicate boundary and
+`RoutingPolicy` ownership, a second independent adversarial review
+(`REVISE_CANDIDATE`, four small defects, all repaired), and a final
+admission-verification pass (`ACCEPT_CANDIDATE`). Its body below is left
+unedited as that record; where it says "candidate," "not yet architecturally
+homed," or similar, read that as accurate *at the time this candidate was
+reviewed*, not as the current state — the canonical page above is current.
 
 ## Identity and state
 
 - Candidate ID: `work-engine.execution-strategy-selection`
-- State: candidate dimension specification; not accepted, prioritized, or
-  authorized for implementation; not part of the canonical atlas
+- State: **admitted 2026-09-27** — canonicalized as `docs/architecture/execution-strategy-selection.md`; this file is now the historical candidate record, not the current specification
 - Decision owner: user or future explicitly authorized architecture owner
 - Primary consumers: whichever authority performs the acceptance act on a
   projected routing nomination (advisory until accepted, per
@@ -15,11 +28,12 @@
 
 ```yaml
 architecture_status:
-  design: proposed
-  reconciliation: partial
-  authorization: unrecorded
+  design: accepted
+  reconciliation: reconciled
+  authorization: design_work_authorized
   implementation: none
-  owner: app-server/ideas/pending/execution-strategy-selection.md
+  owner: app-server/docs/architecture/execution-strategy-selection.md
+  superseded_by: app-server/docs/architecture/execution-strategy-selection.md
   status_as_of: 2026-09-27
 ```
 

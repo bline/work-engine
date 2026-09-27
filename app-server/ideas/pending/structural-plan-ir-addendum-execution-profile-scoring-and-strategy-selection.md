@@ -8,8 +8,11 @@ This addendum does not establish a permanent task taxonomy, scoring formula, mod
 
 ```yaml
 idea_status:
-  architectural_supersession: not_applicable
-  architectural_supersession_note: "Checked 2026-09-17, per review: previously none with no note. Semantic check performed (not term-absence alone): searched runtime-realization.md, semantic-planning-hierarchy.md, material-decision-selection.md, and implementation-contract-compilation.md for any execution-profile-scoring, strategy-selection, or task-taxonomy concept under any name -- none of these architecture-ownership-level views operate at the technical scoring-schema detail this addendum proposes. Genuinely none, not unknown, since the document itself was fully close-read (241 lines) and the plausible-owner check was real, not skipped."
+  architectural_supersession: partial
+  superseded_by:
+    - view: app-server/docs/architecture/execution-strategy-selection.md
+      scope: "Narrow: of this addendum's own five-part strategy tuple (planning/compilation effort + Plan IR projection resolution + executor capability profile + execution autonomy + verification/review strength), only the executor-capability-class selection component -- admitted 2026-09-27 as Warranted(C,X|E,P) -- is now HOMED. The addendum's own execution-profile scoring dimensions (semantic novelty, repository breadth, decision closure, etc.), its scoring/aggregation methodology, and its pilot-measurement design remain entirely this document's own, un-superseded content; execution-strategy-selection.md explicitly declines to own them (advisory_recommendations only, joint-evaluation input, not owned fields)."
+  architectural_supersession_note: "Checked 2026-09-17 against architecture-ownership-level views (none matched); re-checked 2026-09-27 against execution-strategy-selection.md specifically, following that dimension's own admission. partial, not full or not_applicable: exactly one component of this addendum's own five-part tuple was absorbed, narrowly, as detailed in superseded_by above -- the technical scoring-schema detail the 2026-09-17 check already confirmed no architecture-ownership-level view operates at remains this document's own, unaffected by that admission."
   residue: none
   backlog: present
   backlog_ledger: "'Pilot use' (SS190) describes data to collect during the SAME first Plan IR pilot structural-plan-ir-for-capability-aware-multi-model-execution.md SS20 already covers -- not an independent staged plan. Inherits that document's [PLAN: OPEN] finding (zero real fixtures or campaigns found) rather than a separate PLAN tag here."
@@ -17,7 +20,7 @@ idea_status:
     - keyword-scan: full_document
     - close-read: "full document (241 lines)"
   audit_scope_completeness: complete
-  status_as_of: 2026-09-17
+  status_as_of: 2026-09-27
 ```
 
 ```yaml
