@@ -34,6 +34,7 @@ idea_provenance:
     - app-server/ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md
     - app-server/docs/architecture/implementation-contract-compilation.md
     - app-server/docs/architecture/runtime-realization.md
+    - app-server/docs/architecture/role-and-contract-structure.md
     - app-server/docs/architecture/decision-specific-readiness.md
     - app-server/docs/architecture/authority-and-ownership.md
     - app-server/docs/architecture/mechanisms/candidate-resolution-and-admission.md
@@ -234,8 +235,10 @@ prior pass had wrongly folded in:**
    ground both facts, for different reasons, at different times — the
    operative distinction is **revision cadence**, the same
    freshness-independent-of-evaluation pattern `decision-specific-
-   readiness.md` §3 already establishes for its own dimension against
-   `proposal-evaluation.md`. This also confirmed the candidate is non-vacuous
+   readiness.md`'s own Key Invariant 3 ("a freshness change can invalidate
+   a readiness assessment without evaluation itself re-running") already
+   establishes for its own dimension against `proposal-evaluation.md`.
+   This also confirmed the candidate is non-vacuous
    even while ICC exposes exactly one proposed class (`N=1`): "is it *still*
    warranted *now*" is a real, independently re-askable question regardless
    of how many classes ICC currently exposes. `N>1` (once ICC's own
@@ -486,17 +489,25 @@ RoutingPolicy:
       to whatever the operator/authority actually specifies; this
       candidate does not itself define an economic model>
   confidence_thresholds: {...}
-  freshness_requirements: {...}  # a requirement this candidate may state
-                                  # (decision-specific-readiness.md §4's own
+  freshness_requirements: {...}  # this field and its shape are this
+                                  # candidate's own schema (decision-
+                                  # specific-readiness.md §4's own
                                   # precedent for this exact split); the
+                                  # actual threshold value in any adopted
+                                  # revision is authored/adopted content,
+                                  # never set by this candidate itself; the
                                   # freshness mechanism itself remains
                                   # evidence-and-claims.md's own
-  severe_failure_treatment: {...}  # a consumption rule this candidate may
-                                  # state (e.g. "exclude a class with an
-                                  # unresolved severe-failure flag");
-                                  # preservation of the underlying evidence
-                                  # distinction remains evidence-and-
-                                  # claims.md's own representation concern
+  severe_failure_treatment: {...}  # this field and its shape (e.g.
+                                  # "exclude a class with an unresolved
+                                  # severe-failure flag") are this
+                                  # candidate's own schema; the actual rule
+                                  # in any adopted revision is authored/
+                                  # adopted content, never set by this
+                                  # candidate itself; preservation of the
+                                  # underlying evidence distinction remains
+                                  # evidence-and-claims.md's own
+                                  # representation concern
   escalation_triggers: [...]     # systemic policy-level triggers, distinct
                                   # from a single judgment's own subject-
                                   # specific reopening_conditions
@@ -614,13 +625,23 @@ EVIDENCE / POLICY EVOLUTION
     revision is authored or adopted, while the contract itself remains
     untouched
         -> does NOT reopen the subject and does NOT void the existing
-           judgment. It only makes the judgment's applicability
-           re-askable for a *new* attempt against the same still-valid
-           contract. Any operation already relying on the existing
-           judgment keeps it, per the same reliance discipline
+           judgment. It marks the existing judgment's own applicability
+           `stale` (never `historical` -- that transition is reserved
+           for CONTRACT-SUBJECT REOPENING, above), and makes the
+           judgment re-askable for a *new* attempt against the same
+           still-valid contract. Any operation already relying on the
+           existing judgment keeps it, per the same reliance discipline
            runtime-realization.md §9 already states for one operation
            executing under one stable realization.
 ```
+
+To state the full `applicability` enum plainly, since the artifact schema
+declares it but no single passage maps all three values together: `valid`
+(the judgment's basis is current), `stale` (evidence or policy has moved
+since the judgment was produced, but the contract subject itself has not —
+re-askable, not void), and `historical` (the contract subject itself was
+superseded — the judgment is permanently preserved as a true record, never
+current again).
 
 A prior `warranted_executor_class` therefore remains historically valid under
 its original basis unless its own reopening rule fires — reconsideration is
@@ -718,6 +739,13 @@ This page does not define:
   (Settled Finding B) is modeled directly on this page's own Operator
   Runtime Policy Overlay and Key Invariants 10/13 — the precedent this
   candidate follows, not a parallel invention.
+- **`role-and-contract-structure.md`** — §6 ("The Executor-Class-Routing
+  Boundary — Closed by Ruling, Not This Dimension's to Reopen") and Key
+  Invariant 5 independently name the same unhomed Stage-2 seam ICC §6 and
+  RR §5 name: "a contract requirement naming an executor class is not the
+  same decision as routing to that class now." Same correction, if
+  admitted — a fourth canonical page, not previously listed here, whose own
+  text would need the identical update ICC's and RR's own text would need.
 - **`review.md`** — would gain an explicit note that its own "governing
   review contract" input may, in part, be informed by this candidate's
   advisory `verification_review_strength` recommendation, without this
