@@ -5,8 +5,14 @@
 ## Purpose
 
 This view shows Work Engine's **execution-strategy-selection dimension**: the
-home for the `routing.vs.admission` ruling's own named-but-previously-unhomed
-Stage 2 — executor-class routing/acceptance. `implementation-contract-
+home for the routing/warrant judgment and its advisory nomination within the
+`routing.vs.admission` ruling's own historical composite Stage 2 —
+"executor-class routing / acceptance" — a residue that was, until this
+dimension's admission, named but architecturally unhomed. This dimension
+owns the routing/warrant portion of that composite stage only; the
+acceptance/refusal consequence remains the appropriate separately authorized
+authority's own act, never this dimension's (see the ownership boundary and
+§2, below). `implementation-contract-
 compilation.md` §6 owns Stage 1 (contract characterization: which executor
 classes a compiled contract's own constraints semantically support, with
 what evidence-backed readiness). `runtime-realization.md` §5 owns Stage 3
@@ -512,15 +518,19 @@ This page does not define:
 
 `implementation-contract-compilation.md` owns Stage 1 (contract
 characterization) of the `routing.vs.admission` pipeline; this dimension owns
-Stage 2 (executor-class routing/acceptance). ICC's own §5 plan-conformance
-gate criterion — "the selected executor class is supported by prior evidence
-for comparable plan entropy and task shape" — is a coarse, one-shot
-plausibility check, established and revision-bound at Stage 1, never itself
-a preference or currency judgment; it does not collapse into this
-dimension's own capability/outcome-evidence-driven warrant. ICC's own text
-(§6, "What This View Does Not Show") previously named Stage 2 as "the
-supervisor / routing-policy authority — named but not architecturally homed
-by this dimension"; this dimension is that home.
+the routing/warrant judgment and its advisory nomination within Stage 2 (the
+historical composite "executor-class routing / acceptance" stage) — never
+the acceptance/refusal consequence, which remains the appropriate separately
+authorized authority's own act. ICC's own §5 plan-conformance gate criterion
+— "the selected executor class is supported by prior evidence for
+comparable plan entropy and task shape" — is a coarse, one-shot plausibility
+check, established and revision-bound at Stage 1, never itself a preference
+or currency judgment; it does not collapse into this dimension's own
+capability/outcome-evidence-driven warrant. ICC's own text (§6, "What This
+View Does Not Show") previously named Stage 2 as "the supervisor /
+routing-policy authority — named but not architecturally homed by this
+dimension"; this dimension is now that home for the routing/warrant judgment
+specifically, exactly as scoped above.
 
 ## Relationship to Runtime Realization
 
@@ -531,10 +541,12 @@ is modeled directly on that page's own Operator Runtime Policy Overlay and
 Key Invariants 10/13 — a dimension may own a policy overlay's content as
 domain state without ever holding the authority to author it — the precedent
 this dimension follows, not a parallel invention. `runtime-realization.md`
-§5 previously named Stage 2 the same way ICC did; this dimension is that
-home. `RoutingPolicy` never reaches downstream into concrete provider/model/
-harness selection — that remains `runtime-realization.md`'s own territory
-entirely.
+§5 previously named Stage 2 the same way ICC did; this dimension is now that
+home for the routing/warrant judgment and its advisory nomination
+specifically — never for the acceptance/refusal consequence, which remains
+the appropriate separately authorized authority's own act. `RoutingPolicy`
+never reaches downstream into concrete provider/model/harness selection —
+that remains `runtime-realization.md`'s own territory entirely.
 
 ## Relationship to Role and Contract Structure
 
@@ -545,7 +557,10 @@ requirement naming an executor class is not the same decision as routing to
 that class now." That page's own owned fact — a role contract's declared
 `requires: executor_class = X` — remains entirely its own; this dimension
 never redefines or consumes it. Same correction as ICC and Runtime
-Realization: this dimension is now that page's own named-but-unhomed owner.
+Realization: this dimension is now that page's own named-but-unhomed owner
+for the routing/warrant judgment and its advisory nomination specifically —
+never for the acceptance/refusal consequence, which remains the appropriate
+separately authorized authority's own act.
 
 ## Relationship to Review
 

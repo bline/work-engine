@@ -139,9 +139,11 @@ executor-class routing / acceptance
        fact, revision-bound capability/outcome evidence, and an
        applicable RoutingPolicy revision, which supported executor
        class -- if any -- is warranted now. Stage 2 of the
-       routing.vs.admission ruling (2026-09-15, closed; stage 2 homed
-       2026-09-27). A nomination, advisory until accepted for the
-       slice.
+       routing.vs.admission ruling (2026-09-15, closed; stage 2's
+       routing/warrant judgment homed 2026-09-27). A nomination,
+       advisory until accepted for the slice by a separately
+       authorized authority -- the acceptance/refusal consequence
+       itself remains that authority's own act, never this dimension's.
        ACCEPTED, design_work_authorized, none built.
     |
     v
@@ -257,7 +259,7 @@ Each supplies normalized observations to multiple independent consumers without 
 
 `runtime-realization.md` composes with `mechanisms/resource-lease-and-fencing.md` for fenced active-binding (which realization generation currently holds authoritative right to execute as a role — the dimension's own decision; the mechanism's own fencing mechanics make it race-safe and host-enforced) and with `mechanisms/authority-preserving-intent-projection.md` for its own operator-policy-overlay (a real, partial instance, independently arrived at with zero cross-reference to the mechanism's other consumer, Studio).
 
-**Amended 2026-09-27** — the executor-class-routing seam was, until this admission, the one deliberately-unresolved gap in this otherwise-complete chain: stage 2 (executor-class routing/acceptance), named — "the supervisor / the routing-policy authority" in the `routing.vs.admission` ruling's own Stage 6 — but not architecturally homed by any view. Named consistently wherever it appeared (`runtime-realization.md` §5, `role-and-contract-structure.md` §6, `implementation-contract-compilation.md` §6), never silently resolved. `execution-strategy-selection.md`, admitted 2026-09-27, is now that home; all three pages cited above carry the corresponding correction. Two things this admission does **not** resolve, preserved exactly as the admitted dimension's own text states them: `implementation-contract-compilation.md`'s own Stage-1 singular/plural representation tension (that page's own open question, not this seam's), and capability/outcome-evidence ownership, Plan-IR projection-resolution ownership, verification/review-strength ownership, and exploration-versus-exploitation governance (all four explicitly unresolved by `execution-strategy-selection.md`'s own text, not silently settled by its admission).
+**Amended 2026-09-27** — the executor-class-routing seam was, until this admission, the one deliberately-unresolved gap in this otherwise-complete chain: stage 2, the historical composite "executor-class routing / acceptance" stage named — "the supervisor / the routing-policy authority" in the `routing.vs.admission` ruling's own Stage 6 — but not architecturally homed by any view. Named consistently wherever it appeared (`runtime-realization.md` §5, `role-and-contract-structure.md` §6, `implementation-contract-compilation.md` §6), never silently resolved. `execution-strategy-selection.md`, admitted 2026-09-27, is now the home for stage 2's routing/warrant judgment and its advisory nomination specifically — never for the acceptance/refusal consequence, which remains the appropriate separately authorized authority's own act, exactly as it did before this admission; all three pages cited above carry the corresponding correction, scoped the same way. Two things this admission does **not** resolve, preserved exactly as the admitted dimension's own text states them: `implementation-contract-compilation.md`'s own Stage-1 singular/plural representation tension (that page's own open question, not this seam's), and capability/outcome-evidence ownership, Plan-IR projection-resolution ownership, verification/review-strength ownership, and exploration-versus-exploitation governance (all four explicitly unresolved by `execution-strategy-selection.md`'s own text, not silently settled by its admission).
 
 ---
 

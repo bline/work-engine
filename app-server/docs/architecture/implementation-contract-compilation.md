@@ -17,8 +17,10 @@ Implementation-Contract Compilation owns:
 
 Implementation-Contract Compilation does NOT own:
     material decision selection itself (material-decision-selection.md)
-    slice-level executor-class routing/acceptance
-        (execution-strategy-selection.md, §6)
+    slice-level executor-class routing / acceptance (the composite
+        stage; its routing/warrant judgment and advisory nomination
+        belong to execution-strategy-selection.md, §6 -- acceptance
+        itself remains a separately authorized authority's own act)
     concrete runtime resolution/admission (runtime-realization.md)
     a role's own declared contract requirements
         (role-and-contract-structure.md)
@@ -45,7 +47,7 @@ flowchart TB
     GATE["Plan-conformance gate<br/>(THIS DIMENSION — establishes<br/>PLAN READINESS ONLY)"]
 
     S1["stage 1: contract characterization<br/>(THIS DIMENSION)"]
-    S2["stage 2: executor-class routing/acceptance<br/>(execution-strategy-selection.md —<br/>NOT this dimension)"]
+    S2["stage 2: executor-class routing / acceptance<br/>(routing/warrant: execution-strategy-selection.md;<br/>acceptance: separately authorized authority —<br/>NOT this dimension)"]
     S3["stage 3: runtime resolution/admission<br/>(runtime-realization.md — NOT this dimension)"]
 
     PROP --> BASIS
@@ -124,16 +126,19 @@ contract characterization (THIS DIMENSION: the implementation compiler
     authorizes no class for any specific slice.)
             |
             v
-executor-class routing / acceptance (execution-strategy-selection.md --
-    given this dimension's own Supported(C,X) fact plus revision-bound
-    capability/outcome evidence and an applicable RoutingPolicy
-    revision, which supported class -- if any -- is warranted now?
-    Admitted 2026-09-27 as the canonical Stage-2 owner, closing this
-    dimension's own source document's "Stage 6: Adaptive routing"
-    naming: "allow the supervisor to nominate an executor class from
-    contract characteristics and historical outcomes. Routing remains
-    advisory until the appropriate authority accepts it for the
-    slice.")
+executor-class routing / acceptance (the historical composite stage --
+    routing/warrant: execution-strategy-selection.md, admitted
+    2026-09-27 -- given this dimension's own Supported(C,X) fact plus
+    revision-bound capability/outcome evidence and an applicable
+    RoutingPolicy revision, which supported class -- if any -- is
+    warranted now, projected as an advisory nomination; acceptance:
+    the appropriate separately authorized authority's own act, never
+    this dimension's or execution-strategy-selection.md's own,
+    closing this dimension's own source document's "Stage 6: Adaptive
+    routing" naming: "allow the supervisor to nominate an executor
+    class from contract characteristics and historical outcomes.
+    Routing remains advisory until the appropriate authority accepts
+    it for the slice.")
             |
             v
 runtime resolution / admission (`runtime-realization.md` §4: given
@@ -193,7 +198,7 @@ This dimension's own source explicitly disclaims any context-management responsi
 This page does not define:
 
 - material decision selection itself (`material-decision-selection.md`);
-- slice-level executor-class routing/acceptance (`execution-strategy-selection.md`, §6);
+- slice-level executor-class routing / acceptance (the composite stage; routing/warrant belongs to `execution-strategy-selection.md`, §6, acceptance to a separately authorized authority);
 - concrete runtime resolution/admission (`runtime-realization.md`);
 - a role's own declared contract requirements (`role-and-contract-structure.md`);
 - context-lifecycle transitions (`context-lifecycle.md`).
@@ -221,7 +226,7 @@ This dimension owns stage 1 of the `routing.vs.admission` pipeline only (§6); `
 
 ## Relationship to Execution Strategy Selection
 
-`execution-strategy-selection.md`, admitted 2026-09-27, owns stage 2 of the `routing.vs.admission` pipeline (§6): given this dimension's own `Supported(C,X)` fact, revision-bound capability/outcome evidence, and an applicable `RoutingPolicy` revision, which supported class — if any — is warranted now. This dimension's own §4 field ("a proposed executor class with an evidence-backed readiness assessment") remains this dimension's sole territory; `execution-strategy-selection.md` consumes it by reference and never redefines or re-establishes it — its own non-duplication invariant binds it to whatever concrete Stage-1 record(s) this dimension actually exposes, representation-neutral. This dimension's own singular/plural Stage-1 representation tension (§4's single field vs. this dimension's own plural Question/§6 wording) remains this dimension's own open question, explicitly preserved rather than resolved by that dimension's admission.
+`execution-strategy-selection.md`, admitted 2026-09-27, owns the routing/warrant judgment and its advisory nomination within stage 2 of the `routing.vs.admission` pipeline (§6) — never the acceptance/refusal consequence, which remains a separately authorized authority's own act: given this dimension's own `Supported(C,X)` fact, revision-bound capability/outcome evidence, and an applicable `RoutingPolicy` revision, which supported class — if any — is warranted now. This dimension's own §4 field ("a proposed executor class with an evidence-backed readiness assessment") remains this dimension's sole territory; `execution-strategy-selection.md` consumes it by reference and never redefines or re-establishes it — its own non-duplication invariant binds it to whatever concrete Stage-1 record(s) this dimension actually exposes, representation-neutral. This dimension's own singular/plural Stage-1 representation tension (§4's single field vs. this dimension's own plural Question/§6 wording) remains this dimension's own open question, explicitly preserved rather than resolved by that dimension's admission.
 
 ## Relationship to Portfolio Selection
 
@@ -238,7 +243,7 @@ Consumes relevant claims and evidence cutoffs as part of the implementation basi
 - **`semantic-planning-hierarchy.md`** — the upstream semantic-planning view whose accepted branch plan is distinct from and strictly above this dimension's compiled contract(s), per the 2026-09-15 ruling; the exact artifact mapping into this dimension's accepted-proposal and sealed-decision-set input basis remains unresolved.
 - **`material-decision-selection.md`** — the `SUPPLIES` source of the sealed decision-set revision this dimension's basis depends on.
 - **`runtime-realization.md`** — the downstream stage-3 owner; §5 there names this dimension precisely as stage 1's owner.
-- **`execution-strategy-selection.md`** — the downstream stage-2 owner, admitted 2026-09-27; consumes this dimension's own `Supported(C,X)` fact by reference, never re-establishes it.
+- **`execution-strategy-selection.md`** — the downstream owner of stage 2's routing/warrant judgment and advisory nomination, admitted 2026-09-27 (acceptance remains a separately authorized authority's own act); consumes this dimension's own `Supported(C,X)` fact by reference, never re-establishes it.
 - **`role-and-contract-structure.md`** — a distinct, adjacent fact; never the owner of stage 1.
 - **`portfolio-selection.md`** — the upstream source of the accepted proposal this dimension compiles against.
 - **`evidence-and-claims.md`** — the source of claims and evidence cutoffs this dimension's basis consumes.
