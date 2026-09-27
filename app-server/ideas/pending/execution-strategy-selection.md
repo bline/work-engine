@@ -8,58 +8,124 @@
 - Decision owner: user or future explicitly authorized architecture owner
 - Primary consumers: whichever authority performs the acceptance act on a
   projected routing nomination (advisory until accepted, per
-  `implementation-contract-compilation.md` §6), and, downstream of
-  acceptance, `runtime-realization.md`'s own stage-3 admission
+  `implementation-contract-compilation.md` §6), the operator or explicitly
+  authorized authority who authors or adopts `RoutingPolicy` revisions
+  (Settled Finding B, below), and, downstream of acceptance,
+  `runtime-realization.md`'s own stage-3 admission
 
 ```yaml
 architecture_status:
   design: proposed
-  reconciliation: unreconciled
+  reconciliation: partial
   authorization: unrecorded
   implementation: none
   owner: app-server/ideas/pending/execution-strategy-selection.md
-  status_as_of: 2026-09-26
+  status_as_of: 2026-09-27
 ```
 
 ```yaml
 idea_provenance:
   origin: reconciliation_synthesis
+  predecessor: app-server/ideas/pending/execution-strategy-selection.md @ 2d00d31
   related_reconciliations:
     - app-server/ideas/pending/proposal-decision-gated-implementation-compilation.md
     - app-server/ideas/pending/structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md
+    - app-server/ideas/pending/structural-plan-ir-addendum-planner-owned-execution-characterization.md
     - app-server/ideas/pending/evidence-calibrated-plan-resolution-and-continuous-capability-learning.md
     - app-server/docs/architecture/implementation-contract-compilation.md
     - app-server/docs/architecture/runtime-realization.md
+    - app-server/docs/architecture/decision-specific-readiness.md
+    - app-server/docs/architecture/authority-and-ownership.md
+    - app-server/docs/architecture/mechanisms/candidate-resolution-and-admission.md
 ```
 
+## Revision History
+
+- **Revision 1** (2026-09-26, `2d00d31`) — initial candidate, five bounding
+  rounds (§ How This Candidate Was Bounded, items 1–5).
+- **Revision 2** (2026-09-27, this revision) — produced through an
+  independent adversarial review pass and two further falsifier-test
+  reconciliation rounds (items 6–7, below), settled through direct,
+  session-level discussion rather than a formal `*-reconciliation.md`
+  document of their own — the same evidentiary bar `authority-and-
+  ownership.md` §12 and `mechanisms/candidate-resolution-and-admission.md`
+  were each held to when first named. Settles:
+  - **Finding A — predicate boundary.** `Supported(C,X)` (ICC's own Stage-1
+    fact) is necessary but never sufficient for `Warranted(C,X|E,P)` (this
+    candidate's own Stage-2 judgment). The boundary is a **revision-cadence**
+    distinction, not an evidence-coarseness one: the same underlying
+    observations may legitimately inform both. `N=1` (ICC's current
+    single-proposed-class representation) leaves this candidate non-vacuous;
+    `N>1` only adds comparative selection on top of an already-real judgment.
+  - **Finding B — `RoutingPolicy` ownership.** Following `runtime-
+    realization.md`'s own already-accepted Operator Runtime Policy Overlay
+    precedent exactly: this candidate owns the `RoutingPolicy` domain
+    artifact, its revision semantics, and its application to Stage-2
+    candidates — never the preference content of any given revision, which
+    remains the authoring act of the operator or an explicitly authorized
+    authority.
+
+  Also fixes, independent of either finding: an honest three-outcome
+  disposition grammar (previously missing the case where supported
+  candidates exist but none is currently warranted); consistent citation of
+  `execution_profile` everywhere this candidate's exact basis is described;
+  historical (never voided) preservation of a superseded contract-subject's
+  prior judgment; demotion of ICC's own Stage-1 representation tension to an
+  independent upstream question, not an admission prerequisite for this
+  candidate; and a round-count inconsistency between this document's own
+  intro paragraph and its enumerated bounding list.
+
+  Still candidate status throughout: not accepted, not authorized for
+  implementation, not part of the canonical atlas. Independent adversarial
+  review of this revision and an explicit operator admission decision remain
+  the two gates before any canonical-atlas edit — neither has occurred.
+
+---
+
 Not a source-document transcription like most files in this directory. This
-page is a fresh synthesis, produced this session through a four-round
-falsifier/grain test against the `routing.vs.admission` ruling's own named-but-
-architecturally-unhomed Stage 2 (`implementation-contract-compilation.md` §6;
-`runtime-realization.md` §5). It is recorded here, in `ideas/pending/`, rather
-than in `docs/architecture/`, precisely because it has not yet been through an
-independent adversarial pass or an operator admission decision — both
-explicitly still pending.
+page is a fresh synthesis, produced through five rounds of falsifier/grain
+testing at first commit (2026-09-26) against the `routing.vs.admission`
+ruling's own named-but-architecturally-unhomed Stage 2
+(`implementation-contract-compilation.md` §6; `runtime-realization.md` §5),
+plus two further adversarial reconciliation rounds for this revision
+(2026-09-27) — seven rounds in total, enumerated in full below. It is
+recorded here, in `ideas/pending/`, rather than in `docs/architecture/`,
+precisely because independent adversarial review of *this* revision and an
+operator admission decision are both still pending.
 
 ---
 
 ## Candidate question
 
-> Given a bounded implementation contract, its Stage-1 (`implementation-contract-compilation.md`) characterization, revision-bound capability/outcome evidence, and an applicable routing-policy revision, which of the semantically supported executor classes is warranted for this subject?
+> Given a bounded implementation contract, its Stage-1
+> (`implementation-contract-compilation.md`) characterization, revision-bound
+> capability/outcome evidence, and an applicable `RoutingPolicy` revision,
+> which of the semantically supported executor classes — if any — is
+> warranted for this subject now?
+
+`Supported(C,X)` — ICC's own Stage-1 fact, frozen at compile time — is
+**necessary but never sufficient** for `Warranted(C,X|E,P)`, this candidate's
+own, independently revisioned Stage-2 judgment (Settled Finding A). This
+candidate owns exactly the residual judgment of whether an already-supported
+class remains the right one **now**, never whether a class is supported in
+the first place.
 
 This question is held deliberately narrow. Five rounds of falsifier testing
-this session progressively removed content that looked plausible at first
+at first commit progressively removed content that looked plausible at first
 pass but either duplicated an existing owner or would have silently widened
 the already-settled 2026-09-15 `routing.vs.admission` ruling, which names
 Stage 2 specifically as **executor-class routing/acceptance** and nothing
-broader.
+broader. Two further reconciliation rounds in this revision (items 6–7,
+below) sharpened this candidate's own boundary against ICC and settled its
+own ownership of the `RoutingPolicy` artifact — neither round widened this
+section's own scope.
 
 ---
 
 ## How This Candidate Was Bounded
 
-Four corrections, in order, each removing content the prior pass had wrongly
-folded in:
+**Original bounding, five rounds (2026-09-26), each removing content the
+prior pass had wrongly folded in:**
 
 1. **Temporal ordering.** Stage 2 runs strictly after Stage 1 has already
    compiled the contract. `planning/compilation effort` — how much upstream
@@ -71,12 +137,13 @@ folded in:
 2. **Ownership honesty.** Capability/outcome evidence and routing-policy
    authorship were initially treated as already settled elsewhere
    (`evidence-and-claims.md`; a self-owning standing policy artifact,
-   respectively). Neither is actually settled: `evidence-and-claims.md`'s own
-   §10 profile pattern is, per the evidence-calibrated document's own
-   corrected finding, "a real but compositional relationship, not a claim
-   already stated"; no canonical page names an owner for routing-policy
-   authorship at all. Both are carried here as **open dependencies**, not
-   assumed.
+   respectively). Neither was actually settled at the time: `evidence-and-
+   claims.md`'s own §10 profile pattern is, per the evidence-calibrated
+   document's own corrected finding, "a real but compositional relationship,
+   not a claim already stated" — still true, still carried as an open
+   dependency (§ What Remains Explicitly Unresolved). Routing-policy
+   authorship *was* genuinely unresolved at first commit; Settled Finding B
+   (item 7, below) resolves it for this revision.
 3. **Artifact primacy.** The candidate owns a durable judgment artifact.
    Routing nomination is a *projection* of that artifact's own judgment,
    never a second truth class — the artifact records what was warranted and
@@ -105,11 +172,11 @@ folded in:
      mechanism — as its own intended owner. Claiming it here would preempt
      an already-named future owner. Demoted to a joint-evaluation input.
 
-Splitting these components does not destroy an irreducible semantic
-tradeoff — the addendum's own joint economic framing survives intact as this
-candidate's own internal evaluation method. It merely keeps ownership where
-it already sits, or is already named to eventually sit. Joint evaluation is
-not joint ownership.
+   Splitting these components does not destroy an irreducible semantic
+   tradeoff — the addendum's own joint economic framing survives intact as
+   this candidate's own internal evaluation method. It merely keeps
+   ownership where it already sits, or is already named to eventually sit.
+   Joint evaluation is not joint ownership.
 
 5. **Stage-1 cardinality narrowing.** An early adversarial pass asked
    whether `warranted_executor_class` merely restates ICC's own §4 field, "a
@@ -124,14 +191,79 @@ not joint ownership.
    exhaustive map, as individual per-class records, or as a single
    proposed-class projection plus additional unexposed characterization is
    **not decided by this candidate and not assumed either way** — see
-   "Stage-1 Representation Tension" below. This candidate therefore binds to
-   a **representation-neutral Stage-1 support basis**: whatever ICC-owned
+   "Stage-1 Representation Tension" below, now demoted to an independent
+   upstream question rather than a precondition for *this* candidate (item
+   6, below resolves why). This candidate therefore binds to a
+   **representation-neutral Stage-1 support basis**: whatever ICC-owned
    record(s) establish a given class's semantic support and readiness,
    however ICC eventually represents them. It owns only the residual
    judgment of which already-established-supported class is warranted now,
    under current evidence and policy — never which classes are semantically
    supported in the first place, and never a specific storage shape for
    that fact.
+
+**Revision 2 reconciliation, two further rounds (2026-09-27):**
+
+6. **Predicate boundary reconciliation.** An adversarial pressure test asked
+   directly whether `Supported(C,X)` (ICC) and `Warranted(C,X|E,P)` (this
+   candidate) name the same fact under different words — the primary
+   falsifier any admission review of this candidate must clear. Traced
+   against the original `routing.vs.admission` ruling's own two-ingredient
+   Stage 6 text ("allow the supervisor to nominate an executor class from
+   contract characteristics **and historical outcomes**"), both stages'
+   consulted evidence, and a working counterexample — a class can remain
+   `Supported=true` (frozen the instant its contract compiles) while later
+   becoming `Warranted=false` purely from post-compile capability-evidence
+   or policy drift, with no contradiction, because `Supported` never
+   re-evaluates and `Warranted` always can — the distinction was confirmed
+   real and settled **necessary-but-not-sufficient**. Critically, the
+   boundary is **not** that Stage 1 consumes coarse evidence and Stage 2
+   consumes exact evidence: the same underlying observation may legitimately
+   ground both facts, for different reasons, at different times — the
+   operative distinction is **revision cadence**, the same
+   freshness-independent-of-evaluation pattern `decision-specific-
+   readiness.md` §3 already establishes for its own dimension against
+   `proposal-evaluation.md`. This also confirmed the candidate is non-vacuous
+   even while ICC exposes exactly one proposed class (`N=1`): "is it *still*
+   warranted *now*" is a real, independently re-askable question regardless
+   of how many classes ICC currently exposes. `N>1` (once ICC's own
+   representation exposes it) adds comparative selection on top of an
+   already-real judgment — a difference of richness, not of kind.
+7. **`RoutingPolicy` ownership reconciliation.** A second pressure test
+   asked who authors and owns the standing policy `Warranted` is evaluated
+   against, explicitly refusing to accept the superficially attractive
+   `decision-specific-readiness.md` "contract + assessment" analogy without
+   falsifying it first — that dimension's own `ReadinessContract` is a
+   small, largely static, decision-type-keyed taxonomy, not a continuously
+   revised, preference-bearing policy, and is the wrong-shaped precedent.
+   The correct, closer precedent is `runtime-realization.md`'s own already-
+   accepted Operator Runtime Policy Overlay: that dimension explicitly owns
+   a policy overlay at its own Stage-3 grain (its own Purpose line: "This
+   dimension owns capability observation, **operator runtime policy**,
+   resolution of concrete runtime composition, the immutable `RoleRealization`
+   artifact itself..."), yet its own Key Invariant 10 ("a manipulable
+   control surface... not canonical workflow or runtime truth") and Key
+   Invariant 13 (a confirmed, partial instance of `mechanisms/authority-
+   preserving-intent-projection.md`) establish that owning the overlay never
+   means authoring its content. Following that precedent exactly rather than
+   inventing a new shape: this candidate owns the `RoutingPolicy` domain
+   artifact — its schema, revision semantics, scoping, and application to
+   Stage-2 candidates — while the appropriate operator or explicitly
+   authorized authority authors or adopts any given revision's actual
+   preference content. This candidate never self-authors that content
+   merely because it hosts the artifact. Three adjacent mechanisms were
+   checked directly and confirmed not to absorb any part of this: `mechanisms/
+   authority-preserving-intent-projection.md` owns only the projection/edit
+   discipline through which authored content reaches the artifact, never
+   policy meaning; `mechanisms/candidate-resolution-and-admission.md` owns
+   only the generic 0/1/N reduction this candidate's own residual
+   class-selection step reuses when ICC exposes `N>1`, never routing
+   meaning; `evidence-and-claims.md` owns capability-evidence and freshness
+   mechanics, never routing policy. Exploration-versus-exploitation
+   governance is deliberately left **outside** this candidate's own scope:
+   the evidence-calibrated source's own text treats it as "one possible
+   mechanism," not a settled Stage-2 responsibility, and claiming it here
+   would assert more than that source itself does.
 
 ---
 
@@ -140,10 +272,21 @@ not joint ownership.
 ```text
 OWNS
     subject-specific warranted-executor-class judgment
+    disposition grammar (warranted / no_candidate_warranted /
+        insufficient_evidence -- see "Disposition: Three Honest
+        Outcomes" below)
     confidence / unresolved uncertainty
-    exact basis binding (contract revision, evidence reference,
-        policy reference)
-    reopening / applicability semantics
+    exact basis binding (contract revision, Stage-1 support reference,
+        execution-profile reference, capability-evidence reference,
+        RoutingPolicy revision)
+    reopening / applicability semantics, including historical
+        preservation of a superseded subject's prior judgment (never
+        deletion or retroactive rewriting)
+    the RoutingPolicy domain artifact -- schema, revision semantics,
+        scoping, and application to Stage-2 candidates (Settled
+        Finding B) -- never the preference content of any given
+        revision, which remains the authoring act of the operator or
+        an explicitly authorized authority
 
 CONSUMES
     the compiled implementation contract, and specifically Stage 1's
@@ -155,11 +298,13 @@ CONSUMES
         proposed-class projection of it, and without assuming ICC
         represents that fact as an exhaustive map, individual records, or
         a projection plus additional characterization (representation
-        unresolved -- see "Stage-1 Representation Tension")
+        unresolved -- see "Stage-1 Representation Tension," now an
+        independent upstream question, not an admission prerequisite for
+        this candidate -- Settled Finding A)
     execution-profile characterization (a derived representation,
-        self-disclaimed as non-owner by its own source)
+        self-disclaimed as non-owner by its own source; bound as part of
+        this candidate's own exact basis wherever that basis is recorded)
     capability/outcome evidence                    [owner unresolved]
-    routing policy                                 [owner unresolved]
 
 DOES NOT OWN
     the implementation contract itself (implementation-contract-
@@ -175,7 +320,19 @@ DOES NOT OWN
         still-unresolved successor, adaptive-review-panel-coordination)
     capability-evidence truth (owner unresolved -- not assumed to be
         evidence-and-claims.md)
-    routing-policy authorship (owner unresolved)
+    RoutingPolicy content authorship (the operator or explicitly
+        authorized authority's own act -- this candidate owns the
+        artifact, revision semantics, and application mechanics only,
+        never content authorship -- Settled Finding B)
+    the projection/edit discipline through which policy content is
+        authored or adopted (mechanisms/authority-preserving-intent-
+        projection.md)
+    the generic 0/1/N candidate-reduction mechanic itself
+        (mechanisms/candidate-resolution-and-admission.md) -- reused
+        for residual class selection when ICC exposes N>1, never owned
+    exploration-versus-exploitation governance (deliberately left
+        outside this candidate's scope pending separate establishment
+        -- Settled Finding B)
     executor-class acceptance (an authority consequence -- the
         appropriate authority's own act, never this candidate's)
     concrete runtime realization (runtime-realization.md)
@@ -183,6 +340,44 @@ DOES NOT OWN
         evidence-and-claims.md + authority-and-ownership.md +
         mechanisms/revision-cas-and-publication.md's own composition)
 ```
+
+---
+
+## Disposition: Three Honest Outcomes
+
+Mirroring `implementation-contract-compilation.md` §3's own
+`compiled`/`returned_for_decision`/`blocked_by_evidence` honesty, this
+candidate's own judgment step returns exactly one of:
+
+```text
+warranted                 a specific already-ICC-supported executor
+                           class is warranted for this subject now,
+                           under the exact capability-evidence and
+                           RoutingPolicy revision bound to the judgment.
+                           warranted_executor_class is populated.
+
+no_candidate_warranted    one or more classes are ICC-supported for
+                           this subject, but current evidence and
+                           policy jointly warrant none of them -- a
+                           real, evaluated negative, never silently
+                           defaulted, hidden, or resolved by picking
+                           the least-bad candidate. Returns to the
+                           authorized routing authority for
+                           disposition; never blocks, reopens, or
+                           second-guesses ICC's own Stage-1 fact.
+
+insufficient_evidence     the bound capability-evidence or
+                           RoutingPolicy reference is itself too
+                           stale, missing, or contested to render any
+                           judgment -- distinct from
+                           no_candidate_warranted, which is a real
+                           evaluated outcome, not an evidentiary gap.
+```
+
+This is the case revision 1 omitted entirely: a subject with genuinely
+supported candidates for which none currently clears policy or evidence
+requirements is a real, nameable outcome, not an absence this candidate
+should paper over by warranting the least objectionable class anyway.
 
 ---
 
@@ -199,15 +394,22 @@ ExecutionStrategySelection:
       # Whether ICC stores this as an exhaustive map, individual per-class
       # records, or a proposed-class projection plus additional
       # unexposed characterization is not decided here -- see "Stage-1
-      # Representation Tension." ESS binds to, and cites, whichever
-      # concrete record(s) ICC actually exposes for the class in question.
+      # Representation Tension," an independent upstream question, not a
+      # precondition for this candidate (Settled Finding A). ESS binds to,
+      # and cites, whichever concrete record(s) ICC actually exposes for
+      # the class in question.
       class_support_reference: <pointer to ICC's own record(s) establishing
           this specific class's supportedness + readiness>
-    execution_profile: <reference -- derived representation, non-owner>
+    execution_profile: <reference -- derived representation, non-owner;
+        bound here as part of this candidate's own exact basis>
     capability_evidence: <reference -- ownership unresolved>
-    routing_policy: <reference -- ownership unresolved>
-  warranted_executor_class: <the semantic judgment itself -- must be a
-      class whose semantic support is established by
+    routing_policy_revision: <exact RoutingPolicy artifact revision (see
+        below) this judgment was evaluated against -- owned by this
+        candidate; content authored by the operator or an explicitly
+        authorized authority, never by this candidate itself>
+  disposition: warranted | no_candidate_warranted | insufficient_evidence
+  warranted_executor_class: <populated only when disposition = warranted;
+      must be a class whose semantic support is established by
       basis.stage1_support_basis.class_support_reference>
   confidence: ...
   unresolved_uncertainty: ...
@@ -223,6 +425,55 @@ ExecutionStrategySelection:
   integrity_digest: ...
 ```
 
+```yaml
+RoutingPolicy:
+  # This candidate's own domain artifact, per Settled Finding B, following
+  # runtime-realization.md's Operator Runtime Policy Overlay precedent.
+  # This candidate owns the schema, revision semantics, scoping, and
+  # application mechanics below. It never authors the content of any given
+  # revision -- that remains the operator's or an explicitly authorized
+  # authority's own act, exercised through mechanisms/authority-preserving-
+  # intent-projection.md's own projection/edit discipline.
+  revision: <content-digest identity, predecessor-chained -- same
+      Revision/CAS shape as every other durable artifact in this
+      architecture; mechanisms/revision-cas-and-publication.md>
+  scope: <global | campaign | role-class | subject-class | one-slice --
+      the same hierarchical scoping runtime-realization.md §11's own
+      overlay already uses; a narrower scope may override a broader
+      preference, never a role contract, an ICC-established support fact,
+      or an authority boundary>
+  class_exclusions: [...]        # administrative prohibitions, independent
+                                  # of ICC's own Supported(C,X) fact -- see
+                                  # "Distinguishing Policy Exclusion From
+                                  # ICC's Own Negative," below
+  class_preferences: [...]       # ranking among supported classes
+  cost_objective: <reference or weighting, if authored -- narrowly scoped
+      to whatever the operator/authority actually specifies; this
+      candidate does not itself define an economic model>
+  confidence_thresholds: {...}
+  freshness_requirements: {...}  # a requirement this candidate may state
+                                  # (decision-specific-readiness.md §4's own
+                                  # precedent for this exact split); the
+                                  # freshness mechanism itself remains
+                                  # evidence-and-claims.md's own
+  severe_failure_treatment: {...}  # a consumption rule this candidate may
+                                  # state (e.g. "exclude a class with an
+                                  # unresolved severe-failure flag");
+                                  # preservation of the underlying evidence
+                                  # distinction remains evidence-and-
+                                  # claims.md's own representation concern
+  escalation_triggers: [...]     # systemic policy-level triggers, distinct
+                                  # from a single judgment's own subject-
+                                  # specific reopening_conditions
+  pins: [...]
+  class_limitations: [...]
+  authored_by: <the operator or explicitly authorized authority who
+      authored or adopted this revision -- never this candidate's own
+      producer identity>
+  predecessor: ...
+  integrity_digest: ...
+```
+
 > **Non-duplication invariant.** ESS may not warrant class C unless its
 > bound ICC Stage-1 basis establishes C as semantically supported. This
 > holds regardless of how ICC represents that establishment — an exhaustive
@@ -234,7 +485,26 @@ ExecutionStrategySelection:
 > self-manufactured supportedness fact and not a `returned_for_decision`
 > outcome (that outcome is reserved for ICC's own discovery of a newly
 > material route choice, a different condition entirely — see
-> `material-decision-selection.md` §9).
+> `implementation-contract-compilation.md` §8, which mirrors
+> `material-decision-selection.md` §9's own invariant from this dimension's
+> own side). Symmetrically, per Settled Finding A, `Supported=true` alone
+> never obligates `warranted`: `disposition = no_candidate_warranted` is the
+> correct, honest outcome when every supported class fails current evidence
+> or policy — never a silent default to whichever supported class looks
+> least objectionable.
+
+### Distinguishing Policy Exclusion From ICC's Own Negative
+
+`RoutingPolicy`'s own `class_exclusions` must never become a second name for
+`Supported(C,X) = false`. ICC's negative is a **structural/mechanical
+incapability fact**, relative to the compiled contract's own constraints,
+frozen the instant C compiles, carrying no preference or administrative
+content. A policy exclusion is an **administrative/preference prohibition**
+that can hold even when `Supported(C,X) = true` — an operator may exclude an
+otherwise fully capable class from security-adjacent work for compliance
+reasons unrelated to whether that class can technically do the work. These
+answer different questions, about different things, on different revision
+cadences, and must never be collapsed into one field or one negative.
 
 `warranted_executor_class` names the semantic judgment this candidate
 actually owns. It is deliberately not called `selected_executor_class` or
@@ -243,7 +513,8 @@ evidence and policy basis supports, not yet a consequence. The chain from
 judgment to effect stays strictly one-directional and never collapses:
 
 ```text
-warranted_executor_class          (THIS CANDIDATE's own judgment)
+warranted_executor_class          (THIS CANDIDATE's own judgment, produced
+                                    against its own RoutingPolicy revision)
         ↓ projection
 routing nomination                 (advisory -- ICC §6's own verbatim
                                      phrase: "Routing remains advisory
@@ -271,8 +542,10 @@ built).
 
 An `ExecutionStrategySelection` never mutates. Exact-basis preservation means
 it remains a true historical record of what was warranted against exactly
-which contract revision, evidence reference, and policy reference — the same
-discipline `runtime-realization.md` §6 already holds for `RoleRealization`.
+which contract revision, Stage-1 support reference, execution-profile
+reference, capability-evidence reference, and `RoutingPolicy` revision — the
+same discipline `runtime-realization.md` §6 already holds for
+`RoleRealization`.
 
 Two distinct classes of change carry two distinct consequences, and must not
 be conflated:
@@ -283,14 +556,28 @@ CONTRACT-SUBJECT REOPENING
     blocked_by_evidence outcome, or material-decision-selection.md §6's
     decision-set successor reopening every implementation contract that
     relied on the superseded revision
-        -> voids the subject itself. The existing
-           ExecutionStrategySelection's subject no longer exists in that
-           form. A new contract revision requires an entirely new
-           judgment, new subject identity.
+        -> the prior ExecutionStrategySelection's subject (the exact
+           contract revision it bound to) is superseded, never deleted
+           and never retroactively rewritten. Its own applicability
+           transitions to `historical` -- it remains a true, permanently
+           inspectable record of what was warranted, against exactly
+           which contract revision, evidence reference, and
+           RoutingPolicy revision, at the time it was produced. A new
+           contract revision requires an entirely new judgment against a
+           new subject identity; the prior judgment's historical truth
+           is preserved, not erased -- the same discipline every other
+           Revision/CAS instance in this architecture already holds
+           (mechanisms/revision-cas-and-publication.md), and the same
+           correction "invalidation never mints authority"
+           (authority-and-ownership.md §12) already requires: a
+           superseded subject losing current applicability is not
+           license to treat its own historical truth as if it had never
+           existed.
 
 EVIDENCE / POLICY EVOLUTION
-    a capability-evidence or routing-policy revision changes while the
-    contract itself remains untouched
+    a capability-evidence reference changes, or a new RoutingPolicy
+    revision is authored or adopted, while the contract itself remains
+    untouched
         -> does NOT reopen the subject and does NOT void the existing
            judgment. It only makes the judgment's applicability
            re-askable for a *new* attempt against the same still-valid
@@ -307,7 +594,7 @@ authority (`authority-and-ownership.md` §12; `runtime-realization.md` §7).
 
 ---
 
-## Stage-1 Representation Tension (Unresolved, Not This Candidate's to Settle)
+## Stage-1 Representation Tension (ICC's Own Open Question — Not an Admission Prerequisite for This Candidate)
 
 `implementation-contract-compilation.md`'s own top-level Question and §6
 body use plural executor-class wording ("which executor classes are
@@ -321,7 +608,18 @@ tension this candidate does not resolve and does not need to resolve: this
 candidate's own non-duplication rests only on binding to whatever concrete
 Stage-1 record(s) ICC actually exposes for a given class, per the
 representation-neutral basis above — not on any assumption about ICC's
-internal storage shape. Any eventual clarification or correction to ICC §4
+internal storage shape.
+
+**Settled Finding A (§ How This Candidate Was Bounded, item 6) already
+confirms this candidate's own predicate is well-defined independent of how
+ICC eventually resolves this tension:** `Warranted(C,X|E,P)` remains real and
+non-vacuous whether ICC currently exposes one class or eventually exposes
+many. Resolving ICC's own representation gap may *enrich* this candidate's
+own candidate space — turning a binary warrant-or-return-for-recharacterization
+judgment (today's `N=1` reality) into a genuine comparative selection among
+several supported classes (`N>1`) — but it is not a precondition for this
+candidate's own semantic soundness, its own admission, or its own
+implementation readiness. Any eventual clarification or correction to ICC §4
 belongs to that page, on its own timeline, and is out of scope here.
 
 ---
@@ -332,18 +630,24 @@ belongs to that page, on its own timeline, and is out of scope here.
   `evidence-and-claims.md` ever hosts this as a domain profile (its own §10
   pattern is a compositional possibility, not a settled claim) is untested by
   this page and not assumed either way.
-- **Routing-policy semantic ownership.** Whether the routing policy this
-  candidate consumes is a genuinely external standing artifact, or whether
-  this candidate dimension is itself the more natural owner of that policy
-  (the policy could reduce to the generalized history of this dimension's own
-  past judgments), is untested and must be resolved before, or independently
-  of, any atlas admission.
 - **Plan-IR projection-resolution ownership.** Real gap, no claimed owner
   anywhere, and deliberately not claimed here either, to avoid widening the
   2026-09-15 ruling.
 - **Verification/review-strength ownership.** Pending `adaptive-review-panel-
   coordination`'s own eventual resolution — not this candidate's to
   preempt.
+- **Exploration-versus-exploitation governance.** Deliberately excluded from
+  this candidate's own scope (Settled Finding B, item 7). The evidence-
+  calibrated source's own text treats a separately governed exploration
+  allocation as "one possible mechanism," never a settled Stage-2
+  responsibility — folding it into `RoutingPolicy` would assert more than
+  that source itself does. May need its own future mechanism; not decided
+  here.
+
+Resolved by this revision, no longer listed here as open: **routing-policy
+semantic ownership** (Settled Finding B — this candidate owns the
+`RoutingPolicy` artifact, never its content authorship) and the **Stage-1/
+Stage-2 predicate boundary** (Settled Finding A).
 
 ---
 
@@ -355,8 +659,10 @@ This page does not define:
 - material decision selection (`material-decision-selection.md`);
 - the concrete provider/model/harness/tool realization (`runtime-realization.md`);
 - review judgment or review-panel coordination (`review.md`; `adaptive-review-panel-coordination`, unresolved);
-- capability-evidence or routing-policy truth (both explicitly unresolved above);
-- the authority-grant mechanics that make acceptance, autonomy grants, or admission effective (`authority-and-ownership.md`).
+- capability-evidence truth (explicitly unresolved above);
+- the authority-grant mechanics that make acceptance, autonomy grants, or admission effective (`authority-and-ownership.md`);
+- the projection/edit mechanics that let an operator author or adopt a `RoutingPolicy` revision (`mechanisms/authority-preserving-intent-projection.md`);
+- the generic candidate-reduction mechanic this candidate's own residual class-selection step reuses (`mechanisms/candidate-resolution-and-admission.md`).
 
 ---
 
@@ -365,10 +671,18 @@ This page does not define:
 - **`implementation-contract-compilation.md`** — currently states its own
   Stage 2 as "named but not architecturally homed by this dimension" (§6,
   "What This View Does Not Show"). If admitted, this candidate is that home;
-  ICC's own text would need the correction, not the reverse.
+  ICC's own text would need the correction, not the reverse. Settled Finding
+  A also gives ICC's own §5 plan-conformance gate criterion — "the selected
+  executor class is supported by prior evidence for comparable plan entropy
+  and task shape" — a precise, non-overlapping reading: a coarse, one-shot,
+  compile-time plausibility check, frozen into the compiled contract, never
+  itself a preference or currency judgment.
 - **`runtime-realization.md`** — §5 and Key Invariant 11 currently name "the
   supervisor / the routing-policy authority" without a canonical page. Same
-  correction, if admitted.
+  correction, if admitted. This candidate's own `RoutingPolicy` ownership
+  (Settled Finding B) is modeled directly on this page's own Operator
+  Runtime Policy Overlay and Key Invariants 10/13 — the precedent this
+  candidate follows, not a parallel invention.
 - **`review.md`** — would gain an explicit note that its own "governing
   review contract" input may, in part, be informed by this candidate's
   advisory `verification_review_strength` recommendation, without this
@@ -380,13 +694,27 @@ This page does not define:
 - **`authority-and-ownership.md`** — the acceptance consequence and the
   autonomy-grant consequence both remain this page's own §7–§9 territory;
   this candidate would gain a relationship bullet noting it as the upstream
-  producer of the judgment an acceptance act operates on.
+  producer of the judgment an acceptance act operates on, and as the
+  authority whose delegation modes govern who may author a `RoutingPolicy`
+  revision.
+- **`mechanisms/authority-preserving-intent-projection.md`** — owns the
+  projection/edit discipline through which an operator's authored
+  `RoutingPolicy` content reaches this candidate's own artifact; this
+  candidate never acquires that discipline itself, the same relationship
+  `runtime-realization.md` §11 already holds with its own overlay.
+- **`mechanisms/candidate-resolution-and-admission.md`** — this candidate's
+  own residual class-selection step, once ICC exposes `N>1` supported
+  classes, reuses this mechanism's generic 0/1/N reduction; the mechanism
+  supplies no routing meaning of its own, the same relationship `runtime-
+  realization.md` §4 and `material-decision-selection.md` §7 already hold
+  with it.
 - **`app-server/docs/work-engine-planned-architecture.md`** — §4's dimension
   table and §8's routing-gap language would both need updating once (and
   only once) this candidate survives an independent adversarial pass and an
   operator admission decision.
 - **`app-server/ideas/pending/proposal-decision-gated-implementation-compilation.md`**,
   **`structural-plan-ir-addendum-execution-profile-scoring-and-strategy-selection.md`**,
+  **`structural-plan-ir-addendum-planner-owned-execution-characterization.md`**,
   **`evidence-calibrated-plan-resolution-and-continuous-capability-learning.md`** —
   each would need a corrected `superseded_by`/relationship-table entry citing
   this candidate as the eventual home for the narrow residue it actually
@@ -403,7 +731,10 @@ than a fresh audit.
 This candidate is a specification only. It does not amend the migration
 roadmap, the routing.vs.admission ruling, any canonical architecture page, or
 any idea document's own status. It does not authorize implementation. It
-does not resolve the capability-evidence or routing-policy ownership
-questions it names. Admission into the canonical atlas requires a separate,
-independent adversarial review pass and an explicit operator decision, both
-still pending.
+does not resolve the capability-evidence ownership question it names, and it
+deliberately excludes exploration-versus-exploitation governance from its own
+scope. Revision 2 has been through one independent adversarial review pass
+and two further falsifier-test reconciliation rounds (2026-09-26/27,
+enumerated above); it has not been through canonical admission. Admission
+into the canonical atlas requires a separate operator decision, still
+pending.
