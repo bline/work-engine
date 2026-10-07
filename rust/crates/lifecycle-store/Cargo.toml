@@ -1,0 +1,13 @@
+[package]
+name = "lifecycle-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+lifecycle-core = { path = "../lifecycle-core" }
+thiserror.workspace = true
+
+[dev-dependencies]
+trybuild.workspace = true

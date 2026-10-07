@@ -1,0 +1,5 @@
+error[E0599]: no method named `submit_command` found for struct `ReadClient<T>` in the current scope
+  --> tests/ui/read_client_mutation.rs:19:12
+   |
+19 |     client.submit_command(&subject, "advance");
+   |            ^^^^^^^^^^^^^^ method not found in `ReadClient<LocalTransport>`

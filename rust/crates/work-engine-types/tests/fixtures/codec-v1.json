@@ -1,0 +1,32 @@
+{
+  "contract": "lifecycle-command-v1",
+  "unicode_payload": {"": 1, "😀": 2},
+  "new_canonical_utf8": "{\"codec\":\"jcs-rfc8785-v1\",\"domain\":\"work-engine.lifecycle\",\"kind\":\"command\",\"payload\":{\"😀\":2,\"\":1},\"schema\":1}",
+  "new_sha256": "20cf714585ba1cda2bb1fab527a1f780a01d212f37bd3a965816f2dd8f153a74",
+  "escaped_numeric_payload": {
+    "controls": "\b\f\n\r\t\u0000",
+    "exponent": 1e-7,
+    "fraction": 1.5,
+    "quote": "\"",
+    "slash": "\\"
+  },
+  "escaped_numeric_canonical_utf8": "{\"codec\":\"jcs-rfc8785-v1\",\"domain\":\"work-engine.lifecycle\",\"kind\":\"command\",\"payload\":{\"controls\":\"\\b\\f\\n\\r\\t\\u0000\",\"exponent\":1e-7,\"fraction\":1.5,\"quote\":\"\\\"\",\"slash\":\"\\\\\"},\"schema\":1}",
+  "escaped_numeric_sha256": "bf57ec10e371f65311f3c470f538cc89b8226c739e6215917ed5df7362619553",
+  "binary_payload_hex": "00ff01002a",
+  "binary_sha256": "13044f5f6afcc5b2395f8d02f96eedc200a5745feaab005d3182d8e80626d8cb",
+  "text_input_utf8": "hello\n",
+  "text_input_sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+  "vector_source": "ECMAScript JSON.stringify of sorted v1 envelope and SHA-256 of its UTF-8 bytes; exact binary and text bytes hashed separately.",
+  "legacy_claim_evidence": {
+    "canonical_utf8_hex": "7b22ee8080223a312c22f09f9880223a327d0a",
+    "sha256": "90dd0cc8fe36f006faa643a1ccb2bc424434da7abd51bba32919d2c623ea8dad",
+    "ordering": "Unicode code points",
+    "trailing_newline": true
+  },
+  "legacy_workspace_coordination": {
+    "canonical_utf8_hex": "7b22f09f9880223a322c22ee8080223a317d",
+    "sha256": "28c95d1bbb2209223307e62f489020e8f9e0cfa16adf2daf6d88127a1e8dd22a",
+    "ordering": "JavaScript UTF-16 default sort",
+    "trailing_newline": false
+  }
+}

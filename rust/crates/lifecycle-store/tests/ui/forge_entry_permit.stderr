@@ -1,0 +1,15 @@
+error: cannot construct `AuthorizedEntry` with struct literal syntax due to private fields
+ --> tests/ui/forge_entry_permit.rs:5:18
+  |
+5 |     let _entry = AuthorizedEntry {
+  |                  ^^^^^^^^^^^^^^^
+6 |         effect: EffectId::parse("effect-1").unwrap(),
+  |         -------------------------------------------- private field
+7 |         attempt: AttemptId::parse("attempt-1").unwrap(),
+  |         ----------------------------------------------- private field
+8 |         subject: SubjectId::parse("subject-1").unwrap(),
+  |         ----------------------------------------------- private field
+9 |         incarnation: RuntimeIncarnation::parse("incarnation-1").unwrap(),
+  |         ---------------------------------------------------------------- private field
+  |
+  = note: ...and other private field `input` that was not provided

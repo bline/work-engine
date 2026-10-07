@@ -1,0 +1,12 @@
+[package]
+name = "lifecycle-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+lifecycle-core = { path = "../lifecycle-core" }
+lifecycle-store = { path = "../lifecycle-store" }
+lifecycle-provider = { path = "../lifecycle-provider" }
+thiserror.workspace = true
