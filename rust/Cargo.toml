@@ -32,6 +32,7 @@ trybuild = "=1.0.121"
 base64 = "=0.22.1"
 yaml-rust = { package = "yaml-rust2", version = "=0.13.0", default-features = false }
 ryu-js = "=1.0.3"
+tokio = { version = "=1.53.2", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util"] }
 schemars = "=1.2.2"
 jsonschema = { version = "=0.58.6", default-features = false }
 

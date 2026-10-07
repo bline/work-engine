@@ -10,3 +10,9 @@ lifecycle-core = { path = "../lifecycle-core" }
 lifecycle-store = { path = "../lifecycle-store" }
 lifecycle-provider = { path = "../lifecycle-provider" }
 thiserror.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+work-engine-types = { path = "../work-engine-types" }
+tempfile = "=3.27.0"

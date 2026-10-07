@@ -3,8 +3,8 @@
 use std::future::Future;
 
 use lifecycle_core::{
-    AttemptId, ControlledTextInput, EffectId, ProviderThreadId, ProviderTurnId, RuntimeIncarnation,
-    SubjectId,
+    AttemptId, ControlledTextInput, EffectId, EffectSettlement, EvidenceId, ExecutionOutcome,
+    ProviderThreadId, ProviderTurnId, RuntimeIncarnation, SubjectId,
 };
 use thiserror::Error;
 
@@ -25,12 +25,17 @@ pub struct TextTurnRequest {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TextTurnObservation {
+    /// Stable coordinate assigned at ingress; replay must retain it.
+    pub source: EvidenceId,
     pub effect: EffectId,
     pub attempt: AttemptId,
     pub incarnation: RuntimeIncarnation,
     pub thread: ProviderThreadId,
     pub turn: ProviderTurnId,
     pub final_text: Option<String>,
+    /// Provider-qualified facts, not a conclusion drawn from local task exit.
+    pub outcome: ExecutionOutcome,
+    pub settlement: EffectSettlement,
 }
 
 #[derive(Debug, Error)]

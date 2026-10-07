@@ -1,29 +1,67 @@
-//! Owned execution signatures. S2 supplies supervision and result ownership.
+//! Owned execution of store-committed lifecycle entries.
+//!
+//! `AuthorizedEntry` is minted only by the store. Reserving capacity is not
+//! admission; the service must claim entry before transferring it here.
 
-use std::future::Future;
+mod clock;
+mod executor;
+mod framing;
+mod process;
 
-use lifecycle_core::{AttemptId, EffectObservation};
-use lifecycle_store::AuthorizedEntry;
-use thiserror::Error;
+use std::time::Instant;
+
+use lifecycle_provider::TextTurnPort;
+
+pub use clock::{ClockError, ClockSource, DeadlineStatus, MonotonicDeadline, SystemClock};
+pub use executor::{
+    ExecutionReservation, ExecutionTicket, LifecycleExecutor, OwnedExecutor, ProviderFailure,
+    ResultReceiver, RuntimeError, SubmitError, TaskDrainReport, TaskExit, TaskResult,
+    TaskTermination,
+};
+pub use framing::{
+    BoundedFrameReader, BoundedFrameWriter, FrameDiagnosticCode, FrameDiagnostics, FrameError,
+};
+pub use process::{
+    ActivationState, ChildClose, ChildExit, ChildId, CloseDisposition, ProcessError,
+    ProcessShutdownReport, ProcessSupervisor,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TaskExit {
-    pub attempt: AttemptId,
-    pub local_task_ended: bool,
-    pub child_exit_code: Option<i32>,
+pub struct ShutdownReport {
+    pub tasks: TaskDrainReport,
+    pub processes: ProcessShutdownReport,
+    pub unsafe_at_close: bool,
 }
 
-#[derive(Debug, Error)]
-pub enum RuntimeError {
-    #[error("bounded execution capacity is unavailable")]
-    Capacity,
-    #[error("task ownership could not be established")]
-    Ownership,
+pub struct CompletionWithCleanup<T, E> {
+    pub primary: Result<T, E>,
+    pub cleanup: ShutdownReport,
 }
 
-/// Entry must already be committed. A local task exit is not remote settlement.
-pub trait LifecycleExecutor {
-    type Run: Future<Output = (TaskExit, Option<EffectObservation>)> + Send;
-
-    fn submit(&self, entry: AuthorizedEntry) -> Result<Self::Run, RuntimeError>;
+/// Both launch gates close before either owned set begins awaiting cleanup.
+pub async fn finish_with_cleanup<P, T, E>(
+    executor: &OwnedExecutor<P>,
+    processes: &ProcessSupervisor,
+    primary: Result<T, E>,
+    proof_deadline: Instant,
+    cleanup_deadline: Instant,
+) -> CompletionWithCleanup<T, E>
+where
+    P: TextTurnPort + Send + Sync + 'static,
+{
+    executor.close_gate();
+    processes.close_gate();
+    let tasks = executor.close_and_drain(proof_deadline).await;
+    let process_report = processes
+        .close_and_drain(proof_deadline, cleanup_deadline)
+        .await;
+    let unsafe_at_close = tasks.unsafe_at_close || process_report.unsafe_at_close;
+    CompletionWithCleanup {
+        primary,
+        cleanup: ShutdownReport {
+            tasks,
+            processes: process_report,
+            unsafe_at_close,
+        },
+    }
 }
