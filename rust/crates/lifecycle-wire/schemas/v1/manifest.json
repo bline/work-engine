@@ -1,0 +1,47 @@
+{
+  "client_api": "ReadClient<T: ObservationTransport>::snapshot(subject,budget)/reconnect(subject,cursor,budget)/wait(subject,target,budget); target-aware budgeted passive snapshot/wait_hint",
+  "codec": {
+    "command": "jcs-rfc8785-v1",
+    "domain": "work-engine.lifecycle",
+    "snapshot": "jcs-rfc8785-v1"
+  },
+  "fixture_sha256": {
+    "command-v1.json": "01f9a951fa2c2e4486e3f7fcb412bf3edbfddfe938731fbc56e1a168d1c48aa6",
+    "compatibility-v1.json": "80473fe41d54418a388432340d133cf927cf49a6c4944790cd3f3cff3df6c21e",
+    "failed-unsettled-v1.json": "1a4f9c1506bad03851054c2076a8e8af73d76fbabaf60ce8c3878a45e6129691",
+    "historical-complete-current-blocked-v1.json": "5b6df3542e1a4a1b20bf37b7346d153a4355cfaa0bc2e15323bd2e6a64aab7fb",
+    "observation-unavailable-v1.json": "6ad6611aef5df0d18d5a3bcd8e185b1e25e17ed4ccc9fb2d67a86a6235c0f482",
+    "unsupported-observation-v2.json": "387edaffb95005c06d08cd1d897c6624ffea82dd0f1b8726ff6e0e9a80801335"
+  },
+  "generator": {
+    "crate": "schemars",
+    "settings": "draft2020_12",
+    "version": "1.2.2"
+  },
+  "protocol_version": 1,
+  "schema_bundle_hash_basis": "sha256 of compact lexicographically keyed schema_sha256 JSON",
+  "schema_bundle_sha256": "7b1dd82119be4bc37d568783febfbcdcde31a49187e6df32e2bb3aa18c6271e0",
+  "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+  "schema_sha256": {
+    "command.schema.json": "9bdfe1a5366d0aa73011cbe6534d5e49fdd01b16cbf81ca804bf44d5a424e14a",
+    "error.schema.json": "5c775a35d155e8e95b47539fd4d297d24bcdf9e0909b115862574421ed4a6753",
+    "snapshot.schema.json": "45b16a5c43b3223652f4b0da8a7c6404dc3c3d2556efab3ced627ee35a358520",
+    "wait-request.schema.json": "08cdd0b1d16a26171985b4c10cb860c691e53840b1d9a1852ae2939fb59738ca",
+    "wait-result.schema.json": "07673872823652a66865f5b23d8af30583c9405ea11252877e9120be3887d6f2"
+  },
+  "schema_version": 1,
+  "source_sha256": {
+    "../lifecycle-client/README.md": "f7b67fd4560f2c59fe6542bd2b4d3773bebc3eec2723f7a680398dd287fdce57",
+    "../lifecycle-client/src/lib.rs": "d3498dd2ca77440f912417d7035fc703ed4df882470e29413c6b5f180ac1fbf2",
+    "examples/generate_schema_bundle.rs": "c0ab332c438436f7269c37c978b7e3c2fa88513569efa76e4c8ce577b115699d",
+    "src/json.rs": "664e5cfb7cebf5a88b312c90a782b3da097e6c84783a2601232c2407449fa16f",
+    "src/lib.rs": "9dd99478eb7fab698c64d7ab47c6094883b2e18d5bffe6476af25c6fc9d3062d",
+    "src/observation.rs": "72ebae4ecd316888f2fb3eb37e3fea6833b79e53b0be9be6e968f78adf0a0757",
+    "src/schema.rs": "1624002905d85217792ca4c1e935c9dd3d6d906f8ae9b8cf4ad5f596939cc539"
+  },
+  "u0_scope": "contract fixtures, not a live store projection",
+  "unsupported_observation_variant": {
+    "behavior": "reject without lifecycle progress",
+    "code": "unsupported_observation_variant"
+  }
+}

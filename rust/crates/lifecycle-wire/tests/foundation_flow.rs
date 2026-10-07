@@ -2,7 +2,9 @@ use lifecycle_core::{
     BuildId, Command, CommandId, CommandRequest, ContextGeneration, GrantId, ProofRunId, Revision,
     SubjectId,
 };
-use lifecycle_wire::{CommandDto, WireError, WireErrorCode, parse_command, parse_strict_json};
+use lifecycle_wire::{
+    CommandDto, CommandOperationV1, WireError, WireErrorCode, parse_command, parse_strict_json,
+};
 use serde_json::{Value, json};
 use work_engine_types::CodecContract;
 
@@ -33,7 +35,7 @@ fn with_digest(mut value: Value) -> Value {
 
 // Test-only service-boundary conversion. The actual authenticated bridge belongs to S4.
 fn to_domain(dto: CommandDto) -> Result<CommandRequest, String> {
-    if dto.kind != "request_replacement" {
+    if !matches!(&dto.operation, CommandOperationV1::RequestReplacement(_)) {
         return Err("unsupported command".into());
     }
     let digest = CodecContract::LifecycleCommandV1

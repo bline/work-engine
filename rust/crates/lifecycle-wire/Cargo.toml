@@ -10,6 +10,8 @@ work-engine-types = { path = "../work-engine-types" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+schemars.workspace = true
 
 [dev-dependencies]
 lifecycle-core = { path = "../lifecycle-core" }
+jsonschema.workspace = true

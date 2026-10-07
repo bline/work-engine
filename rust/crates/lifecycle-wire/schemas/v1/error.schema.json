@@ -1,0 +1,40 @@
+{
+  "$defs": {
+    "WireErrorCode": {
+      "enum": [
+        "malformed_json",
+        "unsupported_version",
+        "semantic_invalidity",
+        "stale_revision",
+        "conflict",
+        "observation_unavailable",
+        "cursor_gap",
+        "unsupported_capability",
+        "unsupported_observation_variant"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "code": {
+      "$ref": "#/$defs/WireErrorCode"
+    },
+    "detail": {
+      "type": "string"
+    },
+    "protocol_version": {
+      "format": "uint16",
+      "maximum": 65535,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "code",
+    "detail"
+  ],
+  "title": "ErrorDtoV1",
+  "type": "object"
+}

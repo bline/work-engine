@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "CursorV1": {
+      "properties": {
+        "commit_sequence": {
+          "type": "string"
+        },
+        "store_id": {
+          "type": "string"
+        },
+        "stream_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "store_id",
+        "stream_id",
+        "commit_sequence"
+      ],
+      "type": "object"
+    },
+    "ExecutionOutcomeV1": {
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "interrupted",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "TransitionStageV1": {
+      "enum": [
+        "quiescing",
+        "capturing",
+        "verifying",
+        "checkpointed",
+        "switching",
+        "rehydrating",
+        "ready_to_commit",
+        "reconciled",
+        "recovery_required",
+        "aborted_before_entry"
+      ],
+      "type": "string"
+    },
+    "WaitTargetV1": {
+      "oneOf": [
+        {
+          "properties": {
+            "delivery_id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "delivery_outcome",
+              "type": "string"
+            },
+            "outcome": {
+              "$ref": "#/$defs/ExecutionOutcomeV1"
+            }
+          },
+          "required": [
+            "kind",
+            "delivery_id",
+            "outcome"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "transition_stage",
+              "type": "string"
+            },
+            "stage": {
+              "$ref": "#/$defs/TransitionStageV1"
+            },
+            "transition_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "transition_id",
+            "stage"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "cursor": {
+      "$ref": "#/$defs/CursorV1"
+    },
+    "max_wait_ms": {
+      "type": "string"
+    },
+    "protocol_version": {
+      "format": "uint16",
+      "maximum": 65535,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "target": {
+      "$ref": "#/$defs/WaitTargetV1"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "subject_id",
+    "cursor",
+    "target",
+    "max_wait_ms"
+  ],
+  "title": "WaitRequestV1",
+  "type": "object"
+}

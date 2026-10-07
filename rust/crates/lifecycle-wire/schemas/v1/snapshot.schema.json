@@ -1,0 +1,528 @@
+{
+  "$defs": {
+    "AdmissionV1": {
+      "oneOf": [
+        {
+          "properties": {
+            "context_generation": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "domain",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_generation"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "transition",
+              "type": "string"
+            },
+            "transition_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "transition_id"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "fenced",
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "CursorV1": {
+      "properties": {
+        "commit_sequence": {
+          "type": "string"
+        },
+        "store_id": {
+          "type": "string"
+        },
+        "stream_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "store_id",
+        "stream_id",
+        "commit_sequence"
+      ],
+      "type": "object"
+    },
+    "DeliveryV1": {
+      "properties": {
+        "attempt_id": {
+          "type": "string"
+        },
+        "delivery_id": {
+          "type": "string"
+        },
+        "effect_id": {
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/ExecutionOutcomeV1"
+        },
+        "provenance": {
+          "$ref": "#/$defs/FieldV13"
+        },
+        "settlement": {
+          "$ref": "#/$defs/EffectSettlementV1"
+        }
+      },
+      "required": [
+        "delivery_id",
+        "effect_id",
+        "attempt_id",
+        "outcome",
+        "settlement",
+        "provenance"
+      ],
+      "type": "object"
+    },
+    "EffectSettlementV1": {
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {
+              "const": "unresolved",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "evidence_ref": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "established",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_ref"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "evidence_ref": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "conflict",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_ref"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ExecutionOutcomeV1": {
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "interrupted",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "FieldV1": {
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/TransitionV1"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "not_applicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unavailable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FieldV12": {
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/DeliveryV1"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "not_applicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unavailable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FieldV13": {
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/ObservationProvenanceV1"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "not_applicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unavailable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FieldV14": {
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "not_applicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unavailable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ObservationProvenanceV1": {
+      "properties": {
+        "observed_wall_ms": {
+          "description": "Validated decimal Unix milliseconds supplied by the observation owner.",
+          "type": "string"
+        },
+        "source_ref": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "observed_wall_ms"
+      ],
+      "type": "object"
+    },
+    "RuntimeAvailabilityV1": {
+      "enum": [
+        "available",
+        "unavailable",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "TransitionStageV1": {
+      "enum": [
+        "quiescing",
+        "capturing",
+        "verifying",
+        "checkpointed",
+        "switching",
+        "rehydrating",
+        "ready_to_commit",
+        "reconciled",
+        "recovery_required",
+        "aborted_before_entry"
+      ],
+      "type": "string"
+    },
+    "TransitionV1": {
+      "properties": {
+        "completed": {
+          "type": "boolean"
+        },
+        "stage": {
+          "$ref": "#/$defs/TransitionStageV1"
+        },
+        "transition_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transition_id",
+        "stage",
+        "completed"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "authority_refs": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "blocking_reason": {
+      "$ref": "#/$defs/FieldV14"
+    },
+    "context_generation": {
+      "type": "string"
+    },
+    "current_admission": {
+      "$ref": "#/$defs/AdmissionV1"
+    },
+    "cursor": {
+      "$ref": "#/$defs/CursorV1"
+    },
+    "delivery": {
+      "$ref": "#/$defs/FieldV12",
+      "description": "For a targeted read, the named durable delivery when established.\nCurrent admission and the cursor still describe the current read."
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "measurement": {
+      "$ref": "#/$defs/FieldV14"
+    },
+    "protocol_version": {
+      "format": "uint16",
+      "maximum": 65535,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "runtime_availability": {
+      "$ref": "#/$defs/RuntimeAvailabilityV1"
+    },
+    "runtime_provenance": {
+      "$ref": "#/$defs/FieldV13"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "transition": {
+      "$ref": "#/$defs/FieldV1",
+      "description": "For a targeted read, the named durable transition when established.\nFor an untargeted read, the service-selected relevant transition."
+    }
+  },
+  "required": [
+    "protocol_version",
+    "subject_id",
+    "context_generation",
+    "cursor",
+    "transition",
+    "current_admission",
+    "delivery",
+    "runtime_availability",
+    "runtime_provenance",
+    "blocking_reason",
+    "authority_refs",
+    "evidence_refs",
+    "measurement"
+  ],
+  "title": "LifecycleSnapshotV1",
+  "type": "object"
+}

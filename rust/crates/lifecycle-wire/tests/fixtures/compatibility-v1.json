@@ -1,0 +1,31 @@
+{
+  "command_canonical_utf8": "{\"codec\":\"jcs-rfc8785-v1\",\"domain\":\"work-engine.lifecycle\",\"kind\":\"command\",\"payload\":{\"build_id\":\"build-1\",\"command_id\":\"command-1\",\"context_generation\":\"context-a\",\"expected_revision\":\"7\",\"grant_ref\":\"grant-1\",\"kind\":\"request_replacement\",\"payload\":{\"reason\":\"controlled text\"},\"principal_ref\":\"operator:controlled\",\"proof_run_id\":\"proof-1\",\"protocol_version\":1,\"subject_id\":\"subject-1\"},\"schema\":1}",
+  "command_digest": "17a7d8a828feba27cf53760902f21124920c4d93dea72a8dce147005f9ccea99",
+  "legacy_reference_fixture": "../../../work-engine-types/tests/fixtures/codec-v1.json",
+  "negotiation": [
+    {
+      "offered": [
+        1
+      ],
+      "selected": 1
+    },
+    {
+      "offered": [
+        1,
+        2
+      ],
+      "selected": 1
+    },
+    {
+      "error": "unsupported_version",
+      "offered": [
+        2
+      ]
+    }
+  ],
+  "protocol_version": 1,
+  "snapshot_canonical_utf8": "{\"codec\":\"jcs-rfc8785-v1\",\"domain\":\"work-engine.lifecycle\",\"kind\":\"snapshot\",\"payload\":{\"authority_refs\":[],\"blocking_reason\":{\"state\":\"known\",\"value\":\"unsettled_effect\"},\"context_generation\":\"context-a\",\"current_admission\":{\"kind\":\"fenced\",\"reason\":\"unsettled_effect\"},\"cursor\":{\"commit_sequence\":\"9\",\"store_id\":\"store-1\",\"stream_id\":\"subject-1\"},\"delivery\":{\"state\":\"known\",\"value\":{\"attempt_id\":\"attempt-1\",\"delivery_id\":\"delivery-1\",\"effect_id\":\"effect-1\",\"outcome\":\"failed\",\"provenance\":{\"state\":\"known\",\"value\":{\"observed_wall_ms\":\"1700000000000\",\"source_ref\":\"evidence:failure-1\"}},\"settlement\":{\"kind\":\"unresolved\"}}},\"evidence_refs\":[\"evidence:failure-1\"],\"measurement\":{\"state\":\"unavailable\"},\"protocol_version\":1,\"runtime_availability\":\"unavailable\",\"runtime_provenance\":{\"state\":\"unavailable\"},\"subject_id\":\"subject-1\",\"transition\":{\"state\":\"not_applicable\"}},\"schema\":1}",
+  "snapshot_digest": "99002073c748eb416f23f88a8cd8c6e65fa1893ff242ff9911cfe405e458f871",
+  "snapshot_fixture": "failed-unsettled-v1.json",
+  "unknown_observation_variant": "unsupported_observation_variant"
+}

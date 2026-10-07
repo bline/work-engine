@@ -1,0 +1,51 @@
+{
+  "authority_refs": [],
+  "blocking_reason": {
+    "state": "known",
+    "value": "unsettled_effect"
+  },
+  "context_generation": "context-a",
+  "current_admission": {
+    "kind": "fenced",
+    "reason": "unsettled_effect"
+  },
+  "cursor": {
+    "commit_sequence": "9",
+    "store_id": "store-1",
+    "stream_id": "subject-1"
+  },
+  "delivery": {
+    "state": "known",
+    "value": {
+      "attempt_id": "attempt-1",
+      "delivery_id": "delivery-1",
+      "effect_id": "effect-1",
+      "outcome": "deferred",
+      "provenance": {
+        "state": "known",
+        "value": {
+          "observed_wall_ms": "1700000000000",
+          "source_ref": "evidence:failure-1"
+        }
+      },
+      "settlement": {
+        "kind": "unresolved"
+      }
+    }
+  },
+  "evidence_refs": [
+    "evidence:failure-1"
+  ],
+  "measurement": {
+    "state": "unavailable"
+  },
+  "protocol_version": 1,
+  "runtime_availability": "unavailable",
+  "runtime_provenance": {
+    "state": "unavailable"
+  },
+  "subject_id": "subject-1",
+  "transition": {
+    "state": "not_applicable"
+  }
+}
