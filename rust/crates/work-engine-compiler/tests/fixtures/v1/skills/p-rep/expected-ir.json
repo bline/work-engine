@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "skill_id": "repo-search",
+  "status": "experimental_non_authoritative",
+  "input_sha256": {
+    "structure": "05fc9c134c0957d6bdf6d8b0dfb94c01fd33da2b4ae28aeb10c604b8a8bd31ff",
+    "interface": "69c795407d84cafeb30c4e4254be106f5df39e73031a417189de5e8835f9d82e"
+  },
+  "source": {
+    "path": "skills/repo-search/SKILL.md",
+    "repository_revision": "b4d749672990aadb51bab391a2e286b057128ea4",
+    "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+    "producer": "S6 bounded non-role legacy migration"
+  },
+  "section_provenance": [
+    {
+      "id": "identity",
+      "kind": "identity",
+      "source_span": {
+        "start_byte": 382,
+        "end_byte": 619,
+        "sha256": "31ad8cf6ba7e9e157c76ec20513393391efb3406baa72d99367df9c9229ca6d4"
+      }
+    },
+    {
+      "id": "evidence-tier",
+      "kind": "validation",
+      "source_span": {
+        "start_byte": 619,
+        "end_byte": 1197,
+        "sha256": "e5422210185a3e14a86e1711d6e526d378dab48fdbae9353558cf6e082d98f72"
+      }
+    },
+    {
+      "id": "repository-intent",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 1197,
+        "end_byte": 2040,
+        "sha256": "b5198182cb1a532d860fda5c60549ecd5ac6e6623126d713f4d356eab289f236"
+      }
+    },
+    {
+      "id": "claim-routing",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 2040,
+        "end_byte": 3177,
+        "sha256": "6b6177d9dac0a8bbf89b3a0a7c23e354be16d2f84de75cfc31a9cc88b2844279"
+      }
+    },
+    {
+      "id": "evidence-packet",
+      "kind": "receipt",
+      "source_span": {
+        "start_byte": 3177,
+        "end_byte": 4024,
+        "sha256": "80a3fdb09cdc4daa7c33f67aa3392d0dd3e873fa28e41db90609b4db4de8efbe"
+      }
+    },
+    {
+      "id": "role-boundaries",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 4024,
+        "end_byte": 4344,
+        "sha256": "db9774798e553e91373c24a5382317d58a6f8318fb68dab7af06d047055b7c7f"
+      }
+    }
+  ],
+  "source_bindings": [
+    {
+      "id": "authority.legacy-skill",
+      "kind": "canonical_authority",
+      "path": "skills/repo-search/SKILL.md",
+      "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+      "role": "canonical provisional repository-retrieval contract"
+    },
+    {
+      "id": "authority.openai-projection",
+      "kind": "canonical_authority",
+      "path": "skills/repo-search/agents/openai.yaml",
+      "sha256": "fa5513bd8685bf7ab885008307c84056b2b5445150d176fbf210b805fb6b087c",
+      "role": "provider presentation metadata without semantic ownership"
+    },
+    {
+      "id": "authority.backend-capabilities",
+      "kind": "canonical_authority",
+      "path": "skills/repo-search/references/backend-capabilities.md",
+      "sha256": "e0458fc1ba9773d7f5bf4853c2e4dfad7bb82615c71f4f2d5a34a13ce9652f91",
+      "role": "configured capability affordances and evidence limitations"
+    }
+  ],
+  "interface": {
+    "schema_version": 1,
+    "status": "experimental_non_authoritative",
+    "skill_id": "repo-search",
+    "boundaries": [
+      {
+        "id": "evidence.packet-contract",
+        "kind": "interface",
+        "semantic_section": "evidence-packet",
+        "authority_source": "authority.legacy-skill",
+        "enforcement": "receipt_contract"
+      },
+      {
+        "id": "authority.retrieval-only",
+        "kind": "prohibition",
+        "semantic_section": "role-boundaries",
+        "authority_source": "authority.legacy-skill",
+        "enforcement": "denied"
+      }
+    ],
+    "runtime_requirements": {
+      "required_capabilities": [
+        "capability.direct_source_observation",
+        "capability.repository_evidence"
+      ],
+      "capability_ceiling": [
+        "capability.direct_source_observation",
+        "capability.repository_evidence"
+      ],
+      "effect_ceiling": [],
+      "prohibited_effects": [
+        "state.acceptance",
+        "state.review",
+        "state.task_changes",
+        "state.worktree"
+      ],
+      "continuity": "ephemeral"
+    }
+  },
+  "runtime_requirements": {
+    "schema_version": 1,
+    "skill_id": "repo-search",
+    "contract": {
+      "source_binding_id": "authority.legacy-skill",
+      "path": "skills/repo-search/SKILL.md",
+      "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+      "must_be_activated": true,
+      "kind": "skill"
+    },
+    "required_capabilities": [
+      "capability.direct_source_observation",
+      "capability.repository_evidence"
+    ],
+    "capability_ceiling": [
+      "capability.direct_source_observation",
+      "capability.repository_evidence"
+    ],
+    "effect_ceiling": [],
+    "prohibited_effects": [
+      "state.acceptance",
+      "state.review",
+      "state.task_changes",
+      "state.worktree"
+    ],
+    "continuity": "ephemeral",
+    "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+    "verified_sources": false,
+    "sha256": "d946bcc7e2b4290a2a5ce8ca15cdebf66374baeb628b4122015f499507b5f9f0"
+  },
+  "output_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949"
+}

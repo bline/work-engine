@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "skill_id": "claim-evidence",
+  "status": "experimental_non_authoritative",
+  "input_sha256": {
+    "structure": "96d49135fd31c590dade3a126a91baff2ee17d7b2be175fc608bd618647b783f",
+    "interface": "2181d13d0f8cbe4d3844a10a665e286d3232452e9b9d4c9b28901ea07d7c296d"
+  },
+  "source": {
+    "path": "skills/claim-evidence/SKILL.md",
+    "repository_revision": "0ffaaec05e55493e2bb6e3ca30028c0509f00d73",
+    "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+    "producer": "S12 bounded claim-backed review migration"
+  },
+  "section_provenance": [
+    {
+      "id": "identity-and-ownership",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 395,
+        "end_byte": 1037,
+        "sha256": "470a009719501d397ac2a81fe677f45b7ddba01c68fbf29f5ff2eb4c5eed777f"
+      }
+    },
+    {
+      "id": "operations-and-reliance",
+      "kind": "receipt",
+      "source_span": {
+        "start_byte": 1037,
+        "end_byte": 2418,
+        "sha256": "221f95de4ab37f438f8a4c2f6a95651be270db72b1479f43f25ede20c4de95e3"
+      }
+    },
+    {
+      "id": "authority-and-lifecycle-boundaries",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 2418,
+        "end_byte": 3140,
+        "sha256": "b50cde10022f5d40cffb0ef7436e0533e557304d3fa24a7b2ac2bab0558b82a8"
+      }
+    }
+  ],
+  "source_bindings": [
+    {
+      "id": "authority.legacy-skill",
+      "kind": "canonical_authority",
+      "path": "skills/claim-evidence/SKILL.md",
+      "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+      "role": "canonical role participation and authority boundary"
+    },
+    {
+      "id": "authority.claim-contract",
+      "kind": "canonical_authority",
+      "path": "skills/claim-evidence/references/claim-evidence-contract.md",
+      "sha256": "e0e8d452b5e64cc3432ec727e47d4f8a2fee3c4e4e37d8e2dc318c4b6923d0f3",
+      "role": "canonical claim identity, publication, reliance, projection, and closed-phase contract"
+    },
+    {
+      "id": "authority.openai-projection",
+      "kind": "canonical_authority",
+      "path": "skills/claim-evidence/agents/openai.yaml",
+      "sha256": "bd967b550a6a9a439241361d504ece223fbb11fc0ac6e4f74dbfbebe47084054",
+      "role": "provider presentation metadata without semantic or grant ownership"
+    }
+  ],
+  "interface": {
+    "schema_version": 1,
+    "status": "experimental_non_authoritative",
+    "skill_id": "claim-evidence",
+    "boundaries": [
+      {
+        "id": "claim.canonical-owner",
+        "kind": "interface",
+        "semantic_section": "operations-and-reliance",
+        "authority_source": "authority.claim-contract",
+        "enforcement": "mediated"
+      },
+      {
+        "id": "authority.no-possession-grant",
+        "kind": "prohibition",
+        "semantic_section": "authority-and-lifecycle-boundaries",
+        "authority_source": "authority.legacy-skill",
+        "enforcement": "denied"
+      },
+      {
+        "id": "authority.no-review-verdict",
+        "kind": "prohibition",
+        "semantic_section": "authority-and-lifecycle-boundaries",
+        "authority_source": "authority.claim-contract",
+        "enforcement": "denied"
+      }
+    ],
+    "runtime_requirements": {
+      "required_capabilities": [],
+      "capability_ceiling": [
+        "capability.direct_source_observation",
+        "capability.repository_evidence"
+      ],
+      "effect_ceiling": [],
+      "prohibited_effects": [
+        "state.campaign_acceptance",
+        "state.claim_authority",
+        "state.claim_store",
+        "state.finding_evaluation",
+        "state.review_acceptance",
+        "state.review_selection",
+        "state.task_changes"
+      ],
+      "continuity": "retained"
+    }
+  },
+  "runtime_requirements": {
+    "schema_version": 1,
+    "skill_id": "claim-evidence",
+    "contract": {
+      "source_binding_id": "authority.legacy-skill",
+      "path": "skills/claim-evidence/SKILL.md",
+      "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+      "must_be_activated": true,
+      "kind": "skill"
+    },
+    "required_capabilities": [],
+    "capability_ceiling": [
+      "capability.direct_source_observation",
+      "capability.repository_evidence"
+    ],
+    "effect_ceiling": [],
+    "prohibited_effects": [
+      "state.campaign_acceptance",
+      "state.claim_authority",
+      "state.claim_store",
+      "state.finding_evaluation",
+      "state.review_acceptance",
+      "state.review_selection",
+      "state.task_changes"
+    ],
+    "continuity": "retained",
+    "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+    "verified_sources": false,
+    "sha256": "e83dbf907a1386231355eade3ae9155fb808582f4d3141c9a9236b6860bcccc1"
+  },
+  "output_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a"
+}

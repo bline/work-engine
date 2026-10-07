@@ -1,0 +1,82 @@
+{
+  "codec": "review-episode-js-json-v1",
+  "source": "app-server/src/services/review-episode/contract.mjs canonicalJson and digest",
+  "vectors": [
+    {
+      "id": "basic-nested",
+      "value": {
+        "z": [
+          null,
+          true,
+          false,
+          1.25,
+          {
+            "b": "backslash \\ and quote \"",
+            "a": "line\nfeed"
+          }
+        ],
+        "a": {
+          "n": 9007199254740991,
+          "m": -9007199254740991
+        }
+      },
+      "canonical": "{\"a\":{\"m\":-9007199254740991,\"n\":9007199254740991},\"z\":[null,true,false,1.25,{\"a\":\"line\\nfeed\",\"b\":\"backslash \\\\ and quote \\\"\"}]}",
+      "sha256": "a025e8202a32d019cf569afe40821048d14a153d21c7b39a7d900ab97142d6cd"
+    },
+    {
+      "id": "utf16-order",
+      "value": {
+        "": "bmp",
+        "𐀀": "supplementary",
+        "퟿": "before-surrogate"
+      },
+      "canonical": "{\"퟿\":\"before-surrogate\",\"𐀀\":\"supplementary\",\"\":\"bmp\"}",
+      "sha256": "1783de4385cda2744606a163b4511ef67f0c05b55a8e6b0caf1ee695274a5f36"
+    },
+    {
+      "id": "lone-surrogates",
+      "value": {
+        "high": "\ud800",
+        "low": "\udc00",
+        "paired": "😀"
+      },
+      "canonical": "{\"high\":\"\\ud800\",\"low\":\"\\udc00\",\"paired\":\"😀\"}",
+      "sha256": "3ba75425120ec4ce452addbaed1a0f3ff9cdfc597ff8b467f79ce387ef02b2d9"
+    },
+    {
+      "id": "missing-key",
+      "value": {
+        "present": null
+      },
+      "canonical": "{\"present\":null}",
+      "sha256": "924c481da1aca4bbd856f20e4aaef20f67c34fccd0b5e27cb2647b8c45ee21ac"
+    },
+    {
+      "id": "null-key",
+      "value": {
+        "present": null,
+        "absent": null
+      },
+      "canonical": "{\"absent\":null,\"present\":null}",
+      "sha256": "1125c03ba2fd14ccb02bf824dd18bfd57a7da948d3ee1d10cae9a0f2bcd18d7c"
+    },
+    {
+      "id": "array-nested",
+      "value": [
+        {
+          "z": 1,
+          "a": 2
+        },
+        [
+          "é",
+          "🙂",
+          0,
+          0,
+          1e+21
+        ]
+      ],
+      "canonical": "[{\"a\":2,\"z\":1},[\"é\",\"🙂\",0,0,1e+21]]",
+      "sha256": "ff22a6ac7df5049aff454f22a75634c79ad3d5837ca15325676e8c15c58c2bfd"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "oracle": {
+    "compiler_sha256": "abb2cdf31c2d6a2f4a19dfc062cbaef6b96ece6fd74721b0bf170dd5ef23cbeb",
+    "node": "v22.23.2",
+    "yaml": "2.9.0"
+  },
+  "cases": [
+    {
+      "id": "p-sup",
+      "skill": "slice-supervisor",
+      "structure_sha256": "7cf2bd8c33a05b8c49a1567118352aee1d8c05d8b83e584bd1d6f84d137e850b",
+      "interface_sha256": "62e2261c20e1b605ca281afbc2c5b5811e2b2dfb929de7c4e8ccfe97515c1fcc",
+      "output_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+      "expected_ir_sha256": "889f27b1d1991fbcc91fd3f2a7f98fc70d90aef3612750cc8e5cf233bfd6c14b",
+      "canonical_source": "skills/slice-supervisor/SKILL.md"
+    },
+    {
+      "id": "p-bld",
+      "skill": "slice-builder",
+      "structure_sha256": "9ad73f6d2e683ce2891b7bdf7dbfbbccf5f2e8b213bbc7055c054c1b0923b898",
+      "interface_sha256": "50a5cf4a3bc69900a4694e3753e245552b308f8809763e653fc2b331d38cb12a",
+      "output_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+      "expected_ir_sha256": "31fc5505a2cb6bda71a7e67e1c9a8e229a188a92b950e1d7c9bcce616140085c",
+      "canonical_source": "HEAD:skills/slice-builder/SKILL.md"
+    },
+    {
+      "id": "p-rep",
+      "skill": "repo-search",
+      "structure_sha256": "05fc9c134c0957d6bdf6d8b0dfb94c01fd33da2b4ae28aeb10c604b8a8bd31ff",
+      "interface_sha256": "69c795407d84cafeb30c4e4254be106f5df39e73031a417189de5e8835f9d82e",
+      "output_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+      "expected_ir_sha256": "f11d536541e7e486c453e99f6edbcf9e46861eabb8d44472e50bbf0107dea2b1",
+      "canonical_source": "skills/repo-search/SKILL.md"
+    },
+    {
+      "id": "p-clm",
+      "skill": "claim-evidence",
+      "structure_sha256": "96d49135fd31c590dade3a126a91baff2ee17d7b2be175fc608bd618647b783f",
+      "interface_sha256": "2181d13d0f8cbe4d3844a10a665e286d3232452e9b9d4c9b28901ea07d7c296d",
+      "output_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+      "expected_ir_sha256": "7f2ebd56cb4c7ffab4384a9cd14551d389110fab0c2239fb180b83c3dff38143",
+      "canonical_source": "skills/claim-evidence/SKILL.md"
+    },
+    {
+      "id": "p-air",
+      "skill": "agent-instruction-review",
+      "structure_sha256": "4d47d42de934b8a5d020294bdf46eca6e591b4ad0566c9903fd8e6f97effeffa",
+      "interface_sha256": "18c8c47cd7fb3e2a6778becbbe583f79864f2114113ea730776b48363900fbdc",
+      "output_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+      "expected_ir_sha256": "69bdd6e2dabc4665b616b69234b992d8ea9e99465870bd24408b58a5495b0813",
+      "canonical_source": "skills/agent-instruction-review/SKILL.md"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "identity": {
+    "runId": "r0-run",
+    "sliceNumber": 1,
+    "attemptId": "attempt-1",
+    "planVersion": "plan-v1",
+    "reviewObligationId": "generic",
+    "reviewEpisodeId": "episode-commands"
+  },
+  "revisions": {
+    "begin": "30e9c2976846476e738c827665c2ecef52db42d65893d13e191f4d7f4b216b70",
+    "initialResult": "c761732b991c191d0dbe36a983b5585c8393dbd94cac6bf03657c0f4e5b7a1b2",
+    "replaced": "e87feeeabb66282eaddd9cfe653cb6378f94c9ab2e10e1710558771e027d36c1"
+  },
+  "historyRevisions": [
+    "30e9c2976846476e738c827665c2ecef52db42d65893d13e191f4d7f4b216b70",
+    "c761732b991c191d0dbe36a983b5585c8393dbd94cac6bf03657c0f4e5b7a1b2",
+    "27304e007e79215bb60c41ab4f66a18c753b1c09fb412950ecd56dfba7662d69",
+    "e87feeeabb66282eaddd9cfe653cb6378f94c9ab2e10e1710558771e027d36c1"
+  ],
+  "cases": [
+    "begin",
+    "record_result",
+    "matching_replay",
+    "conflicting_id",
+    "stale_CAS",
+    "mark_uncertain",
+    "replace_writer",
+    "stale_writer",
+    "restart_history"
+  ]
+}

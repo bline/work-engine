@@ -1,0 +1,112 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: agent-instruction-review
+source:
+  path: skills/agent-instruction-review/SKILL.md
+  repository_revision: b206eac84548ba37f6dd8e0f6476b392fdb84c95
+  sha256: ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72
+  producer: S11 bounded specialist-contract migration
+frontmatter:
+  name: agent-instruction-review
+  description: "Review materially normative agent-facing text for structural necessity, exact-route causality, semantic ownership, authority scope, audience, and loading placement. Use for implemented skills, role prompts, workflow instructions, or proposals that already contain instruction contracts; do not use for ordinary prose or proposals that only anticipate future instructions."
+document:
+  line_ending: lf
+  final_newline: true
+source_bindings:
+  - id: authority.legacy-skill
+    kind: canonical_authority
+    path: skills/agent-instruction-review/SKILL.md
+    sha256: ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72
+    role: canonical specialist diagnosis and authority contract
+  - id: authority.finding-contract
+    kind: canonical_authority
+    path: skills/agent-instruction-review/references/finding-contract.md
+    sha256: ad0099e0744011aeb5662f8e630d3cf7b70411635b09a8b9dc7e856df625f69a
+    role: canonical applicability, finding, no-finding, and remediation result contract
+  - id: authority.openai-projection
+    kind: canonical_authority
+    path: skills/agent-instruction-review/agents/openai.yaml
+    sha256: b1505aab3948e89ef90ea70cc3b2c7435baa3d5b16d4d4d8f44765584140f0d5
+    role: provider presentation metadata without semantic or acceptance ownership
+sections:
+  - id: identity-and-authority
+    kind: boundary
+    heading: {level: 1, text: Agent Instruction Review}
+    content: |+
+
+      Review an immutable, revision-bound subject and return advisory findings. Do not
+      edit the subject, choose architecture, form or accept a proposal, select a
+      panel, approve implementation, or treat persistence of a finding as evidence.
+
+      The review applies to materially normative text consumed by agents, wherever it
+      is stored. File type and imperative wording are candidate signals, not proof of
+      applicability or structural necessity. For proposals, apply the review only
+      when present proposal content creates or changes an instruction, loading or
+      precedence contract, or an exact route claimed as mandatory. Truthfully omit a
+      proposal that merely anticipates a future instruction artifact.
+
+    source_span: {start_byte: 425, end_byte: 1144, sha256: 80dbac9c93ca66b3ced195ff801144da0d6e1389688c41cdc66f46c4b015acf8}
+  - id: diagnosis
+    kind: operation
+    heading: {level: 2, text: Diagnose the instruction}
+    content: |+
+
+      For each material instruction, ask:
+
+      1. What distinction must remain true for the governed outcome to stay valid,
+         safe, authorized, or observable?
+      2. Does correctness require this exact route, sequence, trigger, or mechanism?
+      3. When a structural command is loaded, does its governed agent also receive
+         enough of the causal reason and concrete failure mode to understand why the
+         protected distinction is necessary?
+
+      These questions are reasoning affordances, not a sentence-by-sentence form or
+      a closed taxonomy. Preserve an exact route when reversing or replacing it would
+      lose the named distinction. Otherwise distinguish invariant structure from a
+      current mechanism, default, example, observation, or recommendation. Split
+      bundled text when its clauses have different effects.
+
+      Judge placement relative to the text's semantic owner, intended consumer,
+      authority source, scope, precedence, audience, and loading behavior. A local
+      mechanism can be correctly placed without becoming general doctrine. Similar
+      wording at project, role, skill-entrypoint, conditional-reference, adapter, and
+      example layers can warrant different conclusions.
+
+      Judge causal exposure at the governed agent's effective loading boundary. The
+      reviewer's ability to reconstruct a command's reason, or the command's
+      traceability to an unloaded owner, does not preserve logical continuity for the
+      governed agent. The reason and failure mode may be stored separately or
+      projected compactly, but they must become available when the command governs
+      the agent; do not require a particular storage or loading mechanism.
+
+      Treat `DESIGN.md` as binding only for the product structure it explicitly owns.
+      Treat `PHILOSOPHY.md` as non-normative reasoning. If both matter, preserve their
+      different effects. Name any other authority source rather than silently
+      promoting preference or current repository knowledge into a command.
+
+      Investigate only the neighboring context needed to establish owner, consumer,
+      loading reach, causal necessity, and consequence. When the underlying
+      capability owner or governing authority is unresolved, report that limitation
+      to the owning architecture or decision role instead of deciding it here.
+
+    source_span: {start_byte: 1144, end_byte: 3373, sha256: 808434ff9f61c3a1e8e8b1f74e32d49158371c60ddb927676eb33c5b936705a6}
+  - id: result-and-remediation
+    kind: receipt
+    heading: {level: 2, text: Return evidence-bearing advice}
+    content: |+
+
+      Read [references/finding-contract.md](references/finding-contract.md) before
+      recording findings or an applicability omission. Keep results compact and bind
+      them to the exact subject revision.
+
+      Ordinary remediation may return to the same retained reviewer so it can
+      evaluate its own findings against an exact new subject or bounded delta. That
+      continuation does not create a new freshness or independence claim. Reset is a
+      judgment for changed premise, material placement or architecture change,
+      unusable context, contamination, or a renewed independence need.
+
+      The author or builder decides whether an advisory finding is valid and performs
+      authorized mutation. The named decision owner retains acceptance authority.
+      This skill cannot certify its own implementation; bootstrap evidence must use
+      an independently defined review contract and fresh reasoning context.
+    source_span: {start_byte: 3373, end_byte: 4273, sha256: e54e15c9c236d3225b3485c41cbd627daffbd6f42617cf3ef237e94d65b4bef7}

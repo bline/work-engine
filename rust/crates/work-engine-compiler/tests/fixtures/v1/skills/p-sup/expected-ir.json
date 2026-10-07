@@ -1,0 +1,453 @@
+{
+  "schema_version": 1,
+  "skill_id": "slice-supervisor",
+  "status": "experimental_non_authoritative",
+  "input_sha256": {
+    "structure": "7cf2bd8c33a05b8c49a1567118352aee1d8c05d8b83e584bd1d6f84d137e850b",
+    "interface": "62e2261c20e1b605ca281afbc2c5b5811e2b2dfb929de7c4e8ccfe97515c1fcc",
+    "role_projection": "1071afffd9b6f0162d3e6ffab3e6bc478c0635408ded599f2e8d7c02744f9c6c"
+  },
+  "source": {
+    "path": "skills/slice-supervisor/SKILL.md",
+    "repository_revision": "2fcdd6cdddede6a694e84db79aab00e747121cee",
+    "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+    "producer": "S8 bounded legacy role migration"
+  },
+  "section_provenance": [
+    {
+      "id": "slice-supervisor",
+      "kind": "identity",
+      "source_span": {
+        "start_byte": 445,
+        "end_byte": 1461,
+        "sha256": "84b051c7bff1669e6b7632ff4e74454395933430592b15d9d548ced36a03e551"
+      }
+    },
+    {
+      "id": "preserve-invariants-adapt-the-route",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 1461,
+        "end_byte": 2685,
+        "sha256": "d34479a1ee92ccb1652b72b102ac4591179c47621644a466d7ba54997085a4c4"
+      }
+    },
+    {
+      "id": "resolve-the-campaign-contract",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 2685,
+        "end_byte": 5716,
+        "sha256": "61c2b8fa3a6e1997fd380b1da5c6933082da2aacee2d09f131beb5718f8ec23f"
+      }
+    },
+    {
+      "id": "start-one-configured-builder",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 5716,
+        "end_byte": 7536,
+        "sha256": "a16b7239292222359b53ec930c5f879a3113f0050d02e140e00899cdc9bc7373"
+      }
+    },
+    {
+      "id": "accept-or-escalate-the-plan",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 7536,
+        "end_byte": 9045,
+        "sha256": "f4d5b9d371033122afc0661c7059e2a8218b9abe0bf3d09d169f74998843a3b9"
+      }
+    },
+    {
+      "id": "execute-in-controlled-phases",
+      "kind": "implementation",
+      "source_span": {
+        "start_byte": 9045,
+        "end_byte": 12579,
+        "sha256": "8923449dc83537b821e7eed75f1a3e71a95512187e23fd3ed4e8cf38e79e9f68"
+      }
+    },
+    {
+      "id": "active-slice-recovery",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 12579,
+        "end_byte": 17977,
+        "sha256": "aa7061785c236a5acf41b8a68b0bf0c02fe4fee2baa9533fd51b0ff8b4d1d002"
+      }
+    },
+    {
+      "id": "accept-and-record-a-slice",
+      "kind": "receipt",
+      "source_span": {
+        "start_byte": 17977,
+        "end_byte": 25185,
+        "sha256": "006835251fde49ac5e7e3c9bab5c86720e176606021f540272551f4bcaa384fc"
+      }
+    },
+    {
+      "id": "reconcile-strategy-when-execution-changes-the-map",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 25185,
+        "end_byte": 26511,
+        "sha256": "c525224610abdec9b19a3d33692359046d05f7bd067257325f9d73c63b78ad49"
+      }
+    },
+    {
+      "id": "decide-whether-to-continue",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 26511,
+        "end_byte": 28793,
+        "sha256": "f14fe76463f692d18e00e9883a44d4c965106389c5167c50c98ceba20a894f0c"
+      }
+    },
+    {
+      "id": "notify-and-finish",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 28793,
+        "end_byte": 29439,
+        "sha256": "500d700dc79d6d49c20f3900cf0e6faebfd64521db81b3e86899f4c92fa414cf"
+      }
+    }
+  ],
+  "source_bindings": [
+    {
+      "id": "authority.legacy-skill",
+      "kind": "canonical_authority",
+      "path": "skills/slice-supervisor/SKILL.md",
+      "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+      "role": "canonical legacy supervisor role contract"
+    },
+    {
+      "id": "authority.environment",
+      "kind": "canonical_authority",
+      "path": "docs/agent-environments.yaml",
+      "sha256": "38002804a2ef3966e58ecef5af50f9376f302a08964ba9d139e8a562aa30e97b",
+      "role": "canonical role environment"
+    },
+    {
+      "id": "authority.invariants",
+      "kind": "canonical_authority",
+      "path": "docs/workflow-invariants.md",
+      "sha256": "124e27108241e42b6fe5f42c499cd5153a14e3c122e9bf41993f96a378f1b4e9",
+      "role": "canonical workflow invariant catalog"
+    },
+    {
+      "id": "evidence.role-projection",
+      "kind": "generated_evidence",
+      "path": "docs/agent-environment-views/slice-supervisor.yaml",
+      "sha256": "1071afffd9b6f0162d3e6ffab3e6bc478c0635408ded599f2e8d7c02744f9c6c",
+      "role": "generated AEG comparison oracle"
+    }
+  ],
+  "role_profile": {
+    "role_id": "role.supervisor",
+    "label": "Slice Supervisor",
+    "objective": "Advance the configured campaign through truthful bounded slices without absorbing or performing repository-domain work.",
+    "context_lifetime": "one campaign; compact lifecycle state across slices",
+    "projection": {
+      "path": "docs/agent-environment-views/slice-supervisor.yaml",
+      "sha256": "1071afffd9b6f0162d3e6ffab3e6bc478c0635408ded599f2e8d7c02744f9c6c"
+    },
+    "relations": {
+      "bound_by": [
+        "INV-001",
+        "INV-002",
+        "INV-003",
+        "INV-004",
+        "INV-005",
+        "INV-009",
+        "INV-010",
+        "INV-014",
+        "INV-015",
+        "INV-017",
+        "INV-018",
+        "INV-019",
+        "INV-020",
+        "INV-021",
+        "INV-022",
+        "INV-023",
+        "INV-025",
+        "INV-026",
+        "INV-027",
+        "INV-028",
+        "INV-029",
+        "INV-030",
+        "INV-031",
+        "INV-032",
+        "INV-034",
+        "INV-035",
+        "INV-036",
+        "INV-037",
+        "INV-038",
+        "INV-039"
+      ],
+      "may_invoke": [
+        "capability.repository_evidence",
+        "capability.preflight",
+        "capability.lifecycle_control",
+        "capability.receipt_finalization",
+        "capability.checkpoint_lifecycle",
+        "capability.completion_offer",
+        "capability.completion_publication",
+        "capability.workspace_coordination",
+        "capability.worktree_lifecycle",
+        "capability.canonical_publication",
+        "capability.resume",
+        "capability.strategic_reconciliation",
+        "capability.operational_coordination",
+        "capability.native_review"
+      ],
+      "may_observe": [
+        "state.campaign_config",
+        "state.campaign_lifecycle",
+        "state.private_checkpoint",
+        "state.resource_admissions",
+        "state.integration_worktree",
+        "state.branch_publication",
+        "state.durable_history",
+        "artifact.campaign_preflight",
+        "artifact.plan",
+        "artifact.placement_certificate",
+        "artifact.implementation_receipt",
+        "artifact.gate_receipt",
+        "artifact.audit_receipt",
+        "artifact.handoff_receipt",
+        "artifact.checkpoint_receipt",
+        "artifact.commit_proposal",
+        "artifact.completion_offer",
+        "artifact.completion_receipt",
+        "artifact.worktree_allocation",
+        "artifact.resource_admission",
+        "artifact.canonical_publication",
+        "artifact.telemetry_ingress",
+        "artifact.planning_handoff"
+      ],
+      "may_mutate": [
+        {
+          "target": "state.campaign_lifecycle",
+          "boundary": "configured state machine and accepted transitions"
+        },
+        {
+          "target": "state.durable_history",
+          "boundary": "exactly one validated terminal receipt per run and slice"
+        }
+      ],
+      "owns": [
+        "state.campaign_config",
+        "state.campaign_lifecycle",
+        "state.durable_history",
+        "artifact.audit_receipt",
+        "artifact.completion_offer"
+      ],
+      "consumes": [
+        "artifact.campaign_preflight",
+        "artifact.plan",
+        "artifact.implementation_receipt",
+        "artifact.gate_receipt",
+        "artifact.handoff_receipt",
+        "artifact.telemetry_ingress",
+        "artifact.planning_handoff"
+      ],
+      "emits": [
+        "artifact.audit_receipt",
+        "artifact.checkpoint_receipt",
+        "artifact.completion_offer"
+      ],
+      "mediated_transitions": [
+        {
+          "transition": "repository implementation",
+          "mediated_by": "role.builder"
+        },
+        {
+          "transition": "private checkpoint mutation",
+          "mediated_by": "capability.checkpoint_lifecycle"
+        },
+        {
+          "transition": "user-visible commit publication",
+          "mediated_by": "capability.canonical_publication"
+        },
+        {
+          "transition": "strategic recommendation",
+          "mediated_by": "capability.strategic_reconciliation"
+        },
+        {
+          "transition": "cross-session operational coordination",
+          "mediated_by": "capability.operational_coordination"
+        },
+        {
+          "transition": "configured selected native review closure",
+          "mediated_by": "capability.native_review"
+        }
+      ],
+      "forbidden_from": [
+        "inspecting repository implementation or diffs for domain judgment",
+        "implementing campaign work",
+        "replacing builder validation with supervisor inference",
+        "creating user-visible commits without an explicit per-slice user decision",
+        "silently amending objective, work source, approval, or immutable configuration"
+      ],
+      "must_require": {
+        "role.builder": [
+          "INV-006",
+          "INV-007",
+          "INV-008",
+          "INV-011",
+          "INV-013",
+          "INV-016"
+        ],
+        "role.independent_reviewer": [
+          "INV-012"
+        ]
+      },
+      "observation_limits": {
+        "artifact.gate_receipt": "configured outcomes and binding identity, not raw gate output",
+        "artifact.implementation_receipt": "compact phase result, not diffs or test logs",
+        "artifact.plan": "concise plan and certificate consequences, not raw exploration",
+        "artifact.planning_handoff": "strategic consequences, not planner transcript",
+        "artifact.telemetry_ingress": "authoritative projection and provenance, not child reasoning"
+      }
+    }
+  },
+  "interface": {
+    "schema_version": 1,
+    "status": "experimental_non_authoritative",
+    "skill_id": "slice-supervisor",
+    "boundaries": [
+      {
+        "id": "authority.supervisor-only",
+        "kind": "prohibition",
+        "semantic_section": "start-one-configured-builder",
+        "authority_source": "authority.environment",
+        "enforcement": "denied"
+      },
+      {
+        "id": "campaign.lifecycle",
+        "kind": "mutation",
+        "semantic_section": "resolve-the-campaign-contract",
+        "authority_source": "authority.environment",
+        "enforcement": "mediated"
+      },
+      {
+        "id": "implementation.builder-mediated",
+        "kind": "mediation",
+        "semantic_section": "execute-in-controlled-phases",
+        "authority_source": "authority.environment",
+        "enforcement": "mediated"
+      },
+      {
+        "id": "publication.human-mediated",
+        "kind": "mediation",
+        "semantic_section": "accept-and-record-a-slice",
+        "authority_source": "authority.environment",
+        "enforcement": "mediated"
+      }
+    ],
+    "runtime_requirements": {
+      "required_capabilities": [
+        "capability.canonical_publication",
+        "capability.checkpoint_lifecycle",
+        "capability.completion_offer",
+        "capability.completion_publication",
+        "capability.lifecycle_control",
+        "capability.native_review",
+        "capability.operational_coordination",
+        "capability.preflight",
+        "capability.receipt_finalization",
+        "capability.repository_evidence",
+        "capability.resume",
+        "capability.strategic_reconciliation",
+        "capability.workspace_coordination",
+        "capability.worktree_lifecycle"
+      ],
+      "capability_ceiling": [
+        "capability.canonical_publication",
+        "capability.checkpoint_lifecycle",
+        "capability.completion_offer",
+        "capability.completion_publication",
+        "capability.lifecycle_control",
+        "capability.native_review",
+        "capability.operational_coordination",
+        "capability.preflight",
+        "capability.receipt_finalization",
+        "capability.repository_evidence",
+        "capability.resume",
+        "capability.strategic_reconciliation",
+        "capability.workspace_coordination",
+        "capability.worktree_lifecycle"
+      ],
+      "effect_ceiling": [
+        "state.campaign_lifecycle",
+        "state.durable_history"
+      ],
+      "prohibited_effects": [
+        "state.repository",
+        "state.task_changes",
+        "state.worktree"
+      ],
+      "continuity": "retained"
+    }
+  },
+  "runtime_requirements": {
+    "schema_version": 1,
+    "role_id": "role.supervisor",
+    "skill_id": "slice-supervisor",
+    "contract": {
+      "source_binding_id": "authority.legacy-skill",
+      "path": "skills/slice-supervisor/SKILL.md",
+      "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+      "must_be_activated": true,
+      "kind": "role_contract"
+    },
+    "required_capabilities": [
+      "capability.canonical_publication",
+      "capability.checkpoint_lifecycle",
+      "capability.completion_offer",
+      "capability.completion_publication",
+      "capability.lifecycle_control",
+      "capability.native_review",
+      "capability.operational_coordination",
+      "capability.preflight",
+      "capability.receipt_finalization",
+      "capability.repository_evidence",
+      "capability.resume",
+      "capability.strategic_reconciliation",
+      "capability.workspace_coordination",
+      "capability.worktree_lifecycle"
+    ],
+    "capability_ceiling": [
+      "capability.canonical_publication",
+      "capability.checkpoint_lifecycle",
+      "capability.completion_offer",
+      "capability.completion_publication",
+      "capability.lifecycle_control",
+      "capability.native_review",
+      "capability.operational_coordination",
+      "capability.preflight",
+      "capability.receipt_finalization",
+      "capability.repository_evidence",
+      "capability.resume",
+      "capability.strategic_reconciliation",
+      "capability.workspace_coordination",
+      "capability.worktree_lifecycle"
+    ],
+    "effect_ceiling": [
+      "state.campaign_lifecycle",
+      "state.durable_history"
+    ],
+    "prohibited_effects": [
+      "state.repository",
+      "state.task_changes",
+      "state.worktree"
+    ],
+    "continuity": "retained",
+    "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+    "verified_sources": false,
+    "sha256": "ec8327dada579d40f64110459276093b2fd833248f7b80917b2ff0a21516658d"
+  },
+  "output_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e"
+}

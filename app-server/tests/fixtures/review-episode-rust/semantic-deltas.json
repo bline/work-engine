@@ -1,0 +1,40 @@
+{
+  "identity": {
+    "runId": "r0-run",
+    "sliceNumber": 1,
+    "attemptId": "attempt-1",
+    "planVersion": "plan-v1",
+    "reviewObligationId": "generic",
+    "reviewEpisodeId": "episode-deltas"
+  },
+  "decisions": {
+    "replay": {
+      "legacy": "matching replay returns latest state before revision/writer checks",
+      "future": "trusted host authorizes the read; superseded writer command replay is rejected, while an authorized reader may read durable history",
+      "owner": "review-episode plus native host"
+    },
+    "questions": {
+      "legacy": {
+        "phase": "reported",
+        "unresolvedQuestions": [
+          "Who resolves this?"
+        ]
+      },
+      "future": {
+        "phase": "remediation",
+        "pendingAction": "await_remediation"
+      },
+      "owner": "review-episode"
+    },
+    "scope": {
+      "legacy": "later result retains earlier admissions without revalidation",
+      "future": "each required admission binds exact subject and result digest at consumption; stale prior admissions remain historical and cannot satisfy the new result",
+      "owner": "claim-evidence and slice-campaign"
+    },
+    "join": {
+      "legacy": "episode succession commits before claims correction, then campaign publication",
+      "future": "reconcile exact episode/claims/campaign revisions and operation ID; incomplete joins remain unresolved until claims-owned settlement",
+      "owner": "claim-evidence, review-episode, slice-campaign"
+    }
+  }
+}

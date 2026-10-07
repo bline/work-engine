@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "skill_id": "agent-instruction-review",
+  "status": "experimental_non_authoritative",
+  "input_sha256": {
+    "structure": "4d47d42de934b8a5d020294bdf46eca6e591b4ad0566c9903fd8e6f97effeffa",
+    "interface": "18c8c47cd7fb3e2a6778becbbe583f79864f2114113ea730776b48363900fbdc"
+  },
+  "source": {
+    "path": "skills/agent-instruction-review/SKILL.md",
+    "repository_revision": "b206eac84548ba37f6dd8e0f6476b392fdb84c95",
+    "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+    "producer": "S11 bounded specialist-contract migration"
+  },
+  "section_provenance": [
+    {
+      "id": "identity-and-authority",
+      "kind": "boundary",
+      "source_span": {
+        "start_byte": 425,
+        "end_byte": 1144,
+        "sha256": "80dbac9c93ca66b3ced195ff801144da0d6e1389688c41cdc66f46c4b015acf8"
+      }
+    },
+    {
+      "id": "diagnosis",
+      "kind": "operation",
+      "source_span": {
+        "start_byte": 1144,
+        "end_byte": 3373,
+        "sha256": "808434ff9f61c3a1e8e8b1f74e32d49158371c60ddb927676eb33c5b936705a6"
+      }
+    },
+    {
+      "id": "result-and-remediation",
+      "kind": "receipt",
+      "source_span": {
+        "start_byte": 3373,
+        "end_byte": 4273,
+        "sha256": "e54e15c9c236d3225b3485c41cbd627daffbd6f42617cf3ef237e94d65b4bef7"
+      }
+    }
+  ],
+  "source_bindings": [
+    {
+      "id": "authority.legacy-skill",
+      "kind": "canonical_authority",
+      "path": "skills/agent-instruction-review/SKILL.md",
+      "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+      "role": "canonical specialist diagnosis and authority contract"
+    },
+    {
+      "id": "authority.finding-contract",
+      "kind": "canonical_authority",
+      "path": "skills/agent-instruction-review/references/finding-contract.md",
+      "sha256": "ad0099e0744011aeb5662f8e630d3cf7b70411635b09a8b9dc7e856df625f69a",
+      "role": "canonical applicability, finding, no-finding, and remediation result contract"
+    },
+    {
+      "id": "authority.openai-projection",
+      "kind": "canonical_authority",
+      "path": "skills/agent-instruction-review/agents/openai.yaml",
+      "sha256": "b1505aab3948e89ef90ea70cc3b2c7435baa3d5b16d4d4d8f44765584140f0d5",
+      "role": "provider presentation metadata without semantic or acceptance ownership"
+    }
+  ],
+  "interface": {
+    "schema_version": 1,
+    "status": "experimental_non_authoritative",
+    "skill_id": "agent-instruction-review",
+    "boundaries": [
+      {
+        "id": "authority.advisory-only",
+        "kind": "prohibition",
+        "semantic_section": "identity-and-authority",
+        "authority_source": "authority.legacy-skill",
+        "enforcement": "denied"
+      },
+      {
+        "id": "result.finding-contract",
+        "kind": "interface",
+        "semantic_section": "result-and-remediation",
+        "authority_source": "authority.finding-contract",
+        "enforcement": "receipt_contract"
+      }
+    ],
+    "runtime_requirements": {
+      "required_capabilities": [
+        "capability.direct_source_observation",
+        "capability.repository_evidence"
+      ],
+      "capability_ceiling": [
+        "capability.direct_source_observation",
+        "capability.repository_evidence"
+      ],
+      "effect_ceiling": [],
+      "prohibited_effects": [
+        "state.architecture",
+        "state.human_authority",
+        "state.implementation_acceptance",
+        "state.proposal_acceptance",
+        "state.review_selection",
+        "state.task_changes",
+        "state.worktree"
+      ],
+      "continuity": "retained"
+    }
+  },
+  "runtime_requirements": {
+    "schema_version": 1,
+    "skill_id": "agent-instruction-review",
+    "contract": {
+      "source_binding_id": "authority.legacy-skill",
+      "path": "skills/agent-instruction-review/SKILL.md",
+      "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+      "must_be_activated": true,
+      "kind": "skill"
+    },
+    "required_capabilities": [
+      "capability.direct_source_observation",
+      "capability.repository_evidence"
+    ],
+    "capability_ceiling": [
+      "capability.direct_source_observation",
+      "capability.repository_evidence"
+    ],
+    "effect_ceiling": [],
+    "prohibited_effects": [
+      "state.architecture",
+      "state.human_authority",
+      "state.implementation_acceptance",
+      "state.proposal_acceptance",
+      "state.review_selection",
+      "state.task_changes",
+      "state.worktree"
+    ],
+    "continuity": "retained",
+    "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+    "verified_sources": false,
+    "sha256": "8bba7ad03b5f583aadebf7c089035bf3958ec626bdf8af78dea432c6155a01df"
+  },
+  "output_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72"
+}
