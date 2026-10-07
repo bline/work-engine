@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { compileRustSkill } from "./rust-compiler-adapter.mjs";
 
 import { parseDocument } from "yaml";
 
@@ -393,7 +394,14 @@ export async function compileSkill({
   workspaceRoot = process.cwd(),
   verifySources = true,
   agentEnvironmentGraphAdapter = null,
+  signal = null,
 }) {
+  const backend = process.env.WORK_ENGINE_COMPILER_BACKEND ?? "legacy";
+  if (backend === "rust") {
+    if (agentEnvironmentGraphAdapter) throw new TypeError("Rust compiler does not accept a legacy AEG adapter injection");
+    return compileRustSkill({ structureSource, interfaceSource, workspaceRoot, verifySources, signal });
+  }
+  if (backend !== "legacy") throw new TypeError(`unknown compiler backend ${backend}`);
   const structure = validateStructure(parseYaml(structureSource, "structure"));
   const skillInterface = validateInterface(parseYaml(interfaceSource, "interface"), structure);
   if (verifySources) {

@@ -1,0 +1,68 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: claim-evidence
+source:
+  path: skills/claim-evidence/SKILL.md
+  repository_revision: 0ffaaec05e55493e2bb6e3ca30028c0509f00d73
+  sha256: afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a
+  producer: S12 bounded claim-backed review migration
+frontmatter:
+  name: claim-evidence
+  description: "Publish, validate, discover, resolve, traverse, and rely on exact production evidence-backed statements while preserving authority, limitations, lineage, and projection completeness. Use for proposal-research claims or revision-bound review findings; do not use it to infer applicability, freshness maintenance, proposal decisions, or review outcomes."
+document:
+  line_ending: lf
+  final_newline: true
+source_bindings:
+  - id: authority.legacy-skill
+    kind: canonical_authority
+    path: skills/claim-evidence/SKILL.md
+    sha256: afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a
+    role: canonical role participation and authority boundary
+  - id: authority.claim-contract
+    kind: canonical_authority
+    path: skills/claim-evidence/references/claim-evidence-contract.md
+    sha256: e0e8d452b5e64cc3432ec727e47d4f8a2fee3c4e4e37d8e2dc318c4b6923d0f3
+    role: canonical claim identity, publication, reliance, projection, and closed-phase contract
+  - id: authority.openai-projection
+    kind: canonical_authority
+    path: skills/claim-evidence/agents/openai.yaml
+    sha256: bd967b550a6a9a439241361d504ece223fbb11fc0ac6e4f74dbfbebe47084054
+    role: provider presentation metadata without semantic or grant ownership
+sections:
+  - id: identity-and-ownership
+    kind: boundary
+    heading: {level: 1, text: Claim Evidence}
+    content: |+
+
+      Use the shared claim-evidence capability when a role needs a durable, exact-revision statement rather than unaddressable prose or an implicit latest result.
+
+      The capability owns stable identity, immutable revisions, reference and lineage integrity, validation of admitted authority, reliance mechanics, and rebuildable query projections. The trusted launcher or another separately authorized lifecycle owner owns when grants are admitted. Proposal-research and review roles retain their domain judgments. A visible or discoverable candidate is not thereby true, current, applicable, sufficient, accepted, or authoritative.
+
+    source_span: {start_byte: 395, end_byte: 1037, sha256: 470a009719501d397ac2a81fe677f45b7ddba01c68fbf29f5ff2eb4c5eed777f}
+  - id: operations-and-reliance
+    kind: receipt
+    heading: {level: 2, text: Operations and exact-revision reliance}
+    content: |+
+
+      Choose operations according to the task rather than following a fixed sequence:
+
+      - discover with bounded subject, profile, producer, support, sensitivity, or consumer criteria;
+      - resolve an exact revision when a decision names one;
+      - inspect lineage and direct or reverse exact-revision reliance;
+      - publish only with a trusted, verified authority manifest whose profile, actor, scope, and permission admit the requested transition; or
+      - rebuild or verify the projection when its freshness or completeness matters.
+
+      Never silently select the newest revision when several heads or branches may govern a decision. Keep candidate identity, evidence baseline, limitations, unresolved reference status, freshness, completeness, exclusions, and failures together. Record reliance only against an exact claim revision, consumer revision, and decision scope. The named consumer owns the reliance decision; a v1 reliance record is the admitted producer's attributed record of that decision, not proof that the consumer directly attested it or delegated to that producer.
+
+      The deterministic mechanics are in `scripts/claim_evidence.py`. Read [the contract](references/claim-evidence-contract.md) before defining a domain publication, authority grant, lineage transition, or reliance. The schemas under `schemas/` define the closed v1 wire records.
+
+    source_span: {start_byte: 1037, end_byte: 2418, sha256: 221f95de4ab37f438f8a4c2f6a95651be270db72b1479f43f25ede20c4de95e3}
+  - id: authority-and-lifecycle-boundaries
+    kind: boundary
+    heading: {level: 2, text: Authority and lifecycle boundaries}
+    content: |+
+
+      This phase does not nominate change impact, orchestrate refresh, advance canonical support, reopen downstream work, deliver obligations, monitor sources, accept proposals or reviews, or grant authority from possession of this skill.
+
+      Publication cannot self-admit a grant; access to the script or skill is insufficient authority. The current filesystem adapter accepts launcher-supplied grants only while initializing a canonical root. That bootstrap limitation is adapter behavior, not a shared requirement that all authority lifecycles freeze grants at root creation. Any other admission lifecycle requires its own trusted owner and must remain causally separate from publication.
+    source_span: {start_byte: 2418, end_byte: 3140, sha256: b50cde10022f5d40cffb0ef7436e0533e557304d3fa24a7b2ac2bab0558b82a8}

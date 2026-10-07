@@ -119,7 +119,7 @@ fn unique_texts(
     Ok(result)
 }
 
-fn parse_yaml(bytes: &[u8], label: &str) -> Result<Value, CompilerError> {
+pub(crate) fn parse_yaml(bytes: &[u8], label: &str) -> Result<Value, CompilerError> {
     let source = std::str::from_utf8(bytes)
         .map_err(|_| error(ErrorCode::InvalidYaml, label, "source must be UTF-8"))?;
     let parse_source = source.strip_prefix('\u{feff}').unwrap_or(source);

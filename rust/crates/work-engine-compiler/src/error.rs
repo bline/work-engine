@@ -6,6 +6,8 @@ pub enum ErrorCode {
     InvalidYaml,
     InvalidStructure,
     InvalidInterface,
+    SourceMismatch,
+    AegProtocol,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

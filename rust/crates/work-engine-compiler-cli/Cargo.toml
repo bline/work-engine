@@ -14,3 +14,6 @@ work-engine-compiler = { path = "../work-engine-compiler" }
 serde.workspace = true
 serde_json.workspace = true
 base64.workspace = true
+tempfile = "=3.27.0"
+rustix = { version = "=1.1.5", features = ["fs", "event"] }
+signal-hook = "=0.3.18"

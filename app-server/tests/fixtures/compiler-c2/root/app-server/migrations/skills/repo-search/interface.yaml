@@ -1,0 +1,28 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: repo-search
+runtime_requirements:
+  required_capabilities:
+    - capability.repository_evidence
+    - capability.direct_source_observation
+  capability_ceiling:
+    - capability.repository_evidence
+    - capability.direct_source_observation
+  effect_ceiling: []
+  prohibited_effects:
+    - state.task_changes
+    - state.worktree
+    - state.review
+    - state.acceptance
+  continuity: ephemeral
+boundaries:
+  - id: evidence.packet-contract
+    kind: interface
+    semantic_section: evidence-packet
+    authority_source: authority.legacy-skill
+    enforcement: receipt_contract
+  - id: authority.retrieval-only
+    kind: prohibition
+    semantic_section: role-boundaries
+    authority_source: authority.legacy-skill
+    enforcement: denied

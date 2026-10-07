@@ -473,11 +473,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "review-episode"
+version = "0.1.0"
+dependencies = [
+ "review-episode-core",
+ "review-episode-store",
+ "rustix",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "review-episode-core"
 version = "0.1.0"
 dependencies = [
  "ryu-js",
  "sha2",
+]
+
+[[package]]
+name = "review-episode-store"
+version = "0.1.0"
+dependencies = [
+ "review-episode-core",
+ "rusqlite",
+ "rustix",
+ "sha2",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -604,6 +628,26 @@ name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+
+[[package]]
+name = "signal-hook"
+version = "0.3.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d881a16cf4426aa584979d30bd82cb33429027e42122b169753d6ef1085ed6e2"
+dependencies = [
+ "libc",
+ "signal-hook-registry",
+]
+
+[[package]]
+name = "signal-hook-registry"
+version = "1.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b"
+dependencies = [
+ "errno",
+ "libc",
+]
 
 [[package]]
 name = "smallvec"
@@ -835,8 +879,11 @@ name = "work-engine-compiler-cli"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "rustix",
  "serde",
  "serde_json",
+ "signal-hook",
+ "tempfile",
  "work-engine-compiler",
 ]
 

@@ -892,3 +892,97 @@ fn generated_action_sequences_keep_replay_cas_phase_and_retirement_fences() {
         );
     }
 }
+
+#[test]
+fn utf16_transition_constructors_preserve_lone_surrogates_and_legacy_scalar_calls() {
+    use review_episode_core::codec::{JsString, canonical_json};
+    let fixture = parse_json(COMMANDS).unwrap();
+    let identity = field(&fixture, "identity").unwrap();
+    let result = parse_json(ACCEPTABLE).unwrap();
+    let grant = authority(field(&result, "subject").unwrap(), identity, 1, None);
+    let scalar = begin(
+        None,
+        &BeginCommand::new(grant.clone(), "scalar", vec![]).unwrap(),
+    )
+    .unwrap()
+    .into_state();
+    let scalar_utf16 = begin(
+        None,
+        &BeginCommand::new_utf16(grant.clone(), JsString::new("scalar"), vec![]).unwrap(),
+    )
+    .unwrap()
+    .into_state();
+    assert_eq!(
+        canonical_json(scalar.value()),
+        canonical_json(scalar_utf16.value())
+    );
+    assert!(BeginCommand::new_utf16(grant.clone(), JsString(vec![0x20]), vec![]).is_err());
+    let first = begin(
+        None,
+        &BeginCommand::new_utf16(grant.clone(), JsString(vec![0xd800]), vec![]).unwrap(),
+    )
+    .unwrap()
+    .into_state();
+    let second = begin(
+        None,
+        &BeginCommand::new_utf16(grant.clone(), JsString(vec![0xd801]), vec![]).unwrap(),
+    )
+    .unwrap()
+    .into_state();
+    assert_ne!(first.revision(), second.revision());
+    assert!(canonical_json(first.value()).contains("\\ud800"));
+    let payload = JsValue::object([
+        ("reason", JsValue::text("lost")),
+        ("reconciliationAction", JsValue::text("reconcile")),
+    ]);
+    let old = TransitionCommand::new(
+        grant.clone(),
+        scalar.revision().clone(),
+        "scalar-transition",
+        Action::MarkUncertain,
+        payload.clone(),
+    )
+    .unwrap();
+    let new = TransitionCommand::new_utf16(
+        grant.clone(),
+        scalar.revision().clone(),
+        JsString::new("scalar-transition"),
+        Action::MarkUncertain,
+        payload.clone(),
+    )
+    .unwrap();
+    assert_eq!(
+        canonical_json(transition(&scalar, &old).unwrap().state().value()),
+        canonical_json(transition(&scalar, &new).unwrap().state().value())
+    );
+    assert!(
+        TransitionCommand::new_utf16(
+            grant.clone(),
+            scalar.revision().clone(),
+            JsString(vec![0x09]),
+            Action::MarkUncertain,
+            payload.clone()
+        )
+        .is_err()
+    );
+    let left = TransitionCommand::new_utf16(
+        grant.clone(),
+        scalar.revision().clone(),
+        JsString(vec![0xd800]),
+        Action::MarkUncertain,
+        payload.clone(),
+    )
+    .unwrap();
+    let right = TransitionCommand::new_utf16(
+        grant,
+        scalar.revision().clone(),
+        JsString(vec![0xd801]),
+        Action::MarkUncertain,
+        payload,
+    )
+    .unwrap();
+    assert_ne!(
+        transition(&scalar, &left).unwrap().state().revision(),
+        transition(&scalar, &right).unwrap().state().revision()
+    );
+}

@@ -306,6 +306,12 @@ export async function loadRuntimeManifestDocument(manifestPath) {
   });
 }
 
+async function readCompiledEnvironmentYaml(filePath) {
+  const bytes = await readFile(filePath);
+  try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+  catch { throw new TypeError(`compiled environment YAML ${filePath} must be UTF-8`); }
+}
+
 export async function hydrateRuntimeRequirements(document, {
   baseDirectory,
   workspaceRoot,
@@ -320,8 +326,8 @@ export async function hydrateRuntimeRequirements(document, {
       requireRecord(role.compiled_environment, `role ${roleId} compiled_environment`);
       rejectUnknownFields(role.compiled_environment, COMPILED_ENVIRONMENT_FIELDS, `role ${roleId} compiled_environment`);
       const compiled = await compileSkill({
-        structureSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.structure), "utf8"),
-        interfaceSource: await readFile(path.resolve(resolvedBase, role.compiled_environment.interface), "utf8"),
+        structureSource: await readCompiledEnvironmentYaml(path.resolve(resolvedBase, role.compiled_environment.structure)),
+        interfaceSource: await readCompiledEnvironmentYaml(path.resolve(resolvedBase, role.compiled_environment.interface)),
         workspaceRoot: resolvedWorkspace,
       });
       if (!compiled.ir.role_profile) throw new Error(`role ${roleId} compiled environment does not define a role profile`);
@@ -330,8 +336,8 @@ export async function hydrateRuntimeRequirements(document, {
     for (const [index, skill] of (role.skills ?? []).entries()) {
       if (skill.compiled_environment == null) continue;
       const compiled = await compileSkill({
-        structureSource: await readFile(path.resolve(resolvedBase, skill.compiled_environment.structure), "utf8"),
-        interfaceSource: await readFile(path.resolve(resolvedBase, skill.compiled_environment.interface), "utf8"),
+        structureSource: await readCompiledEnvironmentYaml(path.resolve(resolvedBase, skill.compiled_environment.structure)),
+        interfaceSource: await readCompiledEnvironmentYaml(path.resolve(resolvedBase, skill.compiled_environment.interface)),
         workspaceRoot: resolvedWorkspace,
       });
       if (compiled.ir.role_profile) throw new Error(`role ${roleId} skills[${index}] secondary compiled skill must not define a role profile`);

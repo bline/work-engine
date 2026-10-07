@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Instruction Review"
+  short_description: "Review agent instruction structure and placement"
+  default_prompt: "Use $agent-instruction-review to review this revision-bound agent instruction surface."

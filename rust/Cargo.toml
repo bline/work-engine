@@ -11,6 +11,8 @@ members = [
   "crates/work-engine-compiler",
   "crates/work-engine-compiler-cli",
   "crates/review-episode-core",
+  "crates/review-episode-store",
+  "crates/review-episode",
 ]
 exclude = ["crates/terminal-ui"]
 

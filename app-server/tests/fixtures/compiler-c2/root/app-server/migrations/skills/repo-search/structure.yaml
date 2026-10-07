@@ -1,0 +1,138 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: repo-search
+source:
+  path: skills/repo-search/SKILL.md
+  repository_revision: b4d749672990aadb51bab391a2e286b057128ea4
+  sha256: cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949
+  producer: S6 bounded non-role legacy migration
+frontmatter:
+  name: repo-search
+  description: "Retrieve verifiable repository evidence across source, documentation, configuration, tests, skills, packages, and architecture. Use for repository orientation, implementation discovery, caller or dependency tracing, change-impact analysis, structural audits, and exhaustive or negative searches that require coverage and fallback provenance."
+document:
+  line_ending: lf
+  final_newline: true
+source_bindings:
+  - id: authority.legacy-skill
+    kind: canonical_authority
+    path: skills/repo-search/SKILL.md
+    sha256: cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949
+    role: canonical provisional repository-retrieval contract
+  - id: authority.openai-projection
+    kind: canonical_authority
+    path: skills/repo-search/agents/openai.yaml
+    sha256: fa5513bd8685bf7ab885008307c84056b2b5445150d176fbf210b805fb6b087c
+    role: provider presentation metadata without semantic ownership
+  - id: authority.backend-capabilities
+    kind: canonical_authority
+    path: skills/repo-search/references/backend-capabilities.md
+    sha256: e0458fc1ba9773d7f5bf4853c2e4dfad7bb82615c71f4f2d5a34a13ce9652f91
+    role: configured capability affordances and evidence limitations
+sections:
+  - id: identity
+    kind: identity
+    heading: {level: 1, text: Repository Search}
+    content: |+
+
+      Retrieve evidence; leave architectural and product judgment to the caller. Keep
+      observations, relationships, coverage, inference, fallbacks, and limitations
+      distinguishable. Never turn a candidate match into proof.
+
+    source_span: {start_byte: 382, end_byte: 619, sha256: 31ad8cf6ba7e9e157c76ec20513393391efb3406baa72d99367df9c9229ca6d4}
+  - id: evidence-tier
+    kind: validation
+    heading: {level: 2, text: Choose the evidence tier}
+    content: |+
+
+      - **Scout:** Find a likely positive answer quickly. Mark it provisional. Do not
+        make absence, exhaustive, dead-code, or complete-impact claims.
+      - **Verify:** Default. Confirm material claims with exact source or structural
+        relationships, exhaust relevant result pages, and check coverage for every
+        relied-on path.
+      - **Auditor:** Verify a bounded scope against a recorded index generation. Cover
+        all relevant pages, both relationship directions when material, and every
+        reported gap with direct source. State unresolved limits explicitly.
+
+    source_span: {start_byte: 619, end_byte: 1197, sha256: e5422210185a3e14a86e1711d6e526d378dab48fdbae9353558cf6e082d98f72}
+  - id: repository-intent
+    kind: operation
+    heading: {level: 2, text: Express repository intent}
+    content: |+
+
+      Select the durable operation before selecting a backend:
+
+      - `orient`: identify packages, boundaries, entry points, languages, and likely
+        ownership areas.
+      - `find`: locate definitions, implementations, literals, documents,
+        configuration, tests, skills, or packages.
+      - `trace`: follow callers, callees, imports, dependencies, data flow, or other
+        explicit relationships.
+      - `impact`: identify changed symbols and bounded downstream consumers, with the
+        direction and traversal depth visible.
+      - `audit`: test a bounded structural, exhaustive, negative, unused-code, or
+        high-connectivity claim with coverage-aware verification.
+
+      Do not expose one backend's command names as these operations. Read
+      [backend-capabilities.md](references/backend-capabilities.md) when selecting or
+      combining current capabilities.
+
+    source_span: {start_byte: 1197, end_byte: 2040, sha256: b5198182cb1a532d860fda5c60549ecd5ac6e6623126d713f4d356eab289f236}
+  - id: claim-routing
+    kind: operation
+    heading: {level: 2, text: Route the claim}
+    content: |+
+
+      1. Use exact-name or qualified-name lookup for a known symbol.
+      2. Use lexical or BM25-style search for natural-language implementation
+         discovery.
+      3. Use vector similarity only to discover candidates across vocabulary. Verify
+         every material candidate structurally or from source.
+      4. Use relationship-aware retrieval for callers, callees, imports,
+         dependencies, data flow, and impact. Do not infer these from text matches.
+      5. Use literal/direct-source search for prose, configuration, fixtures, skill
+         instructions, generated text, and content the structural index does not
+         represent reliably.
+      6. For negative or exhaustive claims, bound the scope, consume every relevant
+         page, inspect coverage for both returned paths and the searched scope, and
+         read every reported missed range or excluded target directly.
+      7. Fall back to targeted source when the index is unavailable, stale, partial,
+         ambiguous, or incapable of establishing the claim. Record why.
+
+      Prefer the smallest set of capabilities that can establish the requested
+      claim. Additional retrieval without credible decision value is noise.
+
+    source_span: {start_byte: 2040, end_byte: 3177, sha256: 6b6177d9dac0a8bbf89b3a0a7c23e354be16d2f84de75cfc31a9cc88b2844279}
+  - id: evidence-packet
+    kind: receipt
+    heading: {level: 2, text: Return an evidence packet}
+    content: |+
+
+      Report:
+
+      - intent operation and evidence tier;
+      - observed evidence, with repository-relative paths and exact symbols,
+        relationships, or source locations when available;
+      - evidence mode for each material claim, such as indexed structure,
+        direct-source observation, or vector candidate discovery;
+      - index/project identity, generation or freshness state, and query pagination;
+      - coverage result for every relied-on path and relevant negative/exhaustive
+        scope;
+      - fallback transitions and reasons;
+      - limitations, unresolved ambiguity, and what would be required to strengthen
+        the result.
+
+      Keep inference in a separately labeled section if the caller asks for it.
+      Never claim that clean coverage proves completeness, that static structure
+      proves runtime behavior, or that a similarity score proves correspondence.
+
+    source_span: {start_byte: 3177, end_byte: 4024, sha256: 80a3fdb09cdc4daa7c33f67aa3392d0dd3e873fa28e41db90609b4db4de8efbe}
+  - id: role-boundaries
+    kind: boundary
+    heading: {level: 2, text: Preserve role boundaries}
+    content: |+
+
+      Repository retrieval does not select architecture, approve a placement
+      certificate, validate runtime behavior, or perform adversarial review. A fresh
+      reviewer may consume the evidence packet, but review-provider identity and
+      freshness remain separate provenance from the retrieval provider.
+    source_span: {start_byte: 4024, end_byte: 4344, sha256: db9774798e553e91373c24a5382317d58a6f8318fb68dab7af06d047055b7c7f}

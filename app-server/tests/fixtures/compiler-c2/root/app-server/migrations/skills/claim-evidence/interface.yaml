@@ -1,0 +1,34 @@
+schema_version: 1
+status: experimental_non_authoritative
+skill_id: claim-evidence
+runtime_requirements:
+  required_capabilities: []
+  capability_ceiling:
+    - capability.repository_evidence
+    - capability.direct_source_observation
+  effect_ceiling: []
+  prohibited_effects:
+    - state.claim_authority
+    - state.claim_store
+    - state.review_selection
+    - state.finding_evaluation
+    - state.review_acceptance
+    - state.campaign_acceptance
+    - state.task_changes
+  continuity: retained
+boundaries:
+  - id: claim.canonical-owner
+    kind: interface
+    semantic_section: operations-and-reliance
+    authority_source: authority.claim-contract
+    enforcement: mediated
+  - id: authority.no-possession-grant
+    kind: prohibition
+    semantic_section: authority-and-lifecycle-boundaries
+    authority_source: authority.legacy-skill
+    enforcement: denied
+  - id: authority.no-review-verdict
+    kind: prohibition
+    semantic_section: authority-and-lifecycle-boundaries
+    authority_source: authority.claim-contract
+    enforcement: denied

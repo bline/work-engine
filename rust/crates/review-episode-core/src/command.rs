@@ -50,7 +50,18 @@ impl BeginCommand {
         transition_id: &str,
         unresolved_questions: Vec<JsValue>,
     ) -> EpisodeResult<Self> {
-        let transition_id = JsString::new(transition_id);
+        Self::new_utf16(
+            authority,
+            JsString::new(transition_id),
+            unresolved_questions,
+        )
+    }
+
+    pub fn new_utf16(
+        authority: Authority,
+        transition_id: JsString,
+        unresolved_questions: Vec<JsValue>,
+    ) -> EpisodeResult<Self> {
         if !transition_id.is_nonempty_text() {
             return Err(EpisodeError::new(
                 "review episode transitionId must be non-empty text",
@@ -89,7 +100,22 @@ impl TransitionCommand {
         action: Action,
         payload: JsValue,
     ) -> EpisodeResult<Self> {
-        let transition_id = JsString::new(transition_id);
+        Self::new_utf16(
+            authority,
+            expected_revision,
+            JsString::new(transition_id),
+            action,
+            payload,
+        )
+    }
+
+    pub fn new_utf16(
+        authority: Authority,
+        expected_revision: Revision,
+        transition_id: JsString,
+        action: Action,
+        payload: JsValue,
+    ) -> EpisodeResult<Self> {
         if !transition_id.is_nonempty_text() {
             return Err(EpisodeError::new(
                 "review episode transitionId must be non-empty text",

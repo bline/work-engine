@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claim Evidence"
+  short_description: "Use exact evidence-backed claim revisions"
+  default_prompt: "Use $claim-evidence to discover or publish an authority-bound exact claim revision with truthful limitations and projection provenance."
