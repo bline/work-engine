@@ -230,6 +230,37 @@ gates. The compiler corpus records current builder-source drift from the
 separate model-adapter repair; immutable source fixtures remain possible without
 changing that owner's production pins.
 
+After C1/R1 publication as `8497df02e055c3b93e865cbe75fe4c99eb555eb4`, the
+user authorized parallel **C2/R2 planning only**. The resulting bounded plans are
+[C2 verified skill closure](rust-compiler-c2-plan.md) and
+[R2 durable episode owner](rust-review-episode-r2-plan.md). They propose separate
+`gpt-6-sol` implementation owners: C2 covers source verification, the real Python
+AEG process and existing compilation/hydration callers; R2 covers episode-owned
+SQLite persistence and an offline command executable. R2 also owns the narrow
+UTF-16 command-constructor addition in the existing episode core. Their product
+paths do not overlap, and neither requires full lifecycle completion.
+
+S1 retains shared workspace ownership until an explicit handoff. One integration
+owner can batch the two lanes' dependency requests and R2's two new members;
+later focused checks bind the resulting lock, while the combined workspace gate
+uses a stable agreed source revision. No common persistence or supervision
+framework is a prerequisite. Independent implementation can proceed after its
+own authorization and required registration, with shared edits serialized.
+
+The user accepted C2's proposed output-publication compatibility delta: reject
+symlink output destinations and preserve existing regular-file permissions.
+Source-file symlinks retain their existing behavior. That decision does not
+authorize implementation, default backend cutover or later C3/R3 scope.
+
+A separate bounded read-only review found no blocking plan defects in C2
+`7390ba1c4490697dfbb62055cf388de42091e8b16102f583f5b542513123d577`
+and R2 `edb856b4f14ef70f1005bd8fa172aae4016b1638784751cc2a2878fa464964f9`.
+Targeted source checks supported the proposed interfaces and ownership split;
+no implementation, tests, builds or database operations ran for that review.
+This is same-provider plan review, not implementation qualification or
+cross-provider independence. The plans are ready for bounded implementation
+approval and the shared integration handoff.
+
 The proposed execution shape is one retained builder per lane, accountable for
 implementation, integration, testing and ordinary remediation. Separate worktrees
 and non-overlapping domain paths permit independent work; the launch adapter and
