@@ -13,3 +13,13 @@ error: cannot construct `AuthorizedEntry` with struct literal syntax due to priv
   |         ---------------------------------------------------------------- private field
   |
   = note: ...and other private field `input` that was not provided
+help: you might have meant to use the `new` associated function
+  |
+5 -     let _entry = AuthorizedEntry {
+6 -         effect: EffectId::parse("effect-1").unwrap(),
+7 -         attempt: AttemptId::parse("attempt-1").unwrap(),
+8 -         subject: SubjectId::parse("subject-1").unwrap(),
+9 -         incarnation: RuntimeIncarnation::parse("incarnation-1").unwrap(),
+10-     };
+5 +     let _entry = AuthorizedEntry::new(_, _, _, _, _);
+  |

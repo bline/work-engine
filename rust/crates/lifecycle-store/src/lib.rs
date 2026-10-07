@@ -1,9 +1,16 @@
-//! Transaction boundary for future S1 implementation. Only this crate can mint
-//! a claimed entry after a durable authority/revision transaction.
+//! Lifecycle transaction owner. Only this crate mints an entry after a durable claim.
+
+mod artifact;
+mod recovery;
+mod sqlite;
+
+pub use artifact::{PublishedArtifact, StagedArtifact};
+pub use recovery::RecoverySnapshot;
+pub use sqlite::SqliteLifecycleStore;
 
 use lifecycle_core::{
-    AttemptId, ClockSample, CommandRequest, EffectId, EffectInput, EffectObservation, EffectPlan,
-    RuntimeIncarnation, SubjectId,
+    AttemptId, ClockSample, CommandAdmission, EffectId, EffectInput, EffectObservation, EffectPlan,
+    EffectSettlement, ExecutionOutcome, RuntimeIncarnation, SubjectId,
 };
 use thiserror::Error;
 
@@ -18,6 +25,22 @@ pub struct AuthorizedEntry {
 }
 
 impl AuthorizedEntry {
+    fn new(
+        effect: EffectId,
+        attempt: AttemptId,
+        subject: SubjectId,
+        incarnation: RuntimeIncarnation,
+        input: EffectInput,
+    ) -> Self {
+        Self {
+            effect,
+            attempt,
+            subject,
+            incarnation,
+            input,
+        }
+    }
+
     pub fn effect(&self) -> &EffectId {
         &self.effect
     }
@@ -69,20 +92,38 @@ pub enum StoreError {
     Unavailable,
 }
 
-/// Transactional signatures only. S1 owns all implementations and SQLite policy.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ObservationApply {
+    Applied,
+    Duplicate,
+    ConflictFenced,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EffectProjection {
+    pub effect: EffectId,
+    pub attempt: AttemptId,
+    pub outcome: ExecutionOutcome,
+    pub settlement: EffectSettlement,
+    pub admission_fenced: bool,
+}
+
+/// Domain-owned transactional port. The service supplies a checked admission envelope.
 pub trait LifecycleStore {
     type CommandResult;
     type ApplyResult;
 
     fn apply_command(
         &mut self,
-        request: CommandRequest,
+        admission: CommandAdmission,
         clock: ClockSample,
     ) -> Result<Self::CommandResult, StoreError>;
 
+    fn prepare_next_input(&mut self, subject: &SubjectId) -> Result<EffectPlan, StoreError>;
+
     fn claim_entry(
         &mut self,
-        plan: EffectPlan,
+        effect: &EffectId,
         incarnation: RuntimeIncarnation,
         clock: ClockSample,
     ) -> Result<AuthorizedEntry, StoreError>;

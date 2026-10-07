@@ -8,8 +8,10 @@ publish.workspace = true
 [dependencies]
 work-engine-types = { path = "../work-engine-types" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
 trybuild.workspace = true
 serde_json.workspace = true
+proptest = "=1.8.0"

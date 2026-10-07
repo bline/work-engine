@@ -95,6 +95,10 @@ impl AuthorityExpiresAt {
     pub const fn allows_new_entry(self, sample: ClockSample) -> bool {
         sample.wall.get() < self.0.get()
     }
+
+    pub const fn wall(self) -> WallTimeMs {
+        self.0
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -233,6 +237,8 @@ pub enum EffectSettlement {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EffectObservation {
+    /// Stable ingress coordinate; replay preserves this identity.
+    pub source: EvidenceId,
     pub effect: EffectId,
     pub attempt: AttemptId,
     pub incarnation: RuntimeIncarnation,
