@@ -55,6 +55,8 @@ pub struct TaskResult {
     pub exit: TaskExit,
     /// Only exact, provider-qualified facts are offered to the S4 store consumer.
     pub observation: Option<EffectObservation>,
+    /// Exact qualified provider text, owned until the store consumer acknowledges the result.
+    pub final_text: Option<String>,
     /// Local completion clocks are facts for deadline accounting, not settlement.
     pub finished_wall: Result<WallTimeMs, ClockError>,
     pub finished_mono: Instant,
@@ -487,11 +489,11 @@ impl<P: TextTurnPort + Send + Sync + 'static> LifecycleExecutor for OwnedExecuto
                 activate_rx
             };
             if activate_rx.await.is_err() {
-                return (TaskTermination::Cancelled, None);
+                return (TaskTermination::Cancelled, None, None);
             }
             let _run_slot = match run_slots.acquire_owned().await {
                 Ok(slot) => slot,
-                Err(_) => return (TaskTermination::Cancelled, None),
+                Err(_) => return (TaskTermination::Cancelled, None, None),
             };
             match provider.execute(request.clone()).await {
                 Ok(fact)
@@ -511,20 +513,21 @@ impl<P: TextTurnPort + Send + Sync + 'static> LifecycleExecutor for OwnedExecuto
                             outcome: fact.outcome,
                             settlement: fact.settlement,
                         }),
+                        fact.final_text,
                     )
                 }
-                Ok(_) => (TaskTermination::InvalidObservation, None),
-                Err(error) => (TaskTermination::ProviderError(error.into()), None),
+                Ok(_) => (TaskTermination::InvalidObservation, None, None),
+                Err(error) => (TaskTermination::ProviderError(error.into()), None, None),
             }
         });
         let abort = inner.abort_handle();
         #[cfg(test)]
         let post_result_hook = self.inner.post_result_hook.clone();
         let outer = tokio::spawn(async move {
-            let (termination, observation) = match inner.await {
+            let (termination, observation, final_text) = match inner.await {
                 Ok(value) => value,
-                Err(error) if error.is_cancelled() => (TaskTermination::Cancelled, None),
-                Err(_) => (TaskTermination::Panic, None),
+                Err(error) if error.is_cancelled() => (TaskTermination::Cancelled, None, None),
+                Err(_) => (TaskTermination::Panic, None, None),
             };
             let result = TaskResult {
                 exit: TaskExit {
@@ -534,6 +537,7 @@ impl<P: TextTurnPort + Send + Sync + 'static> LifecycleExecutor for OwnedExecuto
                     termination,
                 },
                 observation,
+                final_text,
                 finished_wall: clock.wall_time(),
                 finished_mono: clock.monotonic_now(),
             };

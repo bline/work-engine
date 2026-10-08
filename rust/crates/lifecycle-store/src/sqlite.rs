@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
 
@@ -15,10 +16,39 @@ use rusqlite::{
     Connection, ErrorCode, OpenFlags, OptionalExtension, Transaction, TransactionBehavior, params,
 };
 
-use crate::{AuthorizedEntry, EffectProjection, LifecycleStore, ObservationApply, StoreError};
+use crate::{
+    AuthorizedEntry, CommittedTextResult, DeliveryProjection, EffectProjection, LifecycleStore,
+    ObservationApply, StoreError, SubjectProjection, TransitionProjection, VerifierReport,
+};
 
 type PriorCommandRow = (String, Vec<u8>, String, Option<String>, Option<String>, i64);
 type PendingInputRow = (String, String, Vec<u8>, String, String, i64, String);
+type DeliveryRow = (
+    String,
+    Option<String>,
+    Option<String>,
+    String,
+    String,
+    Option<String>,
+);
+type TaskResultRow = (
+    String,
+    bool,
+    Option<i32>,
+    Option<i64>,
+    Option<String>,
+    Option<String>,
+);
+type VerifierResultRow = (
+    String,
+    String,
+    String,
+    String,
+    Option<i32>,
+    bool,
+    bool,
+    bool,
+);
 type PriorSourceRow = (
     String,
     String,
@@ -28,6 +58,7 @@ type PriorSourceRow = (
     String,
     String,
     Option<String>,
+    Option<Vec<u8>>,
 );
 type AttemptObservationRow = (
     String,
@@ -108,7 +139,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=1).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=2).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
         }
@@ -139,7 +170,32 @@ impl SqliteLifecycleStore {
                 tx.commit().map_err(|_| StoreError::Unavailable)?;
             }
             1 => {}
+            2 => {}
             _ => return Err(StoreError::Unavailable),
+        }
+        if version < 2 {
+            let mut random = [0u8; 16];
+            getrandom::fill(&mut random).map_err(|_| StoreError::Unavailable)?;
+            let store_id = format!(
+                "store:{}",
+                random
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()
+            );
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0002_service.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute(
+                "INSERT INTO store_identity(singleton,store_id) VALUES (1,?1)",
+                [&store_id],
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 2)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
         let integrity: String = connection
             .query_row("PRAGMA quick_check", [], |row| row.get(0))
@@ -272,6 +328,35 @@ impl SqliteLifecycleStore {
         Ok(next)
     }
 
+    /// Resolve an authenticated exact command replay without reserving new
+    /// execution capacity. A conflicting command ID is still a conflict.
+    pub fn lookup_checked_command(
+        &self,
+        admission: &CommandAdmission,
+    ) -> Result<Option<CommandResult>, StoreError> {
+        self.verify_identity()?;
+        let request = admission.request();
+        let prior: Option<PriorCommandRow> = self.connection.query_row(
+            "SELECT request_digest,canonical_bytes,outcome_kind,outcome_ref,rejection_code,resulting_revision FROM commands WHERE principal=?1 AND command_id=?2",
+            params![admission.principal(), request.command_id.as_str()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        let Some((digest, bytes, kind, outcome_ref, rejection_code, revision)) = prior else {
+            return Ok(None);
+        };
+        if digest != request.request_digest.hex() || bytes != admission.canonical_bytes() {
+            return Err(StoreError::ClaimConflict);
+        }
+        decode_result(
+            &self.connection,
+            &kind,
+            outcome_ref,
+            rejection_code,
+            revision,
+        )
+        .map(Some)
+    }
+
     pub fn apply_checked_command(
         &mut self,
         admission: CommandAdmission,
@@ -384,9 +469,16 @@ impl SqliteLifecycleStore {
                 .map_err(|_| StoreError::Unavailable)?;
             }
             CommandOutcome::ReplacementRequested { transition } => {
+                // The latest entered attempt is the predecessor boundary. An
+                // older completed response cannot stand in for a newer attempt
+                // whose result is still pending or whose continuation differs.
+                let basis_source: Option<String> = tx.query_row(
+                    "SELECT o.source_id FROM observations o JOIN attempts a ON a.attempt_id=o.attempt_id JOIN effects e ON e.effect_id=a.effect_id WHERE a.attempt_id=(SELECT a2.attempt_id FROM attempts a2 JOIN effects e2 ON e2.effect_id=a2.effect_id WHERE e2.subject_id=?1 ORDER BY a2.rowid DESC LIMIT 1) AND o.applied_kind='applied' AND o.outcome='completed' AND o.settlement_kind='established' AND a.outcome='completed' AND a.settlement_kind='established' AND o.final_text IS NOT NULL ORDER BY o.rowid DESC LIMIT 1",
+                    [request.subject.as_str()], |row| row.get(0),
+                ).optional().map_err(|_| StoreError::Unavailable)?;
                 tx.execute(
-                    "INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms) VALUES (?1,?2,?3,'quiescing',?4,?5)",
-                    params![transition.as_str(), request.subject.as_str(), request.context.as_str(), to_sql_revision(reduction.next_subject.semantic_revision)?, clock.wall.get()],
+                    "INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms,basis_source) VALUES (?1,?2,?3,'quiescing',?4,?5,?6)",
+                    params![transition.as_str(), request.subject.as_str(), request.context.as_str(), to_sql_revision(reduction.next_subject.semantic_revision)?, clock.wall.get(),basis_source],
                 ).map_err(classify_write_error)?;
                 tx.execute(
                     "UPDATE subjects SET revision=?1,semantic_revision=?2,owner_kind='transition',owner_ref=?3,last_wall_ms=?4 WHERE subject_id=?5 AND revision=?6",
@@ -655,21 +747,373 @@ impl SqliteLifecycleStore {
         Ok((commands, inputs, attempts))
     }
 
-    pub fn apply_bound_observation(
+    /// One SQLite read transaction owns the snapshot and its global journal cursor.
+    pub fn subject_projection(
         &mut self,
-        observation: EffectObservation,
-        clock: ClockSample,
-    ) -> Result<ObservationApply, StoreError> {
+        subject: &SubjectId,
+        target_delivery: Option<&DeliveryId>,
+        target_transition: Option<&TransitionId>,
+    ) -> Result<SubjectProjection, StoreError> {
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .map_err(|_| StoreError::Unavailable)?;
+        let store_id: String = tx
+            .query_row(
+                "SELECT store_id FROM store_identity WHERE singleton=1",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let state: (String, i64, i64, String, Option<String>) = tx.query_row(
+            "SELECT context_id,revision,semantic_revision,owner_kind,owner_ref FROM subjects WHERE subject_id=?1",
+            [subject.as_str()],
+            |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?)),
+        ).map_err(|_| StoreError::Rejected)?;
+        let journal_cursor: i64 = tx
+            .query_row("SELECT COALESCE(MAX(sequence),0) FROM journal", [], |row| {
+                row.get(0)
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        let transition: Option<(String, String)> = if let Some(target) = target_transition {
+            tx.query_row("SELECT transition_id,stage FROM transitions WHERE subject_id=?1 AND transition_id=?2",
+                params![subject.as_str(),target.as_str()], |row| Ok((row.get(0)?,row.get(1)?)))
+                .optional().map_err(|_| StoreError::Unavailable)?
+        } else {
+            tx.query_row("SELECT transition_id,stage FROM transitions WHERE subject_id=?1 ORDER BY rowid DESC LIMIT 1",
+                [subject.as_str()], |row| Ok((row.get(0)?,row.get(1)?)))
+                .optional().map_err(|_| StoreError::Unavailable)?
+        };
+        let delivery_row: Option<DeliveryRow> = if let Some(target) = target_delivery {
+            tx.query_row("SELECT i.delivery_id,e.effect_id,a.attempt_id,COALESCE(a.outcome,'pending'),COALESCE(a.settlement_kind,'unresolved'),a.settlement_evidence FROM inputs i LEFT JOIN effects e ON e.input_id=i.input_id AND e.state!='cancelled' LEFT JOIN attempts a ON a.effect_id=e.effect_id WHERE i.subject_id=?1 AND i.delivery_id=?2",
+                params![subject.as_str(),target.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)))
+                .optional().map_err(|_| StoreError::Unavailable)?
+        } else {
+            tx.query_row("SELECT i.delivery_id,e.effect_id,a.attempt_id,COALESCE(a.outcome,'pending'),COALESCE(a.settlement_kind,'unresolved'),a.settlement_evidence FROM inputs i LEFT JOIN effects e ON e.input_id=i.input_id AND e.state!='cancelled' LEFT JOIN attempts a ON a.effect_id=e.effect_id WHERE i.subject_id=?1 ORDER BY i.sequence DESC LIMIT 1",
+                [subject.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)))
+                .optional().map_err(|_| StoreError::Unavailable)?
+        };
+        let delivery = delivery_row.map(|(delivery_id,effect_id,attempt_id,outcome,settlement_kind,settlement_evidence)| {
+            let source: Option<(String,i64)> = if let Some(attempt) = &attempt_id {
+                tx.query_row("SELECT source_id,observed_wall_ms FROM observations WHERE attempt_id=?1 AND applied_kind='applied' ORDER BY rowid DESC LIMIT 1",
+                    [attempt], |row| Ok((row.get(0)?,row.get(1)?))).optional().map_err(|_| StoreError::Unavailable)?
+            } else { None };
+            Ok::<_, StoreError>(DeliveryProjection {
+                delivery_id,effect_id,attempt_id,outcome,settlement_kind,settlement_evidence,
+                source_ref: source.as_ref().map(|item| item.0.clone()),
+                observed_wall_ms: source.map(|item| item.1),
+            })
+        }).transpose()?;
+        let unresolved_attempts: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?1 AND (a.state='entered' OR a.settlement_kind!='established')",
+            [subject.as_str()], |row| row.get(0)).map_err(|_| StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(SubjectProjection {
+            store_id,
+            subject_id: subject.as_str().to_owned(),
+            context_id: state.0,
+            revision: u64::try_from(state.1).map_err(|_| StoreError::Unavailable)?,
+            semantic_revision: u64::try_from(state.2).map_err(|_| StoreError::Unavailable)?,
+            owner_kind: state.3,
+            owner_ref: state.4,
+            journal_cursor: u64::try_from(journal_cursor).map_err(|_| StoreError::Unavailable)?,
+            transition: transition.map(|(transition_id, stage)| TransitionProjection {
+                transition_id,
+                stage,
+            }),
+            delivery,
+            unresolved_attempts: u64::try_from(unresolved_attempts)
+                .map_err(|_| StoreError::Unavailable)?,
+        })
+    }
+
+    /// A transition consumer may read only a committed, exact, settled response.
+    pub fn committed_text_for_transition(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<Option<CommittedTextResult>, StoreError> {
+        self.verify_identity()?;
+        let row: Option<(String,String,String,Vec<u8>)> = self.connection.query_row(
+            "SELECT o.source_id,o.attempt_id,o.provider_thread_id,o.final_text FROM transitions t JOIN observations o ON o.source_id=t.basis_source JOIN attempts a ON a.attempt_id=o.attempt_id JOIN effects e ON e.effect_id=o.effect_id WHERE t.transition_id=?1 AND e.subject_id=t.subject_id AND a.attempt_id=(SELECT a2.attempt_id FROM attempts a2 JOIN effects e2 ON e2.effect_id=a2.effect_id WHERE e2.subject_id=t.subject_id ORDER BY a2.rowid DESC LIMIT 1) AND o.applied_kind='applied' AND o.outcome='completed' AND o.settlement_kind='established' AND a.outcome='completed' AND a.settlement_kind='established' AND o.final_text IS NOT NULL",
+            [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        row.map(|(source_id, attempt_id, provider_thread_id, bytes)| {
+            Ok(CommittedTextResult {
+                source_id,
+                attempt_id,
+                provider_thread_id,
+                final_text: String::from_utf8(bytes).map_err(|_| StoreError::Unavailable)?,
+            })
+        })
+        .transpose()
+    }
+
+    /// Persist the local owned task terminal fact before the executor result is acknowledged.
+    /// A missing external observation leaves custody entered and never authorizes a resend.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_owned_task_result(
+        &mut self,
+        attempt: &AttemptId,
+        incarnation: &RuntimeIncarnation,
+        termination: &str,
+        local_task_ended: bool,
+        child_exit_code: Option<i32>,
+        finished_wall: Option<WallTimeMs>,
+        source: Option<&lifecycle_core::EvidenceId>,
+        final_text: Option<&str>,
+    ) -> Result<(), StoreError> {
+        if termination.len() > 64
+            || !termination
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte == b'_')
+            || final_text.is_some_and(|text| text.len() > 65_536)
+            || (final_text.is_some() && source.is_none())
+        {
+            return Err(StoreError::Rejected);
+        }
+        self.verify_identity()?;
+        let digest = final_text
+            .map(|text| {
+                work_engine_types::CodecContract::BinaryArtifactV1
+                    .digest_binary(text.as_bytes())
+                    .map(|value| value.hex())
+                    .map_err(|_| StoreError::Rejected)
+            })
+            .transpose()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let subject: String = tx.query_row(
+            "SELECT e.subject_id FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE a.attempt_id=?1 AND a.incarnation_id=?2",
+            params![attempt.as_str(),incarnation.as_str()], |row| row.get(0),
+        ).map_err(|_| StoreError::ObservationMismatch)?;
+        let prior: Option<TaskResultRow> = tx.query_row(
+            "SELECT termination,local_task_ended,child_exit_code,finished_wall_ms,observation_source,final_text_sha256 FROM task_results WHERE attempt_id=?1",
+            [attempt.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        if let Some(prior) = prior {
+            if prior
+                == (
+                    termination.to_owned(),
+                    local_task_ended,
+                    child_exit_code,
+                    finished_wall.map(|value| value.get()),
+                    source.map(|value| value.as_str().to_owned()),
+                    digest,
+                )
+            {
+                return Ok(());
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        tx.execute("INSERT INTO task_results(attempt_id,termination,local_task_ended,child_exit_code,finished_wall_ms,observation_source,final_text_sha256) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![attempt.as_str(),termination,local_task_ended,child_exit_code,finished_wall.map(|value| value.get()),source.map(|value| value.as_str()),digest],
+        ).map_err(|_| StoreError::Unavailable)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'task_result_owned',?2,?3)",
+            params![subject,attempt.as_str(),finished_wall.map(|value| value.get()).unwrap_or(0)],
+        ).map_err(|_| StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    /// Retain the exact owned task set observed when this service incarnation closes.
+    /// An unresolved attempt remains entered; this report never grants resend authority.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_service_close(
+        &mut self,
+        incarnation: &RuntimeIncarnation,
+        subject: &SubjectId,
+        joined: &[AttemptId],
+        unresolved: &[AttemptId],
+        pending_results: &[AttemptId],
+        unsafe_at_close: bool,
+        wall: WallTimeMs,
+    ) -> Result<(), StoreError> {
+        if !unresolved.is_empty() && !unsafe_at_close {
+            return Err(StoreError::Rejected);
+        }
+        let joined_set: BTreeSet<_> = joined.iter().map(AttemptId::as_str).collect();
+        let unresolved_set: BTreeSet<_> = unresolved.iter().map(AttemptId::as_str).collect();
+        let pending_set: BTreeSet<_> = pending_results.iter().map(AttemptId::as_str).collect();
+        if joined_set.len() != joined.len()
+            || unresolved_set.len() != unresolved.len()
+            || pending_set.len() != pending_results.len()
+            || !joined_set.is_disjoint(&unresolved_set)
+        {
+            return Err(StoreError::Rejected);
+        }
         self.verify_identity()?;
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
+        for attempt in joined.iter().chain(unresolved).chain(pending_results) {
+            let owned:bool=tx.query_row(
+                "SELECT EXISTS(SELECT 1 FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE a.attempt_id=?1 AND a.incarnation_id=?2 AND e.subject_id=?3)",
+                params![attempt.as_str(),incarnation.as_str(),subject.as_str()],|row|row.get(0),
+            ).map_err(|_|StoreError::Unavailable)?;
+            if !owned {
+                return Err(StoreError::ObservationMismatch);
+            }
+        }
+        let encode = |set: &BTreeSet<&str>| {
+            serde_json::to_string(&set.iter().copied().collect::<Vec<_>>())
+                .map_err(|_| StoreError::Unavailable)
+        };
+        let actual = (
+            subject.as_str().to_owned(),
+            encode(&joined_set)?,
+            encode(&unresolved_set)?,
+            encode(&pending_set)?,
+            unsafe_at_close,
+            wall.get(),
+        );
+        let prior:Option<(String,String,String,String,bool,i64)>=tx.query_row(
+            "SELECT subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms FROM service_closes WHERE incarnation_id=?1",
+            [incarnation.as_str()],|row|Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        if let Some(prior) = prior {
+            return if prior == actual {
+                Ok(())
+            } else {
+                Err(StoreError::ClaimConflict)
+            };
+        }
+        tx.execute("INSERT INTO service_closes(incarnation_id,subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![incarnation.as_str(),actual.0,actual.1,actual.2,actual.3,actual.4,actual.5],
+        ).map_err(|_|StoreError::Unavailable)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'service_closed',?2,?3)",
+            params![subject.as_str(),incarnation.as_str(),wall.get()],
+        ).map_err(|_|StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    pub fn verifier_result(&self, transition: &TransitionId) -> Result<Option<bool>, StoreError> {
+        Ok(self
+            .verifier_report(transition)?
+            .map(|report| report.exit_success))
+    }
+
+    pub fn verifier_report(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<Option<VerifierReport>, StoreError> {
+        self.verify_identity()?;
+        self.connection
+            .query_row(
+                "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1",
+                [transition.as_str()],
+                |row| Ok(VerifierReport {
+                    source_id:row.get(0)?,activation:row.get(1)?,disposition:row.get(2)?,primary_error:row.get(3)?,
+                    exit_code:row.get(4)?,exit_success:row.get(5)?,unsafe_at_close:row.get(6)?,late_at_close:row.get(7)?,
+                }),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_verifier_result(
+        &mut self,
+        transition: &TransitionId,
+        source: &lifecycle_core::EvidenceId,
+        activation: &str,
+        disposition: &str,
+        primary_error: &str,
+        exit_code: Option<i32>,
+        exit_success: bool,
+        unsafe_at_close: bool,
+        late_at_close: bool,
+        wall: WallTimeMs,
+    ) -> Result<(), StoreError> {
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let subject: String = tx
+            .query_row(
+                "SELECT subject_id FROM transitions WHERE transition_id=?1 AND basis_source=?2",
+                params![transition.as_str(), source.as_str()],
+                |row| row.get(0),
+            )
+            .map_err(|_| StoreError::ObservationMismatch)?;
+        let prior:Option<VerifierResultRow>=tx.query_row(
+            "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1",
+            [transition.as_str()],|row|Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        if let Some(prior) = prior {
+            if prior
+                == (
+                    source.as_str().to_owned(),
+                    activation.to_owned(),
+                    disposition.to_owned(),
+                    primary_error.to_owned(),
+                    exit_code,
+                    exit_success,
+                    unsafe_at_close,
+                    late_at_close,
+                )
+            {
+                return Ok(());
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        tx.execute("INSERT INTO verifier_results(transition_id,source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+            params![transition.as_str(),source.as_str(),activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close],
+        ).map_err(|_|StoreError::Unavailable)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'verifier_resolved',?2,?3)",
+            params![subject,transition.as_str(),wall.get()],
+        ).map_err(|_|StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    pub fn apply_bound_observation(
+        &mut self,
+        observation: EffectObservation,
+        clock: ClockSample,
+    ) -> Result<ObservationApply, StoreError> {
+        self.apply_bound_result(observation, None, clock)
+    }
+
+    /// Commit a qualified result and its exact response bytes in one observation transaction.
+    pub fn apply_bound_result(
+        &mut self,
+        observation: EffectObservation,
+        final_text: Option<&str>,
+        clock: ClockSample,
+    ) -> Result<ObservationApply, StoreError> {
+        if final_text.is_some_and(|text| text.len() > 65_536) {
+            return Err(StoreError::Rejected);
+        }
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        if final_text.is_some() {
+            let result_binding: Option<(Option<String>,Option<String>)> = tx.query_row(
+                "SELECT observation_source,final_text_sha256 FROM task_results WHERE attempt_id=?1",
+                [observation.attempt.as_str()], |row| Ok((row.get(0)?,row.get(1)?)),
+            ).optional().map_err(|_| StoreError::Unavailable)?;
+            let expected = final_text
+                .map(|text| {
+                    work_engine_types::CodecContract::BinaryArtifactV1
+                        .digest_binary(text.as_bytes())
+                        .map(|value| value.hex())
+                        .map_err(|_| StoreError::Rejected)
+                })
+                .transpose()?;
+            if result_binding != Some((Some(observation.source.as_str().to_owned()), expected)) {
+                return Err(StoreError::ObservationMismatch);
+            }
+        }
         let prior_source: Option<PriorSourceRow> = tx
             .query_row(
-                "SELECT effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence FROM observations WHERE source_id=?1",
+                "SELECT effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence,final_text FROM observations WHERE source_id=?1",
                 [observation.source.as_str()],
-                |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?)),
+                |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?,row.get(8)?)),
             ).optional().map_err(|_| StoreError::Unavailable)?;
         let (new_settlement_kind, new_evidence) = encode_settlement(&observation.settlement);
         if let Some(prior) = prior_source {
@@ -681,12 +1125,13 @@ impl SqliteLifecycleStore {
                 && prior.5 == outcome_text(&observation.outcome)
                 && prior.6 == new_settlement_kind
                 && prior.7.as_deref() == new_evidence
+                && prior.8.as_deref() == final_text.map(str::as_bytes)
             {
                 return Ok(ObservationApply::Duplicate);
             }
             let previous_variant: Option<String> = tx.query_row(
-                "SELECT attribution_kind FROM observation_conflicts WHERE source_id=?1 AND effect_id=?2 AND attempt_id=?3 AND incarnation_id=?4 AND provider_thread_id=?5 AND provider_turn_id=?6 AND outcome=?7 AND settlement_kind=?8 AND settlement_evidence IS ?9",
-                params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence],
+                "SELECT attribution_kind FROM observation_conflicts WHERE source_id=?1 AND effect_id=?2 AND attempt_id=?3 AND incarnation_id=?4 AND provider_thread_id=?5 AND provider_turn_id=?6 AND outcome=?7 AND settlement_kind=?8 AND settlement_evidence IS ?9 AND final_text IS ?10",
+                params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence,final_text.map(str::as_bytes)],
                 |row| row.get(0),
             ).optional().map_err(|_| StoreError::Unavailable)?;
             if let Some(attribution) = previous_variant {
@@ -715,8 +1160,8 @@ impl SqliteLifecycleStore {
                 "mismatch"
             };
             tx.execute(
-                "INSERT INTO observation_conflicts(source_id,effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence,attribution_kind,observed_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
-                params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence,attribution,clock.wall.get()],
+                "INSERT INTO observation_conflicts(source_id,effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence,attribution_kind,observed_wall_ms,final_text) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+                params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence,attribution,clock.wall.get(),final_text.map(str::as_bytes)],
             ).map_err(|_| StoreError::Unavailable)?;
             // A mismatched variant is retained as a source-integrity fault,
             // not applied as a settlement fact about the original attempt.
@@ -785,8 +1230,8 @@ impl SqliteLifecycleStore {
         let decision = reduce_observation(&subject_state, &prior, &observation, clock)
             .map_err(|_| StoreError::ObservationMismatch)?;
         tx.execute(
-            "INSERT INTO observations(source_id,effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence,applied_kind,observed_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
-            params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence,if decision.conflict { "conflict_fenced" } else { "applied" },clock.wall.get()],
+            "INSERT INTO observations(source_id,effect_id,attempt_id,incarnation_id,provider_thread_id,provider_turn_id,outcome,settlement_kind,settlement_evidence,applied_kind,observed_wall_ms,final_text) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+            params![observation.source.as_str(),observation.effect.as_str(),observation.attempt.as_str(),observation.incarnation.as_str(),observation.provider_thread.as_str(),observation.provider_turn.as_str(),outcome_text(&observation.outcome),new_settlement_kind,new_evidence,if decision.conflict { "conflict_fenced" } else { "applied" },clock.wall.get(),final_text.map(str::as_bytes)],
         ).map_err(|_| StoreError::Unavailable)?;
         let (settlement_kind, settlement_evidence) = encode_settlement(&decision.settlement);
         let still_running = decision.still_running;
@@ -838,6 +1283,16 @@ impl SqliteLifecycleStore {
             ],
         )
         .map_err(|_| StoreError::Unavailable)?;
+        if !decision.conflict
+            && matches!(decision.outcome, ExecutionOutcome::Completed)
+            && matches!(decision.settlement, EffectSettlement::Established(_))
+            && final_text.is_some()
+        {
+            tx.execute(
+                "UPDATE transitions SET basis_source=?1 WHERE subject_id=?2 AND stage='quiescing' AND basis_source IS NULL AND ?3=(SELECT a.attempt_id FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?2 ORDER BY a.rowid DESC LIMIT 1)",
+                params![observation.source.as_str(),subject,observation.attempt.as_str()],
+            ).map_err(|_| StoreError::Unavailable)?;
+        }
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(if decision.conflict {
             ObservationApply::ConflictFenced
@@ -1339,7 +1794,7 @@ fn encode_outcome(outcome: &CommandOutcome) -> (&'static str, Option<&str>, Opti
 }
 
 fn decode_result(
-    tx: &Transaction<'_>,
+    tx: &Connection,
     kind: &str,
     outcome_ref: Option<String>,
     rejection: Option<String>,

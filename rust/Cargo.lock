@@ -464,6 +464,9 @@ name = "lifecycle-client"
 version = "0.1.0"
 dependencies = [
  "lifecycle-wire",
+ "serde_json",
+ "socket2",
+ "tempfile",
  "thiserror",
  "trybuild",
 ]
@@ -503,15 +506,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifecycle-service"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "lifecycle-client",
+ "lifecycle-core",
+ "lifecycle-provider",
+ "lifecycle-runtime",
+ "lifecycle-store",
+ "lifecycle-wire",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "work-engine-types",
+]
+
+[[package]]
 name = "lifecycle-store"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.3.4",
  "lifecycle-core",
  "rusqlite",
  "serde_json",
  "tempfile",
  "thiserror",
  "trybuild",
+ "work-engine-types",
+]
+
+[[package]]
+name = "lifecycle-test-support"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
  "work-engine-types",
 ]
 
@@ -1123,6 +1157,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9395f0f0eee849a9b707b2f06bb92a6a422090e2123bb2ef8e87a0e61892a8e"
 
 [[package]]
+name = "socket2"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
+dependencies = [
+ "libc",
+ "windows-sys",
+]
+
+[[package]]
 name = "strum"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1224,6 +1268,7 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "signal-hook-registry",
+ "socket2",
  "tokio-macros",
  "windows-sys",
 ]

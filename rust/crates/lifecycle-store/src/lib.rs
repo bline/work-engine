@@ -5,8 +5,61 @@ mod recovery;
 mod sqlite;
 
 pub use artifact::{PublishedArtifact, StagedArtifact};
-pub use recovery::RecoverySnapshot;
+pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use sqlite::SqliteLifecycleStore;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SubjectProjection {
+    pub store_id: String,
+    pub subject_id: String,
+    pub context_id: String,
+    pub revision: u64,
+    pub semantic_revision: u64,
+    pub owner_kind: String,
+    pub owner_ref: Option<String>,
+    pub journal_cursor: u64,
+    pub transition: Option<TransitionProjection>,
+    pub delivery: Option<DeliveryProjection>,
+    pub unresolved_attempts: u64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TransitionProjection {
+    pub transition_id: String,
+    pub stage: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeliveryProjection {
+    pub delivery_id: String,
+    pub effect_id: Option<String>,
+    pub attempt_id: Option<String>,
+    pub outcome: String,
+    pub settlement_kind: String,
+    pub settlement_evidence: Option<String>,
+    pub source_ref: Option<String>,
+    pub observed_wall_ms: Option<i64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CommittedTextResult {
+    pub source_id: String,
+    pub attempt_id: String,
+    pub provider_thread_id: String,
+    pub final_text: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct VerifierReport {
+    pub source_id: String,
+    pub activation: String,
+    pub disposition: String,
+    pub primary_error: String,
+    pub exit_code: Option<i32>,
+    pub exit_success: bool,
+    pub unsafe_at_close: bool,
+    pub late_at_close: bool,
+}
 
 use lifecycle_core::{
     AttemptId, ClockSample, CommandAdmission, EffectId, EffectInput, EffectObservation, EffectPlan,

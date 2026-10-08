@@ -1,0 +1,30 @@
+{
+  "codec": {
+    "command": "jcs-rfc8785-v1",
+    "domain": "work-engine.lifecycle",
+    "schema": 2
+  },
+  "fixture_sha256": {
+    "command-v2.json": "881d534ac5c7fe2badbfde15ed895c8bc82069fe21ee7f5079a221836cb2838e",
+    "compatibility-v2.json": "aab2bdf7c4d2c1bd7a5ff6fa85e10ebec989fa7597f552aaa1ea48810f08be6b"
+  },
+  "generator": {
+    "crate": "schemars",
+    "settings": "draft2020_12",
+    "version": "1.2.2"
+  },
+  "protocol_version": 2,
+  "schema_bundle_sha256": "c694f0f8d980673e3628e9f968a2c1c737efe9cd5f1127bf1ede7708f80169d3",
+  "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+  "schema_sha256": {
+    "command-result.schema.json": "4772937f9e0942d2828282aa0a3172c1ae9b458bc0456fac18398db8695ba3e7",
+    "command.schema.json": "5553ee7c30301aac00910550d07bc795afb071729455b98e63f3d1cd49cda6c4"
+  },
+  "schema_version": 2,
+  "source_sha256": {
+    "examples/generate_command_v2.rs": "8ed3431ee433c132bad4b34bc21cd4fb7f5057bf2430a4ee36937b7dd2fd2923",
+    "src/command_v2.rs": "d8dbf5a86b42a48b26d29d1099ff21a0c982b1bda23d5b48d4b08ca1ebf368ec",
+    "src/schema.rs": "eb33bee77392364bb41530067dce879ce82686d1c75d95068b1991755f27564b"
+  },
+  "v1_compatibility_manifest_sha256": "f4c73a45602284989fc352f5529f421a5e2c73cdaece2c4678035825032727be"
+}

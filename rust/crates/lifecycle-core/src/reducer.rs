@@ -94,9 +94,16 @@ impl CommandAdmission {
         if principal.is_empty() || principal.len() > 128 {
             return Err(AdmissionError::MalformedBasis);
         }
+        let command_contract = request.request_digest.contract();
+        if !matches!(
+            command_contract,
+            CodecContract::LifecycleCommandV1 | CodecContract::LifecycleCommandV2
+        ) {
+            return Err(AdmissionError::DigestMismatch);
+        }
         request
             .request_digest
-            .verify_json(CodecContract::LifecycleCommandV1, &digest_basis)
+            .verify_json(command_contract, &digest_basis)
             .map_err(|_| AdmissionError::DigestMismatch)?;
         let object = digest_basis
             .as_object()
@@ -128,7 +135,8 @@ impl CommandAdmission {
             ("proof_run_id", request.proof_run.as_str()),
             ("grant_ref", request.grant_reference.as_str()),
         ];
-        if digest_basis.get("protocol_version").and_then(Value::as_u64) != Some(1)
+        if digest_basis.get("protocol_version").and_then(Value::as_u64)
+            != Some(u64::from(command_contract.schema_version()))
             || digest_basis
                 .get("expected_revision")
                 .and_then(Value::as_str)
@@ -207,7 +215,9 @@ impl CommandAdmission {
 
     pub fn canonical_bytes(&self) -> Vec<u8> {
         // Construction already verified that this encoding succeeds and matches the digest.
-        CodecContract::LifecycleCommandV1
+        self.request
+            .request_digest
+            .contract()
             .canonical_json(&self.digest_basis)
             .expect("verified command basis remains encodable")
     }

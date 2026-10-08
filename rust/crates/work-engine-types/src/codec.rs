@@ -6,6 +6,7 @@ use thiserror::Error;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CodecContract {
     LifecycleCommandV1,
+    LifecycleCommandV2,
     LifecycleSnapshotV1,
     LifecycleTextInputV1,
     BinaryArtifactV1,
@@ -57,23 +58,26 @@ impl CodecContract {
 
     pub const fn payload_kind(self) -> PayloadKind {
         match self {
-            Self::LifecycleCommandV1 | Self::LifecycleSnapshotV1 => PayloadKind::Json,
+            Self::LifecycleCommandV1 | Self::LifecycleCommandV2 | Self::LifecycleSnapshotV1 => {
+                PayloadKind::Json
+            }
             Self::LifecycleTextInputV1 | Self::BinaryArtifactV1 => PayloadKind::Binary,
         }
     }
 
     pub const fn domain(self) -> &'static str {
         match self {
-            Self::LifecycleCommandV1 | Self::LifecycleSnapshotV1 | Self::LifecycleTextInputV1 => {
-                "work-engine.lifecycle"
-            }
+            Self::LifecycleCommandV1
+            | Self::LifecycleCommandV2
+            | Self::LifecycleSnapshotV1
+            | Self::LifecycleTextInputV1 => "work-engine.lifecycle",
             Self::BinaryArtifactV1 => "work-engine.artifact",
         }
     }
 
     pub const fn kind(self) -> &'static str {
         match self {
-            Self::LifecycleCommandV1 => "command",
+            Self::LifecycleCommandV1 | Self::LifecycleCommandV2 => "command",
             Self::LifecycleSnapshotV1 => "snapshot",
             Self::LifecycleTextInputV1 => "controlled-text-input",
             Self::BinaryArtifactV1 => "bytes",
@@ -81,7 +85,10 @@ impl CodecContract {
     }
 
     pub const fn schema_version(self) -> u16 {
-        1
+        match self {
+            Self::LifecycleCommandV2 => 2,
+            _ => 1,
+        }
     }
 
     pub const fn codec_version(self) -> &'static str {

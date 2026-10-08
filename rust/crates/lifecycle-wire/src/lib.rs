@@ -1,5 +1,6 @@
 //! Versioned public shapes and strict wire parsing. DTOs confer no authority.
 
+mod command_v2;
 mod json;
 mod observation;
 mod schema;
@@ -10,13 +11,16 @@ use serde_json::{Value, json};
 use thiserror::Error;
 use work_engine_types::{CodecContract, IdValue};
 
+pub use command_v2::{
+    CommandDtoV2, CommandOperationV2, CommandResultV2, EnqueueInputPayloadV2, parse_command_v2,
+};
 pub use json::parse_strict_json;
 pub use observation::{
     AdmissionV1, DeliveryV1, EffectSettlementV1, ErrorDtoV1, ExecutionOutcomeV1, FieldV1,
     LifecycleSnapshotV1, ObservationProvenanceV1, RuntimeAvailabilityV1, TransitionStageV1,
     TransitionV1, WaitRequestV1, WaitTargetV1,
 };
-pub use schema::schema_bundle_v1;
+pub use schema::{schema_bundle_v1, schema_bundle_v2};
 
 pub const PROTOCOL_VERSION: u16 = 1;
 

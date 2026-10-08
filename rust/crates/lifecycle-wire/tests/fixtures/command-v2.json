@@ -1,0 +1,19 @@
+{
+  "build_id": "build-one",
+  "command_id": "command-v2-vector",
+  "context_generation": "context-one",
+  "expected_revision": "0",
+  "grant_ref": "grant-enqueue",
+  "kind": "enqueue_input",
+  "payload": {
+    "input_id": "input-v2-vector",
+    "producer_ref": "producer-one",
+    "text": "hello controlled",
+    "text_digest": "0c7b1657cceeefb59c898046f177ded1ee200aa71c2fdb9726f0dbee8abaf75b"
+  },
+  "principal_ref": "principal-one",
+  "proof_run_id": "proof-one",
+  "protocol_version": 2,
+  "request_digest": "4ab0b2ea97a625f6e44c1fdbe19963f2741322006d6cfdb2592b8d6aa70e8b0e",
+  "subject_id": "subject-one"
+}

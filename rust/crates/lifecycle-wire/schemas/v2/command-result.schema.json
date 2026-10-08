@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "outcome_kind": {
+      "type": "string"
+    },
+    "outcome_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "protocol_version": {
+      "format": "uint16",
+      "maximum": 65535,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "rejection_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resulting_revision": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "command_id",
+    "accepted",
+    "outcome_kind",
+    "resulting_revision"
+  ],
+  "title": "CommandResultV2",
+  "type": "object"
+}

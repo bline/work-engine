@@ -13,7 +13,76 @@ pub struct RecoverySnapshot {
     pub journal_cursor: i64,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RecoveryDisposition {
+    PreparedNeedsGrant,
+    EnteredUncertain,
+    CompletedSettled,
+    BlockedOrConflicted,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecoveryEntry {
+    pub input_id: String,
+    pub effect_id: String,
+    pub attempt_id: Option<String>,
+    pub incarnation_id: Option<String>,
+    pub disposition: RecoveryDisposition,
+}
+
+type RecoveryRow = (
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
+
 impl SqliteLifecycleStore {
+    /// Classify exact persisted work without inferring that an entered attempt is safe to replay.
+    pub fn load_recovery_entries(&self) -> Result<Vec<RecoveryEntry>, StoreError> {
+        self.verify_identity()?;
+        check_coherence(&self.connection)?;
+        let mut statement=self.connection.prepare(
+            "SELECT i.input_id,e.effect_id,e.state,a.attempt_id,a.incarnation_id,a.outcome,a.settlement_kind FROM effects e JOIN inputs i ON i.input_id=e.input_id LEFT JOIN attempts a ON a.effect_id=e.effect_id WHERE e.state!='cancelled' ORDER BY i.subject_id,i.sequence",
+        ).map_err(|_|StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([], |row| -> rusqlite::Result<RecoveryRow> {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                ))
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        let mut entries = Vec::new();
+        for row in rows {
+            let (input_id, effect_id, state, attempt_id, incarnation_id, outcome, settlement) =
+                row.map_err(|_| StoreError::Unavailable)?;
+            let disposition = match (state.as_str(), outcome.as_deref(), settlement.as_deref()) {
+                ("prepared", None, None) => RecoveryDisposition::PreparedNeedsGrant,
+                (_, Some("completed"), Some("established")) => {
+                    RecoveryDisposition::CompletedSettled
+                }
+                ("entered", _, _) => RecoveryDisposition::EnteredUncertain,
+                _ => RecoveryDisposition::BlockedOrConflicted,
+            };
+            entries.push(RecoveryEntry {
+                input_id,
+                effect_id,
+                attempt_id,
+                incarnation_id,
+                disposition,
+            });
+        }
+        Ok(entries)
+    }
     /// Validate one coherent database view before exposing new admission.
     pub fn load_recovery(&self) -> Result<RecoverySnapshot, StoreError> {
         self.verify_identity()?;
@@ -59,7 +128,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if version != 1 {
+        if version != 2 {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -103,7 +172,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if version != 1 {
+    if version != 2 {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -138,12 +207,22 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         connection,
         "SELECT COUNT(*) FROM artifacts a WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=a.subject_id AND j.event_kind='artifact_published' AND j.event_ref=a.digest_hex)",
     )?;
+    let missing_task_result_journal = count(
+        connection,
+        "SELECT COUNT(*) FROM task_results r JOIN attempts a ON a.attempt_id=r.attempt_id JOIN effects e ON e.effect_id=a.effect_id WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=e.subject_id AND j.event_kind='task_result_owned' AND j.event_ref=r.attempt_id)",
+    )?;
+    let missing_verifier_journal = count(
+        connection,
+        "SELECT COUNT(*) FROM verifier_results v JOIN transitions t ON t.transition_id=v.transition_id WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
+    )?;
     if effect_mismatch != 0
         || input_mismatch != 0
         || command_mismatch != 0
         || missing_command_journal != 0
         || missing_transition_journal != 0
         || missing_artifact_journal != 0
+        || missing_task_result_journal != 0
+        || missing_verifier_journal != 0
     {
         return Err(StoreError::Unavailable);
     }

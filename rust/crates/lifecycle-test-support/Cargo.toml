@@ -1,0 +1,16 @@
+[package]
+name = "lifecycle-test-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+work-engine-types = { path = "../work-engine-types" }
+
+[[bin]]
+name = "controlled_peer"
+path = "src/bin/controlled_peer.rs"

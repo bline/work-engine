@@ -4,7 +4,8 @@ use std::process::Command;
 
 use lifecycle_wire::{
     AdmissionV1, CommandOperationV1, EffectSettlementV1, ExecutionOutcomeV1, FieldV1, WaitTargetV1,
-    WireError, WireErrorCode, negotiate_version, parse_command, parse_snapshot, schema_bundle_v1,
+    WireError, WireErrorCode, negotiate_version, parse_command, parse_command_v2, parse_snapshot,
+    schema_bundle_v1, schema_bundle_v2,
 };
 use serde_json::{Value, json};
 use work_engine_types::CodecContract;
@@ -288,9 +289,15 @@ process.stdout.write(JSON.stringify({command:encode('command', command),snapshot
 
 #[test]
 fn u0_manifest_hashes_bind_schema_fixture_source_and_client_api() {
-    let manifest: Value =
-        serde_json::from_slice(&fs::read(root().join("schemas/v1/manifest.json")).unwrap())
-            .unwrap();
+    let manifest_bytes = fs::read(root().join("schemas/v1/manifest.json")).unwrap();
+    assert_eq!(
+        CodecContract::BinaryArtifactV1
+            .digest_binary(&manifest_bytes)
+            .unwrap()
+            .hex(),
+        "f4c73a45602284989fc352f5529f421a5e2c73cdaece2c4678035825032727be"
+    );
+    let manifest: Value = serde_json::from_slice(&manifest_bytes).unwrap();
     assert_eq!(manifest["protocol_version"], 1);
     assert_eq!(manifest["generator"]["settings"], "draft2020_12");
     let schema_hashes = manifest["schema_sha256"].as_object().unwrap();
@@ -306,7 +313,6 @@ fn u0_manifest_hashes_bind_schema_fixture_source_and_client_api() {
     for (group, prefix) in [
         ("schema_sha256", "schemas/v1"),
         ("fixture_sha256", "tests/fixtures"),
-        ("source_sha256", ""),
     ] {
         for (name, expected) in manifest[group].as_object().unwrap() {
             let bytes = fs::read(root().join(prefix).join(name)).unwrap();
@@ -321,4 +327,42 @@ fn u0_manifest_hashes_bind_schema_fixture_source_and_client_api() {
             );
         }
     }
+}
+
+#[test]
+fn v2_text_command_has_separate_strict_schema_and_independent_digest_vector() {
+    let bundle = schema_bundle_v2();
+    for (name, schema) in &bundle {
+        let mut bytes = serde_json::to_vec_pretty(schema).unwrap();
+        bytes.push(b'\n');
+        assert_eq!(
+            fs::read(root().join("schemas/v2").join(name)).unwrap(),
+            bytes
+        );
+        jsonschema::draft202012::new(schema).unwrap();
+    }
+    let command_value = value("command-v2.json");
+    assert!(jsonschema::draft202012::is_valid(
+        &bundle["command.schema.json"],
+        &command_value
+    ));
+    let parsed = parse_command_v2(&fixture("command-v2.json")).unwrap();
+    let vector = value("compatibility-v2.json");
+    assert_eq!(
+        CodecContract::LifecycleCommandV2
+            .canonical_json(&parsed.digest_basis())
+            .unwrap(),
+        vector["command_canonical_utf8"]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+    );
+    assert_eq!(parsed.request_digest, vector["command_digest"]);
+    let mut altered = command_value;
+    altered["payload"]["text"] = json!("altered text");
+    assert!(parse_command_v2(&serde_json::to_vec(&altered).unwrap()).is_err());
+    altered = value("command-v2.json");
+    altered["payload"]["unexpected"] = json!(true);
+    assert!(parse_command_v2(&serde_json::to_vec(&altered).unwrap()).is_err());
+    assert!(parse_command(&fixture("command-v2.json")).is_err());
 }

@@ -176,6 +176,7 @@ async fn store_claimed_entry_survives_dropped_ticket_and_keeps_exact_result() {
         result.exit.attempt,
         result.observation.as_ref().unwrap().attempt
     );
+    assert_eq!(result.final_text.as_deref(), Some("reply"));
     assert_eq!(entries.load(Ordering::SeqCst), 1);
     assert_eq!(executor.try_reserve().err(), Some(RuntimeError::Capacity));
 }
@@ -199,6 +200,7 @@ async fn port_error_is_owned_data_without_invented_settlement() {
         TaskTermination::ProviderError(_)
     ));
     assert!(result.observation.is_none());
+    assert!(result.final_text.is_none());
 }
 
 #[tokio::test]
@@ -346,6 +348,7 @@ async fn panic_abort_and_wrong_identity_are_owned_without_settlement() {
         TaskTermination::InvalidObservation
     );
     assert!(mismatch.observation.is_none());
+    assert!(mismatch.final_text.is_none());
 
     let (_root, _store, entry) = support::claimed_entry();
     let entered = Arc::new(Semaphore::new(0));

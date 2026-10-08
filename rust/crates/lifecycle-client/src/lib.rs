@@ -5,6 +5,9 @@ use std::time::{Duration, Instant};
 use lifecycle_wire::{CursorV1, LifecycleSnapshotV1, WaitResultV1, WaitTargetV1, WireError};
 use thiserror::Error;
 
+mod socket;
+pub use socket::UnixSocketTransport;
+
 pub use lifecycle_wire::LifecycleSnapshotV1 as SnapshotV1;
 
 const MAX_HINTS_PER_WAIT: usize = 256;

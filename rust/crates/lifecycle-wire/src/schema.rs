@@ -6,7 +6,10 @@ use schemars::JsonSchema;
 use schemars::generate::SchemaSettings;
 use serde_json::Value;
 
-use crate::{CommandDto, ErrorDtoV1, LifecycleSnapshotV1, WaitRequestV1, WaitResultV1};
+use crate::{
+    CommandDto, CommandDtoV2, CommandResultV2, ErrorDtoV1, LifecycleSnapshotV1, WaitRequestV1,
+    WaitResultV1,
+};
 
 fn schema_for<T: JsonSchema>() -> Value {
     let mut generator = SchemaSettings::draft2020_12().into_generator();
@@ -27,6 +30,21 @@ pub fn schema_bundle_v1() -> BTreeMap<&'static str, Value> {
         (
             "wait-result.schema.json",
             schema_for::<WaitResultV1<LifecycleSnapshotV1>>(),
+        ),
+    ])
+}
+
+pub fn schema_bundle_v2() -> BTreeMap<&'static str, Value> {
+    let mut command = schema_for::<CommandDtoV2>();
+    command
+        .as_object_mut()
+        .expect("command schema object")
+        .insert("unevaluatedProperties".into(), Value::Bool(false));
+    BTreeMap::from([
+        ("command.schema.json", command),
+        (
+            "command-result.schema.json",
+            schema_for::<CommandResultV2>(),
         ),
     ])
 }

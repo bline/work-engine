@@ -135,7 +135,10 @@ impl CommandRequest {
         request_digest: Digest,
         command: Command,
     ) -> Result<Self, ContractError> {
-        if request_digest.contract() != CodecContract::LifecycleCommandV1 {
+        if !matches!(
+            request_digest.contract(),
+            CodecContract::LifecycleCommandV1 | CodecContract::LifecycleCommandV2
+        ) {
             return Err(ContractError::WrongDigestContract);
         }
         Ok(Self {

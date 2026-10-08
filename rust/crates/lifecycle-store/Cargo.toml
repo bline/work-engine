@@ -11,6 +11,7 @@ work-engine-types = { path = "../work-engine-types" }
 rusqlite = { version = "=0.37.0", features = ["bundled"] }
 serde_json.workspace = true
 thiserror.workspace = true
+getrandom = "=0.3.4"
 
 [dev-dependencies]
 trybuild.workspace = true
