@@ -508,6 +508,15 @@ pub fn native_proof_barrier(root: Option<&Path>, point: &str) -> Result<(), Stor
     Ok(())
 }
 
+/// Test-controlled startup cuts are armed explicitly so existing proof runs
+/// with a barrier directory do not acquire new waits.
+pub fn optional_native_barrier(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
+    if root.is_some_and(|path| path.join(format!("{point}.arm")).exists()) {
+        native_proof_barrier(root, point)?;
+    }
+    Ok(())
+}
+
 /// Materialize an auth-free, finite local simulator profile. The caller's
 /// network namespace is a separate proof condition; config alone is not one.
 pub fn prepare_native_launch(config: &NativeConfig, uid: u32) -> Result<NativeLaunch, StoreError> {

@@ -114,6 +114,7 @@ pub async fn drive_transition(
     store: &mut SqliteLifecycleStore,
     config: &ServiceConfig,
     verifier_gate: &VerifierGate,
+    semantic_runtime: Option<&crate::semantic::SemanticRuntime>,
 ) -> Result<(), StoreError> {
     let subject = SubjectId::parse(config.subject_id.clone()).map_err(|_| StoreError::Rejected)?;
     for _ in 0..8 {
@@ -126,6 +127,14 @@ pub async fn drive_transition(
         };
         let id =
             TransitionId::parse(transition.transition_id).map_err(|_| StoreError::Unavailable)?;
+        if semantic_runtime.is_some() {
+            store.require_semantic_transition(&id)?;
+        } else if store.semantic_transition_required(&id)? {
+            // A persisted semantic obligation outlives the launch profile. In
+            // particular, reopening with the older controlled profile must
+            // never drive its cached checkpoint through the S5 commit path.
+            return Ok(());
+        }
         let Some(result) = store.committed_text_for_transition(&id)? else {
             return Ok(());
         };
@@ -198,32 +207,54 @@ pub async fn drive_transition(
                 semantic_revision: Revision::new(snapshot.semantic_revision),
             },
             TransitionStage::Verifying if checkpoint_ready => {
-                let digest = CodecContract::BinaryArtifactV1
-                    .digest_binary(result.final_text.as_bytes())
-                    .map_err(|_| StoreError::Unavailable)?;
-                let verified = match store.verifier_result(&id)? {
-                    Some(value) => value,
-                    None => {
-                        verify_external_child(
-                            store,
-                            config,
-                            verifier_gate,
-                            &id,
-                            &result.source_id,
-                            &digest.hex(),
-                        )
-                        .await?
-                    }
-                };
-                if verified {
+                if let Some(runtime) = semantic_runtime {
+                    let context = ContextGeneration::parse(config.context_generation.clone())
+                        .map_err(|_| StoreError::Rejected)?;
+                    let Some(checkpoint) = crate::semantic::establish_checkpoint(
+                        store,
+                        runtime,
+                        &subject,
+                        &context,
+                        &id,
+                        snapshot.semantic_revision,
+                    )
+                    .await?
+                    else {
+                        return Ok(());
+                    };
                     TransitionFact::VerificationEstablished {
-                        evidence: evidence("checkpoint")?,
-                        checkpoint: CheckpointId::parse(format!("checkpoint:{}", digest.hex()))
+                        evidence: EvidenceId::parse(format!("semantic:{}:checkpoint", id.as_str()))
                             .map_err(|_| StoreError::Unavailable)?,
+                        checkpoint,
                     }
                 } else {
-                    TransitionFact::Unresolved {
-                        evidence: evidence("verifier-failure")?,
+                    let digest = CodecContract::BinaryArtifactV1
+                        .digest_binary(result.final_text.as_bytes())
+                        .map_err(|_| StoreError::Unavailable)?;
+                    let verified = match store.verifier_result(&id)? {
+                        Some(value) => value,
+                        None => {
+                            verify_external_child(
+                                store,
+                                config,
+                                verifier_gate,
+                                &id,
+                                &result.source_id,
+                                &digest.hex(),
+                            )
+                            .await?
+                        }
+                    };
+                    if verified {
+                        TransitionFact::VerificationEstablished {
+                            evidence: evidence("checkpoint")?,
+                            checkpoint: CheckpointId::parse(format!("checkpoint:{}", digest.hex()))
+                                .map_err(|_| StoreError::Unavailable)?,
+                        }
+                    } else {
+                        TransitionFact::Unresolved {
+                            evidence: evidence("verifier-failure")?,
+                        }
                     }
                 }
             }
@@ -251,6 +282,17 @@ pub async fn drive_transition(
                 }
             }
             TransitionStage::Rehydrating if native || supplied_rehydration => {
+                if let Some(runtime) = semantic_runtime {
+                    let context = ContextGeneration::parse(config.context_generation.clone())
+                        .map_err(|_| StoreError::Rejected)?;
+                    if !crate::semantic::assess_successor_use(
+                        store, runtime, &subject, &context, &id,
+                    )
+                    .await?
+                    {
+                        return Ok(());
+                    }
+                }
                 let receipt = if native {
                     let Some(receipt) = store.native_rehydration_receipt(&id)? else {
                         return Ok(());
@@ -278,6 +320,71 @@ pub async fn drive_transition(
                 GrantId::parse(grant.grant_ref.clone()).map_err(|_| StoreError::Unavailable)
             })
             .transpose()?;
+        if matches!(fact, TransitionFact::CommitSuccessor { .. })
+            && let Some(runtime) = semantic_runtime
+        {
+            let package = store
+                .semantic_checkpoint(&id)?
+                .ok_or(StoreError::Rejected)?;
+            if store
+                .semantic_successor_verdict(&id)?
+                .is_none_or(|(_, verdict)| verdict != "accepted")
+            {
+                return Ok(());
+            }
+            crate::operations::optional_native_barrier(
+                runtime.proof_dir.as_deref(),
+                "semantic_before_commit",
+            )?;
+            let observed = runtime
+                .material_port
+                .observe_dependencies(&package.basis.dependencies)
+                .map_err(|_| StoreError::Rejected)?;
+            if !lifecycle_semantic::revalidate_dependencies(&package.basis.dependencies, &observed)
+                .map_err(|_| StoreError::Rejected)?
+                .is_empty()
+            {
+                store.mark_semantic_capture_stale(
+                    &package.basis.capture_id,
+                    &package.basis.sha256,
+                    clock_sample(),
+                )?;
+                return Ok(());
+            }
+            let fenced =
+                runtime
+                    .material_port
+                    .with_current_fence(&package.basis.dependencies, &mut || {
+                        store
+                            .apply_transition_fact(
+                                &id,
+                                Revision::new(snapshot.revision),
+                                fact.clone(),
+                                successor_grant.as_ref(),
+                                clock_sample(),
+                            )
+                            .map_err(crate::ServiceError::Store)?;
+                        Ok(())
+                    });
+            match fenced {
+                Ok(()) => {}
+                Err(crate::ServiceError::Material(crate::MaterialPortError::Conflict)) => {
+                    store.mark_semantic_capture_stale(
+                        &package.basis.capture_id,
+                        &package.basis.sha256,
+                        clock_sample(),
+                    )?;
+                    return Ok(());
+                }
+                Err(error) => {
+                    return Err(match error {
+                        crate::ServiceError::Store(inner) => inner,
+                        _ => StoreError::ClaimConflict,
+                    });
+                }
+            }
+            continue;
+        }
         store.apply_transition_fact(
             &id,
             Revision::new(snapshot.revision),

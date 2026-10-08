@@ -145,7 +145,7 @@ fn run_store_example(source: &Path, target: &Path, name: &str, args: &[&Path]) {
 }
 
 #[test]
-fn immutable_base_v1_refuses_genuine_s4_v2_image_and_s4_refuses_current_v3() {
+fn immutable_base_v1_refuses_genuine_s4_v2_image_and_s4_refuses_current_v4() {
     let temp = tempdir().unwrap();
     let root = temp.path();
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
@@ -176,14 +176,14 @@ fn main() {
             store.snapshot_to(&root.join("lifecycle.sqlite")).unwrap();
             assert_eq!(version(&root), 2);
         }
-        "refuse-v3" => {
-            assert_eq!(version(&root), 3);
+        "refuse-future" => {
+            assert!(version(&root) > 2);
             let database = root.join("lifecycle.sqlite");
             let before = fs::read(&database).unwrap();
             if SqliteLifecycleStore::open(&root, "issuer-contract".into()).is_ok() {
-                eprintln!("published S4 opener accepted schema v3"); process::exit(2);
+                eprintln!("published S4 opener accepted future schema"); process::exit(2);
             }
-            assert_eq!(fs::read(&database).unwrap(), before, "published S4 opener mutated schema v3");
+            assert_eq!(fs::read(&database).unwrap(), before, "published S4 opener mutated future schema");
         }
         _ => panic!("unknown mode"),
     }
@@ -229,7 +229,7 @@ fn main() {
     let store = SqliteLifecycleStore::open(&upgraded, "issuer-contract".into()).unwrap();
     assert_eq!(store.load_recovery().unwrap().subjects, 0);
     drop(store);
-    assert_eq!(schema_version(&upgraded), 3);
+    assert_eq!(schema_version(&upgraded), 4);
 
     let db = root.join("live-store");
     let socket = root.join("read.sock");
@@ -252,18 +252,18 @@ fn main() {
     service.0.kill().unwrap();
     service.0.wait().unwrap();
     let store = SqliteLifecycleStore::open(&db, "issuer-contract".into()).unwrap();
-    let current_v3 = root.join("current-service-v3");
-    fs::create_dir(&current_v3).unwrap();
+    let current_v4 = root.join("current-service-v4");
+    fs::create_dir(&current_v4).unwrap();
     store
-        .snapshot_to(&current_v3.join("lifecycle.sqlite"))
+        .snapshot_to(&current_v4.join("lifecycle.sqlite"))
         .unwrap();
     drop(store);
-    assert_eq!(schema_version(&current_v3), 3);
-    let refuse_v3 = Path::new("refuse-v3");
+    assert_eq!(schema_version(&current_v4), 4);
+    let refuse_future = Path::new("refuse-future");
     run_store_example(
         &s4,
         &s4_target,
         "s4_store_contract",
-        &[refuse_v3, &current_v3],
+        &[refuse_future, &current_v4],
     );
 }

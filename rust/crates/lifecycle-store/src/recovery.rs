@@ -190,7 +190,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if !matches!(version, 2 | 3) {
+        if !matches!(version, 2..=4) {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -199,7 +199,7 @@ impl SqliteLifecycleStore {
             unresolved_attempts: count(
                 &inspection,
                 "SELECT COUNT(*) FROM attempts WHERE settlement_kind='unresolved' OR settlement_kind='conflict'",
-            )? + if version == 3 {
+            )? + if version >= 3 {
                 count(
                     &inspection,
                     "SELECT COUNT(*) FROM native_sessions WHERE allocation_state!='bound'",
@@ -247,7 +247,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if !matches!(version, 2 | 3) {
+    if !matches!(version, 2..=4) {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -257,6 +257,24 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         .map_err(|_| StoreError::Unavailable)?;
     if foreign_key_error {
         return Err(StoreError::Unavailable);
+    }
+    if version == 4 {
+        let revision: i64 = connection
+            .query_row(
+                "SELECT revision FROM admin_custody_revision WHERE singleton=1",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        // Every mutable owner table has an insert/update/delete trigger. An
+        // incomplete clock cannot qualify a capsule as the current source.
+        let trigger_count = count(
+            connection,
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
+        )?;
+        if revision < 0 || trigger_count != 102 {
+            return Err(StoreError::Unavailable);
+        }
     }
     let effect_mismatch = count(
         connection,
@@ -290,7 +308,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         connection,
         "SELECT COUNT(*) FROM verifier_results v JOIN transitions t ON t.transition_id=v.transition_id WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
     )?;
-    let native_mismatch = if version == 3 {
+    let native_mismatch = if version >= 3 {
         count(
             connection,
             "SELECT COUNT(*) FROM transitions t JOIN native_turns n ON n.invocation_id=t.native_basis_source \

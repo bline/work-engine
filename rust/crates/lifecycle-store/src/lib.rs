@@ -1,17 +1,30 @@
 //! Lifecycle transaction owner. Only this crate mints an entry after a durable claim.
 
+mod admin;
 mod artifact;
 mod native;
 mod recovery;
+mod semantic;
 mod sqlite;
 
+pub use admin::{
+    AdoptionReceipt, CapsuleArtifact, CapsuleReceipt, DispositionGrant, DispositionReceipt,
+    EffectCoverage, ExactAttemptRecovery, ExactAttemptSelector, FenceReceipt, HandoffProjection,
+    ObservationAvailability, OwnershipReceipt, QualifiedRecoveryFact, RecoveryApplyReceipt,
+    SelectionEvidence, SignedDispositionRequest, StoreOwnershipProjection,
+};
 pub use artifact::{PublishedArtifact, StagedArtifact};
 pub use native::{
-    NativeIngressApply, NativeOperationClaim, NativeOperationEntry, NativeOperationRecovery,
-    NativeOperationResult, NativeRecovery, NativeSessionEntry, NativeTurnEntry, NativeTurnRequest,
+    ControlSessionRequest, NativeFinalMaterial, NativeIngressApply, NativeOperationClaim,
+    NativeOperationEntry, NativeOperationRecovery, NativeOperationResult, NativeRecovery,
+    NativeSessionEntry, NativeTurnEntry, NativeTurnRequest, SemanticControlRole,
     SnapshotReadRequest,
 };
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
+pub use semantic::{
+    SemanticCaptureRecord, SemanticCheckpointPackage, SemanticMaterialRejectionRecord,
+    SemanticResultRecord,
+};
 pub use sqlite::SqliteLifecycleStore;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

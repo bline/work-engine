@@ -106,14 +106,41 @@ pub struct SqliteLifecycleStore {
     database_identity: (u64, u64),
 }
 
+pub(crate) fn adoption_intent_path(root: &Path) -> Result<PathBuf, StoreError> {
+    let mut name = root.file_name().ok_or(StoreError::Rejected)?.to_os_string();
+    name.push(".adoption-pending");
+    Ok(root.with_file_name(name))
+}
+
 impl SqliteLifecycleStore {
     /// Open one local lifecycle store. The lock remains held for this value's lifetime.
     pub fn open(root: &Path, trusted_issuer: String) -> Result<Self, StoreError> {
+        Self::open_inner(root, trusted_issuer, false)
+    }
+
+    pub(crate) fn open_adoption_pending(
+        root: &Path,
+        trusted_issuer: String,
+    ) -> Result<Self, StoreError> {
+        Self::open_inner(root, trusted_issuer, true)
+    }
+
+    fn open_inner(
+        root: &Path,
+        trusted_issuer: String,
+        adoption_pending: bool,
+    ) -> Result<Self, StoreError> {
         if trusted_issuer.is_empty() {
+            return Err(StoreError::Rejected);
+        }
+        if !adoption_pending && adoption_intent_path(root)?.exists() {
             return Err(StoreError::Rejected);
         }
         fs::create_dir_all(root).map_err(|_| StoreError::Unavailable)?;
         let root = fs::canonicalize(root).map_err(|_| StoreError::Unavailable)?;
+        if !adoption_pending && adoption_intent_path(&root)?.exists() {
+            return Err(StoreError::Rejected);
+        }
         let lock_path = root.join("writer.lock");
         let lock_file = OpenOptions::new()
             .read(true)
@@ -139,7 +166,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=3).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=4).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
         }
@@ -172,6 +199,7 @@ impl SqliteLifecycleStore {
             1 => {}
             2 => {}
             3 => {}
+            4 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -207,6 +235,35 @@ impl SqliteLifecycleStore {
             tx.pragma_update(None, "user_version", 3)
                 .map_err(|_| StoreError::Unavailable)?;
             tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 4 {
+            // Rebuild the native session uniqueness constraint so transition-owned
+            // control sessions can coexist with the real domain generation.
+            connection
+                .execute_batch("PRAGMA foreign_keys=OFF")
+                .map_err(|_| StoreError::Unavailable)?;
+            let migration = (|| {
+                let tx = connection
+                    .transaction_with_behavior(TransactionBehavior::Immediate)
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.execute_batch(include_str!("../migrations/0004_composite_s67.sql"))
+                    .map_err(|_| StoreError::Unavailable)?;
+                let foreign_key_error: bool = tx
+                    .prepare("PRAGMA foreign_key_check")
+                    .map_err(|_| StoreError::Unavailable)?
+                    .exists([])
+                    .map_err(|_| StoreError::Unavailable)?;
+                if foreign_key_error {
+                    return Err(StoreError::Unavailable);
+                }
+                tx.pragma_update(None, "user_version", 4)
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.commit().map_err(|_| StoreError::Unavailable)
+            })();
+            connection
+                .execute_batch("PRAGMA foreign_keys=ON")
+                .map_err(|_| StoreError::Unavailable)?;
+            migration?;
         }
         let integrity: String = connection
             .query_row("PRAGMA quick_check", [], |row| row.get(0))
@@ -394,6 +451,9 @@ impl SqliteLifecycleStore {
             }
             return decode_result(&tx, &kind, outcome_ref, rejection_code, revision);
         }
+        if !crate::admin::admission_open(&tx)? {
+            return Err(StoreError::Rejected);
+        }
         let subject = read_subject(&tx, &request.subject)?;
         let grant = read_grant(&tx, &request.grant_reference)?
             .filter(|grant| grant.issuer == self.trusted_issuer);
@@ -567,6 +627,9 @@ impl SqliteLifecycleStore {
     /// Selects the earliest unresolved input. Enqueue itself never starts delivery.
     pub fn prepare_next_input(&mut self, subject: &SubjectId) -> Result<EffectPlan, StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -651,6 +714,9 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<AuthorizedEntry, StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -674,6 +740,14 @@ impl SqliteLifecycleStore {
             _current,
             _owner,
         ) = row;
+        let disposed: bool = tx
+            .prepare("SELECT 1 FROM admin_dispositions WHERE claim_id=?1")
+            .map_err(|_| StoreError::Unavailable)?
+            .exists([format!("effect:{}", effect.as_str())])
+            .map_err(|_| StoreError::Unavailable)?;
+        if disposed {
+            return Err(StoreError::Rejected);
+        }
         let earlier: i64 = tx
             .query_row(
                 "SELECT COUNT(*) FROM inputs earlier JOIN inputs selected ON selected.input_id=?1 WHERE earlier.subject_id=selected.subject_id AND earlier.sequence<selected.sequence AND earlier.state NOT IN ('succeeded','retired')",
@@ -872,7 +946,7 @@ impl SqliteLifecycleStore {
              AND s.subject_id=t.subject_id AND s.context_id=t.predecessor_context \
              AND n.state='completed_settled' AND n.purpose='domain_work' AND n.final_text IS NOT NULL \
              AND n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 JOIN native_sessions s2 ON s2.session_id=n2.session_id \
-                 WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context \
+                 WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context AND s2.role='domain' AND n2.purpose='domain_work' \
                  ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1)",
             [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
         ).optional().map_err(|_| StoreError::Unavailable)?;
@@ -1445,6 +1519,7 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<TransitionState, StoreError> {
         self.verify_identity()?;
+        let semantic_package = self.semantic_checkpoint(transition)?;
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -1474,8 +1549,24 @@ impl SqliteLifecycleStore {
                 |row| row.get(0),
             )
             .map_err(|_| StoreError::Unavailable)?;
+        let semantic_required: bool = tx
+            .query_row(
+                "SELECT semantic_required FROM transitions WHERE transition_id=?1",
+                [transition.as_str()],
+                |row| row.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if semantic_required && !native_basis {
+            return Err(StoreError::Rejected);
+        }
         if native_basis {
             match &fact {
+                TransitionFact::VerificationEstablished { checkpoint, .. } if semantic_required => {
+                    let package = semantic_package.as_ref().ok_or(StoreError::Rejected)?;
+                    if checkpoint.as_str() != format!("checkpoint:{}", package.candidate.sha256) {
+                        return Err(StoreError::Rejected);
+                    }
+                }
                 TransitionFact::SuccessorObserved {
                     context, thread, ..
                 } => {
@@ -1488,7 +1579,18 @@ impl SqliteLifecycleStore {
                     }
                 }
                 TransitionFact::RehydrationVerified { evidence } => {
-                    let receipt: bool = tx.query_row(
+                    let receipt: bool = if semantic_required {
+                        let package = semantic_package.as_ref().ok_or(StoreError::Rejected)?;
+                        let accepted:bool=tx.query_row(
+                            "SELECT EXISTS(SELECT 1 FROM semantic_results WHERE transition_id=?1 AND phase='successor_adequacy' AND verdict='accepted' AND eligibility='current')",
+                            [transition.as_str()],|row|row.get(0),
+                        ).map_err(|_|StoreError::Unavailable)?;
+                        accepted && tx.query_row(
+                            "SELECT EXISTS(SELECT 1 FROM transitions tr JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context AND s.role='successor' JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread WHERE tr.transition_id=?1 AND r.purpose='successor_rehydrate' AND r.state='completed_settled' AND r.prompt=?2 AND r.history_status='observed_complete' AND ?3='native:'||r.invocation_id||':rehydration')",
+                            params![transition.as_str(),package.successor_prompt.as_bytes(),evidence.as_str()],|row|row.get(0),
+                        ).map_err(|_|StoreError::Unavailable)?
+                    } else {
+                        tx.query_row(
                         "SELECT EXISTS(SELECT 1 FROM transitions tr JOIN native_turns p ON tr.native_basis_source=p.invocation_id \
                          JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context \
                          JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread \
@@ -1496,8 +1598,23 @@ impl SqliteLifecycleStore {
                          AND r.prompt=p.final_text AND r.history_status='observed_complete' \
                          AND ?2='native:'||r.invocation_id||':rehydration')",
                         params![transition.as_str(),evidence.as_str()], |row| row.get(0),
-                    ).map_err(|_|StoreError::Unavailable)?;
+                    ).map_err(|_|StoreError::Unavailable)?
+                    };
                     if !receipt {
+                        return Err(StoreError::Rejected);
+                    }
+                }
+                TransitionFact::CommitSuccessor { .. } if semantic_required => {
+                    let package = semantic_package.as_ref().ok_or(StoreError::Rejected)?;
+                    let accepted:bool=tx.query_row(
+                        "SELECT EXISTS(SELECT 1 FROM semantic_results WHERE transition_id=?1 AND phase='successor_adequacy' AND verdict='accepted' AND eligibility='current' AND capture_id=?2)",
+                        params![transition.as_str(),&package.basis.capture_id],|row|row.get(0),
+                    ).map_err(|_|StoreError::Unavailable)?;
+                    let qualified:i64=tx.query_row(
+                        "SELECT COUNT(DISTINCT a.phase) FROM semantic_attempts a JOIN grants g ON g.grant_id=a.grant_id WHERE a.capture_id=?1 AND a.state='completed_settled' AND g.scope='semantic_control' AND g.revoked=0 AND g.expires_ms>?2 AND g.revision=a.grant_revision",
+                        params![&package.basis.capture_id,clock.wall.get()],|row|row.get(0),
+                    ).map_err(|_|StoreError::Unavailable)?;
+                    if !accepted || qualified != 3 {
                         return Err(StoreError::Rejected);
                     }
                 }
@@ -1735,6 +1852,7 @@ pub(super) fn fence_subject(
 fn outcome_text(value: &ExecutionOutcome) -> &'static str {
     match value {
         ExecutionOutcome::Pending => "pending",
+        ExecutionOutcome::Yielded => "yielded",
         ExecutionOutcome::Completed => "completed",
         ExecutionOutcome::Failed => "failed",
         ExecutionOutcome::Interrupted => "interrupted",
@@ -1770,6 +1888,7 @@ fn custody_text(value: CustodyState) -> &'static str {
 fn parse_outcome(value: &str) -> Result<ExecutionOutcome, StoreError> {
     match value {
         "pending" => Ok(ExecutionOutcome::Pending),
+        "yielded" => Ok(ExecutionOutcome::Yielded),
         "completed" => Ok(ExecutionOutcome::Completed),
         "failed" => Ok(ExecutionOutcome::Failed),
         "interrupted" => Ok(ExecutionOutcome::Interrupted),

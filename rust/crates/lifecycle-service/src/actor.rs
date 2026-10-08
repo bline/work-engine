@@ -13,8 +13,8 @@ use lifecycle_core::{
 };
 use lifecycle_core::{
     AuthorityExpiresAt, BuildId, ClockSample, Command, CommandOutcome, ContextGeneration, GrantId,
-    GrantScope, ProofRunId, Revision, RuntimeIncarnation, SubjectId, TrustedGrant, WaitBudgetMs,
-    WallTimeMs,
+    GrantScope, ProofRunId, Revision, RuntimeIncarnation, SubjectId, TransitionId, TrustedGrant,
+    WaitBudgetMs, WallTimeMs,
 };
 use lifecycle_runtime::{
     ExecutionReservation, LifecycleExecutor, OwnedExecutor, ProviderFailure, ResultReceiver,
@@ -31,7 +31,7 @@ use tokio::sync::{mpsc, oneshot};
 use work_engine_types::CodecContract;
 
 use crate::{
-    ServiceConfig, ServiceError,
+    CanonicalMaterialPort, ServiceConfig, ServiceError,
     admission::{AdmitError, parse_authenticated},
     controlled::ControlledPort,
     engine,
@@ -84,13 +84,109 @@ pub struct Actor {
     native_gate: Arc<AtomicBool>,
     native_exit_recorded: bool,
     native_close_unsafe: bool,
+    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
 }
 
 impl Actor {
-    pub fn new(config: ServiceConfig) -> Result<Self, ServiceError> {
+    fn ensure_semantic_owner_current(
+        &mut self,
+        transition: &TransitionId,
+    ) -> Result<(), StoreError> {
+        let package = self
+            .store
+            .semantic_checkpoint(transition)?
+            .ok_or(StoreError::Rejected)?;
+        let port = self.material_port.as_ref().ok_or(StoreError::Rejected)?;
+        let observed = port
+            .observe_dependencies(&package.basis.dependencies)
+            .map_err(|_| StoreError::Rejected)?;
+        if !lifecycle_semantic::revalidate_dependencies(&package.basis.dependencies, &observed)
+            .map_err(|_| StoreError::Rejected)?
+            .is_empty()
+        {
+            self.store.mark_semantic_capture_stale(
+                &package.basis.capture_id,
+                &package.basis.sha256,
+                clock_sample(),
+            )?;
+            return Err(StoreError::Rejected);
+        }
+        Ok(())
+    }
+
+    async fn drive_transition(&mut self) -> Result<(), StoreError> {
+        let semantic_runtime = match (
+            self.material_port.as_ref(),
+            self.config.native.as_ref(),
+            self.native_snapshot.as_ref(),
+        ) {
+            (Some(port), Some(native), Some(snapshot)) if native.semantic.is_some() => {
+                Some(crate::semantic::SemanticRuntime {
+                    material_port: port.clone(),
+                    native: native.clone(),
+                    semantic: native.semantic.clone().ok_or(StoreError::Rejected)?,
+                    incarnation: self.incarnation.clone(),
+                    snapshot: snapshot.id.clone(),
+                    snapshot_manifest_sha256: snapshot.manifest_sha256.clone(),
+                    gate: self.native_gate.clone(),
+                    uid: self.config.principal.uid,
+                    principal: self.config.principal.principal_ref.clone(),
+                    proof_dir: self.config.proof_barrier_dir.clone(),
+                })
+            }
+            _ => None,
+        };
+        if self
+            .config
+            .native
+            .as_ref()
+            .is_some_and(|native| native.semantic.is_some())
+            && semantic_runtime.is_none()
+        {
+            return Err(StoreError::Rejected);
+        }
+        engine::drive_transition(
+            &mut self.store,
+            &self.config,
+            &self.verifier_gate,
+            semantic_runtime.as_ref(),
+        )
+        .await
+    }
+
+    pub fn new(
+        config: ServiceConfig,
+        material_port: Option<Arc<dyn CanonicalMaterialPort>>,
+    ) -> Result<Self, ServiceError> {
+        if config
+            .native
+            .as_ref()
+            .is_some_and(|native| native.semantic.is_some())
+            && material_port.is_none()
+        {
+            return Err(ServiceError::Configuration);
+        }
+        if cfg!(feature = "native-sim-proof") {
+            operations::optional_native_barrier(
+                config.proof_barrier_dir.as_deref(),
+                "startup_before_store_open",
+            )?;
+        }
         let mut store =
             SqliteLifecycleStore::open(&config.store_root, config.trusted_issuer.clone())?;
+        if cfg!(feature = "native-sim-proof") {
+            operations::optional_native_barrier(
+                config.proof_barrier_dir.as_deref(),
+                "startup_before_recovery",
+            )?;
+        }
         let recovery = store.load_recovery()?;
+        if cfg!(feature = "native-sim-proof") {
+            operations::optional_native_barrier(
+                config.proof_barrier_dir.as_deref(),
+                "startup_after_recovery",
+            )?;
+        }
         let entered_uncertain_on_open = store
             .load_recovery_entries()?
             .iter()
@@ -131,7 +227,44 @@ impl Actor {
         }
         let subject =
             SubjectId::parse(config.subject_id.clone()).map_err(|_| ServiceError::Configuration)?;
-        store.subject_projection(&subject, None, None)?;
+        let projection = store.subject_projection(&subject, None, None)?;
+        if config
+            .native
+            .as_ref()
+            .is_some_and(|native| native.semantic.is_some())
+            && let Some(transition) = projection.transition.as_ref()
+        {
+            let id = TransitionId::parse(transition.transition_id.clone())
+                .map_err(|_| ServiceError::Configuration)?;
+            if store.semantic_transition_required(&id)?
+                && matches!(
+                    transition.stage.as_str(),
+                    "switching" | "rehydrating" | "ready_to_commit"
+                )
+            {
+                let package = store
+                    .semantic_checkpoint(&id)?
+                    .ok_or(ServiceError::Configuration)?;
+                let observed = material_port
+                    .as_ref()
+                    .ok_or(ServiceError::Configuration)?
+                    .observe_dependencies(&package.basis.dependencies)?;
+                if !lifecycle_semantic::revalidate_dependencies(
+                    &package.basis.dependencies,
+                    &observed,
+                )
+                .map_err(|_| ServiceError::Configuration)?
+                .is_empty()
+                {
+                    store.mark_semantic_capture_stale(
+                        &package.basis.capture_id,
+                        &package.basis.sha256,
+                        clock_sample(),
+                    )?;
+                    return Err(ServiceError::Configuration);
+                }
+            }
+        }
         let mut bytes = [0u8; 16];
         getrandom::fill(&mut bytes).map_err(|_| ServiceError::Configuration)?;
         let incarnation = RuntimeIncarnation::parse(format!(
@@ -201,6 +334,7 @@ impl Actor {
             native_gate,
             native_exit_recorded: false,
             native_close_unsafe: false,
+            material_port,
         })
     }
 
@@ -221,8 +355,7 @@ impl Actor {
             }));
         }
         if self.config.profile == "controlled" {
-            let _ =
-                engine::drive_transition(&mut self.store, &self.config, &self.verifier_gate).await;
+            let _ = self.drive_transition().await;
         }
         if self.config.profile == "controlled" && !self.entered_uncertain_on_open {
             let _ = self.schedule_once(None).await;
@@ -271,32 +404,40 @@ impl Actor {
                         )
                     });
                 let result = match result {
-                    Ok(()) => {
-                        engine::drive_transition(&mut self.store, &self.config, &self.verifier_gate)
-                            .await
-                            .and_then(|()| {
-                                let subject = SubjectId::parse(self.config.subject_id.clone())
-                                    .map_err(|_| StoreError::Rejected)?;
-                                let projection =
-                                    self.store.subject_projection(&subject, None, None)?;
-                                if projection.owner_kind != "transition" {
-                                    return Ok(None);
-                                }
-                                let transition =
-                                    projection.transition.ok_or(StoreError::Unavailable)?;
-                                if transition.stage != "rehydrating" {
-                                    return Err(StoreError::Rejected);
-                                }
-                                let id =
-                                    lifecycle_core::TransitionId::parse(transition.transition_id)
-                                        .map_err(|_| StoreError::Unavailable)?;
-                                self.store
-                                    .committed_text_for_transition(&id)?
-                                    .map(|value| value.final_text)
-                                    .ok_or(StoreError::Rejected)
-                                    .map(Some)
-                            })
-                    }
+                    Ok(()) => self.drive_transition().await.and_then(|()| {
+                        let subject = SubjectId::parse(self.config.subject_id.clone())
+                            .map_err(|_| StoreError::Rejected)?;
+                        let projection = self.store.subject_projection(&subject, None, None)?;
+                        if projection.owner_kind != "transition" {
+                            return Ok(None);
+                        }
+                        let transition = projection.transition.ok_or(StoreError::Unavailable)?;
+                        if transition.stage != "rehydrating" {
+                            return Err(StoreError::Rejected);
+                        }
+                        let id = lifecycle_core::TransitionId::parse(transition.transition_id)
+                            .map_err(|_| StoreError::Unavailable)?;
+                        if self
+                            .config
+                            .native
+                            .as_ref()
+                            .and_then(|n| n.semantic.as_ref())
+                            .is_some()
+                        {
+                            self.ensure_semantic_owner_current(&id)?;
+                            self.store
+                                .semantic_checkpoint(&id)?
+                                .map(|package| package.successor_prompt)
+                                .ok_or(StoreError::Rejected)
+                                .map(Some)
+                        } else {
+                            self.store
+                                .committed_text_for_transition(&id)?
+                                .map(|value| value.final_text)
+                                .ok_or(StoreError::Rejected)
+                                .map(Some)
+                        }
+                    }),
                     Err(error) => Err(error),
                 };
                 let _ = reply.send(result);
@@ -311,6 +452,21 @@ impl Actor {
                 let result = (|| {
                     if self.native_gate.load(Ordering::SeqCst) {
                         return Err(StoreError::Rejected);
+                    }
+                    if purpose == lifecycle_core::NativeInvocationPurpose::SuccessorRehydrate
+                        && self
+                            .config
+                            .native
+                            .as_ref()
+                            .is_some_and(|native| native.semantic.is_some())
+                    {
+                        let subject = SubjectId::parse(self.config.subject_id.clone())
+                            .map_err(|_| StoreError::Rejected)?;
+                        let projection = self.store.subject_projection(&subject, None, None)?;
+                        let transition = projection.transition.ok_or(StoreError::Rejected)?;
+                        let id = TransitionId::parse(transition.transition_id)
+                            .map_err(|_| StoreError::Rejected)?;
+                        self.ensure_semantic_owner_current(&id)?;
                     }
                     let native = self.config.native.as_ref().ok_or(StoreError::Rejected)?;
                     let session = self.native_session.as_ref().ok_or(StoreError::Rejected)?;
@@ -376,8 +532,7 @@ impl Actor {
                         )
                     });
                 let result = if result.is_ok() {
-                    engine::drive_transition(&mut self.store, &self.config, &self.verifier_gate)
-                        .await
+                    self.drive_transition().await
                 } else {
                     result
                 };
@@ -751,9 +906,7 @@ impl Actor {
                 let _ = self.schedule_once(reservation).await;
             }
             if outcome_kind == "replacement_requested" {
-                let _ =
-                    engine::drive_transition(&mut self.store, &self.config, &self.verifier_gate)
-                        .await;
+                let _ = self.drive_transition().await;
             }
         }
         serde_json::to_value(CommandResultV2 {
@@ -835,8 +988,7 @@ impl Actor {
             )?;
             if !closing {
                 proof_barrier(&self.config, "after_result_commit").await?;
-                engine::drive_transition(&mut self.store, &self.config, &self.verifier_gate)
-                    .await?;
+                self.drive_transition().await?;
             }
         }
         if !self.executor.acknowledge_result(&result.exit.attempt).await {
@@ -929,8 +1081,11 @@ impl ShutdownGate {
     }
 }
 
-pub fn start(config: ServiceConfig) -> Result<(ActorSender, ShutdownGate), ServiceError> {
-    let actor = Actor::new(config)?;
+pub fn start(
+    config: ServiceConfig,
+    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
+) -> Result<(ActorSender, ShutdownGate), ServiceError> {
+    let actor = Actor::new(config, material_port)?;
     let gate = ShutdownGate {
         executor: actor.executor.clone(),
         verifier: actor.verifier_gate.clone(),

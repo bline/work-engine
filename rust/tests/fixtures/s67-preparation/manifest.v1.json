@@ -1,0 +1,48 @@
+{
+  "artifact": "s67-static-preparation-manifest",
+  "version": 1,
+  "status": "candidate_test_data_only",
+  "based_on": "/home/bline/.local/state/work-engine/rust-lifecycle-s5-s67-planning-20261008/s67/corpus-and-recovery-seed.json",
+  "semantic_case_ids": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8"
+  ],
+  "recovery_case_ids": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11"
+  ],
+  "semantic_source_revision_count": 17,
+  "contents": [
+    {
+      "path": "semantic-corpus.v1.json",
+      "sha256": "88a26383f49ca5095a56fceb82a62efb5ca6e8214437fc597a203c27a1f96bea",
+      "bytes": 28164
+    },
+    {
+      "path": "recovery-matrix.v1.json",
+      "sha256": "cf1840f7c8550a1a0a08b08bd3aff8ab235a755567b06000c4f4dd2c98063bd6",
+      "bytes": 10740
+    }
+  ],
+  "limitations": [
+    "No runtime harness, native call, provider entry, database import, migration or disposition performed.",
+    "Oracle consequences are proposed synthetic test data; semantic quality acceptance and independent review require owner decisions.",
+    "Recovery outcomes and compatibility examples do not authorize actual retirement or rollback.",
+    "Source hashes cover exact UTF-8 bytes in semantic-corpus.v1.json source_revisions; fixture hashes cover complete file bytes."
+  ]
+}

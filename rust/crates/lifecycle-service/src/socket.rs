@@ -15,7 +15,7 @@ use tokio::{
 };
 
 use crate::{
-    ServiceConfig, ServiceError,
+    CanonicalMaterialPort, ServiceConfig, ServiceError,
     actor::{self, Request},
     projection,
 };
@@ -23,7 +23,10 @@ use crate::{
 const FRAME_MAX: usize = 131_072;
 const IO_BUDGET: Duration = Duration::from_secs(5);
 
-pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
+pub async fn run(
+    config: ServiceConfig,
+    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
+) -> Result<(), ServiceError> {
     if config.max_executions == 0
         || config.max_executions > 16
         || config.max_wait_ms == 0
@@ -48,6 +51,14 @@ pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
     if config.profile != "native_simulated" && config.native.is_some() {
         return Err(ServiceError::Configuration);
     }
+    if config
+        .native
+        .as_ref()
+        .is_some_and(|native| native.semantic.is_some())
+        && material_port.is_none()
+    {
+        return Err(ServiceError::Configuration);
+    }
     if config.profile == "controlled"
         && (config.verifier_executable.is_none() || config.verifier_ledger_path.is_none())
     {
@@ -69,7 +80,7 @@ pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
     {
         return Err(ServiceError::Configuration);
     }
-    let (sender, shutdown_gate) = actor::start(config.clone())?;
+    let (sender, shutdown_gate) = actor::start(config.clone(), material_port)?;
     if let Ok(metadata) = fs::symlink_metadata(&config.socket_path) {
         if !metadata.file_type().is_socket() || metadata.uid() != config.principal.uid {
             return Err(ServiceError::Configuration);

@@ -120,6 +120,7 @@ async fn execute(
     }
     let outcome = match result.outcome.as_str() {
         "pending" => ExecutionOutcome::Pending,
+        "yielded" => ExecutionOutcome::Yielded,
         "completed" => ExecutionOutcome::Completed,
         "failed" => ExecutionOutcome::Failed,
         "interrupted" => ExecutionOutcome::Interrupted,

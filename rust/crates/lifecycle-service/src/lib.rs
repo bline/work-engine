@@ -4,15 +4,21 @@ mod actor;
 mod admission;
 mod controlled;
 mod engine;
+mod material_port;
 mod operations;
 mod projection;
+mod semantic;
+mod semantic_control;
 mod socket;
 
 use std::path::PathBuf;
 
 use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use thiserror::Error;
+
+pub use material_port::{CanonicalMaterialPort, MaterialPortError};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -62,6 +68,27 @@ pub struct NativeConfig {
     #[serde(default)]
     pub followup_turns: Vec<NativeFollowupTurn>,
     pub snapshot: TrustedSnapshot,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub semantic: Option<SemanticNativeConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SemanticNativeConfig {
+    pub capture_id: String,
+    pub compile_session_id: String,
+    pub verify_session_id: String,
+    pub successor_verify_session_id: String,
+    pub compile_invocation_id: String,
+    pub compile_attempt_id: String,
+    pub candidate_verify_invocation_id: String,
+    pub candidate_verify_attempt_id: String,
+    pub successor_verify_invocation_id: String,
+    pub successor_verify_attempt_id: String,
+    pub challenge_id: String,
+    pub challenge_text: String,
+    pub control_grant_ref: String,
+    pub control_grant_revision: u64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -100,8 +127,17 @@ pub enum ServiceError {
     Store(#[from] lifecycle_store::StoreError),
     #[error("runtime failed: {0}")]
     Runtime(#[from] lifecycle_runtime::RuntimeError),
+    #[error("canonical material failed: {0}")]
+    Material(#[from] MaterialPortError),
 }
 
 pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
-    socket::run(config).await
+    socket::run(config, None).await
+}
+
+pub async fn run_with_material_port(
+    config: ServiceConfig,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+) -> Result<(), ServiceError> {
+    socket::run(config, Some(material_port)).await
 }

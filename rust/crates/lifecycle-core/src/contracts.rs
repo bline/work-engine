@@ -47,6 +47,7 @@ lifecycle_id!(OperationContractId);
 lifecycle_id!(OperationImplementationId);
 lifecycle_id!(OperationExecutorId);
 lifecycle_id!(SnapshotId);
+lifecycle_id!(HandoffId);
 
 /// Native turns share custody while retaining their distinct trusted purposes.
 /// The S5 service executes DomainWork; later owners may use the other purpose
@@ -258,6 +259,7 @@ impl EffectPlan {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExecutionOutcome {
     Pending,
+    Yielded,
     Completed,
     Failed,
     Interrupted,

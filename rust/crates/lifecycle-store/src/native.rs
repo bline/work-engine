@@ -5,8 +5,9 @@ use lifecycle_core::{
     AttemptId, ClockSample, ContextGeneration, GrantId, NativeInvocationPurpose, NativeSessionId,
     NativeToolCallId, OperationAttemptId, OperationContractId, OperationExecutorId,
     OperationImplementationId, ProviderThreadId, ProviderTurnId, RuntimeIncarnation, SnapshotId,
-    SubjectId,
+    SubjectId, TransitionId,
 };
+use lifecycle_semantic::{SemanticInvocationBinding, SemanticPhase};
 use rusqlite::{OptionalExtension, TransactionBehavior, params};
 use work_engine_types::CodecContract;
 
@@ -114,6 +115,39 @@ pub struct NativeTurnRequest {
     pub grant_revision: u64,
     pub purpose: NativeInvocationPurpose,
     pub prompt: Vec<u8>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SemanticControlRole {
+    Compile,
+    Verify,
+    SuccessorVerify,
+}
+
+impl SemanticControlRole {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Compile => "semantic_compile",
+            Self::Verify => "semantic_verify",
+            Self::SuccessorVerify => "semantic_successor_verify",
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ControlSessionRequest {
+    pub id: NativeSessionId,
+    pub subject: SubjectId,
+    pub context: ContextGeneration,
+    pub transition: TransitionId,
+    pub role: SemanticControlRole,
+    pub incarnation: RuntimeIncarnation,
+    pub profile_digest: String,
+    pub binary_sha256: String,
+    pub protocol_digest: String,
+    pub snapshot: SnapshotId,
+    pub manifest_sha256: String,
+    pub clock: ClockSample,
 }
 
 #[must_use = "entered native turn must be settled or retained as uncertain"]
@@ -410,7 +444,7 @@ impl SqliteLifecycleStore {
     ) -> Result<Option<ProviderThreadId>, StoreError> {
         self.verify_identity()?;
         let row: Option<String> = self.connection.query_row(
-            "SELECT thread_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND allocation_state='bound' AND thread_id IS NOT NULL",
+            "SELECT thread_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role='successor' AND allocation_state='bound' AND thread_id IS NOT NULL",
             params![subject.as_str(),context.as_str()], |r| r.get(0),
         ).optional().map_err(|_|StoreError::Unavailable)?;
         row.map(|value| ProviderThreadId::parse(value).map_err(|_| StoreError::Unavailable))
@@ -424,10 +458,20 @@ impl SqliteLifecycleStore {
         transition: &lifecycle_core::TransitionId,
     ) -> Result<Option<String>, StoreError> {
         self.verify_identity()?;
+        let semantic_required = self.semantic_transition_required(transition)?;
+        if let Some(package) = self.semantic_checkpoint(transition)? {
+            return self.connection.query_row(
+                "SELECT 'native:'||r.invocation_id FROM transitions tr JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context AND s.role='successor' JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread WHERE tr.transition_id=?1 AND tr.stage='rehydrating' AND r.purpose='successor_rehydrate' AND r.state='completed_settled' AND r.prompt=?2 AND r.history_status='observed_complete' ORDER BY r.settled_wall_ms DESC,r.rowid DESC LIMIT 1",
+                params![transition.as_str(),package.successor_prompt.as_bytes()],|r|r.get(0),
+            ).optional().map_err(|_|StoreError::Unavailable);
+        }
+        if semantic_required {
+            return Ok(None);
+        }
         self.connection.query_row(
             "SELECT 'native:'||r.invocation_id FROM transitions tr \
              JOIN native_turns p ON tr.native_basis_source=p.invocation_id \
-             JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context \
+             JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context AND s.role='successor' \
              JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread \
              WHERE tr.transition_id=?1 AND tr.stage='rehydrating' AND r.purpose='successor_rehydrate' \
              AND r.state='completed_settled' AND r.prompt=p.final_text AND r.history_status='observed_complete' \
@@ -453,6 +497,9 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<NativeSessionEntry, StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         if same_session_required
             || [
                 profile_digest,
@@ -481,12 +528,20 @@ impl SqliteLifecycleStore {
             if owner != "transition" {
                 false
             } else {
-                let basis: Option<(String,Option<String>)> = self.connection.query_row(
-                    "SELECT stage,native_basis_source FROM transitions WHERE transition_id=?1 AND subject_id=?2",
-                    params![transition,subject.as_str()], |r| Ok((r.get(0)?,r.get(1)?)),
+                let basis: Option<(String,Option<String>,bool)> = self.connection.query_row(
+                    "SELECT stage,native_basis_source,semantic_required FROM transitions WHERE transition_id=?1 AND subject_id=?2",
+                    params![transition,subject.as_str()], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
                 ).optional().map_err(|_|StoreError::Unavailable)?;
-                if let Some((stage, Some(source))) = basis {
-                    if stage != "switching" {
+                if let Some((stage, Some(source), semantic_required)) = basis {
+                    if stage != "switching"
+                        || (semantic_required
+                            && self
+                                .semantic_checkpoint(
+                                    &TransitionId::parse(transition.clone())
+                                        .map_err(|_| StoreError::Rejected)?,
+                                )?
+                                .is_none())
+                    {
                         false
                     } else {
                         let final_text: Option<Vec<u8>> = self.connection.query_row(
@@ -514,7 +569,7 @@ impl SqliteLifecycleStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
         let prior: Option<PriorNativeSessionRow> = tx.query_row(
-            "SELECT session_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,thread_id,allocation_state FROM native_sessions WHERE subject_id=?1 AND context_id=?2",
+            "SELECT session_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,thread_id,allocation_state FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')",
             params![subject.as_str(),context.as_str()], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?)))
             .optional().map_err(|_| StoreError::Unavailable)?;
         if let Some((old_id, old_inc, p, b, proto, snap, manifest, thread, state)) = prior {
@@ -553,8 +608,8 @@ impl SqliteLifecycleStore {
             tx.commit().map_err(|_| StoreError::Unavailable)?;
             return Err(StoreError::Rejected);
         }
-        tx.execute("INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,created_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'intent',?10)",
-            params![id.as_str(),subject.as_str(),context.as_str(),incarnation.as_str(),profile_digest,binary_sha256,protocol_digest,snapshot.as_str(),manifest_sha256,clock.wall.get()])
+        tx.execute("INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,created_wall_ms,role) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'intent',?10,?11)",
+            params![id.as_str(),subject.as_str(),context.as_str(),incarnation.as_str(),profile_digest,binary_sha256,protocol_digest,snapshot.as_str(),manifest_sha256,clock.wall.get(),if admitted_domain {"domain"} else {"successor"}])
             .map_err(|_| StoreError::Unavailable)?;
         observe_native_subject_clock(&tx, subject.as_str(), clock.wall.get())?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
@@ -565,6 +620,235 @@ impl SqliteLifecycleStore {
             profile_digest: profile_digest.into(),
             snapshot,
             thread: None,
+        })
+    }
+
+    /// Transition-owned control contexts are isolated from the one domain or
+    /// successor session of a real context. An unbound intent is never retried.
+    pub fn claim_control_session(
+        &mut self,
+        request: ControlSessionRequest,
+    ) -> Result<NativeSessionEntry, StoreError> {
+        self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)?
+            || [
+                &request.profile_digest,
+                &request.binary_sha256,
+                &request.protocol_digest,
+                &request.manifest_sha256,
+            ]
+            .iter()
+            .any(|value| value.len() != 64 || !value.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err(StoreError::Rejected);
+        }
+        let stage:Option<String>=self.connection.query_row(
+            "SELECT tr.stage FROM transitions tr JOIN subjects sub ON sub.subject_id=tr.subject_id AND sub.owner_kind='transition' AND sub.owner_ref=tr.transition_id WHERE tr.transition_id=?1 AND tr.subject_id=?2 AND ((?4='semantic_successor_verify' AND tr.successor_context=?3 AND tr.stage='rehydrating') OR (?4!='semantic_successor_verify' AND sub.context_id=?3))",
+            params![request.transition.as_str(),request.subject.as_str(),request.context.as_str(),request.role.as_str()],|r|r.get(0),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        if !matches!(
+            stage.as_deref(),
+            Some("verifying" | "checkpointed" | "rehydrating" | "ready_to_commit")
+        ) {
+            return Err(StoreError::Rejected);
+        }
+        let prior:Option<PriorNativeSessionRow>=self.connection.query_row(
+            "SELECT session_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,thread_id,allocation_state FROM native_sessions WHERE control_transition_id=?1 AND role=?2",
+            params![request.transition.as_str(),request.role.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        if let Some((id, inc, p, b, proto, snapshot, manifest, thread, state)) = prior {
+            if id != request.id.as_str()
+                || inc != request.incarnation.as_str()
+                || p != request.profile_digest
+                || b != request.binary_sha256
+                || proto != request.protocol_digest
+                || snapshot != request.snapshot.as_str()
+                || manifest != request.manifest_sha256
+                || state != "bound"
+            {
+                return Err(StoreError::ClaimConflict);
+            }
+            return Ok(NativeSessionEntry {
+                id: request.id,
+                subject: request.subject,
+                context: request.context,
+                profile_digest: p,
+                snapshot: request.snapshot,
+                thread: Some(
+                    ProviderThreadId::parse(thread.ok_or(StoreError::ClaimConflict)?)
+                        .map_err(|_| StoreError::Unavailable)?,
+                ),
+            });
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let last_wall: i64 = tx
+            .query_row(
+                "SELECT last_wall_ms FROM subjects WHERE subject_id=?1",
+                [request.subject.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Rejected)?;
+        if request.clock.wall.get() < last_wall {
+            return Err(StoreError::Rejected);
+        }
+        tx.execute("INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,created_wall_ms,role,control_transition_id) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'intent',?10,?11,?12)",
+            params![request.id.as_str(),request.subject.as_str(),request.context.as_str(),request.incarnation.as_str(),
+                &request.profile_digest,&request.binary_sha256,&request.protocol_digest,request.snapshot.as_str(),
+                &request.manifest_sha256,request.clock.wall.get(),request.role.as_str(),request.transition.as_str()])
+            .map_err(|_|StoreError::ClaimConflict)?;
+        observe_native_subject_clock(&tx, request.subject.as_str(), request.clock.wall.get())?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeSessionEntry {
+            id: request.id,
+            subject: request.subject,
+            context: request.context,
+            profile_digest: request.profile_digest,
+            snapshot: request.snapshot,
+            thread: None,
+        })
+    }
+
+    /// Enter one bounded compiler/verifier effect only under the scoped
+    /// transition grant. The host binding, not model output, owns identity.
+    pub fn claim_control_turn(
+        &mut self,
+        session: &NativeSessionEntry,
+        request: NativeTurnRequest,
+        binding: &SemanticInvocationBinding,
+        principal: &str,
+        clock: ClockSample,
+    ) -> Result<NativeTurnEntry, StoreError> {
+        self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
+        let thread = session.thread.as_ref().ok_or(StoreError::ClaimConflict)?;
+        let role = match binding.phase {
+            SemanticPhase::Compile => "semantic_compile",
+            SemanticPhase::CandidateVerification => "semantic_verify",
+            SemanticPhase::SuccessorAdequacy => "semantic_successor_verify",
+        };
+        let expected_purpose = if binding.phase == SemanticPhase::Compile {
+            "semantic_compile"
+        } else {
+            "semantic_verify"
+        };
+        if request.purpose.as_str() != expected_purpose
+            || request.prompt.is_empty()
+            || request.prompt.len() > 65_536
+            || std::str::from_utf8(&request.prompt).is_err()
+            || binding.subject != session.subject
+            || binding.session_id != session.id.as_str()
+            || binding.thread_id != thread.as_str()
+            || binding.invocation_id != request.invocation_id
+            || binding.attempt_id != request.attempt.as_str()
+            || binding.purpose != request.purpose
+            || binding.grant_ref != request.grant.as_str()
+            || binding.grant_revision != request.grant_revision
+        {
+            return Err(StoreError::Rejected);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let current:Option<(String,String,String,String,String,i64)>=tx.query_row(
+            "SELECT sub.context_id,sub.build_id,sub.proof_run_id,sub.owner_kind,sub.owner_ref,sub.last_wall_ms FROM subjects sub WHERE sub.subject_id=?1",
+            [session.subject.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        let Some((context, build, proof, owner, transition, last_wall)) = current else {
+            return Err(StoreError::Rejected);
+        };
+        if (binding.phase != SemanticPhase::SuccessorAdequacy
+            && context != session.context.as_str())
+            || owner != "transition"
+            || transition != binding.transition.as_str()
+            || clock.wall.get() < last_wall
+        {
+            return Err(StoreError::Rejected);
+        }
+        let state:Option<(String,String,String)>=tx.query_row(
+            "SELECT ns.role,ns.control_transition_id,tr.stage FROM native_sessions ns JOIN transitions tr ON tr.transition_id=ns.control_transition_id WHERE ns.session_id=?1 AND ns.thread_id=?2 AND ns.allocation_state='bound'",
+            params![session.id.as_str(),thread.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        let Some((actual_role, actual_transition, stage)) = state else {
+            return Err(StoreError::Rejected);
+        };
+        if actual_role != role
+            || actual_transition != binding.transition.as_str()
+            || match binding.phase {
+                SemanticPhase::Compile | SemanticPhase::CandidateVerification => {
+                    stage != "verifying"
+                }
+                SemanticPhase::SuccessorAdequacy => stage != "rehydrating",
+            }
+        {
+            return Err(StoreError::Rejected);
+        }
+        if binding.phase == SemanticPhase::SuccessorAdequacy {
+            let successor_context:Option<String>=tx.query_row(
+                "SELECT successor_context FROM transitions WHERE transition_id=?1 AND subject_id=?2 AND stage='rehydrating'",
+                params![binding.transition.as_str(),session.subject.as_str()],|r|r.get(0),
+            ).optional().map_err(|_|StoreError::Unavailable)?;
+            if successor_context.as_deref() != Some(session.context.as_str()) {
+                return Err(StoreError::Rejected);
+            }
+        }
+        let grant:Option<NativeGrantRow>=tx.query_row(
+            "SELECT issuer,principal,subject_id,context_id,build_id,proof_run_id,scope,expires_ms,revision,revoked FROM grants WHERE grant_id=?1",
+            [request.grant.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?,r.get(9)?)),
+        ).optional().map_err(|_|StoreError::Unavailable)?;
+        let Some((issuer, p, s, c, b, pr, scope, expiry, rev, revoked)) = grant else {
+            return Err(StoreError::Rejected);
+        };
+        if issuer != self.trusted_issuer
+            || p != principal
+            || s != session.subject.as_str()
+            || c != session.context.as_str()
+            || b != build
+            || pr != proof
+            || scope != "semantic_control"
+            || revoked
+            || expiry <= clock.wall.get()
+            || rev < 0
+            || rev as u64 != request.grant_revision
+        {
+            return Err(StoreError::Rejected);
+        }
+        let capture_exists:bool=tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM semantic_captures WHERE capture_id=?1 AND transition_id=?2 AND subject_id=?3 AND policy_id=?4 AND eligibility='current')",
+            params![&binding.capture_id,binding.transition.as_str(),session.subject.as_str(),&binding.policy_id],|r|r.get(0),
+        ).map_err(|_|StoreError::Unavailable)?;
+        if !capture_exists {
+            return Err(StoreError::Rejected);
+        }
+        let active:i64=tx.query_row("SELECT COUNT(*) FROM native_turns WHERE session_id=?1 AND state='entered_uncertain'",
+            [session.id.as_str()],|r|r.get(0)).map_err(|_|StoreError::Unavailable)?;
+        if active != 0 {
+            return Err(StoreError::ClaimConflict);
+        }
+        let prompt_sha256 = sha256(&request.prompt)?;
+        tx.execute("INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,entered_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'entered_uncertain',?10,?11)",
+            params![&request.invocation_id,session.id.as_str(),request.attempt.as_str(),request.grant.as_str(),
+                request.grant_revision,request.purpose.as_str(),prompt_sha256,&request.prompt,
+                &session.profile_digest,thread.as_str(),clock.wall.get()])
+            .map_err(|_|StoreError::ClaimConflict)?;
+        tx.execute("INSERT INTO semantic_attempts(invocation_id,capture_id,phase,purpose,attempt_id,session_id,input_sha256,schema_id,policy_id,exposure_sha256,grant_id,grant_revision,state) VALUES (?1,?2,?3,?4,?5,?6,?7,'continuation.v1',?8,?9,?10,?11,'entered_uncertain')",
+            params![&request.invocation_id,&binding.capture_id,match binding.phase {SemanticPhase::Compile=>"compile",SemanticPhase::CandidateVerification=>"candidate_verify",SemanticPhase::SuccessorAdequacy=>"successor_adequacy"},
+                expected_purpose,request.attempt.as_str(),session.id.as_str(),sha256(&request.prompt)?,&binding.policy_id,
+                sha256(binding.exposure_id.as_bytes())?,request.grant.as_str(),request.grant_revision])
+            .map_err(|_|StoreError::ClaimConflict)?;
+        observe_native_subject_clock(&tx, session.subject.as_str(), clock.wall.get())?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeTurnEntry {
+            invocation_id: request.invocation_id,
+            attempt: request.attempt,
+            thread: thread.clone(),
+            turn: None,
+            profile_digest: session.profile_digest.clone(),
         })
     }
 
@@ -591,9 +875,37 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<NativeTurnEntry, StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let thread = session.thread.as_ref().ok_or(StoreError::ClaimConflict)?;
+        let semantic_prompt = if request.purpose == NativeInvocationPurpose::SuccessorRehydrate {
+            let owner:Option<String>=self.connection.query_row(
+                "SELECT owner_ref FROM subjects WHERE subject_id=?1 AND owner_kind='transition'",
+                [session.subject.as_str()],|r|r.get(0),
+            ).optional().map_err(|_|StoreError::Unavailable)?;
+            if let Some(owner) = owner {
+                let transition = TransitionId::parse(owner).map_err(|_| StoreError::Rejected)?;
+                let prompt = self
+                    .semantic_checkpoint(&transition)?
+                    .map(|package| package.successor_prompt.into_bytes());
+                if self.semantic_transition_required(&transition)? && prompt.is_none() {
+                    return Err(StoreError::Rejected);
+                }
+                prompt
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         if request.prompt.is_empty()
-            || request.prompt.len() > 2048
+            || request.prompt.len()
+                > if semantic_prompt.is_some() {
+                    65_536
+                } else {
+                    2048
+                }
             || std::str::from_utf8(&request.prompt).is_err()
         {
             return Err(StoreError::Rejected);
@@ -603,13 +915,17 @@ impl SqliteLifecycleStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
         if request.purpose == NativeInvocationPurpose::SuccessorRehydrate {
-            let source_text: Vec<u8> = tx.query_row(
+            let source_text: Vec<u8> = if let Some(prompt) = semantic_prompt {
+                prompt
+            } else {
+                tx.query_row(
                 "SELECT n.final_text FROM subjects sub JOIN transitions tr ON tr.transition_id=sub.owner_ref \
                  JOIN native_turns n ON tr.native_basis_source=n.invocation_id \
                  WHERE sub.subject_id=?1 AND sub.owner_kind='transition' AND tr.stage='rehydrating' \
                  AND tr.successor_context=?2 AND tr.successor_thread=?3 AND n.state='completed_settled'",
                 params![session.subject.as_str(),session.context.as_str(),thread.as_str()], |r| r.get(0),
-            ).map_err(|_|StoreError::Rejected)?;
+            ).map_err(|_|StoreError::Rejected)?
+            };
             if request.prompt != source_text {
                 return Err(StoreError::Rejected);
             }
@@ -667,7 +983,7 @@ impl SqliteLifecycleStore {
     /// Persist send intent before turn/start bytes; a lost response remains no-resend.
     pub fn mark_native_send_intent(&mut self, entry: &NativeTurnEntry) -> Result<(), StoreError> {
         self.verify_identity()?;
-        let n=self.connection.execute("UPDATE native_turns SET send_intent=1 WHERE invocation_id=?1 AND send_intent=0 AND state='entered_uncertain'",
+        let n=self.connection.execute("UPDATE native_turns SET send_intent=1 WHERE invocation_id=?1 AND send_intent=0 AND state='entered_uncertain' AND EXISTS(SELECT 1 FROM admin_ownership WHERE singleton=1 AND status='active')",
             [entry.invocation_id.as_str()]).map_err(|_| StoreError::Unavailable)?;
         if n != 1 {
             return Err(StoreError::ClaimConflict);
@@ -724,34 +1040,106 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        let subject: String = tx
+        let (subject,bound_thread,allocation_state): (String,Option<String>,String) = tx
             .query_row(
-                "SELECT subject_id FROM native_sessions WHERE session_id=?1",
+                "SELECT subject_id,thread_id,allocation_state FROM native_sessions WHERE session_id=?1",
                 [session.as_str()],
-                |r| r.get(0),
+                |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
             )
             .map_err(|_| StoreError::ClaimConflict)?;
-        let prior:Option<(String,Vec<u8>)>=tx.query_row("SELECT raw_sha256,raw FROM native_ingress WHERE transport_session=?1 AND sequence=?2",
-            params![transport,sequence],|r|Ok((r.get(0)?,r.get(1)?)))
+        if let Some(thread) = thread {
+            if bound_thread.as_deref().is_some_and(|bound| bound != thread)
+                || (bound_thread.is_none() && allocation_state != "intent")
+            {
+                return Err(StoreError::Rejected);
+            }
+            let other: i64 = tx
+                .query_row(
+                    "SELECT COUNT(*) FROM native_sessions WHERE thread_id=?1 AND session_id!=?2",
+                    params![thread, session.as_str()],
+                    |r| r.get(0),
+                )
+                .map_err(|_| StoreError::Unavailable)?;
+            if other != 0 {
+                return Err(StoreError::Rejected);
+            }
+        }
+        if let Some(turn) = turn {
+            let wrong:i64=tx.query_row(
+                "SELECT COUNT(*) FROM native_turns WHERE turn_id=?1 AND (session_id!=?2 OR thread_id!=?3)",
+                params![turn,session.as_str(),thread],|r|r.get(0),
+            ).map_err(|_| StoreError::Unavailable)?;
+            if wrong != 0 {
+                return Err(StoreError::Rejected);
+            }
+        }
+        let prior:Option<(String,Vec<u8>,Option<String>)>=tx.query_row("SELECT raw_sha256,raw,session_id FROM native_ingress WHERE transport_session=?1 AND sequence=?2",
+            params![transport,sequence],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?)))
             .optional().map_err(|_| StoreError::Unavailable)?;
-        let outcome = if let Some((old_digest, old_raw)) = prior {
+        let mut new_incident = false;
+        let mut outcome = if let Some((old_digest, old_raw, old_session)) = prior {
+            if old_session
+                .as_deref()
+                .is_some_and(|id| id != session.as_str())
+            {
+                return Err(StoreError::ClaimConflict);
+            }
             if old_digest == digest && old_raw == raw {
                 NativeIngressApply::Duplicate
             } else {
-                tx.execute("INSERT OR IGNORE INTO native_ingress_conflicts(transport_session,sequence,raw_sha256,raw,observed_wall_ms) VALUES (?1,?2,?3,?4,?5)",
+                let inserted=tx.execute("INSERT OR IGNORE INTO native_ingress_conflicts(transport_session,sequence,raw_sha256,raw,observed_wall_ms) VALUES (?1,?2,?3,?4,?5)",
                     params![transport,sequence,digest,raw,clock.wall.get()]).map_err(|_| StoreError::Unavailable)?;
-                if let (Some(thread), Some(turn)) = (thread, turn) {
-                    tx.execute("UPDATE native_turns SET state='blocked_conflicted' WHERE thread_id=?1 AND turn_id=?2",
-                        params![thread,turn]).map_err(|_| StoreError::Unavailable)?;
-                }
+                new_incident = inserted == 1;
                 NativeIngressApply::ConflictFenced
             }
         } else {
-            tx.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,item_id,observed_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
-                params![transport,sequence,digest,raw,decode_status,method,thread,turn,item,clock.wall.get()])
+            tx.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,item_id,observed_wall_ms,session_id) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+                params![transport,sequence,digest,raw,decode_status,method,thread,turn,item,clock.wall.get(),session.as_str()])
                 .map_err(|_| StoreError::Unavailable)?;
             NativeIngressApply::Inserted
         };
+        // A new transport coordinate can still contradict a turn whose final
+        // outcome was already settled. Keep both raw observations and the
+        // original result, but fence every dependent future admission.
+        if outcome == NativeIngressApply::Inserted
+            && decode_status == "qualified"
+            && let (Some(thread), Some(turn)) = (thread, turn)
+        {
+            let settled: Option<(String, Option<String>)> = tx
+                .query_row(
+                    "SELECT t.state,old.raw_sha256 FROM native_turns t LEFT JOIN native_ingress old ON old.transport_session=t.history_transport_session AND old.sequence=t.history_sequence WHERE t.session_id=?1 AND t.thread_id=?2 AND t.turn_id=?3",
+                    params![session.as_str(), thread, turn],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .optional()
+                .map_err(|_| StoreError::Unavailable)?;
+            if let Some((state, settled_digest)) = settled {
+                let contrary = state == "completed_settled"
+                    && (matches!(
+                        method,
+                        Some("turn/failed" | "turn/interrupted" | "item/tool/call")
+                    ) || (method == Some("turn/completed")
+                        && settled_digest.as_deref() != Some(digest.as_str())));
+                if contrary {
+                    tx.execute("INSERT OR IGNORE INTO native_ingress_conflicts(transport_session,sequence,raw_sha256,raw,observed_wall_ms) VALUES (?1,?2,?3,?4,?5)",
+                        params![transport,sequence,digest,raw,clock.wall.get()]).map_err(|_| StoreError::Unavailable)?;
+                    new_incident = true;
+                    outcome = NativeIngressApply::ConflictFenced;
+                }
+            }
+        }
+        if new_incident {
+            if let (Some(thread), Some(turn)) = (thread, turn) {
+                tx.execute("UPDATE native_turns SET state='blocked_conflicted',history_status='conflicted' WHERE thread_id=?1 AND turn_id=?2",
+                    params![thread,turn]).map_err(|_| StoreError::Unavailable)?;
+            }
+            crate::sqlite::fence_subject(
+                &tx,
+                &subject,
+                &format!("native:ingress:{transport}:{sequence}"),
+                clock,
+            )?;
+        }
         // The ingress owner supplies its store-minted native session even for
         // startup notices and history responses without a thread/turn field.
         observe_native_subject_clock(&tx, &subject, clock.wall.get())?;
@@ -1272,7 +1660,10 @@ impl SqliteLifecycleStore {
             "SELECT purpose,prompt FROM native_turns WHERE invocation_id=?1 AND thread_id=?2 AND turn_id=?3",
             params![entry.invocation_id,entry.thread.as_str(),turn.as_str()], |r| Ok((r.get(0)?,r.get(1)?)),
         ).map_err(|_|StoreError::ClaimConflict)?;
-        if purpose == NativeInvocationPurpose::SuccessorRehydrate.as_str() {
+        if matches!(
+            purpose.as_str(),
+            "successor_rehydrate" | "semantic_compile" | "semantic_verify"
+        ) {
             let prompt =
                 std::str::from_utf8(&submitted_prompt).map_err(|_| StoreError::ClaimConflict)?;
             let input_matches = items
@@ -1314,6 +1705,8 @@ impl SqliteLifecycleStore {
         if history_final != Some(final_text)
             || (history_status == "observed_complete" && visible_tools != children as usize)
             || (history_status == "observed_tool_omitted" && (children == 0 || visible_tools != 0))
+            || (matches!(purpose.as_str(), "semantic_compile" | "semantic_verify")
+                && (children != 0 || visible_tools != 0 || history_status != "observed_complete"))
         {
             return Err(StoreError::ClaimConflict);
         }
@@ -1323,6 +1716,13 @@ impl SqliteLifecycleStore {
             .map_err(|_| StoreError::Unavailable)?;
         if changed != 1 {
             return Err(StoreError::ClaimConflict);
+        }
+        if matches!(purpose.as_str(), "semantic_compile" | "semantic_verify") {
+            let updated=tx.execute("UPDATE semantic_attempts SET state='completed_settled',result_sha256=?2 WHERE invocation_id=?1 AND state='entered_uncertain' AND purpose=?3",
+                params![entry.invocation_id,&digest,&purpose]).map_err(|_|StoreError::Unavailable)?;
+            if updated != 1 {
+                return Err(StoreError::ClaimConflict);
+            }
         }
         let subject: String = tx.query_row(
             "SELECT s.subject_id FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE t.invocation_id=?1",
@@ -1465,6 +1865,16 @@ fn check_grant(
     tx: &rusqlite::Transaction<'_>,
     expected: GrantExpectation<'_>,
 ) -> Result<(), StoreError> {
+    let active: bool = tx
+        .query_row(
+            "SELECT status='active' FROM admin_ownership WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    if !active {
+        return Err(StoreError::ClaimConflict);
+    }
     let current: Option<(String, String, String, String, Option<String>, i64)> = tx
         .query_row(
             "SELECT context_id,build_id,proof_run_id,owner_kind,owner_ref,last_wall_ms FROM subjects WHERE subject_id=?1",

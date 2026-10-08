@@ -4,6 +4,8 @@ members = [
   "crates/work-engine-types",
   "crates/lifecycle-core",
   "crates/lifecycle-store",
+  "crates/lifecycle-semantic",
+  "crates/lifecycle-admin",
   "crates/lifecycle-runtime",
   "crates/lifecycle-provider",
   "crates/lifecycle-codex",

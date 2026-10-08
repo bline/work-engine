@@ -12,6 +12,7 @@ native-sim-proof = []
 
 [dependencies]
 lifecycle-core = { path = "../lifecycle-core" }
+lifecycle-semantic = { path = "../lifecycle-semantic" }
 lifecycle-store = { path = "../lifecycle-store" }
 lifecycle-runtime = { path = "../lifecycle-runtime" }
 lifecycle-provider = { path = "../lifecycle-provider" }
@@ -27,6 +28,7 @@ getrandom = "=0.3.4"
 [dev-dependencies]
 tempfile = "=3.27.0"
 lifecycle-client = { path = "../lifecycle-client" }
+lifecycle-test-support = { path = "../lifecycle-test-support" }
 rusqlite = { version = "=0.37.0", features = ["bundled"] }
 
 [[test]]
@@ -48,3 +50,13 @@ required-features = ["controlled-proof"]
 name = "s4_contract"
 path = "../../tests/s4_contract.rs"
 required-features = ["controlled-proof"]
+
+[[test]]
+name = "s6_semantic_preservation"
+path = "../../tests/s6_semantic_preservation.rs"
+required-features = ["native-sim-proof"]
+
+[[test]]
+name = "s6_s7_s5_native_compat"
+path = "../../tests/s6_s7_s5_native_compat.rs"
+required-features = ["native-sim-proof"]

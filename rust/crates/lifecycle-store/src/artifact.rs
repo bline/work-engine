@@ -1,6 +1,6 @@
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use lifecycle_core::{ClockSample, SubjectId};
@@ -76,6 +76,17 @@ impl SqliteLifecycleStore {
         staged: StagedArtifact,
         clock: ClockSample,
     ) -> Result<PublishedArtifact, StoreError> {
+        self.publish_artifact_with_barrier(staged, clock, None)
+    }
+
+    /// Offline proof hook at the real blob-sync/database-reference boundary.
+    /// Ordinary production calls always pass through `publish_artifact`.
+    pub fn publish_artifact_with_barrier(
+        &mut self,
+        staged: StagedArtifact,
+        clock: ClockSample,
+        barrier_dir: Option<&Path>,
+    ) -> Result<PublishedArtifact, StoreError> {
         self.verify_identity()?;
         let staging = self.root.join("artifacts/staging");
         if staged.path.parent() != Some(staging.as_path()) {
@@ -106,6 +117,26 @@ impl SqliteLifecycleStore {
             Err(_) => return Err(StoreError::Unavailable),
         }
         sync_directory(&blobs)?;
+        if let Some(root) = barrier_dir {
+            let reached = root.join("artifact_after_blob_sync.reached");
+            let release = root.join("artifact_after_blob_sync.release");
+            let mut marker = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(reached)
+                .map_err(|_| StoreError::Unavailable)?;
+            marker
+                .write_all(b"reached\n")
+                .map_err(|_| StoreError::Unavailable)?;
+            marker.sync_all().map_err(|_| StoreError::Unavailable)?;
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+            while !release.exists() {
+                if std::time::Instant::now() >= deadline {
+                    return Err(StoreError::Unavailable);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+        }
         fs::remove_file(&staged.path).map_err(|_| StoreError::Unavailable)?;
         sync_directory(&staging)?;
         let relative_path = format!("artifacts/blobs/{}", staged.digest_hex);

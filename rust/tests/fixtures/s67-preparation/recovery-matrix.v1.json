@@ -1,0 +1,302 @@
+{
+  "artifact": "s67-synthetic-recovery-matrix",
+  "version": 1,
+  "status": "static_preparation_not_acceptance",
+  "authority": "Disposable hypothetical states only; no real queue, grant, root or effect. Expected states are proposed static consequences, not disposition or migration authority.",
+  "identity_legend": {
+    "I": "input",
+    "EF": "effect",
+    "AT": "attempt",
+    "INC": "executor incarnation",
+    "OP": "operation",
+    "RC": "recovery claim",
+    "HD": "handoff",
+    "L": "delivery lineage"
+  },
+  "cases": [
+    {
+      "id": "R1",
+      "title": "Prepared unentered restart",
+      "synthetic_root": "disposable://s67/R1",
+      "preconditions": [
+        "effect EF-1 prepared for input I-1",
+        "no attempt entry recorded"
+      ],
+      "crash_cut": "before any exact grant/entry",
+      "observed_facts": [
+        "store shows PreparedNeedsGrant"
+      ],
+      "expected_durable_state": [
+        "plan EF-1 remains prepared",
+        "only fresh exact authority and fences may admit entry"
+      ],
+      "forbidden_entries": [
+        "recreate grant on restart",
+        "mark completed",
+        "send without exact entry custody"
+      ],
+      "open_owner_decisions": []
+    },
+    {
+      "id": "R2",
+      "title": "Entered claim and lost start",
+      "synthetic_root": "disposable://s67/R2",
+      "preconditions": [
+        "attempt AT-2 for EF-2 durably entered",
+        "incarnation INC-2 and operation OP-2 recorded"
+      ],
+      "crash_cut": "after entry commit, before send or before start response",
+      "observed_facts": [
+        "entry recorded",
+        "native non-entry not proven"
+      ],
+      "expected_durable_state": [
+        "EnteredUncertain",
+        "query-only readback bound to AT-2/INC-2/OP-2"
+      ],
+      "forbidden_entries": [
+        "automatic resend",
+        "infer non-entry from missing response",
+        "new attempt under same claim"
+      ],
+      "open_owner_decisions": [
+        "operation-specific definite non-entry proof standard"
+      ]
+    },
+    {
+      "id": "R3",
+      "title": "Terminal failure with unsettled effect",
+      "synthetic_root": "disposable://s67/R3",
+      "preconditions": [
+        "AT-3 entered",
+        "remote/tool descendant possibility unresolved"
+      ],
+      "crash_cut": "terminal failure observed, before settlement",
+      "observed_facts": [
+        "outcome failed",
+        "settlement unresolved"
+      ],
+      "expected_durable_state": [
+        "failure visible promptly",
+        "queue blocked until settlement/recovery authority resolves dependent effect"
+      ],
+      "forbidden_entries": [
+        "equate failed outcome with settled",
+        "equate process exit with remote settlement",
+        "advance queue"
+      ],
+      "open_owner_decisions": []
+    },
+    {
+      "id": "R4",
+      "title": "Persisted result, lost acknowledgment",
+      "synthetic_root": "disposable://s67/R4",
+      "preconditions": [
+        "AT-4 entered",
+        "result RES-4 persisted with exact bytes hash"
+      ],
+      "crash_cut": "after result commit before client acknowledgment",
+      "observed_facts": [
+        "result RES-4 exists",
+        "client lacks acknowledgment"
+      ],
+      "expected_durable_state": [
+        "read/replay exact RES-4 bytes under original identity",
+        "changed bytes under AT-4 conflict"
+      ],
+      "forbidden_entries": [
+        "provider re-entry",
+        "write alternate result under AT-4"
+      ],
+      "open_owner_decisions": []
+    },
+    {
+      "id": "R5",
+      "title": "No-retry disposition authority race",
+      "synthetic_root": "disposable://s67/R5",
+      "preconditions": [
+        "AT-5 EnteredUncertain",
+        "proposed recovery claim RC-5",
+        "paused competing launch LP-5"
+      ],
+      "crash_cut": "before retirement commit while authority/current claim changes",
+      "observed_facts": [
+        "stale observation revision or narrowed/expired grant or unresolved required effects or competing launch"
+      ],
+      "expected_durable_state": [
+        "refuse stale/unauthorized retirement",
+        "only separately authorized exact claim may record RetiredNoRetry as retirement, never success"
+      ],
+      "forbidden_entries": [
+        "autonomous retirement",
+        "provider success label",
+        "clear no-replay fence"
+      ],
+      "open_owner_decisions": [
+        "trust/signing policy and exact recovery authority"
+      ]
+    },
+    {
+      "id": "R6",
+      "title": "Late contrary evidence after retirement",
+      "synthetic_root": "disposable://s67/R6",
+      "preconditions": [
+        "RC-6 validly retired AT-6 NoRetry",
+        "retirement and source evidence retained"
+      ],
+      "crash_cut": "late contradictory observation arrives",
+      "observed_facts": [
+        "remote consequence reported after retirement"
+      ],
+      "expected_durable_state": [
+        "preserve retirement history and original evidence",
+        "re-fence dependent admission",
+        "expose performed consequence for incident accounting"
+      ],
+      "forbidden_entries": [
+        "erase retirement",
+        "silently reopen replay",
+        "ignore contradiction"
+      ],
+      "open_owner_decisions": [
+        "incident disposition owner"
+      ]
+    },
+    {
+      "id": "R7",
+      "title": "Coherent SQLite/WAL export",
+      "synthetic_root": "disposable://s67/R7",
+      "preconditions": [
+        "disposable source has committed WAL pages and referenced artifacts",
+        "main database file lags WAL"
+      ],
+      "crash_cut": "export cut between WAL and main-file checkpoint",
+      "observed_facts": [
+        "coherent source snapshot includes committed WAL state"
+      ],
+      "expected_durable_state": [
+        "export one coherent snapshot with referenced artifacts and identities",
+        "preparation performs no import or mutation"
+      ],
+      "forbidden_entries": [
+        "main-file-only export as truth",
+        "live-root export in this fixture"
+      ],
+      "open_owner_decisions": []
+    },
+    {
+      "id": "R8",
+      "title": "Inactive adoption and single admission owner",
+      "synthetic_root": "disposable://s67/R8",
+      "preconditions": [
+        "destination absent before adoption",
+        "source SRC-8 currently owns admission",
+        "handoff HD-8 has pinned source revision and path/file identities"
+      ],
+      "crash_cut": "four cuts: before inactive acceptance; after acceptance before source fence; after fence before selection CAS; after CAS before destination ownership commit",
+      "observed_facts": [
+        "A: destination absent or inactive; B: inactive accepted capsule; C: source fenced, destination inactive; D: selection points candidate but destination still inactive"
+      ],
+      "expected_durable_state": [
+        "A: no destination owner; B: source alone owns admission; C: neither destination nor unfenced source may newly admit; D: exact retry may finish original HD-8, conflict stays inactive; after ownership commit only destination admits",
+        "at most one admission owner at every cut"
+      ],
+      "forbidden_entries": [
+        "table-seed destination custody",
+        "dual admission",
+        "activate destination on conflicting retry",
+        "new handoff identity on exact retry"
+      ],
+      "open_owner_decisions": [
+        "destination owning API and launch-manifest CAS semantics"
+      ]
+    },
+    {
+      "id": "R9",
+      "title": "Rollback after candidate-current work",
+      "synthetic_root": "disposable://s67/R9",
+      "preconditions": [
+        "candidate owns L-9 after accepted handoff",
+        "I-1/E-1 completed and settled",
+        "I-2/AT-9 entered uncertain",
+        "I-3 newly pending after import"
+      ],
+      "crash_cut": "rollback requested after candidate has performed work",
+      "observed_facts": [
+        "candidate-current snapshot includes I-1, I-2, I-3 and dedup receipts"
+      ],
+      "expected_durable_state": [
+        "stopped candidate exports current state",
+        "compatible target retains I-1 completion/no replay, I-2 uncertainty/no resend, I-3 pending",
+        "if target incompatible require explicit forward recovery or proven transfer"
+      ],
+      "forbidden_entries": [
+        "restore original pre-candidate backup",
+        "replay I-1 or I-2",
+        "drop I-3"
+      ],
+      "open_owner_decisions": [
+        "rollback compatibility range and transfer owner"
+      ]
+    },
+    {
+      "id": "R10",
+      "title": "Deployment and launcher fencing",
+      "synthetic_root": "disposable://s67/R10",
+      "preconditions": [
+        "old executable or future schema may be present",
+        "manifest/root alias and path identities pinned"
+      ],
+      "crash_cut": "selection changes or symlink swaps before spawn; spawn attempted before registration",
+      "observed_facts": [
+        "mismatch between expected and actual executable/schema/root/selection"
+      ],
+      "expected_durable_state": [
+        "composed launcher/store refuses effect admission",
+        "S9 actual deployment proof remains required"
+      ],
+      "forbidden_entries": [
+        "spawn before registration",
+        "follow substituted symlink into effects",
+        "treat component fixture as permanent proof"
+      ],
+      "open_owner_decisions": [
+        "permanent deployment/startup owner"
+      ]
+    },
+    {
+      "id": "R11",
+      "title": "Unknown or ambiguous import codec",
+      "synthetic_root": "disposable://s67/R11",
+      "preconditions": [
+        "source bytes pinned under declared codec C-11",
+        "destination import scope not selected"
+      ],
+      "crash_cut": "codec decoder unavailable, wrong domain or alternative digest appears matching",
+      "observed_facts": [
+        "source codec identity or domain fails exact match"
+      ],
+      "expected_durable_state": [
+        "reject unknown/ambiguous codec and wrong domain",
+        "if later owner selects import, preserve original bytes/hash and explicit new-identity lineage"
+      ],
+      "forbidden_entries": [
+        "try alternate codecs until one parses",
+        "rehash to disguise mismatch",
+        "mint lineage without source binding"
+      ],
+      "open_owner_decisions": [
+        "import versus archive decision",
+        "supported source codec list and compatibility"
+      ]
+    }
+  ],
+  "open_packet_decisions": [
+    "S5 exact profile/handoff acceptance",
+    "S6 semantic corpus/rubric/independence",
+    "S7 import/archive and current-state accounting",
+    "S7 recovery trust/retirement authority",
+    "S7 supported source codecs/compatibility",
+    "S9 permanent deployment and rollback owner"
+  ]
+}

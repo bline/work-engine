@@ -17,7 +17,9 @@ pub enum GrantScope {
     RequestReplacement,
     RequestInterruption,
     NativeTurn,
+    SemanticControl,
     SnapshotRead,
+    RetireNoRetry,
 }
 
 impl GrantScope {
@@ -27,7 +29,9 @@ impl GrantScope {
             Self::RequestReplacement => "request_replacement",
             Self::RequestInterruption => "request_interruption",
             Self::NativeTurn => "native_turn",
+            Self::SemanticControl => "semantic_control",
             Self::SnapshotRead => "snapshot_read",
+            Self::RetireNoRetry => "retire_no_retry",
         }
     }
 
@@ -37,7 +41,9 @@ impl GrantScope {
             "request_replacement" => Some(Self::RequestReplacement),
             "request_interruption" => Some(Self::RequestInterruption),
             "native_turn" => Some(Self::NativeTurn),
+            "semantic_control" => Some(Self::SemanticControl),
             "snapshot_read" => Some(Self::SnapshotRead),
+            "retire_no_retry" => Some(Self::RetireNoRetry),
             _ => None,
         }
     }

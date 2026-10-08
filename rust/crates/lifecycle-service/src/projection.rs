@@ -6,6 +6,10 @@ use lifecycle_wire::{
 };
 
 pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnapshotV1 {
+    let yielded_outcome_not_representable = value
+        .delivery
+        .as_ref()
+        .is_some_and(|item| item.outcome == "yielded");
     let admission = match value.owner_kind.as_str() {
         "domain" => AdmissionV1::Domain {
             context_generation: value.context_id.clone(),
@@ -86,10 +90,16 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
             RuntimeAvailabilityV1::Available
         },
         runtime_provenance: FieldV1::Unknown,
-        blocking_reason: if value.unresolved_attempts > 0 {
-            FieldV1::Known("unresolved_entered_attempt".into())
-        } else {
-            FieldV1::NotApplicable
+        blocking_reason: match (
+            value.unresolved_attempts > 0,
+            yielded_outcome_not_representable,
+        ) {
+            (true, true) => FieldV1::Known(
+                "unresolved_entered_attempt;yielded_outcome_not_representable_v1".into(),
+            ),
+            (true, false) => FieldV1::Known("unresolved_entered_attempt".into()),
+            (false, true) => FieldV1::Known("yielded_outcome_not_representable_v1".into()),
+            (false, false) => FieldV1::NotApplicable,
         },
         authority_refs: Vec::new(),
         evidence_refs,
@@ -100,6 +110,9 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
 fn outcome(value: &str) -> Option<ExecutionOutcomeV1> {
     match value {
         "pending" => Some(ExecutionOutcomeV1::Pending),
+        // The published v1 schema has no Yielded variant. The blocking
+        // reason distinguishes this lossy projection from an unknown owner fact.
+        "yielded" => Some(ExecutionOutcomeV1::Unknown),
         "completed" => Some(ExecutionOutcomeV1::Completed),
         "failed" => Some(ExecutionOutcomeV1::Failed),
         "interrupted" => Some(ExecutionOutcomeV1::Interrupted),
@@ -134,5 +147,90 @@ fn stage(value: &str) -> Option<TransitionStageV1> {
         "recovery_required" => Some(TransitionStageV1::RecoveryRequired),
         "aborted_before_entry" => Some(TransitionStageV1::AbortedBeforeEntry),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use lifecycle_store::DeliveryProjection;
+    use lifecycle_wire::WaitTargetV1;
+
+    use super::*;
+
+    #[test]
+    fn yielded_custody_survives_service_wire_projection() {
+        let projection = SubjectProjection {
+            store_id: "store-yielded".into(),
+            subject_id: "subject-yielded".into(),
+            context_id: "context-yielded".into(),
+            revision: 2,
+            semantic_revision: 0,
+            owner_kind: "domain".into(),
+            owner_ref: None,
+            journal_cursor: 9,
+            transition: None,
+            delivery: Some(DeliveryProjection {
+                delivery_id: "delivery-yielded".into(),
+                effect_id: Some("effect-yielded".into()),
+                attempt_id: Some("attempt-yielded".into()),
+                outcome: "yielded".into(),
+                settlement_kind: "established".into(),
+                settlement_evidence: Some("settlement-yielded".into()),
+                source_ref: Some("observation-yielded".into()),
+                observed_wall_ms: Some(123),
+            }),
+            unresolved_attempts: 0,
+        };
+        let overlapping = into_snapshot(
+            SubjectProjection {
+                unresolved_attempts: 1,
+                ..projection.clone()
+            },
+            true,
+        );
+        assert_eq!(
+            overlapping.blocking_reason,
+            FieldV1::Known(
+                "unresolved_entered_attempt;yielded_outcome_not_representable_v1".into()
+            )
+        );
+        let snapshot = into_snapshot(projection, true);
+        let bytes = serde_json::to_vec(&snapshot).unwrap();
+        let readback: LifecycleSnapshotV1 = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(readback, snapshot);
+        assert!(
+            !WaitTargetV1::DeliveryOutcome {
+                delivery_id: "delivery-yielded".into(),
+                outcome: ExecutionOutcomeV1::Completed,
+            }
+            .is_observed(&readback)
+        );
+        assert!(
+            WaitTargetV1::DeliveryOutcome {
+                delivery_id: "delivery-yielded".into(),
+                outcome: ExecutionOutcomeV1::Unknown,
+            }
+            .is_observed(&readback)
+        );
+        assert!(matches!(
+            &readback.delivery,
+            FieldV1::Known(DeliveryV1 {
+                outcome: ExecutionOutcomeV1::Unknown,
+                settlement: EffectSettlementV1::Established { .. },
+                ..
+            })
+        ));
+        assert_eq!(
+            readback.blocking_reason,
+            FieldV1::Known("yielded_outcome_not_representable_v1".into())
+        );
+        assert_eq!(readback.evidence_refs, vec!["observation-yielded"]);
+        let FieldV1::Known(delivery) = readback.delivery else {
+            panic!("exact delivery identity was lost");
+        };
+        assert_eq!(delivery.delivery_id, "delivery-yielded");
+        assert_eq!(delivery.effect_id, "effect-yielded");
+        assert_eq!(delivery.attempt_id, "attempt-yielded");
+        assert!(matches!(delivery.provenance, FieldV1::Known(_)));
     }
 }
