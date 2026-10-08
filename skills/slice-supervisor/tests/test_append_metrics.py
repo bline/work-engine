@@ -225,6 +225,24 @@ def add_review_selection(record: dict[str, object]) -> None:
     }
 
 
+def add_specialist(
+    record: dict[str, object], skill: str, identifier: str | None = None
+) -> dict[str, object]:
+    specialists = record["worker_metrics"]["review_selection"]["specialists"]
+    entry = copy.deepcopy(specialists[0])
+    entry.update(
+        skill=skill,
+        selection_reason=f"The candidate requires {skill} review.",
+        result_ref=f"reviews/test-run/{skill}-{len(specialists)}.json",
+        finding_ids=[],
+        unresolved_finding_ids=[],
+    )
+    if identifier is not None:
+        entry["id"] = identifier
+    specialists.append(entry)
+    return entry
+
+
 def declare_provider_accounting_unavailable(record: dict[str, object]) -> None:
     metrics = record["worker_metrics"]
     for path in APPEND_METRICS.UNAVAILABLE_PROVIDER_ACCOUNTING_FIELDS:
@@ -317,6 +335,58 @@ class AppendMetricsCompatibilityTest(unittest.TestCase):
             with self.subTest(invalid=invalid["worker_metrics"]["review_selection"]):
                 with self.assertRaises(ValueError):
                     APPEND_METRICS.validate(invalid)
+
+    def test_review_selection_distinguishes_two_roles_using_one_skill(self) -> None:
+        record = base_record(5)
+        add_review_selection(record)
+        add_specialist(record, "codex-adversarial-review", "s6-contract")
+        add_specialist(record, "codex-adversarial-review", "s7-contract")
+        APPEND_METRICS.validate_current_write(record)
+
+        legacy = base_record(5)
+        add_review_selection(legacy)
+        add_specialist(legacy, "codex-adversarial-review")
+        APPEND_METRICS.validate(legacy)
+
+    def test_review_selection_duplicate_skill_requires_all_explicit_ids(self) -> None:
+        for omit_first in (True, False):
+            record = base_record(5)
+            add_review_selection(record)
+            first = add_specialist(record, "codex-adversarial-review", "s6-contract")
+            add_specialist(record, "codex-adversarial-review", "s7-contract")
+            if omit_first:
+                del first["id"]
+            else:
+                del record["worker_metrics"]["review_selection"]["specialists"][-1]["id"]
+            with self.subTest(omit_first=omit_first):
+                with self.assertRaisesRegex(ValueError, "requires distinct explicit ids"):
+                    APPEND_METRICS.validate(record)
+
+    def test_review_selection_ids_are_nonempty_and_globally_unique(self) -> None:
+        for blank in ("", "   "):
+            record = base_record(5)
+            add_review_selection(record)
+            record["worker_metrics"]["review_selection"]["specialists"][0]["id"] = blank
+            with self.subTest(blank=repr(blank)):
+                with self.assertRaisesRegex(ValueError, "id must be a nonempty string"):
+                    APPEND_METRICS.validate(record)
+
+        for second_skill in ("codex-adversarial-review", "security-review"):
+            record = base_record(5)
+            add_review_selection(record)
+            add_specialist(record, "codex-adversarial-review", "shared-id")
+            add_specialist(record, second_skill, "shared-id")
+            with self.subTest(second_skill=second_skill):
+                with self.assertRaisesRegex(ValueError, "globally unique ids"):
+                    APPEND_METRICS.validate(record)
+
+    def test_review_selection_agent_instruction_review_remains_exactly_once(self) -> None:
+        record = base_record(5)
+        add_review_selection(record)
+        record["worker_metrics"]["review_selection"]["specialists"][0]["id"] = "air-first"
+        add_specialist(record, "agent-instruction-review", "air-second")
+        with self.assertRaisesRegex(ValueError, "agent-instruction-review exactly once"):
+            APPEND_METRICS.validate(record)
 
     def test_review_selection_records_truthful_selection_omission(self) -> None:
         record = base_record(4)

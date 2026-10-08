@@ -615,18 +615,24 @@ def validate_review_selection(value: Any, record: dict[str, Any]) -> None:
         "skill", "selection", "selection_reason", "execution", "applicability",
         "result_ref", "finding_ids", "unresolved_finding_ids",
     }
-    seen: set[str] = set()
+    by_skill: dict[str, list[dict[str, Any]]] = {}
+    seen_ids: set[str] = set()
     for index, entry in enumerate(specialists):
         entry_path = f"{path}.specialists[{index}]"
         if not isinstance(entry, dict):
             fail(f"{entry_path} must be an object")
-        require_exact_keys(entry, entry_fields, entry_path)
+        require_exact_keys(entry, entry_fields | ({"id"} if "id" in entry else set()), entry_path)
         for field in ("skill", "selection_reason"):
             if not isinstance(entry[field], str) or not entry[field].strip():
                 fail(f"{entry_path}.{field} must be a nonempty string")
-        if entry["skill"] in seen:
-            fail(f"{path}.specialists must contain unique skills")
-        seen.add(entry["skill"])
+        if "id" in entry:
+            identifier = entry["id"]
+            if not isinstance(identifier, str) or not identifier.strip():
+                fail(f"{entry_path}.id must be a nonempty string")
+            if identifier in seen_ids:
+                fail(f"{path}.specialists must contain globally unique ids")
+            seen_ids.add(identifier)
+        by_skill.setdefault(entry["skill"], []).append(entry)
         for field in ("finding_ids", "unresolved_finding_ids"):
             identifiers = entry[field]
             if not isinstance(identifiers, list) or not all(
@@ -665,8 +671,11 @@ def validate_review_selection(value: Any, record: dict[str, Any]) -> None:
         else:
             fail(f"{entry_path}.execution is invalid for a selected specialist")
 
-    if "agent-instruction-review" not in seen:
+    if len(by_skill.get("agent-instruction-review", [])) != 1:
         fail(f"{path} must disposition agent-instruction-review exactly once")
+    for skill, entries in by_skill.items():
+        if len(entries) > 1 and any("id" not in entry for entry in entries):
+            fail(f"{path}.specialists duplicate skill {skill} requires distinct explicit ids")
 
 
 def validate_evidence_provenance(record: dict[str, Any]) -> None:

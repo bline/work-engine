@@ -97,6 +97,13 @@ Every new slice-builder terminal receipt includes
 }
 ```
 
+Each specialist entry may include a nonempty `id` for its selected role or
+obligation. IDs must be unique across the specialist list. When the same
+`skill` serves more than one entry, every entry for that skill must carry a
+distinct explicit `id`; keep the actual skill name in each entry. Existing
+single entries without an `id` remain valid. This does not change the
+exactly-once `agent-instruction-review` disposition.
+
 When a stopped or failed slice terminates before an immutable review candidate
 exists, preserve that lifecycle distinction instead:
 
