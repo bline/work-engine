@@ -18,7 +18,7 @@ use std::{
 };
 
 const MAX_STATE_BYTES: usize = 16 * 1024 * 1024;
-const SCHEMA: &str = "native-review-claims-sqlite-v1";
+const SCHEMA: &str = "native-review-claims-sqlite-v2";
 const MARKER: &str = "claim-evidence-root.json";
 const DATABASE: &str = "claim-evidence.sqlite3";
 
@@ -166,7 +166,10 @@ impl Store {
             .map_err(io)?;
         let conn = db_open(&absolute.join(DATABASE))?;
         let (db_dev, db_ino) = metadata(&absolute.join(DATABASE))?;
-        conn.execute_batch("BEGIN EXCLUSIVE; CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, name TEXT NOT NULL) STRICT; INSERT INTO schema_migrations VALUES(1,'native-review-claims-sqlite-v1'); CREATE TABLE root_binding(singleton INTEGER PRIMARY KEY CHECK(singleton=1), marker_sha256 TEXT NOT NULL, database_dev TEXT NOT NULL, database_ino TEXT NOT NULL, schema_sha256 TEXT NOT NULL) STRICT; CREATE TABLE canonical_claim_state(singleton INTEGER PRIMARY KEY CHECK(singleton=1), store_revision INTEGER NOT NULL CHECK(store_revision>0), store_sha256 TEXT NOT NULL, store_json TEXT NOT NULL) STRICT; CREATE TABLE operation_admissions(operation_id TEXT PRIMARY KEY, admission_sha256 TEXT NOT NULL, grant_sha256 TEXT NOT NULL) STRICT; PRAGMA user_version=1;").map_err(io)?;
+        conn.execute_batch(include_str!(
+            "../migrations/0002_private_production_path.sql"
+        ))
+        .map_err(io)?;
         let schema_sha256 = schema_fingerprint(&conn)?;
         conn.execute(
             "INSERT INTO root_binding VALUES(1,?,?,?,?)",
@@ -267,7 +270,8 @@ impl Store {
             current.root_id == self.bootstrap.root_id
                 && current.config_sha256 == self.bootstrap.config_sha256
                 && current.source_sha256 == self.bootstrap.source_sha256
-                && current.grants == self.bootstrap.grants,
+                && current.grants == self.bootstrap.grants
+                && current.trusted_custody == self.bootstrap.trusted_custody,
             "bootstrap files changed",
         )?;
         let actual = checked_absolute_root(&self.identity.absolute_path)?;
@@ -287,11 +291,11 @@ impl Store {
             .conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(io)?;
-        ensure(schema == 1, "claims schema version mismatch")?;
+        ensure(schema == 2, "claims schema version mismatch")?;
         let migration: String = self
             .conn
             .query_row(
-                "SELECT name FROM schema_migrations WHERE version=1",
+                "SELECT name FROM schema_migrations WHERE version=2",
                 [],
                 |r| r.get(0),
             )

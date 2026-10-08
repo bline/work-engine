@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "contract_sha256": "c13dcaa74c7bffdab1e90af919ec6877cc7f2ffe21b3e47b332b2a55f761511e",
+    "service_sha256": "3907667118fad73f4cac82623c38766352b876c3513061fd53b785d8f2c5271a",
+    "identity_sha256": "57e3c6aca0e107123c7dfacadb4511877366ede71c26ddb8e160894d1984f583"
+  },
+  "vectors": [
+    {
+      "value": {
+        "schemaVersion": 1,
+        "proposition": "execution path was observed",
+        "subject": {
+          "candidate": {
+            "commit": "c1",
+            "tree": "t1",
+            "patchIdentity": "p1"
+          },
+          "reviewEpisodeId": "episode-1"
+        },
+        "coveredState": "review-result",
+        "consumptionBoundary": "builder_projection",
+        "consumer": "slice-builder:campaign-1",
+        "acceptance": {
+          "owner": "operator",
+          "source": "campaign",
+          "unestablishedRoute": "hold"
+        },
+        "profile": {
+          "id": "production-path-v1",
+          "revision": "production-path-profile-v1",
+          "allowedMechanisms": [
+            "transport-1"
+          ],
+          "admissibleObservers": [
+            "observer-1"
+          ],
+          "integrityRequired": true,
+          "requiredRealization": "model-1",
+          "requiredCapabilities": [
+            "read"
+          ],
+          "continuity": "fresh_initial"
+        },
+        "claimId": "production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280",
+        "revision": "production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c"
+      },
+      "canonical": "{\"acceptance\":{\"owner\":\"operator\",\"source\":\"campaign\",\"unestablishedRoute\":\"hold\"},\"claimId\":\"production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280\",\"consumer\":\"slice-builder:campaign-1\",\"consumptionBoundary\":\"builder_projection\",\"coveredState\":\"review-result\",\"profile\":{\"admissibleObservers\":[\"observer-1\"],\"allowedMechanisms\":[\"transport-1\"],\"continuity\":\"fresh_initial\",\"id\":\"production-path-v1\",\"integrityRequired\":true,\"requiredCapabilities\":[\"read\"],\"requiredRealization\":\"model-1\",\"revision\":\"production-path-profile-v1\"},\"proposition\":\"execution path was observed\",\"revision\":\"production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c\",\"schemaVersion\":1,\"subject\":{\"candidate\":{\"commit\":\"c1\",\"patchIdentity\":\"p1\",\"tree\":\"t1\"},\"reviewEpisodeId\":\"episode-1\"}}\n",
+      "sha256": "8b250d33e25738e4960cc12f7b1d74948bd59cda5ca5a2a3594c3ea5ed222fb0"
+    },
+    {
+      "value": {
+        "schemaVersion": 1,
+        "proposition": "execution path was observed",
+        "subject": {
+          "candidate": {
+            "commit": "c1",
+            "tree": "t1",
+            "patchIdentity": "p1"
+          },
+          "reviewEpisodeId": "episode-1"
+        },
+        "coveredState": "review-result",
+        "consumptionBoundary": "campaign_terminalization",
+        "consumer": "slice-campaign:campaign-1",
+        "acceptance": {
+          "owner": "operator",
+          "source": "campaign",
+          "unestablishedRoute": "hold"
+        },
+        "profile": {
+          "id": "production-path-v1",
+          "revision": "production-path-profile-v1",
+          "allowedMechanisms": [
+            "transport-1"
+          ],
+          "admissibleObservers": [
+            "observer-1"
+          ],
+          "integrityRequired": true,
+          "requiredRealization": "model-1",
+          "requiredCapabilities": [
+            "read"
+          ],
+          "continuity": "fresh_initial"
+        },
+        "claimId": "production-path-claim-v1@37746f2964dbcf3e8a5035e503d88d70ee3d1ec201070611c326e592a56b6fac",
+        "revision": "production-path-claim-revision-v1@cff9e4df6aca86023c179fcd3ccf71b3780549c26a2a3e4a077a47a375cd5cf2"
+      },
+      "canonical": "{\"acceptance\":{\"owner\":\"operator\",\"source\":\"campaign\",\"unestablishedRoute\":\"hold\"},\"claimId\":\"production-path-claim-v1@37746f2964dbcf3e8a5035e503d88d70ee3d1ec201070611c326e592a56b6fac\",\"consumer\":\"slice-campaign:campaign-1\",\"consumptionBoundary\":\"campaign_terminalization\",\"coveredState\":\"review-result\",\"profile\":{\"admissibleObservers\":[\"observer-1\"],\"allowedMechanisms\":[\"transport-1\"],\"continuity\":\"fresh_initial\",\"id\":\"production-path-v1\",\"integrityRequired\":true,\"requiredCapabilities\":[\"read\"],\"requiredRealization\":\"model-1\",\"revision\":\"production-path-profile-v1\"},\"proposition\":\"execution path was observed\",\"revision\":\"production-path-claim-revision-v1@cff9e4df6aca86023c179fcd3ccf71b3780549c26a2a3e4a077a47a375cd5cf2\",\"schemaVersion\":1,\"subject\":{\"candidate\":{\"commit\":\"c1\",\"patchIdentity\":\"p1\",\"tree\":\"t1\"},\"reviewEpisodeId\":\"episode-1\"}}\n",
+      "sha256": "234b0d1390d07b335429b363a1fdd9dcf23367f301e8002c200a0f513e7c3369"
+    },
+    {
+      "value": {
+        "schema_version": 2,
+        "kind": "production_path",
+        "event_identity": "event-1",
+        "selection": {
+          "id": "selection-1",
+          "revision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "obligationId": "obligation-1",
+        "subject": {
+          "candidate": {
+            "commit": "c1",
+            "tree": "t1",
+            "patchIdentity": "p1"
+          },
+          "reviewEpisodeId": "episode-1"
+        },
+        "coveredState": "review-result",
+        "execution": {
+          "attemptId": "attempt-1",
+          "resultDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "realization": {
+          "requested": "model-1",
+          "observed": "model-1"
+        },
+        "capabilityEnvelope": {
+          "capabilities": [
+            "read"
+          ],
+          "mutationAuthorized": false
+        },
+        "continuity": {
+          "mode": "fresh_initial",
+          "sessionId": "session-1"
+        },
+        "transport": {
+          "mechanism": "transport-1",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "observer": {
+          "identity": "observer-1",
+          "kind": "trusted"
+        },
+        "observedAt": "2026-10-08T01:02:03.004Z",
+        "adapterVersion": "v1",
+        "artifacts": [
+          {
+            "owner": "owner-1",
+            "reference": "artifact:one",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "status": "verified"
+          }
+        ],
+        "id": "production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f"
+      },
+      "canonical": "{\"adapterVersion\":\"v1\",\"artifacts\":[{\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"owner\":\"owner-1\",\"reference\":\"artifact:one\",\"status\":\"verified\"}],\"capabilityEnvelope\":{\"capabilities\":[\"read\"],\"mutationAuthorized\":false},\"continuity\":{\"mode\":\"fresh_initial\",\"sessionId\":\"session-1\"},\"coveredState\":\"review-result\",\"event_identity\":\"event-1\",\"execution\":{\"attemptId\":\"attempt-1\",\"resultDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"id\":\"production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f\",\"kind\":\"production_path\",\"obligationId\":\"obligation-1\",\"observedAt\":\"2026-10-08T01:02:03.004Z\",\"observer\":{\"identity\":\"observer-1\",\"kind\":\"trusted\"},\"realization\":{\"observed\":\"model-1\",\"requested\":\"model-1\"},\"schema_version\":2,\"selection\":{\"id\":\"selection-1\",\"revision\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"},\"subject\":{\"candidate\":{\"commit\":\"c1\",\"patchIdentity\":\"p1\",\"tree\":\"t1\"},\"reviewEpisodeId\":\"episode-1\"},\"transport\":{\"digest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"mechanism\":\"transport-1\"}}\n",
+      "sha256": "13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2"
+    },
+    {
+      "value": {
+        "schema_version": 2,
+        "kind": "production_path",
+        "event_identity": "event-false",
+        "selection": {
+          "id": "selection-1",
+          "revision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "obligationId": "obligation-1",
+        "subject": {
+          "candidate": {
+            "commit": "c1",
+            "tree": "t1",
+            "patchIdentity": "p1"
+          },
+          "reviewEpisodeId": "episode-1"
+        },
+        "coveredState": "review-result",
+        "execution": {
+          "attemptId": "attempt-1",
+          "resultDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "realization": {
+          "requested": "model-1",
+          "observed": "model-1"
+        },
+        "capabilityEnvelope": {
+          "capabilities": [
+            "read"
+          ],
+          "mutationAuthorized": true
+        },
+        "continuity": {
+          "mode": "fresh_initial",
+          "sessionId": "session-1"
+        },
+        "transport": {
+          "mechanism": "transport-1",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "observer": {
+          "identity": "observer-1",
+          "kind": "trusted"
+        },
+        "observedAt": "2026-10-08T01:02:03.004Z",
+        "adapterVersion": "v1",
+        "artifacts": [
+          {
+            "owner": "owner-1",
+            "reference": "artifact:one",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "status": "verified"
+          }
+        ],
+        "id": "production-path-observation-v1@5b138d2ec6bc2a5e88e646f53412459c11557c3481449352fcfe6b46c5652a15"
+      },
+      "canonical": "{\"adapterVersion\":\"v1\",\"artifacts\":[{\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"owner\":\"owner-1\",\"reference\":\"artifact:one\",\"status\":\"verified\"}],\"capabilityEnvelope\":{\"capabilities\":[\"read\"],\"mutationAuthorized\":true},\"continuity\":{\"mode\":\"fresh_initial\",\"sessionId\":\"session-1\"},\"coveredState\":\"review-result\",\"event_identity\":\"event-false\",\"execution\":{\"attemptId\":\"attempt-1\",\"resultDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"id\":\"production-path-observation-v1@5b138d2ec6bc2a5e88e646f53412459c11557c3481449352fcfe6b46c5652a15\",\"kind\":\"production_path\",\"obligationId\":\"obligation-1\",\"observedAt\":\"2026-10-08T01:02:03.004Z\",\"observer\":{\"identity\":\"observer-1\",\"kind\":\"trusted\"},\"realization\":{\"observed\":\"model-1\",\"requested\":\"model-1\"},\"schema_version\":2,\"selection\":{\"id\":\"selection-1\",\"revision\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"},\"subject\":{\"candidate\":{\"commit\":\"c1\",\"patchIdentity\":\"p1\",\"tree\":\"t1\"},\"reviewEpisodeId\":\"episode-1\"},\"transport\":{\"digest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"mechanism\":\"transport-1\"}}\n",
+      "sha256": "cf5f049f04e10e52272b00ece61cfe054118f0334d7985119bffb4427d233683"
+    },
+    {
+      "value": {
+        "schemaVersion": 1,
+        "operationId": "est-1",
+        "claimId": "production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280",
+        "claimRevision": "production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c",
+        "observationId": "production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f",
+        "observationDigest": "13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2",
+        "evaluator": "claim-evidence.production-path-v1",
+        "profileRevision": "production-path-profile-v1",
+        "status": "established",
+        "reasons": [],
+        "predecessor": null,
+        "id": "production-path-establishment-v1@90d0d98f5ca6e19145fb2147c05350c531555061e4deccc6203789455683ca0b"
+      },
+      "canonical": "{\"claimId\":\"production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280\",\"claimRevision\":\"production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c\",\"evaluator\":\"claim-evidence.production-path-v1\",\"id\":\"production-path-establishment-v1@90d0d98f5ca6e19145fb2147c05350c531555061e4deccc6203789455683ca0b\",\"observationDigest\":\"13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2\",\"observationId\":\"production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f\",\"operationId\":\"est-1\",\"predecessor\":null,\"profileRevision\":\"production-path-profile-v1\",\"reasons\":[],\"schemaVersion\":1,\"status\":\"established\"}\n",
+      "sha256": "4d82d2ed71603b1d15b62585cfaa2604692f66f50d9bc01ef921c84704d692ea"
+    },
+    {
+      "value": {
+        "schemaVersion": 1,
+        "operationId": "est-2",
+        "claimId": "production-path-claim-v1@37746f2964dbcf3e8a5035e503d88d70ee3d1ec201070611c326e592a56b6fac",
+        "claimRevision": "production-path-claim-revision-v1@cff9e4df6aca86023c179fcd3ccf71b3780549c26a2a3e4a077a47a375cd5cf2",
+        "observationId": "production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f",
+        "observationDigest": "13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2",
+        "evaluator": "claim-evidence.production-path-v1",
+        "profileRevision": "production-path-profile-v1",
+        "status": "established",
+        "reasons": [],
+        "predecessor": null,
+        "id": "production-path-establishment-v1@7daa844a3e26a8465e728ea9cf915e2e2f9d4c514acaf805b68dd86528bf0e6c"
+      },
+      "canonical": "{\"claimId\":\"production-path-claim-v1@37746f2964dbcf3e8a5035e503d88d70ee3d1ec201070611c326e592a56b6fac\",\"claimRevision\":\"production-path-claim-revision-v1@cff9e4df6aca86023c179fcd3ccf71b3780549c26a2a3e4a077a47a375cd5cf2\",\"evaluator\":\"claim-evidence.production-path-v1\",\"id\":\"production-path-establishment-v1@7daa844a3e26a8465e728ea9cf915e2e2f9d4c514acaf805b68dd86528bf0e6c\",\"observationDigest\":\"13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2\",\"observationId\":\"production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f\",\"operationId\":\"est-2\",\"predecessor\":null,\"profileRevision\":\"production-path-profile-v1\",\"reasons\":[],\"schemaVersion\":1,\"status\":\"established\"}\n",
+      "sha256": "4776dd24b05af6ae523d2026116441b33d77685298a204d6b7c6c642e871ef7f"
+    },
+    {
+      "value": {
+        "schemaVersion": 1,
+        "operationId": "est-absent",
+        "claimId": "production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280",
+        "claimRevision": "production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c",
+        "observationId": "observation:unavailable",
+        "observationDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "evaluator": "claim-evidence.production-path-v1",
+        "profileRevision": "production-path-profile-v1",
+        "status": "unestablished",
+        "reasons": [
+          "observation_unavailable"
+        ],
+        "predecessor": null,
+        "id": "production-path-establishment-v1@566119892b8d924c7bd65c6867fef2190af20ec028754a3a7947f2a0288d850f"
+      },
+      "canonical": "{\"claimId\":\"production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280\",\"claimRevision\":\"production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c\",\"evaluator\":\"claim-evidence.production-path-v1\",\"id\":\"production-path-establishment-v1@566119892b8d924c7bd65c6867fef2190af20ec028754a3a7947f2a0288d850f\",\"observationDigest\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"observationId\":\"observation:unavailable\",\"operationId\":\"est-absent\",\"predecessor\":null,\"profileRevision\":\"production-path-profile-v1\",\"reasons\":[\"observation_unavailable\"],\"schemaVersion\":1,\"status\":\"unestablished\"}\n",
+      "sha256": "3685f8120049d87630bf38c8656790a379f23689aebb3659057f6969e75aa9a0"
+    },
+    {
+      "value": {
+        "schemaVersion": 1,
+        "operationId": "est-false",
+        "claimId": "production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280",
+        "claimRevision": "production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c",
+        "observationId": "production-path-observation-v1@5b138d2ec6bc2a5e88e646f53412459c11557c3481449352fcfe6b46c5652a15",
+        "observationDigest": "cf5f049f04e10e52272b00ece61cfe054118f0334d7985119bffb4427d233683",
+        "evaluator": "claim-evidence.production-path-v1",
+        "profileRevision": "production-path-profile-v1",
+        "status": "false",
+        "reasons": [
+          "mutation_authorized"
+        ],
+        "predecessor": null,
+        "id": "production-path-establishment-v1@75581fa4a1d8671e74ffcfaf889ac06a21625170f793dac835699c86a74a208a"
+      },
+      "canonical": "{\"claimId\":\"production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280\",\"claimRevision\":\"production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c\",\"evaluator\":\"claim-evidence.production-path-v1\",\"id\":\"production-path-establishment-v1@75581fa4a1d8671e74ffcfaf889ac06a21625170f793dac835699c86a74a208a\",\"observationDigest\":\"cf5f049f04e10e52272b00ece61cfe054118f0334d7985119bffb4427d233683\",\"observationId\":\"production-path-observation-v1@5b138d2ec6bc2a5e88e646f53412459c11557c3481449352fcfe6b46c5652a15\",\"operationId\":\"est-false\",\"predecessor\":null,\"profileRevision\":\"production-path-profile-v1\",\"reasons\":[\"mutation_authorized\"],\"schemaVersion\":1,\"status\":\"false\"}\n",
+      "sha256": "7af82407aa4274f564ec6a3f0a7dda35bab0dd33cec3011cba5b39859c56b6d5"
+    }
+  ],
+  "references": [
+    {
+      "owner": "claim-evidence",
+      "reference": "production-path-claim-v1@75a5fae03dc922f5b9d6a03da71f66481dca5a0f0cca76f0800769b2ea752280",
+      "revision": "production-path-claim-revision-v1@3482a2128aa4c6c122b76dd4a14a22227f9d91ea766fbf4f593de62da8d44f8c",
+      "sha256": "8b250d33e25738e4960cc12f7b1d74948bd59cda5ca5a2a3594c3ea5ed222fb0",
+      "freshness": "exact immutable revision"
+    },
+    {
+      "owner": "claim-evidence",
+      "reference": "production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f",
+      "revision": "production-path-observation-v1@1ecd428c1c2d26782579d64d3c60c8a4605aa01f94e1acb8b9dd3d4fee3ee39f",
+      "sha256": "13897563b607973c68c796ac4f01765fbf41d889794040671aa2d00e60614ae2",
+      "freshness": "exact immutable revision"
+    }
+  ]
+}

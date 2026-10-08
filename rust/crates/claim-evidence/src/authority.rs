@@ -9,6 +9,7 @@ use std::{
 
 pub const PROFILE: &str = "native-review-claims-v1";
 pub const FINDING_PROFILE: &str = "revision-bound-review-finding-v1";
+pub const PRODUCTION_PATH_PROFILE: &str = "production-path-v1";
 
 /// Host-owned source and configuration files. Their expected byte hashes are
 /// selected by the trusted host startup, never by a finding request.
@@ -47,6 +48,7 @@ pub(crate) struct Bootstrap {
     pub grants: Vec<JsValue>,
     pub config_sha256: String,
     pub source_sha256: String,
+    pub trusted_custody: Option<JsValue>,
 }
 
 pub fn sha256_bytes(bytes: &[u8]) -> String {
@@ -76,31 +78,62 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
         std::str::from_utf8(&source_bytes)
             .map_err(|_| crate::contract::ClaimError::new("source is not UTF-8"))?,
     )?;
-    exact_fields(
-        &config,
-        &["schema_version", "profile", "root_id", "grants"],
-        "bootstrap config",
-    )?;
-    exact_fields(
-        &source,
-        &[
-            "schema_version",
-            "owner",
-            "reference",
-            "revision",
-            "freshness",
-            "profile",
-            "actors",
-            "decision_scopes",
-            "grant_ids",
-        ],
-        "bootstrap source",
-    )?;
+    let version = field(&config, "schema_version")?;
     ensure(
-        field(&config, "schema_version")? == &JsValue::Number(1.0)
-            && field(&source, "schema_version")? == &JsValue::Number(1.0),
+        version == field(&source, "schema_version")?,
         "bootstrap schema mismatch",
     )?;
+    let v2 = version == &JsValue::Number(2.0);
+    ensure(
+        v2 || version == &JsValue::Number(1.0),
+        "bootstrap schema mismatch",
+    )?;
+    let mut config_fields = vec!["schema_version", "profile", "root_id", "grants"];
+    if v2 {
+        config_fields.push("trusted_custody");
+    }
+    exact_fields(&config, &config_fields, "bootstrap config")?;
+    let mut source_fields = vec![
+        "schema_version",
+        "owner",
+        "reference",
+        "revision",
+        "freshness",
+        "profile",
+        "actors",
+        "decision_scopes",
+        "grant_ids",
+    ];
+    if v2 {
+        source_fields.push("custody_config_sha256");
+    }
+    exact_fields(&source, &source_fields, "bootstrap source")?;
+    let trusted_custody = if v2 {
+        let custody = field(&config, "trusted_custody")?.clone();
+        exact_fields(
+            &custody,
+            &[
+                "owner",
+                "verifier",
+                "profile",
+                "artifact_schemes",
+                "reference_schemes",
+            ],
+            "trusted custody",
+        )?;
+        for key in ["owner", "verifier", "profile"] {
+            text_field(&custody, key)?;
+        }
+        strings(&custody, "artifact_schemes")?;
+        strings(&custody, "reference_schemes")?;
+        ensure(
+            text_field(&source, "custody_config_sha256")? == digest(&custody),
+            "custody source mismatch",
+        )?;
+        Some(custody)
+    } else {
+        None
+    };
     ensure(
         text_field(&config, "profile")? == PROFILE && text_field(&source, "profile")? == PROFILE,
         "bootstrap profile mismatch",
@@ -117,6 +150,10 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
     let mut seen = std::collections::HashSet::new();
     for grant in &grants {
         validate_grant(grant)?;
+        ensure(
+            v2 || text_field(grant, "profile")? == FINDING_PROFILE,
+            "production grant requires bootstrap v2",
+        )?;
         let grant_id = text_field(grant, "grant_id")?;
         ensure(
             seen.insert(grant_id.clone()) && ids.contains(&grant_id),
@@ -148,6 +185,7 @@ pub(crate) fn load(files: &OpenFiles) -> ClaimResult<Bootstrap> {
         grants,
         config_sha256,
         source_sha256,
+        trusted_custody,
     })
 }
 
@@ -184,15 +222,20 @@ pub(crate) fn validate_grant(grant: &JsValue) -> ClaimResult<()> {
     for key in ["grant_id", "actor", "decision_scope"] {
         text_field(grant, key)?;
     }
+    let profile = text_field(grant, "profile")?;
     ensure(
-        text_field(grant, "profile")? == FINDING_PROFILE,
+        profile == FINDING_PROFILE || profile == PRODUCTION_PATH_PROFILE,
         "grant profile mismatch",
     )?;
     let permissions = strings(grant, "permissions")?;
     ensure(
-        permissions
-            .iter()
-            .all(|p| p == "create_claim" || p == "publish_revision" || p == "record_reliance"),
+        permissions.iter().all(|p| {
+            if profile == FINDING_PROFILE {
+                p == "create_claim" || p == "publish_revision" || p == "record_reliance"
+            } else {
+                p == "record_observation" || p == "establish_claim" || p == "read_admission"
+            }
+        }),
         "unsupported grant permission",
     )?;
     let reference = field(grant, "authority_reference")?;

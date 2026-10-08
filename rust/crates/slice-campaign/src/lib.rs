@@ -1,17 +1,29 @@
 //! New private-root campaign owner for one initial native implementation review.
 //! References are descriptive data. Only [`Campaign`] owns a writer and can issue
-//! a live admission handle; this crate never enters a provider or settles a review.
+//! a live admission handle. Provider entry and owner evidence stay external;
+//! campaign state records their checked consequences.
 
 mod admission;
 mod application;
 pub mod codec;
+mod completion;
 pub mod contract;
 mod recovery;
 mod store;
 pub mod subject_binding;
 
+#[cfg(test)]
+extern crate self as slice_campaign;
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+mod test_support;
+
 pub use admission::{AdmissionHandle, Preparation, PreparedInitial};
-pub use application::{AdmitRequest, Campaign, TrustedConfig};
+pub use application::{AdmitRequest, Campaign, CampaignClaimsAdmission, TrustedConfig};
+pub use completion::{
+    CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,
+    DispatchedRequest, RecoveredRequest,
+};
 pub use contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRef, CampaignRevision,
     CandidateRef, Consequence, NativeReviewRequestRef, SelectionRef, Snapshot,

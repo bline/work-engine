@@ -4,6 +4,7 @@ use serde_json::json;
 use std::collections::BTreeSet;
 
 use crate::codec::campaign_digest;
+use crate::completion::CampaignProgress;
 use crate::{CampaignError, Result, require_sha, require_text};
 
 pub const PROFILE: &str = "campaign-native-initial-v1";
@@ -169,6 +170,8 @@ pub struct Snapshot {
     pub review_selection: Option<Value>,
     pub selection_ref: Option<SelectionRef>,
     pub obligations: Vec<Obligation>,
+    #[serde(default)]
+    pub progress: CampaignProgress,
     pub revision: CampaignRevision,
 }
 

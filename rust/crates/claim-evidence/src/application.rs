@@ -95,8 +95,8 @@ pub trait FindingAdmissionPort {
 }
 
 pub struct ClaimsApplication<P: FindingAdmissionPort> {
-    store: Store,
-    port: P,
+    pub(crate) store: Store,
+    pub(crate) port: P,
 }
 impl<P: FindingAdmissionPort> ClaimsApplication<P> {
     pub fn initialize(files: BootstrapFiles, port: P) -> ClaimResult<Self> {

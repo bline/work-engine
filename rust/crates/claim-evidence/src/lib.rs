@@ -7,6 +7,7 @@ mod authority;
 pub mod codec;
 mod contract;
 mod findings;
+mod production_path;
 mod projection;
 mod reliance;
 pub mod schema;
@@ -24,6 +25,15 @@ pub use contract::{
 };
 pub use findings::stable_claim_id;
 pub use findings::{ClaimId, FindingRevisionId, OperationId};
+pub use production_path::{
+    AdmissionReadRequest, CheckedClaimEvidence, CustodyEvidence, EstablishmentCommand,
+    ObservationCommand, ProductionPathAccess, ProductionPathAdmissionBinding,
+    ProductionPathAdmissionPort, ProductionPathLease, ProductionPathLocator,
+    ProductionPathPublication, ProductionPathReceipt, ProductionPathReconciliation,
+    ProductionPathReference, ProductionPathRequest, ProductionPathStage, ProductionPathWriteError,
+    production_path_request_sha256, validate_production_path_claim,
+    validate_production_path_establishment, validate_production_path_observation,
+};
 pub use projection::{
     ClaimProjection, PROJECTION_BUILD_VERSION, PROJECTION_CONTEXT_KIND, ProjectedRevision,
     ProjectionConsumer, ProjectionProvenance, ProjectionRequest, ProjectionSelection,

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "legacy_observations": [
+    {
+      "case": "empty_event_identity",
+      "legacy_behavior": "observation validator accepts the field without a nonempty text check",
+      "ce3_behavior": "refuse before effect"
+    },
+    {
+      "case": "caller_verified_without_owner_record",
+      "legacy_behavior": "shape permits verified artifact status",
+      "ce3_behavior": "refuse without trusted owner custody readback"
+    },
+    {
+      "case": "caller_status_and_predecessor",
+      "legacy_behavior": "direct establishment recording can accept nonempty evaluator and predecessor with caller status",
+      "ce3_behavior": "recompute status and require null predecessor"
+    }
+  ]
+}

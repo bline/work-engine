@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "source_sha256": "c13dcaa74c7bffdab1e90af919ec6877cc7f2ffe21b3e47b332b2a55f761511e",
+  "vectors": [
+    {
+      "observedAt": "0000-01-01T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "-000001-01-01T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "+010000-01-01T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "-271821-04-20T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "+275760-09-13T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "-000000-01-01T00:00:00.000Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "+000000-01-01T00:00:00.000Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "+009999-01-01T00:00:00.000Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "+275760-09-13T00:00:00.001Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "-271821-04-19T23:59:59.999Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "2026-02-30T00:00:00.000Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "1900-02-29T00:00:00.000Z",
+      "accepted": false
+    },
+    {
+      "observedAt": "2000-02-29T00:00:00.000Z",
+      "accepted": true
+    },
+    {
+      "observedAt": "2026-10-08T01:02:03.004+00:00",
+      "accepted": false
+    }
+  ]
+}

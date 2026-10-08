@@ -1,163 +1,219 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+#[cfg(feature = "test-faults")]
+use std::path::PathBuf;
+#[cfg(feature = "test-faults")]
 use std::process::Command;
 
+use claim_evidence::{AdmissionBinding, FindingAdmissionPort};
 use serde_json::{Value, json};
-use slice_campaign::codec::historical_digest;
 use slice_campaign::contract::episode_digest;
+#[cfg(feature = "test-faults")]
+use slice_campaign::{AcceptedBoundary, Baseline};
 use slice_campaign::{
-    AcceptedBoundary, AdmitRequest, AdvancePhase, Baseline, Campaign, CampaignIdentity,
-    Consequence, Effect, Preparation, Reconcile, TrustedConfig,
+    AdmitRequest, AdvancePhase, Campaign, CampaignIdentity, Consequence, DispatchCommand,
+    DispatchEffect, Effect, Preparation, Reconcile,
 };
 
-fn fixture(hash: &str) -> Vec<u8> {
-    fs::read(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/vectors")
-            .join(format!("{hash}.json")),
-    )
-    .unwrap()
-}
-fn setup() -> (
+mod support;
+use support::*;
+
+fn selected_campaign(
+    specialist_count: usize,
+    all_selected: bool,
+) -> (
     tempfile::TempDir,
-    PathBuf,
-    PathBuf,
+    Campaign,
     CampaignIdentity,
-    Baseline,
-    AcceptedBoundary,
+    slice_campaign::Snapshot,
 ) {
-    let temp = tempfile::tempdir().unwrap();
-    let repo = temp.path().join("repo");
-    let workspace = temp.path().join("workspace");
-    fs::create_dir(&workspace).unwrap();
-    let bundle=Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle");
-    assert!(
-        Command::new("/usr/bin/git")
-            .args(["init", "--bare", "-q"])
-            .arg(&repo)
-            .status()
-            .unwrap()
-            .success()
-    );
-    assert!(
-        Command::new("/usr/bin/git")
-            .arg("-C")
-            .arg(&repo)
-            .args(["fetch", "-q"])
-            .arg(bundle)
-            .args(["refs/*:refs/*"])
-            .status()
-            .unwrap()
-            .success()
-    );
-    let identity = CampaignIdentity {
-        run_id: "sc0-oracle-c2".into(),
-        slice_number: 1,
-        attempt_id: "sc0-attempt".into(),
-        plan_version: "sc0-controlled-v1".into(),
-    };
-    let baseline = Baseline {
-        accepted_commit: "a8e074d765d94a7e816b7ab49db428fd4a760a9f".into(),
-        accepted_tree: "17868afbf46ea53715981fce83171001c632b957".into(),
-        inter_slice_commit: "a8e074d765d94a7e816b7ab49db428fd4a760a9f".into(),
-    };
-    let boundary = AcceptedBoundary {
-        reference:
-            "controlled SC0 candidate-2 frozen source-tree gate fixture under accepted HP2 SC0 plan"
-                .into(),
-        sha256: "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef".into(),
-    };
-    (temp, repo, workspace, identity, baseline, boundary)
-}
-fn config(
-    root: PathBuf,
-    repo: PathBuf,
-    workspace: PathBuf,
-    identity: CampaignIdentity,
-    baseline: Baseline,
-    boundary: AcceptedBoundary,
-) -> TrustedConfig {
-    TrustedConfig::controlled_sc0(
+    let (temp, repo, workspace, identity, baseline, boundary) = setup();
+    let root = temp.path().join("campaign");
+    let mut app = Campaign::initialize(config(
         root,
-        repo,
-        workspace,
-        identity,
-        boundary,
-        baseline,
-        "hp3-host-writer".into(),
-        fixture("f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206"),
-        fixture("d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34"),
-        fixture("c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2"),
-    )
-    .unwrap()
-}
-fn anchored_artifacts(repo: &Path) -> (Vec<u8>, Vec<u8>) {
-    let mut candidate: Value = serde_json::from_slice(&fixture(
-        "4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd",
+        repo.clone(),
+        workspace.clone(),
+        identity.clone(),
+        baseline.clone(),
+        boundary.clone(),
     ))
     .unwrap();
-    let mut profile: Value = serde_json::from_slice(&fixture(
-        "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db",
-    ))
-    .unwrap();
-    candidate["repository"] = json!(repo.to_str().unwrap());
-    profile["subject"]["repository"] = json!(repo.to_str().unwrap());
-    profile["subject_digest"] = json!(historical_digest(&profile["subject"]).unwrap());
-    profile["provenance"]["derivation_sources"]["checkpoint_subject"]["identity"]["subject_digest"] =
-        profile["subject_digest"].clone();
-    let mut unsigned = profile.clone();
-    unsigned.as_object_mut().unwrap().remove("profile_digest");
-    profile["profile_digest"] = json!(historical_digest(&unsigned).unwrap());
-    (
-        serde_json::to_vec(&candidate).unwrap(),
-        serde_json::to_vec(&profile).unwrap(),
-    )
-}
-fn claim_digest(value: &Value) -> String {
-    let encoded = serde_json::to_string(value).unwrap();
-    let value = claim_evidence::codec::parse_json(&encoded).unwrap();
-    claim_evidence::codec::digest(&value).unwrap()
-}
-fn claim(
-    identity: &CampaignIdentity,
-    obligation: &str,
-    candidate: &Value,
-    boundary: &str,
-) -> Value {
-    let consumer = if boundary == "builder_projection" {
-        format!("slice-builder:{}", identity.key())
-    } else {
-        format!("slice-campaign:{}", identity.key())
+    let accepted = applied(
+        app.admit(
+            "admit-many",
+            AdmitRequest {
+                identity: identity.clone(),
+                repository: repo.clone(),
+                workspace,
+                accepted_boundary: boundary.clone(),
+                baseline,
+                expected_impact: None,
+            },
+        )
+        .unwrap(),
+    );
+    let consequence = Consequence {
+        owner: "slice-supervisor".into(),
+        reference: "accepted-boundary".into(),
+        sha256: boundary.sha256,
     };
-    let episode_id =
-        episode_digest(&json!({"identity":identity,"obligationId":obligation})).unwrap();
-    let mut claim = json!({"schemaVersion":1,"claimId":"","revision":"","proposition":"independent initial review","subject":{"candidate":candidate,"reviewEpisodeId":&episode_id[..32]},"coveredState":"initial review","consumptionBoundary":boundary,"consumer":consumer,"acceptance":{"owner":"operator","source":"accepted plan","unestablishedRoute":"re-review"},"profile":{"id":"production-path-v1","revision":"production-path-profile-v1","allowedMechanisms":["direct"],"admissibleObservers":["host"],"integrityRequired":true,"requiredRealization":"claude-sonnet-5","requiredCapabilities":[],"continuity":"fresh_initial"}});
-    let id_body = json!({"proposition":claim["proposition"],"subject":claim["subject"],"coveredState":claim["coveredState"],"consumptionBoundary":claim["consumptionBoundary"],"consumer":claim["consumer"]});
-    claim["claimId"] = json!(format!(
-        "production-path-claim-v1@{}",
-        claim_digest(&id_body)
-    ));
-    let mut revision_body = claim.clone();
-    revision_body.as_object_mut().unwrap().remove("revision");
-    claim["revision"] = json!(format!(
-        "production-path-claim-revision-v1@{}",
-        claim_digest(&revision_body)
-    ));
-    claim
+    let implementing = applied(
+        app.advance(
+            &identity,
+            &accepted.revision,
+            "implement-many",
+            AdvancePhase::Implementing,
+            consequence.clone(),
+        )
+        .unwrap(),
+    );
+    let gate = applied(
+        app.advance(
+            &identity,
+            &implementing.revision,
+            "gate-many",
+            AdvancePhase::GateReady,
+            consequence.clone(),
+        )
+        .unwrap(),
+    );
+    let (candidate, profile) = anchored_artifacts(&repo);
+    let bound = applied(
+        app.bind_existing_candidate(
+            &identity,
+            &gate.revision,
+            "candidate-many",
+            &candidate,
+            &profile,
+        )
+        .unwrap(),
+    );
+    let ready = applied(
+        app.advance(
+            &identity,
+            &bound.revision,
+            "ready-many",
+            AdvancePhase::ReviewReady,
+            consequence,
+        )
+        .unwrap(),
+    );
+    let c = ready.candidate.as_ref().unwrap();
+    let subject = json!({"commit":c.commit,"tree":c.tree,"patchIdentity":c.patch_identity});
+    let specialists: Vec<Value> = (0..specialist_count).map(|index| {
+        let obligation = format!("review-{index}");
+        if all_selected || index == 0 {
+            json!({"obligationId":obligation,"skill":"implementation-review","selection":"selected",
+                "requiredClaims":[claim(&identity,&obligation,&subject,"builder_projection"),
+                    claim(&identity,&obligation,&subject,"campaign_terminalization")]})
+        } else {
+            json!({"obligationId":obligation,"skill":"implementation-review","selection":"omitted",
+                "requiredClaims":[]})
+        }
+    }).collect();
+    let selected = applied(
+        app.bind_selection(
+            &identity,
+            &ready.revision,
+            "selection-many",
+            json!({"schemaVersion":2,"owner":"slice-supervisor","selectionId":"selection-many",
+            "subject":subject,"specialists":specialists}),
+        )
+        .unwrap(),
+    );
+    (temp, app, identity, selected)
 }
-fn applied<T>(effect: Effect<T>) -> T {
-    match effect {
-        Effect::Applied { value, .. } => value,
-        other => panic!(
-            "expected applied, got {}",
-            match other {
-                Effect::Replayed { .. } => "replay",
-                Effect::NoEffect(_) => "no effect",
-                Effect::OutcomeUnknown(_) => "unknown",
-                _ => unreachable!(),
-            }
-        ),
+
+#[test]
+fn independent_selected_obligations_prepare_dispatch_and_recover() {
+    let (_temp, mut app, identity, selected) = selected_campaign(2, true);
+    let first = match app
+        .prepare_initial(&identity, &selected.revision, "review-0", "prepare-many-0")
+        .unwrap()
+    {
+        Preparation::Applied(value) => value,
+        _ => panic!("first preparation"),
+    };
+    let after_first = app.read(&identity).unwrap().unwrap();
+    let second = match app
+        .prepare_initial(
+            &identity,
+            &after_first.revision,
+            "review-1",
+            "prepare-many-1",
+        )
+        .unwrap()
+    {
+        Preparation::Applied(value) => value,
+        _ => panic!("second preparation"),
+    };
+    assert_eq!(
+        app.read(&identity)
+            .unwrap()
+            .unwrap()
+            .progress
+            .attempts
+            .len(),
+        2
+    );
+    for (obligation, prepared, operation) in [
+        ("review-0", first, "dispatch-many-0"),
+        ("review-1", second, "dispatch-many-1"),
+    ] {
+        let locator = slice_campaign::RecoveryLocator {
+            root_id: app.root_id().into(),
+            anchored_root: app.anchored_root().into(),
+            identity: identity.clone(),
+            operation_id: prepared.request.operation_id.clone(),
+            kind: "prepare_initial".into(),
+            request_digest: prepared.receipt.request_digest.clone(),
+            expected_revision: prepared.receipt.prior_revision.clone(),
+            profile_digest: prepared.receipt.profile_digest.clone(),
+        };
+        let recovered = app.recover_request(&locator, obligation).unwrap();
+        let handle = recovered
+            .preparation_recovery
+            .expect("independent recovery handle");
+        let episode =
+            episode_digest(&json!({"identity":identity,"obligationId":obligation})).unwrap();
+        let command = DispatchCommand {
+            episode_id: episode[..32].into(),
+            writer_actor: "native-review-host".into(),
+            runtime_session: format!("session-{obligation}"),
+            reviewer_profile: "direct-initial".into(),
+            begin_transition_id: format!("begin-{obligation}"),
+            result_transition_id: format!("result-{obligation}"),
+        };
+        let DispatchEffect::Applied { permit, .. } = app
+            .authorize_recovered_dispatch(handle, operation, command)
+            .unwrap()
+        else {
+            panic!("independent dispatch")
+        };
+        app.consume_dispatch_permit(permit).unwrap();
+        assert!(
+            app.recover_request(&locator, obligation)
+                .unwrap()
+                .dispatch
+                .is_some()
+        );
+        assert!(matches!(
+            app.prepare_initial(
+                &identity,
+                prepared.receipt.prior_revision.as_ref().unwrap(),
+                obligation,
+                &prepared.request.operation_id
+            )
+            .unwrap(),
+            Preparation::Replayed { .. }
+        ));
     }
+}
+
+#[test]
+fn accepted_129_specialist_selection_remains_readable() {
+    let (_temp, app, identity, selected) = selected_campaign(129, false);
+    assert_eq!(selected.obligations.len(), 129);
+    assert_eq!(app.read(&identity).unwrap().unwrap().obligations.len(), 129);
 }
 
 #[test]
@@ -290,13 +346,13 @@ fn full_initial_chain_reopens_without_regranting_entry() {
         Reconcile::Committed(_)
     ));
     drop(app);
-    let reopened = Campaign::open(config(
-        root,
-        repo,
-        workspace,
+    let mut reopened = Campaign::open(config(
+        root.clone(),
+        repo.clone(),
+        workspace.clone(),
         identity.clone(),
-        baseline,
-        boundary,
+        baseline.clone(),
+        boundary.clone(),
     ))
     .unwrap();
     assert!(reopened.consume_initial_admission(handle).is_err());
@@ -312,6 +368,74 @@ fn full_initial_chain_reopens_without_regranting_entry() {
         reopened.reconcile_operation(&locator),
         Reconcile::Committed(_)
     ));
+    let recovered = reopened.recover_request(&locator, "review-1").unwrap();
+    assert!(recovered.dispatch.is_none());
+    let recovered_handle = recovered
+        .preparation_recovery
+        .expect("unentered preparation can be re-admitted");
+    let episode_id =
+        episode_digest(&json!({"identity":identity,"obligationId":"review-1"})).unwrap();
+    let command = DispatchCommand {
+        episode_id: episode_id[..32].into(),
+        writer_actor: "native-review-host".into(),
+        runtime_session: "session-1".into(),
+        reviewer_profile: "direct-initial".into(),
+        begin_transition_id: "begin-1".into(),
+        result_transition_id: "result-1".into(),
+    };
+    let effect = reopened
+        .authorize_recovered_dispatch(recovered_handle, "dispatch-1", command.clone())
+        .unwrap();
+    let (permit, dispatch_receipt) = match effect {
+        DispatchEffect::Applied { permit, receipt } => (permit, receipt),
+        _ => panic!("expected one committed dispatch"),
+    };
+    let dispatch_locator = slice_campaign::RecoveryLocator {
+        root_id: reopened.root_id().into(),
+        anchored_root: reopened.anchored_root().into(),
+        identity: identity.clone(),
+        operation_id: "dispatch-1".into(),
+        kind: "authorize_dispatch".into(),
+        request_digest: dispatch_receipt.request_digest.clone(),
+        expected_revision: dispatch_receipt.prior_revision.clone(),
+        profile_digest: dispatch_receipt.profile_digest.clone(),
+    };
+    let dispatched = reopened.consume_dispatch_permit(permit).unwrap();
+    assert_eq!(dispatched.command, command);
+    assert_eq!(dispatched.request.request_digest, request.request_digest);
+    let (replayed, _) = reopened.replay_dispatch(&dispatch_locator).unwrap();
+    assert!(replayed.may_have_entered);
+    let mut conflicting = dispatch_locator.clone();
+    conflicting.request_digest = "0".repeat(64);
+    assert!(reopened.replay_dispatch(&conflicting).is_err());
+    let current = reopened.read(&identity).unwrap().unwrap();
+    let binding = AdmissionBinding {
+        campaign_root_id: reopened.root_id().into(),
+        campaign_revision: current.revision.as_str().into(),
+        campaign_operation_id: "unregistered-intent".into(),
+        obligation_id: "review-1".into(),
+        candidate_digest: request.candidate.receipt_sha256.clone(),
+        selection_digest: request.selection.campaign_digest.clone(),
+        profile_digest: request.profile_digest.clone(),
+        prepared_request_sha256: request.request_digest.clone(),
+        episode_revision: "episode-revision".into(),
+        result_sha256: "1".repeat(64),
+        claims_request_sha256: "2".repeat(64),
+    };
+    assert!(reopened.claims_admission().acquire(&binding).is_err());
+    let recovered = reopened.recover_request(&locator, "review-1").unwrap();
+    assert!(recovered.preparation_recovery.is_none());
+    assert!(recovered.dispatch.unwrap().may_have_entered);
+    drop(reopened);
+    let reopened =
+        Campaign::open(config(root, repo, workspace, identity, baseline, boundary)).unwrap();
+    assert!(
+        reopened
+            .recover_request(&locator, "review-1")
+            .unwrap()
+            .preparation_recovery
+            .is_none()
+    );
 }
 
 #[test]
@@ -409,6 +533,29 @@ fn fresh_initial_handle_consumes_exact_durable_request() {
     assert!(
         matches!(app.prepare_initial(&identity, &selected.revision, "review-1", "prepare-fresh").unwrap(), Preparation::Replayed { request, .. } if *request == expected)
     );
+}
+
+#[test]
+fn historical_schema_marker_is_not_upgraded_on_open() {
+    let (temp, repo, workspace, identity, baseline, boundary) = setup();
+    let root = temp.path().join("campaign");
+    let app = Campaign::initialize(config(
+        root.clone(),
+        repo.clone(),
+        workspace.clone(),
+        identity.clone(),
+        baseline.clone(),
+        boundary.clone(),
+    ))
+    .unwrap();
+    drop(app);
+    let current = root.join(".campaign-native-initial-v2");
+    let historical = root.join(".campaign-native-initial-v1");
+    let mut marker: Value = serde_json::from_slice(&fs::read(&current).unwrap()).unwrap();
+    marker["schema_version"] = json!(1);
+    fs::write(&historical, serde_json::to_vec(&marker).unwrap()).unwrap();
+    fs::remove_file(current).unwrap();
+    assert!(Campaign::open(config(root, repo, workspace, identity, baseline, boundary)).is_err());
 }
 
 #[test]
@@ -653,7 +800,7 @@ fn killed_before_and_after_sqlite_commit_reconcile_exactly() {
         ))
         .unwrap();
         let marker: Value =
-            serde_json::from_slice(&fs::read(root.join(".campaign-native-initial-v1")).unwrap())
+            serde_json::from_slice(&fs::read(root.join(".campaign-native-initial-v2")).unwrap())
                 .unwrap();
         let digest=campaign_digest(&json!({"operationId":"fault-admit","identity":identity,"repository":repo,"workspace":workspace,"acceptedBoundary":boundary,"baseline":baseline,"expectedImpact":null})).unwrap();
         let locator = RecoveryLocator {

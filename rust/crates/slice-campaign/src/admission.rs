@@ -12,6 +12,9 @@ pub struct AdmissionHandle {
     pub(crate) operation_id: String,
     pub(crate) request_digest: String,
     pub(crate) prepared_revision: CampaignRevision,
+    /// Current CAS revision; may advance independently of this obligation's
+    /// immutable preparation revision before recovery grants dispatch.
+    pub(crate) expected_revision: CampaignRevision,
 }
 
 #[derive(Debug)]
