@@ -7,6 +7,186 @@ use slice_campaign::codec::historical_digest;
 use slice_campaign::contract::episode_digest;
 use slice_campaign::{AcceptedBoundary, Baseline, CampaignIdentity, Effect, TrustedConfig};
 
+// Each integration test compiles this shared module independently; admission
+// uses the other helpers but not the history workload fixture below.
+#[allow(dead_code)]
+pub(crate) enum CorpusRoot {
+    Random(tempfile::TempDir),
+    Fixed(PathBuf),
+}
+
+impl CorpusRoot {
+    #[allow(dead_code)]
+    pub(crate) fn path(&self) -> &Path {
+        match self {
+            Self::Random(temp) => temp.path(),
+            Self::Fixed(path) => path,
+        }
+    }
+}
+
+impl Drop for CorpusRoot {
+    fn drop(&mut self) {
+        if let Self::Fixed(path) = self {
+            fs::remove_dir_all(path).unwrap();
+        }
+    }
+}
+
+/// Build a controlled SC0 campaign through its public API for history workloads.
+/// The caller owns the returned temporary root for the whole measurement.
+#[allow(dead_code)]
+pub(crate) fn selected_campaign(
+    specialist_count: usize,
+    all_selected: bool,
+) -> (
+    CorpusRoot,
+    slice_campaign::Campaign,
+    CampaignIdentity,
+    slice_campaign::Snapshot,
+    Box<dyn Fn() -> TrustedConfig>,
+) {
+    use slice_campaign::{AdmitRequest, AdvancePhase, Campaign, Consequence};
+    let (temp, repo, workspace, identity, baseline, boundary) =
+        if let Ok(fixed) = std::env::var("P1_CORPUS_ROOT") {
+            let path = PathBuf::from(fixed);
+            assert!(path.is_absolute());
+            fs::create_dir(&path).unwrap();
+            let (repo, workspace, identity, baseline, boundary) = setup_paths(&path);
+            (
+                CorpusRoot::Fixed(path),
+                repo,
+                workspace,
+                identity,
+                baseline,
+                boundary,
+            )
+        } else {
+            let (temp, repo, workspace, identity, baseline, boundary) = setup();
+            (
+                CorpusRoot::Random(temp),
+                repo,
+                workspace,
+                identity,
+                baseline,
+                boundary,
+            )
+        };
+    let initial_configuration = config(
+        temp.path().join("campaign"),
+        repo.clone(),
+        workspace.clone(),
+        identity.clone(),
+        baseline.clone(),
+        boundary.clone(),
+    );
+    let reopen_root = temp.path().join("campaign");
+    let reopen_repo = repo.clone();
+    let reopen_workspace = workspace.clone();
+    let reopen_identity = identity.clone();
+    let reopen_baseline = baseline.clone();
+    let reopen_boundary = boundary.clone();
+    let reopen = Box::new(move || {
+        config(
+            reopen_root.clone(),
+            reopen_repo.clone(),
+            reopen_workspace.clone(),
+            reopen_identity.clone(),
+            reopen_baseline.clone(),
+            reopen_boundary.clone(),
+        )
+    });
+    let mut app = Campaign::initialize(initial_configuration).unwrap();
+    let accepted = applied(
+        app.admit(
+            "admit-many",
+            AdmitRequest {
+                identity: identity.clone(),
+                repository: repo.clone(),
+                workspace,
+                accepted_boundary: boundary.clone(),
+                baseline,
+                expected_impact: None,
+            },
+        )
+        .unwrap(),
+    );
+    let consequence = Consequence {
+        owner: "slice-supervisor".into(),
+        reference: "accepted-boundary".into(),
+        sha256: boundary.sha256,
+    };
+    let implementing = applied(
+        app.advance(
+            &identity,
+            &accepted.revision,
+            "implement-many",
+            AdvancePhase::Implementing,
+            consequence.clone(),
+        )
+        .unwrap(),
+    );
+    let gate = applied(
+        app.advance(
+            &identity,
+            &implementing.revision,
+            "gate-many",
+            AdvancePhase::GateReady,
+            consequence.clone(),
+        )
+        .unwrap(),
+    );
+    let (candidate, profile) = anchored_artifacts(&repo);
+    let bound = applied(
+        app.bind_existing_candidate(
+            &identity,
+            &gate.revision,
+            "candidate-many",
+            &candidate,
+            &profile,
+        )
+        .unwrap(),
+    );
+    let ready = applied(
+        app.advance(
+            &identity,
+            &bound.revision,
+            "ready-many",
+            AdvancePhase::ReviewReady,
+            consequence,
+        )
+        .unwrap(),
+    );
+    if specialist_count == 0 {
+        return (temp, app, identity, ready, reopen);
+    }
+    let candidate = ready.candidate.as_ref().unwrap();
+    let subject = json!({"commit":candidate.commit,"tree":candidate.tree,
+        "patchIdentity":candidate.patch_identity});
+    let specialists: Vec<Value> = (0..specialist_count).map(|index| {
+        let obligation = format!("review-{index}");
+        if all_selected || index == 0 {
+            json!({"obligationId":obligation,"skill":"implementation-review","selection":"selected",
+                "requiredClaims":[claim(&identity,&obligation,&subject,"builder_projection"),
+                    claim(&identity,&obligation,&subject,"campaign_terminalization")]})
+        } else {
+            json!({"obligationId":obligation,"skill":"implementation-review","selection":"omitted",
+                "requiredClaims":[]})
+        }
+    }).collect();
+    let selected = applied(
+        app.bind_selection(
+            &identity,
+            &ready.revision,
+            "selection-many",
+            json!({"schemaVersion":2,"owner":"slice-supervisor","selectionId":"selection-many",
+            "subject":subject,"specialists":specialists}),
+        )
+        .unwrap(),
+    );
+    (temp, app, identity, selected, reopen)
+}
+
 pub(crate) fn fixture(hash: &str) -> Vec<u8> {
     fs::read(
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -24,8 +204,21 @@ pub(crate) fn setup() -> (
     AcceptedBoundary,
 ) {
     let temp = tempfile::tempdir().unwrap();
-    let repo = temp.path().join("repo");
-    let workspace = temp.path().join("workspace");
+    let (repo, workspace, identity, baseline, boundary) = setup_paths(temp.path());
+    (temp, repo, workspace, identity, baseline, boundary)
+}
+
+fn setup_paths(
+    root: &Path,
+) -> (
+    PathBuf,
+    PathBuf,
+    CampaignIdentity,
+    Baseline,
+    AcceptedBoundary,
+) {
+    let repo = root.join("repo");
+    let workspace = root.join("workspace");
     fs::create_dir(&workspace).unwrap();
     let bundle=Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle");
     assert!(
@@ -64,7 +257,7 @@ pub(crate) fn setup() -> (
                 .into(),
         sha256: "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef".into(),
     };
-    (temp, repo, workspace, identity, baseline, boundary)
+    (repo, workspace, identity, baseline, boundary)
 }
 pub(crate) fn config(
     root: PathBuf,

@@ -1,6 +1,7 @@
 //! Review-episode application with separate offline and native-host admission ports.
 pub mod admission;
 pub mod host_admission;
+pub mod in_process_admission;
 pub mod operation;
 pub mod protocol;
 

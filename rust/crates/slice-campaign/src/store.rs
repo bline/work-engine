@@ -20,6 +20,31 @@ const LOCK: &str = ".writer.lock";
 const SCHEMA: &str = include_str!("../migrations/0001_private_review.sql");
 const SCHEMA_2: &str = include_str!("../migrations/0002_initial_completion.sql");
 
+#[cfg(test)]
+mod read_profile {
+    use std::cell::Cell;
+    #[derive(Clone, Copy, Default, Debug)]
+    pub(super) struct Counts {
+        pub decoded_snapshots: usize,
+        pub decoded_bytes: usize,
+        pub progress_current: usize,
+        pub progress_historical: usize,
+        pub slot_lookups: usize,
+        pub revision_hashes: usize,
+    }
+    thread_local! { static COUNTS: Cell<Counts> = Cell::new(Counts::default()); }
+    pub(super) fn update(f: impl FnOnce(&mut Counts)) {
+        COUNTS.with(|cell| {
+            let mut counts = cell.get();
+            f(&mut counts);
+            cell.set(counts);
+        });
+    }
+    pub(super) fn take() -> Counts {
+        COUNTS.with(|cell| cell.replace(Counts::default()))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Marker {
@@ -354,12 +379,20 @@ impl Store {
                     "SQL campaign revision differs".into(),
                 ));
             }
-            let committed: Option<String> = self.conn.query_row(
-                "SELECT operation_id FROM operation_receipt WHERE identity_key=?1 AND result_json=?2 LIMIT 1",
-                params![identity.key(), json], |row| row.get(0),
+            let committed: Option<(String, String, String, String)> = self.conn.query_row(
+                "SELECT operation_id,kind,request_digest,receipt_json FROM operation_receipt WHERE identity_key=?1 AND result_json=?2 LIMIT 1",
+                params![identity.key(), json],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
             ).optional().map_err(|e| CampaignError::Integrity(e.to_string()))?;
-            let operation_id = committed.ok_or_else(|| CampaignError::Integrity("current state lacks exact commit receipt".into()))?;
-            self.replay_result(&operation_id)?.ok_or_else(|| CampaignError::Integrity("current commit receipt absent".into()))?;
+            let (operation_id, kind, request_digest, receipt_json) = committed
+                .ok_or_else(|| CampaignError::Integrity("current state lacks exact commit receipt".into()))?;
+            let receipt: OperationReceipt = serde_json::from_str(&receipt_json)
+                .map_err(|e| CampaignError::Integrity(e.to_string()))?;
+            // The exact result_json match binds this envelope to the same bytes
+            // decoded above. Current progress validation is strictly stronger
+            // than historical validation for that identical snapshot.
+            self.validate_result_receipt(&operation_id, &identity.key(), &kind,
+                &request_digest, receipt, &state)?;
             self.validate_progress(&state, false)?;
             Ok(state)
         })
@@ -390,39 +423,75 @@ impl Store {
             let receipt: OperationReceipt = serde_json::from_str(&receipt)
                 .map_err(|e| CampaignError::Integrity(e.to_string()))?;
             let state: Snapshot = self.decode_state(&state, &receipt.identity)?;
-            if receipt.root_id != self.root_id
-                || receipt.operation_id != operation_id
-                || receipt.kind != kind
-                || receipt.request_digest != request_digest
-                || receipt.identity.key() != identity_key
-                || state.identity != receipt.identity
-                || state.schema_version != 2
-                || state.revision != receipt.result_revision
-                || receipt.profile_digest != self.marker.trusted_config_digest
-                || receipt.result_reference != format!("campaign:{}@{}", identity_key, state.revision.as_str())
-                || !valid_sha(&receipt.request_digest)
-            {
-                return Err(CampaignError::Integrity(
-                    "stored operation receipt/result differs".into(),
-                ));
-            }
-            if receipt.kind == "admit" {
-                if receipt.prior_revision.is_some() { return Err(CampaignError::Integrity("admission prior revision differs".into())); }
-            } else {
-                let prior = receipt.prior_revision.as_ref().ok_or_else(|| CampaignError::Integrity("operation prior revision absent".into()))?;
-                let exists: Option<i64> = self.conn.query_row(
-                    "SELECT 1 FROM operation_receipt WHERE identity_key=?1 AND json_extract(receipt_json,'$.resultRevision')=?2 LIMIT 1",
-                    params![identity_key, prior.as_str()], |row| row.get(0),
-                ).optional().map_err(|e| CampaignError::Integrity(e.to_string()))?;
-                if exists.is_none() { return Err(CampaignError::Integrity("operation prior revision uncommitted".into())); }
-            }
+            let receipt = self.validate_result_receipt(
+                operation_id,
+                &identity_key,
+                &kind,
+                &request_digest,
+                receipt,
+                &state,
+            )?;
             self.validate_progress(&state, true)?;
             Ok((receipt, state))
         })
         .transpose()
     }
 
+    fn validate_result_receipt(
+        &self,
+        operation_id: &str,
+        identity_key: &str,
+        kind: &str,
+        request_digest: &str,
+        receipt: OperationReceipt,
+        state: &Snapshot,
+    ) -> Result<OperationReceipt> {
+        if receipt.root_id != self.root_id
+            || receipt.operation_id != operation_id
+            || receipt.kind != kind
+            || receipt.request_digest != request_digest
+            || receipt.identity.key() != identity_key
+            || state.identity != receipt.identity
+            || state.schema_version != 2
+            || state.revision != receipt.result_revision
+            || receipt.profile_digest != self.marker.trusted_config_digest
+            || receipt.result_reference
+                != format!("campaign:{}@{}", identity_key, state.revision.as_str())
+            || !valid_sha(&receipt.request_digest)
+        {
+            return Err(CampaignError::Integrity(
+                "stored operation receipt/result differs".into(),
+            ));
+        }
+        if receipt.kind == "admit" {
+            if receipt.prior_revision.is_some() {
+                return Err(CampaignError::Integrity(
+                    "admission prior revision differs".into(),
+                ));
+            }
+        } else {
+            let prior = receipt.prior_revision.as_ref().ok_or_else(|| {
+                CampaignError::Integrity("operation prior revision absent".into())
+            })?;
+            let exists: Option<i64> = self.conn.query_row(
+                    "SELECT 1 FROM operation_receipt WHERE identity_key=?1 AND json_extract(receipt_json,'$.resultRevision')=?2 LIMIT 1",
+                    params![identity_key, prior.as_str()], |row| row.get(0),
+                ).optional().map_err(|e| CampaignError::Integrity(e.to_string()))?;
+            if exists.is_none() {
+                return Err(CampaignError::Integrity(
+                    "operation prior revision uncommitted".into(),
+                ));
+            }
+        }
+        Ok(receipt)
+    }
+
     fn decode_state(&self, json: &str, identity: &CampaignIdentity) -> Result<Snapshot> {
+        #[cfg(test)]
+        read_profile::update(|counts| {
+            counts.decoded_snapshots += 1;
+            counts.decoded_bytes += json.len();
+        });
         if json.len() > 1_048_576 {
             return Err(CampaignError::Integrity(
                 "stored campaign exceeds capacity".into(),
@@ -444,6 +513,14 @@ impl Store {
     /// Bind each mutable projection to its immutable preparation result and
     /// retained slot. Historical results may precede later dispatch or retry.
     fn validate_progress(&self, state: &Snapshot, historical: bool) -> Result<()> {
+        #[cfg(test)]
+        read_profile::update(|counts| {
+            if historical {
+                counts.progress_historical += 1;
+            } else {
+                counts.progress_current += 1;
+            }
+        });
         let fail = || CampaignError::Integrity("campaign progress/receipt/slot differs".into());
         // The accepted encoded-state capacity bounds iteration; no extra
         // reader-only cardinality rule may reject a committed public write.
@@ -894,6 +971,8 @@ impl Store {
         identity: &CampaignIdentity,
         operation_id: &str,
     ) -> Result<Option<SlotHistory>> {
+        #[cfg(test)]
+        read_profile::update(|counts| counts.slot_lookups += 1);
         self.verify_binding()?;
         self.conn.query_row(
             "SELECT obligation_id,attempt_id,request_digest,prepared_revision,dispatch_operation_id,may_have_entered,active FROM request_slot WHERE identity_key=?1 AND operation_id=?2",
@@ -939,6 +1018,8 @@ fn valid_sha(value: &str) -> bool {
 }
 
 pub(crate) fn state_revision(state: &Snapshot) -> Result<CampaignRevision> {
+    #[cfg(test)]
+    read_profile::update(|counts| counts.revision_hashes += 1);
     let mut value =
         serde_json::to_value(state).map_err(|e| CampaignError::Contract(e.to_string()))?;
     strip_revision(&mut value)?;
@@ -948,6 +1029,39 @@ pub(crate) fn state_revision(state: &Snapshot) -> Result<CampaignRevision> {
         campaign_update_revision_digest(&value)?
     };
     CampaignRevision::new(digest)
+}
+
+#[cfg(test)]
+mod history_profile_tests {
+    use super::read_profile;
+    use crate::test_support;
+
+    #[test]
+    fn profile_one_public_current_read() {
+        let (_temp, mut app, identity, selected, _reopen) =
+            test_support::selected_campaign(8, true);
+        let mut revision = selected.revision;
+        for index in 0..8 {
+            let obligation = format!("review-{index}");
+            let operation = format!("profile-prepare-{index}");
+            // The real public API owns all corpus writes; no SQL fixture edits.
+            assert!(matches!(
+                app.prepare_initial(&identity, &revision, &obligation, &operation),
+                Ok(crate::Preparation::Applied(_))
+            ));
+            revision = app.read(&identity).unwrap().unwrap().revision;
+            if index == 7 {
+                read_profile::take();
+                let state = app.read(&identity).unwrap().unwrap();
+                assert_eq!(state.progress.attempts.len(), 8);
+                let counts = read_profile::take();
+                eprintln!("P1_READ_PROFILE {counts:?}");
+                assert_eq!(counts.progress_current, 1);
+                assert_eq!(counts.progress_historical, 0);
+                return;
+            }
+        }
+    }
 }
 
 fn strip_revision(value: &mut serde_json::Value) -> Result<()> {

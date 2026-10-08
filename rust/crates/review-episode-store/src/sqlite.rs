@@ -39,6 +39,8 @@ impl Default for StoreOptions {
 pub struct EpisodeStore {
     pub(crate) conn: Option<Connection>,
     root: PathBuf,
+    read_only: bool,
+    database_identity: Option<fs::Metadata>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -80,6 +82,45 @@ impl EpisodeStore {
         Ok((Self::open_database(&root, options)?, selection))
     }
 
+    /// Open an existing selected native root without writable SQLite setup.
+    /// The marker, database and sidecars are checked again before each read.
+    pub fn open_native_read_only(
+        root: &Path,
+        options: StoreOptions,
+    ) -> StoreResult<(Self, NativeRootSelection)> {
+        let root = anchored_private_root(root)?;
+        let selection = read_native_selection(&root)?;
+        let db = root.join(DB_NAME);
+        let held = open_existing_read_nofollow(&db)?;
+        verify_sidecars(&root)?;
+        let before = held.metadata().map_err(io_err)?;
+        let conn = Connection::open_with_flags(
+            &db,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )
+        .map_err(db_err)?;
+        if !same_file(&before, &fs::symlink_metadata(&db).map_err(io_err)?) {
+            return Err(StoreError::Path(
+                "database path changed during SQLite open".into(),
+            ));
+        }
+        conn.pragma_update(None, "trusted_schema", "OFF")
+            .map_err(db_err)?;
+        conn.busy_timeout(options.busy_timeout).map_err(db_err)?;
+        verify_schema(&conn)?;
+        verify_sidecars(&root)?;
+        drop(held);
+        Ok((
+            Self {
+                conn: Some(conn),
+                root,
+                read_only: true,
+                database_identity: Some(before),
+            },
+            selection,
+        ))
+    }
+
     fn open_database(root: &Path, options: StoreOptions) -> StoreResult<Self> {
         let db = root.join(DB_NAME);
         let held = open_existing_nofollow(&db)?;
@@ -103,6 +144,8 @@ impl EpisodeStore {
         Ok(Self {
             conn: Some(conn),
             root: root.to_path_buf(),
+            read_only: false,
+            database_identity: None,
         })
     }
 
@@ -111,12 +154,18 @@ impl EpisodeStore {
     }
 
     pub fn read(&mut self, key: &str) -> StoreResult<Snapshot> {
+        if self.read_only {
+            self.verify_read_only_identity()?;
+        }
         let tx = self
             .conn
             .as_mut()
             .ok_or(StoreError::OutcomeUnknown)?
             .transaction()
             .map_err(db_err)?;
+        if self.read_only {
+            verify_schema(&tx)?;
+        }
         let snapshot = load_snapshot(&tx, key)?;
         if tx.commit().is_err() {
             self.conn.take();
@@ -137,6 +186,11 @@ impl EpisodeStore {
         F: FnOnce(Option<&ReviewEpisodeState>) -> StoreResult<WriteDisposition>,
         M: Fn(&ReviewEpisodeState, bool) -> String,
     {
+        if self.read_only {
+            return Err(StoreError::Path(
+                "read-only episode handle denies writes".into(),
+            ));
+        }
         let tx = self
             .conn
             .as_mut()
@@ -284,6 +338,11 @@ impl EpisodeStore {
     }
 
     pub fn checkpoint(&self) -> StoreResult<()> {
+        if self.read_only {
+            return Err(StoreError::Path(
+                "read-only episode handle denies checkpoint".into(),
+            ));
+        }
         let result: (i64, i64, i64) = self
             .conn
             .as_ref()
@@ -296,6 +355,24 @@ impl EpisodeStore {
             return Err(StoreError::Busy);
         }
         Ok(())
+    }
+
+    fn verify_read_only_identity(&self) -> StoreResult<()> {
+        anchored_private_root(&self.root)?;
+        read_native_selection(&self.root)?;
+        let db = self.root.join(DB_NAME);
+        let held = open_existing_read_nofollow(&db)?;
+        if !same_file(
+            self.database_identity
+                .as_ref()
+                .expect("read-only database identity"),
+            &held.metadata().map_err(io_err)?,
+        ) {
+            return Err(StoreError::Path(
+                "selected database identity changed".into(),
+            ));
+        }
+        verify_sidecars(&self.root)
     }
 }
 

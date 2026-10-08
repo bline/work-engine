@@ -929,7 +929,9 @@ version = "0.1.0"
 dependencies = [
  "review-episode-core",
  "review-episode-store",
+ "rusqlite",
  "rustix",
+ "serde",
  "sha2",
  "tempfile",
  "thiserror",
