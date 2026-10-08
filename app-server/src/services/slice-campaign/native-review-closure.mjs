@@ -96,7 +96,8 @@ function reviewerContextRequest({contextRequest, authority, reviewerRequest}) {
 }
 
 export function createNativeReviewClosureService({reviewEpisode, reviewer, findingBridge,
-  productionPathEvidence = null} = {}) {
+  productionPathEvidence = null, nativeRustBounded = false,
+  afterDurableResult = null} = {}) {
   if (!reviewEpisode?.begin || !reviewEpisode?.transition || !reviewEpisode?.recover
       || !reviewEpisode?.read) throw new TypeError("native review closure requires Review Episode");
   if (!reviewer?.review) throw new TypeError("native review closure requires canonical reviewer runtime");
@@ -124,9 +125,22 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       });
     }
     return requiredClaims.map((claim) => {
+      if (episodeDigest(claim.subject?.candidate) !== episodeDigest(result.subject)
+          || claim.subject?.reviewEpisodeId !== authority.identity.reviewEpisodeId
+          || claim.coveredState !== "admitted_native_review_result") {
+        throw new Error("native claim subject or covered state differs from exact review result");
+      }
       const establishment = productionPathEvidence.admit({
         operationId: `${operationPrefix}:establish:${claim.revision}`, claim, observation,
       });
+      const recorded = productionPathEvidence.read(establishment.id);
+      if (!recorded || claimDigest(recorded) !== claimDigest(establishment)
+          || recorded.claimRevision !== claim.revision
+          || recorded.claimId !== claim.claimId
+          || recorded.observationDigest !== (observation ? claimDigest(observation) : "0".repeat(64))
+          || (recorded.status === "established" && observation === null)) {
+        throw new Error("native claim establishment or observation readback differs");
+      }
       const claimRef = productionPathReference("claim-evidence", claim.claimId, claim.revision, claim);
       const establishmentRef = productionPathReference("claim-evidence", establishment.id, establishment.id, establishment);
       const observationRef = observation === null ? null
@@ -144,6 +158,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     succeedProductionPathEvidence({binding: current, obligationId, authority, operationId,
       correctionAuthority, campaignRevision, predecessorSelection, successorSelection,
       predecessorClaims, observationId, candidate}) {
+      if (nativeRustBounded) throw new Error("native production-path succession awaits RC admission");
       const episode = reviewEpisode.recover(authority.identity);
       if (!episode || episode.revision !== current?.episodeRef?.revision
           || episode.phase !== "evidence_unestablished") {
@@ -251,6 +266,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
         if (recorded.failure) return Object.freeze({binding: null, builderContext: null,
           failure: recorded.failure, execution});
         episode = recorded.episode;
+        if (afterDurableResult) await afterDurableResult({episode, authority, transitionId: resultTransitionId});
       }
       if (!episode.currentResult) throw new Error("native reviewer result transition has no durable result");
       if (episode.phase === "evidence_unestablished") {
@@ -270,6 +286,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     async executeCorrection({binding: current, obligationId, reviewSkill, authority,
       resultTransitionId, reviewerRequest, findingAuthority, operationPrefix, contextRequest,
       allowProviderEntry = true}) {
+      if (nativeRustBounded) throw new Error("native result correction awaits RC admission");
       const episode = reviewEpisode.recover(authority.identity);
       const remediationCorrection = episode?.phase === "re_evaluation"
         && episode.currentResult !== null;
@@ -306,6 +323,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
     },
     recoverCorrection({binding: current, obligationId, authority, resultTransitionId,
       recoveredResult, recoveredExecution, findingAuthority, operationPrefix, contextRequest}) {
+      if (nativeRustBounded) throw new Error("native result correction awaits RC admission");
       const episode = reviewEpisode.recover(authority.identity);
       const remediationRecovery = episode?.phase === "re_evaluation"
         && episode.currentResult !== null;
@@ -344,6 +362,7 @@ export function createNativeReviewClosureService({reviewEpisode, reviewer, findi
       return withRelianceStatus(current, findings);
     },
     async executeRemediation({binding: current, reviewSkill, authority, subjectTransitionId, resultTransitionId, remediationSubject, reviewerRequest, findingAuthority, operationPrefix, contextRequest, allowProviderEntry = true}) {
+      if (nativeRustBounded) throw new Error("native remediation awaits RC admission");
       let episode = reviewEpisode.recover(authority.identity);
       if (!episode) throw new Error("native review episode binding is unavailable");
       if (episode.revision !== current.episodeRef.revision && !episode.handledTransitions[subjectTransitionId]) {

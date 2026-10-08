@@ -13,6 +13,8 @@ members = [
   "crates/review-episode-core",
   "crates/review-episode-store",
   "crates/review-episode",
+  "crates/claim-evidence",
+  "crates/slice-campaign",
 ]
 exclude = ["crates/terminal-ui"]
 

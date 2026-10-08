@@ -37,13 +37,16 @@ fn apply(
     key: &str,
     observed: Option<&str>,
     state: ReviewEpisodeState,
-) -> Result<String, StoreError> {
-    store.write(key, observed, 1024, |_| {
-        Ok(WriteDisposition::Applied {
-            state: Box::new(state),
-            reply_json: "ok".into(),
-        })
-    })
+) -> Result<(), StoreError> {
+    store
+        .write(
+            key,
+            observed,
+            32 * 1024 * 1024,
+            |_| Ok(WriteDisposition::Applied(Box::new(state))),
+            |state, _| review_episode_core::codec::canonical_json(state.value()),
+        )
+        .map(|_| ())
 }
 #[test]
 fn conditional_revision_conflict_and_sqlite_busy_are_distinct() {
@@ -66,10 +69,7 @@ fn conditional_revision_conflict_and_sqlite_busy_are_distinct() {
     ));
     holder.execute_batch("ROLLBACK").unwrap();
     drop(holder);
-    assert_eq!(
-        apply(&mut store, &key, None, states[0].clone()).unwrap(),
-        "ok"
-    );
+    apply(&mut store, &key, None, states[0].clone()).unwrap();
     assert!(matches!(
         apply(&mut store, &key, None, states[0].clone()),
         Err(StoreError::RevisionConflict)

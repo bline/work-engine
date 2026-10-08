@@ -92,6 +92,7 @@ export * from "./services/slice-campaign/contract.mjs";
 export * from "./services/slice-campaign/legacy-review-adapter.mjs";
 export * from "./services/slice-campaign/native-review-closure.mjs";
 export * from "./services/slice-campaign/native-review-host.mjs";
+export * from "./services/review-episode/rust-adapter.mjs";
 export * from "./services/slice-campaign/service.mjs";
 export * from "./services/slice-campaign/sqlite-store.mjs";
 export * from "./services/workspace-coordination/contract.mjs";

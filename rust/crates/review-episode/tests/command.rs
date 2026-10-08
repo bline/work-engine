@@ -138,11 +138,7 @@ fn direct_library_execution_uses_only_the_admitted_parsed_envelope() {
     write_fixture(&registry, &root, &begin, None);
     let port = FixtureAdmission::load(&registry, &root).unwrap();
     let store = EpisodeStore::open(&root, StoreOptions::default()).unwrap();
-    let mut app = Application {
-        store,
-        port,
-        response_limit: 32 * 1024 * 1024,
-    };
+    let mut app = Application::new(store, port, 32 * 1024 * 1024);
     let mut changed = begin.clone();
     if let JsValue::Object(envelope) = &mut changed
         && let Some(JsValue::Object(args)) = envelope.get_mut(&"args".into())
@@ -164,7 +160,9 @@ fn direct_library_execution_uses_only_the_admitted_parsed_envelope() {
         .identity()
         .key()
         .0;
-    assert_eq!(app.store.read(&key).unwrap().history.len(), 1);
+    drop(app);
+    let mut store = EpisodeStore::open(&root, StoreOptions::default()).unwrap();
+    assert_eq!(store.read(&key).unwrap().history.len(), 1);
 }
 
 fn raw_request(

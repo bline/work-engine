@@ -53,7 +53,7 @@ pub struct ProtocolError {
     pub message: String,
 }
 impl ProtocolError {
-    fn new(code: &'static str, path: Option<&str>, message: impl Into<String>) -> Self {
+    pub(crate) fn new(code: &'static str, path: Option<&str>, message: impl Into<String>) -> Self {
         let message = message.into();
         Self {
             code,
@@ -82,6 +82,9 @@ impl ProtocolError {
                 | "invalid_interface"
                 | "source_mismatch"
                 | "resource_limit"
+                | "invalid_manifest"
+                | "invalid_requirements"
+                | "requirements_unsatisfied"
         ) {
             2
         } else {
@@ -322,6 +325,10 @@ pub fn process(
     let version = map.get("schema_version");
     if version == Some(&json!(1)) {
         return (1, None, process_v1(map));
+    }
+    if version == Some(&json!(3)) {
+        let id = req_id(map).ok();
+        return (3, id, crate::manifest_protocol::process(map, request.len()));
     }
     if version == Some(&json!(2)) {
         if map.len() == 2 && map.contains_key("operation") {

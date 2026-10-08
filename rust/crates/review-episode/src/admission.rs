@@ -17,7 +17,19 @@ pub struct AdmittedResult {
     _private: (),
 }
 
+impl AdmittedResult {
+    pub(crate) fn checked() -> Self {
+        Self { _private: () }
+    }
+}
+
 pub trait HostAdmissionPort {
+    fn request_version(&self) -> u8;
+
+    fn precheck(&self, _request: &Request) -> AppResult<()> {
+        Ok(())
+    }
+
     fn admit(
         &self,
         request: &Request,
@@ -95,6 +107,10 @@ impl FixtureAdmission {
 }
 
 impl HostAdmissionPort for FixtureAdmission {
+    fn request_version(&self) -> u8 {
+        1
+    }
+
     fn admit(
         &self,
         request: &Request,
@@ -137,6 +153,6 @@ impl HostAdmissionPort for FixtureAdmission {
                 "exactly one offline fixture grant is required".into(),
             ));
         }
-        Ok(AdmittedResult { _private: () })
+        Ok(AdmittedResult::checked())
     }
 }

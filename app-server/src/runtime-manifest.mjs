@@ -1,6 +1,15 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { captureRustManifestSelection, invokeRustManifest } from "./rust-manifest-adapter.mjs";
+
+const rustSelectionByManifest = new WeakMap();
+function selectedRust(selection = null) {
+  if (selection) return true;
+  const backend = process.env.WORK_ENGINE_COMPILER_BACKEND ?? "legacy";
+  if (backend !== "legacy" && backend !== "rust") throw new TypeError("unsupported compiler backend");
+  return backend === "rust";
+}
 
 const TOP_LEVEL_FIELDS = new Set(["schema_version", "manifest_id", "roles"]);
 const ROLE_FIELDS = new Set(["contract", "compiled_environment", "compiled_skill_sha256", "developer_instructions", "thread_options", "skills", "capabilities", "effects", "continuity"]);
@@ -155,12 +164,13 @@ function normalizeEffects(value, roleId) {
 }
 
 export class RuntimeManifest {
-  constructor({ manifestId, source, roles, requirementsBaseDirectory }) {
+  constructor({ manifestId, source, roles, requirementsBaseDirectory, compilerSelection = null }) {
     this.manifestId = manifestId;
     this.source = freezeProjection(source);
     this.roles = freezeProjection(roles);
     this.requirementsBaseDirectory = requirementsBaseDirectory;
     Object.freeze(this);
+    if (compilerSelection) rustSelectionByManifest.set(this, captureRustManifestSelection(compilerSelection));
   }
 
   get roleIds() {
@@ -198,7 +208,25 @@ export function projectRuntimeManifest(document, {
   sourcePath = null,
   sourceSha256 = null,
   runtimeRequirementsByRole = {},
+  compilerSelection = null,
 } = {}) {
+  if (selectedRust(compilerSelection)) {
+    const capturedSelection = compilerSelection == null ? null : captureRustManifestSelection(compilerSelection);
+    const { result } = invokeRustManifest("project_runtime_manifest", {
+      document,
+      options: {
+        base_directory: path.resolve(baseDirectory),
+        identity_base_directory: path.resolve(identityBaseDirectory),
+        requirements_base_directory: path.resolve(requirementsBaseDirectory),
+        source_path: sourcePath == null ? null : path.resolve(sourcePath),
+        source_sha256: sourceSha256,
+        runtime_requirements_by_role: runtimeRequirementsByRole,
+      },
+    }, capturedSelection);
+    const manifest = new RuntimeManifest(result);
+    rustSelectionByManifest.set(manifest, capturedSelection ?? true);
+    return manifest;
+  }
   requireRecord(document, "runtime manifest");
   rejectUnknownFields(document, TOP_LEVEL_FIELDS, "runtime manifest");
   if (document.schema_version !== 1) {
@@ -349,7 +377,7 @@ export async function hydrateRuntimeRequirements(document, {
   return freezeProjection(runtimeRequirementsByRole);
 }
 
-export async function loadRuntimeManifest(manifestPath) {
+export async function loadRuntimeManifest(manifestPath, { compilerSelection = null } = {}) {
   const loaded = await loadRuntimeManifestDocument(manifestPath);
   const base = path.dirname(loaded.sourcePath);
   const workspaceRoot = path.resolve(base, "..");
@@ -363,11 +391,21 @@ export async function loadRuntimeManifest(manifestPath) {
     sourcePath: loaded.sourcePath,
     sourceSha256: loaded.sourceSha256,
     runtimeRequirementsByRole,
+    compilerSelection,
   });
 }
 
 export function satisfyRuntimeRequirements({ manifest, roleId, requirements, skillName = null }) {
   if (!(manifest instanceof RuntimeManifest)) throw new TypeError("runtime satisfaction requires a projected runtime manifest");
+  const pinnedRust = rustSelectionByManifest.has(manifest);
+  const compilerSelection = rustSelectionByManifest.get(manifest);
+  if (pinnedRust || selectedRust()) {
+    const { result } = invokeRustManifest("satisfy_runtime_requirements", {
+      manifest: { manifestId: manifest.manifestId, source: manifest.source, roles: manifest.roles, requirementsBaseDirectory: manifest.requirementsBaseDirectory },
+      role_id: roleId, requirements, skill_name: skillName,
+    }, compilerSelection === true ? null : compilerSelection ?? null);
+    return freezeProjection(result);
+  }
   requireRecord(requirements, "runtime requirements");
   if (requirements.schema_version !== 1) throw new TypeError("runtime requirements schema_version must be 1");
   if (requirements.verified_sources !== true) throw new Error("runtime requirements are not bound to verified sources");

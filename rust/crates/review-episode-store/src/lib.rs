@@ -5,7 +5,10 @@ mod sqlite;
 
 pub use import::{CopyManifest, ImportReport, import_closed_copy, reconcile_closed_copy};
 pub use integrity::{HistoryEntry, Snapshot, validate_history};
-pub use sqlite::{EpisodeStore, StoreOptions, WriteDisposition, init_offline_root};
+pub use sqlite::{
+    EpisodeStore, NativeRootSelection, StoreOptions, WriteDisposition, WriteResult,
+    init_native_root, init_offline_root, read_native_selection,
+};
 
 use review_episode_core::EpisodeError;
 use thiserror::Error;

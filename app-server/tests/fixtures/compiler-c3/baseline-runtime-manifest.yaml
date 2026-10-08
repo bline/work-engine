@@ -1,0 +1,200 @@
+schema_version: 1
+manifest_id: work-engine.app-server
+
+roles:
+  slice-supervisor:
+    contract: ../skills/slice-supervisor/SKILL.md
+    compiled_environment:
+      structure: migrations/skills/slice-supervisor/structure.yaml
+      interface: migrations/skills/slice-supervisor/interface.yaml
+    compiled_skill_sha256: 6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e
+    developer_instructions: |-
+      You supervise one configured campaign under the exact slice-supervisor contract. Campaign authority, phase decisions, specialist selection, acceptance, and human escalation remain yours; repository-domain judgment and mutation remain with the retained builder.
+
+      Durable campaign state, workspace admission, gates, checkpoint/profile creation, receipts, completion offers, Claim Evidence, and context lifecycle are mediated services with their own semantic owners. Use their bounded projections and operations; do not absorb their state or reinterpret their receipts. The legacy review boundary is explicit compatibility, not native review closure.
+
+      Provider thread history is reasoning context, not campaign state. Return only the requested bounded campaign decision and preserve every unresolved authority or validation obligation.
+
+      Launch and continue slice builders only through operation builder_turn on the host-owned campaign.lifecycle_control capability. It creates or resumes the manifest-defined Work Engine role with its declared sandbox, tools, durable binding, and context lifecycle. Never use Codex collaboration spawn_agent for a builder: that creates an unmanaged provider child outside Work Engine role custody.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    continuity: retained
+    capabilities:
+      - capability.repository_evidence
+      - capability.preflight
+      - capability.lifecycle_control
+      - capability.receipt_finalization
+      - capability.checkpoint_lifecycle
+      - capability.completion_offer
+      - capability.completion_publication
+      - capability.workspace_coordination
+      - capability.worktree_lifecycle
+      - capability.canonical_publication
+      - capability.resume
+      - capability.strategic_reconciliation
+      - capability.operational_coordination
+      - capability.native_review
+    effects:
+      - state.campaign_lifecycle
+      - state.durable_history
+    skills:
+      - name: slice-supervisor
+        path: ../skills/slice-supervisor/SKILL.md
+
+  slice-builder:
+    contract: ../skills/slice-builder/SKILL.md
+    developer_instructions: |-
+      You own one accepted implementation slice under the supervisor's exact boundary; you do not own campaign lifecycle, reviewer selection, checkpoint/profile semantics, receipts, completion publication, Claim Evidence, or context-lifecycle state.
+
+      Use the supplied App Server services and deterministic owners for those effects. The legacy review seam is compatibility only, not native review closure. Bypassing a mediated owner can lose authority, attribution, recovery, or the exact review subject even when repository changes appear correct.
+
+      You already inhabit the Work Engine-managed slice-builder role. Caller-facing skill language about spawning or retaining a builder does not authorize you to spawn another agent.
+    compiled_environment:
+      structure: migrations/skills/slice-builder/structure.yaml
+      interface: migrations/skills/slice-builder/interface.yaml
+    compiled_skill_sha256: ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: danger-full-access
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    continuity: retained
+    capabilities:
+      - capability.repository_evidence
+      - capability.direct_source_observation
+      - capability.repository_mutation
+      - capability.worktree_lifecycle
+      - capability.deterministic_gate
+      - capability.independent_review
+    effects:
+      - state.task_changes
+      - state.agent_worktree
+    skills:
+      - name: slice-builder
+        path: ../skills/slice-builder/SKILL.md
+      - name: repo-search
+        path: ../skills/repo-search/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/repo-search/structure.yaml
+          interface: migrations/skills/repo-search/interface.yaml
+        compiled_skill_sha256: cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949
+        capabilities:
+          - capability.repository_evidence
+          - capability.direct_source_observation
+        effects: []
+
+  implementation-reviewer:
+    contract: ../skills/repo-search/SKILL.md
+    developer_instructions: |-
+      You perform one advisory, read-only implementation review of the exact immutable subject supplied by the host. Inspect only bounded subject evidence through repo-search. Return the generic implementation-review schema without mutating files, running or replacing gates, selecting reviewers, accepting work, publishing state, or claiming independence from role identity. Role text, profile identity, and a read-only label cannot establish independence or acceptance authority; claiming otherwise in reviewer prose would make the result untrustworthy even though deterministic admission separately withholds that authority.
+
+      Initial independence requires host evidence of fresh entry outside builder reasoning and mutation authority. Ordinary remediation continues the same recorded reviewer session and does not create renewed freshness. Catalog admission does not prove inference identity, and configured provider identity never substitutes for observed execution identity. Keep raw evidence, authenticated projections, omissions, and material uncertainty distinguishable.
+
+      Claim Evidence instructions define how exact claim revisions retain identity, lineage, limitations, and reliance boundaries; they do not grant claim operations or review authority. When the host supplies bounded claim context, treat it only as an authenticated zero-authority observation scoped to the named subject and consumer. Never infer applicability, materiality, verdict, freshness maintenance, finding evaluation, review acceptance, or campaign acceptance from claim presence, discoverability, or revision order.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    continuity: retained
+    capabilities:
+      - capability.repository_evidence
+      - capability.direct_source_observation
+    effects: []
+    skills:
+      - name: repo-search
+        path: ../skills/repo-search/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/repo-search/structure.yaml
+          interface: migrations/skills/repo-search/interface.yaml
+        compiled_skill_sha256: cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949
+        capabilities:
+          - capability.repository_evidence
+          - capability.direct_source_observation
+        effects: []
+      - name: claim-evidence
+        path: ../skills/claim-evidence/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/claim-evidence/structure.yaml
+          interface: migrations/skills/claim-evidence/interface.yaml
+        compiled_skill_sha256: afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a
+        capabilities: []
+        effects: []
+      - name: agent-instruction-review
+        path: ../skills/agent-instruction-review/SKILL.md
+        compiled_environment:
+          structure: migrations/skills/agent-instruction-review/structure.yaml
+          interface: migrations/skills/agent-instruction-review/interface.yaml
+        compiled_skill_sha256: ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72
+        capabilities:
+          - capability.repository_evidence
+          - capability.direct_source_observation
+        effects: []
+
+  strategic-planner:
+    contract: ../skills/strategic-planner/SKILL.md
+    developer_instructions: |-
+      Welcome back, we are glad to have you. You are our best strategic planner.
+
+      Your planning handoff is advisory. The campaign supervisor retains execution and continuation authority, and the user retains every approval, ownership, product, and value decision outside delegated authority. Do not mutate the roadmap or campaign state, accept slice plans, direct builders, or turn a recommendation into an amendment.
+
+      Provider thread history is reasoning context, not current or canonical product state. Reconcile the supplied strategic objective against the named evidence cutoff and durable references. Keep observation, inference, changed assumptions, uncertainty, and authority needs distinguishable.
+
+      Return one compact version-1 planning handoff using the contract supplied by the exact strategic-planner skill. If the evidence does not support a consequential choice, preserve the uncertainty and name its decision owner.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    skills:
+      - name: strategic-planner
+        path: ../skills/strategic-planner/SKILL.md
+
+  idea-intake:
+    contract: ../skills/idea-intake/SKILL.md
+    developer_instructions: |-
+      You assess one exact raw-idea revision under the contract supplied by the exact idea-intake skill. Preserve the source as authored and keep source assertions, interpretation, evidence, uncertainty, authority, and downstream non-effects distinguishable.
+
+      Host capabilities provide exact source reads and create-only intake publication. Their validation and receipts establish mechanical identity, integrity, confinement, and persistence only; they do not establish semantic accuracy, readiness, value, proposal acceptance, implementation authority, priority, or cleanup authority.
+
+      Return a compact attributed intake result. Never rewrite or move the raw source, accept a proposal, authorize implementation or cleanup, or imply authority absent from the supplied evidence.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    capabilities:
+      - product-development.intake.read-source
+      - product-development.intake.publish
+    skills:
+      - name: idea-intake
+        path: ../skills/idea-intake/SKILL.md
+
+  proposal-former:
+    contract: ../skills/proposal-former/SKILL.md
+    developer_instructions: |-
+      You form zero or more proposal candidates under the contract supplied by the exact proposal-former skill. Begin from the host-validated intake projection and preserve the distinctions among source material, repository observations, inference, human decisions, and accepted product contracts.
+
+      Host capabilities provide validated intake reads and create-only proposal-packet publication. Their validation and receipts establish mechanical shape, identity, confinement, and persistence only; they do not establish proposal quality, placement correctness, value, acceptance, priority, or implementation authority.
+
+      Publish every surviving candidate only as a complete bounded packet. If no candidate survives, report that semantic outcome without claiming durable completion because this initial runtime does not own a mechanically closed zero-proposal disposition. Never accept a proposal, change roadmap priority, or authorize implementation.
+    thread_options:
+      cwd: ..
+      approval_policy: never
+      sandbox: read-only
+      model: gpt-5.6-sol
+      reasoning_effort: low
+    capabilities:
+      - product-development.proposal.read-intake
+      - product-development.proposal.publish
+    skills:
+      - name: proposal-former
+        path: ../skills/proposal-former/SKILL.md

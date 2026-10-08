@@ -1,0 +1,1 @@
+{"status":"passed","checks":[{"requirement":"controlled_subject_validation","identity":"frozen-tree-exact-path-bytes","state":"passed","exit_status":0,"duration_seconds":0.034}],"failed_check":null,"totals":{"configured":1,"executed":1,"passed":1,"failed":0},"duration_seconds":0.034}

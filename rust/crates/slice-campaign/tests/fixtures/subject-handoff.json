@@ -1,0 +1,1620 @@
+{
+  "accepted_plan_sources": {
+    "campaign": {
+      "path": "docs/rust-campaign-hp2-plan.md",
+      "sc0_lines": "65-97",
+      "sc1_lines": "135-175",
+      "sha256": "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef"
+    },
+    "claims": {
+      "path": "docs/rust-claims-hp2-plan.md",
+      "sha256": "c8c389cefa65f01b24630973859b9e66b8ae972b907e27369c5fa8f90a2d3c19"
+    },
+    "main_head_observed": "b2efdbfa0354a997b23ac4e183b89ca0dbf36cc2",
+    "shared": {
+      "path": "docs/rust-host-hp2-contract.md",
+      "sha256": "52a5351b7155d78ecd7de1229743af3c1bb86465dbd37ae12adcf782da05cd11"
+    }
+  },
+  "authority": {
+    "allowed_writes": [
+      "/home/bline/.local/state/work-engine/rust-hp2-sc0-20261007/candidate-2",
+      "/home/bline/code/.work-engine-tmp/sc0/candidate-2"
+    ],
+    "execution": "user accepted parallel CE1 and SC0 on 2026-10-07; controlled local oracle runs permitted",
+    "historical_plans_are_not_execution_authority": true,
+    "model_effective_observation": "unavailable in this worker context",
+    "model_requested": {
+      "model": "gpt-6-sol",
+      "reasoning_effort": "high"
+    },
+    "no_human_subject_owner_approval_inferred": true
+  },
+  "candidate_ordinal": 2,
+  "captured_artifacts": {
+    "baseline_commit_oid": "a8e074d765d94a7e816b7ab49db428fd4a760a9f",
+    "baseline_tree_oid": "17868afbf46ea53715981fce83171001c632b957",
+    "candidate1_marker_only": {
+      "bundle": {
+        "bytes": 6042,
+        "file": "vectors/1d48a3e9757b066e56600eac49812ce092a498310d08da0e5fd6558c98120849.bundle",
+        "sha256": "1d48a3e9757b066e56600eac49812ce092a498310d08da0e5fd6558c98120849"
+      },
+      "candidate_commit_oid": "9b0efa3ca5f4ceec1bdd9f95afdcea89676a9f8e",
+      "gate_success_claim": false,
+      "marker": {
+        "bytes": 72,
+        "file": "vectors/b320ef076b1d981be0e23749c0610e5bfb5f9f7e709761a1dcc5a150d2abd917.txt",
+        "sha256": "b320ef076b1d981be0e23749c0610e5bfb5f9f7e709761a1dcc5a150d2abd917"
+      },
+      "receipt": {
+        "bytes": 1209,
+        "file": "vectors/229e94d90a9be104854b29eef0a7ccb3663be5cc30f8d0de14613a57c303bca8.json",
+        "sha256": "229e94d90a9be104854b29eef0a7ccb3663be5cc30f8d0de14613a57c303bca8"
+      },
+      "repository": "/home/bline/code/.work-engine-tmp/sc0/marker-repo",
+      "status": "mechanical_checkpoint_oracle_only"
+    },
+    "candidate_commit_oid": "49624730af1663f50a3ff85abfdd1b90647d0cdb",
+    "candidate_receipt": {
+      "bytes": 2006,
+      "file": "vectors/4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd.json",
+      "sha256": "4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd"
+    },
+    "candidate_receipt_sha256": "4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd",
+    "candidate_tree_oid": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+    "codec_capture": {
+      "bytes": 19349,
+      "path": "codec-capture.json",
+      "sha256": "ef9ca66756e0c2b845537b48d0590e6ab943abf27cbe8f18c8fd35a75e4960a7"
+    },
+    "failing_gate_manifest": {
+      "bytes": 1523,
+      "file": "vectors/df1890f39a83c2a3ebdc4d0af0137ad8689fdb21b6d99c6e9b287d469c3e8c84.json",
+      "sha256": "df1890f39a83c2a3ebdc4d0af0137ad8689fdb21b6d99c6e9b287d469c3e8c84"
+    },
+    "failing_gate_receipt": {
+      "bytes": 329,
+      "file": "vectors/e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3.json",
+      "sha256": "e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3"
+    },
+    "gate_frozen_commit_oid": "f152c029fffe743066f8cd90fcac91a6e9b4d8af",
+    "gate_frozen_tree_oid": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+    "gate_manifest_exact_argv_bytes": {
+      "bytes": 1523,
+      "file": "vectors/d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34.json",
+      "sha256": "d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34"
+    },
+    "gate_producer_observation": {
+      "bytes": 8388,
+      "file": "vectors/f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206.json",
+      "sha256": "f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206"
+    },
+    "gate_receipt_exact_stdout_bytes": {
+      "bytes": 285,
+      "file": "vectors/c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2.json",
+      "sha256": "c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2"
+    },
+    "git_bundle": {
+      "bytes": 6725,
+      "file": "vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle",
+      "sha256": "4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45"
+    },
+    "oracle_capture": {
+      "bytes": 22910,
+      "path": "oracle-capture.json",
+      "sha256": "ebc7d1d17ddcb09fceca87308d449fddc7d0d36d87116e7140f8a75bfd0d8a96"
+    },
+    "physical_profile": {
+      "bytes": 6209,
+      "file": "vectors/5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db.json",
+      "sha256": "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db"
+    },
+    "physical_profile_sha256": "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db",
+    "profile_digest": "7330e3913c72c9235549b0abf549425acad304c0568d9d9f2b4cea80d9af6db4",
+    "profile_subject_digest": "e3d90f49fa5e9cdbc687ed0bbe0b759c1cde8da58141b163ec582264c8e9adba",
+    "profile_subject_request": {
+      "bytes": 2145,
+      "file": "vectors/6f948c2d42dc8c90908edbff055ccbe6f191a5839cb486c16eb51ce08c8484d8.json",
+      "sha256": "6f948c2d42dc8c90908edbff055ccbe6f191a5839cb486c16eb51ce08c8484d8"
+    },
+    "request": {
+      "bytes": 896,
+      "file": "vectors/df8384b402380fa6cc6ab0cdb57fcda9b632ef677a571d9d79378269258507ad.json",
+      "sha256": "df8384b402380fa6cc6ab0cdb57fcda9b632ef677a571d9d79378269258507ad"
+    }
+  },
+  "gate_receipt_binding": {
+    "claim_limit": "This establishes one controlled source-tree check. It does not make run_gate output a self-authenticating or generally subject-bound receipt.",
+    "legacy_receipt_does_not_self_bind_manifest_cwd_subject_or_producer": true,
+    "legacy_receipt_schema_version": null,
+    "legacy_receipt_shape": [
+      "status",
+      "checks",
+      "failed_check",
+      "totals",
+      "duration_seconds"
+    ],
+    "observed": {
+      "after": {
+        "all_status": "",
+        "head": "f152c029fffe743066f8cd90fcac91a6e9b4d8af",
+        "head_tree": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+        "path_sha256": {
+          "asset.bin": "0851566aff6b7c82ba69aa44e56a5ed5960d5c960abc5dfc307a1a80adbf48c6",
+          "broken.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+          "config/settings.toml": "ed52019a4a887ba50303163221c3192cf3876d213737da502c41c3118f1ab5f0",
+          "docs/guide.md": "d0c160d81e77dca7116286e8f0cb5cc5c1cc6c399b8eb7c88d069dd8a545da6c",
+          "sample.py": "1d1e9cb166e6d3f4668d7733893d71d0e14244edba63efc3cc82376429a18712",
+          "tests/test_case.py": "cda8b00f47f3aeec88a102c42e0417cbb1aaac7dbd056424ed6f8876dfa2830a"
+        },
+        "tracked_paths": [
+          "asset.bin",
+          "broken.py",
+          "config/settings.toml",
+          "docs/guide.md",
+          "sample.py",
+          "skills/slice-checkpoint/scripts/checkpoint.py",
+          "tests/test_case.py"
+        ]
+      },
+      "before": {
+        "all_status": "",
+        "head": "f152c029fffe743066f8cd90fcac91a6e9b4d8af",
+        "head_tree": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+        "path_sha256": {
+          "asset.bin": "0851566aff6b7c82ba69aa44e56a5ed5960d5c960abc5dfc307a1a80adbf48c6",
+          "broken.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+          "config/settings.toml": "ed52019a4a887ba50303163221c3192cf3876d213737da502c41c3118f1ab5f0",
+          "docs/guide.md": "d0c160d81e77dca7116286e8f0cb5cc5c1cc6c399b8eb7c88d069dd8a545da6c",
+          "sample.py": "1d1e9cb166e6d3f4668d7733893d71d0e14244edba63efc3cc82376429a18712",
+          "tests/test_case.py": "cda8b00f47f3aeec88a102c42e0417cbb1aaac7dbd056424ed6f8876dfa2830a"
+        },
+        "tracked_paths": [
+          "asset.bin",
+          "broken.py",
+          "config/settings.toml",
+          "docs/guide.md",
+          "sample.py",
+          "skills/slice-checkpoint/scripts/checkpoint.py",
+          "tests/test_case.py"
+        ]
+      },
+      "candidate_diff_paths": [
+        "asset.bin",
+        "broken.py",
+        "config/settings.toml",
+        "docs/guide.md",
+        "sample.py",
+        "tests/test_case.py"
+      ],
+      "candidate_gate_receipt_digest": "c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2",
+      "candidate_tree_oid": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+      "checks": [
+        {
+          "duration_seconds": 0.034,
+          "exit_status": 0,
+          "identity": "frozen-tree-exact-path-bytes",
+          "requirement": "controlled_subject_validation",
+          "state": "passed"
+        }
+      ],
+      "child_interpreter": "/usr/bin/python3.14",
+      "child_interpreter_sha256": "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
+      "child_mode": {
+        "explicit_conditional_exit": true,
+        "isolated": 1,
+        "optimize": 0
+      },
+      "cwd": "/home/bline/code/.work-engine-tmp/sc0/candidate-2/gate-frozen-tree",
+      "exit_status": 0,
+      "failed_check": null,
+      "failing_probe": {
+        "argv": [
+          "/usr/bin/python3.14",
+          "-I",
+          "/home/bline/code/work-engine/skills/slice-builder/scripts/run_gate.py",
+          "--manifest-json",
+          "{\"checks\":[{\"command\":[\"/usr/bin/python3.14\",\"-I\",\"-c\",\"import hashlib, pathlib, subprocess, sys\\nexpected = {'asset.bin': '0851566aff6b7c82ba69aa44e56a5ed5960d5c960abc5dfc307a1a80adbf48c6', 'broken.py': '6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7', 'config/settings.toml': 'ed52019a4a887ba50303163221c3192cf3876d213737da502c41c3118f1ab5f0', 'docs/guide.md': 'd0c160d81e77dca7116286e8f0cb5cc5c1cc6c399b8eb7c88d069dd8a545da6c', 'sample.py': '0000000000000000000000000000000000000000000000000000000000000000', 'tests/test_case.py': 'cda8b00f47f3aeec88a102c42e0417cbb1aaac7dbd056424ed6f8876dfa2830a'}\\nif sys.flags.isolated != 1 or sys.flags.optimize != 0: raise SystemExit(17)\\nif str(pathlib.Path(sys.executable).resolve()) != '/usr/bin/python3.14': raise SystemExit(18)\\nactual = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in expected}\\nif actual != expected: raise SystemExit(19)\\nif subprocess.check_output(['/usr/bin/git', \\\"rev-parse\\\", \\\"HEAD\\\"], text=True).strip() != 'f152c029fffe743066f8cd90fcac91a6e9b4d8af': raise SystemExit(20)\\nif subprocess.check_output(['/usr/bin/git', \\\"rev-parse\\\", \\\"HEAD^{tree}\\\"], text=True).strip() != '882023b5f0d6b89425f151aab85e6534a53cf5bb': raise SystemExit(21)\\nif subprocess.check_output(['/usr/bin/git', \\\"status\\\", \\\"--porcelain\\\", \\\"--untracked-files=all\\\"], text=True).strip() != \\\"\\\": raise SystemExit(22)\"],\"identity\":\"frozen-tree-exact-path-bytes\",\"requirement\":\"controlled_subject_validation\",\"timeout_seconds\":10}]}",
+          "--cwd",
+          "/home/bline/code/.work-engine-tmp/sc0/candidate-2/gate-frozen-tree"
+        ],
+        "check_exit_status": 19,
+        "exit_status": 1,
+        "manifest_sha256": "df1890f39a83c2a3ebdc4d0af0137ad8689fdb21b6d99c6e9b287d469c3e8c84",
+        "receipt_sha256": "e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3"
+      },
+      "failing_probe_status": "failed",
+      "manifest_sha256": "d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34",
+      "path_sha256": {
+        "asset.bin": "0851566aff6b7c82ba69aa44e56a5ed5960d5c960abc5dfc307a1a80adbf48c6",
+        "broken.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+        "config/settings.toml": "ed52019a4a887ba50303163221c3192cf3876d213737da502c41c3118f1ab5f0",
+        "docs/guide.md": "d0c160d81e77dca7116286e8f0cb5cc5c1cc6c399b8eb7c88d069dd8a545da6c",
+        "sample.py": "1d1e9cb166e6d3f4668d7733893d71d0e14244edba63efc3cc82376429a18712",
+        "tests/test_case.py": "cda8b00f47f3aeec88a102c42e0417cbb1aaac7dbd056424ed6f8876dfa2830a"
+      },
+      "receipt_sha256": "c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2",
+      "status": "passed",
+      "stderr": "",
+      "tested_tree_oid": "882023b5f0d6b89425f151aab85e6534a53cf5bb",
+      "totals": {
+        "configured": 1,
+        "executed": 1,
+        "failed": 0,
+        "passed": 1
+      }
+    },
+    "trusted_producer_capture_requires": [
+      "exact preselected manifest bytes and argv",
+      "runner source SHA-256 and observed Python/Git runtime identities before and after",
+      "private frozen source tree with no concurrent writer",
+      "exact cwd and zero process exit/no stderr",
+      "status passed, every required check passed, totals configured/executed/passed equal and failed zero",
+      "before and after HEAD/tree, full dirty/untracked status, tracked path set and tested file bytes",
+      "receipt raw stdout SHA-256 equals candidate gate_receipt_digest and immutable candidate metadata",
+      "candidate tree equals frozen tested tree; baseline tree and diff path set equal declared tested scope",
+      "candidate manifest content digest equals tested path bytes; no unbound relevant input or generated output",
+      "The exact preselected child command uses the resolved hashed Python executable with -I isolated mode.",
+      "The child explicitly exits nonzero on mode, executable, path-byte, Git commit/tree, or dirty/untracked mismatch; no assert-based check.",
+      "A controlled wrong-byte manifest on the same frozen source tree returns failed with child exit 19."
+    ]
+  },
+  "integration_vectors": [
+    {
+      "artifact": {
+        "bytes": 285,
+        "file": "vectors/43598c2406f857d4b195e69824e51d1691db0c377968e6fa2cfb3959c1fd2a14.json",
+        "sha256": "43598c2406f857d4b195e69824e51d1691db0c377968e6fa2cfb3959c1fd2a14"
+      },
+      "case": "gate_failed_status_rehashed",
+      "expected_sc1": "reject status and digest binding"
+    },
+    {
+      "artifact": {
+        "bytes": 1511,
+        "file": "vectors/c77f5f76c10e4d2127746585a3aa707cf19766eed08ed0f1fff849ce6417181d.json",
+        "sha256": "c77f5f76c10e4d2127746585a3aa707cf19766eed08ed0f1fff849ce6417181d"
+      },
+      "case": "gate_changed_manifest",
+      "expected_sc1": "reject exact trusted manifest and check identity"
+    },
+    {
+      "artifact": {
+        "bytes": 8388,
+        "file": "vectors/06a550363e3a9adc7318377dfdfc201d87d43a8a0fe8a37d18c84dbe9e8ea23e.json",
+        "sha256": "06a550363e3a9adc7318377dfdfc201d87d43a8a0fe8a37d18c84dbe9e8ea23e"
+      },
+      "case": "gate_wrong_tested_tree",
+      "expected_sc1": "reject tested/candidate tree mismatch"
+    },
+    {
+      "artifact": {
+        "bytes": 8388,
+        "file": "vectors/ac9eff99608e6814abc603b2a464eec4ea91d78ef89570b08777b5a4dfb6ec2f.json",
+        "sha256": "ac9eff99608e6814abc603b2a464eec4ea91d78ef89570b08777b5a4dfb6ec2f"
+      },
+      "case": "gate_wrong_runner_identity",
+      "expected_sc1": "reject producer source pin mismatch"
+    },
+    {
+      "artifact": {
+        "bytes": 1519,
+        "file": "vectors/785450d8bf2f8768cee24885114be005e5aa0a720ef63739829ebc7be59449dc.json",
+        "sha256": "785450d8bf2f8768cee24885114be005e5aa0a720ef63739829ebc7be59449dc"
+      },
+      "case": "gate_removed_isolated_mode",
+      "expected_sc1": "reject exact argv and isolated child mode"
+    }
+  ],
+  "kind": "hp2-sc0-subject-handoff",
+  "oracle_execution": {
+    "controlled_repository": "/home/bline/code/.work-engine-tmp/sc0/candidate-2/oracle-repo",
+    "entry_points": [
+      "checkpoint.create_candidate",
+      "checkpoint.validate_candidate_receipt",
+      "code_change_profile.profile",
+      "code_change_profile.validate_profile",
+      "checkpoint.canonical",
+      "code_change_profile.canonical",
+      "run_gate.py CLI"
+    ],
+    "frozen_gate_worktree": "/home/bline/code/.work-engine-tmp/sc0/candidate-2/gate-frozen-tree",
+    "graph": {
+      "coverage": "exact relied-on source paths metadata_match/no_recorded_issue; best effort only; excluded __pycache__ not relevant",
+      "generation": "2026-10-07T23:08:47Z",
+      "project": "home-bline-code-work-engine",
+      "tier": 2
+    },
+    "replay_script": "/home/bline/code/.work-engine-tmp/sc0/candidate-2/verify_vectors.py",
+    "scope": "local temporary Git objects/refs/worktrees and existing legacy oracles; no product/runtime callback",
+    "scratch_scripts": [
+      "/home/bline/code/.work-engine-tmp/sc0/candidate-2/build_vectors.py",
+      "/home/bline/code/.work-engine-tmp/sc0/candidate-2/codec_vectors.py"
+    ],
+    "validation": {
+      "bundle_verified": true,
+      "candidate1_handoff_unchanged": true,
+      "codec_cases": 11,
+      "content_hashes_checked": 78,
+      "gate_and_tree_binding_verified": true,
+      "gate_mode_and_failure_probe_verified": true,
+      "integration_negative_cases": 5,
+      "oracle_cases": 39,
+      "replay_script_sha256": "e7c394e9a8b6add3844f942e77a061ff2bdc8013d4d3da7eeb0b5ed8a2279d65",
+      "source_pins_checked": 3,
+      "status": "passed"
+    }
+  },
+  "owners": {
+    "campaign_accepted_boundary_gate_requirements": {
+      "lines": "135-143",
+      "path": "docs/rust-campaign-hp2-plan.md",
+      "sha256": "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef"
+    },
+    "candidate_receipt_and_git_verification": {
+      "lines": "58-137,190-262,304-359",
+      "path": "skills/slice-checkpoint/scripts/checkpoint.py",
+      "sha256": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"
+    },
+    "legacy_gate_result_producer": {
+      "lines": "22-52,66-146",
+      "path": "skills/slice-builder/scripts/run_gate.py",
+      "sha256": "c8fee4d50fc5689c253fb1ef76a4b86159a3c8a916b76db9a764fbe5c0ed0dba"
+    },
+    "physical_profile_and_producer_provenance": {
+      "lines": "17-193,217-606",
+      "path": "skills/code-change-profile/scripts/code_change_profile.py",
+      "sha256": "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003"
+    },
+    "subject_binding": "SC0 integration handoff joins existing owner artifacts; it creates no gate service, generic schema, checkpoint writer or profile producer"
+  },
+  "owning_codec_vectors": {
+    "capture": {
+      "bytes": 19349,
+      "path": "codec-capture.json",
+      "sha256": "ef9ca66756e0c2b845537b48d0590e6ab943abf27cbe8f18c8fd35a75e4960a7"
+    },
+    "cases": [
+      {
+        "case": "object_key_order",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 13,
+          "file": "vectors/a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a.bin",
+          "sha256": "a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 14,
+              "file": "vectors/81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871.bin",
+              "sha256": "81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871"
+            },
+            "canonical": {
+              "bytes": 13,
+              "file": "vectors/d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772.bin",
+              "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+            },
+            "identity_digest": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 14,
+              "file": "vectors/81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871.bin",
+              "sha256": "81103aa69250ea56e887eaab3cd9bf363d341563f05d0676be389c3e40a72871"
+            },
+            "canonical": {
+              "bytes": 13,
+              "file": "vectors/d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772.bin",
+              "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+            },
+            "identity_digest": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "non_bmp_bmp_key_order",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 40,
+          "file": "vectors/0448f6d4ac3bbdac7b1f08f13bb22bcb1c482f7186082588f015bf689d72a1f2.bin",
+          "sha256": "0448f6d4ac3bbdac7b1f08f13bb22bcb1c482f7186082588f015bf689d72a1f2"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 30,
+              "file": "vectors/16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e.bin",
+              "sha256": "16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e"
+            },
+            "canonical": {
+              "bytes": 29,
+              "file": "vectors/d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd.bin",
+              "sha256": "d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd"
+            },
+            "identity_digest": "d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 30,
+              "file": "vectors/16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e.bin",
+              "sha256": "16dffaafcff903df2801e8d66ef41cfa697a5545b7927f50d3d2dced035d959e"
+            },
+            "canonical": {
+              "bytes": 29,
+              "file": "vectors/d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd.bin",
+              "sha256": "d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd"
+            },
+            "identity_digest": "d364489a7d76b5c396b14c9159854036bb42618732a423a0e6a690c023c633dd",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "escaped_controls",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 48,
+          "file": "vectors/139b41f9a65e920a163acfc29388825ab05f31f470ada010146ddbd179d46285.bin",
+          "sha256": "139b41f9a65e920a163acfc29388825ab05f31f470ada010146ddbd179d46285"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 46,
+              "file": "vectors/b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a.bin",
+              "sha256": "b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a"
+            },
+            "canonical": {
+              "bytes": 45,
+              "file": "vectors/966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4.bin",
+              "sha256": "966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4"
+            },
+            "identity_digest": "966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 46,
+              "file": "vectors/b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a.bin",
+              "sha256": "b9f0fb9fedeb1242cb11b6de0077c07c312665400418c3db2e8de95fbf32d72a"
+            },
+            "canonical": {
+              "bytes": 45,
+              "file": "vectors/966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4.bin",
+              "sha256": "966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4"
+            },
+            "identity_digest": "966d974ac6ea8c77530f03500b4eab6004bb6898be120ff39525ca9c3677d4a4",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "negative_zero_and_exponents",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 90,
+          "file": "vectors/c187b1e17c212d1763f6da650bdc8b667cabd6f0fe13b1566dfcb11edc5aabfc.bin",
+          "sha256": "c187b1e17c212d1763f6da650bdc8b667cabd6f0fe13b1566dfcb11edc5aabfc"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 91,
+              "file": "vectors/7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3.bin",
+              "sha256": "7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3"
+            },
+            "canonical": {
+              "bytes": 90,
+              "file": "vectors/67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a.bin",
+              "sha256": "67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a"
+            },
+            "identity_digest": "67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 91,
+              "file": "vectors/7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3.bin",
+              "sha256": "7e5cd5a42700d46986dd1a47c3af5f0af6a9c2bb3894ffb2bbf0cf937f7d53f3"
+            },
+            "canonical": {
+              "bytes": 90,
+              "file": "vectors/67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a.bin",
+              "sha256": "67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a"
+            },
+            "identity_digest": "67784c7d7d5007278b3c6c29565fe7a238cc735faea727bc62d1d944e7e02c7a",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "nested_array_order",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 40,
+          "file": "vectors/8787392a6450d6412b68763f4d4b72fb44f42c23c865620556cbca0024acc39c.bin",
+          "sha256": "8787392a6450d6412b68763f4d4b72fb44f42c23c865620556cbca0024acc39c"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 41,
+              "file": "vectors/09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac.bin",
+              "sha256": "09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac"
+            },
+            "canonical": {
+              "bytes": 40,
+              "file": "vectors/2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982.bin",
+              "sha256": "2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982"
+            },
+            "identity_digest": "2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 41,
+              "file": "vectors/09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac.bin",
+              "sha256": "09db95efb8cbe46c11578ac10988d21fd29a764dad969dbdfcd28bcb29bb44ac"
+            },
+            "canonical": {
+              "bytes": 40,
+              "file": "vectors/2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982.bin",
+              "sha256": "2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982"
+            },
+            "identity_digest": "2e99df9abeb73b870653a6f3e541b3fa7fa2b6d242588f55637b0039cf028982",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "missing_field",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 2,
+          "file": "vectors/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a.bin",
+          "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 3,
+              "file": "vectors/ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356.bin",
+              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+            },
+            "canonical": {
+              "bytes": 2,
+              "file": "vectors/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a.bin",
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            },
+            "identity_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 3,
+              "file": "vectors/ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356.bin",
+              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+            },
+            "canonical": {
+              "bytes": 2,
+              "file": "vectors/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a.bin",
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            },
+            "identity_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "explicit_null_field",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 14,
+          "file": "vectors/1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8.bin",
+          "sha256": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 15,
+              "file": "vectors/2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee.bin",
+              "sha256": "2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee"
+            },
+            "canonical": {
+              "bytes": 14,
+              "file": "vectors/1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8.bin",
+              "sha256": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8"
+            },
+            "identity_digest": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 15,
+              "file": "vectors/2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee.bin",
+              "sha256": "2e5bb0a6612ff9082a69f530010db34d0b9c459b345be114936568de2fdcfaee"
+            },
+            "canonical": {
+              "bytes": 14,
+              "file": "vectors/1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8.bin",
+              "sha256": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8"
+            },
+            "identity_digest": "1c197daef20de3f47eec5e2f735ec6669869d3180cc29f35be4788511e0af0f8",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "integer_beyond_js_safe",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 24,
+          "file": "vectors/edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3.bin",
+          "sha256": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 25,
+              "file": "vectors/bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd.bin",
+              "sha256": "bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd"
+            },
+            "canonical": {
+              "bytes": 24,
+              "file": "vectors/edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3.bin",
+              "sha256": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3"
+            },
+            "identity_digest": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 25,
+              "file": "vectors/bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd.bin",
+              "sha256": "bf15e37a1d3bb163adbcecf03f6614974e4119741ba21eb795dc2e8a1879afbd"
+            },
+            "canonical": {
+              "bytes": 24,
+              "file": "vectors/edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3.bin",
+              "sha256": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3"
+            },
+            "identity_digest": "edc0c65e0c4510819c805b199447a62255257c93d853261e35472963b90140c3",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "duplicate_input_key_last_value",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 13,
+          "file": "vectors/d38245cfdb5d2239d67fe2a719312768b668a6928d8d97d04fbce83215e50b44.bin",
+          "sha256": "d38245cfdb5d2239d67fe2a719312768b668a6928d8d97d04fbce83215e50b44"
+        },
+        "owners": [
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 8,
+              "file": "vectors/feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d.bin",
+              "sha256": "feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d"
+            },
+            "canonical": {
+              "bytes": 7,
+              "file": "vectors/5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418.bin",
+              "sha256": "5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418"
+            },
+            "identity_digest": "5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": true,
+            "artifact_digest_differs_from_identity": true,
+            "artifact_with_final_lf": {
+              "bytes": 8,
+              "file": "vectors/feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d.bin",
+              "sha256": "feb939020e9d63a4e5671c2fee3621703f45dcd172d5ab9380cec70a163dea5d"
+            },
+            "canonical": {
+              "bytes": 7,
+              "file": "vectors/5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418.bin",
+              "sha256": "5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418"
+            },
+            "identity_digest": "5e2b030a4a0f1582d78c0fd9924511cd6b1f2df9879e574f5ea1406c94052418",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "lone_high_surrogate_rejected",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 16,
+          "file": "vectors/082ab20c47779059d5c223b7152e99e5f40181aee5ec51984b2de7ae33bcabb0.bin",
+          "sha256": "082ab20c47779059d5c223b7152e99e5f40181aee5ec51984b2de7ae33bcabb0"
+        },
+        "owners": [
+          {
+            "accepted": false,
+            "error_type": "UnicodeEncodeError",
+            "message": "'utf-8' codec can't encode character '\\ud800' in position 8: surrogates not allowed",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": false,
+            "error_type": "UnicodeEncodeError",
+            "message": "'utf-8' codec can't encode character '\\ud800' in position 8: surrogates not allowed",
+            "owner": "code-change-profile"
+          }
+        ]
+      },
+      {
+        "case": "lone_low_surrogate_rejected",
+        "classification": "codec_only_not_full_schema_acceptance",
+        "input": {
+          "bytes": 16,
+          "file": "vectors/9e3b51b7636e0e54ae528e35f9cf6fd53d9fc2d8acb8cd8c7ff01b54c96766c0.bin",
+          "sha256": "9e3b51b7636e0e54ae528e35f9cf6fd53d9fc2d8acb8cd8c7ff01b54c96766c0"
+        },
+        "owners": [
+          {
+            "accepted": false,
+            "error_type": "UnicodeEncodeError",
+            "message": "'utf-8' codec can't encode character '\\udc00' in position 8: surrogates not allowed",
+            "owner": "slice-checkpoint"
+          },
+          {
+            "accepted": false,
+            "error_type": "UnicodeEncodeError",
+            "message": "'utf-8' codec can't encode character '\\udc00' in position 8: surrogates not allowed",
+            "owner": "code-change-profile"
+          }
+        ]
+      }
+    ],
+    "classification": "codec-only byte identity and rejection; not full candidate/profile schema acceptance",
+    "source_identity": {
+      "physical_profile_sha256": "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003",
+      "python_runtime": {
+        "executable_sha256": "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
+        "implementation": "CPython",
+        "version": "3.14.4"
+      },
+      "slice_checkpoint_sha256": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b"
+    }
+  },
+  "profile_verification": {
+    "codec": "Python json.dumps(sort_keys=True,separators=(comma,colon),ensure_ascii=False) UTF-8; SHA-256 over canonical bytes, profile_digest excludes itself",
+    "required": [
+      "Exact schema-v2 fields and analyzer name/version/source/checkpoint-validator SHA-256.",
+      "Canonical subject_digest, canonical profile_digest, exact candidate construction method and candidate object identity.",
+      "Producer/provenance derivation sources and pinned observed Python/Git runtime executable hashes/versions.",
+      "Exact observation field/state structure, path list, counts, categories, module distribution, binary/line totals and changed-symbol measurements.",
+      "Bind profile subject checkpoint to the separately verified candidate; profile validator alone does not inspect Git objects.",
+      "Binary file rows retain null additions/deletions and force unsupported line totals with the exact reason.",
+      "Non-Python path symbol measurements are unsupported; malformed Python parses are failed; observed Python symbols retain allowed added/deleted/modified values.",
+      "Re-digested inner mismatches in file paths, counts, categories, modules, coverage, line totals, and symbol states/values reject independently of the outer profile digest."
+    ]
+  },
+  "read_only_git_verification": {
+    "repository_anchor": "/home/bline/code/.work-engine-tmp/sc0/candidate-2/oracle-repo",
+    "requirements": [
+      "Resolve the trusted absolute repository root and refuse a caller-supplied alternate root or symlink escape.",
+      "git rev-parse --verify --quiet <baseline>^{commit}, <candidate>^{commit}, <parent>^{commit}; require exact full OIDs.",
+      "git rev-parse --verify --quiet <private-ref>; require candidate commit OID and expected run/slice/attempt ref shape.",
+      "git cat-file -p <candidate>; parse exact tree, single parent and JSON metadata; compare metadata to receipt fields.",
+      "git rev-parse <baseline>^{tree}; compare baseline tree receipt; candidate commit tree must equal receipt tree.",
+      "SHA-256 of canonical path array must equal manifest_digest; compare to immutable commit metadata.",
+      "git diff-tree --binary --no-renames --no-ext-diff <baseline-tree> <candidate-tree>; hash raw stdout and compare task_patch_digest.",
+      "For the source-tree gate join, compare candidate tree to captured frozen tested tree, diff paths to declared scope, and git show <tree>:<path> bytes to captured content digests.",
+      "No Git write, ref update, checkpoint creation, profile production, Node or first-party Python callback enters SC1 verification."
+    ]
+  },
+  "readiness": {
+    "recommended": "candidate 2 characterization resolves the three source-evidence findings for bounded SC1 source-tree binding, subject to fresh retained review and integration-owner adoption",
+    "review_status": "pending_fresh_reviewer_recheck",
+    "unresolved_mechanical_validation_dependency": [],
+    "unsupported": [
+      "caller-chosen gate/producer",
+      "commit-metadata-dependent gate from tree equality",
+      "legacy gate output alone as subject proof",
+      "generic gate schema/alternate producer"
+    ]
+  },
+  "review_basis": {
+    "findings": [
+      "SC0-F1",
+      "SC0-F2",
+      "SC0-F3"
+    ],
+    "path": "/home/bline/.local/state/work-engine/rust-hp2-ce1-sc0-20261007/review/sc0-initial-review.json",
+    "sha256": "3621804cc6c59648ccd1592045f728db35b657bc4fbb39a6f6f295d23a96e97e"
+  },
+  "review_remediation": {
+    "SC0-F1": {
+      "capture_sha256": "ef9ca66756e0c2b845537b48d0590e6ab943abf27cbe8f18c8fd35a75e4960a7",
+      "proof": "11 raw JSON input/identity-output pairs from both pinned canonical functions, including errors and final-LF distinction",
+      "status": "evidence_added"
+    },
+    "SC0-F2": {
+      "profile_sha256": "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db",
+      "proof": "owner-produced six-path binary/failed-symbol profile plus 12 re-digested internal negatives, historic text-line negative and Python bool equality edge",
+      "status": "evidence_added"
+    },
+    "SC0-F3": {
+      "claim_about_candidate1_execution_mode": "none",
+      "failing_gate_receipt_sha256": "e1fea752e7b0f6bfb02847982e422a786131d32a1889bc565864f1acbf8f5bc3",
+      "gate_manifest_sha256": "d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34",
+      "proof": "pinned absolute Python -I child, explicit failure exits, full frozen-tree source bytes and no dirty/untracked inputs, plus failed wrong-byte probe",
+      "status": "evidence_added"
+    }
+  },
+  "schema_version": 1,
+  "supersedes_for_review": {
+    "disposition": "historical candidate 1 retained unchanged; candidate 2 is the remediation subject",
+    "path": "/home/bline/.local/state/work-engine/rust-hp2-sc0-20261007/subject-handoff.json",
+    "sha256": "24748dce32fc5f3d22b07480b0b7c68d15e87d98a0aa49ae412934a6a0ed2135"
+  },
+  "supported_input_profile": {
+    "accepted_boundary": {
+      "authority": "trusted campaign admission configuration, not the candidate/profile caller",
+      "gate_subject_kind": "immutable source tree and declared materialized path scope",
+      "reference": "controlled SC0 candidate-2 frozen source-tree gate fixture under accepted HP2 SC0 plan",
+      "required_gate_check": "controlled_subject_validation:frozen-tree-exact-path-bytes",
+      "requires_passed_gate": true,
+      "sha256": "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef"
+    },
+    "caller_selected_trust_allowed": false,
+    "candidate_kind": "candidate",
+    "candidate_schema_version": 1,
+    "commit_metadata_dependent_gate": "unsupported; tested tree equality does not prove a check ran against the later candidate commit metadata",
+    "historical_producers": {
+      "analyzer": {
+        "checkpoint_validator_sha256": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b",
+        "name": "work-engine-deterministic-baseline",
+        "source_sha256": "47e486ce1539bbfe1ab466d77650d9bb3e0338222478ae445fe6a07ba95e2003",
+        "version": "2"
+      },
+      "checkpoint_validator_sha256": "1b814da3ef9e1f20804b934b91f6621ed65159dd9dfab5bfbfdd2df95f82d20b",
+      "git_runtime": {
+        "executable_sha256": "5516c9f362c29376ab9a499a33082f9f611941d8c75930c880e30ad109e39c9a",
+        "version": "git version 2.53.0"
+      },
+      "python_runtime": {
+        "executable_sha256": "52e0a13e60a981d8c4b6478be2ba5176f69da07948a056bf49cf6f077e30cb41",
+        "implementation": "CPython",
+        "version": "3.14.4"
+      },
+      "rust_host_producer_claim": false
+    },
+    "name": "historical-candidate-schema1-profile-schema2-frozen-source-tree-gate-candidate2",
+    "profile_construction_method": "slice_checkpoint_candidate_receipt",
+    "profile_schema_version": 2
+  },
+  "vectors": [
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd.json",
+        "sha256": "4a2c4f1872f6dfe8de275181f08b1e4d8c33a437c2519cd8b9ce8b3c9b56a5cd"
+      },
+      "case": "candidate_valid",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": true
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/dbe13486dc8902920630de2232ddd7766622cdcea9703de6da76212196b35ff7.json",
+        "sha256": "dbe13486dc8902920630de2232ddd7766622cdcea9703de6da76212196b35ff7"
+      },
+      "case": "candidate_wrong_ref",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate private ref does not match receipt"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/abf5c951f3709ba567e52907c3559f8721528c9a77da2a5b252a623221702552.json",
+        "sha256": "abf5c951f3709ba567e52907c3559f8721528c9a77da2a5b252a623221702552"
+      },
+      "case": "candidate_wrong_commit",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate private ref does not match receipt"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/fadf97926d3b03cf8d551ee293437f5e02112979c849618581dd7f1469ff6963.json",
+        "sha256": "fadf97926d3b03cf8d551ee293437f5e02112979c849618581dd7f1469ff6963"
+      },
+      "case": "candidate_wrong_parent",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate parent does not match receipt"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/51543476fc008dd3d311817e7de231e77e591ce3f5a45908351c401bf8a47b60.json",
+        "sha256": "51543476fc008dd3d311817e7de231e77e591ce3f5a45908351c401bf8a47b60"
+      },
+      "case": "candidate_wrong_tree",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate receipt does not match immutable commit metadata"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/c170719a49772a84223752144d1fb7611bf7b1f5a387b8a9bb22c8114907479d.json",
+        "sha256": "c170719a49772a84223752144d1fb7611bf7b1f5a387b8a9bb22c8114907479d"
+      },
+      "case": "candidate_wrong_patch",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate receipt does not match immutable commit metadata"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2016,
+        "file": "vectors/51f383441d5f5af2b37ea217b7b698c4caef7a83d211fff9f6c0fc9058db2459.json",
+        "sha256": "51f383441d5f5af2b37ea217b7b698c4caef7a83d211fff9f6c0fc9058db2459"
+      },
+      "case": "candidate_wrong_path_attribution",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate path attribution manifest does not match immutable metadata"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/6a0cb8cea0abd45862490ed421938b8037ddf0f86df128e3950894ca0283e3f2.json",
+        "sha256": "6a0cb8cea0abd45862490ed421938b8037ddf0f86df128e3950894ca0283e3f2"
+      },
+      "case": "candidate_wrong_gate_binding",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate receipt does not match immutable commit metadata"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2002,
+        "file": "vectors/937ece0245c57049d177c1911c1a12735e4a20e5b1f04295b5b23de6d0c07e38.json",
+        "sha256": "937ece0245c57049d177c1911c1a12735e4a20e5b1f04295b5b23de6d0c07e38"
+      },
+      "case": "candidate_wrong_run_identity",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "run_id must be a safe nonempty identity"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/6162f264fe2bae0d2ea54d242245ad338a5c1d77be27b790d344485dc5bb6318.json",
+        "sha256": "6162f264fe2bae0d2ea54d242245ad338a5c1d77be27b790d344485dc5bb6318"
+      },
+      "case": "candidate_wrong_attempt_ref",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate private ref does not match receipt"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/12ef78b5a4a73f9a469803d6ba3c70a8aeb64f97ca4fc438e5492a16b4d8636d.json",
+        "sha256": "12ef78b5a4a73f9a469803d6ba3c70a8aeb64f97ca4fc438e5492a16b4d8636d"
+      },
+      "case": "candidate_wrong_checkpoint_id",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": false,
+        "error_type": "ValueError",
+        "message": "candidate receipt does not match immutable commit metadata"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2006,
+        "file": "vectors/433baf730ba81e96ed55dd998973edae2471efaff9d0dd0d71ae91becb4ffbea.json",
+        "sha256": "433baf730ba81e96ed55dd998973edae2471efaff9d0dd0d71ae91becb4ffbea"
+      },
+      "case": "candidate_schema_mismatch_owner_accepts",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 2024,
+        "file": "vectors/30c4fea1649292849f36a4b27871394b09acb11a08b2b67ac9bbc86b7f2bef48.json",
+        "sha256": "30c4fea1649292849f36a4b27871394b09acb11a08b2b67ac9bbc86b7f2bef48"
+      },
+      "case": "candidate_extra_field_owner_accepts",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "candidate",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db.json",
+        "sha256": "5f78af676bf50a7a328b12e0ddcbf619ecfd78fd8e2f46f299330ff0d96095db"
+      },
+      "case": "profile_valid",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": true
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/b93e4fec146553d6123481de5e73632bcf272925b96e775d1dc51bb7f4656fb3.json",
+        "sha256": "b93e4fec146553d6123481de5e73632bcf272925b96e775d1dc51bb7f4656fb3"
+      },
+      "case": "profile_wrong_producer",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "analyzer source digest does not match this validator"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/c379426e5d52daf801c77f38214783bace9368ebb0ef4e769fe3a6d6f0c8af47.json",
+        "sha256": "c379426e5d52daf801c77f38214783bace9368ebb0ef4e769fe3a6d6f0c8af47"
+      },
+      "case": "profile_wrong_analyzer_version",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "analyzer name or version is unsupported"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/e5bb0742ac7a1ddeb3f9be5c52a9a3d35aaffabd586c8fa7485d17217ff85d68.json",
+        "sha256": "e5bb0742ac7a1ddeb3f9be5c52a9a3d35aaffabd586c8fa7485d17217ff85d68"
+      },
+      "case": "profile_wrong_checkpoint_validator",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "checkpoint validator binding is invalid"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/5a67675909eec5c11d1114fed0e87744220df485ce3408e6e5a32a7129befe49.json",
+        "sha256": "5a67675909eec5c11d1114fed0e87744220df485ce3408e6e5a32a7129befe49"
+      },
+      "case": "profile_wrong_digest",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "profile digest does not match canonical profile"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/47dc3665a86adc66b82d3415285139197b3b16eac1c4bd8be24dd602efe5cb43.json",
+        "sha256": "47dc3665a86adc66b82d3415285139197b3b16eac1c4bd8be24dd602efe5cb43"
+      },
+      "case": "profile_wrong_subject_digest",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "subject digest does not match canonical subject"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/c315b5c1eb455130f99ea964a3be698f91ab4f98328dc9487d5e571f8cfe78fa.json",
+        "sha256": "c315b5c1eb455130f99ea964a3be698f91ab4f98328dc9487d5e571f8cfe78fa"
+      },
+      "case": "profile_wrong_subject_schema_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "derived subject identity is invalid"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6165,
+        "file": "vectors/0ca15c45cf85d5b930a3c2b22905b8db161c6347adf027ccc726441ef6cb3c38.json",
+        "sha256": "0ca15c45cf85d5b930a3c2b22905b8db161c6347adf027ccc726441ef6cb3c38"
+      },
+      "case": "profile_wrong_observation_structure_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "observation structure is invalid"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6208,
+        "file": "vectors/d12b9a0af4a6cd8f0c562457048fc40d304580a072f56dbca0812913c55bb7a1.json",
+        "sha256": "d12b9a0af4a6cd8f0c562457048fc40d304580a072f56dbca0812913c55bb7a1"
+      },
+      "case": "profile_wrong_python_runtime_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "Python runtime provenance does not match the validating runtime"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/dbce708397093394b7363b366cbb5feb6f165a9b9e3c2b41bdf72ba71e7cb004.json",
+        "sha256": "dbce708397093394b7363b366cbb5feb6f165a9b9e3c2b41bdf72ba71e7cb004"
+      },
+      "case": "profile_wrong_candidate_gate_cross_binding_owner_accepts",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6209,
+        "file": "vectors/62d60dbba1f36c210422b858b89cfc1a6afd6853d9e84e30dc8e3e2f41dbc4da.json",
+        "sha256": "62d60dbba1f36c210422b858b89cfc1a6afd6853d9e84e30dc8e3e2f41dbc4da"
+      },
+      "case": "profile_wrong_file_path_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "profiled files do not match attributed manifest"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6210,
+        "file": "vectors/6877a4956ed384163f86943082821ea2382121aa234c43c5d86525316288e5d8.json",
+        "sha256": "6877a4956ed384163f86943082821ea2382121aa234c43c5d86525316288e5d8"
+      },
+      "case": "profile_wrong_file_count_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "file count contradicts files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6155,
+        "file": "vectors/4431b0658c18762760e488c81c8c74bf466b9943b3473bfd6b5237828074aac7.json",
+        "sha256": "4431b0658c18762760e488c81c8c74bf466b9943b3473bfd6b5237828074aac7"
+      },
+      "case": "profile_wrong_categories_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "file categories contradict files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6210,
+        "file": "vectors/36aa2c487bbbf1257a0826ebe63f3d54af0f207d1b1e1f8eae3e0192172ad427.json",
+        "sha256": "36aa2c487bbbf1257a0826ebe63f3d54af0f207d1b1e1f8eae3e0192172ad427"
+      },
+      "case": "profile_wrong_test_count_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "test_file_count contradicts files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6210,
+        "file": "vectors/a3528273a247fc59c1ae9ef13999e5c662a11bfa6ff6e1e626ef210ef03346f4.json",
+        "sha256": "a3528273a247fc59c1ae9ef13999e5c662a11bfa6ff6e1e626ef210ef03346f4"
+      },
+      "case": "profile_wrong_documentation_count_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "documentation_file_count contradicts files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6210,
+        "file": "vectors/24a244b9fbde1e6779f885b2486a31eea83137fc346c9450436b640cd38e3aa3.json",
+        "sha256": "24a244b9fbde1e6779f885b2486a31eea83137fc346c9450436b640cd38e3aa3"
+      },
+      "case": "profile_wrong_configuration_count_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "configuration_file_count contradicts files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6183,
+        "file": "vectors/4656e734eab0ab60bf37022ef2cd81ef740ea2f498140c40bd2c8880d7f5dad7.json",
+        "sha256": "4656e734eab0ab60bf37022ef2cd81ef740ea2f498140c40bd2c8880d7f5dad7"
+      },
+      "case": "profile_wrong_modules_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "module distribution contradicts files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6210,
+        "file": "vectors/62a9840080af8d4ef95fbe153d0c9653bf302f3f9d9b3d8727b47a94bbdcdc14.json",
+        "sha256": "62a9840080af8d4ef95fbe153d0c9653bf302f3f9d9b3d8727b47a94bbdcdc14"
+      },
+      "case": "profile_wrong_coverage_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "coverage contradicts subject or observations"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6206,
+        "file": "vectors/763a75d3eb2a1fa74cb788f2a1197f704f7c64dc3c1d91910c9cc25952f4f74b.json",
+        "sha256": "763a75d3eb2a1fa74cb788f2a1197f704f7c64dc3c1d91910c9cc25952f4f74b"
+      },
+      "case": "profile_binary_fabricated_line_count_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "binary file cannot fabricate line counts"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6194,
+        "file": "vectors/cc425717fc1dace62a325d359f85a317e910af2cbd0ce98273a2ba7f40200d35.json",
+        "sha256": "cc425717fc1dace62a325d359f85a317e910af2cbd0ce98273a2ba7f40200d35"
+      },
+      "case": "profile_binary_wrong_line_totals_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "binary subject requires unsupported line totals"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6149,
+        "file": "vectors/e6ab4c08274a2788b876c8eceee23886eedb886e0701a99d3d2272c1d0cf8dc9.json",
+        "sha256": "e6ab4c08274a2788b876c8eceee23886eedb886e0701a99d3d2272c1d0cf8dc9"
+      },
+      "case": "profile_invalid_symbol_state_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "changed-symbol measurement state is invalid"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 6176,
+        "file": "vectors/998cc5a9c02968e9f60bdf074befc18fa105583681ec1fcd307404188e88f257.json",
+        "sha256": "998cc5a9c02968e9f60bdf074befc18fa105583681ec1fcd307404188e88f257"
+      },
+      "case": "profile_invalid_symbol_value_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "changed-symbol value is invalid"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 4231,
+        "file": "vectors/99fba65cb422e57902ce48739093d67629a2dc620309e7df770cffd64460c00c.json",
+        "sha256": "99fba65cb422e57902ce48739093d67629a2dc620309e7df770cffd64460c00c"
+      },
+      "case": "profile_text_valid_historical",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": true
+    },
+    {
+      "artifact": {
+        "bytes": 4231,
+        "file": "vectors/2675a6eda5e7ec7ecf81480f3be4147a56a3019696f33fb5f8d1c3cfa7dd0e1b.json",
+        "sha256": "2675a6eda5e7ec7ecf81480f3be4147a56a3019696f33fb5f8d1c3cfa7dd0e1b"
+      },
+      "case": "profile_text_wrong_line_totals_resigned",
+      "expected": {
+        "accepted": false
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": false,
+        "error_type": "ProfileError",
+        "message": "line totals contradict files observation"
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 4234,
+        "file": "vectors/f9815b086e50b75a1bfb45a6a4afbed930cdc61da215ecfeb8809b975301c51b.json",
+        "sha256": "f9815b086e50b75a1bfb45a6a4afbed930cdc61da215ecfeb8809b975301c51b"
+      },
+      "case": "profile_python_bool_count_owner_accepts",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": false
+    },
+    {
+      "artifact": {
+        "bytes": 4234,
+        "file": "vectors/01b40cefd773abaea6128fd8c6ccf27be97df6944279a9492f9be13c71b29e84.json",
+        "sha256": "01b40cefd773abaea6128fd8c6ccf27be97df6944279a9492f9be13c71b29e84"
+      },
+      "case": "profile_python_bool_coverage_owner_accepts",
+      "expected": {
+        "accepted": true
+      },
+      "kind": "profile",
+      "observed": {
+        "accepted": true
+      },
+      "sc1_supported_profile_expected_accept": false
+    }
+  ]
+}

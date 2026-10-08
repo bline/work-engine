@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://work-engine.local/claim-evidence/finding-operation-v1.schema.json",
+  "title": "Historical claims finding operation v1",
+  "oneOf": [
+    {"$ref": "#/$defs/create"},
+    {"$ref": "#/$defs/revise"}
+  ],
+  "$defs": {
+    "base": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "operation_id", "action", "profile", "expected_state", "payload"],
+      "properties": {
+        "schema_version": {"const": 1}, "operation_id": {"type": "string", "minLength": 1},
+        "action": {"enum": ["create_claim", "publish_revision"]},
+        "profile": {"const": "revision-bound-review-finding-v1"},
+        "expected_state": {"type": ["string", "null"]}, "payload": {"type": "object"}
+      }
+    },
+    "create": {
+      "allOf": [{"$ref": "#/$defs/base"}, {"properties": {
+        "action": {"const": "create_claim"}, "expected_state": {"const": null},
+        "payload": {"type": "object", "additionalProperties": false,
+          "required": ["subject", "statement_identity", "initial_revision"],
+          "properties": {"subject": {"type": "object"}, "statement_identity": {"type": "string", "minLength": 1}, "initial_revision": {"type": "object"}}}
+      }}]
+    },
+    "revise": {
+      "allOf": [{"$ref": "#/$defs/base"}, {"properties": {
+        "action": {"const": "publish_revision"}, "expected_state": {"type": "string", "minLength": 1},
+        "payload": {"type": "object", "additionalProperties": false,
+          "required": ["claim_id", "revision"],
+          "properties": {"claim_id": {"type": "string", "minLength": 1}, "revision": {"type": "object"}}}
+      }}]
+    }
+  }
+}

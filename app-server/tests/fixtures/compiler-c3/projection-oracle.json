@@ -1,0 +1,1466 @@
+{
+  "baselineSourceSha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+  "sourceRevision": "bcbc52eb071270dc56d4dc65489b26b269506604",
+  "document": {
+    "schema_version": 1,
+    "manifest_id": "work-engine.app-server",
+    "roles": {
+      "slice-supervisor": {
+        "contract": "../skills/slice-supervisor/SKILL.md",
+        "compiled_environment": {
+          "structure": "migrations/skills/slice-supervisor/structure.yaml",
+          "interface": "migrations/skills/slice-supervisor/interface.yaml"
+        },
+        "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "developer_instructions": "You supervise one configured campaign under the exact slice-supervisor contract. Campaign authority, phase decisions, specialist selection, acceptance, and human escalation remain yours; repository-domain judgment and mutation remain with the retained builder.\n\nDurable campaign state, workspace admission, gates, checkpoint/profile creation, receipts, completion offers, Claim Evidence, and context lifecycle are mediated services with their own semantic owners. Use their bounded projections and operations; do not absorb their state or reinterpret their receipts. The legacy review boundary is explicit compatibility, not native review closure.\n\nProvider thread history is reasoning context, not campaign state. Return only the requested bounded campaign decision and preserve every unresolved authority or validation obligation.\n\nLaunch and continue slice builders only through operation builder_turn on the host-owned campaign.lifecycle_control capability. It creates or resumes the manifest-defined Work Engine role with its declared sandbox, tools, durable binding, and context lifecycle. Never use Codex collaboration spawn_agent for a builder: that creates an unmanaged provider child outside Work Engine role custody.",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "continuity": "retained",
+        "capabilities": [
+          "capability.repository_evidence",
+          "capability.preflight",
+          "capability.lifecycle_control",
+          "capability.receipt_finalization",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle",
+          "capability.canonical_publication",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.operational_coordination",
+          "capability.native_review"
+        ],
+        "effects": [
+          "state.campaign_lifecycle",
+          "state.durable_history"
+        ],
+        "skills": [
+          {
+            "name": "slice-supervisor",
+            "path": "../skills/slice-supervisor/SKILL.md"
+          }
+        ]
+      },
+      "slice-builder": {
+        "contract": "../skills/slice-builder/SKILL.md",
+        "developer_instructions": "You own one accepted implementation slice under the supervisor's exact boundary; you do not own campaign lifecycle, reviewer selection, checkpoint/profile semantics, receipts, completion publication, Claim Evidence, or context-lifecycle state.\n\nUse the supplied App Server services and deterministic owners for those effects. The legacy review seam is compatibility only, not native review closure. Bypassing a mediated owner can lose authority, attribution, recovery, or the exact review subject even when repository changes appear correct.\n\nYou already inhabit the Work Engine-managed slice-builder role. Caller-facing skill language about spawning or retaining a builder does not authorize you to spawn another agent.",
+        "compiled_environment": {
+          "structure": "migrations/skills/slice-builder/structure.yaml",
+          "interface": "migrations/skills/slice-builder/interface.yaml"
+        },
+        "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "danger-full-access",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "continuity": "retained",
+        "capabilities": [
+          "capability.repository_evidence",
+          "capability.direct_source_observation",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle",
+          "capability.deterministic_gate",
+          "capability.independent_review"
+        ],
+        "effects": [
+          "state.task_changes",
+          "state.agent_worktree"
+        ],
+        "skills": [
+          {
+            "name": "slice-builder",
+            "path": "../skills/slice-builder/SKILL.md"
+          },
+          {
+            "name": "repo-search",
+            "path": "../skills/repo-search/SKILL.md",
+            "compiled_environment": {
+              "structure": "migrations/skills/repo-search/structure.yaml",
+              "interface": "migrations/skills/repo-search/interface.yaml"
+            },
+            "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+            "capabilities": [
+              "capability.repository_evidence",
+              "capability.direct_source_observation"
+            ],
+            "effects": []
+          }
+        ]
+      },
+      "implementation-reviewer": {
+        "contract": "../skills/repo-search/SKILL.md",
+        "developer_instructions": "You perform one advisory, read-only implementation review of the exact immutable subject supplied by the host. Inspect only bounded subject evidence through repo-search. Return the generic implementation-review schema without mutating files, running or replacing gates, selecting reviewers, accepting work, publishing state, or claiming independence from role identity. Role text, profile identity, and a read-only label cannot establish independence or acceptance authority; claiming otherwise in reviewer prose would make the result untrustworthy even though deterministic admission separately withholds that authority.\n\nInitial independence requires host evidence of fresh entry outside builder reasoning and mutation authority. Ordinary remediation continues the same recorded reviewer session and does not create renewed freshness. Catalog admission does not prove inference identity, and configured provider identity never substitutes for observed execution identity. Keep raw evidence, authenticated projections, omissions, and material uncertainty distinguishable.\n\nClaim Evidence instructions define how exact claim revisions retain identity, lineage, limitations, and reliance boundaries; they do not grant claim operations or review authority. When the host supplies bounded claim context, treat it only as an authenticated zero-authority observation scoped to the named subject and consumer. Never infer applicability, materiality, verdict, freshness maintenance, finding evaluation, review acceptance, or campaign acceptance from claim presence, discoverability, or revision order.",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "continuity": "retained",
+        "capabilities": [
+          "capability.repository_evidence",
+          "capability.direct_source_observation"
+        ],
+        "effects": [],
+        "skills": [
+          {
+            "name": "repo-search",
+            "path": "../skills/repo-search/SKILL.md",
+            "compiled_environment": {
+              "structure": "migrations/skills/repo-search/structure.yaml",
+              "interface": "migrations/skills/repo-search/interface.yaml"
+            },
+            "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+            "capabilities": [
+              "capability.repository_evidence",
+              "capability.direct_source_observation"
+            ],
+            "effects": []
+          },
+          {
+            "name": "claim-evidence",
+            "path": "../skills/claim-evidence/SKILL.md",
+            "compiled_environment": {
+              "structure": "migrations/skills/claim-evidence/structure.yaml",
+              "interface": "migrations/skills/claim-evidence/interface.yaml"
+            },
+            "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+            "capabilities": [],
+            "effects": []
+          },
+          {
+            "name": "agent-instruction-review",
+            "path": "../skills/agent-instruction-review/SKILL.md",
+            "compiled_environment": {
+              "structure": "migrations/skills/agent-instruction-review/structure.yaml",
+              "interface": "migrations/skills/agent-instruction-review/interface.yaml"
+            },
+            "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+            "capabilities": [
+              "capability.repository_evidence",
+              "capability.direct_source_observation"
+            ],
+            "effects": []
+          }
+        ]
+      },
+      "strategic-planner": {
+        "contract": "../skills/strategic-planner/SKILL.md",
+        "developer_instructions": "Welcome back, we are glad to have you. You are our best strategic planner.\n\nYour planning handoff is advisory. The campaign supervisor retains execution and continuation authority, and the user retains every approval, ownership, product, and value decision outside delegated authority. Do not mutate the roadmap or campaign state, accept slice plans, direct builders, or turn a recommendation into an amendment.\n\nProvider thread history is reasoning context, not current or canonical product state. Reconcile the supplied strategic objective against the named evidence cutoff and durable references. Keep observation, inference, changed assumptions, uncertainty, and authority needs distinguishable.\n\nReturn one compact version-1 planning handoff using the contract supplied by the exact strategic-planner skill. If the evidence does not support a consequential choice, preserve the uncertainty and name its decision owner.",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "skills": [
+          {
+            "name": "strategic-planner",
+            "path": "../skills/strategic-planner/SKILL.md"
+          }
+        ]
+      },
+      "idea-intake": {
+        "contract": "../skills/idea-intake/SKILL.md",
+        "developer_instructions": "You assess one exact raw-idea revision under the contract supplied by the exact idea-intake skill. Preserve the source as authored and keep source assertions, interpretation, evidence, uncertainty, authority, and downstream non-effects distinguishable.\n\nHost capabilities provide exact source reads and create-only intake publication. Their validation and receipts establish mechanical identity, integrity, confinement, and persistence only; they do not establish semantic accuracy, readiness, value, proposal acceptance, implementation authority, priority, or cleanup authority.\n\nReturn a compact attributed intake result. Never rewrite or move the raw source, accept a proposal, authorize implementation or cleanup, or imply authority absent from the supplied evidence.",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "capabilities": [
+          "product-development.intake.read-source",
+          "product-development.intake.publish"
+        ],
+        "skills": [
+          {
+            "name": "idea-intake",
+            "path": "../skills/idea-intake/SKILL.md"
+          }
+        ]
+      },
+      "proposal-former": {
+        "contract": "../skills/proposal-former/SKILL.md",
+        "developer_instructions": "You form zero or more proposal candidates under the contract supplied by the exact proposal-former skill. Begin from the host-validated intake projection and preserve the distinctions among source material, repository observations, inference, human decisions, and accepted product contracts.\n\nHost capabilities provide validated intake reads and create-only proposal-packet publication. Their validation and receipts establish mechanical shape, identity, confinement, and persistence only; they do not establish proposal quality, placement correctness, value, acceptance, priority, or implementation authority.\n\nPublish every surviving candidate only as a complete bounded packet. If no candidate survives, report that semantic outcome without claiming durable completion because this initial runtime does not own a mechanically closed zero-proposal disposition. Never accept a proposal, change roadmap priority, or authorize implementation.",
+        "thread_options": {
+          "cwd": "..",
+          "approval_policy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "low"
+        },
+        "capabilities": [
+          "product-development.proposal.read-intake",
+          "product-development.proposal.publish"
+        ],
+        "skills": [
+          {
+            "name": "proposal-former",
+            "path": "../skills/proposal-former/SKILL.md"
+          }
+        ]
+      }
+    }
+  },
+  "options": {
+    "baseDirectory": "/fixture/delivery/app-server",
+    "identityBaseDirectory": "/fixture/root/app-server",
+    "requirementsBaseDirectory": "/fixture/root",
+    "sourcePath": "/fixture/root/app-server/runtime-manifest.yaml",
+    "sourceSha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+    "runtimeRequirementsByRole": {
+      "slice-supervisor": {
+        "schema_version": 1,
+        "role_id": "role.supervisor",
+        "skill_id": "slice-supervisor",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-supervisor/SKILL.md",
+          "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.campaign_lifecycle",
+          "state.durable_history"
+        ],
+        "prohibited_effects": [
+          "state.repository",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "verified_sources": true,
+        "sha256": "89f2f2cdc0d6138439c55c3cff0d1d12d23e7cdb8ef82a2dc0370e5edb2d2f4c"
+      },
+      "slice-builder": {
+        "schema_version": 1,
+        "role_id": "role.builder",
+        "skill_id": "slice-builder",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-builder/SKILL.md",
+          "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.agent_worktree",
+          "state.task_changes"
+        ],
+        "prohibited_effects": [
+          "state.campaign_config",
+          "state.private_checkpoint",
+          "state.user_history"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "verified_sources": true,
+        "sha256": "30315fdbfb83dafbf4e56dde52eee60f36c14807e46f4ee7eb8917ff27378cae"
+      },
+      "slice-builder:repo-search": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "implementation-reviewer:repo-search": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "implementation-reviewer:claim-evidence": {
+        "schema_version": 1,
+        "skill_id": "claim-evidence",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/claim-evidence/SKILL.md",
+          "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.campaign_acceptance",
+          "state.claim_authority",
+          "state.claim_store",
+          "state.finding_evaluation",
+          "state.review_acceptance",
+          "state.review_selection",
+          "state.task_changes"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+        "verified_sources": true,
+        "sha256": "6f12d65e5c90d4d0d8423a65ff0ef2f6d8a1c3a84f50f43b3eb50156f99d1e37"
+      },
+      "implementation-reviewer:agent-instruction-review": {
+        "schema_version": 1,
+        "skill_id": "agent-instruction-review",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/agent-instruction-review/SKILL.md",
+          "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.architecture",
+          "state.human_authority",
+          "state.implementation_acceptance",
+          "state.proposal_acceptance",
+          "state.review_selection",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+        "verified_sources": true,
+        "sha256": "b098f657974ae1b12b798b2009b28d0f1fc2fafbb2e9c87f0f3c04f0d95043d5"
+      }
+    }
+  },
+  "oracle": {
+    "manifestId": "work-engine.app-server",
+    "source": {
+      "manifestId": "work-engine.app-server",
+      "schemaVersion": 1,
+      "path": "/fixture/root/app-server/runtime-manifest.yaml",
+      "sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d"
+    },
+    "roles": {
+      "idea-intake": {
+        "roleContract": {
+          "path": "/fixture/root/skills/idea-intake/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/idea-intake/SKILL.md"
+        },
+        "developerInstructions": "You assess one exact raw-idea revision under the contract supplied by the exact idea-intake skill. Preserve the source as authored and keep source assertions, interpretation, evidence, uncertainty, authority, and downstream non-effects distinguishable.\n\nHost capabilities provide exact source reads and create-only intake publication. Their validation and receipts establish mechanical identity, integrity, confinement, and persistence only; they do not establish semantic accuracy, readiness, value, proposal acceptance, implementation authority, priority, or cleanup authority.\n\nReturn a compact attributed intake result. Never rewrite or move the raw source, accept a proposal, authorize implementation or cleanup, or imply authority absent from the supplied evidence.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "idea-intake",
+            "path": "/fixture/delivery/skills/idea-intake/SKILL.md",
+            "identityPath": "/fixture/root/skills/idea-intake/SKILL.md"
+          }
+        ],
+        "capabilities": [
+          "product-development.intake.publish",
+          "product-development.intake.read-source"
+        ],
+        "effects": [],
+        "continuity": "ephemeral",
+        "compiledSkillSha256": null,
+        "runtimeRequirements": null,
+        "runtimeEnvironmentRevision": "62ee62812289de13bd39445129d8b7b6ed37c1495a548052d32bc82b5fbf38fe"
+      },
+      "implementation-reviewer": {
+        "roleContract": {
+          "path": "/fixture/root/skills/repo-search/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/repo-search/SKILL.md"
+        },
+        "developerInstructions": "You perform one advisory, read-only implementation review of the exact immutable subject supplied by the host. Inspect only bounded subject evidence through repo-search. Return the generic implementation-review schema without mutating files, running or replacing gates, selecting reviewers, accepting work, publishing state, or claiming independence from role identity. Role text, profile identity, and a read-only label cannot establish independence or acceptance authority; claiming otherwise in reviewer prose would make the result untrustworthy even though deterministic admission separately withholds that authority.\n\nInitial independence requires host evidence of fresh entry outside builder reasoning and mutation authority. Ordinary remediation continues the same recorded reviewer session and does not create renewed freshness. Catalog admission does not prove inference identity, and configured provider identity never substitutes for observed execution identity. Keep raw evidence, authenticated projections, omissions, and material uncertainty distinguishable.\n\nClaim Evidence instructions define how exact claim revisions retain identity, lineage, limitations, and reliance boundaries; they do not grant claim operations or review authority. When the host supplies bounded claim context, treat it only as an authenticated zero-authority observation scoped to the named subject and consumer. Never infer applicability, materiality, verdict, freshness maintenance, finding evaluation, review acceptance, or campaign acceptance from claim presence, discoverability, or revision order.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "repo-search",
+            "path": "/fixture/delivery/skills/repo-search/SKILL.md",
+            "compiledEnvironment": {
+              "structure": "/fixture/delivery/app-server/migrations/skills/repo-search/structure.yaml",
+              "interface": "/fixture/delivery/app-server/migrations/skills/repo-search/interface.yaml"
+            },
+            "compiledSkillSha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+            "capabilities": [
+              "capability.direct_source_observation",
+              "capability.repository_evidence"
+            ],
+            "effects": [],
+            "identityPath": "/fixture/root/skills/repo-search/SKILL.md",
+            "runtimeRequirements": {
+              "schema_version": 1,
+              "skill_id": "repo-search",
+              "contract": {
+                "source_binding_id": "authority.legacy-skill",
+                "path": "skills/repo-search/SKILL.md",
+                "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+                "must_be_activated": true,
+                "kind": "skill"
+              },
+              "required_capabilities": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "capability_ceiling": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "effect_ceiling": [],
+              "prohibited_effects": [
+                "state.acceptance",
+                "state.review",
+                "state.task_changes",
+                "state.worktree"
+              ],
+              "continuity": "ephemeral",
+              "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+              "verified_sources": true,
+              "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+            }
+          },
+          {
+            "name": "claim-evidence",
+            "path": "/fixture/delivery/skills/claim-evidence/SKILL.md",
+            "compiledEnvironment": {
+              "structure": "/fixture/delivery/app-server/migrations/skills/claim-evidence/structure.yaml",
+              "interface": "/fixture/delivery/app-server/migrations/skills/claim-evidence/interface.yaml"
+            },
+            "compiledSkillSha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+            "capabilities": [],
+            "effects": [],
+            "identityPath": "/fixture/root/skills/claim-evidence/SKILL.md",
+            "runtimeRequirements": {
+              "schema_version": 1,
+              "skill_id": "claim-evidence",
+              "contract": {
+                "source_binding_id": "authority.legacy-skill",
+                "path": "skills/claim-evidence/SKILL.md",
+                "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+                "must_be_activated": true,
+                "kind": "skill"
+              },
+              "required_capabilities": [],
+              "capability_ceiling": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "effect_ceiling": [],
+              "prohibited_effects": [
+                "state.campaign_acceptance",
+                "state.claim_authority",
+                "state.claim_store",
+                "state.finding_evaluation",
+                "state.review_acceptance",
+                "state.review_selection",
+                "state.task_changes"
+              ],
+              "continuity": "retained",
+              "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+              "verified_sources": true,
+              "sha256": "6f12d65e5c90d4d0d8423a65ff0ef2f6d8a1c3a84f50f43b3eb50156f99d1e37"
+            }
+          },
+          {
+            "name": "agent-instruction-review",
+            "path": "/fixture/delivery/skills/agent-instruction-review/SKILL.md",
+            "compiledEnvironment": {
+              "structure": "/fixture/delivery/app-server/migrations/skills/agent-instruction-review/structure.yaml",
+              "interface": "/fixture/delivery/app-server/migrations/skills/agent-instruction-review/interface.yaml"
+            },
+            "compiledSkillSha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+            "capabilities": [
+              "capability.direct_source_observation",
+              "capability.repository_evidence"
+            ],
+            "effects": [],
+            "identityPath": "/fixture/root/skills/agent-instruction-review/SKILL.md",
+            "runtimeRequirements": {
+              "schema_version": 1,
+              "skill_id": "agent-instruction-review",
+              "contract": {
+                "source_binding_id": "authority.legacy-skill",
+                "path": "skills/agent-instruction-review/SKILL.md",
+                "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+                "must_be_activated": true,
+                "kind": "skill"
+              },
+              "required_capabilities": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "capability_ceiling": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "effect_ceiling": [],
+              "prohibited_effects": [
+                "state.architecture",
+                "state.human_authority",
+                "state.implementation_acceptance",
+                "state.proposal_acceptance",
+                "state.review_selection",
+                "state.task_changes",
+                "state.worktree"
+              ],
+              "continuity": "retained",
+              "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+              "verified_sources": true,
+              "sha256": "b098f657974ae1b12b798b2009b28d0f1fc2fafbb2e9c87f0f3c04f0d95043d5"
+            }
+          }
+        ],
+        "capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effects": [],
+        "continuity": "retained",
+        "compiledSkillSha256": null,
+        "runtimeRequirements": null,
+        "runtimeEnvironmentRevision": "7fa07028b1bdf37472ae1ab5cf53c7cf2e63207d619bdc181ffbc35e72f94ea7"
+      },
+      "proposal-former": {
+        "roleContract": {
+          "path": "/fixture/root/skills/proposal-former/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/proposal-former/SKILL.md"
+        },
+        "developerInstructions": "You form zero or more proposal candidates under the contract supplied by the exact proposal-former skill. Begin from the host-validated intake projection and preserve the distinctions among source material, repository observations, inference, human decisions, and accepted product contracts.\n\nHost capabilities provide validated intake reads and create-only proposal-packet publication. Their validation and receipts establish mechanical shape, identity, confinement, and persistence only; they do not establish proposal quality, placement correctness, value, acceptance, priority, or implementation authority.\n\nPublish every surviving candidate only as a complete bounded packet. If no candidate survives, report that semantic outcome without claiming durable completion because this initial runtime does not own a mechanically closed zero-proposal disposition. Never accept a proposal, change roadmap priority, or authorize implementation.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "proposal-former",
+            "path": "/fixture/delivery/skills/proposal-former/SKILL.md",
+            "identityPath": "/fixture/root/skills/proposal-former/SKILL.md"
+          }
+        ],
+        "capabilities": [
+          "product-development.proposal.publish",
+          "product-development.proposal.read-intake"
+        ],
+        "effects": [],
+        "continuity": "ephemeral",
+        "compiledSkillSha256": null,
+        "runtimeRequirements": null,
+        "runtimeEnvironmentRevision": "c17499d9d24fa19f23bc4cea6ab9113aeac27049a3858a29a308d7d6c5309e7c"
+      },
+      "slice-builder": {
+        "roleContract": {
+          "path": "/fixture/root/skills/slice-builder/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/slice-builder/SKILL.md"
+        },
+        "developerInstructions": "You own one accepted implementation slice under the supervisor's exact boundary; you do not own campaign lifecycle, reviewer selection, checkpoint/profile semantics, receipts, completion publication, Claim Evidence, or context-lifecycle state.\n\nUse the supplied App Server services and deterministic owners for those effects. The legacy review seam is compatibility only, not native review closure. Bypassing a mediated owner can lose authority, attribution, recovery, or the exact review subject even when repository changes appear correct.\n\nYou already inhabit the Work Engine-managed slice-builder role. Caller-facing skill language about spawning or retaining a builder does not authorize you to spawn another agent.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "danger-full-access",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "slice-builder",
+            "path": "/fixture/delivery/skills/slice-builder/SKILL.md",
+            "identityPath": "/fixture/root/skills/slice-builder/SKILL.md"
+          },
+          {
+            "name": "repo-search",
+            "path": "/fixture/delivery/skills/repo-search/SKILL.md",
+            "compiledEnvironment": {
+              "structure": "/fixture/delivery/app-server/migrations/skills/repo-search/structure.yaml",
+              "interface": "/fixture/delivery/app-server/migrations/skills/repo-search/interface.yaml"
+            },
+            "compiledSkillSha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+            "capabilities": [
+              "capability.direct_source_observation",
+              "capability.repository_evidence"
+            ],
+            "effects": [],
+            "identityPath": "/fixture/root/skills/repo-search/SKILL.md",
+            "runtimeRequirements": {
+              "schema_version": 1,
+              "skill_id": "repo-search",
+              "contract": {
+                "source_binding_id": "authority.legacy-skill",
+                "path": "skills/repo-search/SKILL.md",
+                "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+                "must_be_activated": true,
+                "kind": "skill"
+              },
+              "required_capabilities": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "capability_ceiling": [
+                "capability.direct_source_observation",
+                "capability.repository_evidence"
+              ],
+              "effect_ceiling": [],
+              "prohibited_effects": [
+                "state.acceptance",
+                "state.review",
+                "state.task_changes",
+                "state.worktree"
+              ],
+              "continuity": "ephemeral",
+              "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+              "verified_sources": true,
+              "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+            }
+          }
+        ],
+        "capabilities": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "effects": [
+          "state.agent_worktree",
+          "state.task_changes"
+        ],
+        "continuity": "retained",
+        "compiledSkillSha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "runtimeRequirements": {
+          "schema_version": 1,
+          "role_id": "role.builder",
+          "skill_id": "slice-builder",
+          "contract": {
+            "source_binding_id": "authority.legacy-skill",
+            "path": "skills/slice-builder/SKILL.md",
+            "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+            "must_be_activated": true,
+            "kind": "role_contract"
+          },
+          "required_capabilities": [
+            "capability.deterministic_gate",
+            "capability.direct_source_observation",
+            "capability.independent_review",
+            "capability.repository_evidence",
+            "capability.repository_mutation",
+            "capability.worktree_lifecycle"
+          ],
+          "capability_ceiling": [
+            "capability.deterministic_gate",
+            "capability.direct_source_observation",
+            "capability.independent_review",
+            "capability.repository_evidence",
+            "capability.repository_mutation",
+            "capability.worktree_lifecycle"
+          ],
+          "effect_ceiling": [
+            "state.agent_worktree",
+            "state.task_changes"
+          ],
+          "prohibited_effects": [
+            "state.campaign_config",
+            "state.private_checkpoint",
+            "state.user_history"
+          ],
+          "continuity": "retained",
+          "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+          "verified_sources": true,
+          "sha256": "30315fdbfb83dafbf4e56dde52eee60f36c14807e46f4ee7eb8917ff27378cae"
+        },
+        "runtimeEnvironmentRevision": "e50e6cddf3543478e15b17348f689a8dead923e59de798862202f2db99103287"
+      },
+      "slice-supervisor": {
+        "roleContract": {
+          "path": "/fixture/root/skills/slice-supervisor/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/slice-supervisor/SKILL.md"
+        },
+        "developerInstructions": "You supervise one configured campaign under the exact slice-supervisor contract. Campaign authority, phase decisions, specialist selection, acceptance, and human escalation remain yours; repository-domain judgment and mutation remain with the retained builder.\n\nDurable campaign state, workspace admission, gates, checkpoint/profile creation, receipts, completion offers, Claim Evidence, and context lifecycle are mediated services with their own semantic owners. Use their bounded projections and operations; do not absorb their state or reinterpret their receipts. The legacy review boundary is explicit compatibility, not native review closure.\n\nProvider thread history is reasoning context, not campaign state. Return only the requested bounded campaign decision and preserve every unresolved authority or validation obligation.\n\nLaunch and continue slice builders only through operation builder_turn on the host-owned campaign.lifecycle_control capability. It creates or resumes the manifest-defined Work Engine role with its declared sandbox, tools, durable binding, and context lifecycle. Never use Codex collaboration spawn_agent for a builder: that creates an unmanaged provider child outside Work Engine role custody.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "slice-supervisor",
+            "path": "/fixture/delivery/skills/slice-supervisor/SKILL.md",
+            "identityPath": "/fixture/root/skills/slice-supervisor/SKILL.md"
+          }
+        ],
+        "capabilities": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "effects": [
+          "state.campaign_lifecycle",
+          "state.durable_history"
+        ],
+        "continuity": "retained",
+        "compiledSkillSha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "runtimeRequirements": {
+          "schema_version": 1,
+          "role_id": "role.supervisor",
+          "skill_id": "slice-supervisor",
+          "contract": {
+            "source_binding_id": "authority.legacy-skill",
+            "path": "skills/slice-supervisor/SKILL.md",
+            "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+            "must_be_activated": true,
+            "kind": "role_contract"
+          },
+          "required_capabilities": [
+            "capability.canonical_publication",
+            "capability.checkpoint_lifecycle",
+            "capability.completion_offer",
+            "capability.completion_publication",
+            "capability.lifecycle_control",
+            "capability.native_review",
+            "capability.operational_coordination",
+            "capability.preflight",
+            "capability.receipt_finalization",
+            "capability.repository_evidence",
+            "capability.resume",
+            "capability.strategic_reconciliation",
+            "capability.workspace_coordination",
+            "capability.worktree_lifecycle"
+          ],
+          "capability_ceiling": [
+            "capability.canonical_publication",
+            "capability.checkpoint_lifecycle",
+            "capability.completion_offer",
+            "capability.completion_publication",
+            "capability.lifecycle_control",
+            "capability.native_review",
+            "capability.operational_coordination",
+            "capability.preflight",
+            "capability.receipt_finalization",
+            "capability.repository_evidence",
+            "capability.resume",
+            "capability.strategic_reconciliation",
+            "capability.workspace_coordination",
+            "capability.worktree_lifecycle"
+          ],
+          "effect_ceiling": [
+            "state.campaign_lifecycle",
+            "state.durable_history"
+          ],
+          "prohibited_effects": [
+            "state.repository",
+            "state.task_changes",
+            "state.worktree"
+          ],
+          "continuity": "retained",
+          "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+          "verified_sources": true,
+          "sha256": "89f2f2cdc0d6138439c55c3cff0d1d12d23e7cdb8ef82a2dc0370e5edb2d2f4c"
+        },
+        "runtimeEnvironmentRevision": "3f39a84cce1abaea3cb79c26d15ff83d804ac80bffb1f89990566e4e8646e70f"
+      },
+      "strategic-planner": {
+        "roleContract": {
+          "path": "/fixture/root/skills/strategic-planner/SKILL.md",
+          "activatedPath": "/fixture/delivery/skills/strategic-planner/SKILL.md"
+        },
+        "developerInstructions": "Welcome back, we are glad to have you. You are our best strategic planner.\n\nYour planning handoff is advisory. The campaign supervisor retains execution and continuation authority, and the user retains every approval, ownership, product, and value decision outside delegated authority. Do not mutate the roadmap or campaign state, accept slice plans, direct builders, or turn a recommendation into an amendment.\n\nProvider thread history is reasoning context, not current or canonical product state. Reconcile the supplied strategic objective against the named evidence cutoff and durable references. Keep observation, inference, changed assumptions, uncertainty, and authority needs distinguishable.\n\nReturn one compact version-1 planning handoff using the contract supplied by the exact strategic-planner skill. If the evidence does not support a consequential choice, preserve the uncertainty and name its decision owner.",
+        "threadOptions": {
+          "cwd": "/fixture/root",
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "model": "gpt-5.6-sol",
+          "effort": "low"
+        },
+        "skills": [
+          {
+            "name": "strategic-planner",
+            "path": "/fixture/delivery/skills/strategic-planner/SKILL.md",
+            "identityPath": "/fixture/root/skills/strategic-planner/SKILL.md"
+          }
+        ],
+        "capabilities": [],
+        "effects": [],
+        "continuity": "ephemeral",
+        "compiledSkillSha256": null,
+        "runtimeRequirements": null,
+        "runtimeEnvironmentRevision": "9b6286dc8c6c174c9d44885de2a1d4fb8c5f2023393926975ae58fbfabb50d30"
+      }
+    },
+    "requirementsBaseDirectory": "/fixture/root"
+  },
+  "satisfactionCases": [
+    {
+      "roleId": "implementation-reviewer",
+      "skillName": "repo-search",
+      "requirements": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "implementation-reviewer",
+        "requirements_sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "skill_id": "repo-search",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "7fa07028b1bdf37472ae1ab5cf53c7cf2e63207d619bdc181ffbc35e72f94ea7",
+        "sha256": "3637d23bce9a22040c4337de30a87ccfe16b61c69aae02fcab91a16115440480"
+      }
+    },
+    {
+      "roleId": "implementation-reviewer",
+      "skillName": "claim-evidence",
+      "requirements": {
+        "schema_version": 1,
+        "skill_id": "claim-evidence",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/claim-evidence/SKILL.md",
+          "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.campaign_acceptance",
+          "state.claim_authority",
+          "state.claim_store",
+          "state.finding_evaluation",
+          "state.review_acceptance",
+          "state.review_selection",
+          "state.task_changes"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+        "verified_sources": true,
+        "sha256": "6f12d65e5c90d4d0d8423a65ff0ef2f6d8a1c3a84f50f43b3eb50156f99d1e37"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "implementation-reviewer",
+        "requirements_sha256": "6f12d65e5c90d4d0d8423a65ff0ef2f6d8a1c3a84f50f43b3eb50156f99d1e37",
+        "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+        "skill_id": "claim-evidence",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "7fa07028b1bdf37472ae1ab5cf53c7cf2e63207d619bdc181ffbc35e72f94ea7",
+        "sha256": "620f9fb98909912d82123ef5cd04d00828073dc8d3f5c9856cd3f936d94fc563"
+      }
+    },
+    {
+      "roleId": "implementation-reviewer",
+      "skillName": "agent-instruction-review",
+      "requirements": {
+        "schema_version": 1,
+        "skill_id": "agent-instruction-review",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/agent-instruction-review/SKILL.md",
+          "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.architecture",
+          "state.human_authority",
+          "state.implementation_acceptance",
+          "state.proposal_acceptance",
+          "state.review_selection",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+        "verified_sources": true,
+        "sha256": "b098f657974ae1b12b798b2009b28d0f1fc2fafbb2e9c87f0f3c04f0d95043d5"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "implementation-reviewer",
+        "requirements_sha256": "b098f657974ae1b12b798b2009b28d0f1fc2fafbb2e9c87f0f3c04f0d95043d5",
+        "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+        "skill_id": "agent-instruction-review",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "7fa07028b1bdf37472ae1ab5cf53c7cf2e63207d619bdc181ffbc35e72f94ea7",
+        "sha256": "05ffef5ac8f7bc038d4e7e3fe06c9c237723694632e9308d42515052493ad28a"
+      }
+    },
+    {
+      "roleId": "slice-builder",
+      "skillName": null,
+      "requirements": {
+        "schema_version": 1,
+        "role_id": "role.builder",
+        "skill_id": "slice-builder",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-builder/SKILL.md",
+          "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.agent_worktree",
+          "state.task_changes"
+        ],
+        "prohibited_effects": [
+          "state.campaign_config",
+          "state.private_checkpoint",
+          "state.user_history"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "verified_sources": true,
+        "sha256": "30315fdbfb83dafbf4e56dde52eee60f36c14807e46f4ee7eb8917ff27378cae"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "slice-builder",
+        "requirements_sha256": "30315fdbfb83dafbf4e56dde52eee60f36c14807e46f4ee7eb8917ff27378cae",
+        "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "e50e6cddf3543478e15b17348f689a8dead923e59de798862202f2db99103287",
+        "sha256": "511a87df866e92f5e84745851b60c8864c357a6e6dd53526d30cb9a7153c5ac7"
+      }
+    },
+    {
+      "roleId": "slice-builder",
+      "skillName": "repo-search",
+      "requirements": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "slice-builder",
+        "requirements_sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "skill_id": "repo-search",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "e50e6cddf3543478e15b17348f689a8dead923e59de798862202f2db99103287",
+        "sha256": "9b7dae2f92d653108c371b1c5088967030cc80678f38bf5148d2fe7766f5e64a"
+      }
+    },
+    {
+      "roleId": "slice-supervisor",
+      "skillName": null,
+      "requirements": {
+        "schema_version": 1,
+        "role_id": "role.supervisor",
+        "skill_id": "slice-supervisor",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-supervisor/SKILL.md",
+          "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.campaign_lifecycle",
+          "state.durable_history"
+        ],
+        "prohibited_effects": [
+          "state.repository",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "verified_sources": true,
+        "sha256": "89f2f2cdc0d6138439c55c3cff0d1d12d23e7cdb8ef82a2dc0370e5edb2d2f4c"
+      },
+      "receipt": {
+        "schema_version": 1,
+        "role_id": "slice-supervisor",
+        "requirements_sha256": "89f2f2cdc0d6138439c55c3cff0d1d12d23e7cdb8ef82a2dc0370e5edb2d2f4c",
+        "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "manifest_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+        "runtime_environment_revision": "3f39a84cce1abaea3cb79c26d15ff83d804ac80bffb1f89990566e4e8646e70f",
+        "sha256": "6fbbd309a83e59fb799e29aa3679e7f022267d32c93f56203e8f71e823a34995"
+      }
+    }
+  ],
+  "wireOptions": {
+    "base_directory": "/fixture/delivery/app-server",
+    "identity_base_directory": "/fixture/root/app-server",
+    "requirements_base_directory": "/fixture/root",
+    "source_path": "/fixture/root/app-server/runtime-manifest.yaml",
+    "source_sha256": "d50e88a2b0cfe2ba58819de56e95c23ec2369655abc838c94f00b9a9dab9e70d",
+    "runtime_requirements_by_role": {
+      "slice-supervisor": {
+        "schema_version": 1,
+        "role_id": "role.supervisor",
+        "skill_id": "slice-supervisor",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-supervisor/SKILL.md",
+          "sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.canonical_publication",
+          "capability.checkpoint_lifecycle",
+          "capability.completion_offer",
+          "capability.completion_publication",
+          "capability.lifecycle_control",
+          "capability.native_review",
+          "capability.operational_coordination",
+          "capability.preflight",
+          "capability.receipt_finalization",
+          "capability.repository_evidence",
+          "capability.resume",
+          "capability.strategic_reconciliation",
+          "capability.workspace_coordination",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.campaign_lifecycle",
+          "state.durable_history"
+        ],
+        "prohibited_effects": [
+          "state.repository",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "6b26d4dd8294be02d8fc8f462af9f3c505142fb5c060ef31529f9a28fcf48d9e",
+        "verified_sources": true,
+        "sha256": "89f2f2cdc0d6138439c55c3cff0d1d12d23e7cdb8ef82a2dc0370e5edb2d2f4c"
+      },
+      "slice-builder": {
+        "schema_version": 1,
+        "role_id": "role.builder",
+        "skill_id": "slice-builder",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/slice-builder/SKILL.md",
+          "sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+          "must_be_activated": true,
+          "kind": "role_contract"
+        },
+        "required_capabilities": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "capability_ceiling": [
+          "capability.deterministic_gate",
+          "capability.direct_source_observation",
+          "capability.independent_review",
+          "capability.repository_evidence",
+          "capability.repository_mutation",
+          "capability.worktree_lifecycle"
+        ],
+        "effect_ceiling": [
+          "state.agent_worktree",
+          "state.task_changes"
+        ],
+        "prohibited_effects": [
+          "state.campaign_config",
+          "state.private_checkpoint",
+          "state.user_history"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ba46408c74cfd396abd68e430c5ff9230835a985333a595292ad1e7620e3da2e",
+        "verified_sources": true,
+        "sha256": "30315fdbfb83dafbf4e56dde52eee60f36c14807e46f4ee7eb8917ff27378cae"
+      },
+      "slice-builder:repo-search": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "implementation-reviewer:repo-search": {
+        "schema_version": 1,
+        "skill_id": "repo-search",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/repo-search/SKILL.md",
+          "sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.acceptance",
+          "state.review",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "ephemeral",
+        "compiled_skill_sha256": "cf72505d1850e757f6cc6ef3331d0f66ee4c5bf51b52a527c27fe8b78c17a949",
+        "verified_sources": true,
+        "sha256": "f03e559f3d3c22f7b103e29ffbae3f0a85dbecaccb7a2fac7201041d62f1ac0b"
+      },
+      "implementation-reviewer:claim-evidence": {
+        "schema_version": 1,
+        "skill_id": "claim-evidence",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/claim-evidence/SKILL.md",
+          "sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.campaign_acceptance",
+          "state.claim_authority",
+          "state.claim_store",
+          "state.finding_evaluation",
+          "state.review_acceptance",
+          "state.review_selection",
+          "state.task_changes"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "afd233654dbc0b70262eaabf359e5d9f0619e1a36fb4889b301bd32ed6e2800a",
+        "verified_sources": true,
+        "sha256": "6f12d65e5c90d4d0d8423a65ff0ef2f6d8a1c3a84f50f43b3eb50156f99d1e37"
+      },
+      "implementation-reviewer:agent-instruction-review": {
+        "schema_version": 1,
+        "skill_id": "agent-instruction-review",
+        "contract": {
+          "source_binding_id": "authority.legacy-skill",
+          "path": "skills/agent-instruction-review/SKILL.md",
+          "sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+          "must_be_activated": true,
+          "kind": "skill"
+        },
+        "required_capabilities": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "capability_ceiling": [
+          "capability.direct_source_observation",
+          "capability.repository_evidence"
+        ],
+        "effect_ceiling": [],
+        "prohibited_effects": [
+          "state.architecture",
+          "state.human_authority",
+          "state.implementation_acceptance",
+          "state.proposal_acceptance",
+          "state.review_selection",
+          "state.task_changes",
+          "state.worktree"
+        ],
+        "continuity": "retained",
+        "compiled_skill_sha256": "ab652b616869062170f9adca8299e6fe1ee934d3a3e21c8f030a4d37ebebec72",
+        "verified_sources": true,
+        "sha256": "b098f657974ae1b12b798b2009b28d0f1fc2fafbb2e9c87f0f3c04f0d95043d5"
+      }
+    }
+  }
+}

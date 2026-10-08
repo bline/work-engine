@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,6 +10,7 @@ import { createImplementationReviewService } from "../src/services/implementatio
 import { digest as episodeDigest } from "../src/services/review-episode/contract.mjs";
 import { createReviewEpisodeService } from "../src/services/review-episode/service.mjs";
 import { openSqliteReviewEpisodeStore } from "../src/services/review-episode/sqlite-store.mjs";
+import { makeProductionPathClaimRevision } from "../src/services/claim-evidence/production-path-contract.mjs";
 import {
   createReviewBoundary,
   createNativeReviewHostOwners as createProductionNativeReviewHostOwners,
@@ -32,6 +33,122 @@ const legacyFactory = async () => ({identity: {backend: "fixture"}, preflight() 
 const effect = (operation, input) => ({generationId: "generation-native", effect: {
   protocol: SUPERVISOR_CAMPAIGN_HOST_EFFECT_PROTOCOL, capability: "capability.native_review", operation, input,
 }});
+
+const rustBinary = process.env.WORK_ENGINE_REVIEW_EPISODE_TEST_BINARY;
+const rustTest = rustBinary ? test : test.skip;
+
+rustTest("selected Rust Episode executes controlled native host review and recovers after host restart", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-rust-hosting-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  const root = path.join(stateRoot, "review-episode-native");
+  const init = spawnSync(rustBinary, ["init-native", "--root", root]);
+  assert.equal(init.status, 0, init.stderr?.toString());
+  const expectedSha256 = createHash("sha256").update(await readFile(rustBinary)).digest("hex");
+  const obligationId = "generic";
+  const episodeId = episodeDigest({identity, obligationId}).slice(0, 32);
+  const campaignKey = `${identity.runId}:${identity.sliceNumber}:${identity.attemptId}:${identity.planVersion}`;
+  const claims = ["builder_projection", "campaign_terminalization"].map((boundary) =>
+    makeProductionPathClaimRevision({
+      proposition: "The selected native result was independently observed under the required production path.",
+      subject: {candidate: subject, reviewEpisodeId: episodeId},
+      coveredState: "admitted_native_review_result", consumptionBoundary: boundary,
+      consumer: `${boundary === "builder_projection" ? "slice-builder" : "slice-campaign"}:${campaignKey}`,
+      acceptance: {owner: "operator", source: "accepted-selection-v2", unestablishedRoute: "operator"},
+      profile: {id: "production-path-v1", revision: "production-path-profile-v1",
+        allowedMechanisms: ["native-review-host-receipt-v1"],
+        admissibleObservers: ["app-server.reviewer-host"], integrityRequired: true,
+        requiredRealization: "claude-sonnet-5", requiredCapabilities: ["repository_read"],
+        continuity: "fresh_initial"},
+    }));
+  let campaign = await seed(stateRoot, {specialists: [{obligationId, skill: "implementation-review",
+    selection: "selected", requiredClaims: claims}]});
+  const reviewerCredentialSourcePath = await credentialSource(stateRoot);
+  let providerCalls = 0;
+  const ownersFactory = (options) => createNativeReviewHostOwners({...options,
+    reviewEpisodeRust: {binaryPath: rustBinary, expectedSha256, root, timeoutMs: 2_000},
+    reviewerCredentialSourcePath, reviewerExecuteProcess: async (request) => {
+      providerCalls += 1;
+      const toolsIndex = request.args.indexOf("--tools");
+      const grantedTools = request.args[toolsIndex + 1].split(",");
+      assert.deepEqual(grantedTools.slice(0, 3), ["Read", "Glob", "Grep"]);
+      assert.equal(grantedTools.some((tool) => /^(?:Bash|Write|Edit|mcp__review_episode)/.test(tool)), false);
+      const mcpIndex = request.args.indexOf("--mcp-config");
+      const mcp = JSON.parse(await readFile(request.args[mcpIndex + 1], "utf8"));
+      assert.deepEqual(Object.keys(mcp.mcpServers), ["codebase-memory-mcp"]);
+      const probe = spawnSync(process.execPath, ["-e", `const fs=require('fs');
+        const fds=fs.readdirSync('/proc/self/fd').map((name)=>{try{return fs.readlinkSync('/proc/self/fd/'+name)}catch{return ''}});
+        process.stdout.write(JSON.stringify({cwd:process.cwd(),fds,envKeys:Object.keys(process.env)}));`],
+      {env: request.env, cwd: request.cwd, stdio: ["ignore", "pipe", "pipe"]});
+      assert.equal(probe.status, 0, probe.stderr?.toString());
+      const observed = JSON.parse(probe.stdout.toString());
+      assert.equal(observed.cwd, repository);
+      assert.equal(observed.fds.some((fd) => fd.includes("review-episode-admission-")), false);
+      assert.equal(observed.envKeys.some((key) => /REVIEW_EPISODE.*(?:DESCRIPTOR|GRANT)/.test(key)), false);
+      const sessionIndex = request.args.indexOf("--session-id");
+      return {exitCode: 0, stderr: "", stdout: JSON.stringify({type: "result", subtype: "success",
+        session_id: request.args[sessionIndex + 1], model: "claude-sonnet-5", structured_output: result})};
+    }});
+  let host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  const executed = await host.dispatch(effect("execute", {identity, expected_revision: campaign.revision,
+    obligation_id: "generic", operation_id: "rust-native:initial"}));
+  campaign = executed.result.campaign;
+  assert.equal(campaign.nativeReview.obligations.generic.status, "reported");
+  assert.equal(campaign.nativeReview.obligations.generic.claimEvidence.length, 2);
+  assert.deepEqual(campaign.nativeReview.obligations.generic.claimEvidence.map(({status}) => status),
+    ["established", "established"]);
+  await assert.rejects(readFile(path.join(stateRoot, "review-episodes.sqlite3")), {code: "ENOENT"});
+  assert.equal(providerCalls, 1);
+  assert.equal(await readFile(path.join(root, ".review-episode-native-host-v1"), "utf8")
+    .then((value) => JSON.parse(value).executableSha256), expectedSha256);
+  host.close();
+  host = await createSupervisorCampaignCapabilityHostRuntime({workspaceRoot: repository, stateRoot,
+    canonicalBranches: ["main"], legacyAdapterFactory: legacyFactory, nativeReviewOwnersFactory: ownersFactory});
+  t.after(() => host.close());
+  const recovered = await host.dispatch(effect("recover", {identity, obligation_id: "generic"}));
+  assert.equal(recovered.result.campaign_revision, campaign.revision);
+  assert.equal(recovered.result.obligation.episodeRef.revision,
+    campaign.nativeReview.obligations.generic.episodeRef.revision);
+  assert.equal(providerCalls, 1);
+  await assert.rejects(host.dispatch(effect("correct_result", {identity,
+    expected_revision: campaign.revision, obligation_id: "generic", operation_id: "rust-native:correction"})),
+  /awaits RC admission/);
+});
+
+rustTest("actual Node host loss after durable result recovers downstream owners without provider replay", async (t) => {
+  const stateRoot = await mkdtemp(path.join(os.tmpdir(), "native-review-host-os-cut-"));
+  t.after(() => rm(stateRoot, {recursive: true, force: true}));
+  const driver = path.join(repository, "app-server/tests/fixtures/review-episode-rust/host-cut-driver.mjs");
+  const first = spawn(process.execPath, [driver, "first", stateRoot, rustBinary],
+    {stdio: ["ignore", "pipe", "pipe"]});
+  let stderr = "";
+  first.stderr.on("data", (chunk) => {stderr += chunk.toString();});
+  const barrierPath = path.join(stateRoot, "after-durable-result.ready");
+  try {
+    const deadline = Date.now() + 15_000;
+    while (true) {
+      try {await access(barrierPath); break;} catch {}
+      if (first.exitCode !== null) throw new Error(`first host exited before durable-result barrier: ${stderr}`);
+      if (Date.now() > deadline) throw new Error(`first host missed durable-result barrier: ${stderr}`);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    const witnessed = JSON.parse(await readFile(barrierPath, "utf8"));
+    assert.match(witnessed.episodeRevision, /^[0-9a-f]{64}$/);
+    assert.equal(witnessed.providerCalls, 1);
+    first.kill("SIGKILL");
+    const exit = await new Promise((resolve) => first.once("exit", (code, signal) => resolve({code, signal})));
+    assert.equal(exit.signal, "SIGKILL");
+    const recovered = spawnSync(process.execPath, [driver, "recover", stateRoot, rustBinary],
+      {encoding: "utf8", timeout: 30_000});
+    assert.equal(recovered.status, 0, recovered.stderr);
+    const result = JSON.parse(recovered.stdout.trim().split("\n").at(-1));
+    assert.equal(result.status, "reported");
+    assert.equal(result.episodeRevision, witnessed.episodeRevision);
+    assert.equal(result.episodeHistoryLength, 2);
+    assert.deepEqual(result.claims, ["established", "established"]);
+    assert.equal(result.providerCalls, 1);
+  } finally {if (first.exitCode === null) first.kill("SIGKILL");}
+});
 
 async function promptFromRequest(request) {
   const promptFileIndex = request.args.indexOf("--stdin-file");
@@ -239,7 +356,8 @@ async function seed(stateRoot, {candidate = {commit: subject.commit, tree: subje
     request: candidate});
   campaign = service.advance({identity, expectedRevision: campaign.revision, phase: "review_ready", consequence: {}});
   campaign = service.bindReviewSelection({identity, expectedRevision: campaign.revision, selection: {
-    schemaVersion: 1, owner: "slice-supervisor", selectionId: "selection:native-host:v1", subject: selectionSubject,
+    schemaVersion: specialists.some((item) => item.requiredClaims) ? 2 : 1,
+    owner: "slice-supervisor", selectionId: "selection:native-host:v1", subject: selectionSubject,
     specialists,
   }});
   store.close(); return campaign;

@@ -99,12 +99,13 @@ fn rust_reducer_row_is_read_by_legacy_js_with_exact_bytes_and_revision() {
     let expected_revision = state.revision().0.clone();
     let mut store = EpisodeStore::open(&root, StoreOptions::default()).unwrap();
     store
-        .write(&key, None, 32 * 1024 * 1024, |_| {
-            Ok(WriteDisposition::Applied {
-                state: Box::new(state.clone()),
-                reply_json: "{}".into(),
-            })
-        })
+        .write(
+            &key,
+            None,
+            32 * 1024 * 1024,
+            |_| Ok(WriteDisposition::Applied(Box::new(state.clone()))),
+            |state, _| canonical_json(state.value()),
+        )
         .unwrap();
     let history = store.read(&key).unwrap().history;
     assert_eq!(history.len(), 1);

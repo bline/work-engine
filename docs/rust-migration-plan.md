@@ -340,9 +340,199 @@ recorded gaps, a best-effort signal rather than proof of completeness. The Rust
 experiment's bounded results and the legacy effort's failures retain the limits
 recorded in the lifecycle evidence document.
 
-Lifecycle S0 is published; lifecycle S1 proceeds under its own plan and serialized
-workspace handoff. Compiler C2 and episode R2 remain later scope decisions.
+Lifecycle S0 and S1 are published. Compiler C2 and episode R2 are also published;
+the next bounded planning authority is recorded below.
 Broader scope decisions still include the next additional domain consumer,
 which supervision mechanics actually warrant extraction, encoding compatibility
 profiles, and each domain's state migration. The priority table informs those
 decisions; it does not silently add them to the lifecycle replacement's scope.
+
+## Published C2/R2 and next parallel plans — 2026-10-07
+
+S1 was committed as `e7c1d88ec0df20ea6213239b6dc2b36abd9f1872` and
+released shared-workspace ownership in coordination-board message 1239.
+The reviewed C2/R2 implementation was integrated onto S1, then explicitly
+authorized for local publication and committed as
+`bcbc52eb071270dc56d4dc65489b26b269506604` on `rescue-detached-20260911`.
+The commit contains exactly 70 paths; unrelated staged and working-tree changes
+were preserved. It was not pushed. Board message 1245 records the publication
+for the separately coordinated lifecycle S2/S3 efforts.
+
+The [integration record](rust-c2-r2-integration.md) binds unchanged C2/R2 source,
+the reconciled S1 lock, retained review closure, and final gates: 122 workspace
+tests, 32 fault tests, formatting, Clippy, release builds, and 40 Node tests on
+the clean joined candidate. The dirty shared checkout still has eleven
+pre-existing Node failures caused by builder-source drift from its canonical
+pin; the identical failures were reproduced on the S1 baseline. That source
+closure retains its existing owner and was not refreshed by this integration.
+
+The user authorized parallel **C3/R3 planning only** after publication:
+
+- [C3 manifest projection and requirement satisfaction](rust-compiler-c3-plan.md)
+  refines the Rust transformation and compatibility-facade boundary, including
+  executable inventory and generation-owner handoffs.
+- [R3 native review consumer integration](rust-review-episode-r3-plan.md)
+  refines the actual host-to-Rust application/store path and trusted admission,
+  retaining claims, provider, and campaign authority with their existing owners.
+
+The compiler planner owns only its C3 plan; the episode planner owns only its R3
+plan. R3 retains review-host implementation ownership and C3 retains manifest
+facade ownership. Shared host changes, executable staging, and workspace
+registration require explicit coordination. Joined responsiveness must cover
+both bridges together. The plans must identify unresolved owner decisions and
+handoffs rather than assume them from passing offline gates.
+
+Planning uses separate `gpt-6-astra` agents under the model-selection guidance;
+the user's explicit `gpt-6-sol` choice remains the implementation assignment.
+Plan review and bounded implementation authorization precede any C3/R3 code
+changes. This planning authority does not authorize cutover, live data migration,
+provider execution, activation, or expansion into lifecycle or UI implementation.
+
+A separate retained Astra reviewer, with no C3/R3 design participation, found no
+material plan defects in C3 SHA-256
+`cbfdb2172967fe8288b7dd78b4850c899c20c7d4465e81886645aa78e6731421`
+and R3 SHA-256
+`905d2615d46d7e604e072d5a13b340ea7d88bfc09c2a8df0d448687046ea6a18`.
+The review used targeted source and graph evidence; it executed no tests,
+builds, provider calls or database operations. This is plan assessment, not
+implementation qualification or an independence claim.
+
+Before implementation, select the R3 admission/threat profile, freeze the shared
+HOST workload and budget (the plans propose p99 control-route delay at most
+50 ms and maximum at most 250 ms), and choose bounded R3 with affected routes
+closed or an explicitly owned RC extension. The coordinator recommends bounded
+R3 first, retaining correction work as a separate owned slice. Generation
+inventory/selection remains an integration handoff. These plans and this status
+update are uncommitted planning artifacts; no C3/R3 implementation has begun.
+
+The user subsequently accepted the coordinator's recommendation. C3 and bounded
+R3 implementation now proceed in `/home/bline/code/work-engine-c3-r3` at the
+committed `bcbc52eb` baseline, using the retained `gpt-6-sol` builders. RC remains
+separate and affected positive native routes remain closed. The reviewed limited
+tool-grant admission scope and proposed HOST targets are implementation
+qualification gates, not a claim that measurements or launcher proof already
+passed. Board message 1250 and the coordination authority record bind this
+decision. S2/S3 retains shared workspace ownership; no main root or lifecycle
+source edits are included. Generation inventory/selection and controlled
+reconstruction remain a separate handoff while offline implementation progresses.
+
+The user also agreed to plan bounded shared generation integration in this
+session. The [generation integration plan](rust-generation-integration-plan.md)
+retains the Node generation manager and adds pinned artifact staging, saved
+selection for the worker and outer review host, and controlled reconstruction
+evidence. Its revised SHA-256 is
+`a9cec3c7f1f3729d4b9fb5f11b5d6901832dbbdda02de061c2d4f6091ed7e1b1`.
+Retained source review closed one P2 concerning cached runtime-manifest and
+reviewer-profile configuration: these inputs now participate in the proposed
+outer-host closure and reload refusal check. No material plan findings remain.
+This is planning and review evidence only; generation implementation, activation
+and publication have not been authorized. Final component subjects, trusted C2
+hydration and explicit legacy selection, and serialized package registration are
+named handoffs. They do not require the entire lifecycle migration to finish.
+
+C3/R3 subsequently completed isolated functional validation and retained code
+review: C3 aggregate `ecacc79cdbf0618074532ea6a4edc3b1236f05fa5a9ac0f54d73877cd3a559d1`
+and bounded R3 aggregate
+`63e80543dab0069d21e5d2dea55b13cdcb5a595ec3300d9c0b64d84017c0b1eb`.
+Coordinator gates passed 129 workspace tests, 35 fault tests (one intentional
+helper ignored), 91 serial Node tests, formatting, Clippy and release builds.
+The complete corrected HOST experiment, however, did not meet the frozen
+responsiveness target. Normal control p99 was 7.27 ms legacy, 87.58 ms C3-only,
+69.25 ms R3-only and 143.25 ms combined, against 50 ms. Both R3-selected maximum
+profiles timed out on 200/200 near-ceiling history operations.
+
+The isolated `docs/rust-c3-r3-validation.md` and terminal component receipts
+record these different evidence scopes. The full result is
+`/home/bline/.local/state/work-engine/rust-c3-r3-20261007/host-candidate4.json`,
+SHA-256 `099b8d7434fa3998acfc81b7026af3d4e39bba53b628e95b05dc52a2d52c0266`.
+Board 1287 releases the coordinated measurement window. The next recommendation
+is a bounded host/consumer interface plan for execution off the event loop and
+successful large-history handling, preserving authority and recovery contracts.
+Generation implementation should not be mistaken for resolving this failed
+gate. No budget/limit relaxation, default cutover, live migration, commit or
+activation was performed. C3/R3 full exit remains unmet.
+
+## Direct Rust replacement planning after HOST qualification
+
+The user subsequently clarified that substantial temporary infrastructure should
+be avoided unless there is a specific reason to build it, and authorized further
+planning on that basis. The next proposal is therefore the smallest coherent
+permanent Rust host and consumer boundary, documented in the
+[host replacement plan](rust-host-replacement-plan.md). An elaborate Node worker
+or persistent bridge is no longer the default recommendation.
+
+Keep the validated compiler and review-episode cores and their evidence. Compare
+direct Rust library composition with a domain service where ownership or actual
+consumers justify the process boundary. Shared machinery follows demonstrated
+needs; this change does not justify a universal runtime or collapse lifecycle,
+review, claims, campaign and deployment authority into one owner.
+
+Any temporary adapter proposed along that route should identify the concrete
+consumer it unblocks, why direct replacement cannot reasonably supply that
+result, its bounded implementation and maintenance cost, and the successor that
+allows its removal. The earlier generation integration proposal remains a
+reviewed alternative; its exact-artifact and reconstruction requirements survive,
+while its Node handoffs and packaging shape need reconciliation with the chosen
+Rust boundary.
+
+Node retirement and successful large-history handling are separate obligations.
+The failed C3/R3 HOST measurements remain failed evidence. A different host or
+request protocol needs an explicitly specified qualification profile and outcome
+mapping; changing the profile cannot establish a pass of the original one.
+This direction authorizes planning, not broader implementation or cutover.
+
+The user also clarified that Work Engine has no current users during this work;
+keeping it operational is not a requirement unless it is deliberately selected
+as development infrastructure. This replacement effort does not depend on the
+Work Engine runtime for its own development. Plan an offline replacement and a
+deliberate qualified cutover. Continuous availability, parallel old/new operation
+and incremental routing are not reasons to build temporary infrastructure here.
+Historical identity compatibility and the disposition of saved durable state
+remain explicit concerns; lack of current use does not authorize deleting state.
+
+HP1 subsequently completed bounded direct-library implementation and validation
+in isolation, joined with published S3 `634161c2` and S2 `b2efdbfa`. The
+[HP1 validation receipt](rust-host-hp1-validation.md) binds the exact candidate,
+178 passing workspace tests, 43 passing fault tests and 41 passing Node
+compatibility tests. Both material source-review findings were corrected and
+verified resolved. The final complete 31 MB history diagnostic succeeded in
+362 ms for the direct call; it remains above the former 250 ms child comparison,
+and neither that measurement nor HP1 closes the old HOST failure. No host cutover,
+main runtime edit or ordinary commit occurred. The user then authorized parallel
+HP2 planning: [claims](rust-claims-hp2-plan.md),
+[campaigns](rust-campaign-hp2-plan.md) and their
+[shared contract](rust-host-hp2-contract.md). These are bounded implementation
+proposals for the permanent Rust host, with implementation still a separate
+acceptance boundary. Shared lifecycle files and workspace ownership stay separate.
+
+
+CE1 and SC0 subsequently completed under the user's parallel-work authorization.
+The [validation receipt](rust-hp2-ce1-sc0-validation.md) records the isolated
+claims library, accepted bounded subject handoff, six resolved review findings
+and final coordinator gates. Shared workspace integration and ordinary commit
+remain pending. Campaign SC1 and claims CE2 are the next proposed slices;
+SC0 completion does not itself implement the campaign owner or qualify HP3.
+
+SC1 and CE2 subsequently completed under the user's explicit parallel-slice
+authorization. Their [validation and handoff](rust-hp2-sc1-ce2-validation.md)
+binds the permanent campaign preparation library, exact finding reliance and
+projection, seven resolved review findings, and a private 117-path joined source
+with 28 default/optimized tests and 37 fault-feature entries passing. Shared
+workspace integration and ordinary commit remain pending; S4 keeps shared Cargo
+ownership. CE3 and SC2 are the next planning boundary. This library join does not
+qualify provider execution, HP3 admission, live migration or host responsiveness.
+
+## Shared-branch integration — 2026-10-08
+
+The user authorized committing this session's validated C3/R3 and HP1 work,
+CE1/SC1/CE2 libraries, and their plans and validation documents onto
+`rescue-detached-20260911`. Lifecycle S4 and terminal UI work remain excluded.
+The integrated tree passed 206 Rust workspace tests, 80 domain fault-feature
+entries, 62 Node compatibility tests, whole-workspace Clippy and formatting.
+Publication qualification also repaired a test driver's missing live handle at
+its deliberate process-kill barrier; a bounded source review cleared that change.
+The runner binds both the pinned compiler path and its verified SHA-256.
+Exact source, gate, review and publication receipts are retained under
+`/home/bline/.local/state/work-engine/rust-publication-20261008/`.
+This integration preserves the preceding runtime and operational limitations;
+it does not activate a Rust host or publish the other sessions' work.

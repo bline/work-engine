@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "name": "c3-r3-native-host-v1",
+  "compilerFixture": {
+    "path": "app-server/tests/fixtures/compiler-c3/projection-oracle.json",
+    "sha256": "8500ee088ae6561b9700463b49ac9ed8e5a780dc2dc12500040c0c8a574f6626",
+    "roleId": "slice-supervisor",
+    "secondary": ["implementation-reviewer", "repo-search"],
+    "allSixSatisfactions": true
+  },
+  "episodeFixture": {
+    "path": "app-server/tests/fixtures/implementation-review/acceptable-as-is.json",
+    "sha256": "d859ed2c55d24c18c4f971db88ac37ff013d241c1eeb2d0e95d505398fa00369",
+    "selectedObligations": 1,
+    "requiredClaims": ["builder_projection", "campaign_terminalization"],
+    "normalHistoryRows": 2
+  },
+  "hostComposition": {
+    "runtimeFactory": "createSupervisorCampaignCapabilityHostRuntime",
+    "ownersFactory": "createNativeReviewHostOwners",
+    "capability": "capability.native_review",
+    "coldRoute": "execute_once_controlled_peer_then_close_reopen",
+    "hotRoute": "recover_reported_obligation_then_exact_claim_establishment_and_episode_revision_readback",
+    "hostState": "disposable_private_slice_campaign_claim_evidence_and_episode_roots",
+    "controlledPeer": "real_local_node_child_with_trusted_Read_Glob_Grep_grant_and_no_admission_descriptor",
+    "providerCallsDuringHotSampling": 0,
+    "maximumAttribution": "hot capability recovery plus separately reported owner facade near ceiling history and compiler max projection; capability contract does not expose Episode history",
+    "errorsAttribution": "hot capability recovery plus named wrong hash, wrong scope, SQLite busy write, or compiler child timeout injection"
+  },
+  "workloads": {
+    "normal": {
+      "compilerSatisfactions": 2,
+      "episodeOperation": "host_capability_recover_claims_exact_read_plus_owner_exact_read",
+      "episodeRevision": "initial_result",
+      "hostConcurrency": 1
+    },
+    "maximum": {
+      "compilerRequestBytes": 4194304,
+      "compilerResponseBytes": 4194304,
+      "compilerSatisfactions": 6,
+      "episodeRequestCeilingBytes": 8388608,
+      "episodeResponseCeilingBytes": 33554432,
+      "episodeOperation": "host_capability_recover_plus_separate_owner_near_ceiling_history_or_visible_refusal",
+      "hostConcurrency": 1
+    },
+    "error_contention": {
+      "cases": ["compiler_wrong_hash", "episode_wrong_scope", "sqlite_busy_write", "compiler_100ms_timeout"],
+      "sqliteBusyTimeoutMsByEpisodeBackend": {"legacy": 5000, "rust": 50},
+      "compilerChildTimeoutMs": 100,
+      "episodeChildTimeoutMs": 250,
+      "hostConcurrency": 1
+    }
+  },
+  "measurement": {
+    "variants": ["legacy_legacy", "c3_only", "r3_only", "both"],
+    "warmupsPerWorkload": 20,
+    "measuredPerWorkload": 200,
+    "freshHostColdLaunchesPerVariant": 20,
+    "parallelStressRequests": 4,
+    "probeIntervalMs": 10,
+    "controlRouteP99BudgetMs": 50,
+    "controlRouteMaximumBudgetMs": 250,
+    "retainMissedProbesAndTimeouts": true
+  }
+}

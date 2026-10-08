@@ -15,6 +15,7 @@ import { createProductionPathEvidenceService } from "../claim-evidence/productio
 import { createImplementationReviewService } from "../implementation-review/service.mjs";
 import { ImplementationReviewError } from "../implementation-review/contract.mjs";
 import { createReviewEpisodeService, ReviewEpisodeResultError } from "../review-episode/service.mjs";
+import { createRustReviewEpisodeService } from "../review-episode/rust-adapter.mjs";
 import { digest as episodeDigest } from "../review-episode/contract.mjs";
 import { openSqliteReviewEpisodeStore } from "../review-episode/sqlite-store.mjs";
 import { NativeClaudeCodeReviewerAdapter } from "../reviewer-runtime/native-claude-code-adapter.mjs";
@@ -240,12 +241,16 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   reviewerCredentialSourcePath = null,
   reviewerSubjectWorkspaceFactory = materializeImmutableSubjectWorkspace,
   reviewBoundaryFactory = createReviewBoundary,
+  compilerSelection = null,
+  reviewEpisodeRust = null,
+  afterDurableResult = null,
   runtimeSourceRoot = new URL("../../../../", import.meta.url).pathname} = {}) {
   const manifestPath = path.join(runtimeSourceRoot, "app-server/runtime-manifest.yaml");
   const loadedManifest = await loadRuntimeManifestDocument(manifestPath);
   const manifest = projectRuntimeManifest(loadedManifest.document, {
     baseDirectory: path.dirname(loadedManifest.sourcePath), sourcePath: loadedManifest.sourcePath,
     sourceSha256: loadedManifest.sourceSha256,
+    compilerSelection,
   });
   const registrySource = "app-server/reviewer-profiles.yaml";
   const registryContent = await readFile(path.join(runtimeSourceRoot, registrySource), "utf8");
@@ -263,16 +268,21 @@ export async function createNativeReviewHostOwners({workspaceRoot, stateRoot,
   const agentInstructionReview = createAgentInstructionReviewService();
   const reviewer = new ImplementationReviewerRuntime({manifest, adapter, agentInstructionReview});
   const implementationReview = createImplementationReviewService();
-  const episodeStore = await openSqliteReviewEpisodeStore({filePath: path.join(stateRoot, "review-episodes.sqlite3")});
+  const episodeStore = reviewEpisodeRust ? null
+    : await openSqliteReviewEpisodeStore({filePath: path.join(stateRoot, "review-episodes.sqlite3")});
+  const reviewEpisode = reviewEpisodeRust
+    ? createRustReviewEpisodeService({...reviewEpisodeRust, implementationReview})
+    : createReviewEpisodeService({store: episodeStore, implementationReview});
   const authority = findingAuthority();
   const claimStore = await openClaims(path.join(stateRoot, "review-findings.sqlite3"), authority);
-  const reviewEpisode = createReviewEpisodeService({store: episodeStore, implementationReview});
   const productionPathEvidence = createProductionPathEvidenceService({store: claimStore});
   const nativeReview = createNativeReviewClosureService({reviewEpisode, reviewer,
-    findingBridge: createReviewFindingBridge({store: claimStore}), productionPathEvidence});
+    nativeRustBounded: Boolean(reviewEpisodeRust),
+    findingBridge: createReviewFindingBridge({store: claimStore}), productionPathEvidence,
+    afterDurableResult});
   return Object.freeze({implementationReview, agentInstructionReview, nativeReview, adapter, authority, catalogSource,
-    reviewBoundaryFactory,
-    close() { episodeStore.close(); claimStore.close(); }});
+    reviewBoundaryFactory, reviewEpisodeRust: Boolean(reviewEpisodeRust), reviewEpisode,
+    close() { episodeStore?.close(); claimStore.close(); }});
 }
 
 export function createNativeReviewHost({workspaceRoot, campaignService, owners} = {}) {
@@ -280,6 +290,12 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
       || !campaignService?.retryNativeReview || !campaignService?.correctNativeReviewResult
       || !campaignService?.succeedReviewSelection) {
     throw new TypeError("native review host requires Slice Campaign");
+  }
+  if (owners?.reviewEpisodeRust) {
+    owners.reviewEpisode.bindCampaignOwner((identity) => campaignService.recover({
+      runId: identity.runId, sliceNumber: identity.sliceNumber,
+      attemptId: identity.attemptId, planVersion: identity.planVersion,
+    }));
   }
   const request = (campaign, obligationId, operationId,
     {remediationSubject = null, continuationSessionId = null, resultCorrection = null,
@@ -390,6 +406,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
   return Object.freeze({
     correctProductionPathClaims({identity, expected_revision, obligation_id, operation_id,
       authority, successor_selection, observation_id}) {
+      if (owners.reviewEpisodeRust) throw new Error("native production-path succession awaits RC admission");
       const campaign = campaignService.recover(identity);
       const {base} = request(campaign, obligation_id, operation_id);
       return campaignService.succeedReviewSelection({identity, expectedRevision: expected_revision,
@@ -449,6 +466,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
         failure: outcome.failure ?? null});
     },
     async correctResult({identity, expected_revision, obligation_id, operation_id}) {
+      if (owners.reviewEpisodeRust) throw new Error("native result correction awaits RC admission");
       const campaign = campaignService.recover(identity);
       const obligation = campaign.nativeReview?.obligations?.[obligation_id] ?? null;
       const recovery = obligation?.status === "correction_required"
@@ -481,6 +499,7 @@ export function createNativeReviewHost({workspaceRoot, campaignService, owners} 
     },
     async executeRemediation({identity, expected_revision, obligation_id, operation_id,
       remediation_subject}) {
+      if (owners.reviewEpisodeRust) throw new Error("native remediation awaits RC admission");
       const campaign = campaignService.recover(identity);
       const {base} = request(campaign, obligation_id, operation_id, {remediationSubject: remediation_subject});
       const remediationSubjectReference = ref("checkpoint", remediation_subject.commit,

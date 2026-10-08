@@ -2,11 +2,15 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use review_episode_core::codec::{
+    JsValue, canonical_json, digest, exact_fields, field, parse_json,
+};
 use review_episode_core::state::ReviewEpisodeState;
 use rusqlite::{
     Connection, Error as SqlError, ErrorCode, OpenFlags, OptionalExtension, TransactionBehavior,
     params,
 };
+use sha2::{Digest, Sha256};
 
 use crate::integrity::{introduced_transition, state_json};
 use crate::{Snapshot, StoreError, StoreResult, validate_history};
@@ -14,6 +18,9 @@ use crate::{Snapshot, StoreError, StoreResult, validate_history};
 pub const DB_NAME: &str = "review-episodes.sqlite";
 pub const MARKER_NAME: &str = ".review-episode-offline-v1";
 const MARKER_BYTES: &[u8] = b"review-episode-offline-v1\n";
+pub const NATIVE_MARKER_NAME: &str = ".review-episode-native-host-v1";
+pub const NATIVE_PROFILE: &str = "native-host-v1";
+pub const NATIVE_CODEC: &str = "review-episode-js-json-v1";
 const CURRENT_SQL: &str = "CREATE TABLE review_episode_current (identity_key TEXT PRIMARY KEY, revision TEXT NOT NULL UNIQUE CHECK(length(revision)=64), state_json TEXT NOT NULL) STRICT";
 const HISTORY_SQL: &str = "CREATE TABLE review_episode_history (sequence INTEGER PRIMARY KEY AUTOINCREMENT, identity_key TEXT NOT NULL, revision TEXT NOT NULL UNIQUE CHECK(length(revision)=64), predecessor_revision TEXT, state_json TEXT NOT NULL) STRICT";
 
@@ -34,24 +41,46 @@ pub struct EpisodeStore {
     root: PathBuf,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRootSelection {
+    pub root: String,
+    pub executable_sha256: String,
+    pub selection_digest: String,
+}
+
 pub enum WriteDisposition {
-    Applied {
-        state: Box<ReviewEpisodeState>,
-        reply_json: String,
-    },
-    Replay {
-        reply_json: String,
-    },
+    Applied(Box<ReviewEpisodeState>),
+    Replay(Box<ReviewEpisodeState>),
+}
+
+/// The state is returned only after the transaction has committed (or a replay
+/// has rolled back). The caller never has to decode its own wire reply.
+pub struct WriteResult {
+    pub state: Box<ReviewEpisodeState>,
+    pub replay: bool,
 }
 
 impl EpisodeStore {
     pub fn open(root: &Path, options: StoreOptions) -> StoreResult<Self> {
-        ensure_private_root(root)?;
+        let root = anchored_private_root(root)?;
         let marker = root.join(MARKER_NAME);
         verify_regular(&marker, false)?;
         if fs::read(&marker).map_err(io_err)? != MARKER_BYTES {
             return Err(StoreError::Path("offline root marker differs".into()));
         }
+        Self::open_database(&root, options)
+    }
+
+    pub fn open_native(
+        root: &Path,
+        options: StoreOptions,
+    ) -> StoreResult<(Self, NativeRootSelection)> {
+        let root = anchored_private_root(root)?;
+        let selection = read_native_selection(&root)?;
+        Ok((Self::open_database(&root, options)?, selection))
+    }
+
+    fn open_database(root: &Path, options: StoreOptions) -> StoreResult<Self> {
         let db = root.join(DB_NAME);
         let held = open_existing_nofollow(&db)?;
         verify_sidecars(root)?;
@@ -96,15 +125,17 @@ impl EpisodeStore {
         Ok(snapshot)
     }
 
-    pub fn write<F>(
+    pub fn write<F, M>(
         &mut self,
         key: &str,
         observed: Option<&str>,
         max_reply: usize,
         apply: F,
-    ) -> StoreResult<String>
+        encode_reply: M,
+    ) -> StoreResult<WriteResult>
     where
         F: FnOnce(Option<&ReviewEpisodeState>) -> StoreResult<WriteDisposition>,
+        M: Fn(&ReviewEpisodeState, bool) -> String,
     {
         let tx = self
             .conn
@@ -113,21 +144,24 @@ impl EpisodeStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_err)?;
         crate::test_checkpoint("after_begin_immediate");
-        let prepared = (|| -> StoreResult<(String, bool)> {
+        let prepared = (|| -> StoreResult<WriteResult> {
             let snapshot = load_snapshot(&tx, key)?;
             if snapshot.current.as_ref().map(|s| s.revision().0.as_str()) != observed {
                 return Err(StoreError::RevisionConflict);
             }
             let disposition = apply(snapshot.current.as_ref())?;
             match disposition {
-                WriteDisposition::Replay { reply_json } => {
-                    if reply_json.len() > max_reply {
+                WriteDisposition::Replay(state) => {
+                    if encode_reply(&state, true).len() > max_reply {
                         return Err(StoreError::ResponseTooLarge);
                     }
-                    Ok((reply_json, false))
+                    Ok(WriteResult {
+                        state,
+                        replay: true,
+                    })
                 }
-                WriteDisposition::Applied { state, reply_json } => {
-                    if reply_json.len() > max_reply {
+                WriteDisposition::Applied(state) => {
+                    if encode_reply(&state, false).len() > max_reply {
                         return Err(StoreError::ResponseTooLarge);
                     }
                     if state.identity().key().0 != key {
@@ -151,12 +185,15 @@ impl EpisodeStore {
                         return Err(StoreError::RevisionConflict);
                     }
                     crate::test_checkpoint("after_current_update");
-                    Ok((reply_json, true))
+                    Ok(WriteResult {
+                        state,
+                        replay: false,
+                    })
                 }
             }
         })();
         match prepared {
-            Ok((reply_json, true)) => {
+            Ok(result @ WriteResult { replay: false, .. }) => {
                 crate::test_checkpoint("before_commit");
                 if tx.commit().is_err() {
                     self.conn.take();
@@ -170,14 +207,14 @@ impl EpisodeStore {
                     return Err(StoreError::OutcomeUnknown);
                 }
                 crate::test_checkpoint("after_commit");
-                Ok(reply_json)
+                Ok(result)
             }
-            Ok((reply_json, false)) => {
+            Ok(result @ WriteResult { replay: true, .. }) => {
                 if tx.rollback().is_err() {
                     self.conn.take();
                     return Err(StoreError::OutcomeUnknown);
                 }
-                Ok(reply_json)
+                Ok(result)
             }
             Err(error) => {
                 if tx.rollback().is_err() {
@@ -314,6 +351,158 @@ pub fn init_offline_root(root: &Path) -> StoreResult<()> {
             .map_err(io_err)?;
         Ok(())
     }
+}
+
+fn native_selection_value(root: &Path) -> StoreResult<(JsValue, NativeRootSelection)> {
+    let root = root.canonicalize().map_err(io_err)?;
+    let root = root
+        .to_str()
+        .ok_or_else(|| StoreError::Path("native root is not UTF-8".into()))?
+        .to_owned();
+    let executable = std::env::current_exe().map_err(io_err)?;
+    let mut file = File::open(executable).map_err(io_err)?;
+    use std::io::Read;
+    let mut hash = Sha256::new();
+    let mut buffer = [0u8; 65536];
+    loop {
+        let count = file.read(&mut buffer).map_err(io_err)?;
+        if count == 0 {
+            break;
+        }
+        hash.update(&buffer[..count]);
+    }
+    let executable_sha256 = format!("{:x}", hash.finalize());
+    let basis = JsValue::object([
+        ("profile", JsValue::text(NATIVE_PROFILE)),
+        ("protocol", JsValue::Number(2.0)),
+        ("codec", JsValue::text(NATIVE_CODEC)),
+        ("root", JsValue::text(&root)),
+        ("executableSha256", JsValue::text(&executable_sha256)),
+    ]);
+    let selection_digest = digest(&basis);
+    Ok((
+        basis,
+        NativeRootSelection {
+            root,
+            executable_sha256,
+            selection_digest,
+        },
+    ))
+}
+
+pub fn init_native_root(root: &Path) -> StoreResult<NativeRootSelection> {
+    #[cfg(not(unix))]
+    {
+        let _ = root;
+        return Err(StoreError::Path(
+            "native-host SQLite profile requires Unix".into(),
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::io::Write;
+        use std::os::unix::fs::DirBuilderExt;
+        if !root.exists() {
+            let mut builder = fs::DirBuilder::new();
+            builder.mode(0o700);
+            builder.create(root).map_err(io_err)?;
+        }
+        ensure_private_root(root)?;
+        if fs::read_dir(root).map_err(io_err)?.next().is_some() {
+            return Err(StoreError::Path("native root must be empty".into()));
+        }
+        let (basis, selection) = native_selection_value(root)?;
+        let mut fields = basis
+            .as_object()
+            .map_err(|e| StoreError::Path(e.message))?
+            .clone();
+        fields.insert(
+            "selectionDigest".into(),
+            JsValue::text(&selection.selection_digest),
+        );
+        let marker = root.join(NATIVE_MARKER_NAME);
+        let mut marker_file = create_nofollow(&marker)?;
+        marker_file
+            .write_all(canonical_json(&JsValue::Object(fields)).as_bytes())
+            .map_err(io_err)?;
+        marker_file.sync_all().map_err(io_err)?;
+        let db = root.join(DB_NAME);
+        let held = create_nofollow(&db)?;
+        let conn = Connection::open_with_flags(
+            &db,
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )
+        .map_err(db_err)?;
+        if !same_file(
+            &held.metadata().map_err(io_err)?,
+            &fs::symlink_metadata(&db).map_err(io_err)?,
+        ) {
+            return Err(StoreError::Path(
+                "database path changed during native initialization".into(),
+            ));
+        }
+        configure(&conn, StoreOptions::default())?;
+        let tx = conn.unchecked_transaction().map_err(db_err)?;
+        tx.execute_batch(CURRENT_SQL).map_err(db_err)?;
+        tx.execute_batch(HISTORY_SQL).map_err(db_err)?;
+        tx.commit().map_err(|_| StoreError::OutcomeUnknown)?;
+        verify_schema(&conn)?;
+        drop(conn);
+        File::open(root)
+            .and_then(|file| file.sync_all())
+            .map_err(io_err)?;
+        Ok(selection)
+    }
+}
+
+pub fn read_native_selection(root: &Path) -> StoreResult<NativeRootSelection> {
+    ensure_private_root(root)?;
+    let marker = root.join(NATIVE_MARKER_NAME);
+    let file = open_existing_read_nofollow(&marker)?;
+    use std::io::Read;
+    let mut bytes = Vec::new();
+    file.take(4097).read_to_end(&mut bytes).map_err(io_err)?;
+    if bytes.len() > 4096 {
+        return Err(StoreError::Path(
+            "native selection marker exceeds limit".into(),
+        ));
+    }
+    let source = std::str::from_utf8(&bytes)
+        .map_err(|_| StoreError::Path("native selection marker is not UTF-8".into()))?;
+    let value = parse_json(source)
+        .map_err(|_| StoreError::Path("native selection marker JSON invalid".into()))?;
+    exact_fields(
+        &value,
+        &[
+            "profile",
+            "protocol",
+            "codec",
+            "root",
+            "executableSha256",
+            "selectionDigest",
+        ],
+        "native selection marker",
+    )
+    .map_err(|e| StoreError::Path(e.message))?;
+    if canonical_json(&value) != source {
+        return Err(StoreError::Path(
+            "native selection marker is not canonical".into(),
+        ));
+    }
+    let (basis, actual) = native_selection_value(root)?;
+    for name in ["profile", "protocol", "codec", "root", "executableSha256"] {
+        if field(&value, name).map_err(|e| StoreError::Path(e.message.clone()))?
+            != field(&basis, name).map_err(|e| StoreError::Path(e.message.clone()))?
+        {
+            return Err(StoreError::Path(format!("native selection {name} differs")));
+        }
+    }
+    if field(&value, "selectionDigest").map_err(|e| StoreError::Path(e.message))?
+        != &JsValue::text(&actual.selection_digest)
+    {
+        return Err(StoreError::Path("native selection digest differs".into()));
+    }
+    Ok(actual)
 }
 
 pub(crate) fn load_snapshot(conn: &Connection, key: &str) -> StoreResult<Snapshot> {
@@ -468,6 +657,13 @@ fn ensure_private_root(_: &Path) -> StoreResult<()> {
     Err(StoreError::Path(
         "offline SQLite profile requires Unix".into(),
     ))
+}
+
+fn anchored_private_root(root: &Path) -> StoreResult<PathBuf> {
+    ensure_private_root(root)?;
+    let anchored = root.canonicalize().map_err(io_err)?;
+    ensure_private_root(&anchored)?;
+    Ok(anchored)
 }
 
 #[cfg(unix)]

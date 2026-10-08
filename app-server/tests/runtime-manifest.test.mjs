@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -557,5 +558,55 @@ test("repo-search secondary admission refuses missing, excess, effect, path, and
       expected,
       name,
     );
+  }
+});
+
+test("selected v3 projection follows async C2 hydration and direct projection stays unhydrated", { skip: !process.env.WORK_ENGINE_COMPILER_RUST_BINARY }, async () => {
+  const root = path.resolve(new URL("../..", import.meta.url).pathname);
+  const manifestPath = path.join(root, "app-server/runtime-manifest.yaml");
+  const prior = process.env.WORK_ENGINE_COMPILER_BACKEND;
+  const priorBinary = process.env.WORK_ENGINE_COMPILER_RUST_BINARY;
+  const binaryPath = process.env.WORK_ENGINE_C2_TEST_BINARY ?? priorBinary;
+  try {
+    process.env.WORK_ENGINE_COMPILER_BACKEND = "legacy";
+    const legacy = await loadRuntimeManifest(manifestPath);
+    process.env.WORK_ENGINE_COMPILER_BACKEND = "rust";
+    const selected = await loadRuntimeManifest(manifestPath);
+    assert.deepEqual(selected, legacy);
+    process.env.WORK_ENGINE_COMPILER_BACKEND = "legacy";
+    process.env.WORK_ENGINE_COMPILER_RUST_BINARY = "/nonexistent/ambient-compiler";
+    const pinned = await loadRuntimeManifest(manifestPath, { compilerSelection: {
+      binaryPath: path.resolve(binaryPath),
+      expectedSha256: createHash("sha256").update(await readFile(binaryPath)).digest("hex"),
+      protocolVersion: 3, launchProfileId: "manifest-sync-v1",
+    } });
+    assert.deepEqual(pinned, legacy);
+    assert.deepEqual(satisfyRuntimeRequirements({ manifest: pinned, roleId: "slice-supervisor", requirements: pinned.roles["slice-supervisor"].runtimeRequirements }),
+      satisfyRuntimeRequirements({ manifest: legacy, roleId: "slice-supervisor", requirements: legacy.roles["slice-supervisor"].runtimeRequirements }));
+    process.env.WORK_ENGINE_COMPILER_BACKEND = "rust";
+    process.env.WORK_ENGINE_COMPILER_RUST_BINARY = binaryPath;
+    assert.ok(selected instanceof (await import("../src/runtime-manifest.mjs")).RuntimeManifest);
+    const cases = [
+      ["slice-supervisor", null], ["slice-builder", null], ["slice-builder", "repo-search"],
+      ["implementation-reviewer", "repo-search"], ["implementation-reviewer", "claim-evidence"],
+      ["implementation-reviewer", "agent-instruction-review"],
+    ];
+    for (const [roleId, skillName] of cases) {
+      const requirements = skillName === null
+        ? selected.roles[roleId].runtimeRequirements
+        : selected.roles[roleId].skills.find((skill) => skill.name === skillName).runtimeRequirements;
+      assert.deepEqual(
+        satisfyRuntimeRequirements({ manifest: selected, roleId, requirements, skillName }),
+        satisfyRuntimeRequirements({ manifest: legacy, roleId, requirements, skillName }),
+      );
+    }
+    const loaded = await loadRuntimeManifestDocument(manifestPath);
+    const direct = projectRuntimeManifest(loaded.document, { baseDirectory: path.dirname(manifestPath), sourcePath: manifestPath, sourceSha256: loaded.sourceSha256 });
+    assert.equal(direct.roles["slice-supervisor"].runtimeRequirements, null);
+  } finally {
+    if (prior === undefined) delete process.env.WORK_ENGINE_COMPILER_BACKEND;
+    else process.env.WORK_ENGINE_COMPILER_BACKEND = prior;
+    if (priorBinary === undefined) delete process.env.WORK_ENGINE_COMPILER_RUST_BINARY;
+    else process.env.WORK_ENGINE_COMPILER_RUST_BINARY = priorBinary;
   }
 });
