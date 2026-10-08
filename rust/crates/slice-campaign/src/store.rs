@@ -14,11 +14,10 @@ use crate::contract::{CampaignIdentity, CampaignRevision, Snapshot};
 use crate::recovery::{OperationReceipt, Reconcile, RecoveryLocator};
 use crate::{CampaignError, Result};
 
-const MARKER: &str = ".campaign-native-initial-v2";
+const MARKER: &str = ".campaign-native-initial-v3";
 const DATABASE: &str = "slice-campaign.sqlite";
 const LOCK: &str = ".writer.lock";
-const SCHEMA: &str = include_str!("../migrations/0001_private_review.sql");
-const SCHEMA_2: &str = include_str!("../migrations/0002_initial_completion.sql");
+const SCHEMA: &str = include_str!("../migrations/0003_new_root.sql");
 
 #[cfg(test)]
 mod read_profile {
@@ -155,7 +154,7 @@ impl Store {
         fs::set_permissions(root, fs::Permissions::from_mode(0o700))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         let marker = Marker {
-            schema_version: 2,
+            schema_version: 3,
             profile: crate::contract::PROFILE.into(),
             root_id: random_id()?,
             anchored_root_sha256: root_path_digest(root),
@@ -180,13 +179,11 @@ impl Store {
         configure(&conn)?;
         conn.execute_batch(SCHEMA)
             .map_err(|e| CampaignError::Io(e.to_string()))?;
-        conn.execute_batch(SCHEMA_2)
-            .map_err(|e| CampaignError::Io(e.to_string()))?;
         conn.execute(
             "INSERT INTO store_identity(singleton,root_id,anchored_root_sha256,profile,trusted_config_digest,writer_identity) VALUES(1,?1,?2,?3,?4,?5)",
             params![marker.root_id, marker.anchored_root_sha256, marker.profile, marker.trusted_config_digest, marker.writer_identity],
         ).map_err(|e| CampaignError::Io(e.to_string()))?;
-        conn.execute_batch("PRAGMA user_version = 2")
+        conn.execute_batch("PRAGMA user_version = 3")
             .map_err(|e| CampaignError::Io(e.to_string()))?;
         drop(conn);
         File::open(root)
@@ -210,7 +207,7 @@ impl Store {
         let marker_file = regular_nofollow(&root.join(MARKER))?;
         let marker: Marker =
             serde_json::from_reader(marker_file).map_err(|e| CampaignError::Root(e.to_string()))?;
-        if marker.schema_version != 2
+        if marker.schema_version != 3
             || marker.profile != crate::contract::PROFILE
             || marker.trusted_config_digest != config_digest
             || marker.writer_identity != writer_identity
@@ -260,7 +257,7 @@ impl Store {
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         drop(probe);
-        if version != 2 {
+        if version != 3 {
             return Err(CampaignError::Root(
                 "unsupported campaign store schema".into(),
             ));
@@ -279,7 +276,7 @@ impl Store {
         if conn
             .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
             .map_err(|e| CampaignError::Io(e.to_string()))?
-            != 2
+            != 3
         {
             return Err(CampaignError::Root(
                 "unsupported campaign store schema".into(),
@@ -437,6 +434,28 @@ impl Store {
         .transpose()
     }
 
+    /// Receipt-bound historical result for validating current J1 projections.
+    /// This deliberately does not recurse into historical progress validation.
+    fn projection_result(
+        &self,
+        operation_id: &str,
+        identity: &CampaignIdentity,
+    ) -> Result<Option<(OperationReceipt, Snapshot)>> {
+        let row:Option<(String,String,String,String,String)>=self.conn.query_row(
+            "SELECT identity_key,kind,request_digest,receipt_json,result_json FROM operation_receipt WHERE operation_id=?1",
+            [operation_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?)))
+            .optional().map_err(|e|CampaignError::Integrity(e.to_string()))?;
+        row.map(|(key, kind, digest, raw_receipt, raw_state)| {
+            let receipt: OperationReceipt = serde_json::from_str(&raw_receipt)
+                .map_err(|e| CampaignError::Integrity(e.to_string()))?;
+            let state = self.decode_state(&raw_state, identity)?;
+            let receipt =
+                self.validate_result_receipt(operation_id, &key, &kind, &digest, receipt, &state)?;
+            Ok((receipt, state))
+        })
+        .transpose()
+    }
+
     fn validate_result_receipt(
         &self,
         operation_id: &str,
@@ -452,7 +471,7 @@ impl Store {
             || receipt.request_digest != request_digest
             || receipt.identity.key() != identity_key
             || state.identity != receipt.identity
-            || state.schema_version != 2
+            || state.schema_version != 3
             || state.revision != receipt.result_revision
             || receipt.profile_digest != self.marker.trusted_config_digest
             || receipt.result_reference
@@ -500,7 +519,7 @@ impl Store {
         let state: Snapshot =
             serde_json::from_str(json).map_err(|e| CampaignError::Integrity(e.to_string()))?;
         if state.identity != *identity
-            || state.schema_version != 2
+            || state.schema_version != 3
             || state_revision(&state)? != state.revision
         {
             return Err(CampaignError::Integrity(
@@ -704,27 +723,116 @@ impl Store {
             }
             if let Some(intent) = &attempt.completion_intent {
                 let dispatch = attempt.dispatch.as_ref().ok_or_else(fail)?;
-                if intent.episode_id != dispatch.command.episode_id
-                    || intent.attempt_id != attempt.attempt_id
-                    || intent.children.is_empty()
-                    || intent.initial_episode_revision.is_some() != intent.result_digest.is_some()
-                    || intent.result_digest.as_ref().is_some_and(|v| !valid_sha(v))
+                if intent
+                    .validate_initial(dispatch, &attempt.attempt_id)
+                    .is_err()
+                    || intent.preparation_operation_id != attempt.preparation_operation_id
+                    || intent.prepared_request_sha256 != attempt.request_digest
+                    || intent.execution_evidence_ref.attempt_id != attempt.attempt_id
                 {
                     return Err(fail());
                 }
-                let mut children = BTreeSet::new();
-                for child in &intent.children {
-                    if child.operation_id.trim().is_empty()
-                        || !children.insert(&child.operation_id)
-                        || !valid_sha(&child.content_digest)
-                        || child.owner_root_id.trim().is_empty()
-                        || child.grant_identity.trim().is_empty()
+                if !operations.insert(&intent.campaign_operation_id) {
+                    return Err(fail());
+                }
+                let (registration, registered) = self
+                    .projection_result(&intent.registration_operation_id, &state.identity)?
+                    .ok_or_else(fail)?;
+                let registered_intent = registered
+                    .progress
+                    .attempts
+                    .get(index)
+                    .and_then(|a| a.completion_intent.as_ref())
+                    .ok_or_else(fail)?;
+                if registration.kind != "prepare_initial_completion"
+                    || registration.identity != state.identity
+                    || registration.root_id != self.root_id
+                    || registration.prior_revision.as_ref()
+                        != Some(&intent.registration_base_revision)
+                    || registered_intent.campaign_operation_id != intent.campaign_operation_id
+                    || registered_intent.owner_selection_digest != intent.owner_selection_digest
+                    || registered_intent.execution_evidence_ref != intent.execution_evidence_ref
+                    || registered_intent.native_result_claim_sha256
+                        != intent.native_result_claim_sha256
+                    || registered_intent.native_result_raw_sha256 != intent.native_result_raw_sha256
+                    || !registered_intent.stages.is_empty()
+                    || registered_intent.joined_readbacks.is_some()
+                {
+                    return Err(fail());
+                }
+                for stage in &intent.stages {
+                    crate::application::validate_stored_stage(state, intent, stage)
+                        .map_err(|_| fail())?;
+                    let (receipt, registered) = self
+                        .projection_result(&stage.registration_operation_id, &state.identity)?
+                        .ok_or_else(fail)?;
+                    let saved = registered
+                        .progress
+                        .attempts
+                        .get(index)
+                        .and_then(|a| a.completion_intent.as_ref())
+                        .and_then(|i| i.stages.iter().find(|s| s.stage_id == stage.stage_id))
+                        .ok_or_else(fail)?;
+                    if receipt.identity != state.identity
+                        || receipt.root_id != self.root_id
+                        || receipt.prior_revision.as_ref()
+                            != Some(&stage.registration_base_revision)
+                        || receipt.kind
+                            != if stage.kind == crate::completion::StageKind::EpisodeResultRead {
+                                "register_initial_episode_read"
+                            } else {
+                                "register_initial_stage"
+                            }
+                        || receipt.result_revision != registered.revision
+                        || saved.kind != stage.kind
+                        || saved.request_sha256 != stage.request_sha256
+                        || saved.original_admission_sha256 != stage.original_admission_sha256
+                        || saved.original_admission != stage.original_admission
+                        || saved.command != stage.command
+                        || saved.owner_locator != stage.owner_locator
+                        || !matches!(saved.progress, crate::completion::StageProgress::Registered)
                     {
                         return Err(fail());
                     }
                 }
-                if !operations.insert(&intent.campaign_operation_id) {
-                    return Err(fail());
+                if let Some(joined) = &intent.joined_readbacks {
+                    let checked = |kind| {
+                        intent.stages.iter().find(|s| s.kind == kind).and_then(|s| {
+                            match &s.progress {
+                                crate::completion::StageProgress::Checked {
+                                    exact_refs, ..
+                                } => exact_refs.first(),
+                                _ => None,
+                            }
+                        })
+                    };
+                    if checked(crate::completion::StageKind::AdmissionBuilder)
+                        != Some(&joined.builder)
+                        || checked(crate::completion::StageKind::AdmissionCampaign)
+                            != Some(&joined.campaign)
+                        || checked(crate::completion::StageKind::EpisodeResultRead)
+                            != Some(&joined.episode)
+                    {
+                        return Err(fail());
+                    }
+                    let operation_id = format!("{}:joined", intent.campaign_operation_id);
+                    let (receipt, committed) = self
+                        .projection_result(&operation_id, &state.identity)?
+                        .ok_or_else(fail)?;
+                    if receipt.kind != "commit_initial_readbacks"
+                        || committed
+                            .progress
+                            .attempts
+                            .get(index)
+                            .and_then(|a| a.completion_intent.as_ref())
+                            .and_then(|i| i.joined_readbacks.as_ref())
+                            .is_none_or(|saved| {
+                                serde_json::to_value(saved).ok()
+                                    != serde_json::to_value(joined).ok()
+                            })
+                    {
+                        return Err(fail());
+                    }
                 }
             }
             if matches!(
@@ -747,11 +855,7 @@ impl Store {
                     crate::completion::AttemptOutcome::Completed
                         | crate::completion::AttemptOutcome::FailedWithResult
                 )
-            ) && attempt
-                .completion_intent
-                .as_ref()
-                .is_none_or(|intent| intent.result_digest.is_none())
-            {
+            ) {
                 return Err(fail());
             }
         }
@@ -791,25 +895,8 @@ impl Store {
                 }
             }
         }
-        let mut findings = BTreeSet::new();
-        for evaluation in &state.progress.evaluations {
-            if !findings.insert((&evaluation.finding_id, &evaluation.finding_revision))
-                || !matches!(
-                    &evaluation.reliance.kind,
-                    crate::completion::ChildKind::Reliance
-                )
-                || !valid_sha(&evaluation.reliance.content_digest)
-                || evaluation.finding_id.trim().is_empty()
-                || evaluation.finding_revision.trim().is_empty()
-                || evaluation.consumer_tree.trim().is_empty()
-                || evaluation.decision_scope.trim().is_empty()
-                || evaluation.reliance.operation_id.trim().is_empty()
-                || evaluation.reliance.owner_root_id.trim().is_empty()
-                || evaluation.reliance.grant_identity.trim().is_empty()
-                || !operations.insert(&evaluation.reliance.operation_id)
-            {
-                return Err(fail());
-            }
+        if !state.progress.evaluations.is_empty() {
+            return Err(fail());
         }
         Ok(())
     }

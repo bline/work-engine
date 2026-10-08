@@ -549,7 +549,7 @@ fn historical_schema_marker_is_not_upgraded_on_open() {
     ))
     .unwrap();
     drop(app);
-    let current = root.join(".campaign-native-initial-v2");
+    let current = root.join(".campaign-native-initial-v3");
     let historical = root.join(".campaign-native-initial-v1");
     let mut marker: Value = serde_json::from_slice(&fs::read(&current).unwrap()).unwrap();
     marker["schema_version"] = json!(1);
@@ -800,7 +800,7 @@ fn killed_before_and_after_sqlite_commit_reconcile_exactly() {
         ))
         .unwrap();
         let marker: Value =
-            serde_json::from_slice(&fs::read(root.join(".campaign-native-initial-v2")).unwrap())
+            serde_json::from_slice(&fs::read(root.join(".campaign-native-initial-v3")).unwrap())
                 .unwrap();
         let digest=campaign_digest(&json!({"operationId":"fault-admit","identity":identity,"repository":repo,"workspace":workspace,"acceptedBoundary":boundary,"baseline":baseline,"expectedImpact":null})).unwrap();
         let locator = RecoveryLocator {

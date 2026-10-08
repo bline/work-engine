@@ -208,7 +208,7 @@ pub(crate) fn setup() -> (
     (temp, repo, workspace, identity, baseline, boundary)
 }
 
-fn setup_paths(
+pub(crate) fn setup_paths(
     root: &Path,
 ) -> (
     PathBuf,
@@ -219,7 +219,7 @@ fn setup_paths(
 ) {
     let repo = root.join("repo");
     let workspace = root.join("workspace");
-    fs::create_dir(&workspace).unwrap();
+    fs::create_dir_all(&workspace).unwrap();
     let bundle=Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle");
     assert!(
         Command::new("/usr/bin/git")

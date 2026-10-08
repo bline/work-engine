@@ -19,10 +19,15 @@ extern crate self as slice_campaign;
 mod test_support;
 
 pub use admission::{AdmissionHandle, Preparation, PreparedInitial};
-pub use application::{AdmitRequest, Campaign, CampaignClaimsAdmission, TrustedConfig};
+pub use application::{
+    AdmitRequest, CE3CampaignClaimsAdmission, Campaign, CampaignClaimsAdmission,
+    InitialClaimsOwner, InitialCompletionLocator, InitialCompletionOwners,
+    InitialCompletionPrepared, InitialCompletionProgress, InitialEpisodeReadRegistered,
+    InitialJoinSelection, InitialProgressState, TrustedConfig,
+};
 pub use completion::{
     CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,
-    DispatchedRequest, RecoveredRequest,
+    DispatchedRequest, RecoveredRequest, StageIntent, StageKind, StageProgress,
 };
 pub use contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRef, CampaignRevision,

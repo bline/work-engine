@@ -2,6 +2,7 @@
 //! effects; they never attest to an episode result or a claim establishment.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::contract::{CampaignIdentity, CampaignRevision, NativeReviewRequestRef};
 use crate::recovery::{OperationReceipt, RecoveryLocator};
@@ -124,43 +125,217 @@ pub struct RecoveredRequest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ChildKind {
-    Observation,
-    Establishment,
-    EpisodeResult,
-    Finding,
-    Reliance,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ChildIntent {
-    pub kind: ChildKind,
-    pub operation_id: String,
-    pub content_digest: String,
-    pub owner_root_id: String,
-    pub grant_identity: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CompletionIntent {
     pub campaign_operation_id: String,
-    pub episode_id: String,
+    pub registration_operation_id: String,
+    pub registration_base_revision: CampaignRevision,
+    pub obligation_id: String,
     pub attempt_id: String,
-    pub initial_episode_revision: Option<String>,
-    pub result_digest: Option<String>,
-    pub children: Vec<ChildIntent>,
+    pub preparation_operation_id: String,
+    pub prepared_request_sha256: String,
+    pub dispatch_operation_id: String,
+    pub owner_selection_digest: String,
+    pub execution_evidence_ref: ExecutionRefRecord,
+    pub native_result_claim_sha256: String,
+    pub native_result_raw_sha256: String,
+    pub execution_session_id: Option<String>,
+    pub observation_selection: ObservationSelection,
+    pub selected_claims: Vec<SelectedClaim>,
+    pub stages: Vec<StageIntent>,
+    pub consumption_intents: Vec<ConsumptionIntent>,
+    pub joined_readbacks: Option<JoinedReadbacks>,
+    pub outcome: Option<InitialOutcome>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExecutionRefRecord {
+    pub schema_version: u32,
+    pub owner: String,
+    pub root_id: String,
+    pub profile: String,
+    pub attempt_id: String,
+    pub record_id: String,
+    pub revision: String,
+    pub sha256: String,
+}
+
+impl From<&review_execution_evidence::ExecutionEvidenceRef> for ExecutionRefRecord {
+    fn from(value: &review_execution_evidence::ExecutionEvidenceRef) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            owner: value.owner.clone(),
+            root_id: value.root_id.clone(),
+            profile: value.profile.clone(),
+            attempt_id: value.attempt_id.clone(),
+            record_id: value.record_id.clone(),
+            revision: value.revision.clone(),
+            sha256: value.sha256.clone(),
+        }
+    }
+}
+
+impl ExecutionRefRecord {
+    pub(crate) fn checked(&self) -> Result<review_execution_evidence::ExecutionEvidenceRef> {
+        let reference = review_execution_evidence::ExecutionEvidenceRef {
+            schema_version: self.schema_version,
+            owner: self.owner.clone(),
+            root_id: self.root_id.clone(),
+            profile: self.profile.clone(),
+            attempt_id: self.attempt_id.clone(),
+            record_id: self.record_id.clone(),
+            revision: self.revision.clone(),
+            sha256: self.sha256.clone(),
+        };
+        reference
+            .validate()
+            .map_err(|error| CampaignError::Contract(error.to_string()))?;
+        Ok(reference)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ObservationSelection {
+    Present {
+        observation_id: String,
+        event_identity: String,
+        observation_sha256: String,
+    },
+    Absent {
+        reason: String,
+        evidence_ref: ExecutionRefRecord,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct ResultIntent {
-    pub(crate) episode_id: String,
-    pub(crate) result_digest: String,
-    pub(crate) episode_revision: String,
-    pub(crate) children: Vec<ChildIntent>,
+pub struct SelectedClaim {
+    pub claim_id: String,
+    pub revision: String,
+    pub document_sha256: String,
+    pub boundary: String,
+    pub consumer: String,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StageKind {
+    Observation,
+    EstablishmentBuilder,
+    EstablishmentCampaign,
+    AdmissionBuilder,
+    AdmissionCampaign,
+    EpisodeResultRead,
+    ConsumptionBuilder,
+    ConsumptionCampaign,
+    Finding,
+    FindingProjection,
+    EvaluationReliance,
+    EvaluationProjection,
+    InitialOutcome,
+    EvaluationCommit,
+}
+
+impl StageKind {
+    pub(crate) fn is_j2(self) -> bool {
+        matches!(
+            self,
+            Self::ConsumptionBuilder
+                | Self::ConsumptionCampaign
+                | Self::Finding
+                | Self::FindingProjection
+                | Self::EvaluationReliance
+                | Self::EvaluationProjection
+                | Self::InitialOutcome
+                | Self::EvaluationCommit
+        )
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StageIntent {
+    pub stage_id: String,
+    pub kind: StageKind,
+    pub registration_operation_id: String,
+    pub registration_base_revision: CampaignRevision,
+    pub command: Value,
+    pub request_sha256: String,
+    pub original_admission: Value,
+    pub original_admission_sha256: String,
+    pub owner_selection_digest: String,
+    pub owner_locator: Value,
+    pub evidence_ref: ExecutionRefRecord,
+    pub progress: StageProgress,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum StageProgress {
+    Registered,
+    OwnerCommitted {
+        receipt: Value,
+    },
+    Checked {
+        exact_refs: Vec<Value>,
+        content_digests: Vec<String>,
+    },
+    Conflicting {
+        reason: String,
+    },
+    Unresolved {
+        reason: String,
+        locator: Value,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JoinedReadbacks {
+    pub builder: Value,
+    pub campaign: Value,
+    pub episode: Value,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ConsumptionIntent {
+    pub claim_revision: String,
+    pub establishment: Value,
+    pub boundary: String,
+    pub consumer: String,
+    pub body_digest: String,
+    pub reference: String,
+    pub registration_operation_id: String,
+    pub consumed_at_operation_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum InitialOutcome {
+    EvidenceUnestablished {
+        pair: Value,
+    },
+    Reported {
+        pair: Value,
+        consumptions: Value,
+        episode: Value,
+        finding_set: Value,
+        projection: Value,
+    },
+    AwaitingBuilder {
+        pair: Value,
+        consumptions: Value,
+        episode: Value,
+        finding_set: Value,
+        projection: Value,
+    },
+    CorrectionRequired {
+        rejection_ref: Value,
+        evidence_ref: Value,
+    },
 }
 
 impl CompletionIntent {
@@ -169,32 +344,85 @@ impl CompletionIntent {
         dispatch: &DispatchRecord,
         attempt_id: &str,
     ) -> Result<()> {
-        if self.episode_id != dispatch.command.episode_id
-            || self.attempt_id != attempt_id
-            || self.initial_episode_revision.is_some()
-            || self.result_digest.is_some()
+        if self.attempt_id != attempt_id
+            || self.dispatch_operation_id != dispatch.operation_id
+            || self.outcome.is_some()
+            || self.selected_claims.len() != 2
+            || self.selected_claims[0].boundary != "builder_projection"
+            || self.selected_claims[1].boundary != "campaign_terminalization"
+            || self.stages.iter().any(|stage| stage.kind.is_j2())
         {
             return Err(CampaignError::Contract(
-                "initial completion intent does not match dispatch".into(),
+                "initial completion intent invalid".into(),
             ));
         }
-        if self.children.is_empty() {
-            return Err(CampaignError::Contract("completion children absent".into()));
+        for value in [
+            &self.campaign_operation_id,
+            &self.registration_operation_id,
+            &self.obligation_id,
+            &self.preparation_operation_id,
+            &self.dispatch_operation_id,
+            &self.owner_selection_digest,
+        ] {
+            require_text(value, "completion identity")?;
         }
-        require_text(&self.campaign_operation_id, "completion intent operation")?;
+        for value in [
+            &self.prepared_request_sha256,
+            &self.native_result_claim_sha256,
+            &self.native_result_raw_sha256,
+        ] {
+            require_sha(value, "completion digest")?;
+        }
+        self.execution_evidence_ref.checked()?;
+        if self
+            .consumption_intents
+            .iter()
+            .any(|c| c.consumed_at_operation_id.is_some())
+            || !self.consumption_intents.is_empty() && self.consumption_intents.len() != 2
+        {
+            return Err(CampaignError::Contract(
+                "J1 consumption commitments invalid".into(),
+            ));
+        }
         let mut ids = std::collections::BTreeSet::new();
-        for child in &self.children {
-            require_text(&child.operation_id, "child operation")?;
-            require_sha(&child.content_digest, "child content")?;
-            require_text(&child.owner_root_id, "child owner root")?;
-            require_text(&child.grant_identity, "child grant")?;
-            if !ids.insert(child.operation_id.as_str())
-                || child.operation_id == dispatch.operation_id
+        let mut kinds = std::collections::BTreeSet::new();
+        for stage in &self.stages {
+            require_text(&stage.stage_id, "stage ID")?;
+            require_text(
+                &stage.registration_operation_id,
+                "stage registration operation",
+            )?;
+            require_sha(&stage.request_sha256, "stage request")?;
+            require_sha(&stage.original_admission_sha256, "stage admission")?;
+            require_sha(&stage.owner_selection_digest, "stage owner selection")?;
+            stage.evidence_ref.checked()?;
+            if !ids.insert(&stage.stage_id)
+                || !kinds.insert(stage.kind)
+                || stage.owner_selection_digest != self.owner_selection_digest
+                || stage.evidence_ref != self.execution_evidence_ref
             {
                 return Err(CampaignError::Contract(
-                    "completion child operation overlaps".into(),
+                    "completion stage identity differs".into(),
                 ));
             }
+        }
+        if self.stages.len() > 6
+            || (matches!(
+                self.observation_selection,
+                ObservationSelection::Absent { .. }
+            ) && kinds.contains(&StageKind::Observation))
+            || (self.joined_readbacks.is_some()
+                && ![
+                    StageKind::AdmissionBuilder,
+                    StageKind::AdmissionCampaign,
+                    StageKind::EpisodeResultRead,
+                ]
+                .iter()
+                .all(|kind| kinds.contains(kind)))
+        {
+            return Err(CampaignError::Contract(
+                "completion stage set invalid".into(),
+            ));
         }
         Ok(())
     }
@@ -393,46 +621,16 @@ impl CheckedPreEntryFailure {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvaluationRecord {
+    pub operation_id: String,
+    pub registration_operation_id: String,
     pub finding_id: String,
     pub finding_revision: String,
     pub consumer_tree: String,
     pub decision_scope: String,
     pub valid: bool,
-    pub reliance: ChildIntent,
-    pub published: bool,
-}
-
-#[derive(Debug)]
-#[allow(dead_code)] // Materialized only after CE finding and builder-authority readback.
-pub(crate) struct CheckedBuilderEvaluation {
-    pub(crate) finding_id: String,
-    pub(crate) finding_revision: String,
-    pub(crate) consumer_tree: String,
-    pub(crate) decision_scope: String,
-    pub(crate) valid: bool,
-    pub(crate) reliance: ChildIntent,
-}
-
-#[derive(Debug)]
-#[allow(dead_code)] // Materialized only after CE reliance and projection readback.
-pub(crate) struct CheckedReliance {
-    pub(crate) finding_id: String,
-    pub(crate) finding_revision: String,
-    pub(crate) operation_id: String,
-    pub(crate) content_digest: String,
-    pub(crate) owner_root_id: String,
-    pub(crate) grant_identity: String,
-}
-
-#[derive(Debug)]
-#[allow(dead_code)] // Constructed from exact episode and both CE owner readbacks.
-pub(crate) struct CheckedInitialOutcome {
-    pub(crate) episode_id: String,
-    pub(crate) episode_revision: String,
-    pub(crate) result_digest: String,
-    pub(crate) builder_claim_id: String,
-    pub(crate) terminal_claim_id: String,
-    pub(crate) succeeded: bool,
+    pub reliance: Value,
+    pub projection: Value,
+    pub publication_state: String,
 }
 
 #[cfg(test)]

@@ -924,6 +924,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "review-execution-evidence"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "review-episode"
 version = "0.1.0"
 dependencies = [
@@ -1155,7 +1169,10 @@ name = "slice-campaign"
 version = "0.1.0"
 dependencies = [
  "claim-evidence",
+ "review-episode",
  "review-episode-core",
+ "review-episode-store",
+ "review-execution-evidence",
  "rusqlite",
  "rustix",
  "ryu-js",
@@ -1164,6 +1181,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

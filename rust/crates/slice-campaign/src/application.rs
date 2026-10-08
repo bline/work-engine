@@ -10,10 +10,9 @@ use serde_json::{Value, json};
 use crate::admission::{AdmissionHandle, Preparation, PreparedInitial};
 use crate::codec::{campaign_digest, raw_sha256};
 use crate::completion::{
-    AttemptOutcome, AttemptRecord, CheckedBuilderEvaluation, CheckedInitialOutcome,
-    CheckedPreEntryFailure, CheckedReliance, ChildKind, CompletionIntent, DispatchCommand,
-    DispatchEffect, DispatchPermit, DispatchRecord, DispatchedRequest, EvaluationRecord,
-    FailureCustodyRef, RecoveredRequest, RecoveryHandle, ResultIntent,
+    AttemptOutcome, AttemptRecord, CheckedPreEntryFailure, DispatchCommand, DispatchEffect,
+    DispatchPermit, DispatchRecord, DispatchedRequest, FailureCustodyRef, RecoveredRequest,
+    RecoveryHandle,
 };
 use crate::contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRevision, Consequence,
@@ -47,12 +46,10 @@ pub struct TrustedConfig {
 mod core_tests {
     use super::*;
     use crate::completion::{
-        CheckedBuilderEvaluation, CheckedInitialOutcome, CheckedReliance, ChildIntent, ChildKind,
-        ResultIntent, RetryFailureSignature, RetryObligationStatus, RetryProviderEntry,
-        RetryRecoveryFacts, RetryRequestFacts,
+        RetryFailureSignature, RetryObligationStatus, RetryProviderEntry, RetryRecoveryFacts,
+        RetryRequestFacts,
     };
-    use claim_evidence::FindingAdmissionPort;
-    use std::sync::mpsc;
+    #[cfg(feature = "test-faults")]
     use std::time::Duration;
 
     use crate::test_support as support;
@@ -62,8 +59,8 @@ mod core_tests {
         app: Campaign,
         identity: CampaignIdentity,
         locator: RecoveryLocator,
-        request: NativeReviewRequestRef,
-        command: DispatchCommand,
+        _request: NativeReviewRequestRef,
+        _command: DispatchCommand,
     }
 
     fn ready() -> Ready {
@@ -239,162 +236,9 @@ mod core_tests {
             app,
             identity,
             locator,
-            request,
-            command,
+            _request: request,
+            _command: command,
         }
-    }
-
-    fn child(kind: ChildKind, operation_id: &str, content: char) -> ChildIntent {
-        ChildIntent {
-            kind,
-            operation_id: operation_id.into(),
-            content_digest: content.to_string().repeat(64),
-            owner_root_id: "claims-root".into(),
-            grant_identity: "grant-core".into(),
-        }
-    }
-
-    #[test]
-    fn private_reducers_preserve_intent_outcome_and_evaluation() {
-        let ready = self::ready();
-        let mut owner = ready.app.owner().unwrap();
-        let state = owner.read(&ready.identity).unwrap().unwrap();
-        let initial = CompletionIntent {
-            campaign_operation_id: "completion-core".into(),
-            episode_id: ready.command.episode_id.clone(),
-            attempt_id: ready.identity.attempt_id.clone(),
-            initial_episode_revision: None,
-            result_digest: None,
-            children: vec![
-                child(ChildKind::Observation, "observation-core", 'a'),
-                child(ChildKind::Establishment, "establishment-builder", 'b'),
-                child(ChildKind::Establishment, "establishment-campaign", 'c'),
-            ],
-        };
-        let state = support::applied(
-            owner
-                .bind_completion_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "review-1",
-                    "completion-core",
-                    initial,
-                )
-                .unwrap(),
-        );
-        let result = ResultIntent {
-            episode_id: ready.command.episode_id.clone(),
-            result_digest: "d".repeat(64),
-            episode_revision: "episode-revision-core".into(),
-            children: vec![child(ChildKind::Finding, "finding-core", 'e')],
-        };
-        let state = support::applied(
-            owner
-                .bind_result_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "result-intent-core",
-                    result,
-                )
-                .unwrap(),
-        );
-        let selection = state.review_selection.as_ref().unwrap();
-        let claims = selection["specialists"][0]["requiredClaims"]
-            .as_array()
-            .unwrap();
-        let checked = CheckedInitialOutcome {
-            episode_id: ready.command.episode_id,
-            episode_revision: "episode-revision-core".into(),
-            result_digest: "d".repeat(64),
-            builder_claim_id: claims[0]["claimId"].as_str().unwrap().into(),
-            terminal_claim_id: claims[1]["claimId"].as_str().unwrap().into(),
-            succeeded: true,
-        };
-        let state = support::applied(
-            owner
-                .record_initial_outcome(
-                    &ready.identity,
-                    &state.revision,
-                    "review-1",
-                    "outcome-core",
-                    checked,
-                )
-                .unwrap(),
-        );
-        assert_eq!(state.obligations[0].status, "completed");
-        let reliance = child(ChildKind::Reliance, "reliance-core", 'f');
-        let state = support::applied(
-            owner
-                .prepare_evaluation(
-                    &ready.identity,
-                    &state.revision,
-                    "evaluate-core",
-                    CheckedBuilderEvaluation {
-                        finding_id: "finding-1".into(),
-                        finding_revision: "finding-revision-1".into(),
-                        consumer_tree: "tree-1".into(),
-                        decision_scope: "initial-review".into(),
-                        valid: false,
-                        reliance: reliance.clone(),
-                    },
-                )
-                .unwrap(),
-        );
-        assert!(!state.progress.evaluations[0].valid);
-        let state = support::applied(
-            owner
-                .record_evaluation(
-                    &ready.identity,
-                    &state.revision,
-                    "record-evaluation-core",
-                    CheckedReliance {
-                        finding_id: "finding-1".into(),
-                        finding_revision: "finding-revision-1".into(),
-                        operation_id: reliance.operation_id,
-                        content_digest: reliance.content_digest,
-                        owner_root_id: reliance.owner_root_id,
-                        grant_identity: reliance.grant_identity,
-                    },
-                )
-                .unwrap(),
-        );
-        assert!(state.progress.evaluations[0].published);
-        assert!(!state.progress.evaluations[0].valid);
-        let mut state = state;
-        for index in 1..129 {
-            let operation = format!("evaluate-many-{index}");
-            state = support::applied(
-                owner
-                    .prepare_evaluation(
-                        &ready.identity,
-                        &state.revision,
-                        &operation,
-                        CheckedBuilderEvaluation {
-                            finding_id: format!("finding-many-{index}"),
-                            finding_revision: format!("finding-revision-many-{index}"),
-                            consumer_tree: "tree-1".into(),
-                            decision_scope: "initial-review".into(),
-                            valid: true,
-                            reliance: child(
-                                ChildKind::Reliance,
-                                &format!("reliance-many-{index}"),
-                                'a',
-                            ),
-                        },
-                    )
-                    .unwrap(),
-            );
-        }
-        assert_eq!(
-            owner
-                .read(&ready.identity)
-                .unwrap()
-                .unwrap()
-                .progress
-                .evaluations
-                .len(),
-            129
-        );
     }
 
     #[test]
@@ -470,260 +314,6 @@ mod core_tests {
                 .0,
             "retry-core"
         );
-    }
-
-    #[test]
-    fn retry_and_result_reducers_target_their_own_obligations() {
-        let ready = ready_with(true);
-        let mut owner = ready.app.owner().unwrap();
-        let first = owner.read(&ready.identity).unwrap().unwrap();
-        let Preparation::Applied(second) = owner
-            .prepare_initial(
-                &ready.identity,
-                &first.revision,
-                "review-2",
-                "prepare-second",
-            )
-            .unwrap()
-        else {
-            panic!("second preparation")
-        };
-        let episode = crate::contract::episode_digest(&json!({"identity":ready.identity,
-            "obligationId":"review-2"}))
-        .unwrap();
-        let second_command = DispatchCommand {
-            episode_id: episode[..32].into(),
-            writer_actor: "native-review-host".into(),
-            runtime_session: "second-session".into(),
-            reviewer_profile: "direct-initial".into(),
-            begin_transition_id: "second-begin".into(),
-            result_transition_id: "second-result".into(),
-        };
-        let DispatchEffect::Applied { permit, .. } = owner
-            .authorize_dispatch(second.handle, "dispatch-second", second_command.clone())
-            .unwrap()
-        else {
-            panic!("second dispatch")
-        };
-        owner.consume_dispatch_permit(permit).unwrap();
-        let current = owner.read(&ready.identity).unwrap().unwrap();
-        let Preparation::Applied(retry) = owner
-            .prepare_retry(
-                &ready.identity,
-                &current.revision,
-                "review-1",
-                "retry-first",
-                "attempt-first-2",
-                CheckedPreEntryFailure::from_owner_facts(
-                    ready.identity.attempt_id.clone(),
-                    "dispatch-core".into(),
-                    "custody-first".into(),
-                    "a".repeat(64),
-                    RetryObligationStatus::Executing,
-                    RetryRecoveryFacts {
-                        schema_version: 1,
-                        failure_signature: RetryFailureSignature::ProcessStartFailed,
-                        provider_entry: RetryProviderEntry::NotEntered,
-                        session_available: false,
-                        session_id: "session-core".into(),
-                        transport_receipt_digest: None,
-                        session_artifact_digest: None,
-                        error_code: Some("ENOENT".into()),
-                        result_digest: None,
-                    },
-                    None,
-                    RetryRequestFacts {
-                        retry_session_id: "session-core".into(),
-                        continuation_session_id: None,
-                        pre_spawn_retry: true,
-                    },
-                )
-                .unwrap(),
-            )
-            .unwrap()
-        else {
-            panic!("first retry")
-        };
-        let state = owner.read(&ready.identity).unwrap().unwrap();
-        assert_eq!(state.progress.attempts.len(), 3);
-        assert_eq!(
-            state
-                .obligations
-                .iter()
-                .find(|o| o.obligation_id == "review-2")
-                .unwrap()
-                .request
-                .as_ref()
-                .unwrap()
-                .operation_id,
-            "prepare-second"
-        );
-        let state = support::applied(
-            owner
-                .bind_completion_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "review-2",
-                    "complete-second",
-                    CompletionIntent {
-                        campaign_operation_id: "complete-second".into(),
-                        episode_id: second_command.episode_id.clone(),
-                        attempt_id: ready.identity.attempt_id.clone(),
-                        initial_episode_revision: None,
-                        result_digest: None,
-                        children: vec![child(ChildKind::Observation, "observe-second", 'a')],
-                    },
-                )
-                .unwrap(),
-        );
-        let state = support::applied(
-            owner
-                .bind_result_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "result-second",
-                    ResultIntent {
-                        episode_id: second_command.episode_id.clone(),
-                        result_digest: "b".repeat(64),
-                        episode_revision: "episode-second-revision".into(),
-                        children: vec![child(ChildKind::Finding, "finding-second", 'c')],
-                    },
-                )
-                .unwrap(),
-        );
-        let claims = state.review_selection.as_ref().unwrap()["specialists"][1]["requiredClaims"]
-            .as_array()
-            .unwrap();
-        let state = support::applied(
-            owner
-                .record_initial_outcome(
-                    &ready.identity,
-                    &state.revision,
-                    "review-2",
-                    "outcome-second",
-                    CheckedInitialOutcome {
-                        episode_id: second_command.episode_id,
-                        episode_revision: "episode-second-revision".into(),
-                        result_digest: "b".repeat(64),
-                        builder_claim_id: claims[0]["claimId"].as_str().unwrap().into(),
-                        terminal_claim_id: claims[1]["claimId"].as_str().unwrap().into(),
-                        succeeded: true,
-                    },
-                )
-                .unwrap(),
-        );
-        assert_eq!(
-            state
-                .obligations
-                .iter()
-                .find(|o| o.obligation_id == "review-2")
-                .unwrap()
-                .status,
-            "completed"
-        );
-        assert_eq!(
-            state
-                .obligations
-                .iter()
-                .find(|o| o.obligation_id == "review-1")
-                .unwrap()
-                .request
-                .as_ref()
-                .unwrap()
-                .operation_id,
-            retry.request.operation_id
-        );
-        assert_eq!(
-            owner.read(&ready.identity).unwrap().unwrap().revision,
-            state.revision
-        );
-        assert!(
-            owner
-                .store
-                .replay_result("prepare-second")
-                .unwrap()
-                .is_some()
-        );
-    }
-
-    #[test]
-    fn finding_lease_blocks_campaign_read_and_stale_binding_fails() {
-        let ready = self::ready();
-        let state = ready.app.read(&ready.identity).unwrap().unwrap();
-        let mut owner = ready.app.owner().unwrap();
-        let initial = CompletionIntent {
-            campaign_operation_id: "completion-core".into(),
-            episode_id: ready.command.episode_id,
-            attempt_id: ready.identity.attempt_id.clone(),
-            initial_episode_revision: None,
-            result_digest: None,
-            children: vec![child(ChildKind::Observation, "observation-core", 'a')],
-        };
-        let state = support::applied(
-            owner
-                .bind_completion_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "review-1",
-                    "completion-core",
-                    initial,
-                )
-                .unwrap(),
-        );
-        let state = support::applied(
-            owner
-                .bind_result_intent(
-                    &ready.identity,
-                    &state.revision,
-                    "result-intent-core",
-                    ResultIntent {
-                        episode_id: state.progress.attempts[0]
-                            .dispatch
-                            .as_ref()
-                            .unwrap()
-                            .command
-                            .episode_id
-                            .clone(),
-                        result_digest: "b".repeat(64),
-                        episode_revision: "episode-revision-core".into(),
-                        children: vec![child(ChildKind::Finding, "finding-core", 'c')],
-                    },
-                )
-                .unwrap(),
-        );
-        drop(owner);
-        let binding = AdmissionBinding {
-            campaign_root_id: ready.app.root_id().into(),
-            campaign_revision: state.revision.as_str().into(),
-            campaign_operation_id: "completion-core".into(),
-            obligation_id: "review-1".into(),
-            candidate_digest: ready.request.candidate.receipt_sha256.clone(),
-            selection_digest: ready.request.selection.campaign_digest.clone(),
-            profile_digest: ready.request.profile_digest.clone(),
-            prepared_request_sha256: ready.request.request_digest,
-            episode_revision: "episode-revision-core".into(),
-            result_sha256: "b".repeat(64),
-            claims_request_sha256: "c".repeat(64),
-        };
-        let port = ready.app.claims_admission();
-        let lease = port.acquire(&binding).unwrap();
-        let (sender, receiver) = mpsc::channel();
-        let app = ready.app;
-        let identity = ready.identity;
-        let join = std::thread::spawn(move || {
-            let result = app.read(&identity);
-            sender.send(result.is_ok()).unwrap();
-        });
-        assert!(receiver.recv_timeout(Duration::from_millis(50)).is_err());
-        drop(lease);
-        assert!(receiver.recv_timeout(Duration::from_secs(2)).unwrap());
-        join.join().unwrap();
-        let mut stale = binding;
-        stale.campaign_revision = "stale".into();
-        assert!(port.acquire(&stale).is_err());
-        stale.campaign_revision = state.revision.as_str().into();
-        stale.campaign_root_id = "other-root".into();
-        assert!(port.acquire(&stale).is_err());
     }
 
     #[test]
@@ -1201,6 +791,7 @@ pub struct AdmitRequest {
 struct CampaignInner {
     store: Store,
     config: TrustedConfig,
+    initial_join: Option<InitialJoinInstallation>,
 }
 
 /// The store and all admission checks share one process-local gate. A future
@@ -1251,7 +842,11 @@ impl Campaign {
         Self {
             root_id: store.root_id.clone(),
             root: store.root.clone(),
-            inner: Arc::new(Mutex::new(CampaignInner { store, config })),
+            inner: Arc::new(Mutex::new(CampaignInner {
+                store,
+                config,
+                initial_join: None,
+            })),
         }
     }
     fn owner(&self) -> Result<MutexGuard<'_, CampaignInner>> {
@@ -1378,68 +973,13 @@ impl Campaign {
     }
 }
 
+include!("owner_readback.rs");
+
 impl CampaignInner {
-    fn check_finding_admission(&self, binding: &AdmissionBinding) -> Result<()> {
-        if binding.campaign_root_id != self.store.root_id {
-            return Err(CampaignError::Conflict(
-                "claim admission root differs".into(),
-            ));
-        }
-        let state = self
-            .store
-            .read(&self.config.identity)?
-            .ok_or_else(|| CampaignError::Integrity("campaign absent".into()))?;
-        if binding.campaign_revision != state.revision.as_str() {
-            return Err(CampaignError::Conflict(
-                "claim admission revision differs".into(),
-            ));
-        }
-        let request = state
-            .obligations
-            .iter()
-            .find(|item| item.obligation_id == binding.obligation_id && item.status == "executing")
-            .and_then(|item| item.request.as_ref())
-            .ok_or_else(|| CampaignError::Conflict("claim admission obligation absent".into()))?;
-        if binding.candidate_digest != request.candidate.receipt_sha256
-            || binding.selection_digest != request.selection.campaign_digest
-            || binding.profile_digest != request.profile_digest
-            || binding.prepared_request_sha256 != request.request_digest
-        {
-            return Err(CampaignError::Conflict(
-                "claim admission subject differs".into(),
-            ));
-        }
-        let attempt = state
-            .progress
-            .attempts
-            .iter()
-            .find(|item| item.preparation_operation_id == request.operation_id)
-            .ok_or_else(|| CampaignError::Integrity("claim attempt absent".into()))?;
-        let intent = attempt
-            .completion_intent
-            .as_ref()
-            .ok_or_else(|| CampaignError::Conflict("completion intent absent".into()))?;
-        if attempt.request_digest != request.request_digest
-            || intent.campaign_operation_id != binding.campaign_operation_id
-            || intent.initial_episode_revision.as_deref() != Some(binding.episode_revision.as_str())
-            || intent.result_digest.as_deref() != Some(binding.result_sha256.as_str())
-            || !intent.children.iter().any(|child| {
-                matches!(child.kind, ChildKind::Finding | ChildKind::Reliance)
-                    && child.content_digest == binding.claims_request_sha256
-            })
-        {
-            return Err(CampaignError::Conflict(
-                "claim child is not registered".into(),
-            ));
-        }
-        let slot = self
-            .store
-            .slot_for_operation(&self.config.identity, &request.operation_id)?
-            .ok_or_else(|| CampaignError::Integrity("claim request slot absent".into()))?;
-        if !slot.active || slot.request_digest != request.request_digest || !slot.may_have_entered {
-            return Err(CampaignError::Conflict("claim request slot differs".into()));
-        }
-        Ok(())
+    fn check_finding_admission(&self, _binding: &AdmissionBinding) -> Result<()> {
+        Err(CampaignError::Unsupported(
+            "J2 finding and reliance admission is not enabled in schema 3".into(),
+        ))
     }
     fn read(&self, identity: &CampaignIdentity) -> Result<Option<Snapshot>> {
         self.store.read(identity)
@@ -1593,7 +1133,7 @@ impl CampaignInner {
             return Ok(Effect::NoEffect("campaign already admitted".into()));
         }
         let mut state = Snapshot {
-            schema_version: 2,
+            schema_version: 3,
             identity: request.identity,
             workspace: request.workspace.to_string_lossy().into_owned(),
             repository: request.repository.to_string_lossy().into_owned(),
@@ -2356,78 +1896,6 @@ impl CampaignInner {
         Ok((record, receipt))
     }
 
-    /// Internal transition: only domain composition registers child effects.
-    /// The public API cannot turn a caller-supplied record into checked evidence.
-    #[allow(dead_code)] // Consumed by the real-owner join.
-    pub(crate) fn bind_completion_intent(
-        &mut self,
-        identity: &CampaignIdentity,
-        expected: &CampaignRevision,
-        obligation_id: &str,
-        operation_id: &str,
-        intent: CompletionIntent,
-    ) -> Result<Effect<Snapshot>> {
-        self.check_identity(identity)?;
-        require_text(operation_id, "completion intent operation")?;
-        let digest = campaign_digest(&json!({"identity":identity,"expectedRevision":expected,
-            "obligationId":obligation_id,"operationId":operation_id,"intent":intent}))?;
-        if let Some((receipt, state)) =
-            self.replay(operation_id, "bind_completion_intent", &digest, identity)?
-        {
-            return Ok(Effect::Replayed {
-                value: state,
-                receipt,
-            });
-        }
-        let mut state = self.current(identity, expected)?;
-        let request = state
-            .obligations
-            .iter()
-            .find(|item| item.obligation_id == obligation_id && item.status == "executing")
-            .and_then(|item| item.request.as_ref())
-            .ok_or_else(|| CampaignError::Conflict("active request absent".into()))?;
-        let attempt = state
-            .progress
-            .attempts
-            .iter_mut()
-            .find(|item| item.preparation_operation_id == request.operation_id)
-            .ok_or_else(|| CampaignError::Integrity("attempt absent".into()))?;
-        if attempt.request_digest != request.request_digest
-            || attempt.completion_intent.is_some()
-            || attempt.outcome.is_some()
-        {
-            return Ok(Effect::NoEffect(
-                "completion intent already bound or attempt differs".into(),
-            ));
-        }
-        let dispatch = attempt
-            .dispatch
-            .as_ref()
-            .ok_or_else(|| CampaignError::Conflict("dispatch absent".into()))?;
-        if self.store.dispatch_slot(identity, obligation_id)?
-            != Some((Some(dispatch.operation_id.clone()), true))
-        {
-            return Err(CampaignError::Integrity("dispatch slot differs".into()));
-        }
-        intent.validate_initial(dispatch, &attempt.attempt_id)?;
-        if intent.campaign_operation_id != operation_id {
-            return Ok(Effect::NoEffect(
-                "completion intent operation differs".into(),
-            ));
-        }
-        attempt.completion_intent = Some(intent);
-        state.revision = state_revision(&state)?;
-        Ok(self.put(
-            state,
-            Some(expected.clone()),
-            operation_id,
-            "bind_completion_intent",
-            digest,
-            false,
-            None,
-        ))
-    }
-
     /// Positive retry is internal until the execution owner supplies a real
     /// definite-pre-entry readback. It cannot be invoked with a serialized ref.
     #[allow(dead_code)] // Called by HP3 composition after custody integration.
@@ -2588,331 +2056,5 @@ impl CampaignInner {
                 Err(_) => Preparation::OutcomeUnknown(locator),
             },
         )
-    }
-
-    #[allow(dead_code)] // Called by CE/episode owner join.
-    pub(crate) fn prepare_evaluation(
-        &mut self,
-        identity: &CampaignIdentity,
-        expected: &CampaignRevision,
-        operation_id: &str,
-        checked: CheckedBuilderEvaluation,
-    ) -> Result<Effect<Snapshot>> {
-        self.check_identity(identity)?;
-        require_text(operation_id, "evaluation operation")?;
-        for (name, value) in [
-            ("finding ID", checked.finding_id.as_str()),
-            ("finding revision", checked.finding_revision.as_str()),
-            ("consumer tree", checked.consumer_tree.as_str()),
-            ("decision scope", checked.decision_scope.as_str()),
-            ("reliance operation", checked.reliance.operation_id.as_str()),
-            ("reliance root", checked.reliance.owner_root_id.as_str()),
-            ("reliance grant", checked.reliance.grant_identity.as_str()),
-        ] {
-            require_text(value, name)?;
-        }
-        crate::require_sha(&checked.reliance.content_digest, "reliance content")?;
-        if !matches!(checked.reliance.kind, ChildKind::Reliance)
-            || operation_id == checked.reliance.operation_id
-        {
-            return Ok(Effect::NoEffect("reliance child differs".into()));
-        }
-        let record = EvaluationRecord {
-            finding_id: checked.finding_id,
-            finding_revision: checked.finding_revision,
-            consumer_tree: checked.consumer_tree,
-            decision_scope: checked.decision_scope,
-            valid: checked.valid,
-            reliance: checked.reliance,
-            published: false,
-        };
-        let digest = campaign_digest(&json!({"identity":identity,"expectedRevision":expected,
-            "operationId":operation_id,"evaluation":record}))?;
-        if let Some((receipt, state)) =
-            self.replay(operation_id, "prepare_evaluation", &digest, identity)?
-        {
-            return Ok(Effect::Replayed {
-                value: state,
-                receipt,
-            });
-        }
-        let mut state = self.current(identity, expected)?;
-        if !state.progress.attempts.iter().any(|attempt| {
-            matches!(
-                attempt.outcome,
-                Some(AttemptOutcome::Completed | AttemptOutcome::FailedWithResult)
-            )
-        }) {
-            return Ok(Effect::NoEffect(
-                "review outcome has not been published".into(),
-            ));
-        }
-        if state.progress.evaluations.iter().any(|prior| {
-            prior.finding_id == record.finding_id
-                && prior.finding_revision == record.finding_revision
-        }) {
-            return Ok(Effect::NoEffect("finding already evaluated".into()));
-        }
-        state.progress.evaluations.push(record);
-        state.revision = state_revision(&state)?;
-        Ok(self.put(
-            state,
-            Some(expected.clone()),
-            operation_id,
-            "prepare_evaluation",
-            digest,
-            false,
-            None,
-        ))
-    }
-
-    #[allow(dead_code)] // Called after CE checked reliance and projection readback.
-    pub(crate) fn record_evaluation(
-        &mut self,
-        identity: &CampaignIdentity,
-        expected: &CampaignRevision,
-        operation_id: &str,
-        checked: CheckedReliance,
-    ) -> Result<Effect<Snapshot>> {
-        self.check_identity(identity)?;
-        require_text(operation_id, "evaluation record operation")?;
-        let digest = campaign_digest(&json!({"identity":identity,"expectedRevision":expected,
-            "operationId":operation_id,"findingId":checked.finding_id,
-            "findingRevision":checked.finding_revision,"relianceOperationId":checked.operation_id,
-            "relianceContentDigest":checked.content_digest,"relianceOwnerRootId":checked.owner_root_id,
-            "relianceGrantIdentity":checked.grant_identity}))?;
-        if let Some((receipt, state)) =
-            self.replay(operation_id, "record_evaluation", &digest, identity)?
-        {
-            return Ok(Effect::Replayed {
-                value: state,
-                receipt,
-            });
-        }
-        let mut state = self.current(identity, expected)?;
-        let record = state
-            .progress
-            .evaluations
-            .iter_mut()
-            .find(|item| {
-                item.finding_id == checked.finding_id
-                    && item.finding_revision == checked.finding_revision
-                    && !item.published
-            })
-            .ok_or_else(|| CampaignError::Conflict("unevaluated finding intent absent".into()))?;
-        if record.reliance.operation_id != checked.operation_id
-            || record.reliance.content_digest != checked.content_digest
-            || record.reliance.owner_root_id != checked.owner_root_id
-            || record.reliance.grant_identity != checked.grant_identity
-        {
-            return Ok(Effect::NoEffect(
-                "checked reliance differs from intent".into(),
-            ));
-        }
-        record.published = true;
-        state.revision = state_revision(&state)?;
-        Ok(self.put(
-            state,
-            Some(expected.clone()),
-            operation_id,
-            "record_evaluation",
-            digest,
-            false,
-            None,
-        ))
-    }
-
-    #[allow(dead_code)] // Called after exact episode readback, before result-dependent child effects.
-    pub(crate) fn bind_result_intent(
-        &mut self,
-        identity: &CampaignIdentity,
-        expected: &CampaignRevision,
-        operation_id: &str,
-        result: ResultIntent,
-    ) -> Result<Effect<Snapshot>> {
-        self.check_identity(identity)?;
-        require_text(operation_id, "result intent operation")?;
-        require_text(&result.episode_revision, "episode revision")?;
-        crate::require_sha(&result.result_digest, "native result")?;
-        let digest = campaign_digest(&json!({"identity":identity,"expectedRevision":expected,
-            "operationId":operation_id,"result":result}))?;
-        if let Some((receipt, state)) =
-            self.replay(operation_id, "bind_result_intent", &digest, identity)?
-        {
-            return Ok(Effect::Replayed {
-                value: state,
-                receipt,
-            });
-        }
-        let mut state = self.current(identity, expected)?;
-        let attempt = state
-            .progress
-            .attempts
-            .iter_mut()
-            .find(|attempt| {
-                attempt.outcome.is_none()
-                    && attempt
-                        .dispatch
-                        .as_ref()
-                        .is_some_and(|dispatch| dispatch.command.episode_id == result.episode_id)
-            })
-            .ok_or_else(|| CampaignError::Integrity("active attempt absent".into()))?;
-        let dispatch = attempt
-            .dispatch
-            .as_ref()
-            .ok_or_else(|| CampaignError::Conflict("dispatch absent".into()))?;
-        let intent = attempt
-            .completion_intent
-            .as_mut()
-            .ok_or_else(|| CampaignError::Conflict("initial completion intent absent".into()))?;
-        if intent.episode_id != result.episode_id
-            || intent.episode_id != dispatch.command.episode_id
-            || intent.result_digest.is_some()
-            || intent.initial_episode_revision.is_some()
-            || attempt.outcome.is_some()
-        {
-            return Ok(Effect::NoEffect(
-                "result intent already bound or episode differs".into(),
-            ));
-        }
-        if result.children.is_empty() {
-            return Ok(Effect::NoEffect("result-dependent children absent".into()));
-        }
-        let mut ids: std::collections::BTreeSet<String> = intent
-            .children
-            .iter()
-            .map(|child| child.operation_id.clone())
-            .collect();
-        for child in &result.children {
-            require_text(&child.operation_id, "child operation")?;
-            crate::require_sha(&child.content_digest, "child content")?;
-            require_text(&child.owner_root_id, "child root")?;
-            require_text(&child.grant_identity, "child grant")?;
-            if !ids.insert(child.operation_id.clone()) {
-                return Ok(Effect::NoEffect("child operation duplicated".into()));
-            }
-        }
-        intent.initial_episode_revision = Some(result.episode_revision);
-        intent.result_digest = Some(result.result_digest);
-        intent.children.extend(result.children);
-        state.revision = state_revision(&state)?;
-        Ok(self.put(
-            state,
-            Some(expected.clone()),
-            operation_id,
-            "bind_result_intent",
-            digest,
-            false,
-            None,
-        ))
-    }
-
-    #[allow(dead_code)] // Called after CE and episode owner readbacks.
-    pub(crate) fn record_initial_outcome(
-        &mut self,
-        identity: &CampaignIdentity,
-        expected: &CampaignRevision,
-        obligation_id: &str,
-        operation_id: &str,
-        checked: CheckedInitialOutcome,
-    ) -> Result<Effect<Snapshot>> {
-        self.check_identity(identity)?;
-        require_text(operation_id, "outcome operation")?;
-        crate::require_sha(&checked.result_digest, "result digest")?;
-        let digest = campaign_digest(&json!({"identity":identity,"expectedRevision":expected,
-            "obligationId":obligation_id,"operationId":operation_id,"episodeId":checked.episode_id,
-            "episodeRevision":checked.episode_revision,"resultDigest":checked.result_digest,
-            "builderClaimId":checked.builder_claim_id,"terminalClaimId":checked.terminal_claim_id,
-            "succeeded":checked.succeeded}))?;
-        if let Some((receipt, state)) =
-            self.replay(operation_id, "record_initial_outcome", &digest, identity)?
-        {
-            return Ok(Effect::Replayed {
-                value: state,
-                receipt,
-            });
-        }
-        let mut state = self.current(identity, expected)?;
-        let selection = state
-            .review_selection
-            .as_ref()
-            .ok_or_else(|| CampaignError::Integrity("selection absent".into()))?;
-        let specialist = selection["specialists"]
-            .as_array()
-            .and_then(|items| {
-                items
-                    .iter()
-                    .find(|item| item["obligationId"] == obligation_id)
-            })
-            .ok_or_else(|| CampaignError::Integrity("selected specialist absent".into()))?;
-        let claims = specialist["requiredClaims"]
-            .as_array()
-            .ok_or_else(|| CampaignError::Integrity("required claims absent".into()))?;
-        let selected = |boundary: &str| {
-            claims
-                .iter()
-                .find(|claim| claim["consumptionBoundary"] == boundary)
-                .and_then(|claim| claim["claimId"].as_str())
-        };
-        if selected("builder_projection") != Some(checked.builder_claim_id.as_str())
-            || selected("campaign_terminalization") != Some(checked.terminal_claim_id.as_str())
-            || checked.builder_claim_id == checked.terminal_claim_id
-        {
-            return Ok(Effect::NoEffect(
-                "checked claim pair differs from selection".into(),
-            ));
-        }
-        let request_operation_id = state
-            .obligations
-            .iter()
-            .find(|item| item.obligation_id == obligation_id && item.status == "executing")
-            .and_then(|item| item.request.as_ref())
-            .map(|request| request.operation_id.clone())
-            .ok_or_else(|| CampaignError::Conflict("executing obligation absent".into()))?;
-        let attempt = state
-            .progress
-            .attempts
-            .iter_mut()
-            .find(|attempt| attempt.preparation_operation_id == request_operation_id)
-            .ok_or_else(|| CampaignError::Integrity("active attempt absent".into()))?;
-        let intent = attempt
-            .completion_intent
-            .as_ref()
-            .ok_or_else(|| CampaignError::Conflict("completion intent absent".into()))?;
-        if attempt.outcome.is_some()
-            || intent.episode_id != checked.episode_id
-            || intent.initial_episode_revision.as_deref() != Some(checked.episode_revision.as_str())
-            || intent.result_digest.as_deref() != Some(checked.result_digest.as_str())
-        {
-            return Ok(Effect::NoEffect(
-                "checked result differs from intent".into(),
-            ));
-        }
-        attempt.outcome = Some(if checked.succeeded {
-            AttemptOutcome::Completed
-        } else {
-            AttemptOutcome::FailedWithResult
-        });
-        let obligation = state
-            .obligations
-            .iter_mut()
-            .find(|item| item.obligation_id == obligation_id && item.status == "executing")
-            .ok_or_else(|| CampaignError::Conflict("executing obligation absent".into()))?;
-        obligation.status = if checked.succeeded {
-            "completed"
-        } else {
-            "failed"
-        }
-        .into();
-        state.revision = state_revision(&state)?;
-        Ok(self.put(
-            state,
-            Some(expected.clone()),
-            operation_id,
-            "record_initial_outcome",
-            digest,
-            false,
-            None,
-        ))
     }
 }
