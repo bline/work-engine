@@ -34,6 +34,20 @@ struct ControlledContinuation {
     successor_thread: String,
 }
 
+/// Native's committed predecessor response supplies only proposed checkpoint
+/// and successor context. Thread and rehydration evidence are observed later
+/// from the actual successor session and its settled input history.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeContinuation {
+    protocol_version: u16,
+    predecessor_safe: bool,
+    source_frozen: bool,
+    checkpoint_ready: bool,
+    switch_authorized: bool,
+    successor_context: String,
+}
+
 /// The socket signal handler closes this gate without waiting for the actor.
 /// Each verifier retains its own exact child registry until drained.
 pub struct VerifierGate {
@@ -115,16 +129,57 @@ pub async fn drive_transition(
         let Some(result) = store.committed_text_for_transition(&id)? else {
             return Ok(());
         };
-        let continuation: ControlledContinuation = match serde_json::from_str(&result.final_text) {
-            Ok(value) => value,
-            Err(_) => return Ok(()),
+        let native = result.source_id.starts_with("native:");
+        let (
+            version,
+            predecessor_safe,
+            source_frozen,
+            checkpoint_ready,
+            switch_authorized,
+            successor_context,
+            supplied_thread,
+            supplied_successor,
+            supplied_rehydration,
+        ) = if native {
+            let value: NativeContinuation = match serde_json::from_str(&result.final_text) {
+                Ok(value) => value,
+                Err(_) => return Ok(()),
+            };
+            (
+                value.protocol_version,
+                value.predecessor_safe,
+                value.source_frozen,
+                value.checkpoint_ready,
+                value.switch_authorized,
+                value.successor_context,
+                None,
+                false,
+                false,
+            )
+        } else {
+            let value: ControlledContinuation = match serde_json::from_str(&result.final_text) {
+                Ok(value) => value,
+                Err(_) => return Ok(()),
+            };
+            (
+                value.protocol_version,
+                value.predecessor_safe,
+                value.source_frozen,
+                value.checkpoint_ready,
+                value.switch_authorized,
+                value.successor_context,
+                Some(value.successor_thread),
+                value.successor_observed,
+                value.rehydration_verified,
+            )
         };
-        if continuation.protocol_version != 1
-            || IdValue::parse(continuation.successor_context.clone()).is_err()
-            || IdValue::parse(continuation.successor_thread.clone()).is_err()
+        if version != 1
+            || IdValue::parse(successor_context.clone()).is_err()
+            || supplied_thread
+                .as_ref()
+                .is_some_and(|value| IdValue::parse(value.clone()).is_err())
             || !config.grants.iter().any(|grant| {
-                grant.context_generation == continuation.successor_context
-                    && grant.scope == "enqueue_input"
+                grant.context_generation == successor_context && grant.scope == "enqueue_input"
             })
         {
             return Ok(());
@@ -135,18 +190,14 @@ pub async fn drive_transition(
                 .map_err(|_| StoreError::Unavailable)
         };
         let fact = match stage {
-            TransitionStage::Quiescing if continuation.predecessor_safe => {
-                TransitionFact::PredecessorSafe {
-                    evidence: evidence("predecessor-safe")?,
-                }
-            }
-            TransitionStage::Capturing if continuation.source_frozen => {
-                TransitionFact::SourceFrozen {
-                    evidence: evidence("source-frozen")?,
-                    semantic_revision: Revision::new(snapshot.semantic_revision),
-                }
-            }
-            TransitionStage::Verifying if continuation.checkpoint_ready => {
+            TransitionStage::Quiescing if predecessor_safe => TransitionFact::PredecessorSafe {
+                evidence: evidence("predecessor-safe")?,
+            },
+            TransitionStage::Capturing if source_frozen => TransitionFact::SourceFrozen {
+                evidence: evidence("source-frozen")?,
+                semantic_revision: Revision::new(snapshot.semantic_revision),
+            },
+            TransitionStage::Verifying if checkpoint_ready => {
                 let digest = CodecContract::BinaryArtifactV1
                     .digest_binary(result.final_text.as_bytes())
                     .map_err(|_| StoreError::Unavailable)?;
@@ -176,24 +227,40 @@ pub async fn drive_transition(
                     }
                 }
             }
-            TransitionStage::Checkpointed if continuation.switch_authorized => {
+            TransitionStage::Checkpointed if switch_authorized => {
                 TransitionFact::SwitchAuthorized {
                     evidence: evidence("switch")?,
                 }
             }
-            TransitionStage::Switching if continuation.successor_observed => {
+            TransitionStage::Switching if native || supplied_successor => {
+                let context = ContextGeneration::parse(successor_context.clone())
+                    .map_err(|_| StoreError::Unavailable)?;
+                let actual_thread = if native {
+                    let Some(thread) = store.native_successor_thread(&subject, &context)? else {
+                        return Ok(());
+                    };
+                    thread
+                } else {
+                    ProviderThreadId::parse(supplied_thread.clone().ok_or(StoreError::Unavailable)?)
+                        .map_err(|_| StoreError::Unavailable)?
+                };
                 TransitionFact::SuccessorObserved {
                     evidence: evidence("successor")?,
-                    context: ContextGeneration::parse(continuation.successor_context.clone())
-                        .map_err(|_| StoreError::Unavailable)?,
-                    thread: ProviderThreadId::parse(continuation.successor_thread.clone())
-                        .map_err(|_| StoreError::Unavailable)?,
+                    context,
+                    thread: actual_thread,
                 }
             }
-            TransitionStage::Rehydrating if continuation.rehydration_verified => {
-                TransitionFact::RehydrationVerified {
-                    evidence: evidence("rehydration")?,
-                }
+            TransitionStage::Rehydrating if native || supplied_rehydration => {
+                let receipt = if native {
+                    let Some(receipt) = store.native_rehydration_receipt(&id)? else {
+                        return Ok(());
+                    };
+                    EvidenceId::parse(format!("{receipt}:rehydration"))
+                        .map_err(|_| StoreError::Unavailable)?
+                } else {
+                    evidence("rehydration")?
+                };
+                TransitionFact::RehydrationVerified { evidence: receipt }
             }
             TransitionStage::ReadyToCommit => TransitionFact::CommitSuccessor {
                 evidence: evidence("commit")?,
@@ -205,8 +272,7 @@ pub async fn drive_transition(
             .grants
             .iter()
             .find(|grant| {
-                grant.context_generation == continuation.successor_context
-                    && grant.scope == "enqueue_input"
+                grant.context_generation == successor_context && grant.scope == "enqueue_input"
             })
             .map(|grant| {
                 GrantId::parse(grant.grant_ref.clone()).map_err(|_| StoreError::Unavailable)

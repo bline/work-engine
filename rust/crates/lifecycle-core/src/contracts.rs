@@ -37,6 +37,39 @@ lifecycle_id!(StoreId);
 lifecycle_id!(ProofRunId);
 lifecycle_id!(CommandId);
 lifecycle_id!(EvidenceId);
+lifecycle_id!(NativeSessionId);
+lifecycle_id!(NativeTransportSessionId);
+lifecycle_id!(NativeItemId);
+lifecycle_id!(NativeToolCallId);
+lifecycle_id!(OperationId);
+lifecycle_id!(OperationAttemptId);
+lifecycle_id!(OperationContractId);
+lifecycle_id!(OperationImplementationId);
+lifecycle_id!(OperationExecutorId);
+lifecycle_id!(SnapshotId);
+
+/// Native turns share custody while retaining their distinct trusted purposes.
+/// The S5 service executes DomainWork; later owners may use the other purpose
+/// identities without changing the native entry and recovery format.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NativeInvocationPurpose {
+    DomainWork,
+    SemanticCompile,
+    SemanticVerify,
+    SuccessorRehydrate,
+}
+
+impl NativeInvocationPurpose {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::DomainWork => "domain_work",
+            Self::SemanticCompile => "semantic_compile",
+            Self::SemanticVerify => "semantic_verify",
+            Self::SuccessorRehydrate => "successor_rehydrate",
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(transparent)]

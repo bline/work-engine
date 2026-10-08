@@ -30,11 +30,22 @@ pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
         || config.max_wait_ms > 30_000
         || config.trusted_issuer.is_empty()
         || config.principal.principal_ref.is_empty()
-        || !matches!(config.profile.as_str(), "read_only" | "controlled")
+        || !matches!(
+            config.profile.as_str(),
+            "read_only" | "controlled" | "native_simulated"
+        )
     {
         return Err(ServiceError::Configuration);
     }
     if config.profile == "controlled" && !cfg!(feature = "controlled-proof") {
+        return Err(ServiceError::Configuration);
+    }
+    if config.profile == "native_simulated"
+        && (!cfg!(feature = "native-sim-proof") || config.native.is_none())
+    {
+        return Err(ServiceError::Configuration);
+    }
+    if config.profile != "native_simulated" && config.native.is_some() {
         return Err(ServiceError::Configuration);
     }
     if config.profile == "controlled"
@@ -167,7 +178,7 @@ async fn dispatch(
             if object.len() != 2 || !object.contains_key("command") {
                 return error(WireErrorCode::SemanticInvalidity);
             }
-            if config.profile != "controlled" {
+            if !matches!(config.profile.as_str(), "controlled" | "native_simulated") {
                 return error(WireErrorCode::UnsupportedCapability);
             }
             let Some(command) = value.get("command") else {

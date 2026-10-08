@@ -4,11 +4,13 @@ mod actor;
 mod admission;
 mod controlled;
 mod engine;
+mod operations;
 mod projection;
 mod socket;
 
 use std::path::PathBuf;
 
+use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -35,6 +37,39 @@ pub struct ServiceConfig {
     pub verifier_proof_ms: Option<u64>,
     #[serde(default)]
     pub verifier_cleanup_ms: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native: Option<NativeConfig>,
+}
+
+/// Opt-in installed-native simulated profile. The named snapshot is supplied
+/// by trusted composition; native tool arguments cannot add a path or source.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeConfig {
+    pub executable: PathBuf,
+    pub root: PathBuf,
+    pub simulator_base_url: String,
+    pub session_id: String,
+    pub invocation_id: String,
+    pub attempt_id: String,
+    pub prompt: String,
+    pub turn_grant_ref: String,
+    pub turn_grant_revision: u64,
+    pub snapshot_grant_ref: String,
+    pub snapshot_grant_revision: u64,
+    #[serde(default)]
+    pub same_native_session_required: bool,
+    #[serde(default)]
+    pub followup_turns: Vec<NativeFollowupTurn>,
+    pub snapshot: TrustedSnapshot,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeFollowupTurn {
+    pub invocation_id: String,
+    pub attempt_id: String,
+    pub prompt: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

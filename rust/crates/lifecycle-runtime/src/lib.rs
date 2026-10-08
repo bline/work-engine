@@ -6,6 +6,7 @@
 mod clock;
 mod executor;
 mod framing;
+mod native_stdio;
 mod process;
 
 use std::time::Instant;
@@ -21,6 +22,7 @@ pub use executor::{
 pub use framing::{
     BoundedFrameReader, BoundedFrameWriter, FrameDiagnosticCode, FrameDiagnostics, FrameError,
 };
+pub use native_stdio::{NativeChildExit, NativeStdio, NativeStdioError};
 pub use process::{
     ActivationState, ChildClose, ChildExit, ChildId, CloseDisposition, ProcessError,
     ProcessShutdownReport, ProcessSupervisor,

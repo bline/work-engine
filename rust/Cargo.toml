@@ -6,6 +6,7 @@ members = [
   "crates/lifecycle-store",
   "crates/lifecycle-runtime",
   "crates/lifecycle-provider",
+  "crates/lifecycle-codex",
   "crates/lifecycle-wire",
   "crates/lifecycle-client",
   "crates/lifecycle-service",

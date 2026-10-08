@@ -16,6 +16,8 @@ pub enum GrantScope {
     EnqueueInput,
     RequestReplacement,
     RequestInterruption,
+    NativeTurn,
+    SnapshotRead,
 }
 
 impl GrantScope {
@@ -24,6 +26,8 @@ impl GrantScope {
             Self::EnqueueInput => "enqueue_input",
             Self::RequestReplacement => "request_replacement",
             Self::RequestInterruption => "request_interruption",
+            Self::NativeTurn => "native_turn",
+            Self::SnapshotRead => "snapshot_read",
         }
     }
 
@@ -32,6 +36,8 @@ impl GrantScope {
             "enqueue_input" => Some(Self::EnqueueInput),
             "request_replacement" => Some(Self::RequestReplacement),
             "request_interruption" => Some(Self::RequestInterruption),
+            "native_turn" => Some(Self::NativeTurn),
+            "snapshot_read" => Some(Self::SnapshotRead),
             _ => None,
         }
     }

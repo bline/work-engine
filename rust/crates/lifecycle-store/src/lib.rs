@@ -1,10 +1,16 @@
 //! Lifecycle transaction owner. Only this crate mints an entry after a durable claim.
 
 mod artifact;
+mod native;
 mod recovery;
 mod sqlite;
 
 pub use artifact::{PublishedArtifact, StagedArtifact};
+pub use native::{
+    NativeIngressApply, NativeOperationClaim, NativeOperationEntry, NativeOperationRecovery,
+    NativeOperationResult, NativeRecovery, NativeSessionEntry, NativeTurnEntry, NativeTurnRequest,
+    SnapshotReadRequest,
+};
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use sqlite::SqliteLifecycleStore;
 

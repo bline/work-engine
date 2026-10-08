@@ -100,7 +100,7 @@ pub struct SqliteLifecycleStore {
     pub(super) connection: Connection,
     pub(super) root: PathBuf,
     _lock_file: File,
-    trusted_issuer: String,
+    pub(super) trusted_issuer: String,
     root_identity: (u64, u64),
     lock_identity: (u64, u64),
     database_identity: (u64, u64),
@@ -139,7 +139,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=2).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=3).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
         }
@@ -171,6 +171,7 @@ impl SqliteLifecycleStore {
             }
             1 => {}
             2 => {}
+            3 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -194,6 +195,16 @@ impl SqliteLifecycleStore {
             )
             .map_err(|_| StoreError::Unavailable)?;
             tx.pragma_update(None, "user_version", 2)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if version < 3 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0003_native_operation.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 3)
                 .map_err(|_| StoreError::Unavailable)?;
             tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
@@ -472,13 +483,33 @@ impl SqliteLifecycleStore {
                 // The latest entered attempt is the predecessor boundary. An
                 // older completed response cannot stand in for a newer attempt
                 // whose result is still pending or whose continuation differs.
-                let basis_source: Option<String> = tx.query_row(
+                let native_session_exists: bool = tx.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM native_sessions WHERE subject_id=?1 AND context_id=?2)",
+                    params![request.subject.as_str(),request.context.as_str()], |row| row.get(0),
+                ).map_err(|_| StoreError::Unavailable)?;
+                let controlled_basis: Option<String> = tx.query_row(
                     "SELECT o.source_id FROM observations o JOIN attempts a ON a.attempt_id=o.attempt_id JOIN effects e ON e.effect_id=a.effect_id WHERE a.attempt_id=(SELECT a2.attempt_id FROM attempts a2 JOIN effects e2 ON e2.effect_id=a2.effect_id WHERE e2.subject_id=?1 ORDER BY a2.rowid DESC LIMIT 1) AND o.applied_kind='applied' AND o.outcome='completed' AND o.settlement_kind='established' AND a.outcome='completed' AND a.settlement_kind='established' AND o.final_text IS NOT NULL ORDER BY o.rowid DESC LIMIT 1",
                     [request.subject.as_str()], |row| row.get(0),
                 ).optional().map_err(|_| StoreError::Unavailable)?;
+                let native_basis_source = if native_session_exists {
+                    let latest: Option<(String,String,String)> = tx.query_row(
+                        "SELECT t.invocation_id,t.state,t.purpose FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND s.context_id=?2 ORDER BY t.entered_wall_ms DESC,t.rowid DESC LIMIT 1",
+                        params![request.subject.as_str(),request.context.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?)),
+                    ).optional().map_err(|_| StoreError::Unavailable)?;
+                    latest.and_then(|(id, state, purpose)| {
+                        (state == "completed_settled" && purpose == "domain_work").then_some(id)
+                    })
+                } else {
+                    None
+                };
+                let basis_source = if native_session_exists {
+                    None
+                } else {
+                    controlled_basis
+                };
                 tx.execute(
-                    "INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms,basis_source) VALUES (?1,?2,?3,'quiescing',?4,?5,?6)",
-                    params![transition.as_str(), request.subject.as_str(), request.context.as_str(), to_sql_revision(reduction.next_subject.semantic_revision)?, clock.wall.get(),basis_source],
+                    "INSERT INTO transitions(transition_id,subject_id,predecessor_context,stage,basis_revision,created_wall_ms,basis_source,native_basis_source) VALUES (?1,?2,?3,'quiescing',?4,?5,?6,?7)",
+                    params![transition.as_str(), request.subject.as_str(), request.context.as_str(), to_sql_revision(reduction.next_subject.semantic_revision)?, clock.wall.get(),basis_source,native_basis_source],
                 ).map_err(classify_write_error)?;
                 tx.execute(
                     "UPDATE subjects SET revision=?1,semantic_revision=?2,owner_kind='transition',owner_ref=?3,last_wall_ms=?4 WHERE subject_id=?5 AND revision=?6",
@@ -834,6 +865,25 @@ impl SqliteLifecycleStore {
         transition: &TransitionId,
     ) -> Result<Option<CommittedTextResult>, StoreError> {
         self.verify_identity()?;
+        let native: Option<(String,String,String,Vec<u8>)> = self.connection.query_row(
+            "SELECT 'native:'||n.invocation_id,n.attempt_id,n.thread_id,n.final_text FROM transitions t \
+             JOIN native_turns n ON t.native_basis_source=n.invocation_id \
+             JOIN native_sessions s ON s.session_id=n.session_id WHERE t.transition_id=?1 \
+             AND s.subject_id=t.subject_id AND s.context_id=t.predecessor_context \
+             AND n.state='completed_settled' AND n.purpose='domain_work' AND n.final_text IS NOT NULL \
+             AND n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 JOIN native_sessions s2 ON s2.session_id=n2.session_id \
+                 WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context \
+                 ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1)",
+            [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        if let Some((source_id, attempt_id, provider_thread_id, bytes)) = native {
+            return Ok(Some(CommittedTextResult {
+                source_id,
+                attempt_id,
+                provider_thread_id,
+                final_text: String::from_utf8(bytes).map_err(|_| StoreError::Unavailable)?,
+            }));
+        }
         let row: Option<(String,String,String,Vec<u8>)> = self.connection.query_row(
             "SELECT o.source_id,o.attempt_id,o.provider_thread_id,o.final_text FROM transitions t JOIN observations o ON o.source_id=t.basis_source JOIN attempts a ON a.attempt_id=o.attempt_id JOIN effects e ON e.effect_id=o.effect_id WHERE t.transition_id=?1 AND e.subject_id=t.subject_id AND a.attempt_id=(SELECT a2.attempt_id FROM attempts a2 JOIN effects e2 ON e2.effect_id=a2.effect_id WHERE e2.subject_id=t.subject_id ORDER BY a2.rowid DESC LIMIT 1) AND o.applied_kind='applied' AND o.outcome='completed' AND o.settlement_kind='established' AND a.outcome='completed' AND a.settlement_kind='established' AND o.final_text IS NOT NULL",
             [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
@@ -961,6 +1011,54 @@ impl SqliteLifecycleStore {
             serde_json::to_string(&set.iter().copied().collect::<Vec<_>>())
                 .map_err(|_| StoreError::Unavailable)
         };
+        let native_close = {
+            let mut statement = tx.prepare(
+                "SELECT s.session_id,s.allocation_state,s.thread_id,x.outcome_kind,t.invocation_id,t.attempt_id,t.state,\
+                 (SELECT COUNT(*) FROM native_operations o WHERE o.parent_invocation_id=t.invocation_id AND o.state!='completed_settled') \
+                 FROM native_sessions s LEFT JOIN native_process_exits x ON x.session_id=s.session_id \
+                 LEFT JOIN native_turns t ON t.session_id=s.session_id WHERE s.incarnation_id=?1 AND s.subject_id=?2 \
+                 ORDER BY s.session_id,t.entered_wall_ms,t.invocation_id"
+            ).map_err(|_| StoreError::Unavailable)?;
+            let rows = statement
+                .query_map(params![incarnation.as_str(), subject.as_str()], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                        r.get::<_, Option<String>>(3)?,
+                        r.get::<_, Option<String>>(4)?,
+                        r.get::<_, Option<String>>(5)?,
+                        r.get::<_, Option<String>>(6)?,
+                        r.get::<_, i64>(7)?,
+                    ))
+                })
+                .map_err(|_| StoreError::Unavailable)?;
+            let mut values = Vec::new();
+            for row in rows {
+                let (
+                    session,
+                    allocation,
+                    thread,
+                    exit,
+                    invocation,
+                    attempt,
+                    state,
+                    unsettled_children,
+                ) = row.map_err(|_| StoreError::Unavailable)?;
+                if (exit.is_none()
+                    || allocation != "bound"
+                    || state.as_deref().is_some_and(|s| s != "completed_settled")
+                    || unsettled_children != 0)
+                    && !unsafe_at_close
+                {
+                    return Err(StoreError::Rejected);
+                }
+                values.push(serde_json::json!({"session_id":session,"allocation_state":allocation,
+                    "thread_id":thread,"process_outcome":exit,"invocation_id":invocation,
+                    "attempt_id":attempt,"turn_state":state,"unsettled_children":unsettled_children}));
+            }
+            serde_json::to_string(&values).map_err(|_| StoreError::Unavailable)?
+        };
         let actual = (
             subject.as_str().to_owned(),
             encode(&joined_set)?,
@@ -968,10 +1066,11 @@ impl SqliteLifecycleStore {
             encode(&pending_set)?,
             unsafe_at_close,
             wall.get(),
+            native_close,
         );
-        let prior:Option<(String,String,String,String,bool,i64)>=tx.query_row(
-            "SELECT subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms FROM service_closes WHERE incarnation_id=?1",
-            [incarnation.as_str()],|row|Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?)),
+        let prior:Option<(String,String,String,String,bool,i64,String)>=tx.query_row(
+            "SELECT subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms,native_close_json FROM service_closes WHERE incarnation_id=?1",
+            [incarnation.as_str()],|row|Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?)),
         ).optional().map_err(|_|StoreError::Unavailable)?;
         if let Some(prior) = prior {
             return if prior == actual {
@@ -980,8 +1079,8 @@ impl SqliteLifecycleStore {
                 Err(StoreError::ClaimConflict)
             };
         }
-        tx.execute("INSERT INTO service_closes(incarnation_id,subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7)",
-            params![incarnation.as_str(),actual.0,actual.1,actual.2,actual.3,actual.4,actual.5],
+        tx.execute("INSERT INTO service_closes(incarnation_id,subject_id,joined_json,unresolved_json,pending_results_json,unsafe_at_close,wall_ms,native_close_json) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            params![incarnation.as_str(),actual.0,actual.1,actual.2,actual.3,actual.4,actual.5,actual.6],
         ).map_err(|_|StoreError::Unavailable)?;
         tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'service_closed',?2,?3)",
             params![subject.as_str(),incarnation.as_str(),wall.get()],
@@ -1002,7 +1101,8 @@ impl SqliteLifecycleStore {
         self.verify_identity()?;
         self.connection
             .query_row(
-                "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1",
+                "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1 \
+                 UNION ALL SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM native_verifier_results WHERE transition_id=?1",
                 [transition.as_str()],
                 |row| Ok(VerifierReport {
                     source_id:row.get(0)?,activation:row.get(1)?,disposition:row.get(2)?,primary_error:row.get(3)?,
@@ -1032,15 +1132,17 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
+        let native = source.as_str().starts_with("native:");
         let subject: String = tx
             .query_row(
-                "SELECT subject_id FROM transitions WHERE transition_id=?1 AND basis_source=?2",
+                "SELECT subject_id FROM transitions WHERE transition_id=?1 AND (basis_source=?2 OR 'native:'||native_basis_source=?2)",
                 params![transition.as_str(), source.as_str()],
                 |row| row.get(0),
             )
             .map_err(|_| StoreError::ObservationMismatch)?;
         let prior:Option<VerifierResultRow>=tx.query_row(
-            "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1",
+            "SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM verifier_results WHERE transition_id=?1 \
+             UNION ALL SELECT source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close FROM native_verifier_results WHERE transition_id=?1",
             [transition.as_str()],|row|Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?)),
         ).optional().map_err(|_|StoreError::Unavailable)?;
         if let Some(prior) = prior {
@@ -1060,9 +1162,26 @@ impl SqliteLifecycleStore {
             }
             return Err(StoreError::ClaimConflict);
         }
-        tx.execute("INSERT INTO verifier_results(transition_id,source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
-            params![transition.as_str(),source.as_str(),activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close],
-        ).map_err(|_|StoreError::Unavailable)?;
+        let insert = if native {
+            "INSERT INTO native_verifier_results(transition_id,source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)"
+        } else {
+            "INSERT INTO verifier_results(transition_id,source_id,activation,disposition,primary_error,exit_code,exit_success,unsafe_at_close,late_at_close) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)"
+        };
+        tx.execute(
+            insert,
+            params![
+                transition.as_str(),
+                source.as_str(),
+                activation,
+                disposition,
+                primary_error,
+                exit_code,
+                exit_success,
+                unsafe_at_close,
+                late_at_close
+            ],
+        )
+        .map_err(|_| StoreError::Unavailable)?;
         tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'verifier_resolved',?2,?3)",
             params![subject,transition.as_str(),wall.get()],
         ).map_err(|_|StoreError::Unavailable)?;
@@ -1348,6 +1467,43 @@ impl SqliteLifecycleStore {
         if already_seen != 0 {
             return Err(StoreError::ClaimConflict);
         }
+        let native_basis: bool = tx
+            .query_row(
+                "SELECT native_basis_source IS NOT NULL FROM transitions WHERE transition_id=?1",
+                [transition.as_str()],
+                |row| row.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if native_basis {
+            match &fact {
+                TransitionFact::SuccessorObserved {
+                    context, thread, ..
+                } => {
+                    let observed: bool = tx.query_row(
+                        "SELECT EXISTS(SELECT 1 FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND thread_id=?3 AND allocation_state='bound')",
+                        params![subject.subject.as_str(),context.as_str(),thread.as_str()], |row| row.get(0),
+                    ).map_err(|_|StoreError::Unavailable)?;
+                    if !observed {
+                        return Err(StoreError::Rejected);
+                    }
+                }
+                TransitionFact::RehydrationVerified { evidence } => {
+                    let receipt: bool = tx.query_row(
+                        "SELECT EXISTS(SELECT 1 FROM transitions tr JOIN native_turns p ON tr.native_basis_source=p.invocation_id \
+                         JOIN native_sessions s ON s.subject_id=tr.subject_id AND s.context_id=tr.successor_context \
+                         JOIN native_turns r ON r.session_id=s.session_id AND r.thread_id=tr.successor_thread \
+                         WHERE tr.transition_id=?1 AND r.purpose='successor_rehydrate' AND r.state='completed_settled' \
+                         AND r.prompt=p.final_text AND r.history_status='observed_complete' \
+                         AND ?2='native:'||r.invocation_id||':rehydration')",
+                        params![transition.as_str(),evidence.as_str()], |row| row.get(0),
+                    ).map_err(|_|StoreError::Unavailable)?;
+                    if !receipt {
+                        return Err(StoreError::Rejected);
+                    }
+                }
+                _ => {}
+            }
+        }
         let next = reduce_transition(&current, fact.clone()).map_err(|_| StoreError::Rejected)?;
         match next.stage {
             TransitionStage::Reconciled => {
@@ -1359,7 +1515,13 @@ impl SqliteLifecycleStore {
                     "SELECT COUNT(*) FROM inputs WHERE subject_id=?1 AND state IN ('entered','failed_blocked','unknown')",
                     [subject.subject.as_str()], |row| row.get(0),
                 ).map_err(|_| StoreError::Unavailable)?;
-                if unresolved != 0 || blocked != 0 {
+                let native_unresolved: i64 = tx.query_row(
+                    "SELECT (SELECT COUNT(*) FROM native_sessions WHERE subject_id=?1 AND allocation_state!='bound') + \
+                     (SELECT COUNT(*) FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND t.state!='completed_settled') + \
+                     (SELECT COUNT(*) FROM native_operations o JOIN native_turns t ON t.invocation_id=o.parent_invocation_id JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND o.state!='completed_settled')",
+                    [subject.subject.as_str()], |row| row.get(0),
+                ).map_err(|_|StoreError::Unavailable)?;
+                if unresolved != 0 || blocked != 0 || native_unresolved != 0 {
                     return Err(StoreError::Rejected);
                 }
                 let pending: i64 = tx.query_row(
@@ -1553,7 +1715,7 @@ fn classify_write_error(error: rusqlite::Error) -> StoreError {
     }
 }
 
-fn fence_subject(
+pub(super) fn fence_subject(
     tx: &Transaction<'_>,
     subject: &str,
     source: &str,

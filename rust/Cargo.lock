@@ -472,6 +472,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifecycle-codex"
+version = "0.1.0"
+dependencies = [
+ "lifecycle-runtime",
+ "lifecycle-wire",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "lifecycle-core"
 version = "0.1.0"
 dependencies = [
@@ -511,6 +524,7 @@ version = "0.1.0"
 dependencies = [
  "getrandom 0.3.4",
  "lifecycle-client",
+ "lifecycle-codex",
  "lifecycle-core",
  "lifecycle-provider",
  "lifecycle-runtime",

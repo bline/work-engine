@@ -81,6 +81,59 @@ impl SqliteLifecycleStore {
                 disposition,
             });
         }
+        let mut sessions = self.connection.prepare(
+            "SELECT session_id,incarnation_id,allocation_state FROM native_sessions ORDER BY created_wall_ms,session_id"
+        ).map_err(|_| StoreError::Unavailable)?;
+        let sessions = sessions
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        for session in sessions {
+            let (id, incarnation, state) = session.map_err(|_| StoreError::Unavailable)?;
+            entries.push(RecoveryEntry {
+                input_id: format!("native_session:{id}"),
+                effect_id: id,
+                attempt_id: None,
+                incarnation_id: Some(incarnation),
+                disposition: match state.as_str() {
+                    "intent" => RecoveryDisposition::EnteredUncertain,
+                    "bound" => RecoveryDisposition::CompletedSettled,
+                    _ => RecoveryDisposition::BlockedOrConflicted,
+                },
+            });
+        }
+        let mut turns = self.connection.prepare(
+            "SELECT invocation_id,attempt_id,s.incarnation_id,t.state FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id ORDER BY t.entered_wall_ms,t.invocation_id"
+        ).map_err(|_| StoreError::Unavailable)?;
+        let turns = turns
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                ))
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        for turn in turns {
+            let (id, attempt, incarnation, state) = turn.map_err(|_| StoreError::Unavailable)?;
+            entries.push(RecoveryEntry {
+                input_id: format!("native_turn:{id}"),
+                effect_id: id,
+                attempt_id: Some(attempt),
+                incarnation_id: Some(incarnation),
+                disposition: match state.as_str() {
+                    "completed_settled" => RecoveryDisposition::CompletedSettled,
+                    "entered_uncertain" => RecoveryDisposition::EnteredUncertain,
+                    _ => RecoveryDisposition::BlockedOrConflicted,
+                },
+            });
+        }
         Ok(entries)
     }
     /// Validate one coherent database view before exposing new admission.
@@ -92,6 +145,15 @@ impl SqliteLifecycleStore {
         let unresolved_attempts = count(
             &self.connection,
             "SELECT COUNT(*) FROM attempts WHERE settlement_kind='unresolved' OR settlement_kind='conflict'",
+        )? + count(
+            &self.connection,
+            "SELECT COUNT(*) FROM native_sessions WHERE allocation_state!='bound'",
+        )? + count(
+            &self.connection,
+            "SELECT COUNT(*) FROM native_turns WHERE state!='completed_settled'",
+        )? + count(
+            &self.connection,
+            "SELECT COUNT(*) FROM native_operations WHERE state!='completed_settled'",
         )?;
         let journal_cursor = count(
             &self.connection,
@@ -128,7 +190,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if version != 2 {
+        if !matches!(version, 2 | 3) {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -137,7 +199,20 @@ impl SqliteLifecycleStore {
             unresolved_attempts: count(
                 &inspection,
                 "SELECT COUNT(*) FROM attempts WHERE settlement_kind='unresolved' OR settlement_kind='conflict'",
-            )?,
+            )? + if version == 3 {
+                count(
+                    &inspection,
+                    "SELECT COUNT(*) FROM native_sessions WHERE allocation_state!='bound'",
+                )? + count(
+                    &inspection,
+                    "SELECT COUNT(*) FROM native_turns WHERE state!='completed_settled'",
+                )? + count(
+                    &inspection,
+                    "SELECT COUNT(*) FROM native_operations WHERE state!='completed_settled'",
+                )?
+            } else {
+                0
+            },
             journal_cursor: count(&inspection, "SELECT COALESCE(MAX(sequence),0) FROM journal")?,
         })
     }
@@ -172,7 +247,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if version != 2 {
+    if !matches!(version, 2 | 3) {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -215,6 +290,25 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         connection,
         "SELECT COUNT(*) FROM verifier_results v JOIN transitions t ON t.transition_id=v.transition_id WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
     )?;
+    let native_mismatch = if version == 3 {
+        count(
+            connection,
+            "SELECT COUNT(*) FROM transitions t JOIN native_turns n ON n.invocation_id=t.native_basis_source \
+             JOIN native_sessions s ON s.session_id=n.session_id WHERE s.subject_id!=t.subject_id OR \
+             s.context_id!=t.predecessor_context OR n.state!='completed_settled' OR n.purpose!='domain_work'",
+        )? + count(
+            connection,
+            "SELECT COUNT(*) FROM native_verifier_results v JOIN transitions t ON t.transition_id=v.transition_id \
+                 WHERE v.source_id!='native:'||t.native_basis_source OR NOT EXISTS \
+                 (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
+        )? + count(
+            connection,
+            "SELECT COUNT(*) FROM native_turns WHERE state='completed_settled' AND \
+                 (final_text IS NULL OR final_sha256 IS NULL OR turn_id IS NULL OR history_transport_session IS NULL OR history_sequence IS NULL)",
+        )?
+    } else {
+        0
+    };
     if effect_mismatch != 0
         || input_mismatch != 0
         || command_mismatch != 0
@@ -223,6 +317,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         || missing_artifact_journal != 0
         || missing_task_result_journal != 0
         || missing_verifier_journal != 0
+        || native_mismatch != 0
     {
         return Err(StoreError::Unavailable);
     }

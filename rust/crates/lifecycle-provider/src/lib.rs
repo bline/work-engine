@@ -11,6 +11,8 @@ use thiserror::Error;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperationProfile {
     ControlledText,
+    NativeText,
+    NativeSnapshotRead,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

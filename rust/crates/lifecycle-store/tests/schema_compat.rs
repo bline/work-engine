@@ -11,7 +11,7 @@ fn incompatible_future_store_is_refused_before_database_mutation() {
     let root = tempdir().unwrap();
     let database = root.path().join("lifecycle.sqlite");
     let conn = rusqlite::Connection::open(&database).unwrap();
-    conn.pragma_update(None, "user_version", 3).unwrap();
+    conn.pragma_update(None, "user_version", 4).unwrap();
     drop(conn);
     let before = fs::read(&database).unwrap();
     assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_err());
