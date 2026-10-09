@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "baseline_id": "pure-codex-20261009",
+  "recorded": "2026-10-09",
+  "development_host": "pure Codex CLI/VS Code (multi_agent v2 root + sub-agents); no Work Engine runtime involved",
+  "source_data": {
+    "codex_logs": "~/.codex/sessions and ~/.codex/archived_sessions rollout-*.jsonl (rate_limits + token_count + turn_context + session_meta)",
+    "git": "work-engine, geobridge, site2json local branches (refs/heads only; --all double-counts checkpoint refs)",
+    "staging": "~/.local/state/work-engine/*-20261007|20261008"
+  },
+  "units": {
+    "plus_unit": "1% of a 1x ChatGPT Plus weekly Codex quota. prolite=5x (verified: gpt-5.6-sol tokens/unit equal on plus and prolite), pro=10x (user-stated, unverified)",
+    "weighted_tokens": "uncached_input + cached_input/10 + 5*output (assumed price ratios, not fitted separately)"
+  },
+  "quota_price": {
+    "fit": "daily plus_units ~ a*weighted_tokens(gpt-5.6-sol) + b*weighted_tokens(gpt-6-*), no intercept, 53 days, R2=0.92",
+    "plus_units_per_M_weighted_tokens": {
+      "gpt-5.6-sol": 4.381,
+      "gpt-6": 7.826
+    },
+    "gpt6_to_gpt56_price_ratio": 1.79
+  },
+  "eras": {
+    "gpt-5.6-sol_prolite_2026-08-13_to_10-01": {
+      "all_repos": {
+        "plus_units": 5208,
+        "tokens_B": 8.31,
+        "Mtok_per_unit": 1.68,
+        "output_Ktok_per_unit": 5.0,
+        "code_lines_per_100_units": 3117,
+        "code_lines_per_B_tokens": 19545
+      }
+    },
+    "gpt-6_pro_2026-10-03_to_10-08": {
+      "all_repos": {
+        "plus_units": 4155,
+        "tokens_B": 4.07,
+        "Mtok_per_unit": 0.99,
+        "output_Ktok_per_unit": 2.7,
+        "code_lines_per_100_units": 2242,
+        "code_lines_per_B_tokens": 22876
+      }
+    },
+    "work_engine_only": {
+      "python_node_buildout_W34-W37_gpt-5.6-sol": {
+        "plus_units": 3613,
+        "code_lines": 88756,
+        "test_share": 0.38,
+        "md_lines": 108026,
+        "code_per_unit": 25,
+        "code_plus_md_per_unit": 54
+      },
+      "node_migration_W38-W40_mostly_gpt-5.6-sol": {
+        "plus_units": 1779,
+        "code_lines": 30141,
+        "test_share": 0.47,
+        "md_lines": 32750,
+        "code_per_unit": 17,
+        "code_plus_md_per_unit": 35
+      },
+      "rust_W41_gpt-6": {
+        "plus_units": 3465,
+        "code_lines": 83726,
+        "test_share": 0.38,
+        "md_lines": 9112,
+        "code_per_unit": 24,
+        "code_per_unit_incl_uncommitted": 28,
+        "code_plus_md_per_unit": 27
+      }
+    }
+  },
+  "quota_resets_rust_period": [
+    {
+      "window_start": "2026-10-06T21:29-06:00",
+      "hit_99pct": "2026-10-07T11:50-06:00"
+    },
+    {
+      "window_start": "2026-10-07T11:56-06:00",
+      "hit_99pct": "2026-10-07T20:25-06:00"
+    },
+    {
+      "window_start": "2026-10-07T20:30-06:00",
+      "hit_99pct": "2026-10-08T17:49-06:00",
+      "resets_at": "2026-10-14T20:29-06:00"
+    }
+  ],
+  "spend_breakdown_2026-10-05_to_10-09": {
+    "sessions": 121,
+    "model_calls": 26035,
+    "estimated_plus_units": 3528,
+    "observed_plus_units": 3465,
+    "by_role_units": {
+      "build_integrate": 1759,
+      "root_orchestrator": 814,
+      "node_era_work": 574,
+      "review": 218,
+      "planning_diagnosis": 131,
+      "ui": 31
+    },
+    "by_activity_share": {
+      "read_inspect": 0.32,
+      "coordinate_agents": 0.24,
+      "edit_code": 0.22,
+      "verify_gate": 0.11,
+      "board_claim_coordination": 0.06,
+      "respond_reason": 0.03,
+      "write_docs": 0.03
+    },
+    "cost_drivers": {
+      "avg_context_tokens_per_call": {
+        "root": 144000,
+        "sub_agent": 126000
+      },
+      "cached_input_share_of_cost": {
+        "root": 0.71,
+        "sub_agent": 0.75
+      },
+      "pure_polling": {
+        "calls": 3320,
+        "plus_units": 380,
+        "root_share_of_root_spend": 0.24
+      },
+      "startup_doc_read_units": 201,
+      "pre_first_edit_share": {
+        "root": 0.44,
+        "sub_agent": 0.16
+      }
+    },
+    "per_slice": [
+      {
+        "slice": "lifecycle S0-S3",
+        "plus_units": 355,
+        "rs_lines": 11403,
+        "units_per_krs": 31,
+        "accepted": true
+      },
+      {
+        "slice": "lifecycle S4",
+        "plus_units": 150,
+        "rs_lines": 5492,
+        "units_per_krs": 27,
+        "accepted": true
+      },
+      {
+        "slice": "lifecycle S5",
+        "plus_units": 212,
+        "rs_lines": 5236,
+        "units_per_krs": 40,
+        "accepted": true
+      },
+      {
+        "slice": "lifecycle S6/S7",
+        "plus_units": 368,
+        "rs_lines": 14873,
+        "units_per_krs": 25,
+        "accepted": true
+      },
+      {
+        "slice": "lifecycle S8",
+        "plus_units": 316,
+        "rs_lines_approx": 8500,
+        "accepted": false,
+        "note": "stopped at quota exhaustion before final gate; 0/21 acceptance rows closed"
+      },
+      {
+        "slice": "domain libraries (compiler, review-episode, claims, campaign, J1/E1, ER1/P1, HP planning)",
+        "plus_units": 687,
+        "rs_lines": 43296,
+        "units_per_krs": 16,
+        "accepted": true
+      }
+    ],
+    "orchestrator_overhead_on_top_of_slices": 0.25
+  },
+  "caveats": [
+    "Lines added are a crude work proxy; Rust is more verbose and re-implemented already-designed contracts.",
+    "Only ~6 days of gpt-6/pro data; two days dominate.",
+    "Activity classification is heuristic (tool-call text); multi-tool calls split cost evenly.",
+    "Cached/output price ratios are assumed; per-call unit costs are model-estimated, not billed.",
+    "Quality figures cover the Rust period only; Node-era quality is in docs/ai-workflow-metrics.jsonl and metrics/*.jsonl but uses a different record schema."
+  ],
+  "quality_rust_period": {
+    "source": "accepted-checkpoint candidate_attempt fields in ~/.local/state/work-engine/rust-*; finding counts as stated in docs/rust-*-validation.md, *-result.md and commit messages. null = not stated in a reliable record.",
+    "per_slice": [
+      {
+        "slice": "lifecycle S1",
+        "accepted_candidate": 3,
+        "review_findings_resolved": 9
+      },
+      {
+        "slice": "lifecycle S2",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 6
+      },
+      {
+        "slice": "lifecycle S3",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 4
+      },
+      {
+        "slice": "lifecycle S4",
+        "accepted_candidate": 3,
+        "review_findings_resolved": null
+      },
+      {
+        "slice": "lifecycle S5",
+        "accepted_candidate": 5,
+        "review_findings_resolved": null,
+        "note": "second xhigh-effort builder run"
+      },
+      {
+        "slice": "lifecycle S6/S7",
+        "accepted_candidate": 4,
+        "review_findings_resolved": 9,
+        "contract_freeze_revisions": 14
+      },
+      {
+        "slice": "lifecycle S8",
+        "accepted_candidate": null,
+        "admission_contract_revisions": 11,
+        "note": "not accepted; early installed-host evidence invalidated by feature-attestation finding"
+      },
+      {
+        "slice": "compiler C2 + review-episode R2",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 6
+      },
+      {
+        "slice": "C3/R3 + HOST qualification",
+        "accepted_candidate": 4,
+        "review_findings_resolved": null,
+        "note": "functional gates passed; HOST responsiveness gate FAILED (p99 143 ms vs 50 ms)"
+      },
+      {
+        "slice": "HP1",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 2
+      },
+      {
+        "slice": "CE1/SC0",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 6
+      },
+      {
+        "slice": "SC1/CE2",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 7
+      },
+      {
+        "slice": "CE3/SC2",
+        "accepted_candidate": 3,
+        "review_findings_resolved": 10,
+        "note": "first remediation closed 7 findings but introduced 3 new defects"
+      },
+      {
+        "slice": "J1/E1",
+        "accepted_candidate": 3,
+        "review_findings_resolved": 5
+      },
+      {
+        "slice": "ER1/P1",
+        "accepted_candidate": 2,
+        "review_findings_resolved": 2,
+        "note": "plus one lint-fix cycle"
+      }
+    ],
+    "summary": {
+      "accepted_slices_with_candidate_data": 14,
+      "mean_accepted_candidate": 2.8,
+      "first_candidate_accepted": 0,
+      "stated_findings_resolved_total": 66,
+      "slices_with_stated_findings": 11,
+      "mean_findings_per_slice_where_stated": 6.0,
+      "known_failed_gates": [
+        "C3/R3 HOST responsiveness"
+      ],
+      "unaccepted_in_progress": [
+        "lifecycle S8"
+      ]
+    },
+    "caveat": "Automated scans of staging JSON double-count findings repeated across files (see scripts/quality.py output); the stated counts above are the reliable figures."
+  }
+}
