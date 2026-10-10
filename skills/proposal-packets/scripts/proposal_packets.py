@@ -4,18 +4,31 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import contextlib
+import fcntl
+import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, NamedTuple
 
 
 SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "proposal-packet-v1.schema.json"
 SCHEMA = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-DECISION_SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "proposal-decision-v1.schema.json"
-DECISION_SCHEMA = json.loads(DECISION_SCHEMA_PATH.read_text(encoding="utf-8"))
+DECISION_SCHEMAS = {
+    version: json.loads((Path(__file__).parents[1] / "schemas" /
+                         f"proposal-decision-v{version}.schema.json").read_text(encoding="utf-8"))
+    for version in (1, 2)
+}
+HISTORY_DIRECTORY = "decision-history"
+# Transition locks and journals are local coordination state, kept out of the
+# working tree in the repository's per-worktree Git directory.
+TRANSITION_DIRECTORY = "proposal-packets/transitions"
 SCHEMA_VERSION = SCHEMA["properties"]["schema_version"]["const"]
 PROPOSAL_ID = re.compile(SCHEMA["properties"]["proposal_id"]["pattern"])
 LIFECYCLE_STATES = set(SCHEMA["properties"]["lifecycle_state"]["enum"])
@@ -70,8 +83,9 @@ def schema_keys(definition: str | None = None) -> set[str]:
     return required
 
 
-def decision_schema_keys(definition: str | None = None) -> set[str]:
-    node = DECISION_SCHEMA if definition is None else DECISION_SCHEMA["$defs"][definition]
+def decision_schema_keys(definition: str | None = None, version: int = 1) -> set[str]:
+    schema = DECISION_SCHEMAS[version]
+    node = schema if definition is None else schema["$defs"][definition]
     require(node.get("additionalProperties") is False,
             f"decision schema definition {definition or 'decision record'} must remain closed")
     required = set(node["required"])
@@ -90,6 +104,33 @@ def resolve_local(packet_dir: Path, repository_root: Path, value: Any, path: str
         raise PacketError(f"{path} escapes the packet repository") from error
     require(resolved.is_file(), f"{path} does not resolve to a file")
     return resolved
+
+
+def packet_manifest(manifest_path: Path, repository_root: Path) -> Path:
+    """Locate a packet.json inside the repository without following any link.
+
+    Paths are checked component by component below the repository root before
+    anything is resolved, so a symlinked manifest or packet directory cannot
+    redirect validation, transition or recovery to files outside the repository.
+    """
+    require(".." not in manifest_path.parts, f"{manifest_path} must not traverse parent directories")
+    root = repository_root.resolve()
+    candidate = Path(os.path.abspath(manifest_path))
+    relative = None
+    for base in (root, Path(os.path.abspath(repository_root))):
+        with contextlib.suppress(ValueError):
+            relative = candidate.relative_to(base)
+            break
+    require(relative is not None and relative.parts != (),
+            f"{manifest_path} is outside the packet repository")
+    require(relative.name == "packet.json", f"{manifest_path} is not a packet.json manifest")
+    path = root
+    for part in relative.parts:
+        path = path / part
+        require(not path.is_symlink(),
+                f"{path.relative_to(root)} must not be a symbolic link")
+    require(path.is_file(), f"{manifest_path} is not a file")
+    return path
 
 
 def load_packet(manifest_path: Path, repository_root: Path) -> Packet:
@@ -156,39 +197,58 @@ def load_decision(decision_path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as error:
         raise PacketError(f"cannot read {decision_path}: {error}") from error
     decision = obj(decision, str(decision_path))
-    exact_keys(decision, decision_schema_keys(), "decision record")
-    require(decision["schema_version"] == DECISION_SCHEMA["properties"]["schema_version"]["const"],
-            "decision record schema_version is invalid")
+    version = decision.get("schema_version")
+    require(version in DECISION_SCHEMAS, "decision record schema_version is invalid")
+    schema = DECISION_SCHEMAS[version]
+    exact_keys(decision, decision_schema_keys(version=version), "decision record")
     require(bool(PROPOSAL_ID.fullmatch(text(decision["proposal_id"], "decision.proposal_id"))),
             "decision.proposal_id has an invalid stable-ID shape")
 
     for section in ("source", "decision", "authority", "constraints"):
         value = obj(decision[section], f"decision.{section}")
-        exact_keys(value, decision_schema_keys(section), f"decision.{section}")
+        exact_keys(value, decision_schema_keys(section, version), f"decision.{section}")
 
     source = decision["source"]
     require(bool(re.fullmatch(r"[0-9a-f]{40}", text(source["repository_revision"],
                                                         "decision.source.repository_revision"))),
             "decision.source.repository_revision must be a full Git object ID")
     require(source["lifecycle_state"] in
-            DECISION_SCHEMA["$defs"]["source"]["properties"]["lifecycle_state"]["enum"],
+            schema["$defs"]["source"]["properties"]["lifecycle_state"]["enum"],
             "decision.source.lifecycle_state is invalid")
     require(source["placement_state"] in PLACEMENT_STATES,
             "decision.source.placement_state is invalid")
 
     outcome = decision["decision"]
     require(outcome["disposition"] in
-            DECISION_SCHEMA["$defs"]["decision"]["properties"]["disposition"]["enum"],
+            schema["$defs"]["decision"]["properties"]["disposition"]["enum"],
             "decision.disposition is invalid")
     require(outcome["lifecycle_state"] == "decided", "decision.lifecycle_state must be decided")
     require(outcome["placement_state"] in ("uncertain", "probable"),
             "decision.placement_state must remain conditional")
+    # A placement revision leaves the decided disposition in force and may
+    # move placement between the conditional states; first decisions pin it.
     expected_placement = {
         "defer_for_dogfooding": "uncertain",
         "approve_proposal_meaning": "probable",
-    }[outcome["disposition"]]
-    require(outcome["placement_state"] == expected_placement,
+    }.get(outcome["disposition"])
+    require(expected_placement is None or outcome["placement_state"] == expected_placement,
             "decision disposition and placement state are inconsistent")
+    revision = outcome["disposition"] == "revise_placement"
+    require(revision == (source["lifecycle_state"] == "decided"),
+            "only a placement revision may start from a decided proposal")
+    if version >= 2:
+        supersedes = decision["supersedes"]
+        require((supersedes is not None) == revision,
+                "a placement revision, and only a placement revision, supersedes a prior decision")
+        if supersedes is not None:
+            supersedes = obj(supersedes, "decision.supersedes")
+            exact_keys(supersedes, decision_schema_keys("supersession", version), "decision.supersedes")
+            require(bool(re.fullmatch(rf"{HISTORY_DIRECTORY}/[A-Za-z0-9._-]+\.json",
+                                      text(supersedes["path"], "decision.supersedes.path"))),
+                    "decision.supersedes.path must name a decision-history record")
+            require(bool(re.fullmatch(r"[0-9a-f]{64}",
+                                      text(supersedes["sha256"], "decision.supersedes.sha256"))),
+                    "decision.supersedes.sha256 must be a SHA-256 digest")
     text(outcome["placement_claim"], "decision.placement_claim")
     text(outcome["rationale"], "decision.rationale")
     conditions = array(outcome["reopening_conditions"], "decision.reopening_conditions")
@@ -230,36 +290,217 @@ def validate_decision_binding(packet: Packet, decision: dict[str, Any], *, trans
                 "decision source placement is stale")
 
 
-def transition_packet(manifest_path: Path, decision_input_path: Path,
-                      repository_root: Path) -> Path:
-    packet = load_packet(manifest_path, repository_root)
-    decision = load_decision(decision_input_path)
-    validate_decision_binding(packet, decision, transitioned=False)
+def git_output(repository_root: Path, *args: str) -> str:
     try:
-        revision = subprocess.run(
-            ["git", "-C", str(repository_root), "rev-parse", "HEAD"],
+        return subprocess.run(
+            ["git", "-C", str(repository_root), *args],
             check=True, capture_output=True, text=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:
-        raise PacketError("packet repository must have a readable Git HEAD") from error
-    require(revision == decision["source"]["repository_revision"],
-            "decision source repository revision is stale")
+        raise PacketError(f"git {' '.join(args)} failed for {repository_root}") from error
+
+
+def transition_paths(transition_directory: Path, packet_dir: Path) -> tuple[Path, Path]:
+    key = hashlib.sha256(str(packet_dir.resolve()).encode("utf-8")).hexdigest()[:32]
+    return transition_directory / f"{key}.lock", transition_directory / f"{key}.json"
+
+
+def transition_directory(repository_root: Path) -> Path:
+    return Path(git_output(repository_root, "rev-parse", "--path-format=absolute",
+                           "--git-path", TRANSITION_DIRECTORY))
+
+
+@contextlib.contextmanager
+def transition_lock(lock_path: Path):
+    """Serialize every read-validate-write sequence on one packet."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise PacketError("another decision transition holds this packet's lock") from error
+        yield
+    finally:
+        os.close(descriptor)
+
+
+def packet_target(packet_dir: Path, relative: str) -> Path:
+    """Resolve a transition write target without following links out of the packet."""
+    require(bool(re.fullmatch(rf"packet\.json|decision\.json|{HISTORY_DIRECTORY}/[A-Za-z0-9._-]+\.json",
+                              relative)),
+            f"transition target {relative} is not a packet record")
+    target = packet_dir / relative
+    for path in {target.parent, target}:
+        require(not path.is_symlink(), f"{path.relative_to(packet_dir)} must not be a symbolic link")
+    return target
+
+
+def fsync_directory(directory: Path) -> None:
+    descriptor = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def atomic_write(target: Path, content: bytes) -> None:
+    """Replace one file by rename so readers see its old or new bytes, never a mixture."""
+    target.parent.mkdir(exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.",
+                                             suffix=".tmp")
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, target)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(temporary)
+        raise
+    fsync_directory(target.parent)
+
+
+def digest(path: Path) -> str | None:
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+
+
+def apply_journal(journal: dict[str, Any]) -> None:
+    """Roll a journaled transition forward; each write is idempotent and compare-guarded."""
+    packet_dir = Path(journal["packet_dir"])
+    for write in journal["writes"]:
+        target = packet_target(packet_dir, write["path"])
+        after = base64.b64decode(write["after"])
+        current = digest(target)
+        if current == hashlib.sha256(after).hexdigest():
+            continue
+        require(current == write["before_sha256"],
+                f"{write['path']} changed after the transition was journaled; resolve it by hand")
+        atomic_write(target, after)
+
+
+def complete_transition(manifest_path: Path, repository_root: Path,
+                        journal_path: Path, journal: dict[str, Any]) -> Path:
+    apply_journal(journal)
     destination = manifest_path.parent / "decision.json"
-    require(not destination.exists(), "packet already has a decision record")
-
-    transitioned = dict(packet.manifest)
-    transitioned["placement"] = dict(transitioned["placement"])
-    transitioned["uncertainty"] = dict(transitioned["uncertainty"])
-    transitioned["lifecycle_state"] = decision["decision"]["lifecycle_state"]
-    transitioned["placement"]["state"] = decision["decision"]["placement_state"]
-    transitioned["placement"]["claim"] = decision["decision"]["placement_claim"]
-    transitioned["uncertainty"]["reopening_conditions"] = decision["decision"]["reopening_conditions"]
-
-    manifest_path.write_text(json.dumps(transitioned, indent=2) + "\n", encoding="utf-8")
-    destination.write_text(json.dumps(decision, indent=2) + "\n", encoding="utf-8")
-    validate_decision_binding(load_packet(manifest_path, repository_root),
-                              load_decision(destination), transitioned=True)
+    decision = load_decision(destination)
+    validate_decision_binding(load_packet(manifest_path, repository_root), decision, transitioned=True)
+    validate_decision_history(manifest_path.parent, decision)
+    journal_path.unlink()
+    fsync_directory(journal_path.parent)
     return destination
+
+
+def transition_packet(manifest_path: Path, decision_input_path: Path,
+                      repository_root: Path) -> Path:
+    """Apply an authority decision as one recoverable transaction.
+
+    Every check runs under the packet's transition lock. The complete post-state
+    is journaled before any packet file changes, so an interruption leaves a
+    pending journal that validation reports and recover_transition rolls forward.
+    """
+    manifest_path = packet_manifest(manifest_path, repository_root)
+    packet_dir = manifest_path.parent
+    lock_path, journal_path = transition_paths(transition_directory(repository_root), packet_dir)
+    with transition_lock(lock_path):
+        require(not journal_path.exists(),
+                "an interrupted transition is pending for this packet; run recover first")
+        packet = load_packet(manifest_path, repository_root)
+        decision = load_decision(decision_input_path)
+        validate_decision_binding(packet, decision, transitioned=False)
+        require(git_output(repository_root, "rev-parse", "HEAD") ==
+                decision["source"]["repository_revision"],
+                "decision source repository revision is stale")
+        destination = packet_target(packet_dir, "decision.json")
+        writes: list[tuple[str, bytes]] = []
+        if decision["source"]["lifecycle_state"] == "decided":
+            # The prior record must be the packet's current, valid decision. Its
+            # exact bytes move to decision-history so the revision cannot erase
+            # what was decided before or by whose authority.
+            require(destination.is_file(), "a placement revision needs the packet's current decision")
+            prior_bytes = destination.read_bytes()
+            prior = load_decision(destination)
+            validate_decision_binding(packet, prior, transitioned=True)
+            validate_decision_history(packet_dir, prior)
+            require(decision["source"]["placement_state"] == prior["decision"]["placement_state"],
+                    "decision source placement is stale")
+            supersedes = decision["supersedes"]
+            require(hashlib.sha256(prior_bytes).hexdigest() == supersedes["sha256"],
+                    "decision.supersedes.sha256 does not match the current decision record")
+            require(not packet_target(packet_dir, supersedes["path"]).exists(),
+                    "decision-history record already exists")
+            writes.append((supersedes["path"], prior_bytes))
+        else:
+            require(not destination.exists(), "packet already has a decision record")
+
+        transitioned = dict(packet.manifest)
+        transitioned["placement"] = dict(transitioned["placement"])
+        transitioned["uncertainty"] = dict(transitioned["uncertainty"])
+        transitioned["lifecycle_state"] = decision["decision"]["lifecycle_state"]
+        transitioned["placement"]["state"] = decision["decision"]["placement_state"]
+        transitioned["placement"]["claim"] = decision["decision"]["placement_claim"]
+        transitioned["uncertainty"]["reopening_conditions"] = decision["decision"]["reopening_conditions"]
+        writes.append(("decision.json", (json.dumps(decision, indent=2) + "\n").encode("utf-8")))
+        writes.append(("packet.json", (json.dumps(transitioned, indent=2) + "\n").encode("utf-8")))
+
+        journal = {
+            "journal_version": 1,
+            "packet_dir": str(packet_dir),
+            "writes": [{"path": path,
+                        "before_sha256": digest(packet_target(packet_dir, path)),
+                        "after": base64.b64encode(content).decode("ascii")}
+                       for path, content in writes],
+        }
+        atomic_write(journal_path, json.dumps(journal, indent=2).encode("utf-8"))
+        return complete_transition(manifest_path, repository_root, journal_path, journal)
+
+
+def recover_transition(manifest_path: Path, repository_root: Path) -> Path:
+    """Finish an interrupted transition from its journal; never re-decides anything."""
+    manifest_path = packet_manifest(manifest_path, repository_root)
+    lock_path, journal_path = transition_paths(transition_directory(repository_root),
+                                               manifest_path.parent)
+    with transition_lock(lock_path):
+        require(journal_path.is_file(), "no interrupted transition is pending for this packet")
+        journal = json.loads(journal_path.read_text(encoding="utf-8"))
+        require(Path(journal["packet_dir"]) == manifest_path.parent,
+                "transition journal belongs to another packet")
+        return complete_transition(manifest_path, repository_root, journal_path, journal)
+
+
+def validate_decision_history(packet_dir: Path, decision: dict[str, Any]) -> None:
+    """Every superseded decision is retained byte-exact and every archived record is reachable."""
+    history = packet_dir / HISTORY_DIRECTORY
+    require(not history.is_symlink(), f"{HISTORY_DIRECTORY} must not be a symbolic link")
+    reachable: set[Path] = set()
+    current = decision
+    while current.get("supersedes"):
+        supersedes = current["supersedes"]
+        path = packet_dir / supersedes["path"]
+        require(not path.is_symlink(), f"superseded decision {supersedes['path']} must not be a symbolic link")
+        require(path.is_file(), f"superseded decision {supersedes['path']} is missing")
+        require(path not in reachable, "decision history contains a cycle")
+        require(hashlib.sha256(path.read_bytes()).hexdigest() == supersedes["sha256"],
+                f"superseded decision {supersedes['path']} does not match its recorded digest")
+        prior = load_decision(path)
+        require(prior["proposal_id"] == current["proposal_id"],
+                "superseded decision belongs to another proposal")
+        require(current["source"]["placement_state"] == prior["decision"]["placement_state"],
+                "placement revision source does not match the superseded decision")
+        reachable.add(path)
+        current = prior
+    archived = set(history.glob("*.json")) if history.is_dir() else set()
+    require(archived == reachable,
+            "decision-history contains records not reachable from the current decision")
+
+
+def pending_transitions(repository_root: Path) -> Path | None:
+    """Locate transition journals; a directory that is not a Git checkout cannot have any."""
+    try:
+        return transition_directory(repository_root)
+    except PacketError:
+        return None
 
 
 def discover_packets(repository_root: Path) -> dict[str, Packet]:
@@ -268,18 +509,29 @@ def discover_packets(repository_root: Path) -> dict[str, Packet]:
     packets: dict[str, Packet] = {}
     paths = sorted(repository_root.rglob("packet.json"))
     require(bool(paths), "packet repository contains no packet.json manifests")
+    journals = pending_transitions(repository_root)
     for path in paths:
+        path = packet_manifest(path, repository_root)
         packet = load_packet(path, repository_root)
         proposal_id = packet.manifest["proposal_id"]
         require(proposal_id not in packets, f"duplicate proposal_id '{proposal_id}'")
         packets[proposal_id] = packet
+        if journals is not None:
+            require(not transition_paths(journals, path.parent)[1].exists(),
+                    f"proposal '{proposal_id}' has an interrupted decision transition; run recover")
         decision_path = path.parent / "decision.json"
+        require(not decision_path.is_symlink(),
+                f"proposal '{proposal_id}' decision.json must not be a symbolic link")
         if packet.manifest["lifecycle_state"] == "decided":
             require(decision_path.is_file(), f"decided proposal '{proposal_id}' has no decision.json")
-            validate_decision_binding(packet, load_decision(decision_path), transitioned=True)
+            decision = load_decision(decision_path)
+            validate_decision_binding(packet, decision, transitioned=True)
+            validate_decision_history(path.parent, decision)
         else:
             require(not decision_path.exists(),
                     f"undecided proposal '{proposal_id}' cannot have a decision.json")
+            require(not (path.parent / HISTORY_DIRECTORY).exists(),
+                    f"undecided proposal '{proposal_id}' cannot have a decision history")
     for proposal_id, packet in packets.items():
         for relationship in packet.manifest["relationships"]:
             target = relationship["target_id"]
@@ -298,10 +550,15 @@ def main(argv: list[str] | None = None) -> int:
     transition.add_argument("manifest", type=Path)
     transition.add_argument("decision", type=Path)
     transition.add_argument("--repository", required=True, type=Path)
+    recover = subparsers.add_parser("recover", help="finish an interrupted decision transition")
+    recover.add_argument("manifest", type=Path)
+    recover.add_argument("--repository", required=True, type=Path)
     args = parser.parse_args(argv)
     try:
-        if args.command == "transition":
-            destination = transition_packet(args.manifest, args.decision, args.repository)
+        if args.command in ("transition", "recover"):
+            destination = (transition_packet(args.manifest, args.decision, args.repository)
+                           if args.command == "transition"
+                           else recover_transition(args.manifest, args.repository))
             print(json.dumps({"status": "transitioned", "decision": str(destination)},
                              sort_keys=True))
             return 0
