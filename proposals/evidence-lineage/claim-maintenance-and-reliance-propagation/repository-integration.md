@@ -72,93 +72,109 @@ than silently deleting meaning. Structural matching may nominate possible
 impact but cannot decide claim identity, causality, applicability, or
 retraction.
 
-## Current-world projection
+## Current-world correspondence
 
-The projection compiler joins observed or current structural entities to exact
-claim revisions, authored content references, sensitivities, and active
-reliance. It produces a cacheable projection specification whose loss requires
-deterministic recompilation from canonical records, not human reconstruction.
+The claim-maintenance view joins current structural entities to exact claim
+revisions, authored content references, sensitivities, and active reliance. It
+is derived on demand from canonical records and current observations. It is
+not a separately published or materialized store, so losing it requires only
+recomputation, not human reconstruction.
 
-Projected semantic objects point back to their exact canonical record and
-revision. Projection mutations never create or revise canonical claims,
-authored relationships, nominations, judgments, reliance, or obligations.
-Derived nodes and incident edges may be rebuilt without acquiring authority to
-replace or tombstone their canonical sources.
+Derived results point back to their exact canonical record and revision.
+Deriving them never creates or revises canonical claims, authored
+relationships, nominations, judgments, reliance, or obligations, and acquires
+no authority to replace or tombstone their canonical sources.
 
-The projection can report newly observed behavior or normative documentation
+The view can report newly observed behavior or normative documentation
 meaning with no mapped claim or relationship as an explicit unmapped
 candidate. A clean result means only that no candidate was found within the
-declared generation, coverage, exclusions, and traversal bounds.
+declared snapshot, coverage, exclusions, and traversal bounds.
 
-## Probable Codebase Memory placement
+## Probable observation placement
 
-Direct inspection establishes Codebase Memory as the probable default
-current-world projection and traversal provider after a bounded extension. Its
-store already supports generic labels, edge types, qualified-name identity,
-JSON properties, read traversal, staging publication, and conservative
-incremental indexing. It does not currently expose generic projection
-ingestion or preserve arbitrary externally materialized graph records through
-full publication.
+*Revised 2026-10-10 on later evidence:*
+[`evidence/codebase-memory-correspondence-20261010.md`](evidence/codebase-memory-correspondence-20261010.md).
+The earlier probable placement materialized compiled claim projections inside
+Codebase Memory through a bounded, owner-isolated synchronization extension
+provisionally called `sync_projection`. Shadow experiments against a later
+Codebase Memory revision indicate that correspondence needs no external graph
+writes. This revision therefore withdraws that extension from this proposal's
+placement. The proposal's meaning and protected consequences are unchanged.
 
-The missing boundary is provisionally called `sync_projection`. The name and
-wire shape are implementation choices; the protected consequences are not.
+### Declared anchors
 
-### Namespace ownership
+A claim's code and documentation dependencies are declared anchors, owned by
+the declaring claim revision. The
+[evidence-anchor substrate](../../../app-server/docs/architecture/substrates/evidence-anchor.md)
+observes each declared anchor against a current snapshot, compares it with its
+bound observation, and derives `may_affect` nomination candidates. Claim
+maintenance alone publishes durable nominations. The exact code locator and
+comparator richness remain evidence-anchor's open questions; this proposal
+does not decide them.
 
-A projection owner can replace only its own nodes and edges. It cannot
-overwrite parser-produced structural data or another projection. Ownership
-must participate structurally in identity or storage isolation; a JSON property
-alone cannot prevent collision under the current node and edge uniqueness
-rules.
+### Codebase Memory as observation and discovery
 
-### Generation binding
+Codebase Memory remains the probable code-observation backend and a discovery
+source. It provides:
+- structural entities and traversal;
+- indexed document references with reason-coded unresolved rows;
+- change-driven blast radius; and
+- term-scored documentation-to-code candidates.
 
-Synchronization binds at least:
+Discovery results may nominate unmapped candidates. They never satisfy,
+rebind, or stand in for a declared anchor. Declared anchors are not resolved
+through indexed document references, whose observed fallbacks can reduce
+precision without recording it.
 
-```yaml
-expected_index_generation: graphgen:...
-repository_subject: commit-or-checkpoint:...
-structural_manifest_digest: sha256:...
-projection_revision: ...
-```
+### Preserved consequences
 
-The exact fields may vary, but the binding distinguishes the immutable
-repository lineage from the precise structural generation, including indexed
-dirty-worktree content. A stale preparation fails visibly rather than
-attaching canonical references to the wrong repository world.
+The consequences the withdrawn extension was meant to protect remain binding:
 
-### Publication completeness
+- **Namespace ownership.** No external graph writes occur, so nothing can
+  overwrite parser-produced structure or another owner's records. Canonical
+  records stay outside the graph.
+- **Snapshot binding.** Every observation is attributable to one
+  identifiable, coherent, content-verified index snapshot and to the exact
+  canonical revision it was interpreted against:
 
-Projection evaluation occurs in the staging generation before atomic
-publication:
+  ```yaml
+  observed_index_snapshot: ...
+  repository_subject: commit-or-checkpoint:...
+  structural_manifest_digest: sha256:...
+  canonical_revision: ...
+  ```
 
-```text
-build structural graph
-→ load compiled projection specifications
-→ resolve endpoints against that generation
-→ retain resolved and unresolved outcomes
-→ validate owner and generation invariants
-→ atomically publish the complete evaluated generation
-```
+  The exact fields may vary, but the binding distinguishes the immutable
+  repository lineage from the precise indexed content, including dirty
+  working-tree content. A stale or mixed observation fails visibly as
+  `unknown`; it never attaches canonical references to the wrong repository
+  world.
+- **Completeness.** No separate projection is published, so no reader can
+  observe a structural generation that lacks its evaluated projection. An
+  observation is complete only when all its dependent reads share one
+  snapshot.
+- **Truthful unresolved state.** An anchor whose target no longer resolves is
+  reported with its canonical source, expected endpoint, snapshot, and cause.
+  That is `differs` when absence is established, or `unknown` when coverage
+  cannot establish it. Successor candidates never rebind. The code-change
+  profile may later supply relocation evidence; only the authorized
+  claim-maintenance boundary publishes the resulting canonical disposition.
+- **Observation-only authority.** Codebase Memory and evidence-anchor never
+  author canonical meaning. Graph reachability alone cannot manufacture a
+  nomination.
 
-"Complete" means evaluation completed truthfully. It does not mean every
-endpoint resolved. Readers never observe a newly published structural
-generation temporarily missing the projection state that was evaluated for it.
+### Current observation dependency
 
-### Truthful unresolved state
+At the evidence cutoff, Codebase Memory's supported interface cannot yet
+attribute observations to one coherent snapshot:
+- its exposed generation does not change on incremental re-indexes;
+- snippets combine indexed positions with current disk bytes; and
+- freshness is judged by mtime and size.
 
-An authored relationship whose old qualified-name endpoint no longer resolves
-does not silently disappear. The projection retains an unresolved record with
-its canonical source, expected endpoint, generation, and reason. The
-code-change profile may later supply relocation evidence; only the authorized
-claim-maintenance boundary can publish the resulting canonical disposition.
-
-### Projection-only authority
-
-Codebase Memory may materialize claim, claim-revision, relationship, and
-derived-impact nodes for traversal. It never authors their canonical meaning.
-A projected `MAY_AFFECT` edge is marked as derived or points to an already
-canonical nomination; graph reachability alone cannot manufacture nomination.
+Until a supported coherent-snapshot observation exists, production
+correspondence through Codebase Memory cannot establish snapshot binding.
+This is an observation-interface dependency, not a reason to restore graph
+writes.
 
 ## Role-facing retrieval
 
@@ -168,7 +184,7 @@ changed entities, direction, and a relationship profile. Its result includes:
 
 - the bounded related structural and projected entities;
 - traversal paths and relationship types;
-- exact projection revision and structural generation;
+- exact canonical revision and observed index snapshot;
 - repository subject and freshness;
 - coverage, exclusions, failed inputs, and truncation; and
 - unresolved endpoints and unmapped candidates.
@@ -177,10 +193,22 @@ changed entities, direction, and a relationship profile. Its result includes:
 maintenance decides whether retrieved candidates justify a durable
 `may_affect` record.
 
+## Dependent consumers
+
+[`work-engine.concern-scoped-review-judgments`](../../adaptive-specialized-review/concern-scoped-review-judgments/repository-integration.md)
+relies on the `sync_projection` consequence this document formerly formed, to
+project review-judgment nodes into the graph. This revision withdraws the
+mechanism from this proposal's placement only. It does not decide the review
+proposal's placement. That proposal's own fallback applies. Whether review
+navigation independently establishes a product consequence for externally
+materialized graph records is its owner's question, and it is this document's
+reopening condition for a generic projection capability.
+
 ## Reopening conditions
 
-Reconsider Codebase Memory as the probable provider if it cannot preserve
-owner isolation, content-bound generation identity, atomic publication
-completeness, and explicit unresolved state through a bounded extension.
-Reconsider a generic projection-sync capability as merely enabling machinery
-if independent consumers establish a separate product consequence for it.
+Reconsider Codebase Memory as the probable observation backend if it cannot
+expose coherent, content-verified snapshot observation through a supported
+interface. Reconsider withdrawing graph materialization if a consumer
+establishes a product consequence that on-demand correspondence cannot
+preserve, or if independent consumers establish a separate product
+consequence for a generic projection-synchronization capability.

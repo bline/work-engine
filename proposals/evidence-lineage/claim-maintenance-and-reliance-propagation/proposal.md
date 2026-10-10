@@ -33,20 +33,32 @@ does not itself prioritize, accept, schedule, or authorize implementation.
 
 ## Current formation state
 
-Architectural feasibility of the initial repository-maintenance integration is
-resolved at the current evidence cutoff. Codebase Memory is structurally
-capable of serving as the probable default current-world graph projection and
-traversal provider after a bounded, reindex-safe projection-synchronization
-extension. A second graph engine is not presently justified.
+The placement was revised on 2026-10-10 on later evidence
+([`evidence/codebase-memory-correspondence-20261010.md`](evidence/codebase-memory-correspondence-20261010.md)).
+Two conclusions are distinct:
+
+- **Architectural feasibility is supported.** Correspondence between claims
+  and changing code needs no externally writable graph projection. The
+  evidence-anchor substrate observes declared anchors, and Codebase Memory is
+  the probable code-observation backend and discovery source. A second graph
+  engine is not presently justified.
+- **Provider readiness is not.** The tested Codebase Memory revision
+  demonstrably cannot attribute an observation to one coherent,
+  content-verified snapshot through its supported interface. Its exposed
+  generation is frozen across incremental re-indexes. Its snippets apply
+  indexed line ranges to current disk bytes and can return another entity's
+  code. Its freshness is judged by mtime and size. Production use is blocked
+  by that demonstrated deficiency, not merely by an unselected design.
 
 The current placement judgment is:
 
-- canonical claims, authored relationships, nominations, judgments, reliance,
-  and obligations remain Git-backed claim-system state;
-- a projection compiler derives a cacheable projection specification from
-  those canonical records;
-- Codebase Memory may materialize that specification against one exact current
-  index generation for traversal;
+- canonical claims, authored relationships, declared anchors, nominations,
+  judgments, reliance, and obligations remain Git-backed claim-system state;
+- evidence-anchor observers resolve declared anchors against one exact
+  observed snapshot, compare them with their bound observations, and derive
+  nomination candidates;
+- Codebase Memory supplies structural observation and non-authoritative
+  discovery, and hosts no claim-system records;
 - `repo-search` remains the backend-neutral evidence contract presented to
   builders, reviewers, and other roles;
 - the code-change profile owns immutable before/after structural identity and
@@ -54,22 +66,23 @@ The current placement judgment is:
 - claim maintenance owns candidate-impact nomination and every semantic
   disposition.
 
-The remaining uncertainty is implementation-contract correctness rather than
-basic graph feasibility. Formation has not yet selected the exact realization
-of:
+Beyond that provider dependency, the remaining uncertainty is
+implementation-contract correctness. Formation has not yet selected the exact
+realization of:
 
-- structural namespace ownership and owner-aware edge identity;
-- a content-bound index-generation token, including dirty-worktree state;
-- atomic inclusion of evaluated projections in a published graph generation;
-- truthful unresolved endpoint records;
-- preservation and rebuild of compiled projection specifications without
-  creating a second authored registry; or
-- the boundary between retrieved impact candidates, derived cache edges, and
-  canonical `may_affect` nominations.
+- the declared code-anchor locator and its bound observation;
+- the snapshot-observation contract a backend must satisfy, including
+  dirty-worktree state;
+- truthful unresolved and successor-candidate reporting;
+- binding each observation to the exact canonical revision it interpreted; or
+- the boundary between retrieved impact candidates and canonical `may_affect`
+  nominations.
 
 These are bounded design questions for later evaluation and implementation
-planning. They do not reopen the ownership conclusion unless Codebase Memory
-cannot satisfy the required invariants through a bounded extension.
+planning. They do not reopen the ownership conclusion unless no observation
+backend can satisfy the required invariants. The placement remains probable;
+production readiness waits on a backend that provides coherent snapshot
+observation.
 
 ## Candidate and consequence
 
@@ -144,17 +157,17 @@ across those exact worlds. Planned scope, actual change, structural matching,
 candidate impact, and semantic judgment remain distinct evidence and authority
 boundaries.
 
-The claim-maintenance projection joins current structural entities to exact
+The claim-maintenance view joins current structural entities to exact
 canonical claim references and active reliance. It can expose related claims,
-unresolved endpoints, and unmapped behavior or normative documentation meaning
-within declared coverage. A clean projection is not proof that no semantic
-effect exists.
+unresolved anchors, and unmapped behavior or normative documentation meaning
+within declared coverage. A clean result is not proof that no semantic effect
+exists.
 
-Codebase Memory is the probable current provider for that projection, not its
-canonical owner and not a permanent product dependency. Projection loss must
-be recoverable by deterministic recompilation from canonical records. Full
-integration semantics, projection-publication invariants, role-facing queries,
-and provider reopening conditions are in
+The view is derived on demand from canonical records and snapshot-bound
+observations. It has no canonical owner of its own and no permanent provider
+dependency, and its loss requires only recomputation. Full integration
+semantics, preserved observation consequences, role-facing queries, dependent
+consumers, and provider reopening conditions are in
 [`repository-integration.md`](repository-integration.md).
 
 ## Ownership boundary
@@ -175,7 +188,7 @@ Domain workflows own:
 
 General delivery machinery owns transport admission, durable routing, receipt,
 retry, and delivery reconciliation under the supplied obligation identity. The
-slice lifecycle, code-change profile, projection provider, `repo-search`, role
+slice lifecycle, code-change profile, observation backend, `repo-search`, role
 state, scheduler, and provider sessions can supply evidence or transport but do
 not acquire claim meaning or semantic authority. Detailed placement and
 rejected-owner reasoning is in [`placement.md`](placement.md).
@@ -183,17 +196,18 @@ rejected-owner reasoning is in [`placement.md`](placement.md).
 ## Invariants
 
 - Mechanical impact never becomes semantic invalidation or causality.
-- Rebuilding an affected projection never grants authority to create, replace,
-  revise, or delete canonical claims, relationships, nominations, judgments,
-  reliance, or obligations.
-- A projection owner can replace only its own projection material and cannot
-  overwrite parser-produced structure or another owner's projection.
-- Every synchronized projection is bound to the exact structural index
-  generation and repository subject against which its endpoints were resolved.
-- A published structural generation never silently omits its evaluated
-  projection; unresolved endpoints remain explicit rather than disappearing.
-- The preserved projection specification is compiled, cacheable state. Losing
-  it requires recompilation, not semantic recovery or human reconstruction.
+- Deriving or recomputing correspondence never grants authority to create,
+  replace, revise, or delete canonical claims, relationships, declared anchors,
+  nominations, judgments, reliance, or obligations.
+- Every observation binds the exact canonical revision and repository subject
+  it interprets to one coherent, content-verified index snapshot.
+- An incomplete or inconsistent observation remains explicit and is never
+  presented as complete.
+- An unresolved anchor retains its expected identity and cause, and successor
+  candidates never silently rebind it.
+- Derived correspondence views are recomputable from canonical records and
+  observations without a second canonical registry. Losing them requires
+  recomputation, not semantic recovery or human reconstruction.
 - Planned scope, observed repository change, structural matching, retrieved
   impact candidates, canonical nomination, demonstrated behavior, and
   authorized refresh judgment remain distinct.
@@ -230,17 +244,18 @@ claim-centered evidence-lineage proposal. It still does not establish:
 - a graph database or always-running runtime as canonical semantic state.
 
 Those outcomes require independently owned product consequences if later
-desired. The `sync_projection` mechanism does not presently justify its own
-proposal because it is enabling machinery for this candidate rather than an
-independently desired product outcome.
+desired. The formerly placed `sync_projection` mechanism is no longer part of
+this candidate's placement. A generic projection capability would need an
+independently desired product outcome from another consumer.
 
 ## Evidence and acceptance needs
 
 Formation evidence includes the reviewed semantic parent, its deferred
 decision, dogfood evidence, the production-interface dependency, the
 slice-checkpoint lifecycle, the deterministic physical code-change profile,
-the formed code-change-characterization proposal, and direct Verify-tier
-inspection of Codebase Memory.
+the formed code-change-characterization proposal, direct Verify-tier
+inspection of Codebase Memory, and later shadow correspondence experiments
+against a newer Codebase Memory revision.
 
 Repository evidence cutoffs:
 
@@ -249,11 +264,15 @@ Repository evidence cutoffs:
   `2d99c5b63e983d9e6e0c9e5e2fc4a436eb21e6aa`
 - Codebase Memory feasibility inspection:
   `51c48e2093e9ad6c375b396e9624a0135cfb8351`
+- Codebase Memory correspondence experiments (2026-10-10):
+  `ec4fbd3a`, recorded in
+  [`evidence/codebase-memory-correspondence-20261010.md`](evidence/codebase-memory-correspondence-20261010.md)
 
 The dogfood positively represented the backbone semantics but did not exercise
 real consumers, adversarial concurrency, complete delivery recovery, or
-outcome-independent falsification. Codebase Memory inspection established
-current-provider feasibility but not implementation correctness. Acceptance
+outcome-independent falsification. The Codebase Memory evidence supports the
+observation placement and demonstrates that the tested provider is not ready
+for it; it does not establish implementation correctness. Acceptance
 therefore still requires a real end-to-end vertical and the adversarial matrix
 in [`acceptance.md`](acceptance.md).
 
@@ -265,7 +284,8 @@ in [`acceptance.md`](acceptance.md).
   review, and later consumers.
 - Which delivery affordances already available in the control plane can satisfy
   cross-owner consequences without a claim-specific coordinator.
-- What concurrency and scale require from the replaceable query projection.
+- What concurrency and scale require from derived correspondence views and
+  their observation backend.
 - Which residual uncertainty downstream decision owners may accept without
   changing their existing authority contracts.
 - Which documentation and architectural claim profiles should enter the first
@@ -273,13 +293,15 @@ in [`acceptance.md`](acceptance.md).
 - Whether candidate-bound impact nomination should be a universal slice
   affordance or enabled only when a campaign, claim domain, or observed change
   makes semantic maintenance relevant.
-- Which projection synchronization realization best preserves owner isolation,
-  generation binding, atomic publication, and explicit unresolved state.
+- Whether Codebase Memory, or another backend, will provide coherent,
+  content-verified snapshot observation through a supported interface, and
+  what that contract must guarantee.
 
 Reopening conditions are canonical in `packet.json`. The probable Codebase
-Memory placement reopens if it cannot preserve those projection invariants
-through a bounded extension or if another provider becomes necessary for
-correctness rather than convenience or scale.
+Memory placement reopens if it cannot provide coherent, content-verified
+snapshot observation and explicit unresolved anchor state through a supported
+interface, or if another backend becomes necessary for correctness rather than
+convenience or scale.
 
 ## Authority
 

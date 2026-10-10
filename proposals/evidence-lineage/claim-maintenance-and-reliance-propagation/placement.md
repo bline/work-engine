@@ -32,25 +32,32 @@ extends its versioned record and operation surface. It must not establish a
 second claim registry, incompatible identity scheme, or provider-specific state
 owner.
 
-## Probable projection-provider placement
+## Probable observation placement
 
-At the current evidence cutoff, Codebase Memory is the probable default
-current-world projection and traversal provider. Its generic graph store,
-qualified-name lookup, read queries, staging publication, and incremental
-indexing make the required projection reachable after a bounded
-projection-synchronization extension.
+*Revised 2026-10-10 on later evidence:*
+[`evidence/codebase-memory-correspondence-20261010.md`](evidence/codebase-memory-correspondence-20261010.md).
+
+Declared claim dependencies are evidence anchors owned by the declaring claim
+revision. The evidence-anchor substrate observes and compares them and
+derives nomination candidates. Codebase Memory is the probable code-observation
+backend and a discovery source. It is not a host for materialized claim
+projections. The earlier probable placement relied on a bounded
+projection-synchronization extension (`sync_projection`). Later evidence
+indicates that correspondence needs no external graph writes, so this
+proposal no longer places that extension.
 
 This is variant infrastructure placement, not permanent product doctrine.
-Canonical Git-backed claim records remain sufficient to rebuild the compiled
-projection specification and materialized graph. `repo-search` remains the
-role-facing evidence abstraction, while the code-change profile owns
-cross-revision structural reconciliation.
+Canonical Git-backed claim records remain sufficient to recompute every
+derived correspondence. `repo-search` remains the role-facing evidence
+abstraction, and the code-change profile owns cross-revision structural
+reconciliation.
 
-The placement depends on Codebase Memory preserving structural namespace
-ownership, exact content-bound generation identity, atomic inclusion of the
-evaluated projection in each publication, and explicit unresolved endpoint
-state. Failure to preserve those consequences reopens the provider placement;
-it does not transfer semantic ownership to the graph.
+The placement depends on the observation backend attributing each
+observation to one identifiable, coherent, content-verified snapshot, and on
+unresolved anchors remaining explicit. At the evidence cutoff, Codebase
+Memory's supported interface does not yet provide coherent snapshot
+observation. Failure to obtain it reopens the backend placement; it does not
+transfer semantic ownership to the graph or restore graph writes by default.
 
 ## Rejected owners
 
@@ -79,10 +86,12 @@ history, canonical-support selection, or completion.
 
 ### Codebase Memory
 
-It may materialize compiled claim references and relationships for current-world
-traversal. It cannot become the authored claim registry, infer historical
-identity across repository revisions, manufacture canonical nominations, or
-convert unresolved endpoints into silent relationship deletion.
+It may supply structural observations, document-reference discovery,
+change-driven reach, and correspondence candidates. It cannot become the
+authored claim registry, infer historical identity across repository
+revisions, manufacture canonical nominations, or turn unresolved anchors into
+silent relationship deletion. Its discovery results cannot satisfy or rebind
+a declared anchor.
 
 ### Role state
 
@@ -106,5 +115,5 @@ recover one semantic consequence across the boundaries, if delivery cannot
 remain generic without losing obligation meaning, if branching support needs a
 new domain owner, or if an always-running canonical service becomes necessary
 for correctness rather than convenience or scale. Reconsider Codebase Memory's
-probable provider placement if its bounded extension cannot preserve the
-projection consequences stated above.
+probable observation-backend placement if it cannot provide coherent,
+content-verified snapshot observation through a supported interface.

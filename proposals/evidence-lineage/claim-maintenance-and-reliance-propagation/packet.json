@@ -43,7 +43,7 @@
   ],
   "placement": {
     "state": "probable",
-    "claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions; a general control-plane capability may own cross-owner delivery without acquiring claim meaning; and Codebase Memory probably supplies the replaceable current-world projection after a bounded, reindex-safe synchronization extension."
+    "claim": "The shared claim-evidence capability probably owns impact, refresh, reliance, and obligation record semantics; domain workflows own semantic judgments and reopening decisions; a general control-plane capability may own cross-owner delivery without acquiring claim meaning; evidence-anchor observers resolve declared claim anchors against one exact observed snapshot and derive nomination candidates; and Codebase Memory is the probable code-observation backend and non-authoritative discovery source, hosting no claim-system records, with production use waiting on coherent, content-verified snapshot observation through a supported interface."
   },
   "uncertainty": {
     "state": "unresolved",
@@ -53,7 +53,8 @@
       "A real domain consumer cannot distinguish candidate impact, investigation, unchanged refresh, changed support, applicability, and reopening without collapsing owners.",
       "The slice lifecycle cannot durably preserve or derive the exact attributed checkpoint subject needed for post-slice impact analysis before its terminal projection becomes lossy.",
       "Stable code, test, schema, configuration, or documentation-anchor identity cannot be reconciled across rename, move, split, merge, deletion, and ambiguity without converting uncertain structural matching into semantic authority.",
-      "Codebase Memory cannot preserve owner isolation, content-bound generation identity, atomic projection publication, and truthful unresolved references through a bounded extension.",
+      "Codebase Memory, or another observation backend, cannot provide coherent, content-verified snapshot observation and explicit unresolved anchor state through a supported interface.",
+      "A consumer establishes a product consequence that on-demand correspondence, derived from canonical records and snapshot-bound observations, cannot preserve, or independent consumers establish a separate product consequence for a generic projection-synchronization capability.",
       "Cross-owner obligation delivery cannot be made lossless and idempotent without assigning semantic completion to transport acknowledgement.",
       "Compaction, authority revocation, inactive recipients, or partial publication requires durable semantics outside the proposed claim, domain-workflow, and delivery ownership split."
     ]
