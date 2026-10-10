@@ -1,0 +1,883 @@
+{
+ "results": [
+  {
+   "exp": "E1",
+   "case": "fn",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:32:47Z",
+      "2026-10-10T17:32:47Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E1",
+   "case": "method",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:32:47Z",
+      "2026-10-10T17:32:47Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E1",
+   "case": "cfg",
+   "state": "unsupported",
+   "reason": "anchor_kind config_key",
+   "expected": "unsupported",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": []
+  },
+  {
+   "exp": "E2",
+   "case": "baseline",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:07Z",
+      "2026-10-10T17:33:07Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "case": "rename_before_reindex",
+   "state": "unknown",
+   "reason": "index_stale_for_file (observed subject != requested subject)",
+   "expected": "unknown",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:07Z",
+      "2026-10-10T17:33:07Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "case": "rename_after_reindex",
+   "state": "differs",
+   "reason": "absence_established",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": [
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e2.src.util.rounding.round_half_even",
+     "file": "src/util/rounding.py",
+     "body_digest_equal": false,
+     "tail_digest_equal": false,
+     "via": "same_file"
+    },
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e2.src.util.rounding.clamp_value",
+     "file": "src/util/rounding.py",
+     "body_digest_equal": false,
+     "tail_digest_equal": true,
+     "via": "same_file"
+    }
+   ],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:20Z",
+      "2026-10-10T17:33:20Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "case": "directory_move",
+   "state": "differs",
+   "reason": "absence_established (file removed)",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": [
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e2.src.helpers.rounding.clamp",
+     "file": "src/helpers/rounding.py",
+     "body_digest_equal": true
+    }
+   ],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:28Z",
+      "2026-10-10T17:33:28Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "case": "parse_damage",
+   "state": "unknown",
+   "reason": "coverage_issue_in_file: parse_partial",
+   "expected": [
+    "unknown",
+    "differs"
+   ],
+   "as_expected": true,
+   "note": "unknown if coverage reports the damage; differs only if body truly changed and is visible",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:35Z",
+      "2026-10-10T17:33:35Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "case": "file_now_ignored",
+   "state": "unknown",
+   "reason": "file_on_disk_but_not_indexed",
+   "expected": "unknown",
+   "as_expected": true,
+   "note": "file exists but is excluded: absence in the graph is not absence in the world",
+   "successors": [],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:41Z",
+      "2026-10-10T17:33:41Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E3",
+   "case": "code_change:anchor_balance",
+   "state": "differs",
+   "reason": "same_entity_body_changed",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:48Z",
+      "2026-10-10T17:33:48Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E3",
+   "case": "code_change:anchor_post_entry",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "the caller's own body did not change: mechanical anchor comparison stays matches",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:48Z",
+      "2026-10-10T17:33:48Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E3",
+   "case": "doc_change:posting_rules",
+   "state": "differs",
+   "reason": "text_changed",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:48Z",
+      "2026-10-10T17:33:48Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E3",
+   "case": "repeated_heading:svcA",
+   "state": "differs",
+   "reason": "text_changed",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:48Z",
+      "2026-10-10T17:33:48Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E3",
+   "case": "repeated_heading:svcB",
+   "state": "matches",
+   "reason": "same_text",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:33:48Z",
+      "2026-10-10T17:33:48Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "case": "reindex_mid_observation",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "attempts=[(['2026-10-10T17:34:17Z', '2026-10-10T17:34:17Z'], True)]",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "case": "canonical_changes_every_attempt",
+   "state": "unknown",
+   "reason": "no_consistent_snapshot_after_retries",
+   "expected": "unknown",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      1,
+      2
+     ],
+     "consistent": false
+    },
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      2,
+      3
+     ],
+     "consistent": false
+    },
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      3,
+      4
+     ],
+     "consistent": false
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "case": "stale_index",
+   "state": "unknown",
+   "reason": "index_stale_for_file (observed subject != requested subject)",
+   "expected": "unknown",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      4,
+      4
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "case": "same_size_same_mtime_edit",
+   "state": "unknown",
+   "reason": "index_stale_for_file (observed subject != requested subject)",
+   "expected": [
+    "unknown",
+    "differs"
+   ],
+   "as_expected": true,
+   "note": "correct answer requires noticing the content change",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      4,
+      4
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4b",
+   "case": "fresh_baseline",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:35:09Z",
+      "2026-10-10T17:35:09Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4b",
+   "case": "same_size_same_mtime_edit",
+   "state": "differs",
+   "reason": "same_entity_body_changed",
+   "expected": [
+    "unknown",
+    "differs"
+   ],
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:35:09Z",
+      "2026-10-10T17:35:09Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E5",
+   "case": "rebuild_equivalence",
+   "state": "equal",
+   "expected": "equal",
+   "as_expected": true,
+   "reason": "",
+   "note": "{\"before\": {\"balance\": {\"state\": \"differs\", \"reason\": \"same_entity_body_changed\", \"hits\": [[\"ledger\", \"balance\"]], \"successors\": []}, \"close\": {\"state\": \"matches\", \"reason\": \"same_entity_same_body\", \"hits\": [[\"Account\", \"close\"]], \"successors\": []}, \"clamp\": {\"state\": \"differs\", \"reason\": \"absence_established\", \"hits\": [], \"successors\": [[\"src/util/rounding.py\", false], [\"src/util/rounding.py\", false]]}, \"posting_rules\": {\"state\": \"matches\", \"reason\": \"same_text\", \"hits\": [], \"successors\": []}}, \"after\": {\"balance\": {\"state\": \"differs\", \"reason\": \"same_entity_body_changed\", \"hits\": [[\"ledger\", \"balance\"]], \"successors\": []}, \"close\": {\"state\": \"matches\", \"reason\": \"same_entity_same_body\", \"hits\": [[\"Account\", \"close\"]], \"successors\": []}, \"clamp\": {\"state\": \"differs\", \"reason\": \"absence_established\", \"hits\": [], \"successors\": [[\"src/util/rounding.py\", false], [\"src/util/rounding.py\", false]]}, \"posting_rules\": {\"state\": \"matches\", \"reason\": \"same_text\", \"hits\": [], \"successors\": []}}}"
+  },
+  {
+   "exp": "E6",
+   "case": "baseline",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:14Z",
+      "2026-10-10T17:36:14Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E6",
+   "case": "identical_twin_elsewhere",
+   "state": "differs",
+   "reason": "absence_established (file removed)",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "a structurally identical entity elsewhere must stay a candidate, never a match",
+   "successors": [
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e6.src.new.service.process",
+     "file": "src/new/service.py",
+     "body_digest_equal": true
+    }
+   ],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:22Z",
+      "2026-10-10T17:36:22Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E6",
+   "case": "two_identical_twins",
+   "state": "differs",
+   "reason": "absence_established (file removed)",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": [
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e6.src.copy.service.process",
+     "file": "src/copy/service.py",
+     "body_digest_equal": true
+    },
+    {
+     "qn": "tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e6.src.new.service.process",
+     "file": "src/new/service.py",
+     "body_digest_equal": true
+    }
+   ],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:30Z",
+      "2026-10-10T17:36:30Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E6",
+   "case": "same_locator_different_body",
+   "state": "differs",
+   "reason": "same_entity_body_changed",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "qualified-name identity alone would call this present",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:38Z",
+      "2026-10-10T17:36:38Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E6",
+   "case": "deleted_then_identical_recreate:gone",
+   "state": "differs",
+   "reason": "absence_established (file removed)",
+   "expected": "differs",
+   "as_expected": true,
+   "note": "",
+   "successors": [],
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:38Z",
+      "2026-10-10T17:36:38Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E6",
+   "case": "deleted_then_identical_recreate:back",
+   "state": "matches",
+   "reason": "same_entity_same_body",
+   "expected": "matches",
+   "as_expected": true,
+   "note": "mechanically indistinguishable from never-deleted: current-state observation cannot see history",
+   "successors": null,
+   "attempts": [
+    {
+     "gen": [
+      "2026-10-10T17:36:50Z",
+      "2026-10-10T17:36:50Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  }
+ ],
+ "findings": [
+  {
+   "exp": "E1",
+   "kind": "positive",
+   "text": "strict declaration refused every non-exact locator (missing member, wrong kind, wrong owner) instead of falling back to the file",
+   "evidence": [
+    [
+     "fn",
+     "bound"
+    ],
+    [
+     "method",
+     "bound"
+    ],
+    [
+     "missing_member",
+     "refused: 0 exact matches"
+    ],
+    [
+     "kind_mismatch",
+     "refused: 0 exact matches"
+    ],
+    [
+     "owner_mismatch",
+     "refused: 0 exact matches"
+    ],
+    [
+     "cfg",
+     "declared (unsupported kind, no binding)"
+    ]
+   ]
+  },
+  {
+   "exp": "E1",
+   "kind": "NEGATIVE",
+   "text": "doc reference to a nonexistent member resolves as a MENTIONS edge to the containing file, with no record of the requested member: [{'t.label': 'File', 't.name': 'ledger.py'}]",
+   "evidence": [
+    {
+     "t.label": "File",
+     "t.name": "ledger.py"
+    }
+   ]
+  },
+  {
+   "exp": "E2",
+   "kind": "observation",
+   "text": "parse damage: coverage issues=[{'path': 'src/util/rounding.py', 'kind': 'parse_partial', 'match': 'exact', 'ranges': [{'start': 6, 'end': 7}], 'detail': '6-7'}] hits=['tmp-claude-1000-home-bline-code-work-engine-8123ecac-f04c-4c1a-b4b3-475301f2b8c3-scratchpad-exp-e2.src.util.rounding.clamp']",
+   "evidence": null
+  },
+  {
+   "exp": "E3",
+   "kind": "observation",
+   "text": "discovery (not authority): anchors reachable by blast radius [('post_entry', 1)]; doc sections reached via MENTIONS ['Posting-rules']",
+   "evidence": {
+    "reach": [
+     [
+      "post_entry",
+      1
+     ]
+    ],
+    "sections": [
+     "Posting-rules"
+    ]
+   }
+  },
+  {
+   "exp": "E3",
+   "kind": "NEGATIVE",
+   "text": "detect_changes on a doc-only edit yields seeds=0, impacted=0: Sections are never seeds, so doc->code needs the adapter's own section mapping",
+   "evidence": null
+  },
+  {
+   "exp": "E3",
+   "kind": "observation",
+   "text": "workaround (heading at/above changed line -> outbound MENTIONS): [{'s.name': 'Posting rules', 's.start_line': '3', 'c.name': 'post_entry'}, {'s.name': 'Posting rules', 's.start_line': '3', 'c.name': 'balance'}]",
+   "evidence": null
+  },
+  {
+   "exp": "E3",
+   "kind": "NEGATIVE",
+   "text": "repeated heading MENTIONS attribution: [{'s.label': 'File', 's.name': 'repeated.md', 's.start_line': '0', 'c.name': 'post_entry'}, {'s.label': 'File', 's.name': 'repeated.md', 's.start_line': '0', 'c.name': 'balance'}]",
+   "evidence": [
+    {
+     "s.label": "File",
+     "s.name": "repeated.md",
+     "s.start_line": "0",
+     "c.name": "post_entry"
+    },
+    {
+     "s.label": "File",
+     "s.name": "repeated.md",
+     "s.start_line": "0",
+     "c.name": "balance"
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "kind": "NEGATIVE",
+   "text": "supported generation sequence ['2026-10-10T17:34:17Z', '2026-10-10T17:34:17Z', '2026-10-10T17:34:17Z', '2026-10-10T17:34:17Z'] vs oracle mutation_gen ['1', '1', '2', '3']",
+   "evidence": [
+    {
+     "step": "start",
+     "supported_generation": "2026-10-10T17:34:17Z",
+     "recorded_at": "2026-10-10T17:34:17Z",
+     "oracle": {
+      "db_uid": "806c17bd4259237e",
+      "mutation_gen": "1"
+     }
+    },
+    {
+     "step": "noop_reindex",
+     "supported_generation": "2026-10-10T17:34:17Z",
+     "recorded_at": "2026-10-10T17:34:17Z",
+     "oracle": {
+      "db_uid": "806c17bd4259237e",
+      "mutation_gen": "1"
+     }
+    },
+    {
+     "step": "content_reindex_1",
+     "supported_generation": "2026-10-10T17:34:17Z",
+     "recorded_at": "2026-10-10T17:34:23Z",
+     "oracle": {
+      "db_uid": "806c17bd4259237e",
+      "mutation_gen": "2"
+     }
+    },
+    {
+     "step": "content_reindex_2_same_second?",
+     "supported_generation": "2026-10-10T17:34:17Z",
+     "recorded_at": "2026-10-10T17:34:25Z",
+     "oracle": {
+      "db_uid": "806c17bd4259237e",
+      "mutation_gen": "3"
+     }
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "kind": "NEGATIVE",
+   "text": "a reindex between the two reads was NOT detected by the supported generation signal; the result was accepted on the first attempt",
+   "evidence": [
+    {
+     "gen": [
+      "2026-10-10T17:34:17Z",
+      "2026-10-10T17:34:17Z"
+     ],
+     "rev": [
+      1,
+      1
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "exp": "E4",
+   "kind": "observation",
+   "text": "get_code_snippet on stale index returns source='def balance(ledger):\\n    return sum(ledger) * 1\\n' (disk bytes or indexed bytes?) with graph lines ['11', '12']",
+   "evidence": null
+  },
+  {
+   "exp": "E4",
+   "kind": "observation",
+   "text": "same-size/same-mtime edit: freshness=metadata_changed, state=unknown; oracle indexed sha matches disk: False",
+   "evidence": null
+  },
+  {
+   "exp": "E4b",
+   "kind": "observation",
+   "text": "recorded_at as generation: 4 distinct values for 4 distinct generations (second resolution)",
+   "evidence": [
+    [
+     0.93,
+     "2026-10-10T17:35:01Z",
+     "2"
+    ],
+    [
+     1.19,
+     "2026-10-10T17:35:03Z",
+     "3"
+    ],
+    [
+     1.18,
+     "2026-10-10T17:35:05Z",
+     "4"
+    ],
+    [
+     1.18,
+     "2026-10-10T17:35:07Z",
+     "5"
+    ]
+   ]
+  },
+  {
+   "exp": "E4b",
+   "kind": "observation",
+   "text": "same-size/same-mtime edit -> freshness=metadata_match state=differs (snippet reads disk, so body digest caught it)",
+   "evidence": null
+  },
+  {
+   "exp": "E4b",
+   "kind": "NEGATIVE",
+   "text": "identical bytes with a new mtime, after reindex: freshness=metadata_changed, after a second reindex=metadata_changed",
+   "evidence": null
+  },
+  {
+   "exp": "E5",
+   "kind": "observation",
+   "text": "generation ids before {'db_uid': 'd2d0fb45bb3caad4', 'mutation_gen': '1'} after {'db_uid': 'cb8366fb19ed1a18', 'mutation_gen': '1'} (incidental, expected to differ)",
+   "evidence": null
+  }
+ ]
+}

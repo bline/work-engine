@@ -147,3 +147,14 @@ Reinspect the placement if:
 - unresolved references cannot remain visible through rebuild; or
 - a second current-world provider supplies a materially stronger correctness
   boundary without creating a second canonical semantic registry.
+
+## Later evidence
+
+The first reopening condition above has fired. At `ec4fbd3a` (2026-10-10),
+Codebase Memory adds Markdown and doc-comment `MENTIONS` edges, published
+`doc_link_unresolved` rows, `doc_link_candidates`, a configurable fixpoint
+impact walk, and `compare_graphs`. Shadow experiments against that build found
+that correspondence needs no external graph writes but does need a coherent
+observation snapshot. See
+[`codebase-memory-correspondence-20261010.md`](codebase-memory-correspondence-20261010.md).
+The observations above remain accurate for their stated cutoff.

@@ -393,7 +393,20 @@ Can be built independently now:
 Blocked on an owning dependency-declaration contract:
     production anchor registry
     durable impact nominations
+
+Blocked on a coherent observation snapshot from the code backend:
+    production CodeEvidenceAdapter observations
 ```
+
+The second block is evidence-derived, not a design change. Shadow
+observations against `codebase-memory-mcp` at `ec4fbd3a` could not enforce
+the §3 exact-revision binding through its supported interface. Its exposed
+generation does not change on incremental re-indexes. Snippets combine
+indexed positions with current disk bytes. Freshness is mtime and size only,
+and can stay wrong after a successful re-index. Correspondence itself needs
+no backend change, but a production adapter needs a code observation
+attributable to one identifiable, coherent, content-verified index snapshot
+([evidence, 2026-10-10](../../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/codebase-memory-correspondence-20261010.md)).
 
 Whether dependency declarations eventually live inside a claim revision
 itself, or as a separately revisioned dependency artifact bound to an exact
@@ -489,6 +502,15 @@ consumer here, not a reason to build a separate architecture-only mechanism.
 1. [KIND: BACKLOG] [OPEN — `substrates/evidence-anchor.md` names this by its own admission: "investigation, not invention (source §2, §10 open question 1)."] What is the right `CodeStructureAnchor` locator against
    codebase-memory-mcp's actual node identity — `qualified_name` alone, or
    something that also survives a rename?
+   *Evidence, 2026-10-10, still open:* in shadow experiments, `qualified_name`
+   alone reported "present" for a different body at the same path and name.
+   `(path, owner-qualified symbol, label)` plus a bound body digest, resolved
+   strictly with no file fallback, kept absence, uncertain coverage, and
+   non-binding successor candidates distinct. Surviving a rename looks like
+   historical continuity owned by the code-change profile: a byte-identical
+   delete-and-recreate observes as `matches`, which is state equivalence, not
+   continuity
+   ([evidence](../../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/codebase-memory-correspondence-20261010.md#comparison-with-evidence-anchor)).
 2. [KIND: RESIDUE] [OPEN — not addressed by the settled substrate, which explicitly does not own consumer-triggering mechanics.] Should `EvidenceAnchorObserver`s be invoked per the same trigger model
    `claim-evidence-service.md` §"Impact, refresh, and reliance propagation"
    already prefers (on-demand, when a real consumer needs a decision), or
@@ -525,6 +547,14 @@ consumer here, not a reason to build a separate architecture-only mechanism.
    §5's `differs`/`unknown` split exists to avoid. Any richer comparator
    design should preserve that separation rather than adding a single
    `contradictory` state that blurs it.
+   *Evidence, 2026-10-10, still open:* 27 shadow code and text observations
+   all fit the five states. `unknown` arose from five causes with different
+   remedies (stale index, coverage gap, exclusion, inconsistent snapshot,
+   ambiguous locator), and `differs` covered both changed-in-place and
+   absent-with-candidates. That supports a structured cause beside an
+   unchanged outcome, along the availability/coverage and
+   temporal/correspondence axes above, rather than a sixth state
+   ([evidence](../../../proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/codebase-memory-correspondence-20261010.md#comparison-with-evidence-anchor)).
 
 ## Relationships
 
