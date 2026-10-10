@@ -1,0 +1,93 @@
+{
+  "kind": "bounded-rust-native-text-lifecycle-proof",
+  "recorded_at_utc": "2026-10-07T05:23:02Z",
+  "result": "passed",
+  "model": "gpt-6-sol",
+  "native_version": "0.160.1",
+  "native_sha256": "f34a4d2301892ae96c90097786bfe5dc269f187b6f69faf42a7b357b8c081e35",
+  "source_manifest": {
+    "path": "../../parent-validated-sources.sha256",
+    "sha256": "f1a4d84e2080c042010494f35302dd27a584c887a3946f1dc595fc45032e63b0",
+    "files": 18
+  },
+  "validation": {
+    "default_tests_passed": 30,
+    "principal_native_loopback_probes_passed": 3,
+    "formatting": "passed",
+    "clippy_all_targets_deny_warnings": "passed",
+    "review": "bounded retained design review; streaming correction rechecked; not independent production approval"
+  },
+  "live": {
+    "authorized_native_turns": 3,
+    "entered_native_turns": 3,
+    "remaining_authorized_turns": 0,
+    "successful_effects": 3,
+    "successful_deliveries": 3,
+    "input_deliveries": 2,
+    "readiness_deliveries": 1,
+    "native_start_rpc_ids": [
+      6,
+      9,
+      11
+    ],
+    "thread_bindings": 2,
+    "coordinator_pid": 16324,
+    "provider_pid": 15240,
+    "native_pid": 15340,
+    "coordinator_revision": 38,
+    "second_prompt_contains_carried_value": false,
+    "result_path": "result.json",
+    "http_inference_request_count": null
+  },
+  "preceding_rejected_setup": {
+    "entered_turns": 0,
+    "reason": "Unix-seconds deadline supplied to Unix-milliseconds engine",
+    "receipt": "../live-admission-rejection-2026-10-07/diagnosis.json",
+    "old_attempt_unchanged": true,
+    "new_coordinator_database": true
+  },
+  "cleanup": {
+    "coordinator_exit_code": 143,
+    "provider_exit_code": 143,
+    "native_exit_code": null,
+    "all_three_pids_absent": true,
+    "disposable_profile_logout": "success",
+    "normal_profile_used": false,
+    "credential_contents_read_or_copied": false
+  },
+  "evidence": [
+    {
+      "path": "result.json",
+      "sha256": "ea64b318b9ed39e86fe1617ef7f9612c76cc74a755a52d81a626a6b6daae04a0"
+    },
+    {
+      "path": "preflight.json",
+      "sha256": "be31d14ac691e404b498920801abeccf5acfa7e6058283cf5da2530cebc4d328"
+    },
+    {
+      "path": "durable-summary.json",
+      "sha256": "989ea4df08e239034cd55cc0ff1bd99bb61be3e1b764cc84effb2876a76644b8"
+    },
+    {
+      "path": "coordinator-state.sqlite",
+      "sha256": "3918e12f6b002d3ff4bb7866c1f7745ac5d6c4ec1f861fdbbcb26467857db755",
+      "integrity_check": "ok",
+      "backup": "coherent WAL-visible SQLite backup"
+    },
+    {
+      "path": "adapter-state.sqlite",
+      "sha256": "b0c8793c07095c3fee2281fd892cb5d93a05986e1de7a643fdc9ca218124228d",
+      "integrity_check": "ok",
+      "backup": "coherent WAL-visible SQLite backup"
+    }
+  ],
+  "limitations": [
+    "Scoped text-turn completion, not arbitrary external-effect settlement.",
+    "Three local native start records, not a claim of network-wide exactly-once inference.",
+    "Authenticated catalog digest is separately retained in preflight; not embedded in completion receipts.",
+    "Authenticated offered-tool inventory was not captured before inference; pinned profile exclusions and exact native evidence governed eligibility.",
+    "This bounded carried-fact demonstration does not prove general semantic continuation quality.",
+    "UI wire protocol is not versioned/frozen; no production integration or activation occurred.",
+    "Native child disappearance was checked, but its exit status was not directly observed; exit is not settlement."
+  ]
+}

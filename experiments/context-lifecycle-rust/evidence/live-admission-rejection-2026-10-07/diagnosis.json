@@ -1,0 +1,34 @@
+{
+  "kind": "pre_entry_live_admission_rejection",
+  "attempted_at_utc": "2026-10-07T05:14:24Z",
+  "isolated_root": "/tmp/context-lifecycle-live.yyp1P6",
+  "driver_invocations": 1,
+  "driver_exit_code": 1,
+  "driver_error": "synthetic authority missing or expired",
+  "config": {
+    "vertical_json_sha256": "08a2bd900eaec0d270d0f4cba7e6fa7642c51c2831b12511becce40f4ca0d11b",
+    "authority_mode": "CodexTextLive",
+    "authority_deadline_value": 1791350643,
+    "transition_deadline_value": 1791350643,
+    "deadline_as_unix_seconds_utc": "2026-10-07T05:24:03Z",
+    "approval_nonempty": true
+  },
+  "durable_state": {
+    "coordinator_state_json_sha256": "6858bcbf2f1537ac781576f8fa2ae8f13859a6aff8e8a40fa7df3a450df3e643",
+    "coordinator_revision": 3,
+    "contexts": 1,
+    "effects": 0,
+    "deliveries": 0,
+    "commands": 4,
+    "first_admission_command": "vertical:admit:first",
+    "first_admission_reply": {"Err": "synthetic authority missing or expired"},
+    "adapter_state_json_sha256": "3eea72a8a16f28507f108f166bfdcaac3aad476597fa0f2cf45c087bdc7dc868",
+    "adapter_generation": 1,
+    "adapter_records": 0,
+    "adapter_commands": 0,
+    "adapter_bindings": 0
+  },
+  "cause": "The documented live config recipe generated Unix seconds. SystemClock::now and the coordinator admission predicate compare against Unix milliseconds, so the first admission was rejected before effect creation or dispatch.",
+  "scope_of_zero_entry_conclusion": "The coordinator and adapter durable ledgers for this exact isolated root show no entered effect or provider command. The result does not assert anything about unrelated provider activity.",
+  "recovery_boundary": "The failed coordinator persists command identities and a rejected first-admission receipt. This root is retained as failure evidence; editing its config does not make the same command identity reusable. No driver retry or new live provider turn was performed by this diagnosis."
+}

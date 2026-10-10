@@ -1,0 +1,86 @@
+{
+  "kind": "blocked-native-profile-checkpoint",
+  "date_utc": "2026-10-07",
+  "native_version": "0.160.1",
+  "native_sha256": "f34a4d2301892ae96c90097786bfe5dc269f187b6f69faf42a7b357b8c081e35",
+  "requested_model": "gpt-6-sol",
+  "provider": "local_probe_loopback_responses",
+  "effective_goals": false,
+  "before_code_mode_host_switch": {
+    "effective_code_mode_host": "not_read_back",
+    "native_pid": 3989107,
+    "native_thread_id": "01a114a0-7417-7200-adfe-aaf4e374eb4c",
+    "native_turn_id": "01a114a0-7421-7360-8266-1b04ad18d86a",
+    "developer_message_tool_namespaces": ["functions", "clock"],
+    "developer_message_nested_tools": ["exec", "wait", "request_user_input", "request_user_input_async", "sleep"],
+    "responses_tools_field": "not_captured"
+  },
+  "after_code_mode_host_switch": {
+    "effective_code_mode_host": false,
+    "native_pid": 4000323,
+    "native_thread_id": "01a114a3-74eb-7320-838f-ec77e48f8988",
+    "native_turn_id": "01a114a3-74f7-78a1-8627-77fe273cf2df",
+    "developer_message_tool_namespaces": ["functions", "clock"],
+    "developer_message_nested_tools": ["exec", "wait", "request_user_input", "request_user_input_async", "sleep"],
+    "responses_tools_field": "not_captured_in_initial_probe"
+  },
+  "forced_call_results": {
+    "exec_command": "unsupported call: exec_command",
+    "create_goal": "unsupported call: create_goal",
+    "update_goal": "unsupported call: update_goal"
+  },
+  "simulated_inference_requests": 4,
+  "authorization_headers": 0,
+  "requests_after_exact_id_restart_readback": 4,
+  "native_status": "Completed",
+  "strict_delivery": "Unknown",
+  "namespaced_probes_with_code_mode_host_disabled": {
+    "responses_tools_field": null,
+    "developer_message_tool_namespaces": ["functions", "clock"],
+    "exec": {
+      "call_type": "custom_tool_call",
+      "namespace": "functions",
+      "name": "exec",
+      "call_id": "pure-discovery-call",
+      "result_type": "custom_tool_call_output",
+      "result": "code-mode host is disabled",
+      "simulated_inference_requests": 2,
+      "authorization_headers": 0,
+      "first_probe_result": "incomplete_selector",
+      "corrected_probe_result": "exact_call_id_output_recorded"
+    },
+    "request_user_input": {
+      "call_type": "function_call",
+      "namespace": "functions",
+      "name": "request_user_input",
+      "call_id": "user-input-call",
+      "result_type": "function_call_output",
+      "result": "request_user_input is unavailable in Default mode",
+      "simulated_inference_requests": 2,
+      "authorization_headers": 0,
+      "adapter_denial_notes": []
+    },
+    "request_user_input_async": {
+      "call_type": "function_call",
+      "namespace": "functions",
+      "name": "request_user_input_async",
+      "call_id": "async-user-input-call",
+      "result_type": "function_call_output",
+      "result": "{\"accepted\":true}",
+      "simulated_inference_requests": 2,
+      "authorization_headers": 0,
+      "adapter_denial_notes": [],
+      "full_native_notifications_and_readback_items": "not_retained",
+      "external_or_human_delivery": "unobserved"
+    }
+  },
+  "app_server_request_fixture": {
+    "method": "item/tool/requestUserInput",
+    "rpc_wait_id": "input-wait",
+    "ordinary_drain_id": "input-drain",
+    "both_error_code": -32601,
+    "both_error_message": "observer adapter does not grant server-request authority"
+  },
+  "real_provider_turns": 0,
+  "capability_preflight": "blocked"
+}

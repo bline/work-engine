@@ -1,0 +1,326 @@
+{
+  "authorization_headers": 0,
+  "effect": {
+    "codex": {
+      "activity": [
+        {
+          "emittedAtMs": 1791350364723,
+          "method": "item/started",
+          "params": {
+            "item": {
+              "clientId": "adverse:effect",
+              "content": [
+                {
+                  "text": "Synthetic text one",
+                  "text_elements": [],
+                  "type": "text"
+                }
+              ],
+              "id": "01a114cd-5a33-7b40-a6e1-877e38f6d4ec",
+              "type": "userMessage"
+            },
+            "startedAtMs": 1791350364723,
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        },
+        {
+          "emittedAtMs": 1791350364723,
+          "method": "item/completed",
+          "params": {
+            "completedAtMs": 1791350364723,
+            "item": {
+              "clientId": "adverse:effect",
+              "content": [
+                {
+                  "text": "Synthetic text one",
+                  "text_elements": [],
+                  "type": "text"
+                }
+              ],
+              "id": "01a114cd-5a33-7b40-a6e1-877e38f6d4ec",
+              "type": "userMessage"
+            },
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        },
+        {
+          "emittedAtMs": 1791350364741,
+          "method": "item/started",
+          "params": {
+            "item": {
+              "delivery": "async",
+              "id": "async-user-input-call",
+              "memoryCitation": null,
+              "phase": "final_answer",
+              "questions": [
+                {
+                  "options": [
+                    "Continue",
+                    "Stop"
+                  ],
+                  "title": "Local capability probe"
+                }
+              ],
+              "text": "Local capability probe\n- Continue\n- Stop",
+              "type": "agentMessage"
+            },
+            "startedAtMs": 1791350364741,
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        },
+        {
+          "emittedAtMs": 1791350364741,
+          "method": "item/completed",
+          "params": {
+            "completedAtMs": 1791350364741,
+            "item": {
+              "delivery": "async",
+              "id": "async-user-input-call",
+              "memoryCitation": null,
+              "phase": "final_answer",
+              "questions": [
+                {
+                  "options": [
+                    "Continue",
+                    "Stop"
+                  ],
+                  "title": "Local capability probe"
+                }
+              ],
+              "text": "Local capability probe\n- Continue\n- Stop",
+              "type": "agentMessage"
+            },
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        },
+        {
+          "emittedAtMs": 1791350364756,
+          "method": "item/started",
+          "params": {
+            "item": {
+              "delivery": null,
+              "id": "async-user-input-final",
+              "memoryCitation": null,
+              "phase": null,
+              "questions": null,
+              "text": "async user input probe complete",
+              "type": "agentMessage"
+            },
+            "startedAtMs": 1791350364756,
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        },
+        {
+          "emittedAtMs": 1791350364756,
+          "method": "item/completed",
+          "params": {
+            "completedAtMs": 1791350364756,
+            "item": {
+              "delivery": null,
+              "id": "async-user-input-final",
+              "memoryCitation": null,
+              "phase": null,
+              "questions": null,
+              "text": "async user input probe complete",
+              "type": "agentMessage"
+            },
+            "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+            "turnId": "01a114cd-5a24-7382-9837-2a74574a88a6"
+          }
+        }
+      ],
+      "context": "context",
+      "delivery": "adverse:delivery",
+      "effect": "adverse:effect",
+      "epoch": 1,
+      "full_turn": {
+        "completedAt": 1791350364,
+        "durationMs": 48,
+        "error": null,
+        "id": "01a114cd-5a24-7382-9837-2a74574a88a6",
+        "items": [
+          {
+            "clientId": "adverse:effect",
+            "content": [
+              {
+                "text": "Synthetic text one",
+                "text_elements": [],
+                "type": "text"
+              }
+            ],
+            "id": "item-1",
+            "type": "userMessage"
+          },
+          {
+            "delivery": "async",
+            "id": "item-2",
+            "memoryCitation": null,
+            "phase": "final_answer",
+            "questions": [
+              {
+                "options": [
+                  "Continue",
+                  "Stop"
+                ],
+                "title": "Local capability probe"
+              }
+            ],
+            "text": "Local capability probe\n- Continue\n- Stop",
+            "type": "agentMessage"
+          },
+          {
+            "delivery": null,
+            "id": "item-3",
+            "memoryCitation": null,
+            "phase": null,
+            "questions": null,
+            "text": "async user input probe complete",
+            "type": "agentMessage"
+          }
+        ],
+        "itemsView": "full",
+        "startedAt": 1791350364,
+        "status": "completed"
+      },
+      "input_digest": "473e55ef34ddf1e4365f8d961231a97050c52e51e79b6d39cc1f63b4f9aa3816",
+      "interrupt": null,
+      "notes": [],
+      "processes": [
+        {
+          "exit": null,
+          "generation": 1,
+          "pid": 12561
+        }
+      ],
+      "profile_digest": "cb6895cd55064908cedc2fa6268a869b0179c1ae7fecbfbdc5ef7a51f9f20bb7",
+      "purpose": "Input",
+      "readback_attempted": true,
+      "request_digest": "a520f92fdfdf80f03cfc00fa88e5dea52e8742b3ff4ecc5ec7295c98b897116a",
+      "start_rpc_id": 4,
+      "state": "Completed",
+      "terminals": [
+        {
+          "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+          "turn": {
+            "error": null,
+            "id": "01a114cd-5a24-7382-9837-2a74574a88a6",
+            "items": [
+              {
+                "delivery": null,
+                "id": "async-user-input-final",
+                "memoryCitation": null,
+                "phase": null,
+                "questions": null,
+                "text": "async user input probe complete",
+                "type": "agentMessage"
+              }
+            ],
+            "status": "completed"
+          }
+        },
+        {
+          "threadId": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+          "turn": {
+            "error": null,
+            "id": "01a114cd-5a24-7382-9837-2a74574a88a6",
+            "items": [
+              {
+                "clientId": "adverse:effect",
+                "content": [
+                  {
+                    "text": "Synthetic text one",
+                    "text_elements": [],
+                    "type": "text"
+                  }
+                ],
+                "id": "item-1",
+                "type": "userMessage"
+              },
+              {
+                "delivery": "async",
+                "id": "item-2",
+                "memoryCitation": null,
+                "phase": "final_answer",
+                "questions": [
+                  {
+                    "options": [
+                      "Continue",
+                      "Stop"
+                    ],
+                    "title": "Local capability probe"
+                  }
+                ],
+                "text": "Local capability probe\n- Continue\n- Stop",
+                "type": "agentMessage"
+              },
+              {
+                "delivery": null,
+                "id": "item-3",
+                "memoryCitation": null,
+                "phase": null,
+                "questions": null,
+                "text": "async user input probe complete",
+                "type": "agentMessage"
+              }
+            ],
+            "status": "completed"
+          }
+        }
+      ],
+      "text_receipt": null,
+      "text_violation": "UserInputRequested: exact native item view",
+      "thread_id": "01a114cd-5a19-7ba1-bbf6-81a87538f8d0",
+      "turn_id": "01a114cd-5a24-7382-9837-2a74574a88a6"
+    },
+    "context": "context",
+    "delivery": "adverse:delivery",
+    "domain": "CodexTextTurnCompletion",
+    "evidence": [],
+    "id": "adverse:effect",
+    "request": {
+      "authority": {
+        "approval": "explicit adverse native text simulation",
+        "deadline": 18446744073709551615,
+        "mode": "CodexText"
+      },
+      "context": "context",
+      "delivery": "adverse:delivery",
+      "effect": "adverse:effect",
+      "epoch": 1,
+      "input": "one",
+      "input_digest": "473e55ef34ddf1e4365f8d961231a97050c52e51e79b6d39cc1f63b4f9aa3816",
+      "lineage": "synthetic:one",
+      "payload": [
+        83,
+        121,
+        110,
+        116,
+        104,
+        101,
+        116,
+        105,
+        99,
+        32,
+        116,
+        101,
+        120,
+        116,
+        32,
+        111,
+        110,
+        101
+      ],
+      "profile_digest": "cb6895cd55064908cedc2fa6268a869b0179c1ae7fecbfbdc5ef7a51f9f20bb7",
+      "purpose": "Input"
+    },
+    "request_digest": "a520f92fdfdf80f03cfc00fa88e5dea52e8742b3ff4ecc5ec7295c98b897116a",
+    "state": "Unknown"
+  },
+  "real_provider_turns": 0,
+  "simulated_inference_requests": 2
+}

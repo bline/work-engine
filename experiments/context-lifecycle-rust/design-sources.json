@@ -1,0 +1,1606 @@
+{
+  "schema_version": 1,
+  "kind": "rust_lifecycle_design_evidence_manifest",
+  "status": "offline_continuation_documentation_no_new_execution_authority",
+  "recorded_at_utc": "2026-10-07T22:34:16.642157+00:00",
+  "roots": {
+    "repository": "/home/bline/code/work-engine",
+    "legacy": "/home/bline/.local/state/work-engine/context-lifecycle-schema14-consumer-wait-20261004-workspace",
+    "artifacts": "/home/bline/.local/state/work-engine/context-lifecycle-schema14-consumer-wait-20261004-artifacts",
+    "state": "/home/bline/.local/state/work-engine"
+  },
+  "baseline": {
+    "repository_head": "7583e2095725957470e28cc11fc69404386fec63",
+    "legacy_head": "665b15d1d3fb38a9f68536e70191e9b550dd7f13",
+    "legacy_patch_reported_by_verified_gate_receipt": "f961607389b9edfd98f9673f5ce974500323a3ba2f8acd1a1f7ccfd38edb7127",
+    "legacy_gate_status": "failed_unwaived_stage_7",
+    "rust_live_turn_allowance_remaining": 0
+  },
+  "method": {
+    "tier": "Tier 2 task-directed verification",
+    "exhaustive_repository_audit": false,
+    "source_hash_is_not_full_review": true,
+    "tests_rerun": false,
+    "provider_calls": 0,
+    "independent_review": false,
+    "claude_calls": 0,
+    "authority": "User requested deep assessment and complete proposed Rust design; documentation only.",
+    "graph": [
+      {
+        "project": "home-bline-code-work-engine",
+        "initial_generation": "2026-10-07T05:37:04Z",
+        "final_coverage_generation": "2026-10-07T05:59:58Z",
+        "limitation": "Best-effort metadata, not completeness. Saved manifests/lockfile not graph-tracked; direct bytes verified. SQLite evidence deliberately excluded and receipt hashes verified without a fresh database audit."
+      },
+      {
+        "project": "home-bline-.local-state-work-engine-context-lifecycle-schema14-consumer-wait-20261004-workspace",
+        "generation": "2026-10-04T06:52:20Z",
+        "limitation": "Modified files stale, observer/runner untracked; direct source controls. No negative claims from graph absence."
+      }
+    ]
+  },
+  "documents": [
+    {
+      "root": "repository",
+      "path": "docs/rust-development.md",
+      "bytes": 9740,
+      "sha256": "225d2ea65c088b6614dd56824157b847ea453518417cc0aab61ed3ed39f1e904"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/DESIGN.md",
+      "bytes": 77536,
+      "sha256": "e5f5157cd9a852c01ce79c68bc72ef0e78a5b3ecc20f67ca268fe63fb2c2e117"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+      "bytes": 49706,
+      "sha256": "a5037030c9ec1467a509676622171238134f602949eb391a7d95de0d33b13869"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+      "bytes": 29080,
+      "sha256": "037d3b4049da48f5086e34c4a7ad6f5b3d5c838db38be0b7de8083e99803119c"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/README.md",
+      "bytes": 13184,
+      "sha256": "73a40bc6da72904a68f27d089bf8004852adabbb21a46018e898f2ca7fa19422"
+    },
+    {
+      "root": "repository",
+      "path": "AGENTS.md",
+      "bytes": 3224,
+      "sha256": "04675bbabbf39576e4590cc8dfa2d681f7a630572ccd5f88bc62ebc422e4d9b8"
+    },
+    {
+      "root": "repository",
+      "path": "README.md",
+      "bytes": 9357,
+      "sha256": "8315947c7e23dc5fc6c39d86bfa16d1e5781479bcd63f21cef93a06647b2270d"
+    }
+  ],
+  "files": [
+    {
+      "root": "repository",
+      "path": "DESIGN.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 41500,
+      "sha256": "2213ab9a32925e7792353489599201bf71f3268eb8981cc192f87c57e2952095"
+    },
+    {
+      "root": "repository",
+      "path": "PHILOSOPHY.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 34973,
+      "sha256": "299b0ad8192f3cc442f6491d2908f421f22333024ffb1423cae6856b69c3a307"
+    },
+    {
+      "root": "repository",
+      "path": "app-server/docs/context-lifecycle-transition-protocol.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 37893,
+      "sha256": "0f4072ea16c764e9b56e82f10477a7d8add426ad636090fe9f3551d66a1ee8cd"
+    },
+    {
+      "root": "repository",
+      "path": "app-server/docs/semantic-context-lifecycle-manager.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 65561,
+      "sha256": "f349c9c4f43c93ec17420c4e7335d1276ba0ef6c9ff8f179cda8e93ec555e660"
+    },
+    {
+      "root": "repository",
+      "path": "ideas/01-semantic-durability-and-context-lifetime-judgment.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 27616,
+      "sha256": "65131438fc8934ff859500b66d542f5e183576f55d2ab786bade781262c984b1"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/README.md",
+      "inspection": "prior_document_read_plus_authorized_planning_links_only",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 13184,
+      "sha256": "73a40bc6da72904a68f27d089bf8004852adabbb21a46018e898f2ca7fa19422",
+      "previous_document_identity": {
+        "bytes": 12780,
+        "sha256": "05787db55203213b8d7a55bd95020ef8ea79c5c3a77ecf13290e2e994812325b"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/NATIVE_VERTICAL.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 12626,
+      "sha256": "663aabe76a64e5fb77051bcde6009c8abde10d4f725347296bb74e6cd1390119"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/PARENT_VALIDATION.md",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 5049,
+      "sha256": "eb29fcdaa911ffcf32b1e8739132f81eebe83514ce2b8c1f958ffac298250385"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/types.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 8930,
+      "sha256": "70fc564185027bad38bab93c4309a37d75f96ea90e500b8afcea7a60cfeb4047"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/kernel.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 48980,
+      "sha256": "ba186f763e7376b3eb81342b42315a19c3898213726cb216a5c6e175b9fff221"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/storage.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 2192,
+      "sha256": "c3d28daa424a2101d1b2ec1b2f6205b0072901e03473deaa20795924b5d24fb6"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/process.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 9149,
+      "sha256": "c63114b78102d28d7e3c5f543d0abd0b951fa568b98557ca7a415162833e3185"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/vertical.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 5753,
+      "sha256": "b1f17366461a4e35ca57c099e6ce377c2336406e3c19fa5f4d6644bb2f4b6ce5"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/codex.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 68258,
+      "sha256": "80d452f7d81737554782183dcff40be04bd3dcbc3763d993fadb3e656f98e9ee"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/tests/lifecycle.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 28222,
+      "sha256": "3e61d61f7d7a1571346101afa2db19bd0c3c6fe62b7d83e4f2ad76989ed4571e"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/tests/codex_observation.rs",
+      "inspection": "targeted_source_or_test_inspection_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 45480,
+      "sha256": "84222b88d99c0a15009b753526465267ce39f82c36a20d114b9cf181474c8f8f"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/CODEX_CONTRACT.md",
+      "inspection": "document_or_saved_report_read",
+      "bytes": 10158,
+      "sha256": "8d5ae9cd8dd71bdc66986b1ba20bbc5f8c025c36710a2ff6742ea6927e199020",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/parent-validated-sources.sha256",
+      "inspection": "manifest_verified",
+      "bytes": 1529,
+      "sha256": "f1a4d84e2080c042010494f35302dd27a584c887a3946f1dc595fc45032e63b0",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/receipt.json",
+      "inspection": "document_or_saved_report_read",
+      "bytes": 3493,
+      "sha256": "feb5b5317dced64d452c75fb30393e843442ab3b50c6c3e3f65ef418e077f673",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-admission-rejection-2026-10-07/diagnosis.json",
+      "inspection": "document_or_saved_report_read",
+      "bytes": 1949,
+      "sha256": "36cd36b79ce6e4787f4c2a9072227a48e9053bf8d6f1a00e802def9f79ed429e",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-lifecycle-completion-observer.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked"
+      },
+      "bytes": 6962,
+      "sha256": "3e454945b961fb5699bd3eb05efd1123335681af6b36102260455aa64e7cd770"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-lifecycle-cutover-proof-runner.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked"
+      },
+      "bytes": 28593,
+      "sha256": "400eb297475a7f59996ae2fe49736e91dd1d817d182dc398131cf696e05d086e"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/executable-generation-dispatch.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 40657,
+      "sha256": "3607cc977b666a8db37abb9cb62789144be0832d27342bf239ce7f8667e0b8d8"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/executable-generation-role-environment.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 34224,
+      "sha256": "86abccbbbb89eea984566736feb5619a332d30633e224b914bd201950ff2c99b"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/executable-generation-worker-runtime.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 7923,
+      "sha256": "b0fb18b1579f42ab0e1987c0a8f531b43af3483a183bdc77a0898843323aafe6"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/executable-generation-worker.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 13222,
+      "sha256": "9f8aeab4b8d2e9021d84442efdee467fbdd4833017d5b0d285b6d2ca830497d1"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/index.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 6434,
+      "sha256": "6d1c81177d2027aa8902abf02014734d47ef99e4426b33741bbd9677f503f415"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/retained-role-live-lifecycle.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 15623,
+      "sha256": "2b1bab21d0493199456668383b31fff4098614252cdb74518633c94bf14188a0"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/sqlite-context-transition-protocol.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 114855,
+      "sha256": "3d917d6a611ba88988ca2dfd16f1eeec2a56505d61e3ed9f629f0c1dd3c21af6"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/context-lifecycle-clean-cutover.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 169369,
+      "sha256": "9ad87aa50f0989ab298d577cd3429d055962b3306b30cd4d1222e05333c5486a"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/executable-generation-manager.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 15692,
+      "sha256": "2df356780919ea3a59ea5bddf6378e6f4d3d5500c75d4388b46641993394959b"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/executable-generation-snapshot.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 9822,
+      "sha256": "60ca48348faa46ea710803335dd5b7b5aabe5e6d1dfa9e39652593d221b8a2f9"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/executable-generation-worker.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 123036,
+      "sha256": "8a2bc7baec78cbcd472de18ec82e63ed5db9fe8cb3af98cfedd9ef3c284cf858"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/integration.test.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 378485,
+      "sha256": "2cf5e110ad4347c693b97ab0140d953fbc1667fe06398054c7ff507a817b2701"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/prepare-generation-rollover.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 143774,
+      "sha256": "680c24be3355f14be15af8fa83dfb7db6e9cc82ecd7b437900ef7086d8a9baed"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/tests/sqlite-context-transition-protocol.test.mjs",
+      "inspection": "baseline_hash_and_selected_test_inventory_not_full_audit",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_changed"
+      },
+      "bytes": 28815,
+      "sha256": "dac26c193d5ed9730b76af7dec6d80787952227acd21572568ff77139f90a2d1"
+    },
+    {
+      "root": "legacy",
+      "path": "docs/app-server-migration.md",
+      "inspection": "document_read",
+      "member_of_frozen_17_path_manifest": true,
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked"
+      },
+      "bytes": 2875,
+      "sha256": "b4c07644f38dc5750cfd36892c7c49c5a328bab764a90eb0345fb574b182690a"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-transition-protocol.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 47893,
+      "sha256": "cb8b6552133847a2a30c2df3811fc60e1855b9be592fbe5b5337c768863f66d9"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/semantic-context-inference.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 34558,
+      "sha256": "7cfe85dcd396d178a5e61831c9d4622c9c9d83cca9dd053e4c37cb00502c1ecc"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-input-custody.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 24126,
+      "sha256": "d41b205f901e7dbed0a5108ca3ae59a961ec29fc72b2de89dd03494fd7fc8877"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-domain-delivery-retirement-grant.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 5444,
+      "sha256": "43a5e43d43c51654ed0243f418a0e2549742c8dbc5433dbeacb011d311d33c48"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-domain-delivery-retirement.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 12904,
+      "sha256": "f8c0375b741548641e1535a586032bb22e85a1db318d5247625bfd906b327aa3"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-lifecycle-quiescence-reconciliation.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 55617,
+      "sha256": "7101845d7b45b4d10b575a47b4cb7cd0b7b4deb99a5a4fef79d4d17bd72f000e"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/executable-generation-bootstrap.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 29902,
+      "sha256": "abacea82a386ebe41a0d8c380bd98f9c25787acd8b415dbd16a21007bea8db4f"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/scripts/prepare-generation-rollover.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 47906,
+      "sha256": "ff3b511d9ca43adec4cf805ad7aa98e7895fd931da91c5d57a17b0892b08c966"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/continuation-state.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 10543,
+      "sha256": "27a1329713da43a4c6e64184fcc2476a118af2c3213734ef6cee7cdd9cc9e99a"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-pressure-controller.mjs",
+      "inspection": "targeted_source_not_full_audit",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 9409,
+      "sha256": "7f6cb8d57a06dda5b96a8ddbdccc3129813014077cc2d4772679e4f9aeaaebfe"
+    },
+    {
+      "root": "legacy",
+      "path": "app-server/src/context-lifecycle-clean-cutover.mjs",
+      "inspection": "targeted_source_lines_1_to_130",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "bytes": 156472,
+      "sha256": "aa43773dc8726b9476915c99d7a6959c64fc17bad9ab0cfda35836d1f8299dd1"
+    },
+    {
+      "root": "artifacts",
+      "path": "c2-midcapture-targeted-Y2CxTA/source-sha256.txt",
+      "inspection": "manifest_verified",
+      "catalogue_id": "S01",
+      "bytes": 1984,
+      "sha256": "498a285eee9db761620bb19d5fb24da57f3172e75b0fd799f032ae30e1a29ce3"
+    },
+    {
+      "root": "artifacts",
+      "path": "c2-f961-gate-fHlZr4/failed-gate-receipt.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S02",
+      "bytes": 4498,
+      "sha256": "1b1b54478f6727d7aa0d2982602c3c904acbebd409dbf2cd79cce7f41753e291"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-successor-rpc-test-amendment-plan.md",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S03",
+      "bytes": 7941,
+      "sha256": "d799a648408eb7666cd8de2929dffdc8df0d1ba414f0342feef38ae7238b52fd"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-v4-candidate-1-review-adjudication.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S07",
+      "bytes": 4244,
+      "sha256": "e0b38f7e83693bf9b30f9136d765451dec09ee8b1c86ddf32541542e970c0c65"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-v2-frozen-patch-readonly-adjudication.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S08",
+      "bytes": 5296,
+      "sha256": "bfd580f1dfa97289c7ee0aa26597ae93572db49a5fde8966b410bd72f66d788b"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-v3-candidate-2-review-adjudication.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S09",
+      "bytes": 4789,
+      "sha256": "861113d31862b64c1b738bb312fae3258bb3081e183b77ab40ce0854eec9fdee"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-two-ordering-implementation-diagnostic-receipt.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S10",
+      "bytes": 7499,
+      "sha256": "399c12cea845d8b72310b99caf99a3d87716450d9f3925895287f6e623157c9f"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-duplicate-terminal-observation-diagnosis.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S11",
+      "bytes": 8902,
+      "sha256": "133ee29d1a08bd5d2534437ef20350c141b8a01c5c78a481f449e35e30f334b3"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-original-shutdown-causal-assessment.md",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S12",
+      "bytes": 8531,
+      "sha256": "e0ff43866ea1b6e1e967f4488d36aa9a138fd13d9a85fca78fa677c837c831a3"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-063cc980-candidate-invalid-diagnosis-v2.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S13",
+      "bytes": 6344,
+      "sha256": "aeddfb2ea7f8c09ff688aede2cf78d957cb97035829d65ca1ff84689ef751e1f"
+    },
+    {
+      "root": "artifacts",
+      "path": "c2-short-selector-stage4-XVX7ie/discriminating-result-receipt.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S13",
+      "bytes": 10348,
+      "sha256": "ca01bad7548012076e43eae78e1c815754bea65655460c884d0f10c13b014a3a"
+    },
+    {
+      "root": "artifacts",
+      "path": "completion-boundary-c2-yield-handshake-repair-plan-v2.md",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S14",
+      "bytes": 10887,
+      "sha256": "d10b7fb7b7d7b4384da11d0dabf48ad8d67e846b00bf128eccdece301cc57cfc"
+    },
+    {
+      "root": "state",
+      "path": "context-lifecycle-v28-activation-20260930/proof-stop-v29-proof4-lease-tail-20261002.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S05",
+      "bytes": 3063,
+      "sha256": "b095f46b02066eb62da058a241dca7b34cd9372f76f456a85acdb682e64545dc"
+    },
+    {
+      "root": "state",
+      "path": "context-lifecycle-published-candidate5-real-proof-20261004/terminal-failure-receipt.json",
+      "inspection": "saved_report_read",
+      "catalogue_id": "S06",
+      "bytes": 6528,
+      "sha256": "e8e60c5aec111941309f8198ca303b7b8026971303d19fa5fd55c00670ab1718"
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/Cargo.toml",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 424,
+      "sha256": "b467d474ca5a8b1282f743b140c21dcff0aaf31158799b200b0e70b23c8e7f1a",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/Cargo.lock",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 26101,
+      "sha256": "cd08508bf1d205599106575ff7830150496af067edd74d24a52743782fff1007",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/lib.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 8114,
+      "sha256": "9796840f4c5b6d90c61bb64647d63c8ff10d40a681e85f8530f27135caa83975",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/main.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 1354,
+      "sha256": "436208a4bc85a20ea19d0afa5736ac1943f3438195b0dea151ec5290e874bfaf",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/provider.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 9402,
+      "sha256": "0d12118f515c3225c26b1d077a035e275a6f186837fdcab4fccfe062b2886c1e",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/bin/codex-fixture.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 9484,
+      "sha256": "211379f56eb71f7e8a977747bc4b7a37a244fe37b16ceaba43af56bf803bf804",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/bin/native-live-preflight.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 532,
+      "sha256": "ad720c9194a629ca0481f4ac3cd89524fe809c18d133de6a89dc218de042ab3e",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/bin/native-text-vertical.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 2773,
+      "sha256": "a64e80d4da13df21b293ff1aabf0a7fa2efd8ead15f6906ee4a8ff6d1dee9ad8",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/src/bin/prepare-live-profile.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 518,
+      "sha256": "875d11164386ca19b2b402974d98b8c308e998479e96560eb28fc90678ed8535",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/tests/support/loopback.rs",
+      "inspection": "baseline_identity_only_not_source_review",
+      "member_of_validated_18_path_manifest": true,
+      "bytes": 15939,
+      "sha256": "da8d319e04f941d4c30f15a00009c781e765fe2867b261447c11b04a00de144c",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/result.json",
+      "inspection": "receipt_bound_hash_verification_only_not_fresh_database_audit",
+      "bytes": 6562,
+      "sha256": "ea64b318b9ed39e86fe1617ef7f9612c76cc74a755a52d81a626a6b6daae04a0",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/preflight.json",
+      "inspection": "receipt_bound_hash_verification_only_not_fresh_database_audit",
+      "bytes": 1379,
+      "sha256": "be31d14ac691e404b498920801abeccf5acfa7e6058283cf5da2530cebc4d328",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/durable-summary.json",
+      "inspection": "receipt_bound_hash_verification_only_not_fresh_database_audit",
+      "bytes": 2018,
+      "sha256": "989ea4df08e239034cd55cc0ff1bd99bb61be3e1b764cc84effb2876a76644b8",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/coordinator-state.sqlite",
+      "inspection": "receipt_bound_hash_verification_only_not_fresh_database_audit",
+      "bytes": 110592,
+      "sha256": "3918e12f6b002d3ff4bb7866c1f7745ac5d6c4ec1f861fdbbcb26467857db755",
+      "graph": {
+        "status": "excluded",
+        "freshness": "not_tracked"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/adapter-state.sqlite",
+      "inspection": "receipt_bound_hash_verification_only_not_fresh_database_audit",
+      "bytes": 98304,
+      "sha256": "b0c8793c07095c3fee2281fd892cb5d93a05986e1de7a643fdc9ca218124228d",
+      "graph": {
+        "status": "excluded",
+        "freshness": "not_tracked"
+      }
+    },
+    {
+      "catalogue_id": "S19",
+      "root": "repository",
+      "path": "app-server/ideas/pending/service-plane-and-kernel-domain-boundary.md",
+      "inspection": "selected_idea_sections_not_implementation_audit",
+      "selected_sections": [
+        "status and summary",
+        "1-4; operation grammar and capability distinction"
+      ],
+      "bytes": 29480,
+      "sha256": "ea690d6ed7478e366c414af1df7ebad068958e1688b9d54fe07b23d99c3280a6",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "catalogue_id": "S20",
+      "root": "repository",
+      "path": "app-server/ideas/pending/authority-commit-gate-and-effect-admission.md",
+      "inspection": "selected_idea_sections_not_implementation_audit",
+      "selected_sections": [
+        "status and authority",
+        "1-3; open review findings and invariant",
+        "7; operation states and gate sequence",
+        "8.1; local SQL commit boundary",
+        "10-12; excluded effects, trust and unresolved prerequisites"
+      ],
+      "bytes": 57696,
+      "sha256": "6b5289cedb0219720871d1d3096c96159bccabaee1031c3eccba3478e61dda21",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "catalogue_id": "S21",
+      "root": "repository",
+      "path": "app-server/ideas/pending/provider-turn-harness-runtime-and-operator-projection.md",
+      "inspection": "selected_idea_sections_not_implementation_audit",
+      "selected_sections": [
+        "status and summary",
+        "1-5; ports and execution ownership"
+      ],
+      "bytes": 24186,
+      "sha256": "cef6c1c22ce63a9406fe7bfa930740c2fce15390843054c26f6dbc4196c8b64f",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "docs/model-selection.md",
+      "bytes": 6566,
+      "sha256": "f5c594118b0a151056cea38281b7db8f8b0904de02eea87d586d2697fdfa452c",
+      "catalogue_id": "S22",
+      "inspection": "document_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "app-server/experiments/terminal-ui/Cargo.toml",
+      "bytes": 739,
+      "sha256": "a56779f4a31bc63bef0bcfe1499fbbdf1e22f7704f77b3a8e77a774d67911b67",
+      "catalogue_id": "S23",
+      "inspection": "manifest_read",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "app-server/docs/opentui-ui-exploration.md",
+      "bytes": 59160,
+      "sha256": "87ecb5b3050c2ef9159ffff30dbf0badbaa2934f49a19eb1c1e362ce5f5eb88c",
+      "catalogue_id": "S23",
+      "inspection": "selected_client_host_boundary_lines_110_125",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      }
+    },
+    {
+      "root": "repository",
+      "path": "app-server/src/services/claim-evidence/identity.mjs",
+      "bytes": 2685,
+      "sha256": "57e3c6aca0e107123c7dfacadb4511877366ede71c26ddb8e160894d1984f583",
+      "inspection": "direct_source_verification_of_codec_functions",
+      "source_catalogue_id": "S24",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "scope": "compareUnicode, serialize, canonicalJson and digest; not full claim-service review"
+    },
+    {
+      "root": "repository",
+      "path": "app-server/src/services/workspace-coordination/contract.mjs",
+      "bytes": 2822,
+      "sha256": "529d18e6e7840e4165fd1fdf475f8997c21e0ad8f0cbfdaca0d5510a15799d0e",
+      "inspection": "direct_source_verification_of_codec_functions",
+      "source_catalogue_id": "S25",
+      "graph": {
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match"
+      },
+      "scope": "canonicalJson and digest; not full workspace-service review"
+    }
+  ],
+  "baseline_verification": [
+    {
+      "subject": "repository",
+      "source_manifest": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/parent-validated-sources.sha256",
+      "verified": 18,
+      "result": "all hashes match saved manifest"
+    },
+    {
+      "subject": "legacy",
+      "source_manifest": "/home/bline/.local/state/work-engine/context-lifecycle-schema14-consumer-wait-20261004-artifacts/c2-midcapture-targeted-Y2CxTA/source-sha256.txt",
+      "verified": 17,
+      "result": "all hashes match saved manifest"
+    },
+    {
+      "subject": "live receipt evidence",
+      "verified": 5,
+      "result": "all hashes match; no new database integrity check or provider observation"
+    }
+  ],
+  "public_references": [
+    {
+      "url": "https://docs.rs/tokio/latest/tokio/macro.select.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tokio/latest/tokio/task/struct.JoinSet.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tokio/latest/tokio/task/struct.JoinHandle.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tokio/latest/tokio/task/index.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tokio/latest/tokio/process/struct.Child.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://sqlite.org/isolation.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://sqlite.org/backup.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://doc.rust-lang.org/book/ch16-04-extensible-concurrency-sync-and-send.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://doc.rust-lang.org/book/ch06-02-match.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/loom/latest/loom/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://proptest-rs.github.io/proptest/intro.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://json-schema.org/draft/2020-12",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc8785",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://doc.rust-lang.org/cargo/reference/workspaces.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancellationToken.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/rusqlite/latest/rusqlite/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/schemars/latest/schemars/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/jsonschema/latest/jsonschema/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/thiserror/latest/thiserror/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/tracing/latest/tracing/span/index.html",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    },
+    {
+      "url": "https://docs.rs/serde_json_canonicalizer/latest/serde_json_canonicalizer/",
+      "checked_at_utc_date": "2026-10-07",
+      "source_type": "primary_documentation",
+      "content_hash_pinned": false
+    }
+  ],
+  "limits": [
+    "Reported tests and adjudications inspected, not re-executed.",
+    "Selected source ranges/symbols inspected, not every line of every hashed file.",
+    "Some earlier failures remain source-supported hypotheses, not demonstrated historical schedules.",
+    "No current live proxy, Q3/Q4 state or production schema observation.",
+    "Rust text proof does not establish semantic quality, tool settlement, migration or full replacement.",
+    "No implementation, gate, provider proof, acceptance, publication or activation authorized by this manifest.",
+    "The initial assessment created no workspace. Later S0-S3 are accepted and published at the references in documentation_revision; composed service, host, migration and operational qualification remain separate."
+  ],
+  "documentation_revision": {
+    "subject": "Offline Rust lifecycle continuation: accepted S0-S3 progress, S4 service and permanent S8/S9 joins",
+    "authority": "User accepted offline plan reconciliation and one retained Sol/high S4 integration builder, UI preparation with its owner and independent HP1. This delegated amendment is documents only and grants no launch, runtime, provider, state disposition, cutover or publication authority.",
+    "authority_reference": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s4-20261007/authority.json",
+    "prior_manifest_sha256": "4e70f765b8e792589b1706fbdcf110ebe6d43b0d860eb89bcd56d10b4a70b41c",
+    "prior_document_hashes": [
+      {
+        "root": "repository",
+        "path": "docs/rust-development.md",
+        "bytes": 8861,
+        "sha256": "aca53736538773d86ca5c0e9381752814fa1f59ff0a23dd12cff249e37c36f37"
+      },
+      {
+        "root": "repository",
+        "path": "experiments/context-lifecycle-rust/DESIGN.md",
+        "bytes": 74966,
+        "sha256": "08ff65c6520e455a0d9f9ef15e0a1ee5f4bed1cbfc1c6164c35101f3fcd750e8"
+      },
+      {
+        "root": "repository",
+        "path": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+        "bytes": 45437,
+        "sha256": "d8a83f96a63b733cc8a42ab2c75907d6e453d25b05376c557065f1800ed4fc1c"
+      },
+      {
+        "root": "repository",
+        "path": "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+        "bytes": 25766,
+        "sha256": "02c8ad62b958708b9d841eacfd29dda9601096f2bca9ba4cfb713d78a4d8baae"
+      },
+      {
+        "root": "repository",
+        "path": "experiments/context-lifecycle-rust/README.md",
+        "bytes": 13184,
+        "sha256": "73a40bc6da72904a68f27d089bf8004852adabbb21a46018e898f2ca7fa19422"
+      },
+      {
+        "root": "repository",
+        "path": "AGENTS.md",
+        "bytes": 3224,
+        "sha256": "04675bbabbf39576e4590cc8dfa2d681f7a630572ccd5f88bc62ebc422e4d9b8"
+      },
+      {
+        "root": "repository",
+        "path": "README.md",
+        "bytes": 9357,
+        "sha256": "8315947c7e23dc5fc6c39d86bfa16d1e5781479bcd63f21cef93a06647b2270d"
+      }
+    ],
+    "prior_manifest_backup": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s4-20261007/offline-plan-reconciliation/originals/experiments/context-lifecycle-rust/design-sources.json",
+    "changed_paths": [
+      "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+      "experiments/context-lifecycle-rust/DESIGN.md",
+      "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+      "experiments/context-lifecycle-rust/design-sources.json",
+      "docs/rust-development.md"
+    ],
+    "current_published_base": "b2efdbfa0354a997b23ac4e183b89ca0dbf36cc2",
+    "published_components": {
+      "S0": "84be6695d716f026460fbf11aa703e73631e514e",
+      "S1": "e7c1d88ec0df20ea6213239b6dc2b36abd9f1872",
+      "S2": "b2efdbfa0354a997b23ac4e183b89ca0dbf36cc2",
+      "S3": "634161c2f54dc4fcf9dcb53936951ecefe457235"
+    },
+    "inputs": [
+      {
+        "path": "docs/rust-migration-plan.md",
+        "bytes": 32595,
+        "sha256": "3617bd3625d4a18437563064c940e49bb0ed93c97602db2d3374d8a6e7da7c55",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "docs/rust-host-replacement-plan.md",
+        "bytes": 39638,
+        "sha256": "0574fd98c05030d6ad552e30b47f461c72495537dc1a6ba937b33f96c59899a1",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "docs/rust-generation-integration-plan.md",
+        "bytes": 31851,
+        "sha256": "8efd7b273073958e6f4ea56bc090af2580a5e730037deb6f31d0b05be52bf370",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-implementation-20261007/s0-shared-branch-integration-receipt.json",
+        "bytes": 1527,
+        "sha256": "0d55263dc87dd0f89933fd58b33b47cbd294ab64b567ca42f3959de38cb50506",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s1-20261007/s1-accepted-handoff.json",
+        "bytes": 3752,
+        "sha256": "5e488febdf4b42eadb1b47231886bd89dabb2cbcd869588ab9b4d0fb62ef7348",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s2-20261007/s2-terminal-handoff-receipt-corrected.json",
+        "bytes": 3422,
+        "sha256": "019b61474cc21449314ba0d64692b2ff51f516c22bcf23c74ce31d904cb4bdf6",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s3-20261007/s3-handoff-receipt.json",
+        "bytes": 3450,
+        "sha256": "92d8d5366e2f96ab27cbb780e09789d94768a327ce6dc6a95b0f29b8c63a4a60",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s23-20261007/local-publication-complete.json",
+        "bytes": 521,
+        "sha256": "5ed4353ae632b0ace9e432ca3b2d38124a0f1feac8a56195729f9746686281cb",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s23-20261007/offline-rust-cutover-strategic-handoff.json",
+        "bytes": 6069,
+        "sha256": "09805070f192b18f5d336ac67b96e0f5acec0dcf402ae4dcfba6cc75e0207d6c",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      },
+      {
+        "path": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s4-20261007/authority.json",
+        "bytes": 613,
+        "sha256": "92857ba760da8313c74b4e87cdf62423f2939de41a34eaa735564de99172d63d",
+        "inspection": "document_or_handoff_read",
+        "evidence_scope": "planning/authority/result-record inspection; no runtime requalification"
+      }
+    ],
+    "requirements": 32,
+    "proposed_acceptance_scenarios": 37,
+    "proposed_slices": 11,
+    "preserved_historical_fields": [
+      "baseline",
+      "method",
+      "files",
+      "baseline_verification",
+      "public_references"
+    ],
+    "unchanged_prior_input_records": 85,
+    "refinements": [
+      "Development availability is not required; offline replacement changes no ordinary runtime custody, context continuity, uncertainty or recovery invariant.",
+      "S0-S3 component exits are accepted and published; S4 remains actual Rust service integration and U1, not full replacement.",
+      "S8 requires an agreed actual retained-workflow consumer in a permanent Rust host; native-review ownership is not merged and HP1 remains independent.",
+      "S9 binds a selected permanent Rust startup/deployment owner and preserves artifact/configuration/restart/exclusive-ownership evidence; no assumed Node bridge or online coexistence.",
+      "Import versus archive/clean start remains a human/state-owner decision. T25/current-custody/rollback requirements are retained pending any exact owner-authorized amendment.",
+      "Temporary bridges require a named consumer, concrete need direct replacement cannot meet, bounded scope and removal condition."
+    ],
+    "evidence_method": {
+      "tier": "Tier 2 task-directed verification",
+      "operation": "direct non-code document/handoff reads and Git publication identities",
+      "project": "home-bline-code-work-engine",
+      "generation": "2026-10-07T22:18:38Z",
+      "coverage": "14 selected repository governing/skill/input/output documents reported metadata_match/no_recorded_issue before edits; best-effort only. Exact bytes govern edited outputs.",
+      "pagination": "list_projects initial page was non-exhaustive; exact index_status confirmed the known repository. No negative or structural source claims.",
+      "no_exhaustive_source_or_runtime_claim": true
+    },
+    "agent_instruction_surface": {
+      "applicability": "applicable",
+      "review_status": "ready_for_separately_assigned_review; no independent review claimed",
+      "surfaces": [
+        "docs/rust-development.md: development premise, temporary interoperability, workspace progress and deployment boundaries",
+        "IMPLEMENTATION_PLAN.md: status/current authority, progress, S8 consumer, S9 disposition/startup and next decisions",
+        "DESIGN.md: development premise, owner selection, temporary consumers, migration/rollback decision and M4/S8 actual host",
+        "DESIGN_EVIDENCE.md: R01 exclusive admission clarification and retained T02/T25 interpretation"
+      ],
+      "preserved": "All I01-I14, M0-M6, R02-R32, T01-T37 scenario rows and S4 exit scope remain unchanged. No runtime instruction loader changed.",
+      "authority_limit": "Documentation reconciliation does not accept a changed state-disposition contract or select a reviewer, host consumer or startup owner."
+    },
+    "checks": {
+      "documentation_consistency": "passed",
+      "validation_reference": "/home/bline/.local/state/work-engine/rust-context-lifecycle-s4-20261007/offline-plan-reconciliation/validation.json",
+      "original_bytes_preserved": true,
+      "all_document_bindings_match": true,
+      "historical_inputs_and_revision_chain_preserved": true,
+      "I01_I14_M0_M6_T01_T37_and_S4_scope_unchanged": true,
+      "primary_integrated_scenario_ownership_unchanged": true,
+      "new_local_links_checked": 12,
+      "preexisting_missing_links": [
+        {
+          "document": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+          "target": "../../app-server/experiments/terminal-ui/Cargo.toml"
+        }
+      ],
+      "no_runtime_validation_claim": true
+    },
+    "runtime_code_changed": false,
+    "tests_run": false,
+    "implementation_workers_launched": 0,
+    "provider_calls": 0
+  },
+  "documentation_history": [
+    {
+      "subject": "owned-operation contracts and tool execution ownership",
+      "authority": "User requested this design update; documentation only, not full design acceptance or implementation authority.",
+      "prior_manifest_sha256": "02b760054524f663e24c89d12f6acf97dfdc39d37f8da4ffaf98894137217a87",
+      "prior_document_hashes": [
+        {
+          "path": "experiments/context-lifecycle-rust/DESIGN.md",
+          "sha256": "88768bf616bc74ff5c924a311a8caf4d30b3b688b4fa05b4e743e19b4faf103f"
+        },
+        {
+          "path": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+          "sha256": "b2c8951c990ac96f6f6db42b94a442330589650e8bfddf190fc0549bcbabce05"
+        }
+      ],
+      "changed_paths": [
+        "experiments/context-lifecycle-rust/DESIGN.md",
+        "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+        "experiments/context-lifecycle-rust/design-sources.json"
+      ],
+      "requirements": 30,
+      "proposed_acceptance_scenarios": 35,
+      "evidence_method": {
+        "tier": "Tier 2",
+        "operation": "find; direct-document verification",
+        "project": "home-bline-code-work-engine",
+        "generation": "2026-10-07T06:06:18Z",
+        "pagination": "not applicable to direct file reads",
+        "coverage": "metadata_match/no_recorded_issue for the three idea inputs; best-effort, not completeness",
+        "scope": "Selected idea sections; no implementation audit or adoption of the unresolved Authority Commit Gate"
+      },
+      "runtime_code_changed": false,
+      "tests_run": false,
+      "provider_calls": 0
+    },
+    {
+      "subject": "Rust-first shared-library direction and multi-slice lifecycle implementation proposal",
+      "authority": "User requested design updates for Rust-first implementation and a multi-slice plan. Documentation and planning only; no implementation, launches, inference, migration or activation authority.",
+      "prior_manifest_sha256": "39b970b898dfe39abcd95c7352c9ee3afce9de7735e1c301b3703d8e4275a623",
+      "prior_document_hashes": [
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/DESIGN.md",
+          "bytes": 61365,
+          "sha256": "18c94ab11ea69af09eafbb34971d9d9a977c543e142afec6c7e28fc4ecd3d847"
+        },
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+          "bytes": 37781,
+          "sha256": "6fb9849755f22604eeeca706e616a0b347164e3431766dbf08233b05b6c65e99"
+        }
+      ],
+      "changed_paths": [
+        "docs/rust-development.md",
+        "experiments/context-lifecycle-rust/DESIGN.md",
+        "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+        "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+        "experiments/context-lifecycle-rust/README.md",
+        "AGENTS.md",
+        "README.md",
+        "experiments/context-lifecycle-rust/design-sources.json"
+      ],
+      "requirements": 32,
+      "proposed_acceptance_scenarios": 37,
+      "proposed_slices": 11,
+      "unchanged_prior_input_hashes": 79,
+      "changed_prior_document_inputs": [
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/README.md",
+          "previous_sha256": "05787db55203213b8d7a55bd95020ef8ea79c5c3a77ecf13290e2e994812325b",
+          "current_sha256": "73a40bc6da72904a68f27d089bf8004852adabbb21a46018e898f2ca7fa19422",
+          "reason": "Authorized discovery links; experimental code and saved results unchanged."
+        }
+      ],
+      "evidence_method": {
+        "tier": "Tier 2",
+        "operation": "find; direct-document and manifest verification",
+        "project": "home-bline-code-work-engine",
+        "generation": "2026-10-07T06:33:50Z",
+        "pagination": "not applicable to direct document reads",
+        "coverage": "metadata_match/no_recorded_issue for all ten inspected input/output paths; best-effort, not completeness",
+        "scope": "Design and planning text, model guidance, dependency manifests and selected UI client/host boundary; no fresh implementation audit."
+      },
+      "checks": {
+        "document_links_whitespace_fences": "passed",
+        "requirement_ids": "32 contiguous",
+        "scenario_ids": "37 contiguous",
+        "slice_ids": "S0-S10",
+        "primary_integrated_scenario_ownership": "Every T01-T37 has exactly one named primary integrated owner; not runtime evidence."
+      },
+      "author_instruction_review": {
+        "applicability": "applicable",
+        "subject": "Exact output document hashes in documents",
+        "inspected_material": "Rust direction and loading pointer; lifecycle ownership/dependency/clock/UI additions; implementation-plan authority, models, concurrency, integration and gate clauses.",
+        "decisive_context": "User requested Rust-first direction and planning; repository DESIGN sections 1, 3, 7-8, 11-12 preserve mutable route choices, authority, provenance and truthful review.",
+        "outcome": "retain",
+        "material_findings": [],
+        "limitations": "Bounded author self-check, not independent review, formal design acceptance, dependency audit or implementation validation."
+      },
+      "runtime_code_changed": false,
+      "tests_run": false,
+      "implementation_workers_launched": 0,
+      "provider_calls": 0
+    },
+    {
+      "subject": "Bounded cross-domain consolidation refinements to Rust lifecycle design and S0-S10 plan",
+      "authority": "User requested incorporating the four assessed refinements now. Documentation only; not design acceptance, implementation, worker launch, provider inference, migration or operations authority.",
+      "prior_manifest_sha256": "95c1ae6f339175d8080b7d0a5ff3504fa2f8606ae729177b9ef2dda737a3ead1",
+      "prior_document_hashes": [
+        {
+          "root": "repository",
+          "path": "docs/rust-development.md",
+          "bytes": 6556,
+          "sha256": "78cf4eec378b2e5f799b3d153c374529b8d734c9a4e0f0497e3ee67f2fd32125"
+        },
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/DESIGN.md",
+          "bytes": 70310,
+          "sha256": "f80c55dccd87233633c99a66b4c4d5d92f75dc37f0a9f110e638d73c86347e8d"
+        },
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+          "bytes": 41903,
+          "sha256": "00b727283597aca7958271f29c826059f2a8569f1c5b50db88b3c271021f0901"
+        },
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+          "bytes": 23265,
+          "sha256": "91a66e145e513f6abec95641826e9c4016ac72754b73f09af6e4ea2ac27d9ff4"
+        },
+        {
+          "root": "repository",
+          "path": "experiments/context-lifecycle-rust/README.md",
+          "bytes": 13184,
+          "sha256": "73a40bc6da72904a68f27d089bf8004852adabbb21a46018e898f2ca7fa19422"
+        },
+        {
+          "root": "repository",
+          "path": "AGENTS.md",
+          "bytes": 3224,
+          "sha256": "04675bbabbf39576e4590cc8dfa2d681f7a630572ccd5f88bc62ebc422e4d9b8"
+        },
+        {
+          "root": "repository",
+          "path": "README.md",
+          "bytes": 9357,
+          "sha256": "8315947c7e23dc5fc6c39d86bfa16d1e5781479bcd63f21cef93a06647b2270d"
+        }
+      ],
+      "changed_paths": [
+        "docs/rust-development.md",
+        "experiments/context-lifecycle-rust/DESIGN.md",
+        "experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md",
+        "experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md",
+        "experiments/context-lifecycle-rust/design-sources.json"
+      ],
+      "requirements": 32,
+      "proposed_acceptance_scenarios": 37,
+      "proposed_slices": 11,
+      "unchanged_prior_input_hashes": 83,
+      "added_direct_source_inputs": 2,
+      "refinements": [
+        "New domain/version-bound wire codecs preserve historical encoding and hashes; implement legacy codecs only as required by accepted imports.",
+        "Separate reusable process/task machinery from lifecycle execution policy and provider-specific evidence.",
+        "Separate SQLite mechanics from domain schemas, durability, validation and transaction/CAS boundaries.",
+        "Compose deployment and lifecycle through explicit startup/drain/fencing/handoff contracts; no full deployment-manager migration prerequisite."
+      ],
+      "evidence_method": {
+        "tier": "Tier 2",
+        "operation": "bounded direct-document and exact-source verification",
+        "project": "home-bline-code-work-engine",
+        "generation": "2026-10-07T06:37:19Z",
+        "pagination": "not applicable to direct document/source reads",
+        "coverage": "metadata_match/no_recorded_issue for all seven selected source/output paths before edits; best-effort, not completeness. Exact document hashes control the edited outputs.",
+        "scope": "Four document refinements and two codec implementations. The other session's whole-control-plane inventory and complexity ratings are attributed input, not independently verified."
+      },
+      "checks": {
+        "document_links_whitespace_fences": "passed",
+        "local_links_checked": 56,
+        "requirement_ids": "32 contiguous",
+        "scenario_ids": "37 contiguous",
+        "slice_ids": "S0-S10 unchanged",
+        "primary_integrated_scenario_ownership": "Every T01-T37 retains exactly one primary integrated owner; later slices strengthen codec/import evidence.",
+        "prior_source_hashes": "83 of 83 unchanged",
+        "no_runtime_validation_claim": true
+      },
+      "author_instruction_review": {
+        "applicability": "applicable",
+        "subject": "Exact output document hashes in documents; unchanged AGENTS/README loading pointers are preserved.",
+        "inspected_material": "Rust direction common encoding and reuse boundaries; lifecycle package/dependency/codec/migration refinements; S0/S1/S2/S7/S9 scope and acceptance clauses; strengthened R26/R31 and T03/T24/T25/T28/T36.",
+        "decisive_context": "User authorized documentation refinements. Existing semantic owners, historical identity contracts, source-bound lifecycle design and first integrated milestone remain in force. Concrete causal limits accompany guidance: changing serialized bytes changes IDs, shared process exits do not settle remote effects, SQLite helpers do not create cross-owner atomicity, and deployment cannot infer settlement.",
+        "outcome": "retain",
+        "material_findings": [],
+        "limitations": "Bounded author self-check, not independent review, design acceptance, Rust compilation, library/security qualification or runtime/migration validation."
+      },
+      "runtime_code_changed": false,
+      "tests_run": false,
+      "implementation_workers_launched": 0,
+      "provider_calls": 0
+    }
+  ],
+  "initial_assessment_recorded_at_utc": "2026-10-07T06:50:51.197Z"
+}

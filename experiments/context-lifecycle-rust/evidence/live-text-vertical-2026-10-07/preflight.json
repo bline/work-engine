@@ -1,0 +1,43 @@
+{
+  "native_version": "0.160.1",
+  "native_sha256": "f34a4d2301892ae96c90097786bfe5dc269f187b6f69faf42a7b357b8c081e35",
+  "profile_digest": "c23381370be02414978e71b12be11e67e415b7a555d28bf580b89451635e4780",
+  "effective_config_digest": "87708fbf8952b6b753f3e7608bb2673e0dd4cb8e32d6cdd4130a42a259c08916",
+  "account_type": "chatgpt",
+  "plan_type": "pro",
+  "model": "gpt-6-sol",
+  "model_id": "gpt-6-sol",
+  "model_catalog_digest": "2690ec91c839619739f4dfef7f643b00a2f7266a1a18be021ce56a06f72382e6",
+  "input_modalities": [
+    "text",
+    "image"
+  ],
+  "supported_reasoning_efforts": [
+    {
+      "description": "Fast responses with lighter reasoning",
+      "reasoningEffort": "low"
+    },
+    {
+      "description": "Balances speed and reasoning depth for everyday tasks",
+      "reasoningEffort": "medium"
+    },
+    {
+      "description": "Greater reasoning depth for complex problems",
+      "reasoningEffort": "high"
+    },
+    {
+      "description": "Extra high reasoning depth for complex problems",
+      "reasoningEffort": "xhigh"
+    },
+    {
+      "description": "Maximum reasoning depth for the hardest problems",
+      "reasoningEffort": "max"
+    },
+    {
+      "description": "Maximum reasoning with automatic task delegation",
+      "reasoningEffort": "ultra"
+    }
+  ],
+  "catalog_source": "authenticated pinned native model/list",
+  "inference_turns": 0
+}

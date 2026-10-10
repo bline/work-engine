@@ -1,0 +1,95 @@
+{
+  "id": 3,
+  "result": {
+    "thread": {
+      "agentNickname": null,
+      "agentRole": null,
+      "canAcceptDirectInput": null,
+      "cliVersion": "0.160.1",
+      "createdAt": 1791348048,
+      "cwd": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/target/.tmp0McgD6/adapter/work",
+      "daybreakEnabled": null,
+      "environments": null,
+      "ephemeral": false,
+      "extra": null,
+      "forkedFromId": null,
+      "gitInfo": {
+        "branch": "rescue-detached-20260911",
+        "originUrl": "git@github.com:bline/work-engine.git",
+        "sha": "7583e2095725957470e28cc11fc69404386fec63"
+      },
+      "historyMode": "legacy",
+      "id": "01a114aa-022e-7ff3-8045-9261db8e3236",
+      "model": "gpt-6-sol",
+      "modelProvider": "local_probe",
+      "name": null,
+      "originator": "context_lifecycle_rust",
+      "parentThreadId": null,
+      "path": "/home/bline/code/work-engine/experiments/context-lifecycle-rust/target/.tmp0McgD6/adapter/codex/sessions/2026/10/06/rollout-2026-10-06T22-40-48-01a114aa-022e-7ff3-8045-9261db8e3236.jsonl",
+      "preview": "Synthetic text one",
+      "projectId": null,
+      "reasoningEffort": null,
+      "recencyAt": 1791348048,
+      "section": null,
+      "sectionEnteredAt": null,
+      "sessionId": "01a114aa-022e-7ff3-8045-9261db8e3236",
+      "source": "vscode",
+      "status": {
+        "type": "notLoaded"
+      },
+      "threadSource": null,
+      "turns": [
+        {
+          "completedAt": 1791348048,
+          "durationMs": 41,
+          "error": null,
+          "id": "01a114aa-0238-7d30-a970-5b1aa794cc82",
+          "items": [
+            {
+              "clientId": "effect",
+              "content": [
+                {
+                  "text": "Synthetic text one",
+                  "text_elements": [],
+                  "type": "text"
+                }
+              ],
+              "id": "item-1",
+              "type": "userMessage"
+            },
+            {
+              "delivery": "async",
+              "id": "item-2",
+              "memoryCitation": null,
+              "phase": "final_answer",
+              "questions": [
+                {
+                  "options": [
+                    "Continue",
+                    "Stop"
+                  ],
+                  "title": "Local capability probe"
+                }
+              ],
+              "text": "Local capability probe\n- Continue\n- Stop",
+              "type": "agentMessage"
+            },
+            {
+              "delivery": null,
+              "id": "item-3",
+              "memoryCitation": null,
+              "phase": null,
+              "questions": null,
+              "text": "async user input probe complete",
+              "type": "agentMessage"
+            }
+          ],
+          "itemsView": "full",
+          "startedAt": 1791348048,
+          "status": "completed"
+        }
+      ],
+      "updatedAt": 1791348048
+    }
+  }
+}
