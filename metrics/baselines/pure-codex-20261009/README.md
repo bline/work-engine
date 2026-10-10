@@ -5,6 +5,8 @@ Efficiency baseline for Work Engine development performed directly in Codex
 Work Engine. Numbers are in [`baseline.json`](baseline.json); the scripts that
 produced them are in [`scripts/`](scripts/). Compare a future Work Engine-hosted
 period with the same units and caveats rather than against these figures alone.
+Changes expected to move these numbers, and later measurements, are tracked in
+the [efficiency ledger](../../efficiency-ledger.md); this baseline stays frozen.
 
 ## Units
 
