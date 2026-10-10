@@ -281,7 +281,7 @@
     "caveat": "Automated scans of staging JSON double-count findings repeated across files (see scripts/quality.py output); the stated counts above are the reliable figures."
   },
   "reasoning_space": {
-    "status": "provisional",
+    "status": "measured; settled-fact classification independently reproduced",
     "rereads_2026-10-05_to_10-09": {
       "method": "scripts/reread.py: within-session reads (cat, sed -n ranges, head) of lines already read with no intervening write or compaction; sizes scaled to actual tool output; cost = entry + cached carry until the context shrinks",
       "file_read_share_of_spend": 0.247,
@@ -308,7 +308,7 @@
       },
       "downstream_attribution": "credit a contradiction with dependent revisions and quota until work rejoins a valid path; attribute conservatively",
       "case_study_s8": {
-        "status": "provisional; classified by the same analysis that proposed the hypothesis; not a benchmark rate",
+        "status": "provisional; independently reproduced (9/9 agreement on decided items)",
         "source": "~/.local/state/work-engine/rust-context-lifecycle-s8-20261008/admission-contract.v1-v11.md",
         "revisions": [
           {
@@ -370,9 +370,86 @@
         }
       },
       "next": [
-        "independently classify S4-S7 attempts and review findings",
-        "price downstream chains (e.g. v6->v8) from session logs"
-      ]
+        "price downstream chains (e.g. S5 F1 -> candidates 3-5, S8 v6 -> v8) from session logs",
+        "re-run classification on Work Engine-hosted slices with the same rules"
+      ],
+      "independent_classification": {
+        "classifier": "ChatGPT (web, higher reasoning), blind to the proposing analysis's labels",
+        "packet": "classification/packet-s4-s8.md",
+        "results": "classification/results-chatgpt-s4-s8.md",
+        "s8_agreement": {
+          "decided_items": 9,
+          "agreed": 9,
+          "disagreement": "v2 undetermined because the packet omitted v2's reason (packet defect)"
+        },
+        "raw_item_counts": {
+          "S4": [
+            1,
+            3,
+            1,
+            1
+          ],
+          "S5": [
+            7,
+            2,
+            1,
+            1
+          ],
+          "S6_S7": [
+            8,
+            11,
+            2,
+            4
+          ],
+          "S8": [
+            2,
+            2,
+            5,
+            1
+          ],
+          "order": "clear, arguable, novel, undetermined",
+          "note": "not a rate; items are causally dependent"
+        },
+        "independent_root_counts": {
+          "rule": "count findings and revisions once; exclude candidates, bundled multi-change revisions (S6/S7 v11, v12), dependent revisions, and undetermined items",
+          "S4_findings": {
+            "clear": 1,
+            "arguable": 2,
+            "novel": 1
+          },
+          "S5_findings": {
+            "clear": 4,
+            "arguable": 2,
+            "novel": 1
+          },
+          "S6_S7_findings": {
+            "clear": 5,
+            "arguable": 3,
+            "novel": 1
+          },
+          "S6_S7_freeze_revisions": {
+            "clear": 3,
+            "arguable": 5,
+            "novel": 1
+          },
+          "S8_revisions": {
+            "clear": 2,
+            "arguable": 1,
+            "novel": 4
+          },
+          "total": {
+            "items": 36,
+            "clear": 15,
+            "arguable": 13,
+            "novel": 8,
+            "clear_share": 0.42,
+            "arguable_share": 0.36,
+            "novel_share": 0.22
+          },
+          "caveat": "some freeze revisions implement findings from the same slice, so a few roots may still be double-counted; treat 42% as approximate"
+        },
+        "operative_question": "Did this failed premise reopen a specific dimension that an applicable authoritative artifact had already closed before the attempt began?"
+      }
     }
   }
 }

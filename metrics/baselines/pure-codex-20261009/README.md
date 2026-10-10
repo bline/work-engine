@@ -54,12 +54,24 @@ relevance projection) or **novel** (genuine discovery or implementation
 evidence). Credit a contradiction with its dependent revisions and quota until
 work rejoins a valid path, attributing conservatively.
 
-S8 case study, provisional: of 10 admission-contract revisions after v1, 2 are
-clear (v3 contradicted the committed S1 `attempts.effect_id UNIQUE` schema; v6
-assumed a race the established S4 single-actor loop rules out), 3 arguable (v2,
-v5, and v8 as v6's dependent correction) and 5 novel. The same analysis proposed
-the hypothesis and classified the revisions, so this is not a benchmark rate
-until S4–S7 are classified independently. The architectural target is relevance
+S8 case study: of 10 admission-contract revisions after v1, 2 are clear (v3
+contradicted the committed S1 `attempts.effect_id UNIQUE` schema; v6 assumed a
+race the established S4 single-actor loop rules out), 3 arguable (v2, v5, and v8
+as v6's dependent correction) and 5 novel.
+
+Independent classification of S4–S8 by ChatGPT, blind to these labels
+([packet](classification/packet-s4-s8.md),
+[results](classification/results-chatgpt-s4-s8.md)), agreed on all 9 S8
+revisions it could decide; v2 was undetermined because the packet omitted its
+reason. Counting each independent finding or revision once, and excluding later
+candidates, bundled and dependent revisions and undetermined items, 36 items
+split **15 clear (~42%), 13 arguable (~36%) and 8 novel (~22%)**. Some freeze
+revisions implement findings from the same slice, so treat the shares as
+approximate. Raw counts over all 52 items are not a rate because the items are
+causally dependent. The operative question is: did this failed premise reopen a
+specific dimension that an applicable authoritative artifact had already closed
+before the attempt began? A broad consequence such as "recovery must be safe"
+does not count as that artifact. The architectural target is relevance
 projection: contract formation receives the minimal applicable settled facts,
 with mechanically detectable contradictions checked deterministically and
 semantic applicability left to bounded judgment before the contract is frozen.
