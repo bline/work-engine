@@ -36,6 +36,34 @@ and finding counts stated in `docs/rust-*-validation.md`, result docs and commit
 messages. `scripts/quality.py` scans the staging folders, but it double-counts
 findings repeated across files, so use the stated figures in `baseline.json`.
 
+## Reasoning-space measurements (provisional)
+
+Re-reading, Oct 5–9 (`scripts/reread.py`): file reads account for ~25% of spend,
+including their cached carry. Re-reads of lines already read in the same
+session, with no intervening write or compaction, are ~4.2% of spend; calls
+that only re-read are a further ~1.6%. Re-reading after compaction is ~4%, a
+rehydration cost. DESIGN.md and PHILOSOPHY.md were read in full 167 and 186
+times across 112 sessions.
+
+**Settled-fact contradiction:** an attempt or contract revision whose failed
+premise contradicts a fact that (a) was authoritative before the attempt began,
+(b) applies to the attempt's subject or boundary, and (c) remained valid
+throughout the attempt. Classify each revision or retry as **clear** (direct
+contradiction), **arguable** (likely preventable by better contract formation or
+relevance projection) or **novel** (genuine discovery or implementation
+evidence). Credit a contradiction with its dependent revisions and quota until
+work rejoins a valid path, attributing conservatively.
+
+S8 case study, provisional: of 10 admission-contract revisions after v1, 2 are
+clear (v3 contradicted the committed S1 `attempts.effect_id UNIQUE` schema; v6
+assumed a race the established S4 single-actor loop rules out), 3 arguable (v2,
+v5, and v8 as v6's dependent correction) and 5 novel. The same analysis proposed
+the hypothesis and classified the revisions, so this is not a benchmark rate
+until S4–S7 are classified independently. The architectural target is relevance
+projection: contract formation receives the minimal applicable settled facts,
+with mechanically detectable contradictions checked deterministically and
+semantic applicability left to bounded judgment before the contract is frozen.
+
 ## Comparison checklist for the Work Engine-hosted period
 
 Record the same quantities, then add the quality measures this baseline lacks:
@@ -46,6 +74,8 @@ Record the same quantities, then add the quality measures this baseline lacks:
 4. Candidate attempts, review findings, failed gates, contract revisions and
    evidence reruns per accepted slice (Rust-period values in `baseline.json`).
 5. Model, reasoning effort and plan multiplier in force.
+6. Redundant re-read share and settled-fact contradictions (clear, arguable,
+   novel) with downstream quota attributed to each contradiction.
 
 ## Reproducing
 
@@ -60,6 +90,8 @@ The scripts are the exact one-off analysis scripts. Paths and windows are hardco
 - `OUT=x.pkl sess.py`, `OUT=act.pkl act.py`, then `S=<dir> report.py` and
   `drill.py`: per-session, per-activity and per-slice spend. The window
   2026-10-05..09 and the file-mtime cutoff are hardcoded.
+- `reread.py` (`S=<dir>`, writes `reread.pkl`): within-session redundant
+  re-reads and their quota cost; resets at compaction.
 - `quality.py`: per-folder candidate, failure-named file, test-log and finding
   scan of `~/.local/state/work-engine/rust-*` (an indicator only; see above).
 

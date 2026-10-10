@@ -279,5 +279,100 @@
       ]
     },
     "caveat": "Automated scans of staging JSON double-count findings repeated across files (see scripts/quality.py output); the stated counts above are the reliable figures."
+  },
+  "reasoning_space": {
+    "status": "provisional",
+    "rereads_2026-10-05_to_10-09": {
+      "method": "scripts/reread.py: within-session reads (cat, sed -n ranges, head) of lines already read with no intervening write or compaction; sizes scaled to actual tool output; cost = entry + cached carry until the context shrinks",
+      "file_read_share_of_spend": 0.247,
+      "redundant_reread_tokens_M": 2.6,
+      "redundant_share_of_read_tokens": 0.2,
+      "redundant_reread_share_of_spend": 0.042,
+      "pure_reread_calls": 426,
+      "pure_reread_call_share_of_spend": 0.016,
+      "post_compaction_reread_share_of_spend": 0.04,
+      "full_doctrine_reads": {
+        "DESIGN.md": 167,
+        "PHILOSOPHY.md": 186,
+        "AGENTS.md": 78,
+        "sessions": 112
+      },
+      "caveat": "writes outside apply_patch/redirects/sed -i/git are not detected, so the redundant share leans high; rg and codebase-memory queries are not counted as reads"
+    },
+    "settled_fact_contradiction": {
+      "definition": "An attempt or contract revision whose failed premise contradicts a fact that (a) was authoritative before the attempt began, (b) applies to the attempt's subject or boundary, and (c) remained valid throughout the attempt.",
+      "buckets": {
+        "clear": "direct contradiction of such a fact",
+        "arguable": "likely preventable by better contract formation or relevance projection",
+        "novel": "genuine discovery or implementation evidence"
+      },
+      "downstream_attribution": "credit a contradiction with dependent revisions and quota until work rejoins a valid path; attribute conservatively",
+      "case_study_s8": {
+        "status": "provisional; classified by the same analysis that proposed the hypothesis; not a benchmark rate",
+        "source": "~/.local/state/work-engine/rust-context-lifecycle-s8-20261008/admission-contract.v1-v11.md",
+        "revisions": [
+          {
+            "rev": "v2",
+            "bucket": "arguable",
+            "note": "task-to-lifecycle lock order missing from initial contract"
+          },
+          {
+            "rev": "v3",
+            "bucket": "clear",
+            "note": "premise contradicted committed S1 schema (attempts.effect_id UNIQUE)"
+          },
+          {
+            "rev": "v4",
+            "bucket": "novel",
+            "note": "provider history omits tool items"
+          },
+          {
+            "rev": "v5",
+            "bucket": "arguable",
+            "note": "per-subject/context/operation grant map missing"
+          },
+          {
+            "rev": "v6",
+            "bucket": "clear",
+            "note": "assumed race impossible under established S4 single-actor loop"
+          },
+          {
+            "rev": "v7",
+            "bucket": "novel",
+            "note": "native session cannot be reopened after SIGKILL"
+          },
+          {
+            "rev": "v8",
+            "bucket": "arguable",
+            "note": "corrects v6's own shutdown ordering (dependent on v6)"
+          },
+          {
+            "rev": "v9",
+            "bucket": "novel",
+            "note": "idle runner held sender; found by running"
+          },
+          {
+            "rev": "v10",
+            "bucket": "novel",
+            "note": "planned T22 coverage hooks"
+          },
+          {
+            "rev": "v11",
+            "bucket": "novel",
+            "note": "test confused zombie with live child"
+          }
+        ],
+        "summary": {
+          "revisions": 10,
+          "clear": 2,
+          "arguable": 3,
+          "novel": 5
+        }
+      },
+      "next": [
+        "independently classify S4-S7 attempts and review findings",
+        "price downstream chains (e.g. v6->v8) from session logs"
+      ]
+    }
   }
 }
