@@ -12,6 +12,12 @@ decision turns on that rationale. Context loaded at startup is re-sent with ever
 later model call, so startup context should be the binding doctrine plus what the
 task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-document)).
 
+## Coordinating sub-agents
+
+When this session coordinates sub-agents, consult the
+[Codex orchestration brief](docs/codex-orchestration-brief.md). It records
+measured operating defaults with their reasons, not contracts.
+
 ## Durable role schedules
 
 Scheduled obligations can outlive model context, but a schedule does not create
