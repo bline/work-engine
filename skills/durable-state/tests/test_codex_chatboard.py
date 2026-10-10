@@ -70,6 +70,32 @@ class CodexChatboardTest(unittest.TestCase):
         )
         self.assertEqual(replacement["claim"]["author"], "beta")
 
+    def test_read_view_defaults_to_newest_messages_and_pages_forward_with_since(self) -> None:
+        board = BOARD.empty_board()
+        board["messages"] = [{"sequence": number} for number in range(1, 11)]
+        latest = BOARD.read_view(board, since=None, limit=3, active_claims=False,
+                                 observed_at="2026-08-30T04:00:00Z")
+        self.assertEqual([row["sequence"] for row in latest["messages"]], [8, 9, 10])
+        paged = BOARD.read_view(board, since=0, limit=3, active_claims=False,
+                                observed_at="2026-08-30T04:00:00Z")
+        self.assertEqual([row["sequence"] for row in paged["messages"]], [1, 2, 3])
+        after = BOARD.read_view(board, since=8, limit=3, active_claims=False,
+                                observed_at="2026-08-30T04:00:00Z")
+        self.assertEqual([row["sequence"] for row in after["messages"]], [9, 10])
+
+    def test_read_view_active_claims_omits_only_expired_claims(self) -> None:
+        board = BOARD.empty_board()
+        board["claims"] = {
+            "expired": {"expires_at": "2026-08-30T03:59:59Z"},
+            "active": {"expires_at": "2026-08-30T04:00:01Z"},
+        }
+        every = BOARD.read_view(board, since=None, limit=1, active_claims=False,
+                                observed_at="2026-08-30T04:00:00Z")
+        self.assertEqual(set(every["claims"]), {"expired", "active"})
+        active = BOARD.read_view(board, since=None, limit=1, active_claims=True,
+                                 observed_at="2026-08-30T04:00:00Z")
+        self.assertEqual(set(active["claims"]), {"active"})
+
 
 if __name__ == "__main__":
     unittest.main()

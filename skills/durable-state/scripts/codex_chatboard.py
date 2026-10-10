@@ -169,13 +169,30 @@ def release(repository: Path, *, resource: str, session_id: str, claim_id: str) 
     return {"revision": revision, **value}
 
 
+def read_view(board: dict[str, Any], *, since: int | None, limit: int,
+              active_claims: bool, observed_at: str) -> dict[str, Any]:
+    # Without --since, a startup read needs the latest coordination, not the
+    # oldest retained messages. With --since, page forward from that sequence.
+    if since is None:
+        rows = board["messages"][-limit:]
+    else:
+        rows = [row for row in board["messages"] if row["sequence"] > since][:limit]
+    claims = board["claims"]
+    if active_claims:
+        now = parse_time(observed_at)
+        claims = {resource: value for resource, value in claims.items()
+                  if parse_time(value["expires_at"]) > now}
+    return {"messages": rows, "claims": claims}
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     root.add_argument("--repository", type=Path, default=Path.cwd())
     commands = root.add_subparsers(dest="command", required=True)
     read = commands.add_parser("read")
-    read.add_argument("--since", type=int, default=0)
+    read.add_argument("--since", type=int, default=None)
     read.add_argument("--limit", type=int, default=100)
+    read.add_argument("--active-claims", action="store_true")
     post_cmd = commands.add_parser("post")
     for name in ("author", "session-id", "topic", "body"):
         post_cmd.add_argument(f"--{name}", required=True)
@@ -196,11 +213,12 @@ def main() -> int:
     args = parser().parse_args()
     try:
         if args.command == "read":
-            if args.since < 0 or not 1 <= args.limit <= 500:
+            if (args.since is not None and args.since < 0) or not 1 <= args.limit <= 500:
                 raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
             board, revision = read_board(args.repository)
-            rows = [row for row in board["messages"] if row["sequence"] > args.since][:args.limit]
-            print(json.dumps({"revision": revision, "messages": rows, "claims": board["claims"]}, indent=2))
+            view = read_view(board, since=args.since, limit=args.limit,
+                             active_claims=args.active_claims, observed_at=timestamp())
+            print(json.dumps({"revision": revision, **view}, indent=2))
         elif args.command == "post":
             print(json.dumps(post(
                 args.repository, author=args.author, session_id=args.session_id,

@@ -1,11 +1,16 @@
 # Repository Instructions
 
-Before working in this repository, read and follow:
+Before working in this repository, read and follow [DESIGN.md](DESIGN.md), the
+binding doctrine for system design and architectural constraints. Treat it as
+required context for all planning, implementation, review, and documentation work.
 
-- [DESIGN.md](DESIGN.md) for the system design and architectural constraints.
-- [PHILOSOPHY.md](PHILOSOPHY.md) for the project's guiding principles and development philosophy.
-
-Treat both documents as required context for all planning, implementation, review, and documentation work.
+[PHILOSOPHY.md](PHILOSOPHY.md) explains why that doctrine exists and is
+explicitly non-normative. Read it in full for design, architecture, planning,
+and doctrine or instruction review, where its rationale shapes the result. For
+bounded implementation, validation, and mechanical work, consult it when a
+decision turns on that rationale. Context loaded at startup is re-sent with every
+later model call, so startup context should be the binding doctrine plus what the
+task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-document)).
 
 ## Durable role schedules
 
@@ -41,8 +46,11 @@ resource, and before any paid or externally consequential operation, read the
 repository chatboard:
 
 ```bash
-python3 skills/durable-state/scripts/codex_chatboard.py --repository . read
+python3 skills/durable-state/scripts/codex_chatboard.py --repository . read --limit 20 --active-claims
 ```
+
+This returns the newest messages and unexpired claims. When a task needs older
+history, page forward with `--since <sequence>`.
 
 Post concise transition messages for resource claims, launches, pauses,
 interruptions, replacements, and terminal results. Include exact artifact or
