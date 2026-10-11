@@ -92,7 +92,7 @@ Before moving current paths, the runtime and validators need:
 6. an exact migration receipt followed by removal of legacy discovery only
    after all active consumers use the new root.
 
-The current `app-server/ideas/AI_ACCESSIBLE_BROWSER_DESIGN.md` is a raw design
+The current `app-server/ideas/pending/AI_ACCESSIBLE_BROWSER_DESIGN.md` is a raw design
 source, not App Server runtime code. It is a candidate for
 `development/ideas/raw/` when its owner authorizes the migration; this document
 does not move it.

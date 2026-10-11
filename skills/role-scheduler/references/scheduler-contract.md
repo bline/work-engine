@@ -2,7 +2,7 @@
 
 Read this reference for schedule mutation, authority interpretation, recovery,
 or adapter design. The canonical architectural proposal is
-[`ideas/role-aware-agent-scheduler.md`](../../../ideas/role-aware-agent-scheduler.md).
+[`ideas/history/2026-08-22-pre-reconciliation/role-aware-agent-scheduler.md`](../../../ideas/history/2026-08-22-pre-reconciliation/role-aware-agent-scheduler.md).
 
 ## Ownership boundary
 

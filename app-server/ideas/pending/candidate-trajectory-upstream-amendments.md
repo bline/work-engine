@@ -63,7 +63,7 @@ characterization layer and cites the skill's own schema/contract files
 directly. That is still accurate at the analyzer level, but it predates (or at
 least does not mention) that `review-subject` is already the documented App
 Server service boundary in front of that analyzer
-(`app-server/docs/review-subject-service.md`), and that `docs/skills-migration-plan.md`
+(`app-server/docs/review-subject-service.md`), and that `app-server/docs/skills-migration-plan.md`
 (S7) already records this ownership migration as landed
 (`app-server/docs/skills-migration-plan.md:1059-1076`). Candidate change: add a
 pointer to `review-subject-service.md` alongside the existing skill-level

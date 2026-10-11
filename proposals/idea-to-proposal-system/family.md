@@ -12,10 +12,10 @@ authorize implementation.
 This family converts the brainstorming in the following documents into bounded
 candidate changes:
 
-- `ideas/proposal-packet.md`;
-- `ideas/proposal-packet-workflow.md`;
-- `ideas/proposal-packet-impl.md`; and
-- `ideas/interactive-idea-to-proposal-workflow.md`; and
+- `ideas/history/2026-08-22-pre-reconciliation/proposal-packet.md`;
+- `ideas/history/2026-08-22-pre-reconciliation/proposal-packet-workflow.md`;
+- `ideas/history/2026-08-22-pre-reconciliation/proposal-packet-impl.md`; and
+- `ideas/history/2026-08-22-pre-reconciliation/interactive-idea-to-proposal-workflow.md`; and
 - `ideas/raw-idea-intake-and-claim-assessment.md`.
 
 Those documents remain source material. They are not contracts, evidence, or

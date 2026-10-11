@@ -405,8 +405,8 @@ consequence, limitations, and lineage. Later consequential use must establish
 applicability or record refresh, supersession, or composition. Overlap and
 reservation machinery remains a useful conditional coordination capability,
 and later workspace mutation does not retroactively change what was reviewed.
-See [`ideas/persistent-agent-state-and-runtime-introspection.md`](ideas/persistent-agent-state-and-runtime-introspection.md)
-and [`ideas/durable-review-queue-and-scope-coordination.md`](ideas/durable-review-queue-and-scope-coordination.md).
+See [`ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state-and-runtime-introspection.md`](ideas/history/2026-08-22-pre-reconciliation/persistent-agent-state-and-runtime-introspection.md)
+and [`ideas/history/2026-08-22-pre-reconciliation/durable-review-queue-and-scope-coordination.md`](ideas/history/2026-08-22-pre-reconciliation/durable-review-queue-and-scope-coordination.md).
 
 The reviewed context-decision-observability candidate is now decided with
 approved meaning and probable distributed semantic placement. Runtime or host

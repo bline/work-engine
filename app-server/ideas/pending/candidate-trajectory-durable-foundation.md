@@ -71,12 +71,12 @@ documented behavior:
   operation and those digests
   (`app-server/src/services/review-subject/legacy-backend-adapter.mjs:57-106`,
   `app-server/src/services/review-subject/contract.mjs:48-72`).
-- `docs/review-subject-service.md` documents this as a finished ownership
+- `app-server/docs/review-subject-service.md` documents this as a finished ownership
   boundary: "the `code-change-profile` backend owns only its derived subject
   and profile identities, analyzer/provenance identity, physical observations,
   coverage, limitations, and measurement-state vocabulary," delegating
   Git/checkpoint truth to `slice-checkpoint`.
-- `docs/skills-migration-plan.md` (S7) records this as an objective already
+- `app-server/docs/skills-migration-plan.md` (S7) records this as an objective already
   landed: "Port `slice-checkpoint` and `code-change-profile` as host or server
   capabilities that produce an immutable attributed review subject and a
   recomputable deterministic physical profile" (`app-server/docs/skills-migration-plan.md:1059-1076`).

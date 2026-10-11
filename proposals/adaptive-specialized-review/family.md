@@ -3,7 +3,7 @@
 ## Family identity
 
 - Family ID: `work-engine.adaptive-specialized-review`
-- Origin: [`ideas/adaptive-specialized-review-panels.md`](../../ideas/adaptive-specialized-review-panels.md)
+- Origin: [`ideas/history/2026-08-22-pre-reconciliation/adaptive-specialized-review-panels.md`](../../ideas/history/2026-08-22-pre-reconciliation/adaptive-specialized-review-panels.md)
 - Revision evidence:
   [`reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md`](../../reviews/proposals/adaptive-specialized-review/5367d9a/synthesis.md)
 - Continuation evidence:
