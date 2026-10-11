@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.ui-experience-evidence-interface`
 - Family ID: `work-engine.ui-experience-evidence`
-- State: placement uncertain; formed but not reviewed, evaluated, accepted,
-  prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

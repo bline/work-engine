@@ -4,9 +4,6 @@
 
 - Proposal ID: `work-engine.context-decision-observability`
 - Family ID: `work-engine.agent-state`
-- State: reviewed and decided; proposal meaning approved with probable
-  distributed semantic placement; not prioritized or authorized for
-  implementation
 - Decision owner: user or future explicitly authorized architecture owner
 - Evidence cutoff: Work Engine
   `cdc9e3fa5d300e5edc737faf38edf85a336fbdcf`, validated intake checkpoint

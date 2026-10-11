@@ -5,8 +5,6 @@
 - Proposal ID: `work-engine.agent-instruction-structure-placement-review`
 - Family ID: `work-engine.agent-instruction-integrity`
 - Source revision: `dee25c3`
-- State: reviewed and decided; proposal meaning approved with probable
-  placement; not prioritized or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle projection is in [`packet.json`](packet.json), and the

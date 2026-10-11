@@ -4,7 +4,6 @@
 
 - Proposal ID: `work-engine.raw-agent-execution-evidence-archive`
 - Family ID: `work-engine.empirical-agent-research`
-- State: placement uncertain; not reviewed, evaluated, accepted, prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio and data-governance owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

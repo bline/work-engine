@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.raw-idea-intake`
 - Family ID: `work-engine.idea-to-proposal-system`
-- State: formed; placement probable; not reviewed, decided, or authorized for
-  implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

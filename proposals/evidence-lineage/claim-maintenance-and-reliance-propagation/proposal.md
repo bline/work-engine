@@ -4,10 +4,7 @@
 
 - Proposal ID: `work-engine.claim-maintenance-and-reliance-propagation`
 - Family ID: `work-engine.evidence-lineage`
-- State: **decided 2026-09-15** — proposal meaning approved (see
-  [`decision.json`](decision.json)); probable split ownership across shared
-  claim semantics, domain workflows, and general delivery; not yet
-  authorized for implementation
+- Decision record: [`decision.json`](decision.json)
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.production-claim-evidence-interface`
 - Family ID: `work-engine.evidence-lineage`
-- State: formed; probable shared-capability placement; not evaluated,
-  prioritized, accepted, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

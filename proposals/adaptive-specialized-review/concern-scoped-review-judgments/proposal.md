@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.concern-scoped-review-judgments`
 - Family ID: `work-engine.adaptive-specialized-review`
-- State: formed; not evaluated, accepted, prioritized, or authorized for
-  implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

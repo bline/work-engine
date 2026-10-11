@@ -4,8 +4,7 @@
 
 - Proposal ID: `work-engine.revision-bound-review-artifacts`
 - Family ID: `work-engine.adaptive-specialized-review`
-- State: placement uncertain; revised after bootstrap review continuation and
-  not closure-reviewed, evaluated, accepted, or authorized
+- Revision history: revised after bootstrap review continuation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

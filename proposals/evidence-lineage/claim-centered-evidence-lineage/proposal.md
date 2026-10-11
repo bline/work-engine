@@ -4,10 +4,8 @@
 
 - Proposal ID: `work-engine.claim-centered-evidence-lineage`
 - Family ID: `work-engine.evidence-lineage`
-- State: permanent shared placement deferred for dogfooding; semantic review
-  dispositions are owned under
-  `reviews/proposals/claim-centered-evidence-lineage/`; this candidate is not
-  accepted as a permanent owner or authorized for implementation
+- Semantic review dispositions: owned under
+  `reviews/proposals/claim-centered-evidence-lineage/`
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

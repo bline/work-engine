@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.claim-lineage-backbone-dogfood`
 - Family ID: `work-engine.evidence-lineage`
-- State: proposal meaning approved with probable experimental placement; not
-  prioritized or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle projection is in [`packet.json`](packet.json), and the

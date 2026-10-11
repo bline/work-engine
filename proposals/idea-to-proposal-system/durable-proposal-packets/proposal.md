@@ -4,7 +4,6 @@
 
 - Proposal ID: `work-engine.proposal-packets`
 - Family ID: `work-engine.idea-to-proposal-system`
-- State: formed; placement probable; not evaluated or accepted
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle and relationship metadata is in [`packet.json`](packet.json).

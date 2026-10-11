@@ -4,7 +4,6 @@
 
 - Proposal ID: `work-engine.code-change-characterization-profile`
 - Family ID: `work-engine.empirical-agent-research`
-- State: formed; placement probable; not reviewed, evaluated, accepted, prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized portfolio owner
 
 The canonical lifecycle, placement, uncertainty, relationship, and authority

@@ -4,8 +4,6 @@
 
 - Proposal ID: `work-engine.semantic-durability-context-lifetime`
 - Family ID: `work-engine.agent-state`
-- State: formed with probable doctrine and runtime-projection placement; not
-  evaluated, accepted, prioritized, or authorized for implementation
 - Decision owner: user or future explicitly authorized architecture owner
 - Evidence cutoff: Work Engine
   `cdc9e3fa5d300e5edc737faf38edf85a336fbdcf`, exact raw-source checkpoint

@@ -4,7 +4,6 @@
 
 - Proposal ID: `work-engine.operational-state-transition-history`
 - Family ID: `work-engine.agent-state`
-- State: placement uncertain; not evaluated or accepted
 - Decision owner: user or future explicitly authorized architecture owner
 - Evidence cutoff: repository
   `23f2e44dcb43421330c979525234b31ddbf54b93`
