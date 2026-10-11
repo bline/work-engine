@@ -48,7 +48,8 @@
       "The minimum production schema cannot represent exact subjects, evidence baselines, authority, limitations, sensitivity, lineage, reliance, and truthful projection completeness without absorbing domain-owned judgment.",
       "A transport-neutral operation cannot give Codex skills and external read-only MCP consumers equivalent state meaning and provenance.",
       "Authority-bound publication cannot distinguish attribution from admission or prevent an unauthorized producer from exercising a domain transition.",
-      "Representative production queries require a canonical database or runtime service rather than a rebuildable projection over durable records."
+      "Representative production queries require a canonical database or runtime service rather than a rebuildable projection over durable records.",
+      "An item-by-item audit of the built implementation against this proposal's own 'Evidence and acceptance needs' (proposal.md:230-246) finds a material gap -- this would require revisiting whether the proposal's meaning, not just implementation existence, is actually satisfied."
     ]
   },
   "authority": {
