@@ -62,23 +62,47 @@ priority.
 - Claim Evidence can retain a material finding reference without absorbing
   positive judgment, applicability, verdict, or acceptance authority.
 - Code Change Profile can nominate impact without deciding semantic relevance.
-- Codebase Memory can rebuild its projection without becoming a canonical
-  record owner.
+- Codebase Memory can be rebuilt or unavailable without becoming a canonical
+  record owner or losing review meaning.
 - Missing provenance may expose uncertainty but cannot activate a reviewer.
 - A human-authorized audit may intentionally establish missing review knowledge
   without weakening the preceding authority boundary.
 
-## Projection and query cases
+## Observation and query cases
 
-- Result-to-subject and subject-to-review traversal return exact owner,
-  revision, generation, cutoff, coverage, limitations, and unresolved state.
-- Projection owner namespaces prevent one source from overwriting another.
-- Stale generation preparation fails visibly.
-- Projection publication is atomic with respect to the evaluated structural
-  generation and retains unresolved endpoints.
-- Projection loss is recoverable from canonical records.
+- Result-to-subject and subject-to-review navigation return exact owner,
+  revision, per-source cutoffs, observed snapshot, coverage, limitations, and
+  unresolved state.
+- Canonical owner isolation: no source writes another owner's records. Review
+  records are never written into a structural index, and observation or
+  discovery cannot create, alter, or rebind a judgment or declared anchor.
+- Exact-subject observation: an anchor observation that is not bound to the
+  exact repository revision and one coherent, content-verified snapshot fails
+  visibly as `unknown` and is not compared.
+- Canonical publication: a result, its judgments, and their declared anchors
+  publish atomically and retain unresolved endpoints. A composed query whose
+  sources have inconsistent cutoffs is reported incomplete, never merged.
+- Deterministic reconstruction: the derived anchor index and other query
+  structures rebuild from canonical records. Their loss affects performance or
+  freshness, never review meaning.
+- A lost observation that cannot be reproduced exactly is represented as lost,
+  not silently recomputed against different sources. Non-reproducible
+  observations retained as evidence remain durable under their evidence
+  owner's retention contract.
+- A rename, move, deletion, or ambiguous split or merge of an anchored subject
+  cannot produce "no affected judgments". Without explicit Code Change Profile
+  correspondence, its anchors are reported unresolved or possibly affected with
+  their cause. A path or qualified name is never treated as continuous
+  identity.
+- An empty reverse lookup is reported as "no affected judgments" only when
+  source coverage, revision binding, and anchor-index completeness for the
+  queried scope justify it. Otherwise it reports `unknown` or `unavailable`
+  with its cause.
+- Forward and reverse navigation stay bounded over realistic review history;
+  reverse lookup from an exact subject or delta uses the anchor index rather
+  than scanning history.
 - `repo-search` returns provider-neutral evidence packets without exposing
-  synchronization or query-language procedure to reviewer contracts.
+  observation, indexing, or query-language procedure to reviewer contracts.
 
 ## Economic validation cases
 

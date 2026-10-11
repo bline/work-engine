@@ -124,12 +124,13 @@ Current coverage is a cutoff-bound projection over exact judgment lineage, not
 a timeless property. Candidate change alone may produce `possibly_affected` or
 `awaiting_relevance_judgment`; it cannot silently produce semantic invalidation.
 
-### Distributed ownership and composed projection
+### Distributed ownership and composed navigation
 
 The semantic interface is a composition, not a universal canonical database:
 
 - the review contract owns concern and judgment meaning;
-- the review-result capability owns immutable result and judgment records;
+- the review-result capability owns immutable result and judgment records,
+  their declared anchors to exact subjects, and judgment lineage;
 - the review-episode service owns unfinished continuation state;
 - finding state owns adverse-observation remediation lineage;
 - Claim Evidence may own published production finding revisions and reliance;
@@ -137,7 +138,10 @@ The semantic interface is a composition, not a universal canonical database:
   bytes or authorized omissions;
 - Code Change Profile owns recomputable exact-subject change observations;
 - UI evidence capabilities own browser and rendered-state evidence;
-- Codebase Memory owns a replaceable navigation projection; and
+- evidence-anchor observation owns read-only correspondence between declared
+  anchors and exact repository revisions;
+- Codebase Memory is an optional, replaceable structural evidence provider;
+  and
 - the supervisor and human retain their existing selection, acceptance, and
   contract-change authority.
 
@@ -197,16 +201,29 @@ planned by migration slice S9. One service package may realize both capabilities
 if their record types, mutation authority, retention, and recovery boundaries
 remain explicit.
 
-Codebase Memory is the probable default current-world projection and traversal
-provider after the separately proposed owner-isolated, generation-bound
-projection synchronization extension. It is not the result ledger, historical
-identity adjudicator, or coverage authority.
+The review-result capability is canonical for result and judgment records,
+their declared anchors, and judgment lineage. Navigation is composed rather
+than projected: forward queries read canonical records, and reverse queries use
+a derived anchor index over canonical declarations, combined with
+evidence-anchor observation and Code Change Profile deltas. Review records are
+not written into Codebase Memory. It is an optional, replaceable structural
+evidence provider, reached through a read-only evidence adapter. It is not the
+result ledger, historical identity adjudicator, or coverage authority.
+
+*Revised 2026-10-10:* this replaces an earlier placement that depended on the
+`sync_projection` graph-write extension, which
+`work-engine.claim-maintenance-and-reliance-propagation` has withdrawn. Code
+observation through Codebase Memory is not yet production-ready: it awaits
+coherent, content-verified snapshot observation. Until then, composed reverse
+lookups that depend on it report `unknown` rather than an empty result. See
+[repository integration](repository-integration.md#composed-observation-and-query).
 
 ## Economic consequence
 
 The semantic model must reduce repeated inference rather than justify broader
 contexts. Rich durable storage, deterministic indexing, change profiling,
-projection traversal, and activity capture are cheap relative to model calls.
+anchor observation, structural traversal, and activity capture are cheap
+relative to model calls.
 Reviewers receive narrow perspective- and concern-specific projections and
 expand references only when judgment requires it.
 
@@ -232,5 +249,6 @@ findings, limitations, and successors that support it, and from an exact code,
 documentation, test, claim, or UI-evidence revision to the bounded review
 judgments that currently apply at a named cutoff. The consumer can distinguish
 observed activity from asserted review meaning and possible impact from
-attributed semantic disposition without trusting transcripts or treating the
-projection as authority.
+attributed semantic disposition without trusting transcripts or treating
+derived navigation as authority. An empty or incomplete navigation result
+remains explicitly bounded, never evidence that no judgment applies.
