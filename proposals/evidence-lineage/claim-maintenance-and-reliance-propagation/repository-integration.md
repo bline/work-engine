@@ -196,13 +196,19 @@ maintenance decides whether retrieved candidates justify a durable
 ## Dependent consumers
 
 [`work-engine.concern-scoped-review-judgments`](../../adaptive-specialized-review/concern-scoped-review-judgments/repository-integration.md)
-relies on the `sync_projection` consequence this document formerly formed, to
-project review-judgment nodes into the graph. This revision withdraws the
-mechanism from this proposal's placement only. It does not decide the review
-proposal's placement. That proposal's own fallback applies. Whether review
-navigation independently establishes a product consequence for externally
-materialized graph records is its owner's question, and it is this document's
-reopening condition for a generic projection capability.
+formerly relied on the `sync_projection` consequence this document formed, to
+project review-judgment nodes into the graph. Its owner has since revised it to
+composed observation and query
+([its integration](../../adaptive-specialized-review/concern-scoped-review-judgments/repository-integration.md#composed-observation-and-query)).
+Review judgments declare their own anchors, observed through the same
+evidence-anchor contract, and navigation composes canonical review records, a
+derived anchor index, and read-only structural evidence. Neither proposal owns
+the other's declarations or dispositions.
+
+A generic projection capability is reconsidered only if a concrete product
+requirement shows that composed queries cannot meet necessary correctness,
+coverage, or performance bounds. That remains this document's reopening
+condition for such a capability.
 
 ## Reopening conditions
 
