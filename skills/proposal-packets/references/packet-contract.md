@@ -59,7 +59,10 @@ ln -s "$(git rev-parse --show-toplevel)/skills/proposal-packets/scripts/pre-comm
   "$(git rev-parse --git-path hooks)/pre-commit"
 ```
 
-The hook validates the working tree, not the staged snapshot.
+The hook validates the exact snapshot being committed: it exports the index,
+or the temporary index git uses for `commit -a` and `commit --only`, and
+validates that export, so an unstaged repair cannot hide a staged invalid
+packet. It cannot see a pending transition journal; CI does not need to.
 
 ### Narratives and lifecycle state
 

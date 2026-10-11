@@ -1,10 +1,18 @@
 #!/bin/sh
-# Optional local hook: validate proposal packets before each commit.
+# Optional local hook: validate the exact snapshot being committed.
 # CI (.github/workflows/proposal-packets.yml) is the enforcement boundary;
-# this hook only gives earlier feedback and checks the working tree.
-root=$(git rev-parse --show-toplevel) || exit 1
-python3 "$root/skills/proposal-packets/scripts/proposal_packets.py" \
-  validate --repository "$root" "$root/proposals" >/dev/null || {
-  echo "proposal-packets: validation failed (details above). Commit aborted." >&2
+# this hook gives earlier feedback. It validates the index, not the working
+# tree, so unstaged repairs cannot hide a staged invalid packet. During
+# `commit -a` or `commit --only`, git points GIT_INDEX_FILE at a temporary
+# index holding exactly the commit's content, and checkout-index reads it.
+set -e
+snapshot=$(mktemp -d "${TMPDIR:-/tmp}/proposal-packets-pre-commit.XXXXXX")
+trap 'rm -rf "$snapshot"' EXIT INT TERM
+git checkout-index --all --prefix="$snapshot/"
+# The snapshot is not a repository; validate it with the staged validator.
+if ! (unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+      python3 "$snapshot/skills/proposal-packets/scripts/proposal_packets.py" \
+        validate --repository "$snapshot" "$snapshot/proposals" >/dev/null); then
+  echo "proposal-packets: the staged snapshot fails validation (details above); commit aborted." >&2
   exit 1
-}
+fi

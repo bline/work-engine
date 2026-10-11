@@ -758,5 +758,72 @@ class RepositoryValidationTest(unittest.TestCase):
                                       "malformed_packet", "relationship"])
 
 
+
+class PreCommitHookTest(unittest.TestCase):
+    """The hook validates the content being committed, not the working tree."""
+
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.directory.name) / "repository"
+        self.manifests = build_repository(self.root, count=3)
+        shutil.copytree(ROOT, self.root / "skills" / "proposal-packets",
+                        ignore=shutil.ignore_patterns("__pycache__", "tests"))
+        self.git("init", "-q")
+        self.git("config", "user.name", "Fixture")
+        self.git("config", "user.email", "fixture@example.invalid")
+        hooks = self.root / ".git" / "hooks"
+        hooks.mkdir(exist_ok=True)
+        (hooks / "pre-commit").symlink_to(ROOT / "scripts" / "pre-commit")
+        self.git("add", ".")
+        self.git("commit", "-qm", "baseline")
+        self.packet = self.manifests["work-engine.candidate-01"]
+        self.valid = self.packet.read_bytes()
+        manifest = json.loads(self.valid)
+        manifest["lifecycle_state"] = "approved"
+        self.invalid = (json.dumps(manifest, indent=2) + "\n").encode()
+
+    def tearDown(self) -> None:
+        self.directory.cleanup()
+
+    def git(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(self.root), *args],
+                              capture_output=True, text=True, check=False)
+
+    def head(self) -> str:
+        return self.git("rev-parse", "HEAD").stdout.strip()
+
+    def test_staged_invalid_packet_is_rejected_despite_a_repaired_working_tree(self) -> None:
+        self.packet.write_bytes(self.invalid)
+        self.git("add", str(self.packet))
+        self.packet.write_bytes(self.valid)  # repaired only in the working tree
+        before = self.head()
+        result = self.git("commit", "-m", "staged invalid packet")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("[malformed_packet]", result.stderr)
+        self.assertIn("staged snapshot fails validation", result.stderr)
+        self.assertEqual(self.head(), before)
+
+    def test_valid_staged_packet_commits_despite_an_invalid_working_tree(self) -> None:
+        (self.packet.parent / "proposal.md").write_text("# Revised\n", encoding="utf-8")
+        self.git("add", str(self.packet.parent / "proposal.md"))
+        self.packet.write_bytes(self.invalid)  # never staged
+        result = self.git("commit", "-qm", "valid staged change")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_commit_only_validates_the_committed_paths_content(self) -> None:
+        self.packet.write_bytes(self.invalid)
+        self.git("add", str(self.packet))
+        revised = json.loads(self.valid)
+        revised["title"] = "candidate-01, revised"
+        self.packet.write_text(json.dumps(revised, indent=2) + "\n", encoding="utf-8")
+        # --only commits the working-tree version, which is valid.
+        result = self.git("commit", "-qm", "only", "--only", "--", str(self.packet))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.packet.write_bytes(self.invalid)
+        result = self.git("commit", "-qm", "only invalid", "--only", "--", str(self.packet))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("[malformed_packet]", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
