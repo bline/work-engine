@@ -11,6 +11,16 @@ The implementation baseline is joined C2/R2 commit
 `rescue-detached-20260911`. The historical R2 result's pending-review wording
 predates the [completed integration evidence](rust-c2-r2-integration.md).
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `bcbc52e` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 Recommend one explicitly configured `gpt-6-sol`/`high` builder for implementation,
 integration and remediation after acceptance, and a separate initially isolated
 `gpt-6-astra`/`xhigh` reviewer. The designer cannot supply an independent review
@@ -66,6 +76,11 @@ R2 or this planner authority to change the claims/campaign owners.
 | [`EpisodeStore`](../rust/crates/review-episode-store/src/sqlite.rs), 14–194 | R2 uses `review-episodes.sqlite` beneath an offline-marked private root, validates history and rechecks the admitted observation under `BEGIN IMMEDIATE`. Native integration needs a distinct opening profile, not a renamed offline marker or a live legacy import. |
 | [`begin`/`transition`](../rust/crates/review-episode-core/src/reducer.rs), 35–87, 140–214 | Matching replay is persisted in handled transitions, returns latest state, and authorizes the current writer before disclosure. This deliberately differs from the old JS shortcut. |
 | [Capability host](../app-server/src/services/slice-campaign/capability-host-runtime.mjs), 30–82; [generation bootstrap](../app-server/src/executable-generation-bootstrap.mjs), 18–83; [snapshot](../app-server/src/executable-generation-snapshot.mjs), 114–210 | Native owners are injected into the real campaign host. Executable snapshots use closed file inventories. New imports and binaries need an exact generation-owner handoff, not discovery via `PATH` or the mutable checkout. |
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode::admission::HostAdmissionPort` (a public module path); at subject.
+> - `rust/crates/review-episode/src/lib.rs::Application`, public as `review_episode::Application`; at subject.
+> - `rust/crates/review-episode-store/src/sqlite.rs::EpisodeStore`, public as `review_episode_store::EpisodeStore`; at subject.
 
 ## Proposed file ownership
 

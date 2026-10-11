@@ -6,6 +6,16 @@ message 1210. This plan owns this file only. Its predecessor is accepted C1/R1
 commit `8497df02e055c3b93e865cbe75fe4c99eb555eb4`, atop S0
 `84be6695d716f026460fbf11aa703e73631e514e`.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `8497df0` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 The accepted [compiler plan](rust-compiler-implementation-plan.md),
 [C0 contract](rust-compiler-c0-contract.md), [C1 result](rust-compiler-c1-result.md)
 and [combined qualification](rust-c1-r1-validation.md) retain their original
@@ -210,6 +220,9 @@ legacy test adapter injection must not silently switch a Rust-selected request b
 to legacy; Rust adversarial fixtures use a private executable test seam. Preserve
 valid Node string input; reject unsupported lone-surrogate/invalid-byte inputs
 explicitly under C0's profile rather than silently reinterpret them.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/work-engine-compiler/src/skill.rs::compile_skill_unverified`, public as `work_engine_compiler::compile_skill_unverified`; at subject.
 
 ## Real consumers and vertical-first sequence
 

@@ -10,6 +10,16 @@ effective model identity is not independently observable here. This document pro
 [integration plan](rust-ce3-sc2-integration-plan.md). It authorizes no implementation,
 test, provider call, existing-root conversion, commit or activation.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `41992a2` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 The useful result is a campaign application that durably distinguishes preparation,
 possible dispatch, checked result publication, exact downstream recovery and builder
 evaluation. It uses real CE and episode owners without acquiring their authority.
@@ -32,6 +42,13 @@ Rust paths without a full prefix above are under `rust/crates/`; the last closur
 path is under `app-server/src/services/slice-campaign/`. These are bounded static
 observations, not new runtime qualification. [SC1/CE2](rust-hp2-sc1-ce2-validation.md)
 and [HP1](rust-host-hp1-validation.md) retain their original test subjects/limits.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::prepare_initial`, public as `slice_campaign::Campaign::prepare_initial`; at subject.
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::consume_initial_admission`, public as `slice_campaign::Campaign::consume_initial_admission`; at subject.
+> - `rust/crates/claim-evidence/src/application.rs::FindingAdmissionPort`, public as `claim_evidence::FindingAdmissionPort`; at subject.
+> - `rust/crates/review-episode/src/lib.rs::Application::execute_direct`, public as `review_episode::Application::execute_direct`; at subject.
+> - `review_episode::admission::AdmittedResult` (a public module path); at subject.
 
 ## Recommended staging and file ownership
 
@@ -97,6 +114,12 @@ not invent result hashes at initial preparation. Provide a narrow private
 `set_state`. The original operation and child IDs remain recoverable independently
 of whether the final completion transaction committed.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::authorize_dispatch`, public as `slice_campaign::Campaign::authorize_dispatch`; introduced later.
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::recover_request`, public as `slice_campaign::Campaign::recover_request`; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::DispatchPermit`, public as `slice_campaign::DispatchPermit`; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::RecoveryHandle`, crate-private; introduced later.
+
 ## Admission lifetime and cross-owner lease
 
 Use one campaign-owned synchronized inner owner containing the real store/config
@@ -130,6 +153,10 @@ admission digest while campaign verifies the newly held epoch/current slot; a
 new owner epoch does not rewrite the old CE operation digest. No recovery lease
 authorizes provider entry. Old request replay after later campaign revisions is
 readable history, not current admission.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/application.rs::CampaignClaimsAdmission`, public as `slice_campaign::CampaignClaimsAdmission`; introduced later.
+> - `rust/crates/slice-campaign/src/admission.rs::AdmissionHandle`, public as `slice_campaign::AdmissionHandle`; at subject.
 
 ## Frozen CE3 and episode join
 
@@ -230,6 +257,14 @@ HP3 must supply real result/receipt/session/artifact/transport checks and the
 observer/profile provenance consumed by CE3. SC2 does not place provider custody
 in the episode store. Controlled observations in joined library tests establish
 domain behavior only; positive runtime attestation and retry await HP3.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathAdmissionPort`, public as `claim_evidence::ProductionPathAdmissionPort`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::record_observation`, public as `claim_evidence::ClaimsApplication::record_observation`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::establish_claim`, public as `claim_evidence::ClaimsApplication::establish_claim`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::read_claim_admission`, public as `claim_evidence::ClaimsApplication::read_claim_admission`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::CheckedClaimEvidence`, public as `claim_evidence::CheckedClaimEvidence`; introduced later.
+> - `review_episode::in_process_admission::CheckedEpisodeReadback` (a public module path); introduced later.
 
 ## Claims consumption and status mapping
 

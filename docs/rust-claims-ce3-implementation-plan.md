@@ -8,6 +8,16 @@ proposal, not implementation or operational authorization. Planning was assigned
 `01a1193d-9534-7ce3-be38-4ec1893239d0`; effective model identity is not independently
 observable here.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `41992a2` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 CE3 extends the existing `claim-evidence` crate. Its outcome is immutable
 production-path observation custody, deterministic establishment, and checked
 readback of an exact campaign-selected claim and its evidence. It preserves
@@ -38,6 +48,12 @@ In particular, there is no current `AdmissionRequest`, `ClaimsAction`, or
 `with_admission_lease` API. New names below are proposed additions. Existing CE2
 projection depth, reliance payload/grant rehash and bootstrap-schema fixes remain
 regression requirements ([validation](rust-hp2-sc1-ce2-validation.md)).
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/application.rs::AdmissionBinding`, public as `claim_evidence::AdmissionBinding`; at subject.
+> - `rust/crates/claim-evidence/src/application.rs::ClaimsApplication::publish`, public as `claim_evidence::ClaimsApplication::publish`; at subject.
+> - `rust/crates/claim-evidence/src/application.rs::ClaimsApplication::record_reliance`, public as `claim_evidence::ClaimsApplication::record_reliance`; at subject.
+> - `claim_evidence::codec::JsValue` (a public module path); at subject.
 
 ## Implementation ownership
 
@@ -126,6 +142,16 @@ reference/revision. SC2 alone constructs `slice-campaign` / `claim-consumption:`
 refs from the historical consumption body and claims codec. CE3 never fabricates
 that owner reference or relabels one boundary as the other.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathAdmissionPort::acquire_production_path`, public as `claim_evidence::ProductionPathAdmissionPort::acquire_production_path`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathAdmissionBinding`, public as `claim_evidence::ProductionPathAdmissionBinding`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::record_observation`, public as `claim_evidence::ClaimsApplication::record_observation`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::establish_claim`, public as `claim_evidence::ClaimsApplication::establish_claim`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::read_claim_admission`, public as `claim_evidence::ClaimsApplication::read_claim_admission`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::reconcile_observation`, public as `claim_evidence::ClaimsApplication::reconcile_observation`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::reconcile_establishment`, public as `claim_evidence::ClaimsApplication::reconcile_establishment`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::CheckedClaimEvidence`, public as `claim_evidence::CheckedClaimEvidence`; introduced later.
+
 ## Custody and trust are separate from hashing
 
 A valid observation ID proves byte binding, not who observed execution. Trusted
@@ -204,6 +230,9 @@ Known mismatches in an otherwise admissible observation remain evaluator reasons
 forged authority, corrupt identity or an observation from another request is a
 refusal/conflict, not a claim truth assessment. Valid contradictory capability
 evidence must reach `False`, not be filtered out as an input error.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/production_path.rs::evaluate`, crate-private; introduced later.
 
 ## Store version, limits and crash semantics
 

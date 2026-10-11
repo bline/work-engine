@@ -9,6 +9,15 @@ the published ER1/P1 APIs. [ER1/P1](rust-er1-p1-validation.md) and the
 source correctness and bounded replay-performance evidence. Their larger-history
 limitations remain. Future implementation uses the user's selected Sol model.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256 `6b2b24deef29a08c8f15e7b6a9b2b0d76701ce7c5829ad4698f23a84e5799226`).
+> They are not part of this plan and do not change its subject. Each points to
+> where a symbol the section names is implemented in that later tree. *At
+> subject* means a definition of that name existed in the crate at `035a970`
+> (checked with `git grep`); it does not establish the same shape or meaning.
+> *Introduced later* means none did.
+
 J1 ends when a real campaign has durably registered and recovered exact CE3
 observation/establishment/read requests and checked the corresponding historical
 native episode result. It does not publish a builder projection, consume claims
@@ -31,6 +40,12 @@ J2 owns those downstream semantics. HP3 owns execution-record production.
 
 Paths in this table are relative to `rust/crates/`. Exact source, rather than
 sparse/heuristic call edges, establishes the injected owner relationships.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/application.rs::CampaignClaimsAdmission`, public as `slice_campaign::CampaignClaimsAdmission`; at subject.
+> - `rust/crates/claim-evidence/src/application.rs::FindingAdmissionPort`, public as `claim_evidence::FindingAdmissionPort`; at subject.
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathAdmissionBinding`, public as `claim_evidence::ProductionPathAdmissionBinding`; at subject.
+> - `review_episode::in_process_admission::CheckedEpisodeReadback` (a public module path); at subject.
 
 ## Public composition and dependency boundary
 
@@ -118,6 +133,12 @@ route, admission/custody `session_id` and observation digest are `None`, and
 custody artifact references are empty; the execution record still retains its
 actual session provenance. `None` is never a timeout or an inaccessible owner.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/owner_readback.rs::CE3CampaignClaimsAdmission`, public as `slice_campaign::CE3CampaignClaimsAdmission`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::InitialJoinSelection`, public as `slice_campaign::InitialJoinSelection`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::CustodyEvidence`, public as `claim_evidence::CustodyEvidence`; at subject.
+> - `rust/crates/review-episode-store/src/sqlite.rs::NativeRootSelection`, public as `review_episode_store::NativeRootSelection`; at subject.
+
 ## Campaign entry points and returned progress
 
 The proposed methods are public on `Campaign`; details of owner selection remain
@@ -203,6 +224,13 @@ same handoff around the real native descriptor transition. An already committed
 original transition is also readable after exact registration; correspondence
 is still checked before recording joined success.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/owner_readback.rs::Campaign::register_initial_episode_read`, public as `slice_campaign::Campaign::register_initial_episode_read`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::InitialCompletionOwners`, public as `slice_campaign::InitialCompletionOwners`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::InitialCompletionPrepared`, public as `slice_campaign::InitialCompletionPrepared`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::InitialCompletionProgress`, public as `slice_campaign::InitialCompletionProgress`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::InitialEpisodeReadRegistered`, public as `slice_campaign::InitialEpisodeReadRegistered`; introduced later.
+
 ## Recommended schema decision and frozen J1/J2 vocabulary
 
 Recommend **new schema-3 campaign roots only**, marker
@@ -268,6 +296,15 @@ change serialized meaning, reinterpret existing records or silently broaden
 admission under version 3. Any missing semantic dimension found during J2 is an
 explicit owner decision and compatibility/version review before effects.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/completion.rs::CompletionIntent`, crate-private; at subject.
+> - `rust/crates/slice-campaign/src/completion.rs::StageIntent`, public as `slice_campaign::StageIntent`; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::StageProgress`, public as `slice_campaign::StageProgress`; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::JoinedReadbacks`, crate-private; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::ConsumptionIntent`, crate-private; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::InitialOutcome`, crate-private; introduced later.
+> - `rust/crates/slice-campaign/src/completion.rs::EvaluationRecord`, crate-private; at subject.
+
 ## Identity, ordering and stage registration
 
 Avoid a circular hash: an admission binding uses the revision **before** the
@@ -330,6 +367,12 @@ writer/authority/profile, result transition, exact historical state and the two
 complete admissions. `observed_revision` is diagnostic; it cannot replace
 `resolved_revision`. A valid episode shape with a swapped full claim or missing
 admission is not joined. The native descriptor writer is unchanged.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::observation_locator`, public as `claim_evidence::ClaimsApplication::observation_locator`; at subject.
+> - `rust/crates/claim-evidence/src/production_path.rs::ClaimsApplication::establishment_locator`, public as `claim_evidence::ClaimsApplication::establishment_locator`; at subject.
+> - `rust/crates/claim-evidence/src/production_path.rs::AdmissionReadRequest`, public as `claim_evidence::AdmissionReadRequest`; at subject.
+> - `review_episode::in_process_admission::CheckedEpisodeReadback::resolved_revision` (a public module path); at subject.
 
 ## Failure and recovery consequences
 

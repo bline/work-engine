@@ -7,6 +7,16 @@ or saved-state disposition. Planning was assigned Astra/high; future
 implementation and ordinary remediation use Sol/high. The effective model is
 not independently observable from the planning tools.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `035a970` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 Implement the smallest permanent review execution-evidence owner as
 `rust/crates/review-execution-evidence/`. It owns the request-to-process-to-result
 custody record and its checked reader. Its first accepted profile runs a bounded
@@ -88,6 +98,10 @@ it does not copy lifecycle's durable operation/admission/recovery system. A futu
 shared mechanical extraction needs both owners' accepted API and consumers;
 it is not an E1 prerequisite or authority to edit active lifecycle files.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/lifecycle-runtime/src/process.rs::ProcessSupervisor`, public as `lifecycle_runtime::ProcessSupervisor`; at subject.
+> - `rust/crates/lifecycle-runtime/src/native_stdio.rs::NativeStdio`, public as `lifecycle_runtime::NativeStdio`; at subject.
+
 ## Interface prerequisite and real parallelism
 
 Before parallel builders edit, the integration owner freezes E0: crate registration,
@@ -158,6 +172,11 @@ installed `Arc<dyn ExecutionEvidenceOwner>`. No provider/network wait or campaig
 SQL transaction occurs inside that custody call. J1 maps unresolved reads
 truthfully and rechecks campaign CAS after releasing the gate.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/review-execution-evidence/src/contract.rs::ExecutionEvidenceRef`, public as `review_execution_evidence::ExecutionEvidenceRef`; introduced later.
+> - `rust/crates/review-execution-evidence/src/contract.rs::CheckedExecutionResult`, public as `review_execution_evidence::CheckedExecutionResult`; introduced later.
+> - `rust/crates/review-execution-evidence/src/contract.rs::EvidenceReadError`, public as `review_execution_evidence::EvidenceReadError`; introduced later.
+
 ## Three separate trust boundaries
 
 **Startup installation.** A trusted composition entry point opens an anchored
@@ -204,6 +223,9 @@ digest and an empty artifact-reference list; its binding must also have
 even when a separately recorded absence justifies that CE envelope. `None` is
 never inferred from a caller omitting the observation. A caller requesting
 absence against a record containing a present observation is rejected.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/review-execution-evidence/src/contract.rs::ExecutionBinding`, public as `review_execution_evidence::ExecutionBinding`; introduced later.
 
 ## Immutable record and storage contract
 

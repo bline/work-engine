@@ -8,6 +8,16 @@ Future implementation is assigned `gpt-6-sol/high`. Planner thread:
 observable. This proposal preserves the [SC2 contract](rust-campaign-sc2-implementation-plan.md)
 and [core validation limits](rust-ce3-sc2-core-validation.md).
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `d4fc060` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 The recommended next slice is **P1: reproducible measurement plus per-read
 validation deduplication**, contingent on measurement identifying useful savings.
 It does not select a new history representation, cache or schema. The intended
@@ -109,6 +119,10 @@ remove duplicate decoding and needs a separately justified consistency boundary.
 No validation result survives a read, mutation, reopen, owner epoch or external
 owner call. P1 neither holds campaign SQL transactions over CE/episode calls nor
 changes campaign-gate → CE lock ordering.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/store.rs::Store::read`, crate-private; at subject.
+> - `rust/crates/slice-campaign/src/store.rs::Store::replay_result`, crate-private; at subject.
 
 ## Correctness, ownership and acceptance
 

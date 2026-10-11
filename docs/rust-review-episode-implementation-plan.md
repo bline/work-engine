@@ -5,6 +5,16 @@ worker launch, runtime execution, provider entry, live-state migration or cutove
 authority. No implementation or runtime tests were performed for this document.
 The user coordinates lifecycle and UI work separately.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `7583e20`, the HEAD this
+> plan records as inspected (checked with `git grep`); it does not establish the
+> same shape or meaning. *Introduced later* means none did.
+
 ## Outcome and bounded ownership
 
 Move the App Server's provider-neutral review-episode state, deterministic
@@ -102,6 +112,11 @@ operations cannot be claimed qualified or silently removed from full cutover.
 A separately accepted bounded migration profile may leave an affected operation
 on its existing owner or visibly unavailable; it must not claim full replacement.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode_core::reducer::begin` (a public module path); introduced later.
+> - `rust/crates/review-episode-core/src/reducer.rs::record_result`, crate-private; introduced later.
+> - `rust/crates/review-episode-core/src/reducer.rs::succeed_evidence`, crate-private; introduced later.
+
 ## Trustworthy admission and synchronous integration
 
 Keep the existing trusted native host as the authority/admission adapter during
@@ -153,6 +168,9 @@ host workload. Keep the synchronous bridge only if its bound meets the host's
 accepted responsiveness budget. An async successor is a separate interface change;
 it must include claims' synchronous `succeedEpisode` callback and campaign callers,
 not just the episode factory. No performance benefit is asserted in advance.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode::admission::AdmittedResult` (a public module path); introduced later.
 
 ## Encoding, persistence and historical owners
 

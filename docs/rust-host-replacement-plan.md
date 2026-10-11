@@ -10,6 +10,16 @@ call or commit. All implementation and ordinary remediation use the user's
 selected `gpt-6-sol`; planning and independently assigned review retain their
 separate model and authority contracts.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `bcbc52e`, the
+> implementation base this plan names (checked with `git grep`); it does not
+> establish the same shape or meaning. *Introduced later* means none did.
+
 The parent coordination claim is
 `rust-migration:direct-host-plan`,
 `418e3ae0-563b-4a75-9f66-15f9778fffbe`. Lifecycle, UI, the shared Cargo workspace,
@@ -275,6 +285,12 @@ responsiveness. HP1 completion is reported as **library readiness only** and
 followed by the HP2/HP3 closure below. If these bounds cannot produce the required
 history result, return the exact remaining bottleneck and owner decision instead
 of a new framework proposal or a relaxed pass.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/work-engine-compiler/src/verification.rs::prepare_skill_verified`, public as `work_engine_compiler::prepare_skill_verified`; at subject.
+> - `rust/crates/work-engine-compiler/src/manifest.rs::project_runtime_manifest`, public as `work_engine_compiler::project_runtime_manifest`; introduced later.
+> - `rust/crates/review-episode-store/src/sqlite.rs::WriteDisposition`, public as `review_episode_store::WriteDisposition`; at subject.
+> - `review_episode::admission::AdmittedResult` (a public module path); at subject.
 
 ## Subsequent slices and composition
 

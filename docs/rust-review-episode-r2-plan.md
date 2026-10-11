@@ -10,6 +10,16 @@ the [R0 contract](rust-review-episode-r0-contract.md) frozen, and consumes the
 was requested as `gpt-6-astra`/xhigh; independently attested effective runtime
 identity is unavailable.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `8497df0` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 The implementation base is C1/R1 commit
 `8497df02e055c3b93e865cbe75fe4c99eb555eb4`, following S0
 `84be6695d716f026460fbf11aa703e73631e514e`. The
@@ -108,6 +118,9 @@ the row revision and identity key to validated state, and retain original bytes.
 The R1 nesting limit of 256 is retained: an unsupported row is refused with
 source bytes preserved, never normalized or silently skipped. State revision
 continues to exclude the `revision` field; stored state includes it.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode_core::codec::JsString` (a public module path); at subject.
 
 ## SQLite ownership, schema and integrity
 
@@ -222,6 +235,10 @@ outcome is reported as outcome-unknown and closes the connection.
 R1 validators, without publication. Validation results are observational and
 cannot be reused to bypass a later result command's admission or transaction
 CAS. The six transition actions and all R1 selected deltas remain unchanged.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode::admission::HostAdmissionPort` (a public module path); introduced later.
+> - `review_episode::admission::AdmittedResult` (a public module path); introduced later.
 
 ### R2 offline port versus R3 production trust
 

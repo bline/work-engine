@@ -8,6 +8,15 @@ under the shared [HP2 contract](rust-host-hp2-contract.md) and alongside the
 selected `gpt-6-sol`/`high`. The requested identity is recorded separately from
 the effective runtime identity, which is unavailable in this planning session.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. This plan names no
+> planning subject revision, so the blocks make no claim about the code it was
+> written against.
+
 Work Engine is unused during replacement. The selected design is a permanent
 Rust domain library on new private roots, followed by an offline host cutover.
 No daemon, Node bridge, provider port, availability layer or dual writer is
@@ -98,6 +107,10 @@ Closed Rust enums exclude unsupported actions. Finding publication remains
 per-finding, matching the legacy bridge; an entire review result is not one
 atomic claims transaction. Each finding's stable child operation ID is retained
 in the workflow intent so partial publication can be reconciled exactly.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/application.rs::ClaimsApplication::publish`, public as `claim_evidence::ClaimsApplication::publish`.
+> - `rust/crates/claim-evidence/src/application.rs::ClaimsApplication::record_reliance`, public as `claim_evidence::ClaimsApplication::record_reliance`.
 
 ## Identity, codecs and schemas
 
@@ -241,6 +254,10 @@ Recovery after a durable episode result finishes finding/claim publication
 without another provider entry. Exact projection does not evaluate findings;
 reliance does not accept review; established terminal evidence does not authorize
 terminalization. The latter remains unavailable in the first host profile.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/reliance.rs::ExactFindingRevisionRef`, public as `claim_evidence::ExactFindingRevisionRef`.
+> - `rust/crates/claim-evidence/src/reliance.rs::ExactRelianceRef`, public as `claim_evidence::ExactRelianceRef`.
 
 ## Bounded implementation and gates
 

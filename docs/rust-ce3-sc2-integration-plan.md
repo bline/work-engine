@@ -6,6 +6,16 @@ not implementation, publication, provider execution or activation authority.
 The two bounded planners use `gpt-6-astra` at high reasoning effort; subsequent
 implementation and remediation use the user's selected `gpt-6-sol`.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `41992a2` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 The [CE3 plan](rust-claims-ce3-implementation-plan.md) owns observation custody,
 establishment and exact claim evidence readback. The
 [SC2 plan](rust-campaign-sc2-implementation-plan.md) owns campaign dispatch,
@@ -77,6 +87,13 @@ no new episode writer grant. Joined test setup uses the existing actual native
 descriptor admission route for episode writes; the new read API verifies exact
 historical revisions and transition identities. This keeps the permanent
 addition bounded and leaves runtime result production with HP3.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/claim-evidence/src/application.rs::FindingLease`, public as `claim_evidence::FindingLease`; at subject.
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathAdmissionBinding`, public as `claim_evidence::ProductionPathAdmissionBinding`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::ProductionPathLease`, public as `claim_evidence::ProductionPathLease`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::CheckedClaimEvidence`, public as `claim_evidence::CheckedClaimEvidence`; introduced later.
+> - `rust/crates/slice-campaign/src/application.rs::CampaignClaimsAdmission`, public as `slice_campaign::CampaignClaimsAdmission`; introduced later.
 
 ## Implementation ownership and gates
 

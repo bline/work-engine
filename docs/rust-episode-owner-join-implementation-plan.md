@@ -9,6 +9,16 @@ observed. The [core validation](rust-ce3-sc2-core-validation.md) describes the
 earlier implementation subject; its historical “uncommitted” wording does not
 describe this now-committed planning baseline.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. *At subject* means
+> a definition of that name existed in the crate at `d4fc060` (checked with
+> `git grep`); it does not establish the same shape or meaning. *Introduced
+> later* means none did.
+
 Recommend implementing **ER1, the episode prerequisite**, alongside the separately
 owned campaign performance [P1](rust-campaign-history-performance-plan.md). Follow with J1 and J2 below after their exact
 handoffs. ER1 has useful independent qualification; it does not qualify the join.
@@ -32,6 +42,11 @@ Paths in this table are relative to `rust/crates/`. These are bounded source
 observations, not new runtime evidence. The join must extend or replace the
 private core checked inputs and reducers; exposing their present success flag
 would leave a second, weaker completion route.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode::admission::AdmittedResult` (a public module path); at subject.
+> - `review_episode_core::identity::Authority` (a public module path); at subject.
+> - `rust/crates/claim-evidence/src/production_path.rs::AdmissionReadRequest`, public as `claim_evidence::AdmissionReadRequest`; at subject.
 
 ## ER1: permanent, scoped, read-only episode API
 
@@ -142,6 +157,12 @@ compile-fail construction/deserialization checks. `FixtureAdmission` cannot
 qualify this gate. Retain HP1 tests and serialize fault tests because the existing
 process-global episode fault environment has a recorded race.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `review_episode::in_process_admission::InProcessReadAdmission` (a public module path); introduced later.
+> - `rust/crates/review-episode/src/in_process_admission.rs::Application::open_read_only`, public as `review_episode::Application::open_read_only`; introduced later.
+> - `rust/crates/review-episode/src/in_process_admission.rs::Application::read_checked`, public as `review_episode::Application::read_checked`; introduced later.
+> - `review_episode::in_process_admission::CheckedEpisodeReadback` (a public module path); introduced later.
+
 ## J1: real CE3 admission, durable stages and exact episode join
 
 J1 consumes ER1's accepted exports and performance P1's final source handoff.
@@ -223,6 +244,12 @@ J1 exit is the real-store checked pair and exact historical episode readback,
 including partial observation/first establishment/second establishment/episode
 states, stale epoch/revision/slot, changed full claim and missing custody refusal.
 It does not publish a usable builder projection or claim final joined completion.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/owner_readback.rs::Campaign::prepare_initial_completion`, public as `slice_campaign::Campaign::prepare_initial_completion`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::Campaign::complete_initial`, public as `slice_campaign::Campaign::complete_initial`; introduced later.
+> - `rust/crates/slice-campaign/src/owner_readback.rs::Campaign::recover_initial_completion`, public as `slice_campaign::Campaign::recover_initial_completion`; introduced later.
+> - `rust/crates/claim-evidence/src/production_path.rs::CustodyEvidence`, public as `claim_evidence::CustodyEvidence`; at subject.
 
 ## J2: findings, consumption, outcome and builder evaluation
 

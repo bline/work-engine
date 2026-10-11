@@ -9,6 +9,15 @@ a separate RC-dependent proposal. Implementers use `gpt-6-sol`
 at `high`; planning uses `gpt-6-astra` at `xhigh`. Requested configuration is not
 proof of observed model identity.
 
+> **Later annotations.** Blocks headed *Current implementation* were added on
+> 2026-10-11 against a working-tree snapshot based on `c72f7a5` (content
+> manifest sha256
+> `946887f3934c2d5541c41d54ce9fba8d7e1653460d853bac1a788dfa7fa2ac28`). They are
+> not part of this plan and do not change its subject. Each points to where a
+> symbol the section names is implemented in that later tree. This plan names no
+> planning subject revision, so the blocks make no claim about the code it was
+> written against.
+
 Work Engine is inactive during development. No availability, dual-runtime,
 temporary Node bridge, daemon or generic workflow framework is needed. Existing
 state is preserved. This plan does not authorize a provider call, live-root
@@ -189,6 +198,12 @@ admission handle. No provider is invoked. Reopening returns the same admission
 record; an API replay is not a new entry grant. This is directly consumable by
 HP3, while SC2 adds the completion and recovery transitions.
 
+> *Current implementation* (later annotation; see the note under the title):
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::admit`, public as `slice_campaign::Campaign::admit`.
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::bind_selection`, public as `slice_campaign::Campaign::bind_selection`.
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::prepare_initial`, public as `slice_campaign::Campaign::prepare_initial`.
+> - `rust/crates/slice-campaign/src/application.rs::Campaign::reconcile_operation`, public as `slice_campaign::Campaign::reconcile_operation`.
+
 ## Types, codecs and store receipts
 
 The [shared contract](rust-host-hp2-contract.md) owns the agreed seam. Proposed
@@ -234,6 +249,11 @@ expectedRevision, profileDigest)`. `reconcile_operation` returns
 checking the exact root and identity. Timeouts and lost replies are never absence.
 Exact encoded result capacity is checked before committing a mutation; failure
 after commit retains the receipt and recovery identity.
+
+> *Current implementation* (later annotation; see the note under the title):
+> - `slice_campaign::contract::CampaignIdentity` (a public module path).
+> - `slice_campaign::contract::CampaignRevision` (a public module path).
+> - `slice_campaign::contract::NativeReviewRequestRef` (a public module path).
 
 ## SC2: initial completion, recovery, retry and evaluation
 
