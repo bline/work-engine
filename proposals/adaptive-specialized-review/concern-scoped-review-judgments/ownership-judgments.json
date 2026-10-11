@@ -40,6 +40,21 @@
       "human_approval": null
     },
     {
+      "id": "csrj-ownership-composed-navigation-v2",
+      "category": "ownership",
+      "subject": "review.provenance_navigation",
+      "supersedes": "csrj-ownership-codebase-memory-projection-v1",
+      "conclusion": "Review navigation is composed rather than projected. The review-result capability owns result and judgment records, their declared anchors, and judgment lineage; evidence-anchor observation supplies read-only correspondence to exact repository revisions; Codebase Memory is an optional, replaceable structural evidence provider that stores no review records. No component owns semantic coverage validity by virtue of navigation.",
+      "evidence": [
+        "proposals/adaptive-specialized-review/concern-scoped-review-judgments/repository-integration.md#composed-observation-and-query",
+        "proposals/adaptive-specialized-review/concern-scoped-review-judgments/proposal.md#placement",
+        "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/repository-integration.md#probable-observation-placement",
+        "proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/codebase-memory-correspondence-20261010.md"
+      ],
+      "changes_contract": false,
+      "human_approval": null
+    },
+    {
       "id": "csrj-authority-projection-gap-v1",
       "category": "authority",
       "subject": "review.provenance_gap",
