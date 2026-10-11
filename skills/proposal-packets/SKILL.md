@@ -17,11 +17,26 @@ semantic disposition; this capability only records and checks it. It does not
 own proposal meaning, portfolio decisions, roadmap mutation, implementation
 authorization, interactive formation, or runtime campaign state.
 
-Validate a bounded packet repository with:
+Validate every proposal packet in this repository with:
 
 ```bash
-python3 skills/proposal-packets/scripts/proposal_packets.py validate <packet-root>
+python3 skills/proposal-packets/scripts/proposal_packets.py validate --repository . proposals
 ```
+
+Discovery is bounded by the packet root (`proposals/`, the default with
+`--repository`), so unrelated `packet.json` files elsewhere cannot block it.
+Packet references stay relative to their packet directory and may resolve
+anywhere inside the repository. Every packet under the root is validated, and
+every failure is reported with its category, owning file, and, where useful,
+expected and observed values. A malformed packet is reported, never skipped.
+CI runs this check on every push and pull request; the optional local hook is
+described in the reference.
+
+`packet.json` is the only owner of lifecycle, placement state, and
+authorization status. Narratives must not restate them in a `State:`,
+`Status:`, or `Lifecycle:` line; validation rejects one as `duplicated_state`.
+Describe decisions, limitations, and authorization in prose where they carry
+meaning, and leave the current state to the manifest.
 
 A valid result establishes only the mechanically decidable contract described
 in the reference. Preserve semantic uncertainty and the named human or

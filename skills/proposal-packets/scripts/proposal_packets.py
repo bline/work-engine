@@ -38,7 +38,41 @@ RELATIONSHIP_TYPES = set(SCHEMA["$defs"]["relationship"]["properties"]["type"]["
 
 
 class PacketError(ValueError):
-    """Raised when a packet violates a closed, mechanically decidable invariant."""
+    """Raised when a packet violates a closed, mechanically decidable invariant.
+
+    Validation attaches the failure category, owning file and packet, and, where
+    they help a repair, the expected and observed values.
+    """
+
+    def __init__(self, message: str, **details: Any) -> None:
+        super().__init__(message)
+        self.details = details
+
+    def fill(self, **details: Any) -> "PacketError":
+        for key, value in details.items():
+            self.details.setdefault(key, value)
+        return self
+
+    def report(self) -> dict[str, Any]:
+        return {"invariant": str(self), **self.details}
+
+
+# Failure categories reported by validation. Each names the violated contract.
+MALFORMED_PACKET = "malformed_packet"
+MISSING_REFERENCE = "missing_reference"
+MALFORMED_DECISION = "malformed_decision"
+DECISION_PRESENCE = "decision_presence"
+DECISION_BINDING = "decision_binding"
+DECISION_HISTORY = "decision_history"
+TRANSITION_PENDING = "transition_pending"
+DUPLICATE_IDENTITY = "duplicate_identity"
+RELATIONSHIP = "relationship"
+DUPLICATED_STATE = "duplicated_state"
+DISCOVERY = "discovery"
+# packet.json owns lifecycle, placement, and authority state. A narrative line
+# that declares it again is a second representation that drifts.
+NARRATIVE_STATE_LINE = re.compile(
+    r"^\s*[-*]\s+(?:\*\*)?(?:State|Status|Lifecycle(?: state)?)(?:\*\*)?\s*:", re.IGNORECASE)
 
 
 class Packet(NamedTuple):
@@ -46,9 +80,9 @@ class Packet(NamedTuple):
     manifest: dict[str, Any]
 
 
-def require(condition: bool, message: str) -> None:
+def require(condition: bool, message: str, **details: Any) -> None:
     if not condition:
-        raise PacketError(message)
+        raise PacketError(message, **details)
 
 
 def obj(value: Any, path: str) -> dict[str, Any]:
@@ -96,13 +130,14 @@ def decision_schema_keys(definition: str | None = None, version: int = 1) -> set
 
 def resolve_local(packet_dir: Path, repository_root: Path, value: Any, path: str) -> Path:
     relative = Path(text(value, path))
-    require(not relative.is_absolute(), f"{path} must be relative")
+    details = {"category": MISSING_REFERENCE, "observed": str(relative)}
+    require(not relative.is_absolute(), f"{path} must be relative", **details)
     resolved = (packet_dir / relative).resolve()
     try:
         resolved.relative_to(repository_root.resolve())
     except ValueError as error:
-        raise PacketError(f"{path} escapes the packet repository") from error
-    require(resolved.is_file(), f"{path} does not resolve to a file")
+        raise PacketError(f"{path} escapes the packet repository", **details) from error
+    require(resolved.is_file(), f"{path} does not resolve to a file", **details)
     return resolved
 
 
@@ -274,15 +309,25 @@ def validate_decision_binding(packet: Packet, decision: dict[str, Any], *, trans
     require(manifest["authority"]["implementation_authorized"] is False,
             "decision transition cannot authorize implementation")
     if transitioned:
-        require(manifest["lifecycle_state"] == decision["decision"]["lifecycle_state"],
-                "packet lifecycle does not match decision")
-        require(manifest["placement"]["state"] == decision["decision"]["placement_state"],
-                "packet placement state does not match decision")
-        require(manifest["placement"]["claim"] == decision["decision"]["placement_claim"],
-                "packet placement claim does not match decision")
-        require(manifest["uncertainty"]["reopening_conditions"] ==
-                decision["decision"]["reopening_conditions"],
-                "packet reopening conditions do not match decision")
+        # decision.json is the authority; packet.json duplicates its current
+        # outcome, so a mismatch is reported against the packet.
+        for message, observed, expected in (
+            ("packet lifecycle does not match decision",
+             manifest["lifecycle_state"], decision["decision"]["lifecycle_state"]),
+            ("packet placement state does not match decision",
+             manifest["placement"]["state"], decision["decision"]["placement_state"]),
+            ("packet placement claim does not match decision",
+             manifest["placement"]["claim"], decision["decision"]["placement_claim"]),
+            ("packet reopening conditions do not match decision",
+             manifest["uncertainty"]["reopening_conditions"],
+             decision["decision"]["reopening_conditions"]),
+        ):
+            details: dict[str, Any] = {"category": DECISION_BINDING,
+                                       "expected": expected, "observed": observed}
+            if isinstance(expected, list) and isinstance(observed, list):
+                details["missing_from_packet"] = [item for item in expected if item not in observed]
+                details["not_in_decision"] = [item for item in observed if item not in expected]
+            require(observed == expected, message, **details)
     else:
         require(manifest["lifecycle_state"] == decision["source"]["lifecycle_state"],
                 "decision source lifecycle is stale")
@@ -503,49 +548,170 @@ def pending_transitions(repository_root: Path) -> Path | None:
         return None
 
 
-def discover_packets(repository_root: Path) -> dict[str, Packet]:
-    repository_root = repository_root.resolve()
-    require(repository_root.is_dir(), "packet repository must be a directory")
-    packets: dict[str, Packet] = {}
-    paths = sorted(repository_root.rglob("packet.json"))
-    require(bool(paths), "packet repository contains no packet.json manifests")
-    journals = pending_transitions(repository_root)
-    for path in paths:
-        path = packet_manifest(path, repository_root)
-        packet = load_packet(path, repository_root)
-        proposal_id = packet.manifest["proposal_id"]
-        require(proposal_id not in packets, f"duplicate proposal_id '{proposal_id}'")
-        packets[proposal_id] = packet
-        if journals is not None:
-            require(not transition_paths(journals, path.parent)[1].exists(),
-                    f"proposal '{proposal_id}' has an interrupted decision transition; run recover")
-        decision_path = path.parent / "decision.json"
-        require(not decision_path.is_symlink(),
-                f"proposal '{proposal_id}' decision.json must not be a symbolic link")
-        if packet.manifest["lifecycle_state"] == "decided":
-            require(decision_path.is_file(), f"decided proposal '{proposal_id}' has no decision.json")
+class ValidationReport(NamedTuple):
+    repository_root: Path
+    packet_root: Path
+    manifests: list[Path]
+    packets: dict[str, Packet]
+    failures: list[PacketError]
+
+
+def validate_narrative_state(packet: Packet, repository_root: Path) -> None:
+    narrative = packet.manifest_path.parent / packet.manifest["narrative"]["path"]
+    for number, line in enumerate(narrative.read_text(encoding="utf-8").splitlines(), 1):
+        require(not NARRATIVE_STATE_LINE.match(line),
+                "narrative restates lifecycle state that packet.json owns; remove the line",
+                category=DUPLICATED_STATE,
+                file=str(narrative.relative_to(repository_root)),
+                line=number, observed=line.strip(),
+                expected=f"lifecycle_state {packet.manifest['lifecycle_state']!r} only in packet.json")
+
+
+def validate_packet_decision(packet: Packet, journals: Path | None) -> None:
+    path = packet.manifest_path
+    proposal_id = packet.manifest["proposal_id"]
+    if journals is not None:
+        require(not transition_paths(journals, path.parent)[1].exists(),
+                f"proposal '{proposal_id}' has an interrupted decision transition; run recover",
+                category=TRANSITION_PENDING)
+    decision_path = path.parent / "decision.json"
+    require(not decision_path.is_symlink(),
+            f"proposal '{proposal_id}' decision.json must not be a symbolic link",
+            category=MALFORMED_DECISION, file=decision_path)
+    if packet.manifest["lifecycle_state"] == "decided":
+        require(decision_path.is_file(), f"decided proposal '{proposal_id}' has no decision.json",
+                category=DECISION_PRESENCE, file=decision_path)
+        try:
             decision = load_decision(decision_path)
-            validate_decision_binding(packet, decision, transitioned=True)
+        except PacketError as error:
+            raise error.fill(category=MALFORMED_DECISION, file=decision_path)
+        validate_decision_binding(packet, decision, transitioned=True)
+        try:
             validate_decision_history(path.parent, decision)
-        else:
-            require(not decision_path.exists(),
-                    f"undecided proposal '{proposal_id}' cannot have a decision.json")
-            require(not (path.parent / HISTORY_DIRECTORY).exists(),
-                    f"undecided proposal '{proposal_id}' cannot have a decision history")
+        except PacketError as error:
+            raise error.fill(category=DECISION_HISTORY, file=path.parent / HISTORY_DIRECTORY)
+    else:
+        require(not decision_path.exists(),
+                f"undecided proposal '{proposal_id}' cannot have a decision.json",
+                category=DECISION_PRESENCE, file=decision_path,
+                observed=packet.manifest["lifecycle_state"])
+        require(not (path.parent / HISTORY_DIRECTORY).exists(),
+                f"undecided proposal '{proposal_id}' cannot have a decision history",
+                category=DECISION_PRESENCE, file=path.parent / HISTORY_DIRECTORY,
+                observed=packet.manifest["lifecycle_state"])
+
+
+def raw_proposal_id(path: Path) -> str | None:
+    """Best-effort identity of a packet that failed validation, for relationship checks."""
+    with contextlib.suppress(OSError, ValueError, AttributeError):
+        value = json.loads(path.read_text(encoding="utf-8")).get("proposal_id")
+        return value if isinstance(value, str) else None
+    return None
+
+
+def validate_repository(repository_root: Path, packet_root: Path | None = None) -> ValidationReport:
+    """Validate every packet.json under packet_root, collecting each failure.
+
+    Discovery is bounded by packet_root, so unrelated files elsewhere in the
+    repository cannot block it. References stay relative to their packet and
+    may resolve anywhere inside repository_root. A packet in scope that fails
+    to load is reported, never skipped.
+    """
+    repository_root = repository_root.resolve()
+    require(repository_root.is_dir(), f"packet repository {repository_root} must be a directory",
+            category=DISCOVERY)
+    packet_root = repository_root if packet_root is None else Path(os.path.abspath(packet_root))
+    require(packet_root.is_dir(), f"packet root {packet_root} must be a directory", category=DISCOVERY)
+    require(packet_root.resolve().is_relative_to(repository_root),
+            f"packet root {packet_root} is outside repository {repository_root}", category=DISCOVERY)
+    packet_root = packet_root.resolve()
+    manifests = sorted(packet_root.rglob("packet.json"))
+    require(bool(manifests), f"no packet.json manifests under {packet_root}", category=DISCOVERY)
+
+    def where(path: Path) -> str:
+        path = Path(path)
+        with contextlib.suppress(ValueError):
+            return str(path.resolve().relative_to(repository_root)) if path.is_absolute() else str(path)
+        return str(path)
+
+    journals = pending_transitions(repository_root)
+    packets: dict[str, Packet] = {}
+    failures: list[PacketError] = []
+    invalid_ids: set[str] = set()
+    for path in manifests:
+        label = where(path)
+        try:
+            path = packet_manifest(path, repository_root)
+            packet = load_packet(path, repository_root)
+        except PacketError as error:
+            failures.append(error.fill(category=MALFORMED_PACKET, packet=label, file=label))
+            if (identity := raw_proposal_id(path)) is not None:
+                invalid_ids.add(identity)
+            continue
+        proposal_id = packet.manifest["proposal_id"]
+        context = {"packet": label, "proposal_id": proposal_id, "file": label}
+        if proposal_id in packets:
+            failures.append(PacketError(f"duplicate proposal_id '{proposal_id}'",
+                                        category=DUPLICATE_IDENTITY,
+                                        observed=[where(packets[proposal_id].manifest_path), label],
+                                        **context))
+            continue
+        packets[proposal_id] = packet
+        for check in (lambda: validate_packet_decision(packet, journals),
+                      lambda: validate_narrative_state(packet, repository_root)):
+            try:
+                check()
+            except PacketError as error:
+                if "file" in error.details:
+                    error.details["file"] = where(error.details["file"])
+                failures.append(error.fill(**context))
     for proposal_id, packet in packets.items():
-        for relationship in packet.manifest["relationships"]:
+        for index, relationship in enumerate(packet.manifest["relationships"]):
             target = relationship["target_id"]
-            require(target in packets,
-                    f"proposal '{proposal_id}' has unresolved target_id '{target}'")
-            require(target != proposal_id, f"proposal '{proposal_id}' cannot relate to itself")
-    return packets
+            context = {"category": RELATIONSHIP, "packet": where(packet.manifest_path),
+                       "proposal_id": proposal_id, "file": where(packet.manifest_path),
+                       "observed": f"relationships[{index}].target_id = {target}"}
+            if target == proposal_id:
+                failures.append(PacketError(f"proposal '{proposal_id}' cannot relate to itself", **context))
+            elif target not in packets and target not in invalid_ids:
+                failures.append(PacketError(
+                    f"proposal '{proposal_id}' has unresolved target_id '{target}'", **context))
+    for error in failures:
+        for key in ("file", "packet"):
+            if isinstance(error.details.get(key), Path):
+                error.details[key] = where(error.details[key])
+    return ValidationReport(repository_root, packet_root, manifests, packets, failures)
+
+
+def discover_packets(repository_root: Path, packet_root: Path | None = None) -> dict[str, Packet]:
+    """Return every valid packet, raising the first failure if any packet is invalid."""
+    report = validate_repository(repository_root, packet_root)
+    if report.failures:
+        raise report.failures[0]
+    return report.packets
+
+
+def describe(failure: dict[str, Any]) -> str:
+    lines = [f"{failure.get('file') or failure.get('packet') or '<repository>'}"
+             f"{':' + str(failure['line']) if 'line' in failure else ''}: "
+             f"[{failure.get('category', 'invalid')}] {failure['invariant']}"]
+    for key in ("proposal_id", "expected", "observed", "missing_from_packet", "not_in_decision"):
+        if key in failure and failure[key] not in ([], None):
+            lines.append(f"    {key}: {json.dumps(failure[key], ensure_ascii=False)}")
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    validate = subparsers.add_parser("validate", help="discover and validate a packet repository")
-    validate.add_argument("repository", type=Path)
+    validate = subparsers.add_parser(
+        "validate", help="discover and validate every packet under a packet root",
+        description="Validate every packet.json under PACKET_ROOT. With --repository, "
+                    "references resolve anywhere in that repository and PACKET_ROOT "
+                    "defaults to its proposals/ directory; without it, PACKET_ROOT is "
+                    "also the repository boundary.")
+    validate.add_argument("packet_root", type=Path, nargs="?")
+    validate.add_argument("--repository", type=Path)
     transition = subparsers.add_parser("transition", help="apply an authority-authored decision")
     transition.add_argument("manifest", type=Path)
     transition.add_argument("decision", type=Path)
@@ -562,15 +728,38 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"status": "transitioned", "decision": str(destination)},
                              sort_keys=True))
             return 0
-        packets = discover_packets(args.repository)
+        if args.repository is None and args.packet_root is None:
+            parser.error("validate needs a packet root, --repository, or both")
+        repository = args.repository if args.repository is not None else args.packet_root
+        packet_root = (args.packet_root if args.packet_root is not None
+                       else Path(repository) / "proposals")
+        report = validate_repository(repository, packet_root)
     except PacketError as error:
-        print(json.dumps({"status": "invalid", "error": str(error)}, sort_keys=True))
+        failure = error.report()
+        print(json.dumps({"status": "invalid", "error": str(error), "failures": [failure]},
+                         sort_keys=True, default=str))
+        print(describe(failure), file=sys.stderr)
         return 2
-    print(json.dumps({
-        "status": "valid",
-        "packet_count": len(packets),
-        "proposal_ids": sorted(packets),
-    }, sort_keys=True))
+    summary = {
+        "repository": str(report.repository_root),
+        "packet_root": str(report.packet_root.relative_to(report.repository_root) or "."),
+        "discovered_count": len(report.manifests),
+        "packet_count": len(report.packets),
+        "decided_count": sum(packet.manifest["lifecycle_state"] == "decided"
+                             for packet in report.packets.values()),
+        "proposal_ids": sorted(report.packets),
+    }
+    if report.failures:
+        failures = [error.report() for error in report.failures]
+        print(json.dumps({"status": "invalid", "error": str(report.failures[0]),
+                          "failure_count": len(failures), "failures": failures, **summary},
+                         sort_keys=True, default=str))
+        print(f"{len(failures)} proposal-packet failure(s) under {summary['packet_root']}:",
+              file=sys.stderr)
+        for failure in failures:
+            print(describe(failure), file=sys.stderr)
+        return 2
+    print(json.dumps({"status": "valid", **summary}, sort_keys=True))
     return 0
 
 

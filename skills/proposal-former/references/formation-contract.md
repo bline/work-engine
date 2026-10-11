@@ -27,7 +27,9 @@ context.
 
 For each surviving candidate, `packet.json` owns stable identity and closed
 lifecycle, placement, uncertainty, relationship, and authority metadata. Its
-referenced narrative owns current proposal meaning. Referenced supporting files
+referenced narrative owns current proposal meaning and does not restate that
+metadata in a `State:` or `Status:` line, which proposal-packets validation
+rejects. Referenced supporting files
 may elaborate placement, relationships, or evidence without becoming competing
 owners. Git owns durable history and review.
 

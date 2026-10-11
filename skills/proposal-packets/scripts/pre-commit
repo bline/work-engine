@@ -1,0 +1,10 @@
+#!/bin/sh
+# Optional local hook: validate proposal packets before each commit.
+# CI (.github/workflows/proposal-packets.yml) is the enforcement boundary;
+# this hook only gives earlier feedback and checks the working tree.
+root=$(git rev-parse --show-toplevel) || exit 1
+python3 "$root/skills/proposal-packets/scripts/proposal_packets.py" \
+  validate --repository "$root" "$root/proposals" >/dev/null || {
+  echo "proposal-packets: validation failed (details above). Commit aborted." >&2
+  exit 1
+}

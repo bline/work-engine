@@ -535,5 +535,228 @@ class ProposalPacketsTest(unittest.TestCase):
                     PACKETS.load_packet(packet_dir / "packet.json", Path(directory))
 
 
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def build_repository(root: Path, count: int = 19, decided_every: int = 2) -> dict[str, Path]:
+    """A repository with `count` packets under proposals/, references outside it,
+    and unrelated malformed packet.json files elsewhere."""
+    (root / "ideas").mkdir(parents=True)
+    (root / "ideas" / "origin.md").write_text("# Origin idea\n", encoding="utf-8")
+    # Unrelated artifacts that happen to be named packet.json.
+    write_json(root / "pilot" / "runs" / "pass-01" / "packet.json", {"run": 1})
+    (root / "skills" / "fixtures" / "packet.json").parent.mkdir(parents=True)
+    (root / "skills" / "fixtures" / "packet.json").write_text("not json", encoding="utf-8")
+    manifests: dict[str, Path] = {}
+    for index in range(count):
+        name = f"candidate-{index:02d}"
+        packet_dir = root / "proposals" / f"family-{index % 3}" / name
+        packet_dir.mkdir(parents=True)
+        (packet_dir / "proposal.md").write_text(
+            f"# {name}\n\n## Identity\n\n- Proposal ID: `work-engine.{name}`\n"
+            "- Decision owner: user\n\nCanonical lifecycle metadata is in packet.json.\n",
+            encoding="utf-8")
+        decided = index % decided_every == 0
+        manifest = {
+            "schema_version": 1,
+            "proposal_id": f"work-engine.{name}",
+            "family_id": f"work-engine.family-{index % 3}",
+            "title": name,
+            "lifecycle_state": "decided" if decided else "formed",
+            "narrative": {"path": "proposal.md"},
+            # Packet-relative, outside proposals/, inside the repository.
+            "origin_refs": [{"kind": "idea", "path": "../../../ideas/origin.md"}],
+            "placement": {"state": "probable", "claim": f"{name} has a probable owner."},
+            "uncertainty": {"state": "unresolved",
+                            "reopening_conditions": [f"{name} loses its owner.",
+                                                     f"{name} gains a second owner."]},
+            "authority": {"decision_owner": "user", "implementation_authorized": False},
+            "relationships": ([{"type": "related_to", "target_id": "work-engine.candidate-00",
+                                "rationale": "Shares a family root.", "causal": False}]
+                              if index else []),
+        }
+        write_json(packet_dir / "packet.json", manifest)
+        if decided:
+            write_json(packet_dir / "decision.json", {
+                "schema_version": 1,
+                "proposal_id": manifest["proposal_id"],
+                "source": {"repository_revision": "0" * 40, "lifecycle_state": "formed",
+                           "placement_state": "probable"},
+                "decision": {"disposition": "approve_proposal_meaning", "lifecycle_state": "decided",
+                             "placement_state": "probable",
+                             "placement_claim": manifest["placement"]["claim"],
+                             "rationale": "Meaning approved.",
+                             "reopening_conditions": manifest["uncertainty"]["reopening_conditions"]},
+                "authority": {"decision_owner": "user", "exercised_by": "user",
+                              "evidence": "Fixture ruling."},
+                "constraints": {"permanent_architecture_settled": False,
+                                "roadmap_priority_changed": False,
+                                "implementation_authorized": False},
+            })
+        manifests[manifest["proposal_id"]] = packet_dir / "packet.json"
+    return manifests
+
+
+class RepositoryValidationTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.directory.name) / "repository"
+        self.manifests = build_repository(self.root)
+
+    def tearDown(self) -> None:
+        self.directory.cleanup()
+
+    def cli(self, *args: str, cwd: Path | None = None) -> tuple[int, dict, str]:
+        completed = subprocess.run([sys.executable, str(SCRIPT), "validate", *args],
+                                   cwd=cwd, capture_output=True, text=True)
+        return completed.returncode, json.loads(completed.stdout), completed.stderr
+
+    def failures(self) -> list[dict]:
+        report = PACKETS.validate_repository(self.root, self.root / "proposals")
+        return [error.report() for error in report.failures]
+
+    def edit(self, proposal_id: str, mutate) -> Path:
+        path = self.manifests[proposal_id]
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        mutate(manifest)
+        write_json(path, manifest)
+        return path
+
+    def test_valid_nineteen_packet_repository_ignores_unrelated_packet_files(self) -> None:
+        status, result, _ = self.cli("--repository", str(self.root), str(self.root / "proposals"))
+        self.assertEqual((status, result["status"]), (0, "valid"))
+        self.assertEqual(result["discovered_count"], 19)
+        self.assertEqual(result["packet_count"], 19)
+        self.assertEqual(result["decided_count"], 10)
+        self.assertEqual(result["packet_root"], "proposals")
+        # Without a separate packet root, the unrelated files block discovery,
+        # which is the failure this boundary exists to prevent.
+        status, result, _ = self.cli(str(self.root))
+        self.assertEqual((status, result["status"]), (2, "invalid"))
+        self.assertTrue(all(failure["category"] == "malformed_packet"
+                            and not failure["file"].startswith("proposals/")
+                            for failure in result["failures"]))
+
+    def test_invocation_is_independent_of_working_directory(self) -> None:
+        elsewhere = Path(self.directory.name) / "elsewhere"
+        elsewhere.mkdir()
+        results = [
+            self.cli("--repository", str(self.root), str(self.root / "proposals"), cwd=elsewhere),
+            self.cli("--repository", ".", "proposals", cwd=self.root),
+            self.cli("--repository", ".", cwd=self.root),
+            self.cli("--repository", "..", ".", cwd=self.root / "proposals"),
+        ]
+        for status, result, _ in results:
+            self.assertEqual((status, result["status"], result["packet_count"]), (0, "valid", 19))
+        self.assertEqual(len({json.dumps(result, sort_keys=True) for _, result, _ in results}), 1)
+
+    def test_references_resolve_packet_relative_within_the_repository(self) -> None:
+        # Repository-root-relative spelling is not reinterpreted: from the packet
+        # directory, "ideas/origin.md" names a file that does not exist.
+        target = "work-engine.candidate-03"
+        self.edit(target, lambda value: value["origin_refs"][0].update(path="ideas/origin.md"))
+        self.edit("work-engine.candidate-05",
+                  lambda value: value["origin_refs"][0].update(path="../../../../outside.md"))
+        self.edit("work-engine.candidate-07",
+                  lambda value: value["narrative"].update(path="missing.md"))
+        failures = {failure["proposal_id"] if "proposal_id" in failure else failure["packet"]: failure
+                    for failure in self.failures()}
+        self.assertEqual(len(failures), 3)
+        for failure in failures.values():
+            self.assertEqual(failure["category"], "missing_reference")
+            self.assertTrue(failure["file"].endswith("packet.json"))
+        self.assertEqual(failures["proposals/family-0/candidate-03/packet.json"]["observed"],
+                         "ideas/origin.md")
+        self.assertIn("escapes", failures["proposals/family-2/candidate-05/packet.json"]["invariant"])
+        self.assertIn("narrative.path",
+                      failures["proposals/family-1/candidate-07/packet.json"]["invariant"])
+
+    def test_malformed_packets_are_reported_never_skipped(self) -> None:
+        self.manifests["work-engine.candidate-04"].write_text("{ truncated", encoding="utf-8")
+        self.edit("work-engine.candidate-06", lambda value: value.pop("placement"))
+        self.edit("work-engine.candidate-08", lambda value: value.update(lifecycle_state="approved"))
+        # Every other packet relates to candidate-00; breaking it must not
+        # turn those relationships into misleading dangling-target failures.
+        self.edit("work-engine.candidate-00", lambda value: value.pop("title"))
+        failures = self.failures()
+        self.assertEqual(sorted(failure["packet"] for failure in failures), [
+            "proposals/family-0/candidate-00/packet.json",
+            "proposals/family-0/candidate-06/packet.json",
+            "proposals/family-1/candidate-04/packet.json",
+            "proposals/family-2/candidate-08/packet.json",
+        ])
+        self.assertEqual({failure["category"] for failure in failures}, {"malformed_packet"})
+        # Packets related to an invalid one are not misreported as dangling.
+        self.assertFalse(any(failure["category"] == "relationship" for failure in failures))
+        status, result, stderr = self.cli("--repository", str(self.root))
+        self.assertEqual((status, result["failure_count"], result["discovered_count"]), (2, 4, 19))
+        self.assertIn("proposals/family-1/candidate-04/packet.json: [malformed_packet]", stderr)
+
+    def test_decision_binding_drift_names_expected_and_observed_values(self) -> None:
+        dropped = "work-engine.candidate-02 gains a second owner.".replace(
+            "work-engine.candidate-02", "candidate-02")
+        self.edit("work-engine.candidate-02",
+                  lambda value: value["uncertainty"]["reopening_conditions"].remove(dropped))
+        [failure] = self.failures()
+        self.assertEqual(failure["category"], "decision_binding")
+        self.assertEqual(failure["file"], "proposals/family-2/candidate-02/packet.json")
+        self.assertEqual(failure["missing_from_packet"], [dropped])
+        self.assertEqual(failure["not_in_decision"], [])
+        self.assertEqual(len(failure["expected"]), 2)
+        self.assertEqual(len(failure["observed"]), 1)
+
+    def test_hand_edited_decided_packet_cannot_disagree_with_its_decision(self) -> None:
+        target = "work-engine.candidate-10"
+        original = self.manifests[target].read_bytes()
+        mutations = {
+            "placement state": (lambda value: value["placement"].update(state="uncertain"),
+                                "decision_binding"),
+            "placement claim": (lambda value: value["placement"].update(claim="A different owner."),
+                                "decision_binding"),
+            "added condition": (lambda value: value["uncertainty"]["reopening_conditions"]
+                                .append("A condition no authority approved."), "decision_binding"),
+            "reordered conditions": (lambda value: value["uncertainty"]["reopening_conditions"]
+                                     .reverse(), "decision_binding"),
+            "lifecycle reverted": (lambda value: value.update(lifecycle_state="formed"),
+                                   "decision_presence"),
+            "authorized": (lambda value: value["authority"].update(implementation_authorized=True),
+                           "malformed_packet"),
+        }
+        for name, (mutate, category) in mutations.items():
+            with self.subTest(name):
+                self.manifests[target].write_bytes(original)
+                self.edit(target, mutate)
+                failures = self.failures()
+                self.assertEqual([failure["category"] for failure in failures], [category])
+                self.assertEqual(failures[0]["packet"], "proposals/family-1/candidate-10/packet.json")
+        self.manifests[target].write_bytes(original)
+        self.assertEqual(self.failures(), [])
+
+    def test_narrative_lifecycle_state_is_rejected_as_duplicate(self) -> None:
+        narrative = self.manifests["work-engine.candidate-01"].parent / "proposal.md"
+        narrative.write_text(narrative.read_text(encoding="utf-8").replace(
+            "- Decision owner: user", "- State: formed; not evaluated\n- Decision owner: user"),
+            encoding="utf-8")
+        [failure] = self.failures()
+        self.assertEqual(failure["category"], "duplicated_state")
+        self.assertEqual(failure["file"], "proposals/family-1/candidate-01/proposal.md")
+        self.assertEqual(failure["line"], 6)
+        self.assertEqual(failure["observed"], "- State: formed; not evaluated")
+
+    def test_every_failure_in_one_run_is_reported(self) -> None:
+        self.manifests["work-engine.candidate-04"].write_text("[]", encoding="utf-8")
+        self.edit("work-engine.candidate-02", lambda value: value["placement"].update(claim="Drifted."))
+        self.edit("work-engine.candidate-09",
+                  lambda value: value["relationships"][0].update(target_id="work-engine.missing"))
+        (self.manifests["work-engine.candidate-11"].parent / "decision.json").write_text(
+            "{}", encoding="utf-8")
+        categories = sorted(failure["category"] for failure in self.failures())
+        self.assertEqual(categories, ["decision_binding", "decision_presence",
+                                      "malformed_packet", "relationship"])
+
+
 if __name__ == "__main__":
     unittest.main()

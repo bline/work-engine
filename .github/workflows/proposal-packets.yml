@@ -1,0 +1,20 @@
+name: proposal-packets
+
+# No path filter: packets reference files outside proposals/, so any change
+# can break a packet.
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Proposal-packets tests
+        run: python3 -m unittest discover -s skills/proposal-packets/tests -v
+      - name: Validate every proposal packet
+        run: python3 skills/proposal-packets/scripts/proposal_packets.py validate --repository . proposals

@@ -11,7 +11,63 @@ requires identity, family, lifecycle, narrative and origin references,
 placement, uncertainty, decision authority, and typed relationships. Paths are
 relative to the packet directory and must resolve inside the repository passed
 to the validator. Relationship targets resolve by stable proposal ID across the
-discovered repository, never by title or directory name.
+discovered packets, never by title or directory name.
+
+## Validation scope and failure reports
+
+Validation has two separate boundaries. The packet root bounds discovery:
+every `packet.json` under it is a canonical packet, and no file outside it is
+considered. The repository root bounds reference resolution: a packet-relative
+path may leave the packet root, for example `../family.md` or
+`../../../ideas/x.md`, provided it resolves to a file inside the repository.
+Paths are never reinterpreted as repository-root-relative.
+`validate --repository . proposals` is the repository's canonical invocation;
+with one positional argument, that directory serves as both boundaries.
+
+The invariant is: every canonical packet in scope is discovered and validated,
+every failure identifies the violated contract, and no unrelated artifact can
+prevent valid packet discovery. Validation therefore collects every failure in
+one run instead of stopping at the first. Each failure names its packet and
+owning file, plus a category:
+
+- `malformed_packet`: the manifest cannot be read or violates the closed schema;
+- `missing_reference`: a narrative or origin path does not resolve inside the
+  repository;
+- `malformed_decision`, `decision_presence`, `decision_binding`, or
+  `decision_history`: the decision record is invalid, absent or unexpected,
+  disagrees with the packet (reported against `packet.json` with the
+  decision's expected value and the packet's observed value), or its history
+  chain is broken;
+- `transition_pending`: an interrupted transition awaits `recover`;
+- `duplicate_identity` or `relationship`: proposal IDs or relationship targets
+  do not resolve uniquely; and
+- `duplicated_state`: a narrative restates lifecycle state the manifest owns.
+
+A packet that fails to load is still reported, and relationships that target
+it are not misreported as dangling.
+
+### Enforcement
+
+`.github/workflows/proposal-packets.yml` runs the tests and the canonical
+validation on every push and pull request, with no path filter, so a change to
+a referenced file outside `proposals/` is caught too. A local hook gives
+earlier feedback but can be omitted or bypassed, so CI is the enforcement
+boundary. To install the hook:
+
+```bash
+ln -s "$(git rev-parse --show-toplevel)/skills/proposal-packets/scripts/pre-commit" \
+  "$(git rev-parse --git-path hooks)/pre-commit"
+```
+
+The hook validates the working tree, not the staged snapshot.
+
+### Narratives and lifecycle state
+
+`packet.json` and, once decided, `decision.json` are the only representation
+of lifecycle, placement state, and authorization status. A narrative restating
+them is a second copy, and copies drift. Narratives therefore carry no
+`State:`, `Status:`, or `Lifecycle:` line. Prose that explains a decision, its
+limitations, or what remains unauthorized belongs in the narrative body.
 
 The validator proves only closed properties: shape, vocabulary, unique IDs,
 local reference resolution, relationship targets, and the non-authorization of
