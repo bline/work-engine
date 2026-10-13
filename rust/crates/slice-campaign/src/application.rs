@@ -792,6 +792,7 @@ struct CampaignInner {
     store: Store,
     config: TrustedConfig,
     initial_join: Option<InitialJoinInstallation>,
+    completion_selection: Option<CompletionSelection>,
 }
 
 /// The store and all admission checks share one process-local gate. A future
@@ -846,6 +847,7 @@ impl Campaign {
                 store,
                 config,
                 initial_join: None,
+                completion_selection: None,
             })),
         }
     }
@@ -974,6 +976,7 @@ impl Campaign {
 }
 
 include!("owner_readback.rs");
+include!("initial_outcome.rs");
 
 impl CampaignInner {
     fn check_finding_admission(&self, _binding: &AdmissionBinding) -> Result<()> {

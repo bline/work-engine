@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/review-workflow",
+  "crates/work-engine-review-host",
   "crates/work-engine-types",
   "crates/lifecycle-core",
   "crates/lifecycle-store",

@@ -118,11 +118,24 @@ impl FindingLease for CE3Lease<'_> {}
 impl FindingAdmissionPort for CE3CampaignClaimsAdmission {
     fn acquire<'a>(
         &'a self,
-        _binding: &AdmissionBinding,
+        binding: &AdmissionBinding,
     ) -> ClaimResult<Box<dyn FindingLease + 'a>> {
-        Err(ClaimError::new(
-            "J2 finding/reliance admission is not enabled",
-        ))
+        let gate = self
+            .inner
+            .lock()
+            .map_err(|_| ClaimError::new("campaign gate poisoned"))?;
+        if gate.store.root_id != self.campaign_root_id
+            || gate.store.epoch != self.campaign_epoch
+            || gate
+                .initial_join
+                .as_ref()
+                .is_none_or(|j| j.digest != self.selection_digest || j.epoch != self.campaign_epoch)
+        {
+            return Err(ClaimError::new("stale CE3 campaign port"));
+        }
+        gate.check_j2_admission(binding)
+            .map_err(|e| ClaimError::new(e.to_string()))?;
+        Ok(Box::new(CampaignFindingLease { _gate: gate }))
     }
 }
 impl ProductionPathLease for CE3Lease<'_> {
@@ -512,6 +525,9 @@ pub(crate) fn validate_stored_stage(
     intent: &CompletionIntent,
     stage: &StageIntent,
 ) -> Result<()> {
+    if stage.kind.is_j2() {
+        return validate_j2_stage(state, intent, stage);
+    }
     if stage.stage_id != stage_id(&intent.campaign_operation_id, stage.kind)
         || stage.registration_base_revision.as_str().is_empty()
         || stage.owner_locator.is_null()
@@ -666,7 +682,10 @@ impl CampaignInner {
         let current = state
             .obligations
             .iter()
-            .find(|o| o.obligation_id == binding.obligation_id && o.status == "executing")
+            .find(|o| {
+                o.obligation_id == binding.obligation_id
+                    && matches!(o.status.as_str(), "executing" | "completed" | "failed")
+            })
             .and_then(|o| o.request.as_ref())
             .ok_or_else(|| CampaignError::Conflict("CE3 active obligation absent".into()))?;
         let attempt = state
@@ -691,8 +710,7 @@ impl CampaignInner {
             .completion_intent
             .as_ref()
             .ok_or_else(|| CampaignError::Conflict("completion intent absent".into()))?;
-        if intent.outcome.is_some()
-            || attempt.outcome.is_some()
+        if (intent.outcome.is_some() && binding.stage != ProductionPathStage::ReadAdmission)
             || intent.owner_selection_digest != join.digest
             || intent.campaign_operation_id != binding.campaign_operation_id
             || intent.obligation_id != binding.obligation_id
@@ -883,7 +901,10 @@ fn checked_execution_for_attempt(
     let request = state
         .obligations
         .iter()
-        .find(|o| o.obligation_id == obligation_id && o.status == "executing")
+        .find(|o| {
+            o.obligation_id == obligation_id
+                && matches!(o.status.as_str(), "executing" | "completed" | "failed")
+        })
         .and_then(|o| o.request.as_ref())
         .ok_or_else(|| CampaignError::Conflict("active request absent".into()))?;
     let attempt = state
@@ -1271,7 +1292,10 @@ fn current_intent<'a>(
     let request = state
         .obligations
         .iter()
-        .find(|o| o.obligation_id == obligation && o.status == "executing")
+        .find(|o| {
+            o.obligation_id == obligation
+                && matches!(o.status.as_str(), "executing" | "completed" | "failed")
+        })
         .and_then(|o| o.request.as_ref())
         .ok_or_else(|| CampaignError::Conflict("active request absent".into()))?;
     let attempt = state
@@ -1287,8 +1311,6 @@ fn current_intent<'a>(
     if intent.campaign_operation_id != operation
         || intent.prepared_request_sha256 != request.request_digest
         || intent.attempt_id != attempt.attempt_id
-        || attempt.outcome.is_some()
-        || intent.outcome.is_some()
     {
         return Err(CampaignError::Conflict(
             "completion no longer current".into(),
@@ -1304,7 +1326,10 @@ fn current_intent_mut<'a>(
     let request = state
         .obligations
         .iter()
-        .find(|o| o.obligation_id == obligation && o.status == "executing")
+        .find(|o| {
+            o.obligation_id == obligation
+                && matches!(o.status.as_str(), "executing" | "completed" | "failed")
+        })
         .and_then(|o| o.request.as_ref())
         .ok_or_else(|| CampaignError::Conflict("active request absent".into()))?;
     let attempt = state
@@ -1320,8 +1345,6 @@ fn current_intent_mut<'a>(
     if intent.campaign_operation_id != operation
         || intent.prepared_request_sha256 != request.request_digest
         || intent.attempt_id != attempt.attempt_id
-        || attempt.outcome.is_some()
-        || intent.outcome.is_some()
     {
         return Err(CampaignError::Conflict(
             "completion no longer current".into(),

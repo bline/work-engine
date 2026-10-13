@@ -760,12 +760,19 @@ impl Store {
                 {
                     return Err(fail());
                 }
+                let mut j2_registrations = std::collections::BTreeSet::new();
                 for stage in &intent.stages {
                     crate::application::validate_stored_stage(state, intent, stage)
                         .map_err(|_| fail())?;
                     let (receipt, registered) = self
                         .projection_result(&stage.registration_operation_id, &state.identity)?
                         .ok_or_else(fail)?;
+                    if stage.kind.is_j2()
+                        && j2_registrations.insert(stage.registration_operation_id.clone())
+                    {
+                        crate::application::validate_j2_registration(&receipt, &registered)
+                            .map_err(|_| fail())?;
+                    }
                     let saved = registered
                         .progress
                         .attempts
@@ -778,7 +785,10 @@ impl Store {
                         || receipt.prior_revision.as_ref()
                             != Some(&stage.registration_base_revision)
                         || receipt.kind
-                            != if stage.kind == crate::completion::StageKind::EpisodeResultRead {
+                            != if stage.kind.is_j2() {
+                                crate::application::j2_registration_kind(stage.kind)
+                            } else if stage.kind == crate::completion::StageKind::EpisodeResultRead
+                            {
                                 "register_initial_episode_read"
                             } else {
                                 "register_initial_stage"
@@ -794,6 +804,68 @@ impl Store {
                     {
                         return Err(fail());
                     }
+                }
+                for stage in intent.stages.iter().filter(|s| s.kind.is_j2()) {
+                    if !matches!(stage.progress, crate::completion::StageProgress::Registered) {
+                        let (receipt, checked) = self
+                            .projection_result(
+                                &crate::application::j2_progress_operation(
+                                    &stage.stage_id,
+                                    stage.kind,
+                                    &stage.progress,
+                                )?,
+                                &state.identity,
+                            )?
+                            .ok_or_else(fail)?;
+                        let saved = checked
+                            .progress
+                            .attempts
+                            .get(index)
+                            .and_then(|a| a.completion_intent.as_ref())
+                            .and_then(|i| i.stages.iter().find(|s| s.stage_id == stage.stage_id))
+                            .ok_or_else(fail)?;
+                        if receipt.kind != "check_j2_stage"
+                            || receipt.request_digest
+                                != campaign_digest(
+                                    &json!({"stageId":stage.stage_id,"progress":stage.progress}),
+                                )?
+                            || serde_json::to_value(&saved.progress).ok()
+                                != serde_json::to_value(&stage.progress).ok()
+                        {
+                            return Err(fail());
+                        }
+                    }
+                }
+                if intent.outcome.is_some() {
+                    let stage = intent
+                        .stages
+                        .iter()
+                        .find(|s| s.kind == crate::completion::StageKind::InitialOutcome)
+                        .ok_or_else(fail)?;
+                    let (receipt, published) = self
+                        .projection_result(
+                            &format!("{}:publish", stage.registration_operation_id),
+                            &state.identity,
+                        )?
+                        .ok_or_else(fail)?;
+                    let original = published.progress.attempts.get(index).ok_or_else(fail)?;
+                    if receipt.kind != "publish_initial_outcome"
+                        || receipt.request_digest
+                            != crate::application::j2_publication_digest(
+                                &published,
+                                &receipt.operation_id,
+                                &receipt.kind,
+                            )
+                            .map_err(|_| fail())?
+                        || original
+                            .completion_intent
+                            .as_ref()
+                            .is_none_or(|i| i.outcome.is_none())
+                    {
+                        return Err(fail());
+                    }
+                    crate::application::validate_j2_attempt(&published, original)
+                        .map_err(|_| fail())?;
                 }
                 if let Some(joined) = &intent.joined_readbacks {
                     let checked = |kind| {
@@ -849,15 +921,7 @@ impl Store {
             {
                 return Err(fail());
             }
-            if matches!(
-                attempt.outcome,
-                Some(
-                    crate::completion::AttemptOutcome::Completed
-                        | crate::completion::AttemptOutcome::FailedWithResult
-                )
-            ) {
-                return Err(fail());
-            }
+            crate::application::validate_j2_attempt(state, attempt).map_err(|_| fail())?;
         }
         for obligation in &state.obligations {
             if let Some(request) = &obligation.request {
@@ -895,9 +959,54 @@ impl Store {
                 }
             }
         }
-        if !state.progress.evaluations.is_empty() {
-            return Err(fail());
+        for evaluation in &state.progress.evaluations {
+            let (registration, prepared) = self
+                .projection_result(&evaluation.registration_operation_id, &state.identity)?
+                .ok_or_else(fail)?;
+            let original = prepared
+                .progress
+                .evaluations
+                .iter()
+                .find(|e| e.operation_id == evaluation.operation_id)
+                .ok_or_else(fail)?;
+            if registration.kind != "prepare_builder_evaluation"
+                || original.publication_state != "registered"
+                || original.finding_id != evaluation.finding_id
+                || original.finding_revision != evaluation.finding_revision
+                || original.valid != evaluation.valid
+                || original.consumer_tree != evaluation.consumer_tree
+                || original.decision_scope != evaluation.decision_scope
+            {
+                return Err(fail());
+            }
+            if evaluation.publication_state == "committed" {
+                let (receipt, committed) = self
+                    .projection_result(
+                        &format!("{}:publish", evaluation.operation_id),
+                        &state.identity,
+                    )?
+                    .ok_or_else(fail)?;
+                let saved = committed
+                    .progress
+                    .evaluations
+                    .iter()
+                    .find(|e| e.operation_id == evaluation.operation_id)
+                    .ok_or_else(fail)?;
+                if receipt.kind != "publish_builder_evaluation"
+                    || receipt.request_digest
+                        != crate::application::j2_publication_digest(
+                            &committed,
+                            &receipt.operation_id,
+                            &receipt.kind,
+                        )
+                        .map_err(|_| fail())?
+                    || serde_json::to_value(saved).ok() != serde_json::to_value(evaluation).ok()
+                {
+                    return Err(fail());
+                }
+            }
         }
+        crate::application::validate_j2_evaluations(state).map_err(|_| fail())?;
         Ok(())
     }
 

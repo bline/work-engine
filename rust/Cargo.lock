@@ -1114,6 +1114,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "review-workflow"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "review-episode",
+ "review-episode-core",
+ "review-episode-store",
+ "review-execution-evidence",
+ "serde",
+ "serde_json",
+ "sha2",
+ "slice-campaign",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "work-engine-compiler",
+]
+
+[[package]]
 name = "rusqlite"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1733,6 +1752,23 @@ dependencies = [
  "signal-hook",
  "tempfile",
  "work-engine-compiler",
+]
+
+[[package]]
+name = "work-engine-review-host"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "review-episode-core",
+ "review-workflow",
+ "rusqlite",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2",
+ "slice-campaign",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]

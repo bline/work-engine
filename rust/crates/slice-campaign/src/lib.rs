@@ -20,10 +20,13 @@ mod test_support;
 
 pub use admission::{AdmissionHandle, Preparation, PreparedInitial};
 pub use application::{
-    AdmitRequest, CE3CampaignClaimsAdmission, Campaign, CampaignClaimsAdmission,
+    AdmitRequest, BuilderEvaluationDecision, BuilderEvaluationLocator, BuilderEvaluationPrepared,
+    BuilderEvaluationProgress, BuilderEvaluationState, BuilderEvaluationView,
+    CE3CampaignClaimsAdmission, Campaign, CampaignClaimsAdmission, CompletionSelection,
     InitialClaimsOwner, InitialCompletionLocator, InitialCompletionOwners,
     InitialCompletionPrepared, InitialCompletionProgress, InitialEpisodeReadRegistered,
-    InitialJoinSelection, InitialProgressState, TrustedConfig,
+    InitialJoinSelection, InitialOutcomeKind, InitialOutcomeLocator, InitialOutcomeProgress,
+    InitialOutcomeState, InitialOutcomeView, InitialProgressState, TrustedConfig,
 };
 pub use completion::{
     CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,
@@ -71,7 +74,8 @@ pub(crate) fn fault_cut(name: &str) {
     let directory = Path::new(&directory);
     std::fs::write(directory.join(format!("{name}.ready")), b"ready\n")
         .expect("fault ready signal");
-    loop {
+    let release = directory.join(format!("{name}.release"));
+    while !release.exists() {
         std::thread::sleep(Duration::from_millis(5));
     }
 }

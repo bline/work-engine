@@ -346,11 +346,9 @@ impl CompletionIntent {
     ) -> Result<()> {
         if self.attempt_id != attempt_id
             || self.dispatch_operation_id != dispatch.operation_id
-            || self.outcome.is_some()
             || self.selected_claims.len() != 2
             || self.selected_claims[0].boundary != "builder_projection"
             || self.selected_claims[1].boundary != "campaign_terminalization"
-            || self.stages.iter().any(|stage| stage.kind.is_j2())
         {
             return Err(CampaignError::Contract(
                 "initial completion intent invalid".into(),
@@ -374,12 +372,7 @@ impl CompletionIntent {
             require_sha(value, "completion digest")?;
         }
         self.execution_evidence_ref.checked()?;
-        if self
-            .consumption_intents
-            .iter()
-            .any(|c| c.consumed_at_operation_id.is_some())
-            || !self.consumption_intents.is_empty() && self.consumption_intents.len() != 2
-        {
+        if !self.consumption_intents.is_empty() && self.consumption_intents.len() != 2 {
             return Err(CampaignError::Contract(
                 "J1 consumption commitments invalid".into(),
             ));
@@ -397,7 +390,7 @@ impl CompletionIntent {
             require_sha(&stage.owner_selection_digest, "stage owner selection")?;
             stage.evidence_ref.checked()?;
             if !ids.insert(&stage.stage_id)
-                || !kinds.insert(stage.kind)
+                || (!stage.kind.is_j2() && !kinds.insert(stage.kind))
                 || stage.owner_selection_digest != self.owner_selection_digest
                 || stage.evidence_ref != self.execution_evidence_ref
             {
@@ -406,7 +399,7 @@ impl CompletionIntent {
                 ));
             }
         }
-        if self.stages.len() > 6
+        if self.stages.iter().filter(|s| !s.kind.is_j2()).count() > 6
             || (matches!(
                 self.observation_selection,
                 ObservationSelection::Absent { .. }
