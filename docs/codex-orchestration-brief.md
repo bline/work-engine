@@ -59,6 +59,41 @@ for design, planning and doctrine review, not for bounded implementation. Read
 the coordination board as AGENTS.md specifies at startup, after compaction and
 before claims or consequential operations, not as a polling loop.
 
+## Tool output the model never receives
+
+The exec harness truncates a cell's output above its budget and reports only the
+count of discarded tokens. Across ten sessions from 2026-10-11 to 10-13 it
+recorded 123 truncations across 110 tool results, discarding about 1.40 million
+tokens, and 44 of those 110 results were Codebase Memory output. One
+implementation agent lost every coverage result it took, in single payloads of
+13.9K and 23.0K tokens, so it held no verified freshness for any path despite
+fourteen coverage calls.
+
+The lever is asking for less per call, not making more calls. Paging is the
+recovery, not the goal: a truncated batch costs its own full call and then the
+re-requests to recover what was lost, so a request that fits under the budget is
+the cheapest form, and batching up to that budget is right. Every Codebase
+Memory tool takes the parameters that make a request fit: `max_output_tokens`
+(default 3200, 2500 for snippets), `limit`, `fields` or `detail: ids` to drop
+columns, `source_mode: outline` before `full`, `diagnostics: none` on coverage,
+and `paths` holding the files actually cited rather than every file touched.
+Printing a tool's own schema or echoing a whole response consumes the same
+budget as evidence and establishes nothing.
+
+Keep traversals narrow for the same reason. `detect_changes` already defaults
+`edge_types` to `CALLS`; widening it to `MENTIONS` to pick up documentation adds
+2,544 edges in this repository, 80% of which land on `File` nodes rather than
+symbols, against 2,702 doc references that do not resolve at all (1,569 of them
+ambiguous). That is volume without behavioral precision: a `MENTIONS` edge
+records that a document names code, not that the code governs or affects it.
+Widen the edge set only when documentation reference is the actual question.
+
+Truncation is silent in its effect. The agent sees a warning, not the missing
+content, so a conclusion drawn afterwards can rest on evidence that was never
+read. When a result reports truncation, re-request the specific part needed
+rather than proceeding, and do not cite a path whose coverage result was
+truncated.
+
 ## Effort and model
 
 High and extra-high effort are worth their cost for design, contract formation
@@ -87,6 +122,9 @@ exercise.
 After a run, compare against the baseline with the scripts in
 `metrics/baselines/pure-codex-20261009/scripts/`: wait-only calls and timeouts,
 root share of spend, re-read share, and settled-fact contradictions per accepted
-slice. Track outcomes alongside cost: quota per accepted result, candidate and
+slice. `metrics/scripts/` adds per-session profiles, coverage outcomes, cost
+decomposition and discarded tool output; the
+[efficiency ledger](../metrics/efficiency-ledger.md) records what each
+measurement showed. Track outcomes alongside cost: quota per accepted result, candidate and
 remediation attempts, and defects that escape review. A cheaper run that misses
 important issues is not an efficiency improvement.
