@@ -120,6 +120,83 @@ fn invalid_profile_and_changed_startup_refuse_before_effects() {
 }
 
 #[test]
+fn incompatible_derived_native_ids_refuse_before_any_owner_or_peer_effect() {
+    for (operation_id, expected) in [
+        ("x".repeat(122), "derived native transition identifiers"),
+        ("x".repeat(128), "derived native begin identifiers"),
+        ("internal space".into(), "derived native begin identifiers"),
+        (
+            "embedded\tcontrol".into(),
+            "invalid bounded startup identity",
+        ),
+        ("non-ascii-é".into(), "invalid bounded startup identity"),
+    ] {
+        let mut f = Fixture::new(0, "result");
+        f.document.operation_id = operation_id.clone();
+        f.save();
+        let output = std::process::Command::new(&f.host)
+            .args(["initialize", "--startup"])
+            .arg(&f.startup)
+            .output()
+            .unwrap();
+        let diagnostic = String::from_utf8_lossy(&output.stderr);
+        assert!(!output.status.success(), "admitted {operation_id:?}");
+        assert!(diagnostic.contains(expected), "{diagnostic}");
+        for root in [
+            &f.document.roots.campaign,
+            &f.document.roots.episode,
+            &f.document.roots.claims,
+            &f.document.roots.evidence,
+        ] {
+            assert!(!root.exists(), "{operation_id:?}: created {root:?}");
+        }
+        assert_eq!(f.entries(), 0, "{operation_id:?}");
+        assert!(!f.count.exists(), "peer entered for {operation_id:?}");
+        eprintln!(
+            "R1 rejected {operation_id:?}: all four owner roots absent, peer entries=0; {diagnostic}"
+        );
+    }
+}
+
+#[test]
+fn longest_native_operation_id_executes_and_recovers_original_outcome() {
+    let mut f = Fixture::new(0, "result");
+    // The result suffix reaches the owner's 128-byte boundary exactly.
+    f.document.operation_id = format!("A0-_:{}.", "x".repeat(115));
+    assert_eq!(f.document.operation_id.len(), 121);
+    f.save();
+    let initialized = f.initialize();
+    let mut client = f.start(&[]);
+    client.ready();
+    client.send(json!({"version":1,"requestId":"execute","operation":"execute_initial","obligationId":f.document.obligation_id,"operationId":f.document.operation_id,"expectedRevision":initialized["campaign"]["revision"]}));
+    let completed = client.receive();
+    assert_eq!(
+        completed["result"]["outcome"]["status"], "committed",
+        "{completed}"
+    );
+    assert_eq!(
+        completed["result"]["outcome"]["view"]["kind"],
+        "evidence_unestablished"
+    );
+    assert_eq!(f.entries(), 1);
+    client.finish();
+    let mut reopened = f.start(&[]);
+    reopened.ready();
+    reopened.send(json!({"version":1,"requestId":"recover","operation":"recover_initial","obligationId":f.document.obligation_id,"operationId":f.document.operation_id,"expectedRevision":completed["result"]["lastCheckedRevision"]}));
+    let recovered = reopened.receive();
+    assert_eq!(
+        recovered["result"]["outcome"]["receipt"], completed["result"]["outcome"]["receipt"],
+        "{recovered}"
+    );
+    assert_eq!(f.entries(), 1);
+    reopened.finish();
+    assert_eq!(
+        f.initialize()["campaign"]["revision"],
+        completed["result"]["lastCheckedRevision"]
+    );
+}
+
+#[test]
 fn malformed_and_oversized_actual_peer_outputs_retain_uncertainty() {
     for mode in ["malformed", "oversized"] {
         let f = Fixture::new(0, mode);

@@ -1712,6 +1712,227 @@ fn j2_disjoint_pending_evaluations_keep_exact_members_and_original_receipts() {
         },
     );
 }
+
+fn assert_aggregate_rechecks_evaluation_owner(damage: &str) {
+    finish_native_with(
+        setup_pair_custom(false, true, false, Some(2)),
+        false,
+        true,
+        |campaign, identity, joined, owners| {
+            let published = campaign
+                .finalize_initial_completion(
+                    identity,
+                    &joined.last_checked_revision,
+                    &joined.locator,
+                    "outcome-j2",
+                    owners,
+                )
+                .unwrap();
+            let slice_campaign::InitialOutcomeState::Committed {
+                view,
+                receipt: original,
+            } = published.state
+            else {
+                panic!("{:?}", published.state)
+            };
+            let mut prepared = vec![];
+            for (index, finding) in view.findings.iter().enumerate() {
+                let state = campaign.read(identity).unwrap().unwrap();
+                prepared.push(support::applied(
+                    campaign
+                        .prepare_builder_evaluation(
+                            identity,
+                            &state.revision,
+                            &joined.locator,
+                            &format!("eval-r2-{index}"),
+                            slice_campaign::BuilderEvaluationDecision {
+                                claim_id: claim_evidence::ClaimId::new(
+                                    finding["claimId"].as_str().unwrap(),
+                                )
+                                .unwrap(),
+                                finding_revision: claim_evidence::FindingRevisionId::new(
+                                    finding["revision"].as_str().unwrap(),
+                                )
+                                .unwrap(),
+                                valid: false,
+                            },
+                            owners,
+                        )
+                        .unwrap(),
+                ));
+            }
+            let first = campaign
+                .recover_builder_evaluation(&prepared[0].locator, owners)
+                .unwrap();
+            let slice_campaign::BuilderEvaluationState::Committed {
+                receipt: first_receipt,
+                ..
+            } = first.state
+            else {
+                panic!("{:?}", first.state)
+            };
+            let database = campaign
+                .anchored_root()
+                .parent()
+                .unwrap()
+                .join("claims-root/claim-evidence.sqlite3");
+            let moved = database.with_extension("unavailable");
+            let sql = rusqlite::Connection::open(&database).unwrap();
+            let operation = "eval-r2-0:reliance";
+            let (admission, grant): (String, String) = sql.query_row(
+                "SELECT admission_sha256,grant_sha256 FROM operation_admissions WHERE operation_id=?",
+                [operation], |r| Ok((r.get(0)?, r.get(1)?)),
+            ).unwrap();
+            let change_owner = |restore: bool| {
+                if damage == "unavailable" {
+                    if restore {
+                        fs::rename(&moved, &database).unwrap();
+                    } else {
+                        fs::rename(&database, &moved).unwrap();
+                    }
+                } else if restore {
+                    sql.execute("INSERT OR REPLACE INTO operation_admissions(operation_id,admission_sha256,grant_sha256) VALUES (?,?,?)",
+                        rusqlite::params![operation, admission, grant]).unwrap();
+                } else if damage == "missing" {
+                    sql.execute(
+                        "DELETE FROM operation_admissions WHERE operation_id=?",
+                        [operation],
+                    )
+                    .unwrap();
+                } else {
+                    assert_ne!(admission, "0".repeat(64));
+                    sql.execute(
+                        "UPDATE operation_admissions SET admission_sha256=? WHERE operation_id=?",
+                        rusqlite::params!["0".repeat(64), operation],
+                    )
+                    .unwrap();
+                }
+            };
+            change_owner(false);
+            let before = campaign.read(identity).unwrap().unwrap();
+            let initial = campaign
+                .recover_initial_outcome(&published.locator, owners)
+                .unwrap();
+            assert!(
+                matches!(
+                    initial.state,
+                    slice_campaign::InitialOutcomeState::Conflicting { .. }
+                        | slice_campaign::InitialOutcomeState::Unresolved { .. }
+                        | slice_campaign::InitialOutcomeState::Pending { .. }
+                ),
+                "initial aggregate accepted {damage} reliance: {:?}",
+                initial.state
+            );
+            if damage == "changed" {
+                assert!(matches!(initial.state,
+                    slice_campaign::InitialOutcomeState::Conflicting { ref reason, .. }
+                    if reason.contains("committed reliance owner record differs")));
+            }
+            for registration in &prepared {
+                let result = campaign
+                    .recover_builder_evaluation(&registration.locator, owners)
+                    .unwrap();
+                assert!(
+                    matches!(
+                        result.state,
+                        slice_campaign::BuilderEvaluationState::Conflicting { .. }
+                            | slice_campaign::BuilderEvaluationState::Unresolved { .. }
+                            | slice_campaign::BuilderEvaluationState::Pending { .. }
+                    ),
+                    "evaluation aggregate accepted {damage} prior reliance: {:?}",
+                    result.state
+                );
+                assert!(result.newly_observed_receipts.is_empty());
+            }
+            assert_eq!(
+                campaign.read(identity).unwrap().unwrap().revision,
+                before.revision
+            );
+            change_owner(true);
+            let second = campaign
+                .recover_builder_evaluation(&prepared[1].locator, owners)
+                .unwrap();
+            let slice_campaign::BuilderEvaluationState::Committed {
+                view,
+                receipt: second_receipt,
+            } = second.state
+            else {
+                panic!("{:?}", second.state)
+            };
+            assert_eq!(
+                view.outcome.kind,
+                slice_campaign::InitialOutcomeKind::Reported
+            );
+
+            // A committed disjoint evaluation must recheck the first one's
+            // owner evidence too, not just its own still-intact reliance.
+            change_owner(false);
+            let initial = campaign
+                .recover_initial_outcome(&published.locator, owners)
+                .unwrap();
+            assert!(
+                !matches!(
+                    initial.state,
+                    slice_campaign::InitialOutcomeState::Committed { .. }
+                ),
+                "reported aggregate accepted {damage} prior reliance"
+            );
+            let second = campaign
+                .recover_builder_evaluation(&prepared[1].locator, owners)
+                .unwrap();
+            assert!(
+                !matches!(
+                    second.state,
+                    slice_campaign::BuilderEvaluationState::Committed { .. }
+                ),
+                "committed disjoint aggregate accepted {damage} prior reliance"
+            );
+            change_owner(true);
+            for (registration, receipt) in prepared.iter().zip([first_receipt, second_receipt]) {
+                let restored = campaign
+                    .recover_builder_evaluation(&registration.locator, owners)
+                    .unwrap();
+                let slice_campaign::BuilderEvaluationState::Committed {
+                    receipt: recovered, ..
+                } = restored.state
+                else {
+                    panic!("{:?}", restored.state)
+                };
+                assert_eq!(
+                    serde_json::to_value(recovered).unwrap(),
+                    serde_json::to_value(receipt).unwrap()
+                );
+            }
+            let restored = campaign
+                .recover_initial_outcome(&published.locator, owners)
+                .unwrap();
+            let slice_campaign::InitialOutcomeState::Committed { view, receipt } = restored.state
+            else {
+                panic!("{:?}", restored.state)
+            };
+            assert_eq!(view.kind, slice_campaign::InitialOutcomeKind::Reported);
+            assert_eq!(
+                serde_json::to_value(receipt).unwrap(),
+                serde_json::to_value(original).unwrap()
+            );
+            assert_eq!(sql.query_row("SELECT count(*) FROM operation_admissions WHERE operation_id LIKE 'eval-r2-%:reliance'",
+                [], |r| r.get::<_, i64>(0)).unwrap(), 2);
+        },
+    );
+}
+
+#[test]
+fn j2_r2_aggregate_rejects_changed_exact_reliance_admission() {
+    assert_aggregate_rechecks_evaluation_owner("changed");
+}
+#[test]
+fn j2_r2_aggregate_rejects_missing_reliance_admission() {
+    assert_aggregate_rechecks_evaluation_owner("missing");
+}
+#[test]
+fn j2_r2_aggregate_requires_readable_reliance_owner() {
+    assert_aggregate_rechecks_evaluation_owner("unavailable");
+}
 #[cfg(feature = "test-faults")]
 #[test]
 fn j2_actual_process_crash_recovery_without_second_execution() {

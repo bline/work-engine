@@ -469,6 +469,7 @@ impl TrustedStartup {
             gate,
         };
         value.campaign_config()?;
+        value.validate_native_identifiers()?;
         // SC0 root IDs are 16 random bytes encoded as 32 hex characters. All
         // other unknown owner digests/revisions are fixed-width hex; this
         // descriptive sizing value grants nothing and is never dispatched.
@@ -529,6 +530,38 @@ impl TrustedStartup {
             begin_transition_id: self.id("begin"),
             result_transition_id: self.id("result"),
         }
+    }
+    fn validate_native_identifiers(&self) -> Result<()> {
+        let dispatch = self.dispatch_command();
+        // These exact transition IDs become both requestId and grantId at the
+        // native episode boundary. Check the owner's envelope contract before
+        // initialization or dispatch can create durable state. The root digest
+        // is only a sizing/validation placeholder; no root or grant is created.
+        for (operation, id) in [
+            ("begin", dispatch.begin_transition_id),
+            ("transition", dispatch.result_transition_id),
+        ] {
+            let envelope = json!({
+                "version": 2,
+                "domain": "review-episode",
+                "profile": "native-host-v1",
+                "requestId": id,
+                "operation": operation,
+                "grantId": id,
+                "selectionRevision": self.digest,
+                "rootSelectionDigest": "0".repeat(64),
+                "args": {},
+            });
+            review_episode::protocol::Request::parse(&serde_json::to_vec(&envelope)?).map_err(
+                |error| {
+                    refuse(
+                        "startup",
+                        format!("derived native {operation} identifiers: {error}"),
+                    )
+                },
+            )?;
+        }
+        Ok(())
     }
     pub(crate) fn request_bytes(
         &self,

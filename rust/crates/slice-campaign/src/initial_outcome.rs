@@ -1356,7 +1356,7 @@ fn drive_outcome(
         let m = checked.manifest;
         last = checked.state;
         if checked.intent.outcome.is_some() {
-            verify_committed_finding_owners(&checked.intent, owners)?;
+            verify_committed_outcome_owners(&last, &checked.intent, owners)?;
             let view = build_view(
                 &last,
                 &checked.intent,
@@ -2180,7 +2180,7 @@ impl Campaign {
         ) {
             return Err(j2_error("evaluation requires usable publication"));
         }
-        verify_committed_finding_owners(&checked.intent, owners)?;
+        verify_committed_outcome_owners(&checked.state, &checked.intent, owners)?;
         let selection = checked
             .manifest
             .selection
@@ -2431,6 +2431,9 @@ fn drive_evaluation(
     let run = (|| -> Result<(BuilderEvaluationView, OperationReceipt)> {
         let checked = check_initial(c, &l.joined, &m.operation_id, owners)?;
         last = checked.state;
+        // Every aggregate uses all committed dispositions, including those
+        // belonging to another concurrently prepared evaluation.
+        verify_committed_outcome_owners(&last, &checked.intent, owners)?;
         let record = last
             .progress
             .evaluations
@@ -2439,22 +2442,6 @@ fn drive_evaluation(
             .ok_or_else(|| j2_error("evaluation absent"))?
             .clone();
         if record.publication_state == "committed" {
-            verify_committed_finding_owners(&checked.intent, owners)?;
-            let reliance_locator = decode::<J2Locator>(&record.reliance["locator"])?.owner()?;
-            match owners.claims.claims.reconcile_reliance(&reliance_locator) {
-                RelianceReconciliation::Committed(receipt)
-                    if value_from_claim(&receipt.exact.to_js_value())?
-                        == record.reliance["exact"] => {}
-                RelianceReconciliation::Absent => {
-                    return Err(CampaignError::Unsupported(
-                        "committed reliance owner record absent".into(),
-                    ));
-                }
-                RelianceReconciliation::Unresolved(reason) => {
-                    return Err(CampaignError::Io(reason));
-                }
-                _ => return Err(j2_error("committed reliance owner record differs")),
-            }
             let intent = current_intent(
                 &last,
                 &l.joined.obligation_id,
@@ -2556,9 +2543,7 @@ fn drive_evaluation(
         )?;
         ce(owners.claims.claims.verify_projection_fresh(&projection))?;
         active = StageKind::EvaluationCommit;
-        let mut gate = c.owner()?;
-        let current = gate.current(&l.joined.identity, &last.revision)?;
-        let mut next = current.clone();
+        let mut next = last.clone();
         let evaluation = next
             .progress
             .evaluations
@@ -2574,6 +2559,10 @@ fn drive_evaluation(
             &l.joined.obligation_id,
             &l.joined.completion_operation_id,
         )?;
+        // Recheck original owner admissions and current membership after the
+        // downstream effects, before publishing an aggregate that uses them.
+        // Keep this outside the campaign lock: projection admission reads it.
+        verify_committed_outcome_owners(&next, intent, owners)?;
         let view = evaluation_view(&next, intent, &m, &committed)?;
         current_intent_mut(
             &mut next,
@@ -2584,6 +2573,8 @@ fn drive_evaluation(
         next.revision = state_revision(&next)?;
         preflight_snapshot(&next)?;
         let digest = campaign_digest(&encode(&view)?)?;
+        let mut gate = c.owner()?;
+        let current = gate.current(&l.joined.identity, &last.revision)?;
         crate::fault_cut("j2_before_evaluation_commit");
         match gate.put(
             next,
@@ -2655,7 +2646,8 @@ fn evaluation_view(
     })
 }
 
-fn verify_committed_finding_owners(
+fn verify_committed_outcome_owners(
+    state: &Snapshot,
     intent: &CompletionIntent,
     owners: &InitialCompletionOwners<'_>,
 ) -> Result<()> {
@@ -2679,6 +2671,48 @@ fn verify_committed_finding_owners(
             Reconciliation::Unresolved(reason) => return Err(CampaignError::Io(reason)),
             _ => return Err(j2_error("committed finding owner receipt differs")),
         }
+    }
+    let mut reliances = vec![];
+    for record in state
+        .progress
+        .evaluations
+        .iter()
+        .filter(|r| r.publication_state == "committed")
+    {
+        let stage = intent
+            .stages
+            .iter()
+            .find(|s| {
+                s.kind == StageKind::EvaluationReliance
+                    && s.stage_id == format!("{}:reliance", record.operation_id)
+            })
+            .ok_or_else(|| j2_error("committed evaluation reliance stage absent"))?;
+        let J2Command::Evaluation(envelope) = decode(&stage.command)? else {
+            return Err(j2_error("evaluation command differs"));
+        };
+        let locator = decode::<J2Locator>(&stage.owner_locator)?.owner()?;
+        let command = reliance_command(&envelope, binding_for(stage)?)?;
+        if ce(owners.claims.claims.reliance_locator(&command))? != locator {
+            return Err(j2_error("committed reliance owner locator differs"));
+        }
+        let receipt = match owners.claims.claims.reconcile_reliance(&locator) {
+            RelianceReconciliation::Committed(receipt) => receipt,
+            RelianceReconciliation::Absent => {
+                return Err(CampaignError::Unsupported(
+                    "committed reliance owner record absent".into(),
+                ));
+            }
+            RelianceReconciliation::Unresolved(reason) => return Err(CampaignError::Io(reason)),
+            RelianceReconciliation::Conflicting => {
+                return Err(j2_error("committed reliance owner record differs"));
+            }
+        };
+        let found = json!({"exact":value_from_claim(&receipt.exact.to_js_value())?,
+            "locator":encode(&J2Locator::from(&receipt.locator))?});
+        if found != record.reliance || found != checked_ref(stage)? {
+            return Err(j2_error("committed reliance owner receipt differs"));
+        }
+        reliances.push(receipt.exact);
     }
     if let Some(stage) = stage_by_kind(intent, StageKind::FindingProjection) {
         let J2Command::Projection(envelope) = decode(&stage.command)? else {
@@ -2705,7 +2739,18 @@ fn verify_committed_finding_owners(
                 return Err(j2_error("committed projection exact revision differs"));
             }
         }
+        for reliance in &reliances {
+            if !projected.relevant_exact_revisions().iter().any(|revision| {
+                revision.exact == reliance.finding && revision.current_reliances.contains(reliance)
+            }) {
+                return Err(j2_error(
+                    "current projection lacks committed exact reliance",
+                ));
+            }
+        }
         ce(owners.claims.claims.verify_projection_fresh(&projected))?;
+    } else if !reliances.is_empty() {
+        return Err(j2_error("committed evaluations lack finding projection"));
     }
     Ok(())
 }
