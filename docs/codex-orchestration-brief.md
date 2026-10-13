@@ -30,8 +30,14 @@ This was one nested-parent trial per treatment, not a guarantee across clients.
 - Continue useful independent work while children run. When required results
   are outstanding and no independent work remains, prefer a long blocking wait
   within the active tool and instruction limits.
+- Set the timeout against the child's expected remaining execution time. A
+  timeout substantially below it produces predictable churn: all six 10-second
+  waits in the 2026-10-13 worker sample expired, while the supervisors' long
+  waits returned on child completion without the requested timeout elapsing.
 - If a wait expires without new information, re-enter the wait; avoid
   interleaving `list_agents`, sleeps or status probes while nothing has changed.
+  Status probing is the residue to watch: it is a third of what the supervisors
+  still spend on calls that learn nothing.
 - End the turn when no required collection or integration remains, or when a
   verified continuation mechanism owns resumption. Human visibility of the
   agents alone does not provide that mechanism.

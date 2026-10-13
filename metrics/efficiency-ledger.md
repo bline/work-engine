@@ -26,9 +26,9 @@ their full path under `metrics/scripts/`.
 
 | ID | Metric | Baseline | Latest | Source |
 |---|---|---|---|---|
-| M1 | Wait-only calls, share of estimated spend | ~11% (3,320 calls); root supervisors 31–32% | — | `scripts/act.py`, `drill.py` |
-| M2 | `wait_agent` calls that timed out | 1,097 of 2,080 waits (mostly 30–60 s) | — | log query, see baseline |
-| M3 | Root orchestrator share of spend | 23% | — | `scripts/report.py` |
+| M1 | Wait-only calls, share of estimated spend | ~11% (3,320 calls); root supervisors 31–32% | 4.5% of the window; supervisors 17–18% (stricter definition, see Supervision) | `scripts/act.py`, `drill.py`, `metrics/scripts/supervision_profile.py` |
+| M2 | `wait_agent` calls that timed out | 1,097 of 2,080 waits (mostly 30–60 s) | 7 of 29 on one supervisor, 0 of 70 on the other; longest wait requested 60 s → 3,600 s | `metrics/scripts/supervision_profile.py` |
+| M3 | Root orchestrator share of spend | 23% | 18.4% of 1,012 units (2026-10-12 to 10-13) | `scripts/report.py`, `metrics/scripts/supervision_profile.py` |
 | M4 | Cached-context re-send share of spend (estimated) | ~73% | 52–71% of weighted cost per call (9 sessions, 10-07 to 10-13) | `scripts/drill.py`, `metrics/scripts/cost_decomposition.py` |
 | M5 | Full doctrine reads per session | DESIGN 1.5, PHILOSOPHY 1.7 (167 / 186 over 112 sessions) | — | `scripts/reread.py` |
 | M6 | Redundant within-session re-reads, share of spend | ~4.2% (+1.6% re-read-only calls) | — | `scripts/reread.py` |
@@ -100,7 +100,7 @@ did not operate.
 |---|---|---|---|---|---|
 | Chatboard `read` shows newest messages; `--active-claims` | M13, M4 | ~22K fewer startup tokens per session; current coordination visible | sessions use the new read command | shipped, M13 measured | `67621bd` |
 | PHILOSOPHY.md tiered to design/planning/doctrine work | M5, M8 | ~9K fewer standing tokens for implementation agents | PHILOSOPHY full reads by implementation agents | shipped, unmeasured | `67621bd` |
-| Codex orchestration brief: long waits, consequential messages, settled-fact briefs, root handoff, dependency-closure validation | M1, M2, M3, M8, M11, M14 | most of M1/M2 if behavior follows; unknown otherwise | `wait_agent` timeout distribution; messages per sub-agent; briefs containing settled facts | shipped, first test after quota reset 2026-10-14 | `a72ab76` |
+| Codex orchestration brief: long waits, consequential messages, settled-fact briefs, root handoff, dependency-closure validation | M1, M2, M3, M8, M11, M14 | most of M1/M2 if behavior follows; unknown otherwise | `wait_agent` timeout distribution; messages per sub-agent; briefs containing settled facts | long waits and consequential messages adopted and measured (see Supervision); root handoff **not** adopted, root context 166–180K against 144K baseline | `a72ab76`, `1586663` |
 | Work Engine wake policy: no inference while waiting, wake eligibility, batching | M1, M2, M3 | ~10 points of spend (structural, central estimate) | turns recorded by wake reason; none while waiting | policy recorded, not implemented | `docs/context-lifecycle-wake-policy.md` |
 | Deterministic coordination owners (campaign, claims, scheduler) | M3, M14, agent-messaging spend | ~7 + 3 points (central estimate) | dispatch and bookkeeping performed without model calls | partly built in Rust, not hosting development | baseline scenario model |
 | Compiled role packages and event-scoped organizational judgment | M5, M8 | ~4 + 8 points (central estimate) | roles start from compiled packages, not full doctrine | architecture accepted, not implemented | `organizational-compilation.md` |
@@ -128,6 +128,7 @@ overlap.
 | 2026-10-12 | 10 sessions, 2026-10-11 17:57 to 10-13 05:05 local, context-lifecycle builders plus causal and fresh-source reviews, against 22 reviewer sessions of 2026-10-07 to 10-08 | M15 | source-fallback recommendations 19% → 6% of path observations; `metadata_changed` 195 → 0; `content_verified` true in 745 of 792, `generation_matches` true in 50 of 50 | the one un-confounded result in this window: independent of model, effort and task type. Graph use itself did not change — the earlier reviewers already queried it in 0.19–0.85 calls per exec call — so the new variable is verified freshness, not adoption. Source reading did **not** fall (1.04 and 1.13 reads per exec call in the new reviews, against 0.41–1.02 before): the graph is being used to choose what to read, not to avoid reading |
 | 2026-10-12 | Same window, 9 sessions with per-call usage | M4, M8, cost model | 0.10–0.20 Plus-units per model call; cached re-send 52–71% of weighted cost | see Cost structure. The two new reviews cost 3.4 and 8.4 units over 24 and 54 exec calls. The full cohort of 22 reviewer sessions from 10-07 to 10-08 spans 1.3–24.1 units over 10–95 calls, so the new values sit **inside** the earlier range: against the whole cohort rather than a few large contract reviews, this window shows no cost effect at all, in either direction. It is also confounded — those sessions ran at **xhigh** and reviewed contracts rather than causal behavior |
 | 2026-10-12 | Same 10 sessions | M16 | 123 truncations across 110 tool results, ~1.40M tokens discarded; 44 of those 110 results were codebase-memory output | `h0_astra_implementation` lost every coverage result it took (13.9K and 23.0K token payloads), so it contributes no M15 observations despite 14 coverage calls. Verified evidence cannot help a session that never receives it |
+| 2026-10-13 | Root `01a1150c` compared with itself, 2026-10-05 to 10-09 against 2026-10-12 to 10-13, plus root `01a1294e` and 15 workers and reviewers in the current window | M1, M2, M3 | supervisor units per dispatch 1.82 → 1.21; waits per dispatch 3.34 → 1.04; messages per dispatch 3.13 → 0.21; timeouts 38% → 24%, and 0 of 70 on the second supervisor | full table and caveats in Supervision below. The long-wait and consequential-message levers are adopted; root handoff is not. Task mix differs between the windows and the current one was still running |
 
 **Reading Codex rollout logs.** Two mistakes have produced wrong values here and
 are now guarded against in
@@ -142,3 +143,51 @@ cumulative and reads about three orders of magnitude high if mistaken for a
 session total. Sessions measured while still running give a snapshot, not a
 final value: the figures above were taken at 2026-10-12 23:29 local and three
 of those sessions were still active.
+
+## Supervision, 2026-10-12 to 10-13
+
+Root `01a1150c` has supervised continuously since 2026-10-07, so it covers the
+baseline campaign and the current one. Comparing it with itself holds role,
+model and client fixed; only the window and the task mix differ
+([`metrics/scripts/supervision_profile.py`](scripts/supervision_profile.py),
+whose `FROM`/`TO` bound the calls counted by entry timestamp).
+
+| Root `01a1150c` | Baseline 10-05 to 10-09 | Current 10-12 to 10-13 |
+|---|---|---|
+| Plus-units per dispatch | 1.82 | **1.21** |
+| waits per dispatch | 3.34 | **1.04** |
+| `wait_agent` timeouts | 194 of 504 (38%) | 7 of 29 (24%) |
+| longest wait requested | 60 s | **3,600 s** |
+| wait-only calls | 548 | 46 |
+| wait-only calls per dispatch | 3.63 | **1.64** |
+| sub-agent messages per dispatch | 3.13 | **0.21** |
+| wait-only share of its spend | 19.7% | 18.3% |
+| context per call | 120K | 124K |
+
+Supervisor cost per dispatch fell by a third, waits per dispatch by 69% and
+sub-agent messages by 93%. The second supervisor, `01a1294e`, is cleaner still:
+70 waits over 111 dispatches, **zero timeouts**, 237,840 seconds of wait
+requested, 1.25 units per dispatch. Workers carry 0–4.8% wait-only spend, with
+one residue: all six 10-second waits in the window expired, while the
+supervisors' long waits returned on child completion.
+
+Two inefficiencies are untouched, which is why further savings are likely
+without being quantifiable yet. Status probing replaced timeout churn:
+`list_agents` is 16 of 46 and 39 of 115 of the two supervisors' remaining
+wait-only calls. And root context grew to 166–180K per call against the 144K
+baseline, so the handoff lever is unused and cached re-send absorbs part of the
+waiting win.
+
+**Why M1's two values are not comparable.** The baseline 31–32% figure comes
+from `act.py`, which spreads each call's cost across every activity it
+performed and counts all coordination. The values here count only calls whose
+every tool call was waiting or status probing, measured by one script on both
+sides of the comparison. Read 19.7% → 18.3% as internally valid and 31–32% as a
+different question. The current window was also still running when measured.
+
+**The claim these measurements test.** An agent should not spend inference to
+discover what its execution environment already knows. Both measured residues
+are instances: a supervisor paying a full-context call to ask `list_agents` what
+the scheduler already knows, and a reviewer re-reading source to establish a
+freshness the file watcher already tracked (M15). The levers above are specific
+mitigations; the claim is what makes them one problem rather than several.
