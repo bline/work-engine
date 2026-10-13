@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Supervisor and worker spend: dispatches, waiting behavior, wait-only calls
-and their share of a session's estimated cost.
+"""Supervisor and worker spend in the shape the orchestration brief asks for:
+units, waits, messages and status probes per dispatch, timeout rate, context
+per call against the handoff trigger, and whether any turn was started by a
+child completion.
 
 Usage: python3 -I supervision_profile.py ~/.codex/sessions/2026/10/13/rollout-*.jsonl
        FROM=2026-10-12 TO=2026-10-13 python3 -I supervision_profile.py <rollouts>
@@ -17,6 +19,12 @@ timeout. A model call is "wait-only" when every tool call it issued was
 coordination (wait, list_agents, sleep, status probes) and none was exec,
 dispatch or messaging: such a call pays the full standing-context charge and
 learns nothing new.
+
+Turn triggers come from task_started.turn_attribution.turn_trigger, so
+"did the parent resume on completion" is answered by the harness's own
+attribution rather than inferred. task_started also carries
+model_context_window, which the handoff trigger is computed from (60% of the
+window, per the brief) instead of hardcoding a token count.
 
 Per-call token usage is info.last_token_usage. info.total_token_usage is
 account-lifetime cumulative and must not be read as a session total.
@@ -37,6 +45,8 @@ def scan(f):
     units = collections.Counter()
     n = collections.Counter()
     waitonly = collections.Counter()
+    triggers = collections.Counter()
+    window = 0
     names = collections.Counter()
     waits = []                 # (timeout_ms, timed_out)
     ctx = []
@@ -68,6 +78,11 @@ def scan(f):
                 if FROM <= stamp <= TO:
                     waits.append((req, bool((out or {}).get("timed_out"))))
             continue
+        if t == "task_started":
+            if FROM <= stamp <= TO:
+                triggers[(p.get("turn_attribution") or {}).get("turn_trigger") or "?"] += 1
+                window = max(window, p.get("model_context_window") or 0)
+            continue
         if t != "token_count": continue
         if not (FROM <= stamp <= TO):
             pending = []
@@ -86,7 +101,7 @@ def scan(f):
         elif acts: k = "work"
         else: k = "respond/reason"
         units[k] += u; n[k] += 1
-    return meta, units, n, names, waits, ctx, waitonly
+    return meta, units, n, names, waits, ctx, waitonly, triggers, window
 
 rows = []
 for f in sys.argv[1:]:
@@ -96,7 +111,7 @@ rows.sort(key=lambda r: (r[1].get("timestamp") or ""))
 
 tot = sum(sum(r[2].values()) for r in rows)
 sup = 0.0
-for f, meta, units, n, names, waits, ctx, waitonly in rows:
+for f, meta, units, n, names, waits, ctx, waitonly, triggers, window in rows:
     if not sum(units.values()): continue
     u = sum(units.values())
     disp = sum(names[k] for k in DISPATCH)
@@ -106,9 +121,25 @@ for f, meta, units, n, names, waits, ctx, waitonly in rows:
     print("%-14s %-38s %-7s units=%7.1f calls=%-4d ctx=%5.0fK" % (
         (meta.get("timestamp") or "")[5:16], (meta.get("agent_path") or "-")[:38],
         meta.get("agent_role") or "root", u, sum(n.values()), (sum(ctx)/len(ctx)/1000 if ctx else 0)))
-    print("     wait-only %5.1f u (%4.1f%%, %d calls) | dispatch %d | waits %d (timed out %d, requested %.0fs total%s)" % (
-        units["wait-only"], 100*units["wait-only"]/u, n["wait-only"], disp, len(waits), to, secs,
+    probes = sum(names[k] for k in ("list_agents", "sleep", "wait"))
+    msgs = names["send_message"]
+    d = max(disp, 1)
+    print("     wait-only %5.1f u (%4.1f%%, %d calls) | dispatch %d | waits %d (timed out %d of %d = %.0f%%, requested %.0fs total%s)" % (
+        units["wait-only"], 100*units["wait-only"]/u, n["wait-only"], disp, len(waits), to, len(waits),
+        100*to/max(len(waits), 1), secs,
         ", longest %.0fs" % (max((r or 0) for r, _ in waits)/1000.0) if waits else ""))
+    if disp:
+        print("     per dispatch: units %.2f | waits %.2f | messages %.2f | status probes %.2f | wait-only calls %.2f" % (
+            u/d, len(waits)/d, msgs/d, probes/d, n["wait-only"]/d))
+    if ctx:
+        trigger = 0.6*window if window else 0
+        peak = max(ctx)
+        print("     context: mean %.0fK, peak %.0fK of a %.0fK window%s" % (
+            sum(ctx)/len(ctx)/1000, peak/1000, window/1000,
+            "; peak %s the %.0fK handoff trigger" % ("CROSSED" if peak >= trigger else "under", trigger/1000) if trigger else ""))
+    if triggers:
+        print("     turn triggers:", dict(triggers.most_common()),
+              "<- a completion-started turn would not say 'user'")
     print("     by kind:", {k: round(v, 1) for k, v in units.most_common()},
           "| coord calls:", {k: v for k, v in names.items() if k in WAITY | DISPATCH | {"send_message"}})
     if waitonly: print("     wait-only calls made of:", dict(waitonly.most_common(6)))
