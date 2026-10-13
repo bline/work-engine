@@ -1,0 +1,150 @@
+{
+  "format": "work-engine-ui-history",
+  "version": 1,
+  "recorded_at": "2026-10-07T05:23:02Z",
+  "scope": "Bounded text-only proof; no production readiness or activation.",
+  "sources": {
+    "receipt": {
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/receipt.json",
+      "sha256": "feb5b5317dced64d452c75fb30393e843442ab3b50c6c3e3f65ef418e077f673"
+    },
+    "result": {
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/result.json",
+      "sha256": "ea64b318b9ed39e86fe1617ef7f9612c76cc74a755a52d81a626a6b6daae04a0"
+    },
+    "summary": {
+      "path": "experiments/context-lifecycle-rust/evidence/live-text-vertical-2026-10-07/durable-summary.json",
+      "sha256": "989ea4df08e239034cd55cc0ff1bd99bb61be3e1b764cc84effb2876a76644b8"
+    },
+    "rejection": {
+      "path": "experiments/context-lifecycle-rust/evidence/live-admission-rejection-2026-10-07/diagnosis.json",
+      "sha256": "36cd36b79ce6e4787f4c2a9072227a48e9053bf8d6f1a00e802def9f79ed429e"
+    }
+  },
+  "limitations": [
+    "Scoped text-turn completion, not arbitrary external-effect settlement.",
+    "Three local native start records, not a claim of network-wide exactly-once inference.",
+    "Authenticated catalog digest is separately retained in preflight; not embedded in completion receipts.",
+    "Authenticated offered-tool inventory was not captured before inference; pinned profile exclusions and exact native evidence governed eligibility.",
+    "This bounded carried-fact demonstration does not prove general semantic continuation quality.",
+    "UI wire protocol is not versioned/frozen; no production integration or activation occurred.",
+    "Native child disappearance was checked, but its exit status was not directly observed; exit is not settlement."
+  ],
+  "live": [
+    {
+      "kind": "agent",
+      "context": "A",
+      "text": "FACT:ORION-7",
+      "details": "",
+      "refs": [
+        "result#/first/output"
+      ]
+    },
+    {
+      "kind": "accepted",
+      "context": "A",
+      "text": "Input 1 accepted",
+      "details": "Native observation: Completed\nCoordinator outcome: Success\nEvidence domain: CodexTextTurnCompletion\nContext: vertical-context / epoch 1\nThread: 01a114ce-4f25-78c3-bfe5-f5ad5ef833b0\nTurn: 01a114ce-4f40-70b3-9d26-d21c27892612\nEffect: vertical-effect-1\nDelivery: vertical-delivery-1\nRequest digest: 94d9017d6ace2f7f51a4ceb523698714679bc0e5978d10a53b03146287052450\nOutput digest: ade4b8b02087f9b4542d28445832f8bab019d1c4ec51e21b5ae8111e8a2659ec",
+      "refs": [
+        "result#/first",
+        "summary#/effects",
+        "summary#/deliveries",
+        "summary#/native_records"
+      ]
+    },
+    {
+      "kind": "system",
+      "context": "A → B",
+      "text": "Continuation package retained",
+      "details": "Package revision: 18\nDigest: 9f6c1c4e109f7269e72acf6dd30de98c1aded619b3c74c2544a764eb2e784465\nA captured package alone is not successor activation.",
+      "refs": [
+        "result#/package",
+        "result#/readiness/package_digest"
+      ]
+    },
+    {
+      "kind": "agent",
+      "context": "B",
+      "text": "READY:9f6c1c4e109f7269e72acf6dd30de98c1aded619b3c74c2544a764eb2e784465:FACT:ORION-7",
+      "details": "",
+      "refs": [
+        "result#/readiness/output"
+      ]
+    },
+    {
+      "kind": "accepted",
+      "context": "B",
+      "text": "Exact package readiness accepted",
+      "details": "Native observation: Completed\nCoordinator outcome: Success\nEvidence domain: CodexTextTurnCompletion\nContext: vertical-context / epoch 2\nThread: 01a114ce-5ed8-7832-b55e-7dbb896d67ab\nTurn: 01a114ce-5ef4-7081-bfb5-1ee99ec78abc\nEffect: vertical-readiness-effect\nDelivery: vertical-readiness-delivery\nRequest digest: 58c6d5d8c9aee9c87361b1e50486b8a9df5d7dcaab45cd39cd1b0ef6d848aa6c\nOutput digest: bde60ca15516893de6b4bc73c372cbd13ae2dfb2a0c46938bb113615b5e0a917",
+      "refs": [
+        "result#/readiness",
+        "summary#/effects",
+        "summary#/deliveries",
+        "summary#/native_records"
+      ]
+    },
+    {
+      "kind": "input",
+      "context": "B",
+      "text": "Using only the fact already carried in this context, reply with SECOND: followed by the value after FACT: and nothing else. Do not ask for the fact again.",
+      "details": "Actual queued second input; the carried value is absent.",
+      "refs": [
+        "result#/package/queue"
+      ]
+    },
+    {
+      "kind": "agent",
+      "context": "B",
+      "text": "SECOND:ORION-7",
+      "details": "",
+      "refs": [
+        "result#/second/output"
+      ]
+    },
+    {
+      "kind": "accepted",
+      "context": "B",
+      "text": "Input 2 accepted",
+      "details": "Native observation: Completed\nCoordinator outcome: Success\nEvidence domain: CodexTextTurnCompletion\nContext: vertical-context / epoch 2\nThread: 01a114ce-5ed8-7832-b55e-7dbb896d67ab\nTurn: 01a114ce-6c6a-7982-b9ce-702cf5788e98\nEffect: vertical-effect-2\nDelivery: vertical-delivery-2\nRequest digest: 0cfe89d212c002c800dff430f8ed330dbbb6bc74d74f1fecf8a929d041e4d7bc\nOutput digest: 6617aa087228de595758fa7aecef2e90da21ae895277b835da7350e7c1f552c0",
+      "refs": [
+        "result#/second",
+        "summary#/effects",
+        "summary#/deliveries",
+        "summary#/native_records"
+      ]
+    },
+    {
+      "kind": "system",
+      "context": "B",
+      "text": "Historical proof closed · no inference authority remains",
+      "details": "Coordinator PID 16324 survived the handoff. Final revision 38.\nAll 3 authorized native turns consumed. HTTP inference request count unavailable.\nCleanup is separate from settlement; native child exit status was not directly observed.",
+      "refs": [
+        "receipt#/live",
+        "receipt#/cleanup"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "kind": "rejected",
+      "context": "setup",
+      "text": "Admission rejected before entry · 0 provider turns",
+      "details": "The documented live config recipe generated Unix seconds. SystemClock::now and the coordinator admission predicate compare against Unix milliseconds, so the first admission was rejected before effect creation or dispatch.\nThe coordinator and adapter durable ledgers for this exact isolated root show no entered effect or provider command. The result does not assert anything about unrelated provider activity.\nSeparate attempt; not a failed turn in the successful run.",
+      "refs": [
+        "rejection#/durable_state",
+        "receipt#/preceding_rejected_setup"
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "kind": "system",
+      "context": "validation",
+      "text": "30 default tests · 3 controlled probes passed",
+      "details": "Provider-disabled tests and simulated-inference native probes, separate from the live run.\nFormatting: passed\nClippy: passed\nReview: bounded retained design review; streaming correction rechecked; not independent production approval",
+      "refs": [
+        "receipt#/validation"
+      ]
+    }
+  ]
+}

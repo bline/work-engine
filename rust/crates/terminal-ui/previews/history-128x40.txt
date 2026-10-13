@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ HISTORICAL FIXTURE / approach-a @ r11  |  partial retained snapshot  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Branches & history · F5 switches snapshot                                               Context / Overview
+  objective:ui                                                                           Supervise work
+  ├─ approach-a @ r11   embedded UI / superseded                                         OBJECTIVE · objective:ui
+  └─ main @ r18         standalone UI / waiting                                          SUPERSEDED
+
+  Comparison: runtime-coupled → independent client                                       OBJECTIVE / MEANING
+  Candidate A / adapter B → candidate B / adapter A                                      Earlier approach: embed the interface
+  Inspecting: HISTORICAL FIXTURE / approach-a @ r11                                      in a provider-specific runtime.
+  Same subject IDs; different revisions and evidence.                                    Superseded by the standalone client
+                                                                                         direction.
+ › Supervise work  ·  SUPERSEDED
+   Interaction review  ·  ARCHIVED                                                       WAIT / NEXT DECISION
+   History action scope  ·  ARCHIVED                                                     Historical snapshot. No current wait
+   Terminal prototype  ·  ARCHIVED                                                       can be inferred.
+   Resize evidence  ·  ARCHIVED
+                                                                                         RESPONSIBLE ROLE
+                                                                                         planner:main
+
+                                                                                         Ctrl-P: conversation / inspect
+                                                                                         F5: return to live before targeting
+                                                                                         F4: evidence / history
+                                                                                         HISTORICAL · INSPECT ONLY
+
+
+
+
+
+
+ ▌ Messaging unavailable · draft → planner:main retained
+ Read-only inspection. No native commands, inference, or replayed execution.
+ Your work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.
+
+
+ Historical snapshot. Drafts retained; simulated send disabled. F5 returns to live.
+ Messaging unavailable · drafts retained · Ctrl-P commands · F1 help
+ Drag text to select Markdown · Ctrl-C copies selection; otherwise quits
+

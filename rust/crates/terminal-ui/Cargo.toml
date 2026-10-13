@@ -1,0 +1,27 @@
+[package]
+name = "work-engine-terminal-ui"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[dependencies]
+tuirealm = "=4.1.0"
+crossterm = "=0.29.0"
+rataflow = { version = "=0.1.0", default-features = false, features = ["crossterm"] }
+ratatui-textarea = "=0.9.3"
+ratatui = { version = "=0.30.2", default-features = false, features = ["unstable-rendered-line-info"] }
+
+unicode-segmentation = "=1.13.3"
+unicode-width = "=0.2.2"
+base64 = "=0.22.1"
+
+pulldown-cmark = { version = "=0.13.4", default-features = false }
+syntect = { version = "=5.3.0", default-features = false, features = ["default-syntaxes", "regex-fancy"] }
+
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+lifecycle-wire = { path = "../lifecycle-wire" }
+lifecycle-client = { path = "../lifecycle-client" }
+
+[workspace]

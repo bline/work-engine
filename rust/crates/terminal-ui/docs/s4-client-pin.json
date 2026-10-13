@@ -1,0 +1,15 @@
+{
+  "published_commit": "41992a22d86b041d2db357d16345c477804af63a",
+  "purpose": "S4 public passive client and stable v1 wire inputs consumed by terminal UI U1",
+  "sha256": {
+    "rust/crates/lifecycle-client/README.md": "bab2cc39dd763d1f7f17f7082548614401d421487aba047d73701d4f786350de",
+    "rust/crates/lifecycle-client/src/lib.rs": "020ef6575a80051b17bdc41ca96c6d99103f6f86a22996a8646285df937b6e34",
+    "rust/crates/lifecycle-client/src/socket.rs": "a9d954705d479b9e105af5342ae9bbee84d9425f526124493f8591afbf31b124",
+    "rust/crates/lifecycle-wire/examples/generate_schema_bundle.rs": "c0ab332c438436f7269c37c978b7e3c2fa88513569efa76e4c8ce577b115699d",
+    "rust/crates/lifecycle-wire/src/json.rs": "664e5cfb7cebf5a88b312c90a782b3da097e6c84783a2601232c2407449fa16f",
+    "rust/crates/lifecycle-wire/src/lib.rs": "647e93c849a235c8d043dbd991a4e413700b6c60a7cec7ca981d1441ccdbabb2",
+    "rust/crates/lifecycle-wire/src/observation.rs": "72ebae4ecd316888f2fb3eb37e3fea6833b79e53b0be9be6e968f78adf0a0757",
+    "rust/crates/lifecycle-wire/src/schema.rs": "eb33bee77392364bb41530067dce879ce82686d1c75d95068b1991755f27564b",
+    "rust/crates/lifecycle-wire/schemas/v1/manifest.json": "f4c73a45602284989fc352f5529f421a5e2c73cdaece2c4678035825032727be"
+  }
+}

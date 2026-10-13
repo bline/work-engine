@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    READ-ONLY • NO LIVE CONNECTION
+ LIFECYCLE / DESIGN FIXTURE  |  messaging unavailable · Ctrl-P commands  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Lifecycle · read-only · Ctrl-P scenario                                                 Lifecycle / evidence & limits
+ Missing completion evidence                                                             Terminal status without exact final
+ DESIGN FIXTURE · failure-state illustration                                             evidence
+ Illustrative contract state · NO LIVE CONNECTION                                        ILLUSTRATIVE · not a captured run
+
+ › 1  Terminal status without exact final evidence                                       NATIVE OBSERVATION
+      ILLUSTRATIVE · not a captured run · UNCERTAIN                                      Completed
+
+                                                                                         LIFECYCLE OUTCOME
+                                                                                         UNCERTAIN
+                                                                                         A native terminal status is present,
+                                                                                         but exact identity-bound final
+                                                                                         text/readback is missing. No accepted
+                                                                                         text completion can be inferred.
+
+                                                                                         WHAT HAPPENS NEXT
+                                                                                         Later input stays blocked. Await
+                                                                                         authoritative evidence; do not retry
+                                                                                         automatically.
+
+                                                                                         PROVENANCE
+                                                                                         Authored design scenario informed by
+                                                                                         the lifecycle contract. Not a captured
+                                                                                         failure trace or claim that a test
+ DESIGN FIXTURE · not a captured failure trace                                           passed.
+ Native Completed ≠ accepted lifecycle completion                                        experiments/context-lifecycle-rust/NAT
+ Ctrl-P: inspect step / scenario / panel context                                         IVE_VERTICAL.md
+
+ ▌ Messaging unavailable · draft → planner:main retained
+ Read-only inspection. No native commands, inference, or replayed execution.
+ Your work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.
+
+
+ Ctrl-P opens commands. Type to compose; inspection never changes the recipient.
+ Messaging unavailable · drafts retained · Ctrl-P commands · F1 help
+ Drag text to select Markdown · Ctrl-C copies selection; otherwise quits
+

@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  messaging unavailable · Ctrl-P commands  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · Context B · usage unavailable                                                    Chat / lifecycle context
+ ILLUSTRATIVE CHAT · not captured output · F3 expands system events                      ILLUSTRATIVE CHAT
+ Shared timeline · drag text to select · Ctrl-C copy Markdown
+                                                                                         Agent output and typed lifecycle
+ agent / context A · chat:handoff-example                                                system events share the timeline.
+ I have reviewed the first input. The continuation needs to retain **the objective,
+ commitments, and unresolved work**.                                                     F3 expands system-event details.
+
+ SYSTEM · IN PROGRESS · context A                                                        Context B usage is unavailable. There
+ Capturing continuation package…                                                         is no runtime measurement or live
+                                                                                         subscription.
+ SYSTEM · READY · context A → B
+ Context handoff · B acknowledged the package and is active.                             The uncertain ending is invented to
+                                                                                         exercise the UI; it is not the
+ agent / context B · chat:handoff-example                                                controlled run's outcome.
+ Continuing with the retained package. I’ll handle the second input here.
+                                                                                         Command conversation returns to the
+ ```rust                                                                                 work fixture. Drafts remain retained.
+ let next_context = "B";
+ ```
+
+ SYSTEM · UNCERTAIN · context B
+ Completion uncertain · awaiting exact final evidence.
+
+
+
+
+
+ ▌ Messaging unavailable · draft → planner:main retained
+ Read-only inspection. No native commands, inference, or replayed execution.
+ Your work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.
+
+
+ ILLUSTRATIVE CHAT · invented messages and alternate uncertain ending · no runtime connection
+ Messaging unavailable · drafts retained · Ctrl-P commands · F1 help
+ Drag text to select Markdown · Ctrl-C copies selection; otherwise quits
+

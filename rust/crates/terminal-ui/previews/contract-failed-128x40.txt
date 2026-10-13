@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    S3 CONTRACT EXAMPLE • OFFLINE
+ failed unsettled  |  messaging unavailable · Ctrl-P commands  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · Context context-a · usage unavailable                                            Lifecycle observation / exact scope
+ S3 CONTRACT EXAMPLE · NOT LIVE OR ARCHIVE EVIDENCE · typed lifecycle observation · rea  Protocol v1
+ Shared timeline · drag text to select · Ctrl-C copy Markdown                            Identity: subject subject-1 / context
+                                                                                         context-a / store store-1 / stream
+ S3 contract · contract:example                                                          subject-1 / commit 9
+ Observation S3 CONTRACT EXAMPLE · NOT LIVE OR ARCHIVE EVIDENCE · subject subject-1 /    Observation: S3 CONTRACT EXAMPLE · NOT
+ context context-a / store store-1 / stream subject-1 / commit 9                         LIVE OR ARCHIVE EVIDENCE
+                                                                                         Current admission: fenced /
+ S3 contract · contract:example                                                          unsettled_effect
+ Current admission: fenced / unsettled_effect                                            Blocking reason: unsettled_effect
+                                                                                         Historical/target transition: not
+ S3 contract · contract:example                                                          applicable
+ Target delivery: delivery-1 / outcome failed / settlement unresolved                    Target delivery: delivery-1 / outcome
+                                                                                         failed / settlement unresolved
+ S3 contract · contract:example                                                          Runtime availability: unavailable
+ Historical/target transition: not applicable                                            Runtime provenance: unavailable
+                                                                                         Measurement (raw, unqualified; no
+                                                                                         percentage): unavailable
+                                                                                         Authority references: none supplied
+                                                                                         Evidence references:
+                                                                                         evidence:failure-1
+
+
+
+
+
+
+
+ ▌ Messaging unavailable · draft → planner:main retained
+ Read-only inspection. No native commands, inference, or replayed execution.
+ Your work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.
+
+
+ S3 CONTRACT EXAMPLE · not live or archive evidence · read-only
+ Messaging unavailable · drafts retained · Ctrl-P commands · F1 help
+ Drag text to select Markdown · Ctrl-C copies selection; otherwise quits
+

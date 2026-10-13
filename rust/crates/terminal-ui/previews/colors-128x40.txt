@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  sample activity 0  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · Context unbound · usage unavailable                                              Context / Overview
+ Inspecting planner:main / Supervise work                                                Supervise work
+ Shared timeline · drag text to select · Ctrl-C copy Markdown                            OBJECTIVE · objective:ui
+                                                                                         WAITING
+ builder:main · build:prototype
+ ## A clearer conversation                                                               OBJECTIVE / MEANING
+                                                                                         Make objectives, progress, decisions,
+ **Important decisions**, *supporting context*, and `inline code`.                       and intervention understandable across
+ Inspect the [review evidence](fixture://review/ui/r7).                                  providers.
+
+ ```rust                                                                                 WAIT / NEXT DECISION
+ // Keep inspection separate from delivery.                                              Review is waiting on a human scope
+ fn can_send(live: bool, draft: &str) -> bool {                                          decision.
+     live && !draft.trim().is_empty()
+ }                                                                                       RESPONSIBLE ROLE
+ let message = "Ready for review";                                                       planner:main
+ ```
+                                                                                         Ctrl-P: conversation / inspect
+ ```json                                                                                 F7: target this role explicitly
+ { "scope": "live", "attempt": 3, "ready": true }                                        F4: evidence / history
+ ```
+
+ ```diff
+ - runtime-coupled client
+ + independent supervision desk
+ ```
+
+
+ ▌ Draft → planner:main | Enter SEND · Shift-Enter newline · SIMULATED
+  Enter sends · Shift-Enter or Alt-Enter newline · Ctrl-P commands · paste stays in draft.
+
+
+
+ Ctrl-P opens commands. Type to compose; inspection never changes the recipient.
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P commands · F1 help
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies selection; otherwise quits
+

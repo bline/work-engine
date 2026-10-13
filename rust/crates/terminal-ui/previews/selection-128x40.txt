@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  sample activity 0  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · Context unbound · usage unavailable                                              Context / Overview
+ Inspecting planner:main / Supervise work                                                Supervise work
+ Shared timeline · drag text to select · Ctrl-C copy Markdown                            OBJECTIVE · objective:ui
+                                                                                         WAITING
+ you · SIMULATED to reviewer:main · operator:input
+ ## Review plan                                                                          OBJECTIVE / MEANING
+                                                                                         Make objectives, progress, decisions,
+ - **Keep history inspect-only.**                                                        and intervention understandable across
+ - Preserve the [evidence](fixture://review/ui/r7) and its limits.                       providers.
+
+ ```text                                                                                 WAIT / NEXT DECISION
+ objective -> review -> decision                                                         Review is waiting on a human scope
+ ```                                                                                     decision.
+
+ Select across wrapped lines: copying preserves the Markdown source and its original     RESPONSIBLE ROLE
+ line breaks, without role labels or UI decoration.                                      planner:main
+
+                                                                                         Ctrl-P: conversation / inspect
+                                                                                         F7: target this role explicitly
+                                                                                         F4: evidence / history
+
+
+
+
+
+
+
+
+ ▌ Draft → planner:main | Enter SEND · Shift-Enter newline · SIMULATED
+  Enter sends · Shift-Enter or Alt-Enter newline · Ctrl-P commands · paste stays in draft.
+
+
+
+ Ctrl-P opens commands. Type to compose; inspection never changes the recipient.
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P commands · F1 help
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies selection; otherwise quits
+

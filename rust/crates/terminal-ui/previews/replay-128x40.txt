@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    HISTORICAL • OFFLINE REPLAY
+ Live proof · historical  |  messaging unavailable · Ctrl-P commands  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · historical usage unavailable                                                     Historical evidence / provenance
+ Live proof · historical · F3 source details · NOT a running engine                      Live proof · historical
+ Shared timeline · drag text to select · Ctrl-C copy Markdown
+                                                                                         Archive recorded: 2026-10-07T05:23:02Z
+ agent / A · recorded · replay:2026-10-07                                                Bounded text-only proof; no production
+ FACT:ORION-7                                                                            readiness or activation.
+
+ SYSTEM · TEXT ACCEPTED · context A                                                      Logical sequence, not timestamped
+ Input 1 accepted                                                                        playback. No running engine connected.
+                                                                                         Context usage unavailable.
+ SYSTEM · RECORDED · context A → B
+ Continuation package retained                                                           Scoped text-turn completion, not
+                                                                                         arbitrary external-effect settlement.
+ agent / B · recorded · replay:2026-10-07
+ READY:9f6c1c4e109f7269e72acf6dd30de98c1aded619b3c74c2544a764eb2e784465:FACT:ORION-7     Three local native start records, not
+                                                                                         a claim of network-wide exactly-once
+ SYSTEM · TEXT ACCEPTED · context B                                                      inference.
+ Exact package readiness accepted
+                                                                                         Authenticated catalog digest is
+ input / B · recorded · replay:2026-10-07                                                separately retained in preflight; not
+ Using only the fact already carried in this context, reply with SECOND: followed by     embedded in completion receipts.
+ the value after FACT: and nothing else. Do not ask for the fact again.
+                                                                                         Authenticated offered-tool inventory
+ agent / B · recorded · replay:2026-10-07                                                was not captured before inference;
+ SECOND:ORION-7                                                                          pinned profile exclusions and exact
+                                                                                         native evidence governed eligibility.
+ SYSTEM · TEXT ACCEPTED · context B
+
+ ▌ Messaging unavailable · draft → planner:main retained
+ Read-only inspection. No native commands, inference, or replayed execution.
+ Your work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.
+
+
+ HISTORICAL REPLAY · retained evidence · read-only · no running engine connected
+ Messaging unavailable · drafts retained · Ctrl-P commands · F1 help
+ Drag text to select Markdown · Ctrl-C copies selection; otherwise quits
+

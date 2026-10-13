@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  sample activity 0  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Evidence
+                                                                                                              Commands  Ctrl-P
+ ▌ Chat · Context unbound · usage unavailable                                              Context / Overview
+ Inspecting reviewer:main / History action scope                                         History action scope
+ Shared timeline · drag text to select · Ctrl-C copy Markdown                            DECISION · decision:history
+                                                                                         NEEDS YOU
+ planner:main · objective:ui
+ The standalone UI should make work and intervention understandable.                     OBJECTIVE / MEANING
+                                                                                         Should historical views allow new
+ builder:main · build:prototype                                                          actions? Suggested scope: inspect
+ Graph and context panel are being explored in parallel with review.                     history, then explicitly return to
+                                                                                         live work.
+ reviewer:main · review:ui
+ The waiting review needs a decision about historical actions.                           WAIT / NEXT DECISION
+                                                                                         Human decision needed. No approval
+ reviewer:main · decision:history                                                        operation is wired in this prototype.
+ ## History stays inspect-only
+                                                                                         RESPONSIBLE ROLE
+ - **Return to live context** before taking action.                                      reviewer:main
+ - Keep `recipient` separate from the selected subject.
+ - Inspect the [decision context](fixture://decision/history).                           Ctrl-P: conversation / inspect
+                                                                                         F7: target this role explicitly
+ ```rust                                                                                 F4: evidence / history
+ // Illustrative UI rule, not engine authority.
+ let can_send = scope == Scope::Live;
+ ```
+
+ This is a recommendation, not a decision.
+
+
+ ▌ Draft → reviewer:main | Enter SEND · Shift-Enter newline · SIMULATED
+ Keep historical views inspect-only. Show the live target before any action.
+
+
+
+ Composer now targets reviewer:main. Each role keeps its own draft.
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P commands · F1 help
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies selection; otherwise quits
+

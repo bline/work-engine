@@ -1,0 +1,41 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  sample activity 0  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                                                                              Commands  Ctrl-P
+ ▌ Work graph · arrows show work relationships                                             Context / Overview
+  1 decision needs you    1 active build                                                 Supervise work
+  Objective → review → decision; build proceeds in parallel                              OBJECTIVE · objective:ui
+     ╭────────────────○───────────────╮                                                  WAITING
+     │         Supervise work         │
+     │            WAITING             │                                                  OBJECTIVE / MEANING
+     │                                │                                                  Make objectives, progress, decisions,
+     ╰────────────────○───────────────╯                                                  and intervention understandable across
+                      │                                                                  providers.
+                      │
+                      ▼──────────────────────────────────────────▼                       WAIT / NEXT DECISION
+     ╭────────────────○───────────────╮         ╭────────────────○───────────────╮       Review is waiting on a human scope
+     │                                │         │                                │       decision.
+     │       Interaction review       │         │       Terminal prototype       │
+     │            BLOCKED             │         │             ACTIVE             │       RESPONSIBLE ROLE
+     │                                │         │                                │       planner:main
+     ╰────────────────○───────────────╯         ╰────────────────○───────────────╯
+                      │                                          │                       Ctrl-P: conversation / inspect
+                      │                                          │                       F7: target this role explicitly
+                      ▼                                          ▼                       F4: evidence / history
+     ╭────────────────○───────────────╮         ╭────────────────○───────────────╮
+     │                                │         │                                │
+     │      History action scope      │         │        Resize evidence         │
+     │           NEEDS YOU            │         │           AVAILABLE            │
+     │                                │         │                                │
+     ╰────────────────○───────────────╯         ╰────────────────○───────────────╯
+  Selected: Supervise work  |  Ctrl-P inspect
+
+ ▌ Draft → planner:main | Enter SEND · Shift-Enter newline · SIMULATED
+  Enter sends · Shift-Enter or Alt-Enter newline · Ctrl-P commands · paste stays in draft.
+
+
+
+ Ctrl-P opens commands. Type to compose; inspection never changes the recipient.
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P commands · F1 help
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies selection; otherwise quits
+

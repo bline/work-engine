@@ -1,0 +1,25 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNECTION
+ LIVE FIXTURE / main @ r18  |  sample activity 0  |  cost: unavailable
+ Dashboard  History  Conversation  Lifecycle    Detail: Summary
+                                                              Commands  Ctrl-P
+ ▌ Work list · compact layout
+  1 decision needs you    1 active build
+  Objective → review → decision; build proceeds in parallel
+ ›  WAITING     Supervise work
+                 OBJECTIVE · planner:main
+    BLOCKED     Interaction review
+                 REVIEW · reviewer:main
+    NEEDS YOU   History action scope
+                 DECISION · reviewer:main
+
+  Selected: Supervise work  |  Ctrl-P inspect
+
+ ▌ Draft → planner:main | Enter SEND · Shift-Enter newline · SIMULATED
+  Enter sends · Shift-Enter or Alt-Enter newline · Ctrl-P commands · paste stay
+
+
+
+ Ctrl-P opens commands. Type to compose; inspection never changes the recipient.
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P commands · F1 help
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies selection; otherwise qu
+

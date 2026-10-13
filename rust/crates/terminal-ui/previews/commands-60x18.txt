@@ -1,0 +1,19 @@
+ WORK ENGINE   Supervision desk    FIXTURE • NO ENGINE CONNE
+  ▌ Commands    4 matches · LOCAL UI                       u
+  > to▏                                                    m
+
+  › to planner:main          RECIPIENT
+    to reviewer:main         RECIPIENT
+    to builder:main          RECIPIENT
+    graph toggle             VIEW
+
+  ↑↓ select   Tab complete   Enter run   Esc cancel · draf
+   Draft → planner:main | Enter SEND · Shift-Enter newline ·
+ Keep this draft while choosing a command.
+
+
+
+ Ctrl-P opens commands. Type to compose; inspection never ch
+ Enter send · Shift-Enter / Alt-Enter newline · Ctrl-P comma
+ Ctrl-O full draft · Drag text to select · Ctrl-C copies sel
+
