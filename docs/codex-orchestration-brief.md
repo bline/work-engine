@@ -34,19 +34,33 @@ This was one nested-parent trial per treatment, not a guarantee across clients.
   timeout substantially below it produces predictable churn: all six 10-second
   waits in the 2026-10-13 worker sample expired, while the supervisors' long
   waits returned on child completion without the requested timeout elapsing.
-- If a wait expires without new information, re-enter the wait; avoid
-  interleaving `list_agents`, sleeps or status probes while nothing has changed.
-  Status probing is the residue to watch: it is a third of what the supervisors
-  still spend on calls that learn nothing.
-- End the turn when no required collection or integration remains, or when a
-  verified continuation mechanism owns resumption. Human visibility of the
-  agents alone does not provide that mechanism.
+- **Do not poll for progress.** After a timeout with no new information,
+  re-enter a suitably long `wait_agent`; do not interleave `list_agents`, sleeps,
+  or status probes. A short timeout is not a reason to inspect the roster.
+- Use `list_agents` only to answer a concrete coordination question that the
+  current wait result, messages, and durable assignment record cannot answer:
+  e.g., reconciling an unexpected agent identity/state, recovering after context
+  handoff, or verifying ownership before reassignment. Record what changed or
+  which decision needs that read; never call it merely to check whether work
+  is "still running." In the measured 2026-10-12 to 10-13 supervisors,
+  `list_agents` made up roughly 34% of remaining wait-only **calls** (not spend).
+- Before dispatch, designate who collects each required result and who resumes
+  the parent after a wait or ended turn. If integration is still required, keep
+  the supervising turn active with a supported blocking wait. End the turn only
+  when no required collection or integration remains, or when a **verified**
+  external continuation mechanism owns resumption; human visibility is not
+  automatic wakeup. If neither waiting nor external resumption is available,
+  surface the blocked handoff explicitly rather than assuming completion will
+  restart the parent.
 
 ## Messages from sub-agents
 
 A message can release an active wait or be consumed during ongoing work;
 delivery alone does not guarantee a new parent turn. Processing messages incurs
 the parent's context cost, though several messages may be consumed together.
+Treat completion notification as an execution-control event: the parent should
+consume it while already waiting or working, not wake itself repeatedly to ask
+whether it has arrived.
 Ask sub-agents to message for a final result, a decision or authority request,
 a blocker, or a significant evidence change or newly discovered risk that
 affects a parent decision, and to report those immediately rather than waiting
@@ -68,8 +82,9 @@ candidates, bundled and dependent revisions, found about 42% directly reopened
 such a fact and a further ~36% were arguably preventable by better contract
 formation; ~22% were genuine discovery. For example, S8 v3 contradicted S1's
 committed schema and v6 assumed a race S4's single-actor loop rules out. Include
-only the facts that apply; loading everything recreates the context cost. Before freezing a contract or route revision, the builder checks
-its premises against them.
+only the facts that apply; loading everything recreates the context cost.
+Before freezing a contract or route revision, the builder checks its premises
+against them.
 
 ## Doctrine and coordination reads
 
@@ -146,12 +161,31 @@ and independent review. For mechanical implementation, tests and validation runs
 against an explicit contract, consider medium effort and compare candidate
 attempts and findings with the baseline.
 
-## Root context
+## Root context and supervision ownership
 
 A root's context grows with every report it receives; roots averaged about 144K
-tokens per call. When context is large and no in-flight obligation depends on it,
-hand off through Wind Walker to a fresh root with a compact continuation rather
-than carrying the whole history.
+tokens per call in the baseline, and recent supervisors reached 166K–180K.
+Context re-send compounds the cost of every coordination call, even when much
+of it is cached. **Check context size at each dispatch/integration boundary**;
+for a 258K window, plan a handoff around 150K (roughly 60%) and execute at the
+next safe boundary if the remaining work does not justify carrying that history.
+These are operational triggers, not hard limits; record why a handoff is deferred.
+
+Use Wind Walker to pass a compact, durable continuation to a fresh root. Carry
+only the current objective, settled authority/constraints, assignment-to-owner
+map, required results and acceptance gates, outstanding decisions/obligations,
+verified evidence/artifact pointers, and the next actions. Re-read source
+artifacts as necessary rather than copying entire transcripts or tool outputs.
+Verify that the new root has accepted supervision before the old root relinquishes
+it. Do **not** strand in-flight children or assume a new root automatically
+inherits their completion notifications. If ownership transfer cannot be
+verified, retain the existing supervisor and schedule another safe boundary.
+
+Use a durable, compact assignment record as the deterministic source for known
+owners, expected deliverables, and received results. Update it on actual
+assignment, message, completion, and handoff events; don't repeatedly call a
+model or `list_agents` to rediscover unchanged execution state. Judgment about
+results remains with the supervisor; roster maintenance does not need inference.
 
 ## Validation scope
 
@@ -168,8 +202,16 @@ After a run, compare against the baseline with the scripts in
 `metrics/baselines/pure-codex-20261009/scripts/`: wait-only calls and timeouts,
 root share of spend, re-read share, and settled-fact contradictions per accepted
 slice. `metrics/scripts/` adds per-session profiles, coverage outcomes, cost
-decomposition and discarded tool output; the
+decomposition and discarded tool output; use
+`metrics/scripts/supervision_profile.py` for dispatch-normalized supervision
+measurements when available. The
 [efficiency ledger](../metrics/efficiency-ledger.md) records what each
-measurement showed. Track outcomes alongside cost: quota per accepted result, candidate and
-remediation attempts, and defects that escape review. A cheaper run that misses
-important issues is not an efficiency improvement.
+measurement showed. Report **units, waits, messages, and status probes per
+dispatch**, timeout rates, context tokens per call, and whether a parent resumed
+after completion. Keep same-definition comparisons separate from broad
+coordination categories and account for task-mix differences: the 2026-10-12 to
+10-13 same-supervisor observation reduced units/dispatch from 1.82 to 1.21,
+but it was not a controlled same-workload experiment. Track outcomes alongside
+cost: quota per accepted result, candidate and remediation attempts, and defects
+that escape review. A cheaper run that misses important issues is not an
+efficiency improvement.
