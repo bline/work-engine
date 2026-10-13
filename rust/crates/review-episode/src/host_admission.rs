@@ -1,14 +1,15 @@
-//! Trusted native-host descriptor admission. The inherited descriptor is a
-//! transport capability within the selected host/launcher boundary, not an
-//! authentication mechanism against arbitrary code running as the same UID.
+//! Trusted native-host descriptor admission. Direct composition trusts the linked
+//! Rust caller; inherited descriptors additionally enforce transport provenance.
+//! Neither authenticates against arbitrary code running as the same UID.
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 use review_episode_core::codec::{
     JsValue, canonical_json, digest, exact_fields, field, parse_json,
 };
 use review_episode_core::identity::Identity;
-use review_episode_store::NativeRootSelection;
+use review_episode_store::{NativeRootSelection, read_native_selection};
 
 use crate::admission::{AdmittedResult, HostAdmissionPort};
 use crate::protocol::Request;
@@ -93,56 +94,75 @@ impl NativeHostAdmission {
             file.take(64 * 1024 + 1)
                 .read_to_end(&mut bytes)
                 .map_err(|_| invalid("native descriptor cannot be read"))?;
-            if bytes.len() > 64 * 1024 {
-                return Err(invalid("native descriptor exceeds limit"));
-            }
-            let source = std::str::from_utf8(&bytes)
-                .map_err(|_| invalid("native descriptor is not UTF-8"))?;
-            let descriptor =
-                parse_json(source).map_err(|_| invalid("native descriptor JSON is invalid"))?;
-            if canonical_json(&descriptor) != source {
-                return Err(invalid("native descriptor is not canonical"));
-            }
-            exact_fields(
-                &descriptor,
-                &[
-                    "schemaVersion",
-                    "profile",
-                    "root",
-                    "executableSha256",
-                    "rootSelectionDigest",
-                    "requestId",
-                    "operation",
-                    "grantId",
-                    "selectionRevision",
-                    "requestDigest",
-                    "identityKey",
-                    "argsDigest",
-                    "authorityDigest",
-                    "resultDigest",
-                    "evidenceDigest",
-                    "contentDigest",
-                    "observedRevision",
-                    "principal",
-                ],
-                "native host descriptor",
-            )
-            .map_err(|_| invalid("native descriptor shape differs"))?;
-            if field(&descriptor, "schemaVersion")? != &JsValue::Number(1.0)
-                || field(&descriptor, "profile")? != &JsValue::text("native-host-v1")
-                || field(&descriptor, "root")? != &JsValue::text(&selection.root)
-                || field(&descriptor, "executableSha256")?
-                    != &JsValue::text(&selection.executable_sha256)
-                || field(&descriptor, "rootSelectionDigest")?
-                    != &JsValue::text(&selection.selection_digest)
-            {
-                return Err(invalid("native descriptor selection differs"));
-            }
-            Ok(Self {
-                descriptor,
-                selection,
-            })
+            Self::from_trusted_descriptor(selection, &bytes)
         }
+    }
+
+    /// Admit an exact descriptor supplied by trusted in-process composition.
+    ///
+    /// The caller owns descriptor provenance and must derive it from installed
+    /// authority and exact command facts. These bytes are not a wire grant or
+    /// authentication of arbitrary linked Rust code. The selected native root,
+    /// marker and actual executable are checked before admission is issued;
+    /// request, principal and observed-revision checks still occur on use.
+    pub fn from_trusted_descriptor(
+        selection: NativeRootSelection,
+        canonical_descriptor: &[u8],
+    ) -> AppResult<Self> {
+        let bytes = canonical_descriptor;
+        if bytes.len() > 64 * 1024 {
+            return Err(invalid("native descriptor exceeds limit"));
+        }
+        let source =
+            std::str::from_utf8(bytes).map_err(|_| invalid("native descriptor is not UTF-8"))?;
+        let descriptor =
+            parse_json(source).map_err(|_| invalid("native descriptor JSON is invalid"))?;
+        if canonical_json(&descriptor) != source {
+            return Err(invalid("native descriptor is not canonical"));
+        }
+        exact_fields(
+            &descriptor,
+            &[
+                "schemaVersion",
+                "profile",
+                "root",
+                "executableSha256",
+                "rootSelectionDigest",
+                "requestId",
+                "operation",
+                "grantId",
+                "selectionRevision",
+                "requestDigest",
+                "identityKey",
+                "argsDigest",
+                "authorityDigest",
+                "resultDigest",
+                "evidenceDigest",
+                "contentDigest",
+                "observedRevision",
+                "principal",
+            ],
+            "native host descriptor",
+        )
+        .map_err(|_| invalid("native descriptor shape differs"))?;
+        if field(&descriptor, "schemaVersion")? != &JsValue::Number(1.0)
+            || field(&descriptor, "profile")? != &JsValue::text("native-host-v1")
+            || field(&descriptor, "root")? != &JsValue::text(&selection.root)
+            || field(&descriptor, "executableSha256")?
+                != &JsValue::text(&selection.executable_sha256)
+            || field(&descriptor, "rootSelectionDigest")?
+                != &JsValue::text(&selection.selection_digest)
+        {
+            return Err(invalid("native descriptor selection differs"));
+        }
+        let actual = read_native_selection(Path::new(&selection.root))?;
+        if actual != selection {
+            return Err(invalid("native root selection differs"));
+        }
+        Ok(Self {
+            descriptor,
+            selection: actual,
+        })
     }
 
     fn check_request(&self, request: &Request) -> AppResult<()> {
