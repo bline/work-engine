@@ -18,6 +18,7 @@ pub enum Pane {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum View {
+    Overview,
     Dashboard,
     History,
     Conversation,
@@ -26,7 +27,8 @@ pub enum View {
 impl View {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Dashboard => "Dashboard",
+            Self::Overview => "Overview",
+            Self::Dashboard => "Graph",
             Self::History => "History",
             Self::Conversation => "Conversation",
             Self::Lifecycle => "Lifecycle",
@@ -57,6 +59,8 @@ pub struct Connection {
 }
 
 pub struct Model {
+    pub task: Option<crate::task::Task>,
+    last_task_click: Option<(usize, std::time::Instant)>,
     conversation_source: Option<SourceId>,
     pub contract_case: Option<crate::contract::Case>,
     pub client_observation: Option<Conversation>,
@@ -104,7 +108,8 @@ pub struct Model {
 }
 impl Model {
     pub fn input_read_only(&self) -> bool {
-        self.view == View::Lifecycle
+        self.task.is_some()
+            || self.view == View::Lifecycle
             || (self.connection.is_some()
                 && self.view == View::Conversation
                 && self.client_observation.is_some())
@@ -114,7 +119,26 @@ impl Model {
                 || self.client_observation.is_some())
                 && self.view == View::Conversation
     }
+    pub fn open_task(&mut self, case: crate::task::Case) {
+        self.leave_connection_view();
+        self.task = Some(crate::task::Task::fixture(case));
+        self.client_observation = None;
+        self.replay = None;
+        self.contract_case = None;
+        self.chat_example = false;
+        self.view = View::Overview;
+        self.scroll = 0;
+        self.context_scroll = 0;
+        self.last_task_click = None;
+        self.inspected_event = None;
+        self.pending_event = None;
+        self.show_context = false;
+        self.transcript.clear();
+        self.notice =
+            "PROVISIONAL TASK FIXTURE · non-atomic components · no host connection".into();
+    }
     pub fn connect(&mut self, socket: PathBuf, subject: lifecycle_client::SubjectRef) {
+        self.task = None;
         self.connection_generation += 1;
         self.client_source_sequence += 1;
         self.connection = Some(Connection {
@@ -150,6 +174,7 @@ impl Model {
             self.notice = "Disconnected. Use connection reconnect.".into();
             return;
         }
+        self.task = None;
         connection.disconnected = false;
         connection.refreshing = true;
         self.pending_connection_read = Some(kind);
@@ -182,6 +207,7 @@ impl Model {
     }
     pub fn disconnect_connection(&mut self) {
         if let Some(connection) = &mut self.connection {
+            self.task = None;
             self.connection_generation += 1;
             connection.generation = self.connection_generation;
             connection.disconnected = true;
@@ -408,6 +434,7 @@ impl Model {
         });
     }
     pub fn open_contract(&mut self, case: crate::contract::Case) {
+        self.task = None;
         self.leave_connection_view();
         self.client_observation = None;
         self.client_last_known = None;
@@ -424,6 +451,7 @@ impl Model {
         self.notice = "S3 CONTRACT EXAMPLE · not live or archive evidence · read-only".into();
     }
     pub fn open_replay(&mut self, section: crate::replay::Section) {
+        self.task = None;
         self.leave_connection_view();
         match crate::replay::Replay::load(crate::replay::ARCHIVE, section) {
             Ok(replay) => {
@@ -447,6 +475,7 @@ impl Model {
         }
     }
     pub fn open_chat_example(&mut self) {
+        self.task = None;
         self.leave_connection_view();
         self.replay = None;
         self.contract_case = None;
@@ -526,7 +555,21 @@ impl Model {
             }
 
             if let Some((_, item)) = self.mouse.items.iter().find(|(r, _)| r.contains(point)) {
-                self.select(*item);
+                let item = *item;
+                if self.task.is_some() {
+                    let now = std::time::Instant::now();
+                    let double = self.last_task_click.is_some_and(|(old, at)| {
+                        old == item && now.duration_since(at).as_millis() <= 450
+                    });
+                    self.select(item);
+                    self.last_task_click = Some((item, now));
+                    if double {
+                        self.view = View::Conversation;
+                        self.last_task_click = None;
+                    }
+                } else {
+                    self.select(item);
+                }
                 return;
             }
         }
@@ -542,6 +585,7 @@ impl Model {
                 Some(Pane::Main) if self.view == View::Conversation => {
                     self.scroll = adjust(self.scroll)
                 }
+                Some(Pane::Main) if self.task.is_some() => self.scroll = adjust(self.scroll),
                 Some(Pane::Main) if self.view == View::Lifecycle => self.select(if up {
                     self.lifecycle_selected.saturating_sub(1)
                 } else {
@@ -582,6 +626,8 @@ impl Model {
         let mut drafts = HashMap::new();
         drafts.insert("planner:main", editor());
         Self {
+            task: None,
+            last_task_click: None,
             conversation_source: None,
             contract_case: None,
             client_observation: None,
@@ -628,7 +674,9 @@ impl Model {
         }
     }
     pub fn conversation(&self) -> Conversation {
-        if let Some(observation) = &self.client_observation {
+        if let Some(task) = &self.task {
+            task.conversation()
+        } else if let Some(observation) = &self.client_observation {
             observation.clone()
         } else if let Some(case) = self.contract_case {
             crate::contract::example(case)
@@ -701,6 +749,13 @@ impl Model {
         };
     }
     pub fn select(&mut self, index: usize) {
+        if let Some(task) = &mut self.task {
+            task.selected = index % task.nodes.len();
+            self.scroll = 0;
+            self.context_scroll = 0;
+            self.transcript.clear();
+            return;
+        }
         if self.view == View::Lifecycle {
             self.lifecycle_selected =
                 index.min(crate::lifecycle::steps(self.lifecycle_case).len() - 1);
@@ -906,9 +961,12 @@ impl Model {
             Key::Function(1) => self.help = true,
             Key::Function(2) => {
                 self.view = match self.view {
+                    View::Overview => View::Dashboard,
+                    View::Dashboard if self.task.is_some() => View::Conversation,
                     View::Dashboard => View::History,
                     View::History => View::Conversation,
                     View::Conversation => View::Lifecycle,
+                    View::Lifecycle if self.task.is_some() => View::Overview,
                     View::Lifecycle => View::Dashboard,
                 };
                 if self.view != View::Conversation {

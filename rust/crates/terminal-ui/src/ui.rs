@@ -103,7 +103,7 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
         area,
     );
     if area.width < 60 || area.height < 18 {
-        frame.render_widget(Paragraph::new(format!("WORK ENGINE / {}\nResize to at least 60x18.\nDrafts retained. Ctrl-C exits (y confirms if a draft exists).", if model.borrow().connection.is_some() { "PASSIVE CLIENT · READ-ONLY" } else if model.borrow().replay.is_some() { "HISTORICAL REPLAY" } else { "FIXTURE" }))
+        frame.render_widget(Paragraph::new(format!("WORK ENGINE / {}\nResize to at least 60x18.\nDrafts retained. Ctrl-C exits (y confirms if a draft exists).", if model.borrow().task.is_some() { "PROVISIONAL TASK FIXTURE · READ-ONLY" } else if model.borrow().connection.is_some() { "PASSIVE CLIENT · READ-ONLY" } else if model.borrow().replay.is_some() { "HISTORICAL REPLAY" } else { "FIXTURE" }))
             .wrap(Wrap {trim:false}),area);
         return;
     }
@@ -125,13 +125,23 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
         if m.view != View::Conversation {
             m.transcript.clear();
         }
+        let views = if m.task.is_some() {
+            vec![
+                View::Overview,
+                View::Dashboard,
+                View::Conversation,
+                View::Lifecycle,
+            ]
+        } else {
+            vec![
+                View::Dashboard,
+                View::History,
+                View::Conversation,
+                View::Lifecycle,
+            ]
+        };
         let mut x = tabs.x;
-        for view in [
-            View::Dashboard,
-            View::History,
-            View::Conversation,
-            View::Lifecycle,
-        ] {
+        for view in views.iter().copied() {
             let width = view.label().len() as u16 + 2;
             m.mouse.tabs.push((Rect::new(x, tabs.y, width, 1), view));
             x += width;
@@ -148,7 +158,9 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
                     ),
                     Span::raw("  Supervision desk"),
                     Span::styled(
-                        if let Some(connection) = m.connection.as_ref().filter(|_| {
+                        if m.task.is_some() {
+                            "    PROVISIONAL TASK FIXTURE"
+                        } else if let Some(connection) = m.connection.as_ref().filter(|_| {
                             m.client_observation.is_some() && m.view == View::Conversation
                         }) {
                             if connection.disconnected {
@@ -172,82 +184,75 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
                         Style::default().fg(AMBER),
                     ),
                 ]),
-                muted(
-                    if let Some(connection) = m
-                        .connection
-                        .as_ref()
-                        .filter(|_| m.client_observation.is_some() && m.view == View::Conversation)
-                    {
-                        format!(
-                            " subject {}  |  socket {}  |  read-only",
-                            connection.subject.as_str(),
-                            connection.socket.display()
-                        )
-                    } else {
-                        format!(
-                            " {}  |  {}  |  cost: unavailable",
-                            if let Some(case) =
-                                m.contract_case.filter(|_| m.view == View::Conversation)
-                            {
-                                case.label()
-                            } else if m.client_observation.is_some() && m.view == View::Conversation
-                            {
-                                "CLIENT OBSERVATION"
-                            } else if let Some(replay) =
-                                m.replay.as_ref().filter(|_| m.view == View::Conversation)
-                            {
-                                replay.label
-                            } else if m.view == View::Lifecycle {
-                                if m.lifecycle_case == 0 {
-                                    "EXPERIMENTAL LIFECYCLE / SIMULATED INFERENCE"
-                                } else {
-                                    "LIFECYCLE / DESIGN FIXTURE"
-                                }
+                muted(if let Some(task) = &m.task {
+                    format!(" {}", task.identity())
+                } else if let Some(connection) = m
+                    .connection
+                    .as_ref()
+                    .filter(|_| m.client_observation.is_some() && m.view == View::Conversation)
+                {
+                    format!(
+                        " subject {}  |  socket {}  |  read-only",
+                        connection.subject.as_str(),
+                        connection.socket.display()
+                    )
+                } else {
+                    format!(
+                        " {}  |  {}  |  cost: unavailable",
+                        if let Some(case) = m.contract_case.filter(|_| m.view == View::Conversation)
+                        {
+                            case.label()
+                        } else if m.client_observation.is_some() && m.view == View::Conversation {
+                            "CLIENT OBSERVATION"
+                        } else if let Some(replay) =
+                            m.replay.as_ref().filter(|_| m.view == View::Conversation)
+                        {
+                            replay.label
+                        } else if m.view == View::Lifecycle {
+                            if m.lifecycle_case == 0 {
+                                "EXPERIMENTAL LIFECYCLE / SIMULATED INFERENCE"
                             } else {
-                                m.scope.label()
-                            },
-                            if m.input_read_only() {
-                                "messaging unavailable · Ctrl-P commands".into()
-                            } else if m.scope == Scope::Live {
-                                format!("sample activity {}", m.pulses)
-                            } else {
-                                "partial retained snapshot".into()
+                                "LIFECYCLE / DESIGN FIXTURE"
                             }
-                        )
-                    },
-                ),
+                        } else {
+                            m.scope.label()
+                        },
+                        if m.input_read_only() {
+                            "messaging unavailable · Ctrl-P commands".into()
+                        } else if m.scope == Scope::Live {
+                            format!("sample activity {}", m.pulses)
+                        } else {
+                            "partial retained snapshot".into()
+                        }
+                    )
+                }),
             ]),
             header,
         );
         let tab_line = Line::from(
-            [
-                View::Dashboard,
-                View::History,
-                View::Conversation,
-                View::Lifecycle,
-            ]
-            .into_iter()
-            .map(|v| {
-                Span::styled(
-                    format!(" {} ", v.label()),
-                    if m.view == v {
-                        Style::default()
-                            .bg(SELECTED)
-                            .fg(ACCENT)
-                            .add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(MUTED)
-                    },
-                )
-            })
-            .chain(std::iter::once(Span::styled(
-                format!(
-                    "   Detail: {}",
-                    ["Summary", "Activity", "Evidence"][m.detail]
-                ),
-                Style::default().fg(MUTED),
-            )))
-            .collect::<Vec<_>>(),
+            views
+                .into_iter()
+                .map(|v| {
+                    Span::styled(
+                        format!(" {} ", v.label()),
+                        if m.view == v {
+                            Style::default()
+                                .bg(SELECTED)
+                                .fg(ACCENT)
+                                .add_modifier(Modifier::BOLD)
+                        } else {
+                            Style::default().fg(MUTED)
+                        },
+                    )
+                })
+                .chain(std::iter::once(Span::styled(
+                    format!(
+                        "   Detail: {}",
+                        ["Summary", "Activity", "Evidence"][m.detail]
+                    ),
+                    Style::default().fg(MUTED),
+                )))
+                .collect::<Vec<_>>(),
         );
         frame.render_widget(Paragraph::new(tab_line), tabs);
         frame.render_widget(
@@ -338,7 +343,11 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
     }
 }
 fn main_view(frame: &mut Frame, area: Rect, m: &mut Model) {
+    if m.task.is_some() && m.view != View::Conversation {
+        return task_view(frame, area, m);
+    }
     match m.view {
+        View::Overview => dashboard(frame, area, m),
         View::Dashboard => dashboard(frame, area, m),
         View::History => history(frame, area, m),
         View::Conversation => conversation(frame, area, m),
@@ -438,10 +447,14 @@ fn dashboard(frame: &mut Frame, area: Rect, m: &mut Model) {
     );
 }
 fn context(frame: &mut Frame, area: Rect, m: &mut Model) {
-    if m.view == View::Conversation
+    if (m.view == View::Conversation || m.task.is_some())
         && let Some((title, content)) = m.conversation().context
     {
-        let b = block(title, m.show_context).style(Style::default().bg(CONTEXT).fg(INK));
+        let b = block(title, m.show_context).style(
+            Style::default()
+                .bg(if m.task.is_some() { CODE_BG } else { CONTEXT })
+                .fg(INK),
+        );
         let inner = b.inner(area);
         let text = Paragraph::new(content).wrap(Wrap { trim: false });
         m.context_scroll = m.context_scroll.min(
@@ -674,7 +687,7 @@ fn composer(frame: &mut Frame, area: Rect, m: &mut Model) {
     if m.input_read_only() || m.scope == Scope::Historical {
         frame.render_widget(Paragraph::new("Read-only inspection. No native commands, inference, or replayed execution.\nYour work-fixture drafts are retained. Ctrl-P navigation and inspection remain available.")
             .wrap(Wrap{trim:false}).block(block(format!("Messaging unavailable · draft → {} retained", m.recipient), m.focus == Pane::Composer)
-                .style(Style::default().bg(COMPOSER).fg(MUTED))), area);
+                .style(Style::default().bg(if m.task.is_some() { BG } else { COMPOSER }).fg(MUTED))), area);
         return;
     }
     let title = format!(
@@ -973,4 +986,300 @@ fn paste_preview(frame: &mut Frame, area: Rect, m: &mut Model) {
         .min(u16::MAX as usize) as u16;
     preview.scroll = preview.scroll.min(max);
     frame.render_widget(text.scroll((preview.scroll, 0)).block(b), area);
+}
+
+fn task_view(frame: &mut Frame, area: Rect, m: &mut Model) {
+    let task = m.task.as_ref().unwrap();
+    if m.view == View::Lifecycle {
+        let text = [1, 2]
+            .into_iter()
+            .map(|i| {
+                let c = &task.components[i];
+                format!("{}\n{}\n{}", c.summary(), c.binding, c.detail)
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        let b = block("Task lifecycle · independent components", !m.show_context);
+        let inner = b.inner(area);
+        let paragraph = Paragraph::new(format!("PROVISIONAL TASK FIXTURE · non-atomic reads\n\n{text}\n\nNative state is not task completion. Source references and bound segments are available in Graph.")).wrap(Wrap { trim:false });
+        m.scroll = m.scroll.min(
+            paragraph
+                .line_count(inner.width)
+                .saturating_sub(inner.height as usize) as u16,
+        );
+        frame.render_widget(paragraph.scroll((m.scroll, 0)).block(b), area);
+        return;
+    }
+    if m.view == View::Dashboard {
+        task_graph(frame, area, m);
+    } else {
+        task_overview(frame, area, m);
+    }
+}
+
+fn task_overview(frame: &mut Frame, area: Rect, m: &mut Model) {
+    let task = m.task.as_ref().unwrap();
+    let b = block("Overview", false);
+    let inner = b.inner(area);
+    let mut lines = Vec::new();
+    let mut hits = Vec::new();
+    let mut row = 0;
+    for section in task.overview() {
+        let selected = section.node == Some(task.selected);
+        let first_row = row;
+        let heading = Line::styled(
+            format!("{} {}", if selected { "▸" } else { " " }, section.title),
+            Style::default()
+                .fg(if section.warning { AMBER } else { ACCENT })
+                .add_modifier(Modifier::BOLD),
+        );
+        row += Paragraph::new(heading.clone())
+            .wrap(Wrap { trim: false })
+            .line_count(inner.width);
+        lines.push(heading);
+        for text in section.body.lines() {
+            let line = Line::styled(
+                format!("  {text}"),
+                Style::default().fg(if section.warning { AMBER } else { INK }),
+            );
+            row += Paragraph::new(line.clone())
+                .wrap(Wrap { trim: false })
+                .line_count(inner.width);
+            lines.push(line);
+        }
+        if let Some(index) = section.node {
+            hits.push((first_row, row, index));
+        }
+        lines.push(Line::raw(""));
+        row += 1;
+    }
+    lines.push(muted(
+        "  Inputs and recorded effects → Graph · sources → Context",
+    ));
+    let paragraph = Paragraph::new(lines).wrap(Wrap { trim: false });
+    m.scroll = m.scroll.min(
+        paragraph
+            .line_count(inner.width)
+            .saturating_sub(inner.height as usize) as u16,
+    );
+    for (start, end, index) in hits {
+        let visible_start = start.max(usize::from(m.scroll));
+        let visible_end = end.min(usize::from(m.scroll + inner.height));
+        if visible_start < visible_end {
+            m.mouse.items.push((
+                Rect::new(
+                    inner.x,
+                    inner.y + (visible_start - usize::from(m.scroll)) as u16,
+                    inner.width,
+                    (visible_end - visible_start) as u16,
+                ),
+                index,
+            ));
+        }
+    }
+    frame.render_widget(paragraph.scroll((m.scroll, 0)).block(b), area);
+}
+
+/// A small identifier-bound graph. Layout is presentation only; edges come from Node.parent.
+fn task_graph(frame: &mut Frame, area: Rect, m: &mut Model) {
+    let b = block(
+        "Graph · click to inspect · double-click for Conversation",
+        false,
+    );
+    let inner = b.inner(area);
+    frame.render_widget(b, area);
+    let task = m.task.as_ref().unwrap();
+    if inner.width < 82 || inner.height < 24 {
+        task_graph_list(frame, inner, m);
+        return;
+    }
+    let width = ((inner.width - 12) / 3).min(28);
+    let columns = [inner.x + 1, inner.x + width + 6, inner.x + 2 * width + 11];
+    let root = task.nodes.iter().position(|n| n.parent.is_none()).unwrap();
+    let mut placements = vec![(root, Rect::new(columns[0], inner.y + 10, width, 3))];
+    let mut child_row = 0;
+    for (index, node) in task.nodes.iter().enumerate() {
+        if node.parent == Some(task.nodes[root].id) {
+            placements.push((
+                index,
+                Rect::new(columns[1], inner.y + child_row * 5, width, 3),
+            ));
+            child_row += 1;
+        }
+    }
+    let delivery = placements
+        .iter()
+        .find(|(i, _)| task.nodes[*i].id == "delivery:d1")
+        .map(|(_, r)| *r);
+    if let Some(delivery) = delivery {
+        for (offset, (index, _)) in task
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| n.parent == Some("delivery:d1"))
+            .enumerate()
+        {
+            placements.push((
+                index,
+                Rect::new(columns[2], delivery.y + offset as u16 * 5, width, 3),
+            ));
+        }
+    }
+    let edge_style = Style::default().fg(MUTED);
+    for (index, rect) in &placements {
+        let node = &task.nodes[*index];
+        if let Some(parent) = node.parent.and_then(|id| {
+            placements
+                .iter()
+                .find(|(i, _)| task.nodes[*i].id == id)
+                .map(|(_, r)| *r)
+        }) {
+            let from = (parent.right(), parent.y + 1);
+            let to = (rect.x, rect.y + 1);
+            let bend = from.0 + 2;
+            for x in from.0..to.0 {
+                frame.render_widget(
+                    Paragraph::new("─").style(edge_style),
+                    Rect::new(x, if x < bend { from.1 } else { to.1 }, 1, 1),
+                );
+            }
+            for y in from.1.min(to.1)..=from.1.max(to.1) {
+                frame.render_widget(
+                    Paragraph::new("│").style(edge_style),
+                    Rect::new(bend, y, 1, 1),
+                );
+            }
+            frame.render_widget(
+                Paragraph::new("›").style(edge_style),
+                Rect::new(to.0 - 1, to.1, 1, 1),
+            );
+        }
+    }
+    for (index, rect) in placements {
+        let node = &task.nodes[index];
+        let component = &task.components[node.component];
+        let selected = index == task.selected;
+        let style = Style::default()
+            .bg(if selected { SELECTED } else { CODE_BG })
+            .fg(if selected { INK } else { QUIET });
+        frame.render_widget(Block::default().style(style), rect);
+        let title = Line::styled(
+            format!("{} {}", if selected { "▸" } else { " " }, node.caption()),
+            style
+                .fg(if selected { ACCENT } else { INK })
+                .add_modifier(Modifier::BOLD),
+        );
+        let status = if component.stale {
+            "STALE · last known"
+        } else if node.id.starts_with("segment:") {
+            if node.id == "segment:n1" {
+                "seq 1 · context A"
+            } else {
+                "seq 2 · context B"
+            }
+        } else if node.id == "delivery:d1" {
+            if task.question_pending {
+                "Running · admission open"
+            } else {
+                "Unsettled · stopped"
+            }
+        } else {
+            node.status()
+        };
+        frame.render_widget(
+            Paragraph::new(vec![
+                title,
+                Line::styled(
+                    format!("  {status}"),
+                    style.fg(if component.stale { AMBER } else { MUTED }),
+                ),
+            ])
+            .wrap(Wrap { trim: false }),
+            rect,
+        );
+        m.mouse.items.push((rect, index));
+    }
+    let note = if task.components[2].availability == crate::task::Availability::Refused {
+        "Native history refused: capacity · no segment nodes available"
+    } else if task.components[0].stale {
+        "Owner/native reads unavailable · STALE nodes retain last-known data"
+    } else {
+        "Edges show identifier bindings, not chronology. Details → Context"
+    };
+    frame.render_widget(
+        Paragraph::new(note).style(Style::default().fg(
+            if task.case == crate::task::Case::Refused {
+                AMBER
+            } else {
+                MUTED
+            },
+        )),
+        Rect::new(inner.x, inner.bottom() - 1, inner.width, 1),
+    );
+}
+
+fn task_graph_list(frame: &mut Frame, area: Rect, m: &mut Model) {
+    let task = m.task.as_ref().unwrap();
+    let mut lines = vec![muted("Compact graph · bound relationships")];
+    if task.components[2].availability == crate::task::Availability::Refused {
+        lines.push(Line::styled(
+            "Native history refused: capacity · no collection supplied",
+            Style::default().fg(AMBER),
+        ));
+    } else if task.components[0].stale {
+        lines.push(Line::styled(
+            "Owner/native reads unavailable · nodes marked STALE",
+            Style::default().fg(AMBER),
+        ));
+    }
+    let prefix = lines.len();
+    for (index, node) in task.nodes.iter().enumerate() {
+        let selected = index == task.selected;
+        let style = Style::default()
+            .fg(if selected { ACCENT } else { INK })
+            .bg(if selected { SELECTED } else { BG });
+        let parent = node
+            .parent
+            .and_then(|id| task.nodes.iter().find(|n| n.id == id))
+            .map(|n| n.caption());
+        lines.push(Line::styled(
+            format!("{} {}", if selected { "▸" } else { " " }, node.caption()),
+            style,
+        ));
+        lines.push(Line::styled(
+            format!(
+                "  {}{}",
+                parent.map(|p| format!("{p} → ")).unwrap_or_default(),
+                if task.components[node.component].stale {
+                    "STALE / last known"
+                } else {
+                    node.status()
+                }
+            ),
+            Style::default().fg(MUTED),
+        ));
+    }
+    let paragraph = Paragraph::new(lines);
+    m.scroll = m.scroll.min(
+        paragraph
+            .line_count(area.width)
+            .saturating_sub(area.height as usize) as u16,
+    );
+    for index in 0..task.nodes.len() {
+        let start = prefix + index * 2;
+        let lo = start.max(m.scroll as usize);
+        let hi = (start + 2).min(usize::from(m.scroll + area.height));
+        if lo < hi {
+            m.mouse.items.push((
+                Rect::new(
+                    area.x,
+                    area.y + (lo - m.scroll as usize) as u16,
+                    area.width,
+                    (hi - lo) as u16,
+                ),
+                index,
+            ));
+        }
+    }
+    frame.render_widget(paragraph.scroll((m.scroll, 0)), area);
 }

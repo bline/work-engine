@@ -12,6 +12,7 @@ mod model;
 mod mouse;
 mod presentation;
 mod replay;
+mod task;
 #[cfg(test)]
 mod tests;
 mod theme;
@@ -87,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|a| a == "--help" || a == "-h") {
         println!(
-            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--snapshot [WIDTH HEIGHT] [dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
+            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
         );
         return Ok(());
     }
@@ -103,6 +104,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (mut app, model) = application(EventListenerCfg::default());
         match args.get(3).map(String::as_str) {
             None | Some("dashboard") => (),
+            Some(name) if name.starts_with("task-") => {
+                let case_name = name.trim_start_matches("task-");
+                let case = if matches!(case_name, "graph" | "conversation") {
+                    task::Case::Pending
+                } else {
+                    task::Case::parse(case_name).ok_or("unknown task snapshot")?
+                };
+                model.borrow_mut().open_task(case);
+                if case_name == "graph" {
+                    model.borrow_mut().view = View::Dashboard;
+                }
+                if case_name == "conversation" {
+                    model.borrow_mut().view = View::Conversation;
+                }
+            }
+            Some("graph") => {
+                model.borrow_mut().view = View::Dashboard;
+            }
             Some("history") => {
                 let mut m = model.borrow_mut();
                 m.view = View::History;
@@ -207,7 +226,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
-    let selected_connection = if args.is_empty() {
+    let task_case = if args.len() == 2 && args[0] == "--task-fixture" {
+        Some(
+            task::Case::parse(&args[1])
+                .ok_or("unknown task fixture; use pending, result, stale, refused")?,
+        )
+    } else {
+        None
+    };
+    let selected_connection = if args.is_empty() || task_case.is_some() {
         None
     } else if args.len() == 4 && args[0] == "--connect" && args[2] == "--subject" {
         let socket = PathBuf::from(&args[1]);
@@ -248,6 +275,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut app, model) = application(
         EventListenerCfg::default().crossterm_input_listener(Duration::from_millis(10), 1),
     );
+    if let Some(case) = task_case {
+        model.borrow_mut().open_task(case);
+    }
     let worker = selected_connection.map(|(socket, subject)| {
         model.borrow_mut().connect(socket, subject);
         connection::Worker::start()

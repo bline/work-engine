@@ -9,6 +9,8 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 #[derive(Clone, Copy)]
 pub enum Action {
     View(View),
+    Task(crate::task::Case),
+    WorkFixture,
     Detail(usize),
     Context(usize),
     Scope(Scope),
@@ -158,6 +160,32 @@ fn base_commands() -> Vec<Command> {
             action: Action::Help,
         },
     ];
+    for case in crate::task::Case::ALL {
+        commands.push(Command {
+            name: format!("task fixture {}", case.label()),
+            group: "PROVISIONAL TASK",
+            description: "Draft task projection only; no accepted protocol or host connection.",
+            action: Action::Task(case),
+        });
+    }
+    commands.push(Command {
+        name: "overview".into(),
+        group: "VIEW",
+        description: "Open task Overview; starts provisional pending fixture if none is selected.",
+        action: Action::View(View::Overview),
+    });
+    commands.push(Command {
+        name: "graph".into(),
+        group: "VIEW",
+        description: "Inspect bound relationships; selection never retargets messaging.",
+        action: Action::View(View::Dashboard),
+    });
+    commands.push(Command {
+        name: "work fixture".into(),
+        group: "VIEW",
+        description: "Return to the original illustrative work fixture; restore drafts.",
+        action: Action::WorkFixture,
+    });
     for case in crate::contract::Case::ALL {
         commands.push(Command {
             name: format!("contract {}", case.label()),
@@ -274,7 +302,7 @@ impl Model {
             Action::Panel(true),
         );
         for (context, target) in [(false, "timeline"), (true, "context")] {
-            if context || self.view == View::Conversation {
+            if context || self.view == View::Conversation || self.task.is_some() {
                 for (name, amount) in [
                     ("up", -8),
                     ("down", 8),
@@ -290,7 +318,16 @@ impl Model {
                 }
             }
         }
-        if self.view == View::Lifecycle {
+        if let Some(task) = &self.task {
+            for (index, node) in task.nodes.iter().enumerate() {
+                add(
+                    format!("inspect {} {}", node.id, node.title),
+                    "TASK NODE",
+                    "Scope inspection and Conversation; recipient remains unchanged.",
+                    Action::Inspect(index),
+                );
+            }
+        } else if self.view == View::Lifecycle {
             for (i, name) in crate::lifecycle::CASES.iter().enumerate() {
                 add(
                     format!("scenario {name}"),
@@ -350,7 +387,7 @@ impl Model {
                 Action::Graph(0),
             );
         }
-        if self.view == View::Dashboard {
+        if self.view == View::Dashboard && self.task.is_none() {
             for (i, name) in [
                 "fit",
                 "zoom in",
@@ -454,7 +491,15 @@ impl Model {
                 self.focus = Pane::Composer;
                 self.notice = format!("{} · local UI command; nothing sent.", command.name);
                 match command.action {
+                    Action::Task(case) => self.open_task(case),
+                    Action::WorkFixture => {
+                        self.task = None;
+                        self.view = View::Dashboard;
+                    }
                     Action::View(view) => {
+                        if view == View::Overview && self.task.is_none() {
+                            self.open_task(crate::task::Case::Pending);
+                        }
                         self.leave_connection_view();
                         self.inspected_event = None;
                         self.pending_event = None;
@@ -464,7 +509,11 @@ impl Model {
                         self.client_observation = None;
                         self.client_last_known = None;
                         self.context_usage = Default::default();
-                        self.view = view;
+                        self.view = if self.task.is_some() && view == View::History {
+                            View::Overview
+                        } else {
+                            view
+                        };
                         self.show_context = false;
                     }
                     Action::Detail(level) => {

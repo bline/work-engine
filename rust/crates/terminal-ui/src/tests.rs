@@ -1281,6 +1281,7 @@ fn every_conversation_source_feeds_the_same_palette_and_transcript_rows() {
                     assert!(presentation.banner.contains("CONTRACT EXAMPLE"));
                     assert!(!presentation.simulated_activity);
                 }
+                SourceId::Task(_, _) => panic!("task fixture has separate projection tests"),
                 SourceId::Client(_) => {
                     panic!("client observations are opened through the passive client path")
                 }
@@ -1910,4 +1911,241 @@ fn typed_contract_projection_preserves_conflict_and_qualified_unknown_fields() {
         assert!(detail.contains(exact), "missing {exact}");
     }
     assert!(!projected.usage.contains('%'));
+}
+
+#[test]
+fn task_publications_are_grouped_and_component_freshness_is_independent() {
+    use crate::task::{Availability, Case, Task};
+    let pending = Task::fixture(Case::Pending);
+    assert_eq!(pending.components[6].availability, Availability::Absent);
+    assert!(pending.components[1].detail.contains("running"));
+    assert!(pending.nodes[2].text.unwrap().contains("Pending q1"));
+    let result = Task::fixture(Case::Result);
+    assert_eq!(result.components[6].availability, Availability::Present);
+    assert!(result.components[1].detail.contains("unsettled"));
+    let stale = Task::fixture(Case::Stale);
+    assert_eq!(stale.components[0].availability, Availability::Unavailable);
+    assert!(stale.components[6].stale);
+    assert!(!stale.components[1].stale);
+    let conversation = stale.conversation();
+    assert_eq!(conversation.entries.len(), 3);
+    assert_eq!(
+        conversation
+            .entries
+            .iter()
+            .map(|e| e.subject)
+            .collect::<Vec<_>>(),
+        vec!["input:i1", "question:q1", "result:r1"]
+    );
+    assert!(
+        conversation
+            .entries
+            .iter()
+            .all(|e| e.text.starts_with("STALE / LAST KNOWN"))
+    );
+    assert!(
+        conversation.entries[2]
+            .text
+            .contains("Lifecycle delivery remains unsettled")
+    );
+    assert!(!conversation.simulated_activity);
+    assert!(
+        conversation
+            .banner
+            .contains("NOT a chronological transcript")
+    );
+    assert!(
+        conversation.entries[2]
+            .display_text(true)
+            .contains("fixture://result/r1")
+    );
+    let refused = Task::fixture(Case::Refused);
+    assert_eq!(refused.components[2].availability, Availability::Refused);
+    assert!(!refused.nodes.iter().any(|n| n.id.starts_with("segment:")));
+    assert!(refused.components[2].detail.contains("capacity"));
+    assert!(
+        refused
+            .details()
+            .contains("Explicit fixture reason: capacity")
+    );
+    assert_eq!(
+        refused.components[3].availability,
+        Availability::NotRequested
+    );
+    assert_eq!(
+        refused.components[4].availability,
+        Availability::NotApplicable
+    );
+    assert_eq!(refused.components[5].availability, Availability::Unknown);
+    for node in &pending.nodes {
+        if let Some(parent) = node.parent {
+            assert!(pending.nodes.iter().any(|n| n.id == parent));
+        }
+    }
+}
+
+#[test]
+fn task_mouse_scope_double_click_and_read_only_drafts_survive_navigation() {
+    use tuirealm::event::{MouseButton::Left, MouseEventKind::Down};
+    let (mut app, model) = application(EventListenerCfg::default());
+    model.borrow_mut().draft().insert_str("retained draft");
+    command(&mut model.borrow_mut(), "task fixture pending");
+    assert_eq!(model.borrow().view, View::Overview);
+    command(&mut model.borrow_mut(), "graph");
+    ui::snapshot(&mut app, &model, 128, 40);
+    let rect = model
+        .borrow()
+        .mouse
+        .items
+        .iter()
+        .find(|(_, i)| *i == 2)
+        .unwrap()
+        .0;
+    model
+        .borrow_mut()
+        .handle(mouse_event(Down(Left), rect.x, rect.y));
+    assert_eq!(model.borrow().task.as_ref().unwrap().selected, 2);
+    assert_eq!(model.borrow().view, View::Dashboard);
+    model
+        .borrow_mut()
+        .handle(mouse_event(Down(Left), rect.x, rect.y));
+    assert_eq!(model.borrow().view, View::Conversation);
+    assert_eq!(model.borrow().visible_entries().len(), 1);
+    assert_eq!(model.borrow().visible_entries()[0].subject, "question:q1");
+    let frame = ui::snapshot(&mut app, &model, 80, 30);
+    assert!(frame.contains("Inspecting: Question q1 · task:ui-17"));
+    assert!(frame.contains("Pending q1"));
+    let source_len = model.borrow().transcript.source.len();
+    model.borrow_mut().transcript.selection = Some(0..source_len);
+    model.borrow_mut().handle(Event::Keyboard(KeyEvent {
+        code: Key::Char('c'),
+        modifiers: KeyModifiers::CONTROL,
+    }));
+    assert!(
+        model
+            .borrow()
+            .clipboard
+            .as_ref()
+            .unwrap()
+            .starts_with("## Questions")
+    );
+    model
+        .borrow_mut()
+        .handle(Event::Paste("must not edit".into()));
+    model.borrow_mut().send();
+    model.borrow_mut().set_recipient();
+    command(&mut model.borrow_mut(), "overview");
+    command(&mut model.borrow_mut(), "inspect segment:n1");
+    command(&mut model.borrow_mut(), "conversation");
+    assert!(
+        model.borrow().visible_entries()[0]
+            .text
+            .contains("No attributable conversation text")
+    );
+    assert_eq!(model.borrow().recipient, "planner:main");
+    assert_eq!(model.borrow().draft_text(), "retained draft");
+    command(&mut model.borrow_mut(), "work fixture");
+    assert!(model.borrow().task.is_none());
+    assert_eq!(model.borrow().draft_text(), "retained draft");
+}
+
+#[test]
+fn task_overview_rendering_keeps_failure_and_result_separate_at_both_sizes() {
+    let (mut app, model) = application(EventListenerCfg::default());
+    for (w, h) in [(128, 40), (80, 30)] {
+        model.borrow_mut().open_task(task::Case::Stale);
+        let frame = ui::snapshot(&mut app, &model, w, h);
+        assert!(frame.contains("PROVISIONAL TASK FIXTURE"));
+        assert!(frame.contains("Owner read unavailable"));
+        assert!(frame.contains("Last-known publication · STALE"));
+        assert!(frame.contains("Delivery unsettled"));
+        assert!(frame.find("OBJECTIVE").unwrap() < frame.find("NEEDS ATTENTION").unwrap());
+        assert!(frame.find("NEEDS ATTENTION").unwrap() < frame.find("LATEST RESULT").unwrap());
+        assert!(frame.find("LATEST RESULT").unwrap() < frame.find("EXECUTION").unwrap());
+        if w == 80 {
+            assert!(!frame.contains("owner revision"));
+            assert!(!frame.contains("not_requested"));
+        }
+    }
+}
+
+#[test]
+fn task_visual_graph_edges_selection_and_responsive_fallback_share_identity() {
+    use tuirealm::event::{MouseButton::Left, MouseEventKind::Down};
+    let (mut app, model) = application(EventListenerCfg::default());
+    model.borrow_mut().open_task(task::Case::Result);
+    command(&mut model.borrow_mut(), "graph");
+    let frame = ui::snapshot(&mut app, &model, 128, 40);
+    assert!(frame.contains('│') && frame.contains('─') && frame.contains('›'));
+    assert!(!frame.contains("Compact graph"));
+    let hits = model.borrow().mouse.items.clone();
+    assert_eq!(
+        hits.len(),
+        model.borrow().task.as_ref().unwrap().nodes.len()
+    );
+    for (rect, index) in &hits {
+        assert_eq!(rect.height, 3);
+        assert!(
+            !hits.iter().any(|(other, other_index)| other_index != index
+                && !rect.intersection(*other).is_empty())
+        );
+        model
+            .borrow_mut()
+            .handle(mouse_event(Down(Left), rect.x + 1, rect.y + 1));
+        assert_eq!(model.borrow().task.as_ref().unwrap().selected, *index);
+        assert_eq!(model.borrow().recipient, "planner:main");
+    }
+    let inspected = model.borrow().task.as_ref().unwrap().selected;
+    let narrow = ui::snapshot(&mut app, &model, 80, 30);
+    assert!(narrow.contains("Compact graph"));
+    assert_eq!(model.borrow().task.as_ref().unwrap().selected, inspected);
+    let rect = model
+        .borrow()
+        .mouse
+        .items
+        .iter()
+        .find(|(_, i)| *i == 2)
+        .unwrap()
+        .0;
+    model
+        .borrow_mut()
+        .handle(mouse_event(Down(Left), rect.x, rect.y));
+    ui::snapshot(&mut app, &model, 80, 30);
+    let tab = model
+        .borrow()
+        .mouse
+        .tabs
+        .iter()
+        .find(|(_, view)| *view == View::Conversation)
+        .unwrap()
+        .0;
+    model
+        .borrow_mut()
+        .handle(mouse_event(Down(Left), tab.x, tab.y));
+    assert_eq!(model.borrow().visible_entries().len(), 1);
+    assert_eq!(model.borrow().visible_entries()[0].subject, "question:q1");
+    assert_eq!(model.borrow().recipient, "planner:main");
+}
+
+#[test]
+fn task_overview_empty_result_refusal_and_current_execution_remain_distinct() {
+    let (mut app, model) = application(EventListenerCfg::default());
+    for case in [task::Case::Pending, task::Case::Result, task::Case::Refused] {
+        model.borrow_mut().open_task(case);
+        let frame = ui::snapshot(&mut app, &model, 80, 30);
+        assert!(frame.contains("Inspecting: Inspect task evidence · task:ui-17"));
+        assert!(frame.contains("OBJECTIVE") && frame.contains("NEEDS ATTENTION"));
+        if case == task::Case::Result {
+            assert!(frame.contains("Published by the task owner"));
+            assert!(frame.contains("Delivery unsettled"));
+            assert!(frame.contains("No pending questions"));
+        } else {
+            assert!(frame.contains("Pending question"));
+            assert!(frame.contains("No result published"));
+            assert!(frame.contains("Delivery active"));
+        }
+        if case == task::Case::Refused {
+            assert!(frame.contains("Native history refused: capacity"));
+        }
+    }
 }
