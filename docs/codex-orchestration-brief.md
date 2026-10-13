@@ -14,25 +14,38 @@ standing-context charge as one that does.
 
 ## Waiting
 
-`wait_agent` returns as soon as a message arrives. A short timeout therefore
-saves nothing and adds a full-context call each time it expires: 1,097 waits
-timed out, most at 30–60 seconds, and wait-only calls were about a third of root
-supervisors' spend.
+`wait_agent` blocks until mailbox activity or timeout; child completion can
+release it without repeated parent inference while it is pending. Each timeout
+that leads to another wait requires a full-context model call. In the baseline,
+1,097 waits timed out, most at 30–60 seconds, and wait-only calls were about a
+third of root supervisors' spend.
 
-- Wait with a long timeout (tens of minutes) instead of repeated short waits.
-- Do not interleave `list_agents`, sleeps or status probes while nothing has
-  changed.
-- When the user is monitoring agents directly, ending the turn after dispatch is
-  also valid.
+Ending a turn is different from waiting. In the
+[2026-10-13 native resumption experiment](../metrics/experiments/parent-resumption-20261013/README.md)
+on Codex 0.162.1, a completed child left its ended parent idle for the observed
+79 seconds; explicit resumption delivered the queued result. A one-hour
+`wait_agent` timeout was accepted and released after 15.2 seconds on completion.
+This was one nested-parent trial per treatment, not a guarantee across clients.
+
+- Continue useful independent work while children run. When required results
+  are outstanding and no independent work remains, prefer a long blocking wait
+  within the active tool and instruction limits.
+- If a wait expires without new information, re-enter the wait; avoid
+  interleaving `list_agents`, sleeps or status probes while nothing has changed.
+- End the turn when no required collection or integration remains, or when a
+  verified continuation mechanism owns resumption. Human visibility of the
+  agents alone does not provide that mechanism.
 
 ## Messages from sub-agents
 
-Each delivered message wakes the parent at its full context. Ask sub-agents to
-message for a final result, a decision or authority request, a blocker, or a
-significant evidence change or newly discovered risk that affects a parent
-decision, and to report those immediately rather than waiting for a formal
-blocker. Routine progress belongs in durable artifacts the parent can read when
-it needs it.
+A message can release an active wait or be consumed during ongoing work;
+delivery alone does not guarantee a new parent turn. Processing messages incurs
+the parent's context cost, though several messages may be consumed together.
+Ask sub-agents to message for a final result, a decision or authority request,
+a blocker, or a significant evidence change or newly discovered risk that
+affects a parent decision, and to report those immediately rather than waiting
+for a formal blocker. Routine progress belongs in durable artifacts the parent
+can read when it needs it.
 
 ## Task briefs
 
@@ -58,6 +71,32 @@ Sub-agents read DESIGN.md as AGENTS.md requires. PHILOSOPHY.md is needed in full
 for design, planning and doctrine review, not for bounded implementation. Read
 the coordination board as AGENTS.md specifies at startup, after compaction and
 before claims or consequential operations, not as a polling loop.
+
+## Codebase Memory across worktrees
+
+This installation enables `auto_index`, `auto_watch`, and `watcher_enabled`.
+Auto-indexing can bootstrap a project, but a lasting watch belongs to a live MCP
+connection rooted at **that worktree**. Querying or manually indexing another
+worktree does not register its watch; a one-shot CLI call cannot retain one
+after it exits. The main repository and an allocated slice worktree are distinct
+projects. A normal MCP client connection rooted at the worktree is sufficient;
+a temporary dedicated connection can serve the same purpose when needed, with
+an owner responsible for closing only that connection at retirement. Workspace
+cleanup does not authorize stopping a shared daemon or another agent's connection.
+
+At worktree allocation or context recovery, distinguish configuration from
+observed state: check the exact project root, `index_status` watch status and
+reason/strategy, and the current store generation. A watch marked active is
+not proof that the latest edit is indexed. After edits, check candidate-file
+coverage and content verification; use a bounded workspace reindex if needed
+and direct source for changed, unverified, partial, or missed ranges. A manual
+`index_repository` with `persistence=false` avoids repository writes but does
+not itself retain a watch. Tool availability can change mid-session, so
+rediscover the available MCP tools before assuming only a CLI or source fallback
+is possible. The [repository Codebase Memory instructions](../AGENTS.md#codebase-memory)
+and [repository-search evidence contract](../skills/repo-search/SKILL.md) own
+query, coverage, and fallback details; clean coverage remains best-effort, and
+text returned by `search_code` remains unverified source text.
 
 ## Tool output the model never receives
 

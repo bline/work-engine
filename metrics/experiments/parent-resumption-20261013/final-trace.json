@@ -1,0 +1,1099 @@
+{
+  "observed_at": "2026-10-13T18:12:41.404528+00:00",
+  "root_session": "01a1366f-44ff-73f3-9d3b-858d18782d47",
+  "sessions": [
+    {
+      "source_path": "/home/bline/.codex/sessions/2026/10/13/rollout-2026-10-13T12-07-39-01a13672-db3c-75d0-b6ac-5961671f996e.jsonl",
+      "source_bytes": 403774,
+      "source_sha256": "af91483d714a7b8969f4b91f28d143b9b9a893144a5d317a50570166c9b581d9",
+      "metadata": {
+        "id": "01a13672-db3c-75d0-b6ac-5961671f996e",
+        "agent_path": "/root/resumption_probe_parent",
+        "parent_thread_id": "01a1366f-44ff-73f3-9d3b-858d18782d47",
+        "cli_version": "0.162.1",
+        "timestamp": "2026-10-13T18:07:39.346Z"
+      },
+      "events": [
+        {
+          "timestamp": "2026-10-13T18:07:39.434Z",
+          "source_line": 2,
+          "line_sha256": "8f9d3f75d2212b118d3a3bf7c6534fe1f9ebe526575d0a4b89b1c9b67c45c395",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "turn_attribution": {
+            "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37",
+            "initiating_agent_path": "/root",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:07:40.854Z",
+          "source_line": 8,
+          "line_sha256": "bc9bfbf89267379c8ca0704b2e402271bf88546c0fa52fdb84a926eee72f198d",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d"
+        },
+        {
+          "timestamp": "2026-10-13T18:07:41.369Z",
+          "source_line": 10,
+          "line_sha256": "29bf5699b10dcb2d7a7cb17b049ff54c9d18d0a67784c9a34b09c9eed92f7433",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": true
+        },
+        {
+          "timestamp": "2026-10-13T18:07:41.369Z",
+          "source_line": 11,
+          "line_sha256": "00d4029c6b65ca7e7953a6b82c268ea5e74bce0394c79c5225a25c4cb2b6ecfc",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root",
+          "recipient": "/root/resumption_probe_parent",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:07:44.832Z",
+          "source_line": 12,
+          "line_sha256": "a3384e8e54b11c2a61d4da029b982f7d3bca559420e9e5ac7d459b3add41e8ac",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_c7dfef1d50ec424fbd6679aba9d8e6ba"
+        },
+        {
+          "timestamp": "2026-10-13T18:07:45.006Z",
+          "source_line": 14,
+          "line_sha256": "6f8fe73844d655d8ddf4c838a01bed684d20e77757e9e7faa21c6ef36a8d482b",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace736ddae08196aafe93e1e5b0aa88",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 20582,
+            "cached_input_tokens": 6912,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 67,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 20649
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:07:51.678Z",
+          "source_line": 21,
+          "line_sha256": "da6d7a8630ad7d99753a5b3f9ee2ff5a4d68cada83fe6ee4c458908ecfd88e37",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_c890241b628b45a7b8c3fc4af3232c34"
+        },
+        {
+          "timestamp": "2026-10-13T18:07:51.729Z",
+          "source_line": 22,
+          "line_sha256": "89be6543a74620c5da77df8f77306bfb703f3bfbcea7c3d32ce14c8cf0302113",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace737155a481968541febf3e1afac9",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 27856,
+            "cached_input_tokens": 20352,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 210,
+            "reasoning_output_tokens": 39,
+            "total_tokens": 28066
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:07:59.385Z",
+          "source_line": 27,
+          "line_sha256": "10d7e093d97e2be5e80a19c4c8acccaa8686d8a744983dee4879cb827596e33d",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_507381263d144b1f82658442d14b3176"
+        },
+        {
+          "timestamp": "2026-10-13T18:07:59.631Z",
+          "source_line": 28,
+          "line_sha256": "d543d961d25fcaf7d54cdbb42be2ca92028acfcc09ede54fa4a1be560ff61ad8",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73785aa88196913588a7b5142b9d",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 39114,
+            "cached_input_tokens": 27648,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 252,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 39366
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:12.108Z",
+          "source_line": 36,
+          "line_sha256": "1e572c6cc9c04a2dd19f7ed40f6002161f0e6ebee83277aa043c6de3d19908de",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "spawn_agent",
+          "call_id": "call_6906ef817abf41469ea37f5510fc2b72"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:12.192Z",
+          "source_line": 38,
+          "line_sha256": "b64d291805ec2688e9ac481e7e51ec6e639ba37c8b52f84fc031fc198e330975",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73803624819685a35ebb16894f8b",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 43035,
+            "cached_input_tokens": 38912,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 378,
+            "reasoning_output_tokens": 9,
+            "total_tokens": 43413
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:20.642Z",
+          "source_line": 42,
+          "line_sha256": "0e2a9f7279730623652ab611d591b2816442bbebe27392aa8571b7de6a4d81e4",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_9ddf886f34a4435ba8704cdf94fee898"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:20.849Z",
+          "source_line": 44,
+          "line_sha256": "c239d4c6cc9f3686a2e72fe4f5b7fe2c32701e018506f1a192460df536482ca3",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace738c7fec8196a2fe8611dd06df97",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 43438,
+            "cached_input_tokens": 42880,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 145,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 43583
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:22.874Z",
+          "source_line": 47,
+          "line_sha256": "d7e6dfd75d62bce6570c32a8504573e0671549b1d64e76693211556fbb08bef7",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "wait_agent",
+          "call_id": "call_a9cec42f9501465bbcf498ae8731f140",
+          "arguments": "{\"timeout_ms\":60000}"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:23.139Z",
+          "source_line": 48,
+          "line_sha256": "bec997e0eb2ec052bd102acba19201fb4bf0032c4a546a4b1a629c3b53d44e6e",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73956418819684e7b752d5d869ca",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 43706,
+            "cached_input_tokens": 43264,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 21,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 43727
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:18.049Z",
+          "source_line": 51,
+          "line_sha256": "04816b979e4cd5e7fe663623de2c7ef624042bc143ec040c4e288eb1d35192f8",
+          "kind": "response_item",
+          "event": "function_call_output",
+          "name": "wait_agent",
+          "call_id": "call_a9cec42f9501465bbcf498ae8731f140",
+          "output": "{\"message\":\"Wait completed.\",\"timed_out\":false}"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:18.053Z",
+          "source_line": 53,
+          "line_sha256": "a9a5bb5dc41383ecd9b21dd94c816143d4296cd40c4f0f447f7b6b1dc21e8484",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": false
+        },
+        {
+          "timestamp": "2026-10-13T18:09:18.053Z",
+          "source_line": 54,
+          "line_sha256": "08a74edf2f1cd80b7067a2da1b7a1a23429d524274eccf25afc78ec0d76f7d4a",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent/leaf",
+          "recipient": "/root/resumption_probe_parent",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:09:23.598Z",
+          "source_line": 55,
+          "line_sha256": "8f3f72428f57898baaf73544737189f179e467105f2d25ffb18ec3bf5dcc9fe3",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_3fc77bef19c14b3fac6747e81fb8780a"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:23.650Z",
+          "source_line": 56,
+          "line_sha256": "23662e29b4721b2f5e0332500a00a0e23b5c1ea9fb3a18abc87615b16bdf57af",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73ce69108196b0fbfca423c28077",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 43804,
+            "cached_input_tokens": 43520,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 174,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 43978
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.796Z",
+          "source_line": 60,
+          "line_sha256": "26989c7f3a6d5e0b9991620c9dfdd803a861d4f4f044aa7750fe6c4bac237484",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "followup_task",
+          "call_id": "call_0254b6f3b07e4620a79e2eefd5b4e4da"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.905Z",
+          "source_line": 62,
+          "line_sha256": "ea205c40469f2ee23fdc5b51bab676cbdb794bf49bd8ad54a0663c712a664ec8",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73d4417c81969d7c5205488a68c4",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 44107,
+            "cached_input_tokens": 43648,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 85,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 44192
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:34.697Z",
+          "source_line": 65,
+          "line_sha256": "7b0c244b28fe84db496b4772a188db66cd3db862ff67670a0d434274d02afe58",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_9047d93c843c4251898ace5d0844f489"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:34.774Z",
+          "source_line": 66,
+          "line_sha256": "c0694ace9dd335db08e4761ee63f148fe249877a23345ff28654d7c320d8eb20",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73d82b348196804bf4c0bd52e550",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 44205,
+            "cached_input_tokens": 43904,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 143,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 44348
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:38.098Z",
+          "source_line": 72,
+          "line_sha256": "6bd9c46213253052358f9d49d128307083836f69e48f0e799974b5c064eee690",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace73df21148196bd67d25823b1ac60",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "usage": {
+            "input_tokens": 44469,
+            "cached_input_tokens": 44032,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 16,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 44485
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:38.107Z",
+          "source_line": 74,
+          "line_sha256": "97736f29e4a00b948bd56625dc71eb2c204ad02eb4d13366d48736c91f6102c1",
+          "kind": "event_msg",
+          "event": "task_complete",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "turn_attribution": null,
+          "last_agent_message": "IDLE_ARMED /root/resumption_probe_parent/leaf"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.098Z",
+          "source_line": 76,
+          "line_sha256": "ff4def4ed5bddf13a2d5375ac4d4bbac72285a6f17a3becaf382251f4db90703",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "turn_attribution": {
+            "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37",
+            "initiating_agent_path": "/root",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.149Z",
+          "source_line": 77,
+          "line_sha256": "bc9d51c23d560e445bc9bbd5a1d6895956070a57d7492684b0683e280efd464b",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.163Z",
+          "source_line": 78,
+          "line_sha256": "fbf6360311900ed78df7a052ef7d13ba4cf0a3d8a5c96aeadd70e65209a6474c",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": false
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.165Z",
+          "source_line": 79,
+          "line_sha256": "57733ded403eb2996e97742f6ea4d20b28f78c44193d0bdfcd5a5cb525fcda6d",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent/leaf",
+          "recipient": "/root/resumption_probe_parent",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.170Z",
+          "source_line": 80,
+          "line_sha256": "f465552b6a244bee7fd41ac622bd75058ba5eeeea100f222080869d75063edb7",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": true
+        },
+        {
+          "timestamp": "2026-10-13T18:11:41.170Z",
+          "source_line": 81,
+          "line_sha256": "64bf9573cc1ef46f974818a2078c905d485e4da9ecf7b867d38b768773e1ce72",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root",
+          "recipient": "/root/resumption_probe_parent",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:11:47.169Z",
+          "source_line": 82,
+          "line_sha256": "9135c12ef8c46b1238501117b0854b8d3ab0bdcae9230447a497bf0eeb229220",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_b025199acabb41538bb2c556f785ad01"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:47.226Z",
+          "source_line": 83,
+          "line_sha256": "67b512979366d78b76fffc0dcf11b4457b19e1fef359b0f5c2a867b1b70719e8",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace745e37e881969dcdec3eb897fa4c",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 44770,
+            "cached_input_tokens": 44288,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 156,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 44926
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.488Z",
+          "source_line": 87,
+          "line_sha256": "a55d74ef9992701e930a5f241d4e8c758127c5ace3d4c6c5d2d0ccda63c2768d",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "followup_task",
+          "call_id": "call_b4733906885545e3be0ce2a402f50840"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.600Z",
+          "source_line": 89,
+          "line_sha256": "f0ea1ea643b562e1aadcf1b244e2f6685d49cd9ff748e9cfe9869fb337b9523b",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace74639638819698070a69f6c60aa4",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 45058,
+            "cached_input_tokens": 44544,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 85,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 45143
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:00.886Z",
+          "source_line": 92,
+          "line_sha256": "68ffe5e61bc4ae2afc72ad5d456a46d79c94497e157ce5a0d1942f4b72043bfc",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_44282fdaf96145c69db0f5a862f888ed"
+        },
+        {
+          "timestamp": "2026-10-13T18:12:00.939Z",
+          "source_line": 93,
+          "line_sha256": "512f63de282fc3e830e1606b4b81464040f506c2f4f82e11618b37a53906ecc4",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace746cf6008196bdbc4ab14de30132",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 45156,
+            "cached_input_tokens": 44928,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 151,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 45307
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:05.494Z",
+          "source_line": 97,
+          "line_sha256": "56f7080ac533483025d8411a83f60ac907b340b51e08f313fe0a81e755e6b1a5",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "wait_agent",
+          "call_id": "call_c998515b57654e3ea8a047a4fa2f251d",
+          "arguments": "{\"timeout_ms\":3600000}"
+        },
+        {
+          "timestamp": "2026-10-13T18:12:05.571Z",
+          "source_line": 98,
+          "line_sha256": "9a7322024badefbc449bfaad879b3dd91d1078583c4946b3fbbd360616e82bd9",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace74721f1881968246d37883511bb1",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 45437,
+            "cached_input_tokens": 44928,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 22,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 45459
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:20.690Z",
+          "source_line": 101,
+          "line_sha256": "9b264a19d409dc1956ae2a197e0d94a21ca2026e0dd8cd3b74fbd6256fd0703f",
+          "kind": "response_item",
+          "event": "function_call_output",
+          "name": "wait_agent",
+          "call_id": "call_c998515b57654e3ea8a047a4fa2f251d",
+          "output": "{\"message\":\"Wait completed.\",\"timed_out\":false}"
+        },
+        {
+          "timestamp": "2026-10-13T18:12:20.695Z",
+          "source_line": 103,
+          "line_sha256": "35d773a2778799eebfce2b29d47d8b3ab06849226685dd0501526ea6838c0910",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": false
+        },
+        {
+          "timestamp": "2026-10-13T18:12:20.695Z",
+          "source_line": 104,
+          "line_sha256": "7d681841d94f55d2ae8a7e1435d44fa8a37ee526e9ee9394402a8b340dde52e9",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent/leaf",
+          "recipient": "/root/resumption_probe_parent",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:12:26.479Z",
+          "source_line": 105,
+          "line_sha256": "b0eeb5fe0f01daf2ebe71de22eb48f27f9a378ab8808216c0cd688665ade33b1",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_562741e060bb4427a227866829d22675"
+        },
+        {
+          "timestamp": "2026-10-13T18:12:26.800Z",
+          "source_line": 107,
+          "line_sha256": "27e5f22884a5b30d53891e3b5d7d1286fd1abcb1d49b97253d2b82d3b08b0b52",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace7485174c8196b7e7bb0195c7fa75",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 45537,
+            "cached_input_tokens": 45312,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 180,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 45717
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:37.102Z",
+          "source_line": 112,
+          "line_sha256": "b4916500849d33327555a08ad919518d5660544ed52d40d95580b99d68c2a249",
+          "kind": "token_usage_record",
+          "response_id": "resp_08879a63062848b8016ace748b711c8196b11216e64d58159a",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "usage": {
+            "input_tokens": 45853,
+            "cached_input_tokens": 45312,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 100,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 45953
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:37.111Z",
+          "source_line": 114,
+          "line_sha256": "51e23fb3b872ae2e86adf5d3a53bbc8d11da788de498a3a011c6e6799107afc7",
+          "kind": "event_msg",
+          "event": "task_complete",
+          "turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+          "turn_attribution": null,
+          "last_agent_message": "Explicit recovery delivered queued `IDLE_COMPLETE` as a separate leaf message; no automatic resumption observed.\n\n`wait_agent(timeout_ms=3600000)` was accepted and returned `timed_out=false`, delivering `MAX_WAIT_COMPLETE`. Logged interval: 25.583 seconds, including surrounding tool/model overhead.\n\nEvidence: [parent-events.jsonl](/home/bline/code/work-engine/metrics/experiments/parent-resumption-20261013/parent-events.jsonl)."
+        }
+      ]
+    },
+    {
+      "source_path": "/home/bline/.codex/sessions/2026/10/13/rollout-2026-10-13T12-08-12-01a13673-5b5f-77a0-9920-393a297757e1.jsonl",
+      "source_bytes": 475814,
+      "source_sha256": "c5fc345049192b4ca4a30eb3f22daaad7e3898d1f3257aad525f9bcb1357cad3",
+      "metadata": {
+        "id": "01a13673-5b5f-77a0-9920-393a297757e1",
+        "agent_path": "/root/resumption_probe_parent/leaf",
+        "parent_thread_id": "01a13672-db3c-75d0-b6ac-5961671f996e",
+        "cli_version": "0.162.1",
+        "timestamp": "2026-10-13T18:08:12.135Z"
+      },
+      "events": [
+        {
+          "timestamp": "2026-10-13T18:08:12.143Z",
+          "source_line": 3,
+          "line_sha256": "f1084661b899e831254ed4050d29fdf9e5e8f46279f06847bcd68116a9a85d92",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+          "turn_attribution": {
+            "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37",
+            "initiating_agent_path": "/root",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:12.144Z",
+          "source_line": 7,
+          "line_sha256": "7b18fc471f22c7ed203446cf9f8bcbbd0f478866b08d58f2a1c13e65d646fa44",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13672-db95-7872-9f64-2180e2fa877d"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:12.196Z",
+          "source_line": 11,
+          "line_sha256": "890e9700f4d551ac371cd6ba9236db43fe9e4c386b4178c1e88dd00fef14e3cc",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "turn_attribution": {
+            "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+            "initiating_agent_path": "/root/resumption_probe_parent",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:13.665Z",
+          "source_line": 14,
+          "line_sha256": "e579dbbc501bc89c88275117571f299ccb331ef448c9c1916d212913f873ff6c",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:14.076Z",
+          "source_line": 16,
+          "line_sha256": "e6840158a68cc6a33352e08f658512c4e09d32ca48f60aafb004192b5f7ccded",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": true
+        },
+        {
+          "timestamp": "2026-10-13T18:08:14.076Z",
+          "source_line": 17,
+          "line_sha256": "26cb258f4fb340c2b22da30188eaaf387f5badad4916692f6135e15f07fd4507",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent",
+          "recipient": "/root/resumption_probe_parent/leaf",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:08:23.600Z",
+          "source_line": 20,
+          "line_sha256": "084c755050c08c14ec05874147899a7b3b6b8585f319610dcaeb4007697e86ba",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_X7u1bJ5HQVu1G0W6UsDTcSD8"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:23.720Z",
+          "source_line": 24,
+          "line_sha256": "51fce6b737256c24b16e46f699701aa9cef468e55beb1771ff1fc2c81f0281e1",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace738f082c87d1a6a2faf2a53275b4",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 20572,
+            "cached_input_tokens": 17536,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 188,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 20760
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:31.272Z",
+          "source_line": 30,
+          "line_sha256": "d2802ed0bfcc5de52f3a9b3a6babb5973c0635128545098bb0feb8d35046955a",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_sI7Ugmho3a3FexVxTo4K8IAg"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:31.331Z",
+          "source_line": 31,
+          "line_sha256": "34b6a89fda16456367ff01b624e52cdf14e54ac13e46ba5552762a02c8343f5e",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace739816d887d18ecd35e145e30379",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 30978,
+            "cached_input_tokens": 20352,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 109,
+            "reasoning_output_tokens": 24,
+            "total_tokens": 31087
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:38.163Z",
+          "source_line": 35,
+          "line_sha256": "fb4cf72787815ff04e16209e2d5a094a5bc77fd5eadef50099bd00d765856069",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_ZCSwlvWcGuxaJfLIk4v8LlDD"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:38.220Z",
+          "source_line": 36,
+          "line_sha256": "a819137e62fcef4d2cb0f36405580331ecc53ab7635d26954d50d55168a75ac0",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace739f95d487d1872cbf3d9a4102ab",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 32557,
+            "cached_input_tokens": 30848,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 126,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 32683
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:45.448Z",
+          "source_line": 44,
+          "line_sha256": "20dc115f982d6fa9aa6be5431db510be25f15fff95a76d584fe9e0701839a500",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_u4hegxZYeOj10M0Z3TmUyZ7t"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:45.509Z",
+          "source_line": 45,
+          "line_sha256": "95ef29b8d33bc5cb66bd858383290fcf8534f4e208a97c02ff6f47eaa2c215aa",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73a6fe8c87d199f69c67f725a48a",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 40540,
+            "cached_input_tokens": 32384,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 173,
+            "reasoning_output_tokens": 20,
+            "total_tokens": 40713
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:08:49.968Z",
+          "source_line": 50,
+          "line_sha256": "b208c073c6b8b45f2e71a818be87b2923e42f05190c213985d284c12f8ffda57",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "sleep",
+          "call_id": "call_hDtwg1md8hjeLham00UhVIRA",
+          "arguments": "{\"duration_ms\":15000}"
+        },
+        {
+          "timestamp": "2026-10-13T18:08:50.086Z",
+          "source_line": 51,
+          "line_sha256": "1a1d9db766092cc001ced8befc308cca37d3920402bae105a4d9550674b4a5d3",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73ae159487d194bf4d1a94b1c0ea",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 47837,
+            "cached_input_tokens": 40320,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 19,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 47856
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:04.984Z",
+          "source_line": 53,
+          "line_sha256": "9df927194f9c0bf82600cdfcc538e1239c9fe4c6c19a67a0821f1e2250255e70",
+          "kind": "response_item",
+          "event": "function_call_output",
+          "name": "sleep",
+          "call_id": "call_hDtwg1md8hjeLham00UhVIRA",
+          "output": "Wall time: 15.0078 seconds\nSleep completed."
+        },
+        {
+          "timestamp": "2026-10-13T18:09:13.556Z",
+          "source_line": 55,
+          "line_sha256": "ccc46e52ca9446b2f0f3bd80166622d579d9cc23cceca8872f8a3e5126f7e836",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_Uwxo9be3dedsYNXXKPeaetCt"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:13.615Z",
+          "source_line": 56,
+          "line_sha256": "a4b0c260874cb2efe0d5816bfbd5adda6ad8f3ba4b8bf20ad80582a860147251",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73c13fa887d19b4443b9d5a1186b",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 47879,
+            "cached_input_tokens": 47616,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 127,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48006
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:18.032Z",
+          "source_line": 62,
+          "line_sha256": "8d773b3bd1b0c309264e919bc74244a7e9c64d8a0d68566f70f09a48419c173c",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73ca065c87d19e894ad269613e56",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "usage": {
+            "input_tokens": 48063,
+            "cached_input_tokens": 47744,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 6,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48069
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:18.041Z",
+          "source_line": 64,
+          "line_sha256": "6ea660fac5e27f666552f48c0560cdbc24a5c2059d65a5565123afe0222811f5",
+          "kind": "event_msg",
+          "event": "task_complete",
+          "turn_id": "01a13673-5b99-7e03-b6d7-15c649b0c820",
+          "turn_attribution": null,
+          "last_agent_message": "WAIT_COMPLETE"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.833Z",
+          "source_line": 65,
+          "line_sha256": "edb8da62c81ba57dd71193e19c30c05938483c350634b17050f66d199457f4d2",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+          "turn_attribution": {
+            "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13672-db95-7872-9f64-2180e2fa877d",
+            "initiating_agent_path": "/root/resumption_probe_parent",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.854Z",
+          "source_line": 66,
+          "line_sha256": "23816999bfcdc1ae19f5ddda63d2b86e528951e97aae9e418c8c6e43dd07d736",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.859Z",
+          "source_line": 67,
+          "line_sha256": "0cd1d55efc59988e109516b3ecfb11f856ccd164d46114d0f3fe7ef3f5c47861",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": true
+        },
+        {
+          "timestamp": "2026-10-13T18:09:27.859Z",
+          "source_line": 68,
+          "line_sha256": "34c6f04aad5bc798a4c431bac7f0310f5159326389f8eabec2808830b4883aee",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent",
+          "recipient": "/root/resumption_probe_parent/leaf",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:09:32.435Z",
+          "source_line": 71,
+          "line_sha256": "5ab399e3d9696713eada86254a0ab1a7452387a38f822f3116c5d4b553261fb1",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "sleep",
+          "call_id": "call_CR30qDgBfUyiJkNSRVNo4kX4",
+          "arguments": "{\"duration_ms\":30000}"
+        },
+        {
+          "timestamp": "2026-10-13T18:09:32.560Z",
+          "source_line": 72,
+          "line_sha256": "6ad90260b9fe17717b91a2d53d6e6f3343a524dc7192695e000e7b3519df413e",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73d8237c87d19b3accb834f2bf71",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+          "usage": {
+            "input_tokens": 48183,
+            "cached_input_tokens": 47872,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 37,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48220
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:10:02.449Z",
+          "source_line": 74,
+          "line_sha256": "e7911dfebd27092ba60f10f5c75b7f015ad2e308c09a077285fbdcc733f46cff",
+          "kind": "response_item",
+          "event": "function_call_output",
+          "name": "sleep",
+          "call_id": "call_CR30qDgBfUyiJkNSRVNo4kX4",
+          "output": "Wall time: 30.0065 seconds\nSleep completed."
+        },
+        {
+          "timestamp": "2026-10-13T18:10:08.865Z",
+          "source_line": 76,
+          "line_sha256": "2e91cb0166aa4f8dc502585be79052606e79473efb0102dd58ccd24d6c91c820",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_4jEsWDgKBrYdqnfZS47iJsDT"
+        },
+        {
+          "timestamp": "2026-10-13T18:10:08.918Z",
+          "source_line": 77,
+          "line_sha256": "819a0baba1530bafac395078488dba3163dc71f2867c2d67b6a0060049af5927",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace73faa9dc87d1ba131f0c5a922c0f",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+          "usage": {
+            "input_tokens": 48243,
+            "cached_input_tokens": 48000,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 128,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48371
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:10:11.889Z",
+          "source_line": 83,
+          "line_sha256": "3f71bad63f53a27699265f8a18917c1e0db2e2c89e988cd25a63a3e8cb33271a",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace74013a1087d197622ae392a4cb42",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+          "usage": {
+            "input_tokens": 48429,
+            "cached_input_tokens": 48128,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 7,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48436
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:10:11.901Z",
+          "source_line": 85,
+          "line_sha256": "75d546e854b286324b4fe51aad18772c86b30581adcceb3be43310766b184951",
+          "kind": "event_msg",
+          "event": "task_complete",
+          "turn_id": "01a13674-8310-7010-bda1-8f5c563869d4",
+          "turn_attribution": null,
+          "last_agent_message": "IDLE_COMPLETE"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.501Z",
+          "source_line": 86,
+          "line_sha256": "3852a27a3b2da5de4746651b0411163c95fb91715e4b70f9313305a031469f49",
+          "kind": "event_msg",
+          "event": "task_started",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+          "turn_attribution": {
+            "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+            "turn_trigger": "user",
+            "parent_turn_id": "01a13676-8b94-7011-a8b8-c2c1562eafae",
+            "initiating_agent_path": "/root/resumption_probe_parent",
+            "root_turn_id": "01a13671-10cb-7a43-a106-158315b9bb37"
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.520Z",
+          "source_line": 87,
+          "line_sha256": "7ae074336918d5fd98f7a470c339126f1fe62ce22045fd220c5244f9b167caa5",
+          "kind": "turn_context",
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.524Z",
+          "source_line": 88,
+          "line_sha256": "6079ac9fff205559e8e68f3e9b46c4cd2f4ca122e22e43d25b814b39e4a04d76",
+          "kind": "inter_agent_communication_metadata",
+          "trigger_turn": true
+        },
+        {
+          "timestamp": "2026-10-13T18:11:56.524Z",
+          "source_line": 89,
+          "line_sha256": "75a94a09a3d608fbf655e0d6e4060a48874b083f4c03fd8a9587a93941786c3e",
+          "kind": "response_item",
+          "event": "agent_message",
+          "author": "/root/resumption_probe_parent",
+          "recipient": "/root/resumption_probe_parent/leaf",
+          "content_copied": false
+        },
+        {
+          "timestamp": "2026-10-13T18:11:59.155Z",
+          "source_line": 92,
+          "line_sha256": "d9bc5c5b4cccd5d09ed791630247b28cd09b48efc727ba6ba20e22de5d000733",
+          "kind": "response_item",
+          "event": "function_call",
+          "name": "sleep",
+          "call_id": "call_KDfq68h2hDdtm0v0mTLXzL1z",
+          "arguments": "{\"duration_ms\":10000}"
+        },
+        {
+          "timestamp": "2026-10-13T18:11:59.200Z",
+          "source_line": 93,
+          "line_sha256": "2ec82116e68729a80bd2b585a2fbaf6c5040a216dca1e365f0ffb8ddf23999f9",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace746ccb7887d1b11ede2d3d46523e",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+          "usage": {
+            "input_tokens": 48550,
+            "cached_input_tokens": 48256,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 39,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48589
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:09.174Z",
+          "source_line": 95,
+          "line_sha256": "6f897e5d99a854da94fdf45abf5640fcb78a213df8b2e16b41ae1727b903e2e5",
+          "kind": "response_item",
+          "event": "function_call_output",
+          "name": "sleep",
+          "call_id": "call_KDfq68h2hDdtm0v0mTLXzL1z",
+          "output": "Wall time: 10.0089 seconds\nSleep completed."
+        },
+        {
+          "timestamp": "2026-10-13T18:12:17.777Z",
+          "source_line": 97,
+          "line_sha256": "147237b37bdf1f98056d7ff976d829df0e1983d9a565f0e0873eac73ef36dc74",
+          "kind": "response_item",
+          "event": "custom_tool_call",
+          "name": "exec",
+          "call_id": "call_pkQbwzwTg4ziFwRYiAyOLTtx"
+        },
+        {
+          "timestamp": "2026-10-13T18:12:17.972Z",
+          "source_line": 98,
+          "line_sha256": "ad5a5bdaa7d067f58988ac0e8232470a8e0faa663a53a73e85c9bbcfbd29bfe9",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace747a803087d19e06268eb9e4c01e",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+          "usage": {
+            "input_tokens": 48612,
+            "cached_input_tokens": 48384,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 129,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48741
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:20.669Z",
+          "source_line": 104,
+          "line_sha256": "0f20d3adb058400b03b49222f35f1e8f0b47e81e509979c564ec8ba1aa71cfe0",
+          "kind": "token_usage_record",
+          "response_id": "resp_0977400d230de5a6016ace748243e087d198f04ca9622a2972",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+          "usage": {
+            "input_tokens": 48796,
+            "cached_input_tokens": 48384,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 7,
+            "reasoning_output_tokens": 0,
+            "total_tokens": 48803
+          }
+        },
+        {
+          "timestamp": "2026-10-13T18:12:20.680Z",
+          "source_line": 106,
+          "line_sha256": "27edd315e6e99477f5fc0b435718d1d5853e8b425bb1630aff9fd18e1006f576",
+          "kind": "event_msg",
+          "event": "task_complete",
+          "turn_id": "01a13676-c7cd-7c93-b06f-eb8bf1720199",
+          "turn_attribution": null,
+          "last_agent_message": "MAX_WAIT_COMPLETE"
+        }
+      ]
+    }
+  ]
+}

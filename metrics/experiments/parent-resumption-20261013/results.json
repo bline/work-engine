@@ -1,0 +1,49 @@
+{
+  "waits": [
+    {
+      "timeout_ms": 60000,
+      "call_at": "2026-10-13T18:08:22.874Z",
+      "returned_at": "2026-10-13T18:09:18.049Z",
+      "elapsed_seconds": 55.175,
+      "terminal_to_return_ms": 8.0,
+      "return": {
+        "message": "Wait completed.",
+        "timed_out": false
+      },
+      "dispatch_usage_records": 1,
+      "dispatch_usage": {
+        "input_tokens": 43706,
+        "cached_input_tokens": 43264,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 21,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 43727
+      }
+    },
+    {
+      "timeout_ms": 3600000,
+      "call_at": "2026-10-13T18:12:05.494Z",
+      "returned_at": "2026-10-13T18:12:20.690Z",
+      "elapsed_seconds": 15.196,
+      "terminal_to_return_ms": 10.0,
+      "return": {
+        "message": "Wait completed.",
+        "timed_out": false
+      },
+      "dispatch_usage_records": 1,
+      "dispatch_usage": {
+        "input_tokens": 45437,
+        "cached_input_tokens": 44928,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 22,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 45459
+      }
+    }
+  ],
+  "idle_observation_seconds_after_child_terminal": 78.667742,
+  "idle_parent_event_count_after_child_terminal": 0,
+  "provenance_hash_checks": "passed",
+  "guidance_and_frozen_baseline_hashes": "unchanged",
+  "limitations": "One sample per treatment; nested parent, bounded absence of continuation; no quota benchmark."
+}

@@ -1,0 +1,6 @@
+{
+  "observed_at": "2026-10-13T18:11:30.568742+00:00",
+  "method": "collaboration.list_agents path_prefix /root/resumption_probe_parent",
+  "parent_completed": "IDLE_ARMED /root/resumption_probe_parent/leaf",
+  "leaf_completed": "IDLE_COMPLETE"
+}

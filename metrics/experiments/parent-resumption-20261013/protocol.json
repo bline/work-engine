@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-10-13T18:07:18.315136+00:00",
+  "objective": "Test native collaboration wait and idle-parent completion before implementation",
+  "root_session": "01a1366f-44ff-73f3-9d3b-858d18782d47",
+  "session_cli_version": "0.162.1",
+  "path_cli_version": "0.160.1",
+  "tests": [
+    {
+      "id": "wait",
+      "procedure": "Parent spawns leaf, requests 60000ms wait; leaf finishes after a controlled delay; measure early release and result collection."
+    },
+    {
+      "id": "idle",
+      "procedure": "Parent starts delayed leaf then ends turn; root observes completion and parent state without messaging parent for at least 60 seconds after leaf terminal; explicit followup then tests queued result delivery."
+    }
+  ],
+  "limitations": [
+    "Nested parent is a proxy, not a top-level ended user turn.",
+    "One trial each initially; not a quota benchmark.",
+    "Do not infer zero inference from missing usage telemetry."
+  ],
+  "authority": "Bounded experiment and evidence artifacts only; do not edit guidance or runtime",
+  "baseline_sha256": {
+    "docs/codex-orchestration-brief.md": "028637a09f761bbdd2ba09dff36148171e91da969a67f40b40c6614ada96a658",
+    "metrics/baselines/pure-codex-20261009/baseline.json": "20628bcb08326707618775c433802fdb4f44cbbc90815b892f8b1f40a062b1d1"
+  }
+}

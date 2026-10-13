@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-10-13T18:11:55.839599+00:00",
+  "reason": "Initial wait 60s proved release, idle failure observed; test declared maximum timeout acceptance and prompt release with warmed leaf.",
+  "test": {
+    "id": "max_wait",
+    "timeout_ms": 3600000,
+    "leaf_sleep_ms": 10000,
+    "claim": "Ceiling accepted; completion releases before timeout. Not a one-hour endurance or cancellation test."
+  },
+  "intervention": "Root explicit followup to resume experimental parent only after >=60s terminal observation."
+}

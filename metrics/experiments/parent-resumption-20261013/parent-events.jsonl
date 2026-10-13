@@ -1,0 +1,6 @@
+{"timestamp": "2026-10-13T18:08:20.735280+00:00", "event": "before_wait", "monotonic": 271715.799428933, "timeout_ms": 60000, "leaf": "/root/resumption_probe_parent/leaf"}
+{"timestamp": "2026-10-13T18:09:23.670737+00:00", "event": "wait_return", "elapsed_seconds": 62.93545042799087, "result": {"message": "Wait completed.", "timed_out": false}, "received_token": "WAIT_COMPLETE"}
+{"timestamp": "2026-10-13T18:09:34.777117+00:00", "event": "idle_dispatch", "leaf": "/root/resumption_probe_parent/leaf", "delay_ms": 30000, "intended_next_action": "end_turn"}
+{"timestamp": "2026-10-13T18:11:47.260381+00:00", "event": "explicit_recovery", "queued_idle_complete_present": true, "received_token": "IDLE_COMPLETE", "token_source": "separate leaf FINAL_ANSWER preceding root NEW_TASK in resumed context", "automatic_resume_observed": false}
+{"timestamp": "2026-10-13T18:12:00.963871+00:00", "event": "before_wait", "phase": "max_wait", "monotonic": 271936.028036493, "timeout_ms": 3600000, "leaf": "/root/resumption_probe_parent/leaf"}
+{"timestamp": "2026-10-13T18:12:26.546530+00:00", "event": "wait_return", "phase": "max_wait", "elapsed_seconds": 25.58263173798332, "result": {"message": "Wait completed.", "timed_out": false}, "received_token": "MAX_WAIT_COMPLETE"}
