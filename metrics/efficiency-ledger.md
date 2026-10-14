@@ -30,7 +30,7 @@ their full path under `metrics/scripts/`.
 | M2 | `wait_agent` calls that timed out | 1,097 of 2,080 waits (mostly 30–60 s) | 7 of 29 on one supervisor, 0 of 70 on the other; longest wait requested 60 s → 3,600 s | `metrics/scripts/supervision_profile.py` |
 | M3 | Root orchestrator share of spend | 23% | 18.4% of 1,012 units (2026-10-12 to 10-13) | `scripts/report.py`, `metrics/scripts/supervision_profile.py` |
 | M4 | Cached-context re-send share of spend (estimated) | ~73% | 52–71% of weighted cost per call (9 sessions, 10-07 to 10-13) | `scripts/drill.py`, `metrics/scripts/cost_decomposition.py` |
-| M5 | Full doctrine reads per session | DESIGN 1.5, PHILOSOPHY 1.7 (167 / 186 over 112 sessions) | — | `scripts/reread.py` |
+| M5 | Full doctrine reads per session | DESIGN 1.5, PHILOSOPHY 1.7 (167 / 186 over 112 sessions) | 4.9 whole-document reads per 100 model calls (45 over 914 calls, 6 sessions, 2026-10-13 22:55Z on), against 3.3 before: DESIGN 19, PHILOSOPHY 12, brief 14 | `scripts/reread.py` |
 | M6 | Redundant within-session re-reads, share of spend | ~4.2% (+1.6% re-read-only calls) | — | `scripts/reread.py` |
 | M7 | Re-reading after compaction, share of spend | ~4% | — | `scripts/reread.py` |
 | M8 | Average context per call | root ~144K, sub-agent ~126K tokens | 76–140K across 10 sessions (10-11 to 10-13) | `scripts/drill.py`, `metrics/scripts/session_profile.py` |
@@ -41,7 +41,7 @@ their full path under `metrics/scripts/`.
 | M13 | Startup chatboard read size | ~107 KB, oldest 100 of 1,503 messages | 19.5 KB, newest 20 (2026-10-09) | `codex_chatboard.py read` |
 | **M14** | **Estimated Plus-units per accepted slice** (primary outcome) | lifecycle S4 150, S5 212, S6/S7 368 (joint), S0–S3 355 (four slices); orchestration adds ~25% on top | — | `scripts/report.py` per-slice table |
 | M15 | Codebase Memory coverage observations recommending source fallback | 652 of 3,480 (19%), including 195 `metadata_changed` (2026-10-04 to 10-08) | 47 of 792 (6%), all unindexed files, 0 `metadata_changed` | `metrics/scripts/coverage_outcomes.py` |
-| M16 | Tool output discarded by harness truncation before the model reads it | not measured | 123 truncations, ~1.40M tokens, 44 of 110 payloads codebase-memory results | `metrics/scripts/output_truncation.py` |
+| M16 | Tool output discarded by harness truncation before the model reads it | not measured | 4.0 truncations per 100 model calls (36 over 903, 2026-10-13 22:55Z on), against 3.1 before; **33 of 33 truncated calls had set an explicit `max_output_tokens`** | `metrics/scripts/output_truncation.py` |
 
 **M11 denominator.** Each independent review finding or contract/route revision
 in S4–S8 counted once; later candidate attempts, bundled multi-change revisions,
@@ -109,9 +109,9 @@ did not operate.
 | Doc↔code claim projection in Codebase Memory (`sync_projection`); evidence-anchor impact nomination | M11, M6 | code changes nominate dependent claims and documents, and the reverse | nominations raised for changed anchors | proposal meaning approved, placement probable, not implemented | `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/` |
 | Coherent, content-verified index observation in Codebase Memory (upstream snapshot-coherence fixes, local publication 2026-10-11) | M15, M6, M8 | agents rely on the graph instead of re-reading source to establish freshness | share of coverage observations recommending source fallback; `content_verified` and `generation_matches` present and true | shipped locally, adopted, M15 measured; cost effect not isolated | upstream `#2585`, PRs `#2600`–`#2613`, `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/` |
 | Bounded Codebase Memory requests (output budget, limit, field and path selection, narrow `edge_types`), batched only up to what fits | M16, M6 | graph evidence reaches the model instead of being truncated away, without spending extra calls on paging | truncation events whose lost payload was a codebase-memory result; requests carrying an explicit output budget | recorded in the orchestration brief 2026-10-13, unmeasured | `docs/codex-orchestration-brief.md` |
-| Status-probe discipline: no polling, `list_agents` only for a concrete coordination question that the wait result, messages and assignment record cannot answer | M1, M3 | removes the residue the long-wait lever left behind, about a third of remaining wait-only calls | `list_agents` calls per dispatch, and whether each one names the decision that needed it | recorded 2026-10-13 (`25a5164`), pre-change value measured, not yet tested | `docs/codex-orchestration-brief.md` |
-| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | recorded 2026-10-13 (`25a5164`), pre-change value measured, not yet tested | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
-| Durable assignment record as the deterministic roster: owners, expected deliverables and received results updated on real events | M1, M3 | roster maintenance stops consuming inference; judgment about results stays with the supervisor | assignment record updated on assignment, message, completion and handoff, with `list_agents` not used to rediscover unchanged state | recorded 2026-10-13 (`25a5164`), not yet tested | `docs/codex-orchestration-brief.md`, `skills/durable-state/` |
+| Status-probe discipline: no polling, `list_agents` only for a concrete coordination question that the wait result, messages and assignment record cannot answer | M1, M3 | removes the residue the long-wait lever left behind, about a third of remaining wait-only calls | `list_agents` calls per dispatch, and whether each one names the decision that needed it | **adopted, no saving measured** (2026-10-13 22:55Z on): probes 0.39 → 0.04 per dispatch, `list_agents` 39 of 828 calls → 1 of 208, `sleep` and `wait` to zero; units per dispatch 1.26 → 1.29 and wait-only share 17.2% → 18.1%, both flat | `docs/codex-orchestration-brief.md` |
+| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not adopted**: mean context 166K → 168K, peak 238K → 237K of a 258K window, so the 155K trigger was crossed again and no handoff was performed | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
+| Durable assignment record as the deterministic roster: owners, expected deliverables and received results updated on real events | M1, M3 | roster maintenance stops consuming inference; judgment about results stays with the supervisor | assignment record updated on assignment, message, completion and handoff, with `list_agents` not used to rediscover unchanged state | **adopted**: board messages naming a collector or resumer rose from 19 of 344 (6%) to 13 of 56 (23%), and two post-revision claims carry "Root collects" in the claim note | `docs/codex-orchestration-brief.md`, `skills/durable-state/` |
 | Plan IR and execution-strategy model routing | M12, M14 | ~6 points from routing, ~2 from compression (central estimate) | routed attempts by model and effort | hypothesis, pilot planned | Plan IR idea §13, §20 |
 
 Central estimates come from the scenario model recorded with the baseline
@@ -132,6 +132,8 @@ overlap.
 | 2026-10-12 | Same window, 9 sessions with per-call usage | M4, M8, cost model | 0.10–0.20 Plus-units per model call; cached re-send 52–71% of weighted cost | see Cost structure. The two new reviews cost 3.4 and 8.4 units over 24 and 54 exec calls. The full cohort of 22 reviewer sessions from 10-07 to 10-08 spans 1.3–24.1 units over 10–95 calls, so the new values sit **inside** the earlier range: against the whole cohort rather than a few large contract reviews, this window shows no cost effect at all, in either direction. It is also confounded — those sessions ran at **xhigh** and reviewed contracts rather than causal behavior |
 | 2026-10-12 | Same 10 sessions | M16 | 123 truncations across 110 tool results, ~1.40M tokens discarded; 44 of those 110 results were codebase-memory output | `h0_astra_implementation` lost every coverage result it took (13.9K and 23.0K token payloads), so it contributes no M15 observations despite 14 coverage calls. Verified evidence cannot help a session that never receives it |
 | 2026-10-13 | Root `01a1150c` compared with itself, 2026-10-05 to 10-09 against 2026-10-12 to 10-13, plus root `01a1294e` and 15 workers and reviewers in the current window | M1, M2, M3 | supervisor units per dispatch 1.82 → 1.21; waits per dispatch 3.34 → 1.04; messages per dispatch 3.13 → 0.21; timeouts 38% → 24%, and 0 of 70 on the second supervisor | full table and caveats in Supervision below. The long-wait and consequential-message levers are adopted; root handoff is not. Task mix differs between the windows and the current one was still running |
+
+| 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 01:13Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 4.0 per 100 calls with 33 of 33 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it |
 
 | 2026-10-13 | Pre-change values for the `25a5164` brief revision, supervisor `01a1294e` over 2026-10-12 to 10-13 | M8, M1 | peak context **238K of a 258K window**, mean 166K, so the 155K handoff trigger was crossed and never acted on; status probes 0.39 per dispatch; `turn_trigger` was `user` for **172 of 172** turns | taken before the sessions that will exercise the revision, so the comparison is pre-registered rather than reconstructed. No turn in the window was started by a child completion, which is the upstream behavior of #46120 stated in the harness's own attribution field |
 
@@ -189,6 +191,70 @@ performed and counts all coordination. The values here count only calls whose
 every tool call was waiting or status probing, measured by one script on both
 sides of the comparison. Read 19.7% → 18.3% as internally valid and 31–32% as a
 different question. The current window was also still running when measured.
+
+## Supervision after the `25a5164` revision, 2026-10-13 22:55Z to 10-14 01:13Z
+
+Supervisor `01a1294e` re-read the revised brief at 22:55:34Z, 32 seconds after
+the commit, so the window after that timestamp is a genuine post-exposure
+window for it and the comparison below is the same supervisor against itself.
+The window boundary is a timestamp, not a date: `FROM`/`TO` are ISO-8601
+prefixes of any length, and the revision landed mid-day (local 16:55 MDT is
+22:55Z).
+
+| Supervisor `01a1294e` | Before, 10-12 to 10-13 22:54Z | After, 22:55Z to 01:13Z |
+|---|---|---|
+| model calls | 828 | 208 |
+| dispatches | 114 | 27 |
+| Plus-units per dispatch | 1.26 | 1.29 |
+| **status probes per dispatch** | 0.39 | **0.04** |
+| `list_agents` / `sleep` / `wait` calls | 39 / 5 / 1 | **1 / 0 / 0** |
+| waits per dispatch | 0.65 | 1.52 |
+| `wait_agent` timeouts | 0 of 74 | 0 of 40 |
+| wait requested, every call | 3,600 s | 3,600 s |
+| median wait held open | 72.5 s | 55.1 s |
+| wait-only calls per dispatch | 1.04 | 1.63 |
+| wait-only share of its spend | 17.2% | 18.1% |
+| context per call, mean / peak | 166K / 238K | 168K / 237K |
+| turn triggers | `user` 172 of 172 | `user` 11 of 11 |
+
+**Status-probe discipline was adopted completely and saved nothing measurable.**
+Polling went to almost zero — one `list_agents` call in 208, issued to confirm a
+just-spawned child was running — yet units per dispatch (1.26 → 1.29) and the
+wait-only share of this supervisor's spend (17.2% → 18.1%) did not move. The
+probes were not where the money was. Wait-only cost is dominated by the waiting
+call itself, which pays the full 168K standing-context charge to learn one
+completion, and that call is not optional under the current design.
+
+**Waits per dispatch rose, and the metric is the problem, not the behaviour.**
+`wait_agent` returns on one completion, so a supervisor holding three children
+needs three waits regardless of discipline. The after window is five times more
+dispatch-intense (one dispatch per 5.1 minutes against one per 24.7) with more
+children in flight, which raises waits per dispatch mechanically. Read waits per
+*completion collected*, which is ~1.0 by construction, and drop waits per
+dispatch as a quality measure; keep units per dispatch and the probe and timeout
+rates. The supervisor was blocked in a wait for 84 of the window's 138 minutes,
+which is the intended behaviour: every one of the 40 waits requested the 3,600 s
+ceiling and none expired. Two returned in under two seconds, collecting a result
+that had already arrived.
+
+**Bounded requests are being set and are still truncating.** Truncation did not
+fall: 4.0 events per 100 model calls against 3.1 before, 0.43M tokens discarded
+in 2.3 hours, 21 of 36 of them codebase-memory results. Every one of the 33
+truncated calls whose body was recoverable **had set an explicit
+`max_output_tokens`**. The guidance is being followed literally and does not
+work, because a limit is a truncation point rather than a budget: `cat DESIGN.md`
+with `max_output_tokens: 15000` loses the tail just as surely as no limit at
+all. One session sized the request first with `wc -l` and truncated anyway. The
+brief's wording needs the request sized to the limit — line ranges, outlines,
+`detail: ids` — not the limit attached to whatever request was already intended.
+
+**The documents being truncated are mostly ones already read.** Whole-document
+doctrine reads ran at 4.9 per 100 model calls, up from 3.3: DESIGN.md 19 times,
+PHILOSOPHY.md 12, the brief 14, across six sessions in 2.3 hours, with one
+supervisor reading the brief three times inside eleven seconds. At ~10K, ~9K and
+~3K tokens that is ~340K tokens of new input, ~2.7 units or 2% of the window's
+133.6, before the cached re-send tail that every later call in those sessions
+pays. This is M5 and M6 reappearing in a window where they were not the subject.
 
 **The claim these measurements test.** An agent should not spend inference to
 discover what its execution environment already knows. Both measured residues

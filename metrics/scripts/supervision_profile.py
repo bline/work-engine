@@ -10,7 +10,10 @@ Usage: python3 -I supervision_profile.py ~/.codex/sessions/2026/10/13/rollout-*.
 FROM/TO bound the calls counted by their entry timestamp, which is what makes a
 long-lived root comparable with itself across two eras: the supervising roots in
 this repository run for days, so a whole-file total mixes eras and answers
-nothing.
+nothing. They are ISO-8601 prefixes of any length and are compared against the
+same prefix of each entry, so FROM=2026-10-13T22:55 bounds an era that began
+mid-day, which a date-granularity window cannot express. Entry timestamps are
+UTC; a change landed at local 16:55 MDT is 22:55Z.
 
 Waiting is read from paired call/output entries: wait_agent's requested
 timeout_ms comes from the call, and whether it expired comes from the output's
@@ -33,6 +36,9 @@ import json, sys, os, collections
 
 FROM = os.environ.get("FROM", "0000-00-00")
 TO = os.environ.get("TO", "9999-99-99")
+
+def inwin(stamp):
+    return FROM <= stamp[:len(FROM)] and stamp[:len(TO)] <= TO
 
 COEF = 7.826/1e6
 WAITY = {"wait_agent", "wait", "sleep", "list_agents", "request_user_input_async"}
@@ -59,10 +65,10 @@ def scan(f):
         except Exception: continue
         p = o.get("payload") or {}
         t = p.get("type")
-        stamp = (o.get("timestamp") or "")[:10]
+        stamp = o.get("timestamp") or ""
         if t in ("function_call", "custom_tool_call"):
             nm = p.get("name")
-            if FROM <= stamp <= TO: names[nm] += 1
+            if inwin(stamp): names[nm] += 1
             pending.append(nm)
             calls[p.get("call_id")] = (nm, p.get("input") or p.get("arguments") or "")
             continue
@@ -75,16 +81,16 @@ def scan(f):
                 if isinstance(out, str):
                     try: out = json.loads(out)
                     except Exception: out = {}
-                if FROM <= stamp <= TO:
+                if inwin(stamp):
                     waits.append((req, bool((out or {}).get("timed_out"))))
             continue
         if t == "task_started":
-            if FROM <= stamp <= TO:
+            if inwin(stamp):
                 triggers[(p.get("turn_attribution") or {}).get("turn_trigger") or "?"] += 1
                 window = max(window, p.get("model_context_window") or 0)
             continue
         if t != "token_count": continue
-        if not (FROM <= stamp <= TO):
+        if not inwin(stamp):
             pending = []
             continue
         l = ((p.get("info") or {}).get("last_token_usage")) or {}

@@ -140,6 +140,19 @@ and `paths` holding the files actually cited rather than every file touched.
 Printing a tool's own schema or echoing a whole response consumes the same
 budget as evidence and establishes nothing.
 
+**Setting a limit is not sizing a request.** In the 2.3 hours after this
+guidance was recorded, every one of 33 truncated calls had already set an
+explicit `max_output_tokens`, and truncation per model call did not fall. A
+limit is the point at which output is cut, so `cat DESIGN.md` under a 15,000
+token limit loses the tail exactly as it would with no limit. Size the request
+to the budget — a line range, an outline, a path list, `detail: ids` — and set
+the limit as the guard against being wrong about the size, not as the plan.
+Checking the size first with `wc -l` is worth doing and is not sufficient on its
+own; one session did that and truncated anyway. A document already read in this
+session needs no re-read at all: whole-document re-reads of DESIGN.md,
+PHILOSOPHY.md and this brief ran at 4.9 per 100 model calls in the same window,
+about 340K tokens of input for text the session had already received.
+
 Keep traversals narrow for the same reason. `detect_changes` already defaults
 `edge_types` to `CALLS`; widening it to `MENTIONS` to pick up documentation adds
 2,544 edges in this repository, 80% of which land on `File` nodes rather than
