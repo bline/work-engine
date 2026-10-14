@@ -111,15 +111,26 @@ units each against 0.116 below. So the two lever families are: remove a call, or
 lower what every call carries.
 
 **What a context window actually costs, and why the trigger alone is worth
-nothing.** A compaction is not a reset to zero. Reading the supervisor's
-2026-10-13 23:43:17Z compaction: a 237K window was replaced by a `retained_context`
-of 7,611 bytes (~2K tokens, holding `verified_answers`, `incomplete`,
-`user_messages`, `assistant_messages`), discarding 131K tokens of
-`replacement_history` and 85K of `guardian_history`. The next call nonetheless
-opened at **80K** — system prompt, `AGENTS.md`, tool schemas and re-sent
-messages — and cost **0.536 units**, four times a normal call, because none of
-it was cached yet. The following thirteen calls climbed 80K → 116K reloading
-doctrine. **One compaction cycle costs about 2 units and leaves a 116K floor.**
+nothing.** These sessions do not use native compaction:
+`~/.codex/supervisor.config.toml` sets `model_auto_compact_token_limit =
+16000000` and enables `[features.token_budget]`, so the window is emptied rather
+than summarized. The emptying is nonetheless not a reset to zero. Reading the
+supervisor's 2026-10-13 23:43:17Z replacement: a 237K window was replaced by a
+`retained_context` of 7,611 bytes, discarding 131K tokens of
+`replacement_history` and 85K of `guardian_history`. The next call opened at
+**80K** — system prompt, `AGENTS.md`, tool schemas and re-sent messages — and
+cost **0.536 units**, four times a normal call, because none of it was cached
+yet. The following thirteen calls climbed 80K → 116K reloading doctrine. **One
+replacement cycle costs about 2 units and leaves a 116K floor.**
+
+Two details about the retention. On root `01a088a4`, `retained_context` was
+**117 bytes** for windows 42 through 61 — blank, which is the designed
+behaviour — and became 10,300, 10,912, 15,070 and 14,294 bytes from window 62
+(2026-10-05) onward. Whatever changed then, the current regime retains ~2–4K
+tokens rather than nothing, and that is worth knowing for a design that assumes
+nothing. Second, **every replacement observed fires at the ceiling**: 208–244K
+across 65 windows on `01a088a4` and 216–238K across 11 on `01a1294e`. None was
+taken at a chosen boundary.
 
 That makes the arithmetic of a lower handoff trigger unfavourable on its own.
 Projecting the supervisor's 423 calls and 67.7 units onto the band curve above:
@@ -146,8 +157,8 @@ anything, so the comparison is pre-registered rather than reconstructed.
 | first call after replacement | **0.536 units**, ~4× a normal call, nothing cached | T30 cache accounting; rehydration cost |
 | one replacement cycle | **~2 Plus-units** | T30 conditional payback per replacement |
 | cost per call by context | **0.087 u at 65K → 0.272 at 230K** | threshold choice; the curve the controller optimizes on |
-| involuntary replacement interval | **42–80 min, median 50** | M4 retained-workflow scenario realism |
-| harness-chosen retention | **7,611 bytes kept**, 131K `replacement_history` + 85K `guardian_history` discarded | T13 semantic-preservation corpus: the control case is what the harness loses |
+| ceiling-driven replacement interval | **42–80 min, median 50**, all at 208–244K | M4 retained-workflow scenario realism |
+| retention across a replacement | **117 bytes** (windows 42–61) rising to **7,611–15,070 bytes** (window 62 on), against 131K `replacement_history` + 85K `guardian_history` discarded | T13 semantic-preservation corpus: the control case is what a blanked window loses |
 | rediscovery before productive work | **5 doctrine calls, ~36K tokens, 18 s** | "time until productive work resumes"; rediscovery cost |
 | completion-started turns | **0 of 172** (`turn_trigger` always `user`) | S8 plan's "waiting alone does not trigger replacement": the native baseline it is written against |
 
@@ -211,7 +222,7 @@ did not operate.
 | Coherent, content-verified index observation in Codebase Memory (upstream snapshot-coherence fixes, local publication 2026-10-11) | M15, M6, M8 | agents rely on the graph instead of re-reading source to establish freshness | share of coverage observations recommending source fallback; `content_verified` and `generation_matches` present and true | shipped locally, adopted, M15 measured; cost effect not isolated | upstream `#2585`, PRs `#2600`–`#2613`, `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/` |
 | Bounded Codebase Memory requests (output budget, limit, field and path selection, narrow `edge_types`), batched only up to what fits | M16, M6 | graph evidence reaches the model instead of being truncated away, without spending extra calls on paging | truncation events whose lost payload was a codebase-memory result; requests carrying an explicit output budget | recorded in the orchestration brief 2026-10-13, unmeasured | `docs/codex-orchestration-brief.md` |
 | Status-probe discipline: no polling, `list_agents` only for a concrete coordination question that the wait result, messages and assignment record cannot answer | M1, M3 | removes the residue the long-wait lever left behind, about a third of remaining wait-only calls | `list_agents` calls per dispatch, and whether each one names the decision that needed it | **adopted, no saving measured** (2026-10-13 22:55Z on): probes 0.39 → 0.04 per dispatch, `list_agents` 39 of 828 calls → 1 of 208, `sleep` and `wait` to zero; units per dispatch 1.26 → 1.29 and wait-only share 17.2% → 18.1%, both flat | `docs/codex-orchestration-brief.md` |
-| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not adopted**: mean context 166K → 168K, peak 238K → 237K of a 258K window, so the 155K trigger was crossed again and no handoff was performed | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
+| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not actuable in these sessions**: no `new_context` tool appears in any measured session's tool list (`exec`, `spawn_agent`, `wait_agent`, `followup_task`, `send_message`, `list_agents`, `sleep`, `wait`, `request_user_input_async`, `interrupt_agent`), and all 76 observed window replacements fired at a 208–244K ceiling rather than a boundary. Mean context 166K → 168K, peak 238K → 237K. This is a missing capability in the session's tool set, not guidance that was ignored | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
 | Durable assignment record as the deterministic roster: owners, expected deliverables and received results updated on real events | M1, M3 | roster maintenance stops consuming inference; judgment about results stays with the supervisor | assignment record updated on assignment, message, completion and handoff, with `list_agents` not used to rediscover unchanged state | **adopted**: board messages naming a collector or resumer rose from 19 of 344 (6%) to 13 of 56 (23%), and two post-revision claims carry "Root collects" in the claim note | `docs/codex-orchestration-brief.md`, `skills/durable-state/` |
 | Batched evidence collection: independent checks in one cell, `skills/evidence-battery/` as the declared form, re-verification by digest comparison instead of restating evidence | M17, M18, M19, M14 | removes a subset of calls outright; ~20 of the 338 units in the 2026-10-13 round, from 211 small read-only checks and 24 exact repeats | tool invocations per call and output budget per call; share of hash or verify calls recomputing a path set an earlier call established | shipped 2026-10-14, starting values pre-registered, untested | `skills/evidence-battery/`, `docs/codex-orchestration-brief.md` |
 | Plan IR and execution-strategy model routing | M12, M14 | ~6 points from routing, ~2 from compression (central estimate) | routed attempts by model and effort | hypothesis, pilot planned | Plan IR idea §13, §20 |
