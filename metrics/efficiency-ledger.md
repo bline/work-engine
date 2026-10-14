@@ -41,6 +41,9 @@ their full path under `metrics/scripts/`.
 | M13 | Startup chatboard read size | ~107 KB, oldest 100 of 1,503 messages | 19.5 KB, newest 20 (2026-10-09) | `codex_chatboard.py read` |
 | **M14** | **Estimated Plus-units per accepted slice** (primary outcome) | lifecycle S4 150, S5 212, S6/S7 368 (joint), S0–S3 355 (four slices); orchestration adds ~25% on top | — | `scripts/report.py` per-slice table |
 | M15 | Codebase Memory coverage observations recommending source fallback | 652 of 3,480 (19%), including 195 `metadata_changed` (2026-10-04 to 10-08) | 47 of 792 (6%), all unindexed files, 0 `metadata_changed` | `metrics/scripts/coverage_outcomes.py` |
+| M17 | Tool invocations per model call | not measured | 93% carry exactly one; median 1, max 3 (1,154 tool calls, `s9_native_capture_builder`, 2026-10-13 22:55Z on) | `metrics/scripts/` ad hoc; see Per-call cost |
+| M18 | Output budget requested per call | not measured | median 1,800 tokens, mean 3,112, 60% at or below 2,000, against a mean context of 136K | `metrics/scripts/` ad hoc; see Per-call cost |
+| M19 | Plus-units per call by context band | not measured | 0.087 at 65K → 0.134 at 137K → 0.185 at 187K → 0.272 at 230K; calls ≥150K are 47% of calls and 58% of spend | `metrics/scripts/` ad hoc; see Per-call cost |
 | M16 | Tool output discarded by harness truncation before the model reads it | not measured | 3.4 truncations per 100 model calls (79 over 2,313, 2026-10-13 22:55Z to 10-14 04:00Z), against 3.1 before; **75 of 76 truncated calls had set an explicit `max_output_tokens`**; 32% touch a doctrine or skill document and 38% fall within 120 s of a context reset | `metrics/scripts/output_truncation.py` |
 
 **M11 denominator.** Each independent review finding or contract/route revision
@@ -88,6 +91,49 @@ call, a lever that removes tokens from startup context or shortens a session is
 worth more than one that makes an individual answer shorter. This is the
 per-call form of M4 and does not replace its spend-share measurement.
 
+### Per-call cost, 2026-10-13 22:55Z to 10-14 04:00Z
+
+`calls × context` is not a figure of speech. Binning 2,313 calls of the round by
+their own `input_tokens`:
+
+| context band | calls | Plus-units per call | share of the round's 338 units |
+|---|---|---|---|
+| 50–75K | 183 | 0.087 | 4.7% |
+| 100–125K | 331 | 0.117 | 11.5% |
+| 125–150K | 417 | 0.134 | 16.5% |
+| 150–175K | 472 | 0.160 | 22.3% |
+| 175–200K | 415 | 0.185 | 22.7% |
+| 200–225K | 178 | 0.206 | 10.8% |
+| 225–250K | 32 | 0.272 | 2.6% |
+
+Calls at or above 150K are **47% of the calls and 58% of the spend**, at 0.180
+units each against 0.116 below. So the two lever families are: remove a call, or
+lower what every call carries. **Lowering what every call carries is the larger
+of the two.** Holding those 1,097 calls near 120K instead of 164–230K is worth
+roughly 64 of 338 units, about 19% of the round — which makes the unadopted
+context-boundary handoff the single biggest measured lever in this ledger, ahead
+of everything attributed to waiting.
+
+Removing calls is the smaller but immediately available family. In
+`s9_native_capture_builder`, 150 of the round's 338 units over 1,180 calls:
+**93% of tool calls carried exactly one tool invocation** (median 1, max 3) and
+**60% requested 2,000 output tokens or fewer** (median 1,800) against a mean
+context of 136K — a 136K charge to receive 1,800 tokens, over a thousand times.
+339 of its calls were hash or verify bookkeeping: 138 separate `sha256sum`
+invocations, 42 `jq` reads, 21 `git` reads, 10 `rg` sweeps. 17% of the hash calls
+recomputed a path set an earlier call had already established, one seven-path set
+fourteen times.
+
+**Correction to the first estimate.** An earlier reading of this session
+extrapolated from the 93% single-invocation figure to roughly 110 units
+recoverable by batching. That does not survive checking the dependency
+structure: the per-path hashing is already batched (median 3 paths, max 19 per
+call), the whole-tree snapshot work is already a single in-process call, and
+write-then-verify steps are genuinely sequential. The defensible figure is the
+211 small read-only checks at ~0.127 units each, of which perhaps three quarters
+could share a call, plus the 24 exact repeats: **about 20 units, 6% of the
+round**. The batching lever is real and cheap; it is not the big one.
+
 ## Levers
 
 Each lever is judged on two separate questions: **was it adopted** (did the
@@ -112,6 +158,7 @@ did not operate.
 | Status-probe discipline: no polling, `list_agents` only for a concrete coordination question that the wait result, messages and assignment record cannot answer | M1, M3 | removes the residue the long-wait lever left behind, about a third of remaining wait-only calls | `list_agents` calls per dispatch, and whether each one names the decision that needed it | **adopted, no saving measured** (2026-10-13 22:55Z on): probes 0.39 → 0.04 per dispatch, `list_agents` 39 of 828 calls → 1 of 208, `sleep` and `wait` to zero; units per dispatch 1.26 → 1.29 and wait-only share 17.2% → 18.1%, both flat | `docs/codex-orchestration-brief.md` |
 | Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not adopted**: mean context 166K → 168K, peak 238K → 237K of a 258K window, so the 155K trigger was crossed again and no handoff was performed | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
 | Durable assignment record as the deterministic roster: owners, expected deliverables and received results updated on real events | M1, M3 | roster maintenance stops consuming inference; judgment about results stays with the supervisor | assignment record updated on assignment, message, completion and handoff, with `list_agents` not used to rediscover unchanged state | **adopted**: board messages naming a collector or resumer rose from 19 of 344 (6%) to 13 of 56 (23%), and two post-revision claims carry "Root collects" in the claim note | `docs/codex-orchestration-brief.md`, `skills/durable-state/` |
+| Batched evidence collection: independent checks in one cell, `skills/evidence-battery/` as the declared form, re-verification by digest comparison instead of restating evidence | M17, M18, M19, M14 | removes a subset of calls outright; ~20 of the 338 units in the 2026-10-13 round, from 211 small read-only checks and 24 exact repeats | tool invocations per call and output budget per call; share of hash or verify calls recomputing a path set an earlier call established | shipped 2026-10-14, starting values pre-registered, untested | `skills/evidence-battery/`, `docs/codex-orchestration-brief.md` |
 | Plan IR and execution-strategy model routing | M12, M14 | ~6 points from routing, ~2 from compression (central estimate) | routed attempts by model and effort | hypothesis, pilot planned | Plan IR idea §13, §20 |
 
 Central estimates come from the scenario model recorded with the baseline
@@ -132,6 +179,8 @@ overlap.
 | 2026-10-12 | Same window, 9 sessions with per-call usage | M4, M8, cost model | 0.10–0.20 Plus-units per model call; cached re-send 52–71% of weighted cost | see Cost structure. The two new reviews cost 3.4 and 8.4 units over 24 and 54 exec calls. The full cohort of 22 reviewer sessions from 10-07 to 10-08 spans 1.3–24.1 units over 10–95 calls, so the new values sit **inside** the earlier range: against the whole cohort rather than a few large contract reviews, this window shows no cost effect at all, in either direction. It is also confounded — those sessions ran at **xhigh** and reviewed contracts rather than causal behavior |
 | 2026-10-12 | Same 10 sessions | M16 | 123 truncations across 110 tool results, ~1.40M tokens discarded; 44 of those 110 results were codebase-memory output | `h0_astra_implementation` lost every coverage result it took (13.9K and 23.0K token payloads), so it contributes no M15 observations despite 14 coverage calls. Verified evidence cannot help a session that never receives it |
 | 2026-10-13 | Root `01a1150c` compared with itself, 2026-10-05 to 10-09 against 2026-10-12 to 10-13, plus root `01a1294e` and 15 workers and reviewers in the current window | M1, M2, M3 | supervisor units per dispatch 1.82 → 1.21; waits per dispatch 3.34 → 1.04; messages per dispatch 3.13 → 0.21; timeouts 38% → 24%, and 0 of 70 on the second supervisor | full table and caveats in Supervision below. The long-wait and consequential-message levers are adopted; root handoff is not. Task mix differs between the windows and the current one was still running |
+
+| 2026-10-14 | Per-call cost structure of the same round, 2,313 calls binned by their own context | M17, M18, M19, M8 | units per call 0.087 at 65K → 0.272 at 230K; calls ≥150K are 47% of calls and 58% of spend; 93% of one session's tool calls carried a single invocation and 60% asked for ≤2,000 output tokens | table and correction in Per-call cost. Shipped `skills/evidence-battery/` the same day so the batching lever has a declared form and a countable adoption check before the next round. The handoff lever, still unadopted, is worth about three times more than batching |
 
 | 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 04:00Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 3.4 per 100 calls with 75 of 76 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it. The first reading of this window, taken at 903 calls, reported doctrine re-reads at 4.9 per 100 calls and truncation at 4.0; at 2,313 calls both fell to 2.4 and 3.4. The window opened minutes after several sessions had reset their context, so its early calls were reload traffic. A window that begins just after a context reset oversamples reload the way a session measured mid-run oversamples whatever it is doing |
 

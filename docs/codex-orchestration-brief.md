@@ -119,6 +119,40 @@ and [repository-search evidence contract](../skills/repo-search/SKILL.md) own
 query, coverage, and fallback details; clean coverage remains best-effort, and
 text returned by `search_code` remains unverified source text.
 
+## What a call costs
+
+A model call is charged for the whole context it carries, not for what it
+returns. Measured across 2,313 calls on 2026-10-13, cost per call rises with
+context almost linearly: 0.087 Plus-units at 65K, 0.134 at 137K, 0.185 at 187K,
+0.272 at 230K. Calls above 150K were 47% of the round and 58% of its spend. Two
+things follow, and they are the whole cost model: **spend is calls times
+context**, so the levers that matter either remove a call or lower what every
+call carries.
+
+Removing calls is the one available immediately. In the most expensive session of
+that round — 150 of the round's 338 units over 1,180 calls — 93% of tool calls
+carried a single tool invocation and 60% asked for 2,000 output tokens or fewer,
+against a mean context of 136K. It paid a 136K charge to receive 1,800 tokens,
+over a thousand times. 339 of its calls were hash or verify bookkeeping: 138
+separate `sha256sum` invocations, 42 `jq` reads, 21 `git` reads, each its own
+round trip.
+
+Batch independent operations into one cell. `Promise.allSettled` over several
+`tools.exec_command` calls is the native form, and
+[`skills/evidence-battery/`](../skills/evidence-battery/SKILL.md) is the
+declared form for a verification round: one plan of named checks — path digests,
+read-only `git`, JSON selections, bounded regex sweeps — one process, one result
+with one `battery_sha256`. Genuinely sequential steps stay sequential; a write
+must land before its verification. Most verification batteries are not
+sequential, they are a list.
+
+Then stop re-establishing what has not changed. 17% of those hash calls
+recomputed a path set an earlier call had already established, one seven-path set
+fourteen times. `evidence_battery.py --compare` answers an unchanged battery in
+about 34 tokens, and otherwise names only the ids that moved. Asking the
+environment what it already told you is the same mistake as asking the scheduler
+what the wait result would have said.
+
 ## Tool output the model never receives
 
 The exec harness truncates a cell's output above its budget and reports only the
@@ -226,7 +260,10 @@ measurements when available. The
 [efficiency ledger](../metrics/efficiency-ledger.md) records what each
 measurement showed. Report **units, waits, messages, and status probes per
 dispatch**, timeout rates, context tokens per call, and whether a parent resumed
-after completion. Keep same-definition comparisons separate from broad
+after completion. Report two per-call numbers with them: **tool invocations per
+call** and **output budget requested per call**, whose starting values are 93%
+single-invocation and a 1,800 token median. They are the adoption check for
+batching, and they are countable from the rollout without interpretation. Keep same-definition comparisons separate from broad
 coordination categories and account for task-mix differences: the 2026-10-12 to
 10-13 same-supervisor observation reduced units/dispatch from 1.82 to 1.21,
 but it was not a controlled same-workload experiment. Track outcomes alongside
