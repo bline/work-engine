@@ -108,11 +108,37 @@ their own `input_tokens`:
 
 Calls at or above 150K are **47% of the calls and 58% of the spend**, at 0.180
 units each against 0.116 below. So the two lever families are: remove a call, or
-lower what every call carries. **Lowering what every call carries is the larger
-of the two.** Holding those 1,097 calls near 120K instead of 164–230K is worth
-roughly 64 of 338 units, about 19% of the round — which makes the unadopted
-context-boundary handoff the single biggest measured lever in this ledger, ahead
-of everything attributed to waiting.
+lower what every call carries.
+
+**What a context window actually costs, and why the trigger alone is worth
+nothing.** A compaction is not a reset to zero. Reading the supervisor's
+2026-10-13 23:43:17Z compaction: a 237K window was replaced by a `retained_context`
+of 7,611 bytes (~2K tokens, holding `verified_answers`, `incomplete`,
+`user_messages`, `assistant_messages`), discarding 131K tokens of
+`replacement_history` and 85K of `guardian_history`. The next call nonetheless
+opened at **80K** — system prompt, `AGENTS.md`, tool schemas and re-sent
+messages — and cost **0.536 units**, four times a normal call, because none of
+it was cached yet. The following thirteen calls climbed 80K → 116K reloading
+doctrine. **One compaction cycle costs about 2 units and leaves a 116K floor.**
+
+That makes the arithmetic of a lower handoff trigger unfavourable on its own.
+Projecting the supervisor's 423 calls and 67.7 units onto the band curve above:
+at the observed 237K ceiling the cycle averages ~176K and 4 compactions; at a
+155K ceiling it averages ~135K but the 39K of headroom above a 116K floor buys
+only ~34 calls per cycle, so about 12 compactions. The context saving is ~18
+units and the extra compactions cost ~17. **Net approximately zero.** An earlier
+version of this section estimated 64 units from holding calls near 120K; that
+estimate assumed a cheap floor and is withdrawn.
+
+**The floor is the lever, not the ceiling.** The 116K floor is ~80K the harness
+reconstitutes plus ~36K of doctrine the session re-reads. The second part is
+ours. Projected on the same curve: a 60K floor with the ceiling left alone saves
+~15% of the supervisor's spend; a 60K floor **and** a 155K trigger saves ~30%,
+because cheap cycles can be taken often. A 155K trigger with a 116K floor saves
+nothing. So the handoff packet is the lever and the trigger is a multiplier on
+it, in that order — and the packet pays on every compaction, which happens
+whether or not anyone plans a handoff. These are projections from the measured
+cost-per-context curve, not measurements.
 
 Removing calls is the smaller but immediately available family. In
 `s9_native_capture_builder`, 150 of the round's 338 units over 1,180 calls:
@@ -180,7 +206,7 @@ overlap.
 | 2026-10-12 | Same 10 sessions | M16 | 123 truncations across 110 tool results, ~1.40M tokens discarded; 44 of those 110 results were codebase-memory output | `h0_astra_implementation` lost every coverage result it took (13.9K and 23.0K token payloads), so it contributes no M15 observations despite 14 coverage calls. Verified evidence cannot help a session that never receives it |
 | 2026-10-13 | Root `01a1150c` compared with itself, 2026-10-05 to 10-09 against 2026-10-12 to 10-13, plus root `01a1294e` and 15 workers and reviewers in the current window | M1, M2, M3 | supervisor units per dispatch 1.82 → 1.21; waits per dispatch 3.34 → 1.04; messages per dispatch 3.13 → 0.21; timeouts 38% → 24%, and 0 of 70 on the second supervisor | full table and caveats in Supervision below. The long-wait and consequential-message levers are adopted; root handoff is not. Task mix differs between the windows and the current one was still running |
 
-| 2026-10-14 | Per-call cost structure of the same round, 2,313 calls binned by their own context | M17, M18, M19, M8 | units per call 0.087 at 65K → 0.272 at 230K; calls ≥150K are 47% of calls and 58% of spend; 93% of one session's tool calls carried a single invocation and 60% asked for ≤2,000 output tokens | table and correction in Per-call cost. Shipped `skills/evidence-battery/` the same day so the batching lever has a declared form and a countable adoption check before the next round. The handoff lever, still unadopted, is worth about three times more than batching |
+| 2026-10-14 | Per-call cost structure of the same round, 2,313 calls binned by their own context | M17, M18, M19, M8 | units per call 0.087 at 65K → 0.272 at 230K; calls ≥150K are 47% of calls and 58% of spend; 93% of one session's tool calls carried a single invocation and 60% asked for ≤2,000 output tokens | table and correction in Per-call cost. Shipped `skills/evidence-battery/` the same day so the batching lever has a declared form and a countable adoption check before the next round. The handoff trigger on its own is worth approximately nothing once the 116K post-compaction floor and the ~2 unit cost of a cycle are counted; the handoff **packet** that lowers that floor is the lever, projected at ~15% alone and ~30% with the trigger |
 
 | 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 04:00Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 3.4 per 100 calls with 75 of 76 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it. The first reading of this window, taken at 903 calls, reported doctrine re-reads at 4.9 per 100 calls and truncation at 4.0; at 2,313 calls both fell to 2.4 and 3.4. The window opened minutes after several sessions had reset their context, so its early calls were reload traffic. A window that begins just after a context reset oversamples reload the way a session measured mid-run oversamples whatever it is doing |
 

@@ -233,6 +233,24 @@ it. Do **not** strand in-flight children or assume a new root automatically
 inherits their completion notifications. If ownership transfer cannot be
 verified, retain the existing supervisor and schedule another safe boundary.
 
+**The same packet serves compaction, which is a handoff nobody planned.** Every
+~50–80 minutes a long-running supervisor is compacted: its window is replaced by
+a ~2K `retained_context` the harness chose, and the next call opens at about
+80K — system prompt, `AGENTS.md`, tool schemas, re-sent messages — costing four
+times a normal call because nothing is cached yet. The session then spends about
+thirteen calls climbing to 116K re-reading doctrine. One cycle costs roughly 2
+Plus-units and leaves a 116K floor.
+
+Two consequences. First, maintain the continuation packet **continuously**, not
+only when a handoff is planned, because compaction will take the window without
+asking and the packet is what the new window reads instead of re-deriving.
+Second, a lower handoff trigger is worth nothing by itself: with a 116K floor,
+the 39K of headroom under a 155K trigger buys about 34 calls, so compacting
+three times as often costs as much as the lower context saves. Lower the floor
+first — a sized packet and a sized doctrine reload — and the trigger becomes
+worth taking. Measured values and the projection are in the
+[efficiency ledger](../metrics/efficiency-ledger.md) under Per-call cost.
+
 Use a durable, compact assignment record as the deterministic source for known
 owners, expected deliverables, and received results. Update it on actual
 assignment, message, completion, and handoff events; don't repeatedly call a
