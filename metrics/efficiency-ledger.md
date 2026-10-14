@@ -130,6 +130,35 @@ units and the extra compactions cost ~17. **Net approximately zero.** An earlier
 version of this section estimated 64 units from holding calls near 120K; that
 estimate assumed a cheap floor and is withdrawn.
 
+### Replacement economics the Rust lifecycle has to beat
+
+T30 in
+[`experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md`](../experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md)
+requires that "no claimed optimum relies on an invented future workload", and
+the pressure policy in that experiment's `DESIGN.md` is declared as
+"revision-bound pressure" without tuned thresholds. These are measured values
+from a real workload for exactly those slots, taken before the Rust host hosts
+anything, so the comparison is pre-registered rather than reconstructed.
+
+| Measured Codex-native, 2026-10-13/14 | Value | Where it belongs |
+|---|---|---|
+| post-replacement floor | **116K** (~80K reconstituted + ~36K doctrine re-read) | pressure threshold selection; T30 payback |
+| first call after replacement | **0.536 units**, ~4× a normal call, nothing cached | T30 cache accounting; rehydration cost |
+| one replacement cycle | **~2 Plus-units** | T30 conditional payback per replacement |
+| cost per call by context | **0.087 u at 65K → 0.272 at 230K** | threshold choice; the curve the controller optimizes on |
+| involuntary replacement interval | **42–80 min, median 50** | M4 retained-workflow scenario realism |
+| harness-chosen retention | **7,611 bytes kept**, 131K `replacement_history` + 85K `guardian_history` discarded | T13 semantic-preservation corpus: the control case is what the harness loses |
+| rediscovery before productive work | **5 doctrine calls, ~36K tokens, 18 s** | "time until productive work resumes"; rediscovery cost |
+| completion-started turns | **0 of 172** (`turn_trigger` always `user`) | S8 plan's "waiting alone does not trigger replacement": the native baseline it is written against |
+
+**One boundary limits the claimable win.** The pre-Rust design's ownership
+section disclaims "the exact hidden model context assembled inside Codex Core",
+and ~80K of the 116K floor is exactly that: system prompt, tool schemas and
+re-sent messages. While Codex Core assembles the prompt, the host's reachable
+share of the floor is the ~36K rediscovery plus owning *when* replacement
+happens. The remaining 80K becomes addressable only if the Rust host owns prompt
+assembly. Any lifecycle benefit claim should state which of the two it is.
+
 **The floor is the lever, not the ceiling.** The 116K floor is ~80K the harness
 reconstitutes plus ~36K of doctrine the session re-reads. The second part is
 ours. Projected on the same curve: a 60K floor with the ceiling left alone saves
@@ -176,7 +205,7 @@ did not operate.
 | Work Engine wake policy: no inference while waiting, wake eligibility, batching | M1, M2, M3 | ~10 points of spend (structural, central estimate) | turns recorded by wake reason; none while waiting | policy recorded, not implemented | `docs/context-lifecycle-wake-policy.md` |
 | Deterministic coordination owners (campaign, claims, scheduler) | M3, M14, agent-messaging spend | ~7 + 3 points (central estimate) | dispatch and bookkeeping performed without model calls | partly built in Rust, not hosting development | baseline scenario model |
 | Compiled role packages and event-scoped organizational judgment | M5, M8 | ~4 + 8 points (central estimate) | roles start from compiled packages, not full doctrine | architecture accepted, not implemented | `organizational-compilation.md` |
-| Cache-aware accounting and conditional payback (T30) | M4, M7 | ~0–3 points after structural savings; mainly visibility | payback reported per replacement | in S8 coverage, unproven | lifecycle `DESIGN.md` R28/T30 |
+| Cache-aware accounting and conditional payback (T30) | M4, M7, M19 | ~0–3 points after structural savings; mainly visibility | payback reported per replacement | in S8 coverage, unproven; measured Codex-native constants for it are in Replacement economics below | `experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md` T30, `experiments/context-lifecycle-rust/DESIGN.md` R28 |
 | Relevance projection of settled facts into contract formation | M11, M9, M10, M14 | clear-bucket contradictions toward zero without suppressing novel discovery | contracts cite applicable settled facts before freeze | hypothesis | baseline README, `classification/` |
 | Doc↔code claim projection in Codebase Memory (`sync_projection`); evidence-anchor impact nomination | M11, M6 | code changes nominate dependent claims and documents, and the reverse | nominations raised for changed anchors | proposal meaning approved, placement probable, not implemented | `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/` |
 | Coherent, content-verified index observation in Codebase Memory (upstream snapshot-coherence fixes, local publication 2026-10-11) | M15, M6, M8 | agents rely on the graph instead of re-reading source to establish freshness | share of coverage observations recommending source fallback; `content_verified` and `generation_matches` present and true | shipped locally, adopted, M15 measured; cost effect not isolated | upstream `#2585`, PRs `#2600`–`#2613`, `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/` |
