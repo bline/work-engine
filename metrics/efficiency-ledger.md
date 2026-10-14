@@ -30,7 +30,7 @@ their full path under `metrics/scripts/`.
 | M2 | `wait_agent` calls that timed out | 1,097 of 2,080 waits (mostly 30–60 s) | 7 of 29 on one supervisor, 0 of 70 on the other; longest wait requested 60 s → 3,600 s | `metrics/scripts/supervision_profile.py` |
 | M3 | Root orchestrator share of spend | 23% | 18.4% of 1,012 units (2026-10-12 to 10-13) | `scripts/report.py`, `metrics/scripts/supervision_profile.py` |
 | M4 | Cached-context re-send share of spend (estimated) | ~73% | 52–71% of weighted cost per call (9 sessions, 10-07 to 10-13) | `scripts/drill.py`, `metrics/scripts/cost_decomposition.py` |
-| M5 | Full doctrine reads per session | DESIGN 1.5, PHILOSOPHY 1.7 (167 / 186 over 112 sessions) | 4.9 whole-document reads per 100 model calls (45 over 914 calls, 6 sessions, 2026-10-13 22:55Z on), against 3.3 before: DESIGN 19, PHILOSOPHY 12, brief 14 | `scripts/reread.py` |
+| M5 | Full doctrine reads per session | DESIGN 1.5, PHILOSOPHY 1.7 (167 / 186 over 112 sessions) | 2.4 whole-document reads per 100 model calls (56 over 2,313 calls, 2026-10-13 22:55Z to 10-14 04:00Z), against 3.3 before; 48 of 51 arrive within 25 s of a context reset | `scripts/reread.py` |
 | M6 | Redundant within-session re-reads, share of spend | ~4.2% (+1.6% re-read-only calls) | — | `scripts/reread.py` |
 | M7 | Re-reading after compaction, share of spend | ~4% | — | `scripts/reread.py` |
 | M8 | Average context per call | root ~144K, sub-agent ~126K tokens | 76–140K across 10 sessions (10-11 to 10-13) | `scripts/drill.py`, `metrics/scripts/session_profile.py` |
@@ -41,7 +41,7 @@ their full path under `metrics/scripts/`.
 | M13 | Startup chatboard read size | ~107 KB, oldest 100 of 1,503 messages | 19.5 KB, newest 20 (2026-10-09) | `codex_chatboard.py read` |
 | **M14** | **Estimated Plus-units per accepted slice** (primary outcome) | lifecycle S4 150, S5 212, S6/S7 368 (joint), S0–S3 355 (four slices); orchestration adds ~25% on top | — | `scripts/report.py` per-slice table |
 | M15 | Codebase Memory coverage observations recommending source fallback | 652 of 3,480 (19%), including 195 `metadata_changed` (2026-10-04 to 10-08) | 47 of 792 (6%), all unindexed files, 0 `metadata_changed` | `metrics/scripts/coverage_outcomes.py` |
-| M16 | Tool output discarded by harness truncation before the model reads it | not measured | 4.0 truncations per 100 model calls (36 over 903, 2026-10-13 22:55Z on), against 3.1 before; **33 of 33 truncated calls had set an explicit `max_output_tokens`** | `metrics/scripts/output_truncation.py` |
+| M16 | Tool output discarded by harness truncation before the model reads it | not measured | 3.4 truncations per 100 model calls (79 over 2,313, 2026-10-13 22:55Z to 10-14 04:00Z), against 3.1 before; **75 of 76 truncated calls had set an explicit `max_output_tokens`**; 32% touch a doctrine or skill document and 38% fall within 120 s of a context reset | `metrics/scripts/output_truncation.py` |
 
 **M11 denominator.** Each independent review finding or contract/route revision
 in S4–S8 counted once; later candidate attempts, bundled multi-change revisions,
@@ -133,7 +133,7 @@ overlap.
 | 2026-10-12 | Same 10 sessions | M16 | 123 truncations across 110 tool results, ~1.40M tokens discarded; 44 of those 110 results were codebase-memory output | `h0_astra_implementation` lost every coverage result it took (13.9K and 23.0K token payloads), so it contributes no M15 observations despite 14 coverage calls. Verified evidence cannot help a session that never receives it |
 | 2026-10-13 | Root `01a1150c` compared with itself, 2026-10-05 to 10-09 against 2026-10-12 to 10-13, plus root `01a1294e` and 15 workers and reviewers in the current window | M1, M2, M3 | supervisor units per dispatch 1.82 → 1.21; waits per dispatch 3.34 → 1.04; messages per dispatch 3.13 → 0.21; timeouts 38% → 24%, and 0 of 70 on the second supervisor | full table and caveats in Supervision below. The long-wait and consequential-message levers are adopted; root handoff is not. Task mix differs between the windows and the current one was still running |
 
-| 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 01:13Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 4.0 per 100 calls with 33 of 33 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it |
+| 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 04:00Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 3.4 per 100 calls with 75 of 76 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it. The first reading of this window, taken at 903 calls, reported doctrine re-reads at 4.9 per 100 calls and truncation at 4.0; at 2,313 calls both fell to 2.4 and 3.4. The window opened minutes after several sessions had reset their context, so its early calls were reload traffic. A window that begins just after a context reset oversamples reload the way a session measured mid-run oversamples whatever it is doing |
 
 | 2026-10-13 | Pre-change values for the `25a5164` brief revision, supervisor `01a1294e` over 2026-10-12 to 10-13 | M8, M1 | peak context **238K of a 258K window**, mean 166K, so the 155K handoff trigger was crossed and never acted on; status probes 0.39 per dispatch; `turn_trigger` was `user` for **172 of 172** turns | taken before the sessions that will exercise the revision, so the comparison is pre-registered rather than reconstructed. No turn in the window was started by a child completion, which is the upstream behavior of #46120 stated in the harness's own attribution field |
 
@@ -238,23 +238,45 @@ ceiling and none expired. Two returned in under two seconds, collecting a result
 that had already arrived.
 
 **Bounded requests are being set and are still truncating.** Truncation did not
-fall: 4.0 events per 100 model calls against 3.1 before, 0.43M tokens discarded
-in 2.3 hours, 21 of 36 of them codebase-memory results. Every one of the 33
-truncated calls whose body was recoverable **had set an explicit
-`max_output_tokens`**. The guidance is being followed literally and does not
-work, because a limit is a truncation point rather than a budget: `cat DESIGN.md`
-with `max_output_tokens: 15000` loses the tail just as surely as no limit at
-all. One session sized the request first with `wc -l` and truncated anyway. The
-brief's wording needs the request sized to the limit — line ranges, outlines,
-`detail: ids` — not the limit attached to whatever request was already intended.
+fall: 3.4 events per 100 model calls against 3.1 before, 1.71M tokens discarded
+over 2,313 calls. **75 of the 76 truncated calls whose body was recoverable had
+set an explicit `max_output_tokens`.** The guidance is being followed literally
+and does not work, because a limit is a truncation point rather than a budget:
+`cat DESIGN.md` with `max_output_tokens: 15000` loses the tail just as surely as
+no limit at all. One session sized the request first with `wc -l` and truncated
+anyway. The brief's wording needs the request sized to the limit — line ranges,
+outlines, `detail: ids` — not the limit attached to whatever request was already
+intended.
 
-**The documents being truncated are mostly ones already read.** Whole-document
-doctrine reads ran at 4.9 per 100 model calls, up from 3.3: DESIGN.md 19 times,
-PHILOSOPHY.md 12, the brief 14, across six sessions in 2.3 hours, with one
-supervisor reading the brief three times inside eleven seconds. At ~10K, ~9K and
-~3K tokens that is ~340K tokens of new input, ~2.7 units or 2% of the window's
-133.6, before the cached re-send tail that every later call in those sessions
-pays. This is M5 and M6 reappearing in a window where they were not the subject.
+**What truncates is largely the mandated reload.** 32% of truncated calls touch
+DESIGN.md, PHILOSOPHY.md, this brief or a skill reference, and 38% are issued
+within 120 seconds of a context reset; inside the first 25 seconds after a reset
+the truncated calls are mostly doctrine. The reload is the largest single read a
+session makes — DESIGN.md, PHILOSOPHY.md and the brief are ~10K, ~9K and ~3K
+tokens, and the skills add more — so it is the read most exposed to a limit, and
+it recurs once per context window rather than once per session. See **Why the
+reload recurs** below.
+
+**Why the reload recurs.** A compaction is recorded in the rollout as a payload
+carrying `window_number`, `retained_context` and `previous_window_id`, with no
+`type` field, which is why a scan keyed on payload type finds none. Across the
+sessions measured here, **48 of 51 context resets are followed by a read of
+DESIGN.md, PHILOSOPHY.md, the brief or a skill reference within 25 seconds**,
+median about 6 seconds. That is not drift: `AGENTS.md` requires `$wind-walker`
+in the first turn of every new context window and treats DESIGN.md as required
+context for all work, so the reload is the instruction being obeyed. The cost
+recurs per context window, not per session, and the doctrine set is ~22K tokens
+before skills.
+
+The per-session cadence has not changed. Median interval between consecutive
+context windows was 73 minutes on 2026-10-07 and 42 on 10-08; it is 50 on 10-14.
+What rose is how many long-running sessions are in that state at once: about 1.6
+resets per hour across the fleet on 10-07 against about 3.75 in the first four
+hours of 10-14, and 0.66 → 0.91 resets per 100 model calls. One worker is on its
+fifteenth context window and one reviewer its thirteenth. So the share of calls
+spent on reload traffic rises with fleet concurrency and session longevity,
+without any agent behaving differently — and it is the context-boundary handoff
+lever, the one lever not adopted, that would bound it.
 
 **The claim these measurements test.** An agent should not spend inference to
 discover what its execution environment already knows. Both measured residues
