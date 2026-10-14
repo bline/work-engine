@@ -69,21 +69,52 @@ Candidates by workload rather than by evidence: `documents`, `pdf`,
 `unified-computer-use`, `code-review`, `github`. Do not cut whichever plugin
 step 1 attributes `web__run`, `view_image` or `clock__curr_time` to.
 
+## Applied, 2026-10-14T22:57Z
+
+Both tiers were applied to `~/.codex/config.toml` after the operator asked for
+plugins and MCP servers to be cut and the next rounds observed. Backup:
+`~/.codex/config.toml.bak-20261014-preplugintrim`. The file still parses as TOML.
+
+- **10 plugins set to `enabled = false`**: github, visualize, documents, pdf,
+  spreadsheets, presentations, template-creator, chrome, unified-computer-use,
+  code-review.
+- **Kept enabled**: `codex-app-tools` and `browser`, because `view_image`,
+  `clock__curr_time` and `web__run` are observed in use and cannot be attributed
+  to a plugin from rollout evidence. Cutting these two would be a guess.
+- **4 MCP server blocks commented out**: playwright, notify, node_repl,
+  openaiDeveloperDocs. Restore by removing the leading `# ` from each line, or
+  copy the backup back.
+
+Running sessions are unaffected; configuration is read at session start, so the
+sessions that resume after this timestamp are the "after" cohort.
+
 ## Dogfood protocol
 
-Baseline is already frozen in `../context-replacement-20261014/observations.json`:
-worker first-call floor **min 24K, median 28K**; roots **76K and 80K**; cost per
-call by context band from 0.0733 at 25–50K to 0.2222 at 225–250K.
+The comparable baseline is **session-start context**, not the post-replacement
+floor: the 98 sessions started 2026-10-04 to 10-14 opened at **min 20K, p25 21K,
+median 21K, p75 25K**. The 20–21K cluster is the bare surface before any task
+brief — system prompt, `developer_instructions`, project doc and every enabled
+tool's schema — and is the quantity this trim moves. `floor.py` prints the after
+side and the implied per-call saving:
 
-1. **Attribute the surface.** In the first turn of one ordinary session, print
-   each available tool's name and the byte length of its schema, then stop. This
-   is the only step that needs a live session and it costs one call. It turns
-   tier 2 from a guess into a list.
-2. **Apply tier 1.** Then launch one worker on a task comparable to a 2026-10-07
-   builder and record its **first call's `input_tokens`**. Compare against the
-   24–26K floors of `ce1_builder`, `sc1_builder`, `rust_lifecycle_s0_20261007`,
-   `ce3_builder` and `sc2_core_builder`.
-3. **Apply tier 2** from step 1's list and repeat step 2.
+```
+python3 -I floor.py                  # sessions started after the trim
+python3 -I floor.py 2026-10-15       # or any ISO-8601 prefix
+```
+
+The post-replacement figures in `../context-replacement-20261014/` (24K min, 28K
+median, roots 76–80K) are a different quantity: those windows also carry
+retained context and re-sent messages. Do not compare the two.
+
+1. **Read the after side.** Run `floor.py` once sessions have resumed. A fresh
+   session's first call is the measurement; no special instrumentation is needed.
+2. **Attribute what remains.** In the first turn of one ordinary session, print
+   each still-available tool's name and the byte length of its schema. This says
+   whether the remaining surface is worth further cutting, and whether
+   `codex-app-tools` or `browser` is the larger of the two kept plugins.
+3. **Watch for a missing capability.** A disabled plugin fails as an absent
+   tool, not as an error in these logs. If a session reaches for a cut
+   capability, restore from the backup rather than working around it.
 4. **Report** the floor before and after, and the implied per-call saving:
    removed standing tokens are charged uncached once per context window and at
    one tenth thereafter, so the per-call effect is
