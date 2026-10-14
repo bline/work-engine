@@ -143,6 +143,13 @@ estimate assumed a cheap floor and is withdrawn.
 
 ### Replacement economics the Rust lifecycle has to beat
 
+The organized evidence package is
+[`metrics/experiments/context-replacement-20261014/`](experiments/context-replacement-20261014/):
+`extract.py` re-derives it from local rollouts, `summarize.py` recomputes every
+figure its README quotes, and `observations.json` is the frozen extraction.
+Campaign-state context for the slices this feeds is in
+[`notes/rust-context-lifecycle-slice-state-20261014.md`](../notes/rust-context-lifecycle-slice-state-20261014.md).
+
 T30 in
 [`experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md`](../experiments/context-lifecycle-rust/DESIGN_EVIDENCE.md)
 requires that "no claimed optimum relies on an invented future workload", and
