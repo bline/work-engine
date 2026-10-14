@@ -84,6 +84,37 @@ Plus-units per model call**, split as 14–34% new input, **52–71% cached cont
 re-send** and 11–22% output
 ([`metrics/scripts/cost_decomposition.py`](scripts/cost_decomposition.py)).
 
+**What the cost model does and does not account for in caching.** Verified
+against 34,003 `last_token_usage` records: `cached_input_tokens` is a strict
+subset of `input_tokens` (zero violations), so `uncached = input - cached` is
+sound; `reasoning_output_tokens` is a strict subset of `output_tokens` (zero
+violations, median 22% of output), so `5*output` does not double count; and
+`total_tokens == input + output` in every record. One field is unused:
+**`cache_write_input_tokens` is zero in all 34,003 records**, which is T30's
+"distinguish unavailable from zero" — it may mean cache writes are not charged,
+or not reported to this client, and the model has no term for it either way.
+
+**The coefficient is independently corroborated; the ratios are not
+identifiable.** Rollouts carry `rate_limits.primary.used_percent` for the
+10,080-minute window (59,203 observations, 2026-09-08 to 10-13). Segmenting each
+weekly window at 10-point increments and regressing the increment on
+assumed-weighted tokens gives, for 92 Pro-plan segments of median 778 calls,
+**0.684 percent-of-a-Pro-week per million weighted tokens at R² 0.79**. At Pro =
+10x Plus that is **6.84 Plus-units per million weighted tokens against the
+baseline's fitted 7.826** — 14% apart from an independent direction, which is
+reassuring for every aggregate figure in this ledger.
+
+Freeing the three weights does **not** identify them. The same 92 Pro segments
+give cached/uncached **-0.016** and output/uncached **21.2**; 63 Pro Lite
+segments give **+0.087** and **74.8**. A ratio that changes sign between plans is
+collinearity — uncached, cached and output all scale with call count — not a
+measurement. So `cached/10` and `5*output` remain assumptions, as the baseline
+states. The exposure is confined to comparisons that turn on cache **mix**
+rather than volume: the resume charge (M20), the uncached first call after a
+context replacement, and the band curve's low-context end. If cached input is in
+fact cheaper than one tenth, those low-cache events are a larger share of spend
+than stated here, not smaller.
+
 Two consequences for how levers are judged. First, session cost is close to
 `calls × context size`; effort level and task type act on the **number** of
 calls, not on the price of a call, so a cheaper session is normally a session
