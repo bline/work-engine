@@ -44,6 +44,7 @@ their full path under `metrics/scripts/`.
 | M17 | Tool invocations per model call | not measured | 93% carry exactly one; median 1, max 3 (1,154 tool calls, `s9_native_capture_builder`, 2026-10-13 22:55Z on) | `metrics/scripts/` ad hoc; see Per-call cost |
 | M18 | Output budget requested per call | not measured | median 1,800 tokens, mean 3,112, 60% at or below 2,000, against a mean context of 136K | `metrics/scripts/` ad hoc; see Per-call cost |
 | M19 | Plus-units per call by context band | not measured | 0.087 at 65K → 0.134 at 137K → 0.185 at 187K → 0.272 at 230K; calls ≥150K are 47% of calls and 58% of spend | `metrics/scripts/` ad hoc; see Per-call cost |
+| M20 | Cost of resuming a stopped session | not measured | 69 resume boundaries (>4h gap) at median 165K context and **1.179 Plus-units for the single first call**, 63 of 69 with ≤20% of input cache-hit; 78.8 units in total, about 7× an ordinary call at that context | `metrics/experiments/codex-config-trim-20261014/` |
 | M16 | Tool output discarded by harness truncation before the model reads it | not measured | 3.4 truncations per 100 model calls (79 over 2,313, 2026-10-13 22:55Z to 10-14 04:00Z), against 3.1 before; **75 of 76 truncated calls had set an explicit `max_output_tokens`**; 32% touch a doctrine or skill document and 38% fall within 120 s of a context reset | `metrics/scripts/output_truncation.py` |
 
 **M11 denominator.** Each independent review finding or contract/route revision
@@ -176,6 +177,16 @@ re-sent messages. While Codex Core assembles the prompt, the host's reachable
 share of the floor is the ~36K rediscovery plus owning *when* replacement
 happens. The remaining 80K becomes addressable only if the Rust host owns prompt
 assembly. Any lifecycle benefit claim should state which of the two it is.
+
+**Resuming restores the context; it does not reset it.** Across every stop/resume
+boundary observed, context comes back where it left off and slightly higher:
+80K → 86K over a 124-hour gap, 207K → 214K over 102 hours, 119K → 122K over 199
+hours. For 63 of 69 boundaries, 20% or less of that input was a cache hit, so
+the whole window was re-sent uncached for a median **1.179 Plus-units in one
+call** — about seven times an ordinary call at the same context, and 78.8 units
+across the corpus. Two consequences: a configuration change reaches only
+sessions started fresh after it, and session longevity is expensive from a third
+direction, because every interruption is re-paid in full on return.
 
 **The floor is the lever, not the ceiling.** The 116K floor is ~80K the harness
 reconstitutes plus ~36K of doctrine the session re-reads. The second part is
