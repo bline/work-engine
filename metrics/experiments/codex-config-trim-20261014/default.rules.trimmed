@@ -1,0 +1,8 @@
+prefix_rule(pattern=["cargo", "test"], decision="allow")
+prefix_rule(pattern=["cargo", "fmt", "--all"], decision="allow")
+prefix_rule(pattern=["docker", "ps"], decision="allow")
+prefix_rule(pattern=["docker", "logs"], decision="allow")
+prefix_rule(pattern=["set", "-euo", "pipefail"], decision="allow")
+prefix_rule(pattern=["dmesg"], decision="allow")
+prefix_rule(pattern=["docker", "inspect"], decision="allow")
+prefix_rule(pattern=["sort"], decision="allow")

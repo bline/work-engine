@@ -130,3 +130,94 @@ for the two larger levers the replacement evidence identifies: a cheaper
 continuation packet, and supervisors that do not live for days. The floor rises
 from a 28K median at under 500 calls to 57K beyond 1,500, which no configuration
 change reaches.
+
+## Measured, 2026-10-15
+
+Three sessions started after the change. Roots are the clean comparison: a
+worker's first call also carries its spawn brief, whose size varies by a few
+thousand tokens and swamps the effect.
+
+| Fresh root session starts | first-call input tokens |
+|---|---|
+| pre-trim, 5 fresh starts 2026-10-01 to 10-13 | 19,760 · 19,835 · 20,056 · 20,328 · 20,560 |
+| post-trim, 2026-10-15 | **17,729 · 17,716** |
+
+**−2,333 tokens against the pre-trim median, −11.6% of the floor.** That is
+0.0018 Plus-units per call: **1.25% of a 338-unit round**, against the 2.7%
+predicted above. The prediction was high by a factor of ~2 because the unused
+plugin surface was nearer 2.5K than 5K.
+
+`standing.py` itemizes where the floor actually comes from and attributes the
+change component by component:
+
+| component | pre-trim bytes | post-trim bytes | Δ |
+|---|---|---|---|
+| `base_instructions` | 21,420 | 18,037 | **−3,383** |
+| `world_state.host_skills` | 16,671 | 13,858 | **−2,813** |
+| `world_state.permissions` | 31,627 | 31,627 | 0 |
+| `world_state.agents_md` | 7,150 | 7,150 | 0 |
+
+So the plugin trim did take effect, as a smaller harness base prompt and a
+shorter skills index. The four MCP servers contributed almost nothing: their
+schemas are not in the rollout, and the residual after accounting for the two
+components above is a few hundred tokens — `playwright` was evidently never
+loading, which also explains its zero calls.
+
+`disabled_plugin_ids` in `turn_context` is **not** evidence either way: it reads
+`[]` in pre-trim and post-trim sessions alike, so it does not list
+config-disabled plugins.
+
+## The larger lever this exposed: stale approval rules
+
+`world_state.permissions.approved_command_prefixes` is **31,627 bytes, 32.6% of
+the standing payload, an estimated 5,780 tokens** — the single largest item,
+larger than the harness base prompt. It is byte-identical in all 236 sessions
+from 2026-09-01 to 10-15 and is re-sent on every model call.
+
+It is `~/.codex/rules/default.rules`: **133 approval rules, 36,590 bytes, last
+modified 2026-08-05**. Not one mentions this repository. They are one-off
+approvals from the `locus`/`geobridge` work — `ogrinfo` reads of specific INEGI
+shapefiles, `docker logs` for `compose-locus-cli-run` container IDs, and
+multi-hundred-byte `perl -0777 -i -pe s/.../.../` source rewrites of files in
+another project. The five longest entries are 522–1,491 bytes each.
+
+They are also inert here: **all 110 October sessions ran `approval_policy =
+"never"`** (109 `danger-full-access`, 1 `read-only`), so no allow-rule is ever
+consulted. This is dead weight at 2.4× the size of what the plugin trim removed.
+
+`default.rules.trimmed` in this directory keeps the 8 short generic rules
+(`cargo test`, `cargo fmt --all`, `docker ps|logs|inspect`, `set -euo pipefail`,
+`dmesg`, `sort`) and drops the 125 project-specific ones: **461 bytes, down from
+36,590**. To apply:
+
+```bash
+cp ~/.codex/rules/default.rules ~/.codex/rules/default.rules.bak   # if absent
+cp default.rules.trimmed ~/.codex/rules/default.rules
+```
+
+Expected: about **−5,700 tokens**, 0.0045 Plus-units per call, **3.0% of a
+338-unit round**. One fresh session measures it: run `floor.py` again and the
+floor should land near 12K. The one cost is outside this repository — a `locus`
+session with approvals enabled would prompt again for those commands.
+
+## Standing-context inventory, 2026-10-15
+
+Measured from one post-trim root session: 96,951 bytes of standing payload
+against 17,716 first-call tokens, 5.47 bytes per token overall. Per-component
+token figures below are that ratio applied, which assumes a component tokenizes
+like the average; JSON-escaped shell strings do not, so only the total is
+measured.
+
+| component | bytes | share | est tokens | client-side lever |
+|---|---|---|---|---|
+| `world_state.permissions` | 31,627 | 32.6% | 5,780 | **yes** — stale, inert, see above |
+| pre-first-call messages | 25,532 | 26.3% | 4,666 | partly — 15,458 of it is harness developer text |
+| `base_instructions` | 18,037 | 18.6% | 3,296 | no |
+| `world_state.host_skills` | 13,858 | 14.3% | 2,532 | partly — 41 skills, `pages` listed 4×; `[[skills.config]] enabled = false` works |
+| `world_state.agents_md` | 7,150 | 7.4% | 1,307 | **duplicate** — see below |
+
+`AGENTS.md` is sent **twice**: `world_state.agents_md.text` (6,929 bytes) is a
+strict substring of the user-role message that also carries it (7,403 bytes).
+About 1,300 tokens per window are pure duplication. This is harness behavior,
+not configuration, but it means every byte trimmed from `AGENTS.md` is paid back
+twice.
