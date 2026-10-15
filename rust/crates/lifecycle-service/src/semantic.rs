@@ -50,6 +50,7 @@ fn binding(
     attempt: &str,
     policy_id: &str,
 ) -> SemanticInvocationBinding {
+    let (grant_ref, grant_revision) = runtime.semantic.grant_for_phase(phase);
     SemanticInvocationBinding {
         subject: subject.clone(),
         transition: transition.clone(),
@@ -66,8 +67,8 @@ fn binding(
         thread_id: "thread:pending".into(),
         policy_id: policy_id.into(),
         exposure_id: format!("exposure:{invocation}"),
-        grant_ref: runtime.semantic.control_grant_ref.clone(),
-        grant_revision: runtime.semantic.control_grant_revision,
+        grant_ref: grant_ref.into(),
+        grant_revision,
     }
 }
 

@@ -15,9 +15,11 @@ pub use admin::{
 };
 pub use artifact::{PublishedArtifact, StagedArtifact};
 pub use native::{
-    ControlSessionRequest, NativeFinalMaterial, NativeIngressApply, NativeOperationClaim,
-    NativeOperationEntry, NativeOperationRecovery, NativeOperationResult, NativeRecovery,
-    NativeSessionEntry, NativeTurnEntry, NativeTurnRequest, SemanticControlRole,
+    ControlSessionRequest, NativeDeliveryBinding, NativeDeliveryObservation, NativeFinalMaterial,
+    NativeIngressApply, NativeOperationClaim, NativeOperationEntry, NativeOperationRecovery,
+    NativeOperationResult, NativeRecovery, NativeResumeCandidate, NativeSessionEntry,
+    NativeTaskOperationClaim, NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest,
+    NativeUsageAccounting, NativeUsageUnits, PendingNativeTaskOperation, SemanticControlRole,
     SnapshotReadRequest,
 };
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
@@ -25,7 +27,7 @@ pub use semantic::{
     SemanticCaptureRecord, SemanticCheckpointPackage, SemanticMaterialRejectionRecord,
     SemanticResultRecord,
 };
-pub use sqlite::SqliteLifecycleStore;
+pub use sqlite::{GrantControlHandle, SqliteLifecycleStore};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SubjectProjection {

@@ -13,6 +13,12 @@ use work_engine_types::CodecContract;
 
 use crate::{SqliteLifecycleStore, StoreError};
 
+// Offline custody capsules retain their actual schema across read-only inspection.
+// Writable migration remains owned by SqliteLifecycleStore::open_inner.
+fn supported_admin_schema(version: i64) -> bool {
+    matches!(version, 4 | 5)
+}
+
 type EffectRecoveryRow = (
     String,
     String,
@@ -861,6 +867,19 @@ impl SqliteLifecycleStore {
         fs::create_dir(destination).map_err(|_| StoreError::ClaimConflict)?;
         sync_dir(parent)?;
         self.snapshot_to(&destination.join("lifecycle.sqlite"))?;
+        let snapshot = rusqlite::Connection::open_with_flags(
+            destination.join("lifecycle.sqlite"),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+        let source_schema: i64 = snapshot
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if !supported_admin_schema(source_schema) {
+            return Err(StoreError::Rejected);
+        }
+        crate::recovery::check_coherence(&snapshot)?;
+        drop(snapshot);
         let database_sha256 = digest(
             &fs::read(destination.join("lifecycle.sqlite")).map_err(|_| StoreError::Unavailable)?,
         )?;
@@ -925,7 +944,7 @@ impl SqliteLifecycleStore {
             capsule_root: destination.to_path_buf(),
             source_store_id: ownership.store_id,
             source_revision,
-            source_schema: 4,
+            source_schema: source_schema as u32,
             database_sha256,
             artifacts,
             semantic_artifact_digests,
@@ -966,7 +985,7 @@ impl SqliteLifecycleStore {
             serde_json::from_slice(&fs::read(&manifest_path).map_err(|_| StoreError::Unavailable)?)
                 .map_err(|_| StoreError::Rejected)?;
         if receipt.version != 1
-            || receipt.source_schema != 4
+            || !supported_admin_schema(i64::from(receipt.source_schema))
             || receipt.capsule_root != capsule_root
             || receipt.capsule_sha256 != capsule_digest(&receipt)?
         {
@@ -991,7 +1010,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if version != 4 {
+        if !supported_admin_schema(version) || version != i64::from(receipt.source_schema) {
             return Err(StoreError::Rejected);
         }
         let store_id: String = inspection
@@ -1002,6 +1021,18 @@ impl SqliteLifecycleStore {
             )
             .map_err(|_| StoreError::Unavailable)?;
         if store_id != receipt.source_store_id {
+            return Err(StoreError::Rejected);
+        }
+        let snapshot_source_revision: i64 = inspection
+            .query_row(
+                "SELECT revision FROM admin_custody_revision WHERE singleton=1",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if u64::try_from(snapshot_source_revision).map_err(|_| StoreError::Unavailable)?
+            != receipt.source_revision
+        {
             return Err(StoreError::Rejected);
         }
         let mut statement = inspection
@@ -1736,7 +1767,7 @@ fn inspect_peer(root: &Path) -> Result<PeerOwnership, StoreError> {
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if version != 4 {
+    if !supported_admin_schema(version) {
         return Err(StoreError::Rejected);
     }
     connection.query_row(

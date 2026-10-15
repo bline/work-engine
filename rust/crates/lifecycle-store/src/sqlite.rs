@@ -22,6 +22,7 @@ use crate::{
 };
 
 type PriorCommandRow = (String, Vec<u8>, String, Option<String>, Option<String>, i64);
+type CommandReadbackRow = (String, String, String, Option<String>, Option<String>, i64);
 type PendingInputRow = (String, String, Vec<u8>, String, String, i64, String);
 type DeliveryRow = (
     String,
@@ -106,6 +107,55 @@ pub struct SqliteLifecycleStore {
     database_identity: (u64, u64),
 }
 
+/// Service-internal, grant-only connection sharing the owning store's held
+/// writer lock. It cannot admit effects or mutate lifecycle state generally.
+pub struct GrantControlHandle {
+    store: SqliteLifecycleStore,
+}
+
+impl GrantControlHandle {
+    #[allow(clippy::too_many_arguments)]
+    pub fn contract(
+        &mut self,
+        command_id: &str,
+        subject: &SubjectId,
+        principal: &str,
+        grant: &GrantId,
+        expected_revision: Revision,
+        canonical_command: &[u8],
+        clock: ClockSample,
+    ) -> Result<Revision, StoreError> {
+        self.store.contract_grant_command(
+            command_id,
+            subject,
+            principal,
+            grant,
+            expected_revision,
+            canonical_command,
+            clock,
+        )
+    }
+
+    pub fn readback(
+        &self,
+        command_id: &str,
+        subject: &SubjectId,
+        principal: &str,
+        grant: &GrantId,
+        expected_revision: Revision,
+        canonical_command: &[u8],
+    ) -> Result<Option<Revision>, StoreError> {
+        self.store.grant_contraction_readback(
+            command_id,
+            subject,
+            principal,
+            grant,
+            expected_revision,
+            canonical_command,
+        )
+    }
+}
+
 pub(crate) fn adoption_intent_path(root: &Path) -> Result<PathBuf, StoreError> {
     let mut name = root.file_name().ok_or(StoreError::Rejected)?.to_os_string();
     name.push(".adoption-pending");
@@ -113,6 +163,36 @@ pub(crate) fn adoption_intent_path(root: &Path) -> Result<PathBuf, StoreError> {
 }
 
 impl SqliteLifecycleStore {
+    /// Create one bounded control lane inside this owner's process and lock
+    /// lifetime. It has a separate SQLite connection so grant contraction can
+    /// race a task-owner commit while the main actor handles a native tool.
+    pub fn grant_control_handle(&self) -> Result<GrantControlHandle, StoreError> {
+        self.verify_identity()?;
+        let connection = Connection::open_with_flags(
+            self.root.join("lifecycle.sqlite"),
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NOFOLLOW,
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+        connection
+            .execute_batch(
+                "PRAGMA foreign_keys=ON; PRAGMA synchronous=FULL; PRAGMA busy_timeout=250;",
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        Ok(GrantControlHandle {
+            store: Self {
+                connection,
+                root: self.root.clone(),
+                _lock_file: self
+                    ._lock_file
+                    .try_clone()
+                    .map_err(|_| StoreError::Unavailable)?,
+                trusted_issuer: self.trusted_issuer.clone(),
+                root_identity: self.root_identity,
+                lock_identity: self.lock_identity,
+                database_identity: self.database_identity,
+            },
+        })
+    }
     /// Open one local lifecycle store. The lock remains held for this value's lifetime.
     pub fn open(root: &Path, trusted_issuer: String) -> Result<Self, StoreError> {
         Self::open_inner(root, trusted_issuer, false)
@@ -166,7 +246,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=4).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=5).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
         }
@@ -200,6 +280,7 @@ impl SqliteLifecycleStore {
             2 => {}
             3 => {}
             4 => {}
+            5 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -264,6 +345,16 @@ impl SqliteLifecycleStore {
                 .execute_batch("PRAGMA foreign_keys=ON")
                 .map_err(|_| StoreError::Unavailable)?;
             migration?;
+        }
+        if version < 5 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0005_retained_task.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 5)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
         let integrity: String = connection
             .query_row("PRAGMA quick_check", [], |row| row.get(0))
@@ -396,6 +487,122 @@ impl SqliteLifecycleStore {
         Ok(next)
     }
 
+    /// Authenticated service command for exact, once-only grant contraction.
+    /// The immutable command bytes give lost-reply readback a stable identity.
+    #[allow(clippy::too_many_arguments)]
+    pub fn contract_grant_command(
+        &mut self,
+        command_id: &str,
+        subject: &SubjectId,
+        principal: &str,
+        grant: &GrantId,
+        expected_revision: Revision,
+        canonical_command: &[u8],
+        clock: ClockSample,
+    ) -> Result<Revision, StoreError> {
+        self.verify_identity()?;
+        if canonical_command.len() > 4096 || canonical_command.is_empty() {
+            return Err(StoreError::Rejected);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let prior: Option<(String, String, String, i64, i64, Vec<u8>)> = tx.query_row(
+            "SELECT subject_id,principal,grant_id,expected_revision,resulting_revision,canonical_command \
+             FROM grant_contractions WHERE command_id=?1",
+            [command_id],
+            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        if let Some((s, p, g, e, next, bytes)) = prior {
+            if s == subject.as_str()
+                && p == principal
+                && g == grant.as_str()
+                && e == to_sql_revision(expected_revision)?
+                && bytes == canonical_command
+            {
+                return from_sql_revision(next);
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        let active: bool = tx
+            .query_row(
+                "SELECT status='active' FROM admin_ownership WHERE singleton=1",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if !active {
+            return Err(StoreError::Rejected);
+        }
+        let next = Revision::new(
+            expected_revision
+                .get()
+                .checked_add(1)
+                .ok_or(StoreError::Rejected)?,
+        );
+        let changed = tx
+            .execute(
+                "UPDATE grants SET revoked=1,revision=?1 WHERE grant_id=?2 AND revision=?3 \
+             AND revoked=0 AND issuer=?4 AND principal=?5 AND subject_id=?6",
+                params![
+                    to_sql_revision(next)?,
+                    grant.as_str(),
+                    to_sql_revision(expected_revision)?,
+                    self.trusted_issuer,
+                    principal,
+                    subject.as_str()
+                ],
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if changed != 1 {
+            return Err(StoreError::Rejected);
+        }
+        tx.execute(
+            "UPDATE subjects SET last_wall_ms=MAX(last_wall_ms,?1) WHERE subject_id=?2",
+            params![clock.wall.get(), subject.as_str()],
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+        tx.execute("INSERT INTO grant_contractions(command_id,subject_id,principal,grant_id,expected_revision,resulting_revision,canonical_command,committed_wall_ms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            params![command_id,subject.as_str(),principal,grant.as_str(),
+                to_sql_revision(expected_revision)?,to_sql_revision(next)?,canonical_command,clock.wall.get()])
+            .map_err(classify_write_error)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'grant_revoked',?2,?3)",
+            params![subject.as_str(),command_id,clock.wall.get()])
+            .map_err(|_| StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(next)
+    }
+
+    pub fn grant_contraction_readback(
+        &self,
+        command_id: &str,
+        subject: &SubjectId,
+        principal: &str,
+        grant: &GrantId,
+        expected_revision: Revision,
+        canonical_command: &[u8],
+    ) -> Result<Option<Revision>, StoreError> {
+        self.verify_identity()?;
+        let prior: Option<(String,String,String,i64,i64,Vec<u8>)> = self.connection.query_row(
+            "SELECT subject_id,principal,grant_id,expected_revision,resulting_revision,canonical_command FROM grant_contractions WHERE command_id=?1",
+            [command_id],
+            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        let Some((s, p, g, e, next, bytes)) = prior else {
+            return Ok(None);
+        };
+        if s != subject.as_str()
+            || p != principal
+            || g != grant.as_str()
+            || e != to_sql_revision(expected_revision)?
+            || bytes != canonical_command
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        from_sql_revision(next).map(Some)
+    }
+
     /// Resolve an authenticated exact command replay without reserving new
     /// execution capacity. A conflicting command ID is still a conflict.
     pub fn lookup_checked_command(
@@ -413,6 +620,45 @@ impl SqliteLifecycleStore {
             return Ok(None);
         };
         if digest != request.request_digest.hex() || bytes != admission.canonical_bytes() {
+            return Err(StoreError::ClaimConflict);
+        }
+        decode_result(
+            &self.connection,
+            &kind,
+            outcome_ref,
+            rejection_code,
+            revision,
+        )
+        .map(Some)
+    }
+
+    /// Read a committed command by immutable identity after a lost socket
+    /// reply. An absent row is unknown to the caller and grants no resend.
+    pub fn command_result_readback(
+        &self,
+        principal: &str,
+        subject: &SubjectId,
+        command_id: &str,
+        request_digest: &str,
+    ) -> Result<Option<CommandResult>, StoreError> {
+        self.verify_identity()?;
+        if request_digest.len() != 64 || !request_digest.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(StoreError::Rejected);
+        }
+        let prior: Option<CommandReadbackRow> = self
+            .connection
+            .query_row(
+                "SELECT subject_id,request_digest,outcome_kind,outcome_ref,rejection_code,resulting_revision \
+                 FROM commands WHERE principal=?1 AND command_id=?2",
+                params![principal, command_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some((row_subject, digest, kind, outcome_ref, rejection_code, revision)) = prior else {
+            return Ok(None);
+        };
+        if row_subject != subject.as_str() || digest != request_digest {
             return Err(StoreError::ClaimConflict);
         }
         decode_result(
@@ -493,6 +739,31 @@ impl SqliteLifecycleStore {
                 if existing != 0 {
                     reduction.result.outcome = CommandOutcome::Rejected(RejectionCode::Conflict);
                     reduction.result.revision = subject.revision;
+                    reduction.next_subject = subject.clone();
+                    reduction.next_subject.last_wall = clock.wall;
+                }
+            }
+            if matches!(
+                reduction.result.outcome,
+                CommandOutcome::ReplacementRequested { .. }
+            ) {
+                let late_task_terminal: bool = tx
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM native_delivery_segments d \
+                     JOIN native_turns n ON n.invocation_id=d.invocation_id \
+                     JOIN native_sessions s ON s.session_id=n.session_id \
+                     WHERE s.subject_id=?1 AND s.context_id=?2 AND d.state='completed' \
+                     AND n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 \
+                     JOIN native_sessions s2 ON s2.session_id=n2.session_id \
+                     WHERE s2.subject_id=?1 AND s2.context_id=?2 AND n2.purpose='domain_work' \
+                     ORDER BY n2.rowid DESC LIMIT 1))",
+                        params![request.subject.as_str(), request.context.as_str()],
+                        |r| r.get(0),
+                    )
+                    .map_err(|_| StoreError::Unavailable)?;
+                if late_task_terminal {
+                    reduction.result.outcome = CommandOutcome::Rejected(RejectionCode::Conflict);
+                    reduction.result.revision = subject.revision;
                     reduction.next_subject = subject;
                     reduction.next_subject.last_wall = clock.wall;
                 }
@@ -552,12 +823,15 @@ impl SqliteLifecycleStore {
                     [request.subject.as_str()], |row| row.get(0),
                 ).optional().map_err(|_| StoreError::Unavailable)?;
                 let native_basis_source = if native_session_exists {
-                    let latest: Option<(String,String,String)> = tx.query_row(
-                        "SELECT t.invocation_id,t.state,t.purpose FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND s.context_id=?2 ORDER BY t.entered_wall_ms DESC,t.rowid DESC LIMIT 1",
-                        params![request.subject.as_str(),request.context.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?)),
+                    let latest: Option<(String,String,String,bool)> = tx.query_row(
+                        "SELECT t.invocation_id,t.state,t.purpose,EXISTS(SELECT 1 FROM native_delivery_segments d WHERE d.invocation_id=t.invocation_id) FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND s.context_id=?2 ORDER BY t.entered_wall_ms DESC,t.rowid DESC LIMIT 1",
+                        params![request.subject.as_str(),request.context.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
                     ).optional().map_err(|_| StoreError::Unavailable)?;
-                    latest.and_then(|(id, state, purpose)| {
-                        (state == "completed_settled" && purpose == "domain_work").then_some(id)
+                    latest.and_then(|(id, state, purpose, task_segment)| {
+                        (purpose == "domain_work"
+                            && (state == "completed_settled"
+                                || (task_segment && state == "entered_uncertain")))
+                            .then_some(id)
                     })
                 } else {
                     None
@@ -945,9 +1219,11 @@ impl SqliteLifecycleStore {
              JOIN native_sessions s ON s.session_id=n.session_id WHERE t.transition_id=?1 \
              AND s.subject_id=t.subject_id AND s.context_id=t.predecessor_context \
              AND n.state='completed_settled' AND n.purpose='domain_work' AND n.final_text IS NOT NULL \
-             AND n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 JOIN native_sessions s2 ON s2.session_id=n2.session_id \
-                 WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context AND s2.role='domain' AND n2.purpose='domain_work' \
-                 ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1)",
+             AND (EXISTS(SELECT 1 FROM native_delivery_segments d WHERE d.invocation_id=n.invocation_id \
+                          AND d.transition_id=t.transition_id AND d.state='yielded') \
+                  OR n.invocation_id=(SELECT n2.invocation_id FROM native_turns n2 JOIN native_sessions s2 ON s2.session_id=n2.session_id \
+                      WHERE s2.subject_id=t.subject_id AND s2.context_id=t.predecessor_context AND s2.role='domain' AND n2.purpose='domain_work' \
+                      ORDER BY n2.entered_wall_ms DESC,n2.rowid DESC LIMIT 1))",
             [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?)),
         ).optional().map_err(|_| StoreError::Unavailable)?;
         if let Some((source_id, attempt_id, provider_thread_id, bytes)) = native {
@@ -1624,13 +1900,31 @@ impl SqliteLifecycleStore {
         let next = reduce_transition(&current, fact.clone()).map_err(|_| StoreError::Rejected)?;
         match next.stage {
             TransitionStage::Reconciled => {
+                // A retained task can cross this boundary with one logical
+                // delivery still Entered. Its exact yielded native segment is
+                // the transition basis; every other unresolved custody still
+                // blocks the switch. The queue attempt is not observed here.
+                let retained: Option<(String, String)> = tx.query_row(
+                    "SELECT a.attempt_id,i.input_id FROM transitions tr \
+                     JOIN native_delivery_segments d ON d.invocation_id=tr.native_basis_source \
+                          AND d.transition_id=tr.transition_id AND d.state='yielded' \
+                     JOIN native_turns n ON n.invocation_id=d.invocation_id AND n.state='completed_settled' \
+                     JOIN attempts a ON a.attempt_id=d.queue_attempt_id AND a.state='entered' \
+                          AND a.outcome='pending' AND a.settlement_kind='unresolved' \
+                     JOIN effects e ON e.effect_id=a.effect_id AND e.subject_id=tr.subject_id AND e.state='entered' \
+                     JOIN inputs i ON i.input_id=e.input_id AND i.subject_id=tr.subject_id AND i.state='entered' \
+                     WHERE tr.transition_id=?1 AND tr.semantic_required=1",
+                    [transition.as_str()], |row| Ok((row.get(0)?,row.get(1)?)),
+                ).optional().map_err(|_| StoreError::Unavailable)?;
+                let retained_attempt = retained.as_ref().map(|v| v.0.as_str()).unwrap_or("");
+                let retained_input = retained.as_ref().map(|v| v.1.as_str()).unwrap_or("");
                 let unresolved: i64 = tx.query_row(
-                    "SELECT COUNT(*) FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?1 AND (a.settlement_kind!='established' OR a.outcome NOT IN ('completed','failed','interrupted'))",
-                    [subject.subject.as_str()], |row| row.get(0),
+                    "SELECT COUNT(*) FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?1 AND a.attempt_id!=?2 AND (a.settlement_kind!='established' OR a.outcome NOT IN ('completed','failed','interrupted'))",
+                    params![subject.subject.as_str(),retained_attempt], |row| row.get(0),
                 ).map_err(|_| StoreError::Unavailable)?;
                 let blocked: i64 = tx.query_row(
-                    "SELECT COUNT(*) FROM inputs WHERE subject_id=?1 AND state IN ('entered','failed_blocked','unknown')",
-                    [subject.subject.as_str()], |row| row.get(0),
+                    "SELECT COUNT(*) FROM inputs WHERE subject_id=?1 AND input_id!=?2 AND state IN ('entered','failed_blocked','unknown')",
+                    params![subject.subject.as_str(),retained_input], |row| row.get(0),
                 ).map_err(|_| StoreError::Unavailable)?;
                 let native_unresolved: i64 = tx.query_row(
                     "SELECT (SELECT COUNT(*) FROM native_sessions WHERE subject_id=?1 AND allocation_state!='bound') + \

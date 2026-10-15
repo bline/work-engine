@@ -557,6 +557,7 @@ dependencies = [
  "getrandom 0.3.4",
  "lifecycle-core",
  "lifecycle-store",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",
@@ -600,6 +601,18 @@ dependencies = [
  "thiserror",
  "trybuild",
  "work-engine-types",
+]
+
+[[package]]
+name = "lifecycle-proof"
+version = "0.1.0"
+dependencies = [
+ "lifecycle-wire",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -651,6 +664,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror",
  "tokio",
@@ -1064,6 +1078,21 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+
+[[package]]
+name = "retained-task-workflow"
+version = "0.1.0"
+dependencies = [
+ "lifecycle-core",
+ "lifecycle-semantic",
+ "lifecycle-service",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
 
 [[package]]
 name = "review-episode"
@@ -1769,6 +1798,23 @@ dependencies = [
  "slice-campaign",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "work-engine-task-host"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "lifecycle-service",
+ "lifecycle-wire",
+ "retained-task-workflow",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "work-engine-types",
 ]
 
 [[package]]

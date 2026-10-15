@@ -1,0 +1,1182 @@
+//! Canonical, durable meaning for a retained repository-analysis task.
+//! Lifecycle owns delivery, native execution, tool effects, and custody.
+
+use std::{path::Path, sync::Mutex, time::Duration};
+#[cfg(feature = "controlled-proof")]
+use std::{path::PathBuf, time::Instant};
+
+use lifecycle_semantic::{
+    ObligationKind, RequiredObligation, SourceAvailability, SourceKind, SourceMaterial,
+    SourceReference, SourceTrust,
+};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest as _, Sha256};
+use thiserror::Error;
+
+mod material;
+mod port;
+
+pub const PROFILE: &str = "retained-repository-analysis-v1";
+pub const OWNER_NAMESPACE: &str = "retained-task-workflow";
+const MAX_TEXT: usize = 8 * 1024;
+type TaskGrantFence<'a> =
+    dyn FnMut(&mut dyn FnMut() -> Result<(), TaskError>) -> Result<(), TaskError> + 'a;
+type CommandRow = (String, String, String, Vec<u8>);
+
+#[derive(Debug, Error)]
+pub enum TaskError {
+    #[error("task input is invalid")]
+    Invalid,
+    #[error("task command conflicts with existing identity")]
+    Conflict,
+    #[error("task or operation is unavailable")]
+    Unavailable,
+    #[error("task authority or revision is stale")]
+    Stale,
+    #[error("task authority is invalid")]
+    Unauthorized,
+    #[error("task operation is blocked by an unresolved question")]
+    PendingQuestion,
+    #[error("task owner is busy")]
+    Busy,
+    #[error("task owner outcome is uncertain")]
+    Uncertain,
+    #[error("task storage failed: {0}")]
+    Storage(#[from] rusqlite::Error),
+    #[error("task encoding failed: {0}")]
+    Encoding(#[from] serde_json::Error),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SubjectKind {
+    RepositoryAnalysis,
+    DesignInquiry,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FactKind {
+    Governing,
+    CanonicalRecord,
+    Decision,
+    Commitment,
+    Uncertainty,
+    HumanInteraction,
+    CanonicalReference,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FactInput {
+    pub id: String,
+    pub kind: FactKind,
+    pub text: String,
+    #[serde(default = "default_current")]
+    pub current: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SubmitTask {
+    pub command_id: String,
+    pub task_id: String,
+    pub subject_id: String,
+    pub kind: SubjectKind,
+    pub objective: String,
+    pub engineering_question: String,
+    pub snapshot_ref: String,
+    #[serde(default)]
+    pub facts: Vec<FactInput>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnswerQuestion {
+    pub command_id: String,
+    pub task_id: String,
+    pub question_id: String,
+    pub recipient_ref: String,
+    pub scope_ref: String,
+    pub answer: String,
+    pub expected_revision: u64,
+    pub authority_ref: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum QuestionState {
+    Pending,
+    Answered {
+        answer: String,
+        authority_ref: String,
+    },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Question {
+    pub id: String,
+    pub recipient_ref: String,
+    pub scope_ref: String,
+    pub text: String,
+    pub state: QuestionState,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct CompletedEffect {
+    pub effect_id: String,
+    pub delivery_id: String,
+    pub receipt_digest: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AttributedResult {
+    pub result_id: String,
+    pub operation_id: String,
+    pub body: String,
+    pub source_refs: Vec<SourceReference>,
+    pub attribution: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TaskInput {
+    pub command_id: String,
+    pub input_id: String,
+    pub engineering_question: String,
+    pub owner_revision: u64,
+    pub cursor_revision: u64,
+    pub locator_text: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct InputLocator {
+    pub schema: String,
+    pub input_id: String,
+    pub task_id: String,
+    pub subject_id: String,
+    pub owner_revision: u64,
+    pub cursor_ref: String,
+    pub cursor_revision: u64,
+    pub objective_ref: String,
+    pub engineering_question: String,
+    pub snapshot_ref: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TaskRecord {
+    pub task_id: String,
+    pub subject_id: String,
+    pub kind: SubjectKind,
+    pub objective: String,
+    pub engineering_question: String,
+    pub snapshot_ref: String,
+    pub revision: u64,
+    pub cursor_revision: u64,
+    pub sources: Vec<SourceMaterial>,
+    #[serde(default)]
+    pub fact_kinds: std::collections::BTreeMap<String, FactKind>,
+    pub questions: Vec<Question>,
+    pub inputs: Vec<TaskInput>,
+    pub completed_effects: Vec<CompletedEffect>,
+    pub result: Option<AttributedResult>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TaskCommit {
+    pub task_id: String,
+    pub owner_revision: u64,
+    pub cursor_revision: u64,
+    pub digest: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AdmissionCommand {
+    pub command_id: String,
+    pub request_digest: String,
+    pub command_json: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ControlCommand {
+    pub command_id: String,
+    pub kind: String,
+    pub request_sha256: String,
+    pub service_command_json: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OperationEntry {
+    pub operation_id: String,
+    pub task_id: String,
+    pub subject_id: String,
+    pub delivery_id: String,
+    pub attempt_id: String,
+    pub expected_task_revision: u64,
+    pub expected_cursor_revision: u64,
+    pub grant_ref: String,
+    pub grant_revision: u64,
+    pub payload_sha256: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct QuestionOpenPayload {
+    pub question_id: String,
+    pub recipient_ref: String,
+    pub scope_ref: String,
+    pub text: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ResultPublishPayload {
+    pub result_id: String,
+    pub body: String,
+    pub source_refs: Vec<SourceReference>,
+    pub attribution: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OperationCommit {
+    pub operation_id: String,
+    pub task_id: String,
+    pub kind: String,
+    pub owner_revision: u64,
+    pub cursor_revision: u64,
+    pub digest: String,
+}
+
+pub struct TaskStore {
+    connection: Mutex<Connection>,
+    answer_authority_ref: String,
+    #[cfg(feature = "controlled-proof")]
+    proof_barrier_dir: Option<PathBuf>,
+}
+
+impl TaskStore {
+    pub fn open(path: &Path, answer_authority_ref: String) -> Result<Self, TaskError> {
+        if answer_authority_ref.is_empty() || !path.is_absolute() {
+            return Err(TaskError::Invalid);
+        }
+        let connection = Connection::open(path)?;
+        connection.busy_timeout(Duration::from_secs(2))?;
+        connection.execute_batch(
+            "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
+             CREATE TABLE IF NOT EXISTS tasks (
+               task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL UNIQUE,
+               record_json BLOB NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS commands (
+               command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+               payload_digest TEXT NOT NULL, task_id TEXT NOT NULL,
+               commit_json BLOB NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS operations (
+               operation_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+               payload_digest TEXT NOT NULL, entry_digest TEXT NOT NULL,
+               commit_json BLOB NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS completed_effects (
+               effect_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+               delivery_id TEXT NOT NULL, receipt_digest TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS admission_commands (
+               command_id TEXT PRIMARY KEY, request_digest TEXT NOT NULL,
+               command_json TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS control_commands (
+               command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+               request_sha256 TEXT NOT NULL, service_command_json TEXT NOT NULL
+             );",
+        )?;
+        Ok(Self {
+            connection: Mutex::new(connection),
+            answer_authority_ref,
+            #[cfg(feature = "controlled-proof")]
+            proof_barrier_dir: None,
+        })
+    }
+
+    /// Controlled timing only. The installed host supplies this trusted path;
+    /// default builds have no task-lock barrier capability.
+    #[cfg(feature = "controlled-proof")]
+    pub fn with_controlled_proof_barrier(
+        mut self,
+        root: Option<PathBuf>,
+    ) -> Result<Self, TaskError> {
+        if root
+            .as_ref()
+            .is_some_and(|path| !path.is_absolute() || !path.is_dir())
+        {
+            return Err(TaskError::Invalid);
+        }
+        self.proof_barrier_dir = root;
+        Ok(self)
+    }
+
+    pub fn submit(&self, input: &SubmitTask) -> Result<TaskCommit, TaskError> {
+        self.submit_with_status(input).map(|(commit, _)| commit)
+    }
+
+    /// The boolean is true only for the first owner publication. A repeated
+    /// command must read lifecycle admission back, never be reissued by absence.
+    pub fn submit_with_status(&self, input: &SubmitTask) -> Result<(TaskCommit, bool), TaskError> {
+        validate_submit(input)?;
+        let payload_digest = json_digest(input)?;
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        if let Some((kind, digest, task_id, receipt)) = command_row(&tx, &input.command_id)? {
+            if kind != "submit" || digest != payload_digest || task_id != input.task_id {
+                return Err(TaskError::Conflict);
+            }
+            return Ok((serde_json::from_slice(&receipt)?, false));
+        }
+        if let Some(mut record) = read_task(&tx, &input.task_id)? {
+            if record.subject_id != input.subject_id
+                || record.kind != input.kind
+                || record.objective != input.objective
+                || record.snapshot_ref != input.snapshot_ref
+                || !input.facts.is_empty()
+                || record.result.is_some()
+            {
+                return Err(TaskError::Conflict);
+            }
+            record.revision += 1;
+            let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+            record.inputs.push(task_input);
+            write_task(&tx, &record)?;
+            let commit = commit_of(&record)?;
+            tx.execute(
+                "INSERT INTO commands VALUES (?1,'submit',?2,?3,?4)",
+                params![
+                    input.command_id,
+                    payload_digest,
+                    input.task_id,
+                    serde_json::to_vec(&commit)?
+                ],
+            )?;
+            tx.commit()?;
+            return Ok((commit, true));
+        }
+        let mut record = TaskRecord {
+            task_id: input.task_id.clone(),
+            subject_id: input.subject_id.clone(),
+            kind: input.kind,
+            objective: input.objective.clone(),
+            engineering_question: input.engineering_question.clone(),
+            snapshot_ref: input.snapshot_ref.clone(),
+            revision: 1,
+            cursor_revision: 1,
+            sources: Vec::new(),
+            fact_kinds: std::collections::BTreeMap::new(),
+            questions: Vec::new(),
+            inputs: Vec::new(),
+            completed_effects: Vec::new(),
+            result: None,
+        };
+        add_source(
+            &mut record,
+            "objective",
+            SourceKind::CanonicalRecord,
+            &input.objective,
+            true,
+        );
+        add_source(
+            &mut record,
+            "engineering-question",
+            SourceKind::CanonicalRecord,
+            &input.engineering_question,
+            true,
+        );
+        add_source(
+            &mut record,
+            "snapshot-reference",
+            SourceKind::CanonicalRecord,
+            &input.snapshot_ref,
+            true,
+        );
+        for fact in &input.facts {
+            let (kind, text) = fact_source(fact);
+            add_source(&mut record, &fact.id, kind, text, fact.current);
+            record.fact_kinds.insert(fact.id.clone(), fact.kind);
+        }
+        let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+        record.inputs.push(task_input);
+        write_task(&tx, &record)?;
+        let commit = commit_of(&record)?;
+        tx.execute(
+            "INSERT INTO commands VALUES (?1,'submit',?2,?3,?4)",
+            params![
+                input.command_id,
+                payload_digest,
+                input.task_id,
+                serde_json::to_vec(&commit)?
+            ],
+        )?;
+        tx.commit()?;
+        Ok((commit, true))
+    }
+
+    pub fn answer(&self, input: &AnswerQuestion) -> Result<TaskCommit, TaskError> {
+        if !valid_id(&input.command_id)
+            || !valid_id(&input.question_id)
+            || !valid_text(&input.answer)
+            || input.expected_revision == 0
+        {
+            return Err(TaskError::Invalid);
+        }
+        if input.authority_ref != self.answer_authority_ref {
+            return Err(TaskError::Unauthorized);
+        }
+        let payload_digest = json_digest(input)?;
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        if let Some((kind, digest, task_id, receipt)) = command_row(&tx, &input.command_id)? {
+            if kind != "answer" || digest != payload_digest || task_id != input.task_id {
+                return Err(TaskError::Conflict);
+            }
+            return Ok(serde_json::from_slice(&receipt)?);
+        }
+        let mut record = read_task(&tx, &input.task_id)?.ok_or(TaskError::Unavailable)?;
+        if record.revision != input.expected_revision {
+            return Err(TaskError::Stale);
+        }
+        let question = record
+            .questions
+            .iter_mut()
+            .find(|q| q.id == input.question_id)
+            .ok_or(TaskError::Unavailable)?;
+        if question.recipient_ref != input.recipient_ref
+            || question.scope_ref != input.scope_ref
+            || !matches!(question.state, QuestionState::Pending)
+        {
+            return Err(TaskError::Conflict);
+        }
+        question.state = QuestionState::Answered {
+            answer: input.answer.clone(),
+            authority_ref: input.authority_ref.clone(),
+        };
+        record.revision += 1;
+        record.cursor_revision += 1;
+        update_source(
+            &mut record,
+            &format!("question-{}", input.question_id),
+            &format!(
+                "Question {} answered by {} in scope {}: {}",
+                input.question_id, input.authority_ref, input.scope_ref, input.answer
+            ),
+        )?;
+        write_task(&tx, &record)?;
+        let commit = commit_of(&record)?;
+        tx.execute(
+            "INSERT INTO commands VALUES (?1,'answer',?2,?3,?4)",
+            params![
+                input.command_id,
+                payload_digest,
+                input.task_id,
+                serde_json::to_vec(&commit)?
+            ],
+        )?;
+        tx.commit()?;
+        Ok(commit)
+    }
+
+    pub fn observe(&self, task_id: &str) -> Result<Option<TaskRecord>, TaskError> {
+        let connection = self.lock()?;
+        read_task(&connection, task_id)
+    }
+
+    pub fn input_text(&self, command_id: &str) -> Result<Option<String>, TaskError> {
+        let connection = self.lock()?;
+        let Some((kind, _, task_id, _)) = command_row(&connection, command_id)? else {
+            return Ok(None);
+        };
+        if kind != "submit" {
+            return Ok(None);
+        }
+        let record = read_task(&connection, &task_id)?.ok_or(TaskError::Uncertain)?;
+        Ok(record
+            .inputs
+            .iter()
+            .find(|input| input.command_id == command_id)
+            .map(|input| input.locator_text.clone()))
+    }
+
+    /// Read an exact, already committed owner command without opening a write
+    /// transaction. Recovery-only hosts use this before refusing new work.
+    pub fn lookup_command_receipt(
+        &self,
+        kind: &str,
+        task_id: &str,
+        command_id: &str,
+        payload_digest: &str,
+    ) -> Result<Option<TaskCommit>, TaskError> {
+        if !matches!(kind, "submit" | "answer") || !valid_digest(payload_digest) {
+            return Err(TaskError::Invalid);
+        }
+        let connection = self.lock()?;
+        let Some((stored_kind, stored_digest, stored_task_id, receipt)) =
+            command_row(&connection, command_id)?
+        else {
+            return Ok(None);
+        };
+        if stored_kind != kind || stored_digest != payload_digest || stored_task_id != task_id {
+            return Err(TaskError::Conflict);
+        }
+        Ok(Some(serde_json::from_slice(&receipt)?))
+    }
+
+    pub fn record_admission_command(&self, command: &AdmissionCommand) -> Result<(), TaskError> {
+        if !valid_id(&command.command_id)
+            || !valid_digest(&command.request_digest)
+            || command.command_json.len() > MAX_TEXT
+        {
+            return Err(TaskError::Invalid);
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let Some((kind, _, _, _)) = command_row(&tx, &command.command_id)? else {
+            return Err(TaskError::Unavailable);
+        };
+        if kind != "submit" {
+            return Err(TaskError::Invalid);
+        }
+        let old: Option<(String, String)> = tx
+            .query_row(
+                "SELECT request_digest,command_json FROM admission_commands WHERE command_id=?1",
+                [&command.command_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?;
+        if let Some(old) = old {
+            if old != (command.request_digest.clone(), command.command_json.clone()) {
+                return Err(TaskError::Conflict);
+            }
+            return Ok(());
+        }
+        tx.execute(
+            "INSERT INTO admission_commands VALUES (?1,?2,?3)",
+            params![
+                command.command_id,
+                command.request_digest,
+                command.command_json
+            ],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn lookup_admission_command(
+        &self,
+        command_id: &str,
+    ) -> Result<Option<AdmissionCommand>, TaskError> {
+        let connection = self.lock()?;
+        connection
+            .query_row(
+                "SELECT request_digest,command_json FROM admission_commands WHERE command_id=?1",
+                [command_id],
+                |r| {
+                    Ok(AdmissionCommand {
+                        command_id: command_id.into(),
+                        request_digest: r.get(0)?,
+                        command_json: r.get(1)?,
+                    })
+                },
+            )
+            .optional()
+            .map_err(TaskError::from)
+    }
+
+    pub fn record_control_command(&self, command: &ControlCommand) -> Result<bool, TaskError> {
+        if !valid_id(&command.command_id)
+            || !valid_digest(&command.request_sha256)
+            || command.service_command_json.len() > MAX_TEXT
+            || !matches!(command.kind.as_str(), "replacement" | "contract_grant")
+        {
+            return Err(TaskError::Invalid);
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let prior:Option<(String,String,String)>=tx.query_row("SELECT kind,request_sha256,service_command_json FROM control_commands WHERE command_id=?1",[&command.command_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional()?;
+        if let Some(prior) = prior {
+            if prior
+                != (
+                    command.kind.clone(),
+                    command.request_sha256.clone(),
+                    command.service_command_json.clone(),
+                )
+            {
+                return Err(TaskError::Conflict);
+            }
+            return Ok(false);
+        }
+        tx.execute(
+            "INSERT INTO control_commands VALUES (?1,?2,?3,?4)",
+            params![
+                command.command_id,
+                command.kind,
+                command.request_sha256,
+                command.service_command_json
+            ],
+        )?;
+        tx.commit()?;
+        Ok(true)
+    }
+    pub fn lookup_control_command(
+        &self,
+        command_id: &str,
+    ) -> Result<Option<ControlCommand>, TaskError> {
+        let connection = self.lock()?;
+        connection.query_row("SELECT kind,request_sha256,service_command_json FROM control_commands WHERE command_id=?1",[command_id],|r|Ok(ControlCommand{command_id:command_id.into(),kind:r.get(0)?,request_sha256:r.get(1)?,service_command_json:r.get(2)?})).optional().map_err(TaskError::from)
+    }
+
+    pub fn validate_input(&self, input_id: &str, text: &str) -> Result<InputLocator, TaskError> {
+        if text.len() > 8 * 1024 {
+            return Err(TaskError::Invalid);
+        }
+        let locator: InputLocator = serde_json::from_str(text)?;
+        if locator.schema != "retained-task-input-v1"
+            || locator.input_id != input_id
+            || locator.cursor_ref != locator.task_id
+            || locator.objective_ref != "objective"
+        {
+            return Err(TaskError::Invalid);
+        }
+        let connection = self.lock()?;
+        let record = read_task(&connection, &locator.task_id)?.ok_or(TaskError::Unavailable)?;
+        if record.subject_id != locator.subject_id || record.snapshot_ref != locator.snapshot_ref {
+            return Err(TaskError::Conflict);
+        }
+        let input = record
+            .inputs
+            .iter()
+            .find(|input| input.input_id == input_id)
+            .ok_or(TaskError::Unavailable)?;
+        if input.locator_text != text
+            || input.owner_revision != locator.owner_revision
+            || input.cursor_revision != locator.cursor_revision
+            || input.engineering_question != locator.engineering_question
+        {
+            return Err(TaskError::Conflict);
+        }
+        Ok(locator)
+    }
+
+    pub fn observe_subject(&self, subject_id: &str) -> Result<Option<TaskRecord>, TaskError> {
+        let connection = self.lock()?;
+        let value: Option<Vec<u8>> = connection
+            .query_row(
+                "SELECT record_json FROM tasks WHERE subject_id=?1",
+                [subject_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        value
+            .map(|bytes| serde_json::from_slice(&bytes).map_err(TaskError::from))
+            .transpose()
+    }
+
+    /// Invoked only after lifecycle's exact child/effect settlement is committed.
+    /// The owner record, not this callback's return, is durable cursor evidence.
+    pub fn record_completed_effect(
+        &self,
+        task_id: &str,
+        effect: CompletedEffect,
+        expected_cursor_revision: u64,
+    ) -> Result<TaskCommit, TaskError> {
+        if !valid_id(&effect.effect_id)
+            || !valid_id(&effect.delivery_id)
+            || !valid_digest(&effect.receipt_digest)
+        {
+            return Err(TaskError::Invalid);
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let existing: Option<(String,String,String)> = tx.query_row("SELECT task_id,delivery_id,receipt_digest FROM completed_effects WHERE effect_id=?1", [&effect.effect_id], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional()?;
+        if let Some(existing) = existing {
+            if existing
+                != (
+                    task_id.to_owned(),
+                    effect.delivery_id.clone(),
+                    effect.receipt_digest.clone(),
+                )
+            {
+                return Err(TaskError::Conflict);
+            }
+            return commit_of(&read_task(&tx, task_id)?.ok_or(TaskError::Uncertain)?);
+        }
+        let mut record = read_task(&tx, task_id)?.ok_or(TaskError::Unavailable)?;
+        if record.cursor_revision != expected_cursor_revision {
+            return Err(TaskError::Stale);
+        }
+        record.completed_effects.push(effect.clone());
+        record.revision += 1;
+        record.cursor_revision += 1;
+        add_source(
+            &mut record,
+            &format!("effect-{}", effect.effect_id),
+            SourceKind::DeliveryConsequence,
+            &format!(
+                "Completed effect {} for delivery {} receipt {}",
+                effect.effect_id, effect.delivery_id, effect.receipt_digest
+            ),
+            true,
+        );
+        write_task(&tx, &record)?;
+        tx.execute(
+            "INSERT INTO completed_effects VALUES (?1,?2,?3,?4)",
+            params![
+                effect.effect_id,
+                task_id,
+                effect.delivery_id,
+                effect.receipt_digest
+            ],
+        )?;
+        tx.commit()?;
+        commit_of(&record)
+    }
+
+    pub fn lookup_completed_effect(
+        &self,
+        effect_id: &str,
+    ) -> Result<Option<CompletedEffect>, TaskError> {
+        let connection = self.lock()?;
+        connection
+            .query_row(
+                "SELECT delivery_id,receipt_digest FROM completed_effects WHERE effect_id=?1",
+                [effect_id],
+                |r| {
+                    Ok(CompletedEffect {
+                        effect_id: effect_id.into(),
+                        delivery_id: r.get(0)?,
+                        receipt_digest: r.get(1)?,
+                    })
+                },
+            )
+            .optional()
+            .map_err(TaskError::from)
+    }
+
+    pub fn lookup_operation(
+        &self,
+        operation_id: &str,
+    ) -> Result<Option<OperationCommit>, TaskError> {
+        let connection = self.lock()?;
+        let bytes: Option<Vec<u8>> = connection
+            .query_row(
+                "SELECT commit_json FROM operations WHERE operation_id=?1",
+                [operation_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        bytes
+            .map(|bytes| serde_json::from_slice(&bytes).map_err(TaskError::from))
+            .transpose()
+    }
+
+    /// `with_grant_fence` must acquire and hold the lifecycle grant/currentness
+    /// transaction while it executes its callback. Lock order is task then lifecycle.
+    pub fn open_question(
+        &self,
+        entry: &OperationEntry,
+        payload: &QuestionOpenPayload,
+        with_grant_fence: &mut TaskGrantFence<'_>,
+    ) -> Result<OperationCommit, TaskError> {
+        self.commit_operation(
+            entry,
+            "task.question.open.v1",
+            payload,
+            with_grant_fence,
+            |record| {
+                if !valid_id(&payload.question_id)
+                    || !valid_id(&payload.recipient_ref)
+                    || !valid_id(&payload.scope_ref)
+                    || !valid_text(&payload.text)
+                    || record.questions.iter().any(|q| q.id == payload.question_id)
+                {
+                    return Err(TaskError::Invalid);
+                }
+                record.questions.push(Question {
+                    id: payload.question_id.clone(),
+                    recipient_ref: payload.recipient_ref.clone(),
+                    scope_ref: payload.scope_ref.clone(),
+                    text: payload.text.clone(),
+                    state: QuestionState::Pending,
+                });
+                add_source(
+                    record,
+                    &format!("question-{}", payload.question_id),
+                    SourceKind::HumanInteraction,
+                    &format!(
+                        "Pending question {} to {} in scope {}: {}",
+                        payload.question_id, payload.recipient_ref, payload.scope_ref, payload.text
+                    ),
+                    true,
+                );
+                Ok(())
+            },
+        )
+    }
+
+    pub fn publish_result(
+        &self,
+        entry: &OperationEntry,
+        payload: &ResultPublishPayload,
+        with_grant_fence: &mut TaskGrantFence<'_>,
+    ) -> Result<OperationCommit, TaskError> {
+        self.commit_operation(
+            entry,
+            "task.result.publish.v1",
+            payload,
+            with_grant_fence,
+            |record| {
+                if !valid_id(&payload.result_id)
+                    || !valid_text(&payload.body)
+                    || !valid_id(&payload.attribution)
+                    || record.result.is_some()
+                {
+                    return Err(TaskError::Invalid);
+                }
+                if record
+                    .questions
+                    .iter()
+                    .any(|q| matches!(q.state, QuestionState::Pending))
+                {
+                    return Err(TaskError::PendingQuestion);
+                }
+                if payload.source_refs.is_empty()
+                    || payload.source_refs.iter().any(|reference| {
+                        !record.sources.iter().any(|source| {
+                            source.current
+                                && source.availability == SourceAvailability::Complete
+                                && source.reference() == *reference
+                        })
+                    })
+                {
+                    return Err(TaskError::Stale);
+                }
+                record.result = Some(AttributedResult {
+                    result_id: payload.result_id.clone(),
+                    operation_id: entry.operation_id.clone(),
+                    body: payload.body.clone(),
+                    source_refs: payload.source_refs.clone(),
+                    attribution: payload.attribution.clone(),
+                });
+                add_source(
+                    record,
+                    &format!("result-{}", payload.result_id),
+                    SourceKind::DeliveryConsequence,
+                    &payload.body,
+                    true,
+                );
+                Ok(())
+            },
+        )
+    }
+
+    fn commit_operation<P: Serialize>(
+        &self,
+        entry: &OperationEntry,
+        kind: &str,
+        payload: &P,
+        with_grant_fence: &mut TaskGrantFence<'_>,
+        update: impl FnOnce(&mut TaskRecord) -> Result<(), TaskError>,
+    ) -> Result<OperationCommit, TaskError> {
+        if !valid_id(&entry.operation_id)
+            || !valid_id(&entry.task_id)
+            || !valid_id(&entry.delivery_id)
+            || !valid_id(&entry.attempt_id)
+            || !valid_id(&entry.grant_ref)
+            || entry.grant_revision == 0
+        {
+            return Err(TaskError::Invalid);
+        }
+        let digest = json_digest(payload)?;
+        let entry_digest = json_digest(entry)?;
+        if digest != entry.payload_sha256 {
+            return Err(TaskError::Conflict);
+        }
+        let mut connection = self.lock()?;
+        let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let existing: Option<(String, String, String, Vec<u8>)> = tx
+            .query_row(
+                "SELECT kind,payload_digest,entry_digest,commit_json FROM operations WHERE operation_id=?1",
+                [&entry.operation_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?,r.get(3)?)),
+            )
+            .optional()?;
+        if let Some((old_kind, old_digest, old_entry_digest, bytes)) = existing {
+            if old_kind != kind || old_digest != digest || old_entry_digest != entry_digest {
+                return Err(TaskError::Conflict);
+            }
+            return Ok(serde_json::from_slice(&bytes)?);
+        }
+        let mut record = read_task(&tx, &entry.task_id)?.ok_or(TaskError::Unavailable)?;
+        if record.subject_id != entry.subject_id
+            || record.revision != entry.expected_task_revision
+            || record.cursor_revision != entry.expected_cursor_revision
+        {
+            return Err(TaskError::Stale);
+        }
+        update(&mut record)?;
+        record.revision += 1;
+        record.cursor_revision += 1;
+        let receipt = OperationCommit {
+            operation_id: entry.operation_id.clone(),
+            task_id: entry.task_id.clone(),
+            kind: kind.into(),
+            owner_revision: record.revision,
+            cursor_revision: record.cursor_revision,
+            digest: json_digest(&record)?,
+        };
+        #[cfg(feature = "controlled-proof")]
+        if kind == "task.result.publish.v1" {
+            self.controlled_result_barrier()?;
+        }
+        let mut tx = Some(tx);
+        with_grant_fence(&mut || {
+            let tx = tx.take().ok_or(TaskError::Uncertain)?;
+            write_task(&tx, &record)?;
+            tx.execute(
+                "INSERT INTO operations VALUES (?1,?2,?3,?4,?5)",
+                params![
+                    entry.operation_id,
+                    kind,
+                    digest,
+                    entry_digest,
+                    serde_json::to_vec(&receipt)?
+                ],
+            )?;
+            tx.commit()?;
+            Ok(())
+        })?;
+        if tx.is_some() {
+            return Err(TaskError::Uncertain);
+        }
+        Ok(receipt)
+    }
+
+    fn lock(&self) -> Result<std::sync::MutexGuard<'_, Connection>, TaskError> {
+        self.connection.lock().map_err(|_| TaskError::Uncertain)
+    }
+
+    #[cfg(feature = "controlled-proof")]
+    fn controlled_result_barrier(&self) -> Result<(), TaskError> {
+        const POINT: &str = "task_result_after_owner_begin";
+        let Some(root) = self.proof_barrier_dir.as_deref() else {
+            return Ok(());
+        };
+        if !root.join(format!("{POINT}.arm")).exists() {
+            return Ok(());
+        }
+        let reached = root.join(format!("{POINT}.reached"));
+        let release = root.join(format!("{POINT}.release"));
+        let mut file = std::fs::File::create(reached).map_err(|_| TaskError::Uncertain)?;
+        use std::io::Write as _;
+        file.write_all(b"reached\n")
+            .map_err(|_| TaskError::Uncertain)?;
+        file.sync_all().map_err(|_| TaskError::Uncertain)?;
+        let deadline = Instant::now() + Duration::from_secs(15);
+        while !release.exists() {
+            if Instant::now() >= deadline {
+                return Err(TaskError::Busy);
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        Ok(())
+    }
+}
+
+fn read_task(connection: &Connection, task_id: &str) -> Result<Option<TaskRecord>, TaskError> {
+    let bytes: Option<Vec<u8>> = connection
+        .query_row(
+            "SELECT record_json FROM tasks WHERE task_id=?1",
+            [task_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    bytes
+        .map(|bytes| serde_json::from_slice(&bytes).map_err(TaskError::from))
+        .transpose()
+}
+fn write_task(connection: &Connection, record: &TaskRecord) -> Result<(), TaskError> {
+    connection.execute("INSERT INTO tasks(task_id,subject_id,record_json) VALUES(?1,?2,?3) ON CONFLICT(task_id) DO UPDATE SET record_json=excluded.record_json",params![record.task_id,record.subject_id,serde_json::to_vec(record)?])?;
+    Ok(())
+}
+fn command_row(connection: &Connection, id: &str) -> Result<Option<CommandRow>, TaskError> {
+    connection
+        .query_row(
+            "SELECT kind,payload_digest,task_id,commit_json FROM commands WHERE command_id=?1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .optional()
+        .map_err(TaskError::from)
+}
+fn commit_of(record: &TaskRecord) -> Result<TaskCommit, TaskError> {
+    Ok(TaskCommit {
+        task_id: record.task_id.clone(),
+        owner_revision: record.revision,
+        cursor_revision: record.cursor_revision,
+        digest: json_digest(record)?,
+    })
+}
+fn make_input(
+    record: &TaskRecord,
+    command_id: &str,
+    question: &str,
+) -> Result<TaskInput, TaskError> {
+    let input_id = format!("input:{command_id}");
+    let locator = InputLocator {
+        schema: "retained-task-input-v1".into(),
+        input_id: input_id.clone(),
+        task_id: record.task_id.clone(),
+        subject_id: record.subject_id.clone(),
+        owner_revision: record.revision,
+        cursor_ref: record.task_id.clone(),
+        cursor_revision: record.cursor_revision,
+        objective_ref: "objective".into(),
+        engineering_question: question.into(),
+        snapshot_ref: record.snapshot_ref.clone(),
+    };
+    let locator_text = serde_json::to_string(&locator)?;
+    if locator_text.len() > 8 * 1024 {
+        return Err(TaskError::Invalid);
+    }
+    Ok(TaskInput {
+        command_id: command_id.into(),
+        input_id,
+        engineering_question: question.into(),
+        owner_revision: record.revision,
+        cursor_revision: record.cursor_revision,
+        locator_text,
+    })
+}
+fn add_source(record: &mut TaskRecord, id: &str, kind: SourceKind, text: &str, required: bool) {
+    let trust = if kind == SourceKind::Governing {
+        SourceTrust::HostGoverning
+    } else {
+        SourceTrust::HostCanonical
+    };
+    record.sources.push(SourceMaterial {
+        id: id.into(),
+        owner_namespace: OWNER_NAMESPACE.into(),
+        owner_ref: record.task_id.clone(),
+        revision: 1,
+        dependency_key: format!("{}:{id}", record.task_id),
+        current: required,
+        dependency_required: required,
+        kind,
+        trust,
+        availability: SourceAvailability::Complete,
+        bytes: text.as_bytes().to_vec(),
+        sha256: sha256(text.as_bytes()),
+    });
+}
+fn update_source(record: &mut TaskRecord, id: &str, text: &str) -> Result<(), TaskError> {
+    let source = record
+        .sources
+        .iter_mut()
+        .find(|s| s.id == id)
+        .ok_or(TaskError::Unavailable)?;
+    source.revision += 1;
+    source.bytes = text.as_bytes().to_vec();
+    source.sha256 = sha256(&source.bytes);
+    Ok(())
+}
+fn fact_source(fact: &FactInput) -> (SourceKind, &str) {
+    let kind = match fact.kind {
+        FactKind::Governing => SourceKind::Governing,
+        FactKind::CanonicalRecord | FactKind::CanonicalReference => SourceKind::CanonicalRecord,
+        FactKind::Decision => SourceKind::Decision,
+        FactKind::Commitment => SourceKind::CanonicalRecord,
+        FactKind::Uncertainty => SourceKind::CanonicalRecord,
+        FactKind::HumanInteraction => SourceKind::HumanInteraction,
+    };
+    (kind, &fact.text)
+}
+fn default_current() -> bool {
+    true
+}
+fn validate_submit(input: &SubmitTask) -> Result<(), TaskError> {
+    if !valid_id(&input.command_id)
+        || input.command_id.len() > 120
+        || !valid_id(&input.task_id)
+        || !valid_id(&input.subject_id)
+        || !valid_id(&input.snapshot_ref)
+        || !valid_text(&input.objective)
+        || !valid_text(&input.engineering_question)
+        || input.facts.len() > 32
+        || input.objective.len()
+            + input.engineering_question.len()
+            + input.snapshot_ref.len()
+            + input.facts.iter().map(|f| f.text.len()).sum::<usize>()
+            > 64 * 1024
+        || input.facts.iter().any(|f| {
+            !valid_id(&f.id)
+                || !valid_text(&f.text)
+                || ["objective", "engineering-question", "snapshot-reference"]
+                    .contains(&f.id.as_str())
+                || ["question-", "effect-", "result-", "input-"]
+                    .iter()
+                    .any(|prefix| f.id.starts_with(prefix))
+        })
+    {
+        return Err(TaskError::Invalid);
+    }
+    let mut ids = std::collections::BTreeSet::new();
+    if input.facts.iter().any(|f| !ids.insert(&f.id)) {
+        return Err(TaskError::Invalid);
+    }
+    Ok(())
+}
+fn valid_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b))
+}
+fn valid_text(value: &str) -> bool {
+    !value.is_empty() && value.len() <= MAX_TEXT && !value.contains('\0')
+}
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+pub fn sha256(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+pub fn json_digest<T: Serialize>(value: &T) -> Result<String, TaskError> {
+    Ok(sha256(&serde_json::to_vec(value)?))
+}
+
+pub fn obligations(record: &TaskRecord) -> Vec<RequiredObligation> {
+    record
+        .sources
+        .iter()
+        .filter(|s| s.current)
+        .map(|s| {
+            let kind = match s.id.as_str() {
+                "objective" | "engineering-question" => ObligationKind::Objective,
+                "snapshot-reference" => ObligationKind::CanonicalReference,
+                _ if s.id.starts_with("question-") => ObligationKind::HumanInteraction,
+                _ if s.id.starts_with("effect-") => ObligationKind::CompletedConsequence,
+                _ if s.id.starts_with("result-") => ObligationKind::CompletedConsequence,
+                _ => match record.fact_kinds.get(&s.id) {
+                    Some(FactKind::Governing) => ObligationKind::Governing,
+                    Some(FactKind::Decision) => ObligationKind::Decision,
+                    Some(FactKind::Commitment) => ObligationKind::Commitment,
+                    Some(FactKind::Uncertainty) => ObligationKind::Uncertainty,
+                    Some(FactKind::HumanInteraction) => ObligationKind::HumanInteraction,
+                    _ => ObligationKind::CanonicalReference,
+                },
+            };
+            RequiredObligation {
+                id: format!("obligation-{}", s.id),
+                kind,
+                verifier_scope: format!("Preserve current {} source and its consequence", s.id),
+                description: format!("Current task-owned {} remains represented accurately", s.id),
+                sources: vec![s.reference()],
+            }
+        })
+        .collect()
+}

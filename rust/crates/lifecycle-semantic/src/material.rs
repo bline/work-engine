@@ -192,7 +192,12 @@ impl SourceBasis {
 /// Check host-projected material without changing source availability. The
 /// caller still must establish owner currentness at commit under its fence.
 pub fn project_material(input: MaterialInput) -> Result<SourceBasis, SemanticError> {
-    if input.policy.schema_version != 1 || input.policy.id != "s6-strict-synthetic-v1" {
+    if input.policy.schema_version != 1
+        || !matches!(
+            input.policy.id.as_str(),
+            "s6-strict-synthetic-v1" | "retained-repository-analysis-v1"
+        )
+    {
         return Err(SemanticError::UnsupportedPolicy);
     }
     if !input.policy.within_frozen_limits() || !valid_id(&input.capture_id) {

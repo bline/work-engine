@@ -1,0 +1,28 @@
+[package]
+name = "lifecycle-proof"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+lifecycle-wire = { path = "../lifecycle-wire" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "=3.27.0"
+
+[[test]]
+name = "retained_workflow"
+path = "tests/retained_workflow.rs"
+
+[[test]]
+name = "identity_and_cleanup"
+path = "tests/identity_and_cleanup.rs"
+
+[[test]]
+name = "recovery_and_faults"
+path = "tests/recovery_and_faults.rs"

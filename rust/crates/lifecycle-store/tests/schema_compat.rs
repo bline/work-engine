@@ -11,11 +11,61 @@ fn incompatible_future_store_is_refused_before_database_mutation() {
     let root = tempdir().unwrap();
     let database = root.path().join("lifecycle.sqlite");
     let conn = rusqlite::Connection::open(&database).unwrap();
-    conn.pragma_update(None, "user_version", 5).unwrap();
+    conn.pragma_update(None, "user_version", 6).unwrap();
     drop(conn);
     let before = fs::read(&database).unwrap();
     assert!(SqliteLifecycleStore::open(root.path(), "trusted".into()).is_err());
     assert_eq!(fs::read(&database).unwrap(), before);
+}
+
+#[test]
+fn genuine_schema_four_migrates_to_five_without_changing_store_identity() {
+    let root = tempdir().unwrap();
+    let database = root.path().join("lifecycle.sqlite");
+    let conn = rusqlite::Connection::open(&database).unwrap();
+    for sql in [
+        include_str!("../migrations/0001_initial.sql"),
+        include_str!("../migrations/0002_service.sql"),
+        include_str!("../migrations/0003_native_operation.sql"),
+        include_str!("../migrations/0004_composite_s67.sql"),
+    ] {
+        conn.execute_batch(sql).unwrap();
+    }
+    conn.execute(
+        "INSERT INTO store_identity(singleton,store_id) VALUES(1,'store:schema-four')",
+        [],
+    )
+    .unwrap();
+    conn.pragma_update(None, "user_version", 4).unwrap();
+    assert_eq!(
+        conn.query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'custody_revision_%'",
+            [], |r| r.get::<_, i64>(0),
+        ).unwrap(),
+        102
+    );
+    drop(conn);
+    let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+    assert_eq!(store.admin_store_identity().unwrap(), "store:schema-four");
+    assert_eq!(store.admin_ownership().unwrap().status, "active");
+    drop(store);
+    let conn = rusqlite::Connection::open_with_flags(
+        &database,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .unwrap();
+    assert_eq!(
+        conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        5
+    );
+    assert_eq!(
+        conn.query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name LIKE 'custody_revision_%'",
+            [], |r| r.get::<_, i64>(0),
+        ).unwrap(),
+        111
+    );
 }
 
 #[test]

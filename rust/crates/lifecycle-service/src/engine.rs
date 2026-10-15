@@ -149,7 +149,39 @@ pub async fn drive_transition(
             supplied_thread,
             supplied_successor,
             supplied_rehydration,
-        ) = if native {
+        ) = if native && config.profile == "retained-repository-analysis-v1" {
+            // The installed task profile derives readiness from custody and
+            // semantic verification, never from provider final-text flags.
+            if !store.task_transition_source_ready(&id)? {
+                return Ok(());
+            }
+            let contexts: Vec<&str> = config
+                .grants
+                .iter()
+                .filter(|grant| grant.scope == "enqueue_input")
+                .map(|grant| grant.context_generation.as_str())
+                .collect();
+            if contexts
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                != contexts.len()
+            {
+                return Err(StoreError::Rejected);
+            }
+            let position = contexts
+                .iter()
+                .position(|context| *context == snapshot.context_id)
+                .ok_or(StoreError::Rejected)?;
+            let next = contexts
+                .get(position + 1)
+                .ok_or(StoreError::Rejected)?
+                .to_string();
+            let context =
+                ContextGeneration::parse(next.clone()).map_err(|_| StoreError::Rejected)?;
+            store.bind_task_successor_intent(&id, &context)?;
+            (1, true, true, true, true, next, None, false, false)
+        } else if native {
             let value: NativeContinuation = match serde_json::from_str(&result.final_text) {
                 Ok(value) => value,
                 Err(_) => return Ok(()),
@@ -208,7 +240,7 @@ pub async fn drive_transition(
             },
             TransitionStage::Verifying if checkpoint_ready => {
                 if let Some(runtime) = semantic_runtime {
-                    let context = ContextGeneration::parse(config.context_generation.clone())
+                    let context = ContextGeneration::parse(snapshot.context_id.clone())
                         .map_err(|_| StoreError::Rejected)?;
                     let Some(checkpoint) = crate::semantic::establish_checkpoint(
                         store,
@@ -283,7 +315,7 @@ pub async fn drive_transition(
             }
             TransitionStage::Rehydrating if native || supplied_rehydration => {
                 if let Some(runtime) = semantic_runtime {
-                    let context = ContextGeneration::parse(config.context_generation.clone())
+                    let context = ContextGeneration::parse(successor_context.clone())
                         .map_err(|_| StoreError::Rejected)?;
                     if !crate::semantic::assess_successor_use(
                         store, runtime, &subject, &context, &id,

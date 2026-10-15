@@ -2,9 +2,9 @@ use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 use thiserror::Error;
 
-pub const PROFILE_ID: &str = "codex-0.160.1-workspace-snapshot-read-v1";
+pub const PROFILE_ID: &str = "codex-0.162.1-workspace-snapshot-read-v1";
 pub const NATIVE_BINARY_SHA256: &str =
-    "f34a4d2301892ae96c90097786bfe5dc269f187b6f69faf42a7b357b8c081e35";
+    "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1";
 pub const SCHEMA_THREAD_START_SHA256: &str =
     "80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de";
 pub const SCHEMA_TOOL_CALL_SHA256: &str =

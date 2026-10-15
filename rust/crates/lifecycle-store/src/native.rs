@@ -13,6 +13,13 @@ use work_engine_types::CodecContract;
 
 use crate::{SqliteLifecycleStore, StoreError};
 
+/// A bounded read result, not a delivery outcome or a storage failure.
+#[derive(Clone, Debug, PartialEq)]
+pub enum NativeDeliveryObservation {
+    Complete(serde_json::Value),
+    CapacityExceeded { limit: usize },
+}
+
 const SNAPSHOT_CONTRACT: &str = "workspace.snapshot.read.v1";
 const SNAPSHOT_IMPLEMENTATION: &str = "rust.snapshot.read.v1";
 const SNAPSHOT_EXECUTOR: &str = "lifecycle.service.snapshot";
@@ -29,6 +36,31 @@ type PriorNativeSessionRow = (
     String,
 );
 type NativeIngressRow = (String, Option<String>, Option<String>, Vec<u8>);
+type NativeDeliveryRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    i64,
+    Option<String>,
+    Option<String>,
+    String,
+    Vec<u8>,
+    String,
+);
+type PriorTaskOperationRow = (
+    String,
+    String,
+    String,
+    String,
+    i64,
+    String,
+    String,
+    String,
+    String,
+    Option<Vec<u8>>,
+);
 type PriorNativeOperationRow = (
     String,
     String,
@@ -105,6 +137,9 @@ impl NativeSessionEntry {
     pub fn snapshot(&self) -> &SnapshotId {
         &self.snapshot
     }
+    pub fn profile_digest(&self) -> &str {
+        &self.profile_digest
+    }
 }
 
 #[derive(Debug)]
@@ -158,6 +193,112 @@ pub struct NativeTurnEntry {
     thread: ProviderThreadId,
     turn: Option<ProviderTurnId>,
     profile_digest: String,
+}
+
+/// Exact join from a native domain turn to the lifecycle FIFO owner. A
+/// control or rehydration turn has no delivery binding.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeDeliveryBinding {
+    pub input_id: String,
+    pub delivery_id: String,
+    pub effect_id: String,
+    pub attempt_id: String,
+    pub native_attempt_id: String,
+    pub segment_no: u64,
+    pub predecessor_invocation_id: Option<String>,
+    pub transition_id: Option<String>,
+    pub segment_state: String,
+    pub text: String,
+    pub context_id: String,
+}
+
+/// One settled native turn's observed usage. `units=None` means the provider
+/// did not supply a complete, disjoint counter set; it never means zero.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeUsageAccounting {
+    pub invocation_id: String,
+    pub purpose: String,
+    pub units: Option<NativeUsageUnits>,
+    pub raw_events: u64,
+}
+
+/// Disjoint units derived from the last cumulative notification for one turn.
+/// Control and rehydration turns remain separate rows, so a domain-work total
+/// cannot accidentally charge them again.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct NativeUsageUnits {
+    pub uncached_input: u64,
+    pub cached_input: u64,
+    pub cache_write_input: u64,
+    pub nonreasoning_output: u64,
+    pub reasoning_output: u64,
+}
+
+/// Immutable child entry that may already have committed in the task owner
+/// when the lifecycle process died before recording its reply.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PendingNativeTaskOperation {
+    pub operation_id: String,
+    pub contract_id: String,
+    pub payload_sha256: String,
+    pub entry_sha256: String,
+    pub entry_json: Vec<u8>,
+    pub grant_id: String,
+    pub grant_revision: u64,
+}
+
+fn normalized_usage(raw: &[u8]) -> Option<NativeUsageUnits> {
+    let event: serde_json::Value = serde_json::from_slice(raw).ok()?;
+    let total = &event["params"]["tokenUsage"]["total"];
+    let input = total["inputTokens"].as_u64()?;
+    let cached_input = total["cachedInputTokens"].as_u64()?;
+    let cache_write_input = total["cacheWriteInputTokens"].as_u64()?;
+    let output = total["outputTokens"].as_u64()?;
+    let reasoning_output = total["reasoningOutputTokens"].as_u64()?;
+    let all = total["totalTokens"].as_u64()?;
+    if input.checked_add(output)? != all || reasoning_output > output {
+        return None;
+    }
+    let uncached_input = input.checked_sub(cached_input.checked_add(cache_write_input)?)?;
+    Some(NativeUsageUnits {
+        uncached_input,
+        cached_input,
+        cache_write_input,
+        nonreasoning_output: output - reasoning_output,
+        reasoning_output,
+    })
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeResumeCandidate {
+    pub queue_attempt_id: String,
+    pub effect_id: String,
+    pub text: String,
+    pub next_segment_no: u64,
+    pub predecessor_invocation_id: String,
+    pub transition_id: String,
+}
+
+#[derive(Debug)]
+pub struct NativeTaskOperationRequest {
+    pub operation_id: String,
+    pub call: NativeToolCallId,
+    pub transport_session: String,
+    pub sequence: u64,
+    pub contract_id: String,
+    pub implementation_id: String,
+    pub executor_id: String,
+    pub grant: GrantId,
+    pub grant_revision: u64,
+    pub payload_json: Vec<u8>,
+    pub entry_json: Vec<u8>,
+}
+
+#[derive(Debug)]
+pub enum NativeTaskOperationClaim {
+    Entered,
+    Committed(Vec<u8>),
+    EnteredUncertain,
 }
 
 impl NativeTurnEntry {
@@ -345,6 +486,691 @@ pub struct NativeSessionRecovery {
 }
 
 impl SqliteLifecycleStore {
+    pub fn pending_native_task_operations(
+        &self,
+        subject: &SubjectId,
+        session: &NativeSessionId,
+    ) -> Result<Vec<PendingNativeTaskOperation>, StoreError> {
+        self.verify_identity()?;
+        let mut statement = self.connection.prepare(
+            "SELECT o.operation_id,o.contract_id,o.payload_sha256,o.entry_sha256,o.entry_json,o.grant_id,o.grant_revision \
+             FROM native_task_operations o JOIN native_turns n ON n.invocation_id=o.parent_invocation_id \
+             JOIN native_sessions s ON s.session_id=n.session_id \
+             WHERE s.subject_id=?1 AND s.session_id=?2 AND o.state='entered_uncertain' \
+             ORDER BY o.entered_wall_ms,o.operation_id LIMIT 65",
+        ).map_err(|_| StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([subject.as_str(), session.as_str()], |r| {
+                Ok(PendingNativeTaskOperation {
+                    operation_id: r.get(0)?,
+                    contract_id: r.get(1)?,
+                    payload_sha256: r.get(2)?,
+                    entry_sha256: r.get(3)?,
+                    entry_json: r.get(4)?,
+                    grant_id: r.get(5)?,
+                    grant_revision: r.get(6)?,
+                })
+            })
+            .map_err(|_| StoreError::Unavailable)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| StoreError::Unavailable)?;
+        if rows.len() > 64 {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(rows)
+    }
+
+    pub fn native_delivery_status(
+        &self,
+        subject: &SubjectId,
+    ) -> Result<NativeDeliveryObservation, StoreError> {
+        self.verify_identity()?;
+        let mut statement=self.connection.prepare(
+            "SELECT i.delivery_id,i.input_id,i.sequence,i.state,e.effect_id,a.attempt_id, \
+             d.segment_no,d.invocation_id,n.attempt_id,d.predecessor_invocation_id, \
+             d.transition_id,d.state,n.state,n.send_intent,n.thread_id,n.turn_id, \
+             s.context_id,n.final_sha256,n.history_status \
+             FROM native_delivery_segments d JOIN native_turns n ON n.invocation_id=d.invocation_id \
+             JOIN native_sessions s ON s.session_id=n.session_id \
+             JOIN attempts a ON a.attempt_id=d.queue_attempt_id \
+             JOIN effects e ON e.effect_id=a.effect_id JOIN inputs i ON i.input_id=e.input_id \
+             WHERE e.subject_id=?1 ORDER BY i.sequence,d.segment_no LIMIT 65",
+        ).map_err(|_|StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([subject.as_str()], |r| {
+                Ok(serde_json::json!({
+                    "delivery_id":r.get::<_,String>(0)?,"input_id":r.get::<_,String>(1)?,
+                    "sequence":r.get::<_,i64>(2)?,"delivery_state":r.get::<_,String>(3)?,
+                    "effect_id":r.get::<_,String>(4)?,"queue_attempt_id":r.get::<_,String>(5)?,
+                    "segment_no":r.get::<_,i64>(6)?,"invocation_id":r.get::<_,String>(7)?,
+                    "native_attempt_id":r.get::<_,String>(8)?,
+                    "predecessor_invocation_id":r.get::<_,Option<String>>(9)?,
+                    "transition_id":r.get::<_,Option<String>>(10)?,
+                    "segment_state":r.get::<_,String>(11)?,"native_state":r.get::<_,String>(12)?,
+                    "send_intent":r.get::<_,i64>(13)?==1,
+                    "thread_id":r.get::<_,String>(14)?,"turn_id":r.get::<_,Option<String>>(15)?,
+                    "context_generation":r.get::<_,String>(16)?,
+                    "final_sha256":r.get::<_,Option<String>>(17)?,
+                    "history_status":r.get::<_,String>(18)?,
+                }))
+            })
+            .map_err(|_| StoreError::Unavailable)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| StoreError::Unavailable)?;
+        if rows.len() > 64 {
+            return Ok(NativeDeliveryObservation::CapacityExceeded { limit: 64 });
+        }
+        Ok(NativeDeliveryObservation::Complete(
+            serde_json::json!({"protocol_version":1,"subject_id":subject.as_str(),"segments":rows}),
+        ))
+    }
+
+    pub fn task_successor_intent(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<Option<String>, StoreError> {
+        self.verify_identity()?;
+        self.connection
+            .query_row(
+                "SELECT successor_intent_context FROM transitions WHERE transition_id=?1",
+                [transition.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    /// Bind trusted config's next generation to the exact settled predecessor
+    /// before successor allocation. A provider text field cannot select it.
+    pub fn bind_task_successor_intent(
+        &mut self,
+        transition: &TransitionId,
+        context: &ContextGeneration,
+    ) -> Result<(), StoreError> {
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let prior: Option<(Option<String>, String, String)> = tx
+            .query_row(
+                "SELECT tr.successor_intent_context,tr.native_basis_source,d.state \
+             FROM transitions tr JOIN native_delivery_segments d \
+             ON d.invocation_id=tr.native_basis_source WHERE tr.transition_id=?1 \
+             AND tr.stage NOT IN ('aborted_before_entry','recovery_required')",
+                [transition.as_str()],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some((old, _, state)) = prior else {
+            return Err(StoreError::Rejected);
+        };
+        if state != "yielded" {
+            return Err(StoreError::Rejected);
+        }
+        if let Some(old) = old {
+            return if old == context.as_str() {
+                Ok(())
+            } else {
+                Err(StoreError::ClaimConflict)
+            };
+        }
+        tx.execute(
+            "UPDATE transitions SET successor_intent_context=?2 \
+                    WHERE transition_id=?1 AND successor_intent_context IS NULL",
+            params![transition.as_str(), context.as_str()],
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    /// S8 may use the complete, single owned raw ingress/child chain when the
+    /// selected app-server's legacy thread/read omits dynamicToolCall items.
+    /// `completed_settled` is minted only by settle_native_turn after checking
+    /// every raw started/completed call, exact child result, terminal and final
+    /// history text. The omission label remains truthful; this does not infer
+    /// invisible provider-internal effects or qualify an untested live provider.
+    pub fn task_transition_source_ready(
+        &self,
+        transition: &TransitionId,
+    ) -> Result<bool, StoreError> {
+        self.verify_identity()?;
+        self.connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM transitions tr JOIN native_delivery_segments d \
+             ON d.invocation_id=tr.native_basis_source JOIN native_turns n ON n.invocation_id=d.invocation_id \
+             WHERE tr.transition_id=?1 AND d.state='yielded' AND n.state='completed_settled' \
+             AND n.send_intent=1 AND n.terminal_status='completed' \
+             AND n.final_text IS NOT NULL AND n.final_sha256 IS NOT NULL \
+             AND n.turn_id IS NOT NULL AND n.history_transport_session IS NOT NULL \
+             AND n.history_sequence IS NOT NULL \
+             AND n.history_status IN ('observed_complete','observed_tool_omitted') \
+             AND EXISTS(SELECT 1 FROM native_ingress h WHERE h.transport_session=n.history_transport_session \
+                        AND h.sequence=n.history_sequence AND h.decode_status='qualified' AND h.method IS NULL) \
+             AND (SELECT COUNT(*) FROM native_ingress c WHERE c.thread_id=n.thread_id \
+                  AND c.turn_id=n.turn_id AND c.method='turn/completed' AND c.decode_status='qualified')=1 \
+             AND NOT EXISTS(SELECT 1 FROM native_ingress bad WHERE bad.thread_id=n.thread_id \
+                            AND bad.turn_id=n.turn_id AND (bad.method IN ('turn/failed','turn/interrupted') \
+                            OR bad.decode_status NOT IN ('qualified','denied_before_entry'))) \
+             AND (SELECT COUNT(*) FROM native_ingress c WHERE c.thread_id=n.thread_id \
+                  AND c.turn_id=n.turn_id AND c.method='item/tool/call') = \
+                 (SELECT COUNT(*) FROM native_operations o WHERE o.parent_invocation_id=n.invocation_id) + \
+                 (SELECT COUNT(*) FROM native_task_operations o WHERE o.parent_invocation_id=n.invocation_id) \
+             AND NOT EXISTS(SELECT 1 FROM native_operations o WHERE o.parent_invocation_id=n.invocation_id \
+                            AND o.state!='completed_settled') \
+             AND NOT EXISTS(SELECT 1 FROM native_task_operations o WHERE o.parent_invocation_id=n.invocation_id \
+                            AND o.state!='completed_settled'))",
+            [transition.as_str()],|r|r.get(0),
+        ).map_err(|_|StoreError::Unavailable)
+    }
+
+    pub fn native_task_operation_entry(
+        &self,
+        operation_id: &str,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        self.verify_identity()?;
+        self.connection
+            .query_row(
+                "SELECT entry_json FROM native_task_operations WHERE operation_id=?1",
+                [operation_id],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    /// Admit one exact task child after qualified native ingress and a current
+    /// grant. The owner callback is invoked only after this row commits.
+    pub fn claim_native_task_operation(
+        &mut self,
+        parent: &NativeTurnEntry,
+        request: &NativeTaskOperationRequest,
+        principal: &str,
+        clock: ClockSample,
+    ) -> Result<NativeTaskOperationClaim, StoreError> {
+        self.verify_identity()?;
+        let scope = match request.contract_id.as_str() {
+            "task.question.open.v1" => "task_question_open",
+            "task.result.publish.v1" => "task_result_publish",
+            _ => return Err(StoreError::Rejected),
+        };
+        if request.operation_id.is_empty()
+            || request.operation_id.len() > 192
+            || request.sequence == 0
+            || request.sequence > i64::MAX as u64
+            || request.payload_json.is_empty()
+            || request.payload_json.len() > 8192
+            || request.entry_json.is_empty()
+            || request.entry_json.len() > 8192
+            || request.implementation_id
+                != format!(
+                    "rust.{}.v1",
+                    if scope == "task_question_open" {
+                        "question.open"
+                    } else {
+                        "result.publish"
+                    }
+                )
+            || request.executor_id != "lifecycle.service.task"
+        {
+            return Err(StoreError::Rejected);
+        }
+        let turn = parent.turn.as_ref().ok_or(StoreError::ClaimConflict)?;
+        let payload: serde_json::Value =
+            serde_json::from_slice(&request.payload_json).map_err(|_| StoreError::Rejected)?;
+        let (subject, context, native_state, segment_state): (String, String, String, String) =
+            self.connection
+                .query_row(
+                    "SELECT s.subject_id,s.context_id,n.state,d.state FROM native_turns n \
+             JOIN native_sessions s ON s.session_id=n.session_id \
+             JOIN native_delivery_segments d ON d.invocation_id=n.invocation_id \
+             WHERE n.invocation_id=?1 AND n.thread_id=?2 AND n.turn_id=?3",
+                    params![parent.invocation_id, parent.thread.as_str(), turn.as_str()],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+                )
+                .map_err(|_| StoreError::ClaimConflict)?;
+        if native_state != "entered_uncertain" || segment_state != "entered" {
+            return Err(StoreError::ClaimConflict);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let raw: Vec<u8> = tx.query_row(
+            "SELECT raw FROM native_ingress WHERE transport_session=?1 AND sequence=?2 \
+             AND decode_status='qualified' AND method='item/tool/call' AND thread_id=?3 AND turn_id=?4",
+            params![request.transport_session,i64::try_from(request.sequence).map_err(|_|StoreError::Rejected)?,parent.thread.as_str(),turn.as_str()],
+            |r|r.get(0),
+        ).map_err(|_| StoreError::ClaimConflict)?;
+        let observed: serde_json::Value =
+            serde_json::from_slice(&raw).map_err(|_| StoreError::ClaimConflict)?;
+        let expected_tool = if scope == "task_question_open" {
+            "question_open"
+        } else {
+            "result_publish"
+        };
+        if observed["params"]["callId"] != request.call.as_str()
+            || observed["params"]["namespace"] != "task"
+            || observed["params"]["tool"] != expected_tool
+            || observed["params"]["arguments"] != payload
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        let payload_sha256 = sha256(&request.payload_json)?;
+        let entry_sha256 = sha256(&request.entry_json)?;
+        let prior: Option<PriorTaskOperationRow> = tx
+            .query_row(
+                "SELECT parent_invocation_id,call_id,contract_id,grant_id,grant_revision, \
+             payload_sha256,entry_sha256,implementation_id,executor_id,owner_commit_json \
+             FROM native_task_operations WHERE operation_id=?1",
+                [&request.operation_id],
+                |r| {
+                    Ok((
+                        r.get(0)?,
+                        r.get(1)?,
+                        r.get(2)?,
+                        r.get(3)?,
+                        r.get(4)?,
+                        r.get(5)?,
+                        r.get(6)?,
+                        r.get(7)?,
+                        r.get(8)?,
+                        r.get(9)?,
+                    ))
+                },
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        if let Some(row) = prior {
+            if row.0 != parent.invocation_id
+                || row.1 != request.call.as_str()
+                || row.2 != request.contract_id
+                || row.3 != request.grant.as_str()
+                || row.4
+                    != i64::try_from(request.grant_revision).map_err(|_| StoreError::Rejected)?
+                || row.5 != payload_sha256
+                || row.6 != entry_sha256
+                || row.7 != request.implementation_id
+                || row.8 != request.executor_id
+            {
+                return Err(StoreError::ClaimConflict);
+            }
+            return Ok(match row.9 {
+                Some(bytes) => NativeTaskOperationClaim::Committed(bytes),
+                None => NativeTaskOperationClaim::EnteredUncertain,
+            });
+        }
+        check_grant(
+            &tx,
+            GrantExpectation {
+                issuer: &self.trusted_issuer,
+                principal,
+                grant: &request.grant,
+                revision: request.grant_revision,
+                subject: &subject,
+                context: &context,
+                scope,
+                clock,
+                successor_rehydrate: false,
+            },
+        )?;
+        tx.execute(
+            "INSERT INTO native_task_operations(operation_id,parent_invocation_id,call_id,transport_session,transport_sequence,contract_id,implementation_id,executor_id,grant_id,grant_revision,payload_sha256,entry_sha256,entry_json,state,entered_wall_ms) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'entered_uncertain',?14)",
+            params![request.operation_id,parent.invocation_id,request.call.as_str(),request.transport_session,
+                i64::try_from(request.sequence).map_err(|_|StoreError::Rejected)?,request.contract_id,
+                request.implementation_id,request.executor_id,request.grant.as_str(),
+                i64::try_from(request.grant_revision).map_err(|_|StoreError::Rejected)?,
+                payload_sha256,entry_sha256,request.entry_json,clock.wall.get()],
+        ).map_err(|_|StoreError::ClaimConflict)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'native_task_operation_entered',?2,?3)",
+            params![subject,request.operation_id,clock.wall.get()]).map_err(|_|StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeTaskOperationClaim::Entered)
+    }
+
+    pub fn commit_native_task_operation(
+        &mut self,
+        operation_id: &str,
+        owner_commit_json: &[u8],
+        clock: ClockSample,
+    ) -> Result<(), StoreError> {
+        self.verify_identity()?;
+        if owner_commit_json.is_empty() || owner_commit_json.len() > 8192 {
+            return Err(StoreError::Rejected);
+        }
+        let parsed: serde_json::Value =
+            serde_json::from_slice(owner_commit_json).map_err(|_| StoreError::Rejected)?;
+        if parsed["operation_id"] != operation_id {
+            return Err(StoreError::Rejected);
+        }
+        let digest = sha256(owner_commit_json)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let row: (String, Option<Vec<u8>>, String) = tx
+            .query_row(
+                "SELECT o.state,o.owner_commit_json,s.subject_id FROM native_task_operations o \
+             JOIN native_turns n ON n.invocation_id=o.parent_invocation_id \
+             JOIN native_sessions s ON s.session_id=n.session_id WHERE o.operation_id=?1",
+                [operation_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .map_err(|_| StoreError::Rejected)?;
+        if row.0 == "completed_settled" {
+            return if row.1.as_deref() == Some(owner_commit_json) {
+                Ok(())
+            } else {
+                Err(StoreError::ClaimConflict)
+            };
+        }
+        if row.0 != "entered_uncertain" {
+            return Err(StoreError::ClaimConflict);
+        }
+        tx.execute("UPDATE native_task_operations SET state='completed_settled',owner_commit_json=?2,owner_commit_sha256=?3,settled_wall_ms=?4 WHERE operation_id=?1 AND state='entered_uncertain'",
+            params![operation_id,owner_commit_json,digest,clock.wall.get()]).map_err(|_|StoreError::Unavailable)?;
+        tx.execute("INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,'native_task_operation_settled',?2,?3)",
+            params![row.2,operation_id,clock.wall.get()]).map_err(|_|StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    /// A reconciled transition can resume the still-entered logical delivery
+    /// only after an explicit settled yield and before any later queue input.
+    pub fn native_resume_candidate(
+        &self,
+        subject: &SubjectId,
+    ) -> Result<Option<NativeResumeCandidate>, StoreError> {
+        self.verify_identity()?;
+        let row: Option<(String,String,Vec<u8>,i64,String,String)> = self.connection.query_row(
+            "SELECT a.attempt_id,e.effect_id,i.text,d.segment_no,d.invocation_id,d.transition_id \
+             FROM native_delivery_segments d JOIN attempts a ON a.attempt_id=d.queue_attempt_id \
+             JOIN effects e ON e.effect_id=a.effect_id JOIN inputs i ON i.input_id=e.input_id \
+             JOIN transitions tr ON tr.transition_id=d.transition_id \
+             JOIN subjects sub ON sub.subject_id=e.subject_id \
+             WHERE e.subject_id=?1 AND d.state='yielded' AND tr.stage='reconciled' \
+             AND sub.owner_kind='domain' AND sub.context_id=tr.successor_context \
+             AND i.state='entered' AND a.state='entered' \
+             AND NOT EXISTS(SELECT 1 FROM native_delivery_segments later \
+                            WHERE later.queue_attempt_id=a.attempt_id AND later.segment_no>d.segment_no) \
+             AND NOT EXISTS(SELECT 1 FROM inputs earlier WHERE earlier.subject_id=i.subject_id \
+                            AND earlier.sequence<i.sequence AND earlier.state NOT IN ('succeeded','retired')) \
+             ORDER BY i.sequence,d.segment_no DESC LIMIT 1",
+            [subject.as_str()],
+            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        row.map(
+            |(
+                queue_attempt_id,
+                effect_id,
+                text,
+                segment_no,
+                predecessor_invocation_id,
+                transition_id,
+            )| {
+                Ok(NativeResumeCandidate {
+                    queue_attempt_id,
+                    effect_id,
+                    text: String::from_utf8(text).map_err(|_| StoreError::Unavailable)?,
+                    next_segment_no: u64::try_from(segment_no + 1)
+                        .map_err(|_| StoreError::Unavailable)?,
+                    predecessor_invocation_id,
+                    transition_id,
+                })
+            },
+        )
+        .transpose()
+    }
+
+    pub fn native_delivery_binding(
+        &self,
+        invocation_id: &str,
+    ) -> Result<Option<NativeDeliveryBinding>, StoreError> {
+        self.verify_identity()?;
+        let row: Option<NativeDeliveryRow> = self.connection
+            .query_row(
+                "SELECT i.input_id,i.delivery_id,e.effect_id,a.attempt_id,n.attempt_id,d.segment_no, \
+                 d.predecessor_invocation_id,d.transition_id,d.state,i.text,s.context_id \
+                 FROM native_turns n JOIN native_delivery_segments d ON d.invocation_id=n.invocation_id \
+                 JOIN native_sessions s ON s.session_id=n.session_id \
+                 JOIN attempts a ON a.attempt_id=d.queue_attempt_id \
+                 JOIN effects e ON e.effect_id=a.effect_id \
+                 JOIN inputs i ON i.input_id=e.input_id \
+                 WHERE n.invocation_id=?1 AND n.purpose='domain_work' \
+                 AND e.subject_id=s.subject_id",
+                [invocation_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        row.map(
+            |(
+                input_id,
+                delivery_id,
+                effect_id,
+                attempt_id,
+                native_attempt_id,
+                segment_no,
+                predecessor_invocation_id,
+                transition_id,
+                segment_state,
+                text,
+                context_id,
+            )| {
+                Ok(NativeDeliveryBinding {
+                    input_id,
+                    delivery_id,
+                    effect_id,
+                    attempt_id,
+                    native_attempt_id,
+                    segment_no: u64::try_from(segment_no).map_err(|_| StoreError::Unavailable)?,
+                    predecessor_invocation_id,
+                    transition_id,
+                    segment_state,
+                    text: String::from_utf8(text).map_err(|_| StoreError::Unavailable)?,
+                    context_id,
+                })
+            },
+        )
+        .transpose()
+    }
+
+    /// Bind a physical native attempt to one entered FIFO delivery before
+    /// send-intent. A missing map never grants permission to replay the turn.
+    pub fn bind_native_delivery_segment(
+        &mut self,
+        invocation: &str,
+        queue_attempt: &AttemptId,
+        segment_no: u64,
+        predecessor: Option<&str>,
+        transition: Option<&TransitionId>,
+    ) -> Result<(), StoreError> {
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let current: Option<(String, String, String, String, String, String)> = tx
+            .query_row(
+                "SELECT n.state,n.send_intent,n.purpose,s.subject_id,s.context_id,i.state \
+             FROM native_turns n JOIN native_sessions s ON s.session_id=n.session_id \
+             JOIN attempts a ON a.attempt_id=?2 JOIN effects e ON e.effect_id=a.effect_id \
+             JOIN inputs i ON i.input_id=e.input_id WHERE n.invocation_id=?1 AND n.prompt=i.text \
+             AND e.subject_id=s.subject_id AND a.state='entered'",
+                params![invocation, queue_attempt.as_str()],
+                |r| {
+                    Ok((
+                        r.get(0)?,
+                        r.get::<_, i64>(1)?.to_string(),
+                        r.get(2)?,
+                        r.get(3)?,
+                        r.get(4)?,
+                        r.get(5)?,
+                    ))
+                },
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some((state, send_intent, purpose, subject, context, input_state)) = current else {
+            return Err(StoreError::Rejected);
+        };
+        if state != "entered_uncertain"
+            || send_intent != "0"
+            || purpose != "domain_work"
+            || input_state != "entered"
+        {
+            return Err(StoreError::Rejected);
+        }
+        if segment_no == 0 {
+            if predecessor.is_some() || transition.is_some() {
+                return Err(StoreError::Rejected);
+            }
+            let initial: String = tx.query_row(
+                "SELECT sub.context_id FROM attempts a JOIN effects e ON e.effect_id=a.effect_id \
+                 JOIN subjects sub ON sub.subject_id=e.subject_id WHERE a.attempt_id=?1",
+                [queue_attempt.as_str()], |r| r.get(0),
+            ).map_err(|_| StoreError::Unavailable)?;
+            if initial != context {
+                return Err(StoreError::Rejected);
+            }
+        } else {
+            let prior: Option<(String, i64, Option<String>)> = tx
+                .query_row(
+                    "SELECT d.state,d.segment_no,d.transition_id FROM native_delivery_segments d \
+                 WHERE d.invocation_id=?1 AND d.queue_attempt_id=?2",
+                    params![
+                        predecessor.ok_or(StoreError::Rejected)?,
+                        queue_attempt.as_str()
+                    ],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                )
+                .optional()
+                .map_err(|_| StoreError::Unavailable)?;
+            let (prior_state, prior_no, prior_transition) = prior.ok_or(StoreError::Rejected)?;
+            let transition = transition.ok_or(StoreError::Rejected)?;
+            if prior_state != "yielded"
+                || prior_no + 1 != i64::try_from(segment_no).map_err(|_| StoreError::Rejected)?
+                || prior_transition.as_deref() != Some(transition.as_str())
+            {
+                return Err(StoreError::Rejected);
+            }
+            let ready: i64 = tx.query_row(
+                "SELECT COUNT(*) FROM transitions tr JOIN subjects sub ON sub.subject_id=tr.subject_id \
+                 WHERE tr.transition_id=?1 AND tr.subject_id=?2 AND tr.stage='reconciled' \
+                 AND tr.successor_context=?3 AND sub.owner_kind='domain' AND sub.context_id=?3",
+                params![transition.as_str(),subject,context], |r| r.get(0),
+            ).map_err(|_| StoreError::Unavailable)?;
+            if ready != 1 {
+                return Err(StoreError::Rejected);
+            }
+        }
+        tx.execute(
+            "INSERT INTO native_delivery_segments(invocation_id,queue_attempt_id,segment_no,predecessor_invocation_id,transition_id,state) \
+             VALUES (?1,?2,?3,?4,?5,'entered')",
+            params![invocation,queue_attempt.as_str(),i64::try_from(segment_no).map_err(|_| StoreError::Rejected)?,predecessor,transition.map(TransitionId::as_str)],
+        ).map_err(|_| StoreError::ClaimConflict)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
+    /// Settle a native segment only after its own terminal/history commit.
+    pub fn settle_native_delivery_segment(
+        &mut self,
+        invocation: &str,
+        clock: ClockSample,
+    ) -> Result<bool, StoreError> {
+        self.verify_identity()?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let row: (String, String) = tx
+            .query_row(
+                "SELECT d.state,n.state FROM native_delivery_segments d JOIN native_turns n \
+             ON n.invocation_id=d.invocation_id WHERE d.invocation_id=?1",
+                [invocation],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .map_err(|_| StoreError::Rejected)?;
+        if row.0 != "entered" || row.1 != "completed_settled" {
+            return Err(StoreError::ClaimConflict);
+        }
+        let transition: Option<String> = tx
+            .query_row(
+                "SELECT transition_id FROM transitions WHERE native_basis_source=?1 \
+             AND stage NOT IN ('aborted_before_entry','recovery_required')",
+                [invocation],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        tx.execute(
+            "UPDATE native_delivery_segments SET state=?2,transition_id=COALESCE(?3,transition_id),settled_wall_ms=?4 \
+             WHERE invocation_id=?1 AND state='entered'",
+            params![invocation,if transition.is_some(){"yielded"}else{"completed"},transition,clock.wall.get()],
+        ).map_err(|_| StoreError::Unavailable)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(transition.is_some())
+    }
+
+    pub fn native_turn_has_reserved_transition(
+        &self,
+        invocation_id: &str,
+    ) -> Result<bool, StoreError> {
+        self.verify_identity()?;
+        self.connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM transitions WHERE native_basis_source=?1 \
+                 AND stage NOT IN ('aborted_before_entry','recovery_required'))",
+                [invocation_id],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    /// Hold the lifecycle writer fence while the canonical task owner commits
+    /// one already-entered operation. The caller must hold its task-owner fence
+    /// first; this is the same lock order as semantic material publication.
+    /// A committed owner operation with a lost reply is recovered by its exact
+    /// operation ID, not by replaying this callback.
+    #[allow(clippy::too_many_arguments)]
+    pub fn with_task_grant_fence(
+        &mut self,
+        subject: &SubjectId,
+        context: &ContextGeneration,
+        grant: &GrantId,
+        revision: u64,
+        principal: &str,
+        scope: &str,
+        clock: ClockSample,
+        commit_owner: &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        self.verify_identity()?;
+        if !matches!(scope, "task_question_open" | "task_result_publish") {
+            return Err(StoreError::Rejected);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        check_grant(
+            &tx,
+            GrantExpectation {
+                issuer: &self.trusted_issuer,
+                principal,
+                grant,
+                revision,
+                subject: subject.as_str(),
+                context: context.as_str(),
+                scope,
+                clock,
+                successor_rehydrate: false,
+            },
+        )?;
+        // No fallible lifecycle mutation follows this owner commit. If our
+        // connection fails afterward, the owner receipt is still discoverable.
+        commit_owner()?;
+        tx.commit().map_err(|_| StoreError::Unavailable)
+    }
+
     pub fn native_session_recovery(
         &self,
         session_id: &NativeSessionId,
@@ -544,15 +1370,28 @@ impl SqliteLifecycleStore {
                     {
                         false
                     } else {
+                        let trusted_intent: Option<String> = self.connection.query_row(
+                            "SELECT tr.successor_intent_context FROM transitions tr \
+                             JOIN native_delivery_segments d ON d.invocation_id=tr.native_basis_source \
+                             WHERE tr.transition_id=?1 AND d.state='yielded'",
+                            [transition],|r|r.get(0),
+                        ).optional().map_err(|_|StoreError::Unavailable)?.flatten();
                         let final_text: Option<Vec<u8>> = self.connection.query_row(
                             "SELECT final_text FROM native_turns WHERE invocation_id=?1 AND state='completed_settled' AND purpose='domain_work'",
                             [source], |r| r.get(0),
                         ).optional().map_err(|_|StoreError::Unavailable)?;
-                        final_text
-                            .and_then(|bytes| {
-                                serde_json::from_slice::<serde_json::Value>(&bytes).ok()
-                            })
-                            .is_some_and(|value| value["successor_context"] == context.as_str())
+                        final_text.is_some()
+                            && if let Some(intent) = trusted_intent {
+                                intent == context.as_str()
+                            } else {
+                                final_text
+                                    .and_then(|bytes| {
+                                        serde_json::from_slice::<serde_json::Value>(&bytes).ok()
+                                    })
+                                    .is_some_and(|value| {
+                                        value["successor_context"] == context.as_str()
+                                    })
+                            }
                     }
                 } else {
                     false
@@ -903,6 +1742,13 @@ impl SqliteLifecycleStore {
             || request.prompt.len()
                 > if semantic_prompt.is_some() {
                     65_536
+                } else if request.purpose == NativeInvocationPurpose::DomainWork
+                    && request
+                        .attempt
+                        .as_str()
+                        .starts_with("native-attempt:delivery:")
+                {
+                    8192
                 } else {
                     2048
                 }
@@ -1403,11 +2249,27 @@ impl SqliteLifecycleStore {
             .map_err(|_| StoreError::Unavailable)?;
         let incomplete:i64=tx.query_row("SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1 AND state!='completed_settled'",
             [entry.invocation_id.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
+        let incomplete_task:i64=tx.query_row("SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1 AND state!='completed_settled'",
+            [entry.invocation_id.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
         let calls:i64=tx.query_row("SELECT COUNT(*) FROM native_ingress WHERE method='item/tool/call' AND thread_id=?1 AND turn_id=?2",
             params![entry.thread.as_str(),turn.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
         let children: i64 = tx
             .query_row(
                 "SELECT COUNT(*) FROM native_operations WHERE parent_invocation_id=?1",
+                [entry.invocation_id.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let task_children: i64 = tx
+            .query_row(
+                "SELECT COUNT(*) FROM native_task_operations WHERE parent_invocation_id=?1",
+                [entry.invocation_id.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let task_profile: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM native_delivery_segments WHERE invocation_id=?1)",
                 [entry.invocation_id.as_str()],
                 |r| r.get(0),
             )
@@ -1419,7 +2281,8 @@ impl SqliteLifecycleStore {
         let unknown:i64=tx.query_row("SELECT COUNT(*) FROM native_ingress WHERE thread_id=?1 AND turn_id=?2 AND decode_status NOT IN ('qualified','denied_before_entry')",
             params![entry.thread.as_str(),turn.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
         if incomplete != 0
-            || calls != children
+            || incomplete_task != 0
+            || calls != children + task_children
             || terminal != 1
             || adverse_terminal != 0
             || unknown != 0
@@ -1445,8 +2308,13 @@ impl SqliteLifecycleStore {
             match item["type"].as_str() {
                 Some("dynamicToolCall") => {
                     let call = item["id"].as_str().ok_or(StoreError::ClaimConflict)?;
-                    if item["namespace"] != "workspace"
-                        || item["tool"] != "snapshot_read"
+                    if !((item["namespace"] == "workspace" && item["tool"] == "snapshot_read")
+                        || (task_profile
+                            && item["namespace"] == "task"
+                            && matches!(
+                                item["tool"].as_str(),
+                                Some("question_open" | "result_publish")
+                            )))
                         || !started_calls.insert(call.into())
                     {
                         return Err(StoreError::ClaimConflict);
@@ -1485,8 +2353,13 @@ impl SqliteLifecycleStore {
                 }
                 Some("dynamicToolCall") => {
                     let call = item["id"].as_str().ok_or(StoreError::ClaimConflict)?;
-                    if item["namespace"] != "workspace"
-                        || item["tool"] != "snapshot_read"
+                    if !((item["namespace"] == "workspace" && item["tool"] == "snapshot_read")
+                        || (task_profile
+                            && item["namespace"] == "task"
+                            && matches!(
+                                item["tool"].as_str(),
+                                Some("question_open" | "result_publish")
+                            )))
                         || item["status"] != "completed"
                         || item["success"] != true
                         || tool_completions.insert(call.into(), item.clone()).is_some()
@@ -1499,7 +2372,7 @@ impl SqliteLifecycleStore {
             }
         }
         if final_seen != 1
-            || tool_completions.len() != children as usize
+            || tool_completions.len() != (children + task_children) as usize
             || started_calls
                 .iter()
                 .any(|call| !tool_completions.contains_key(call))
@@ -1565,6 +2438,57 @@ impl SqliteLifecycleStore {
                 || result["member_id"] != member
                 || result["offset"].as_u64() != Some(start)
                 || result["length"].as_u64() != Some(length)
+            {
+                return Err(StoreError::ClaimConflict);
+            }
+        }
+        let task_operations = {
+            let mut statement=tx.prepare(
+                "SELECT o.call_id,o.contract_id,o.owner_commit_json,o.owner_commit_sha256,i.raw \
+                 FROM native_task_operations o JOIN native_ingress i \
+                 ON i.transport_session=o.transport_session AND i.sequence=o.transport_sequence \
+                 WHERE o.parent_invocation_id=?1",
+            ).map_err(|_|StoreError::Unavailable)?;
+            statement
+                .query_map([entry.invocation_id.as_str()], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Vec<u8>>(2)?,
+                        r.get::<_, String>(3)?,
+                        r.get::<_, Vec<u8>>(4)?,
+                    ))
+                })
+                .map_err(|_| StoreError::Unavailable)?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| StoreError::Unavailable)?
+        };
+        for (call, contract, commit_bytes, digest, raw) in task_operations {
+            let item = tool_completions
+                .get(&call)
+                .ok_or(StoreError::ClaimConflict)?;
+            let request: serde_json::Value =
+                serde_json::from_slice(&raw).map_err(|_| StoreError::ClaimConflict)?;
+            let commit: serde_json::Value =
+                serde_json::from_slice(&commit_bytes).map_err(|_| StoreError::ClaimConflict)?;
+            let tool = if contract == "task.question.open.v1" {
+                "question_open"
+            } else {
+                "result_publish"
+            };
+            let content = item["contentItems"]
+                .as_array()
+                .ok_or(StoreError::ClaimConflict)?;
+            if item["namespace"] != "task"
+                || item["tool"] != tool
+                || item["arguments"] != request["params"]["arguments"]
+                || content.len() != 1
+                || content[0]["type"] != "inputText"
+                || content[0]["text"]
+                    .as_str()
+                    .and_then(|text| serde_json::from_str::<serde_json::Value>(text).ok())
+                    != Some(commit)
+                || sha256(&commit_bytes)? != digest
             {
                 return Err(StoreError::ClaimConflict);
             }
@@ -1680,8 +2604,13 @@ impl SqliteLifecycleStore {
             match item["type"].as_str() {
                 Some("dynamicToolCall") => {
                     let call = item["id"].as_str().ok_or(StoreError::ClaimConflict)?;
-                    if item["namespace"] != "workspace"
-                        || item["tool"] != "snapshot_read"
+                    if !((item["namespace"] == "workspace" && item["tool"] == "snapshot_read")
+                        || (task_profile
+                            && item["namespace"] == "task"
+                            && matches!(
+                                item["tool"].as_str(),
+                                Some("question_open" | "result_publish")
+                            )))
                         || item["status"] != "completed"
                         || item["success"] != true
                         || tool_completions.get(call) != Some(item)
@@ -1703,8 +2632,10 @@ impl SqliteLifecycleStore {
             .and_then(|v| v["text"].as_str());
         let visible_tools = history_tools.len();
         if history_final != Some(final_text)
-            || (history_status == "observed_complete" && visible_tools != children as usize)
-            || (history_status == "observed_tool_omitted" && (children == 0 || visible_tools != 0))
+            || (history_status == "observed_complete"
+                && visible_tools != (children + task_children) as usize)
+            || (history_status == "observed_tool_omitted"
+                && (children + task_children == 0 || visible_tools != 0))
             || (matches!(purpose.as_str(), "semantic_compile" | "semantic_verify")
                 && (children != 0 || visible_tools != 0 || history_status != "observed_complete"))
         {
@@ -1731,6 +2662,65 @@ impl SqliteLifecycleStore {
         observe_native_subject_clock(&tx, &subject, clock.wall.get().max(history_wall))?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(())
+    }
+
+    /// Query-only accounting. Each invocation contributes at most its last
+    /// cumulative notification, never the sum of its notifications. Purpose
+    /// stays attached to the row so domain, control and rehydration costs are
+    /// disjoint; absent, malformed or cross-transport ambiguous counters
+    /// remain unavailable.
+    pub fn native_usage_accounting(
+        &self,
+        subject: &SubjectId,
+    ) -> Result<Vec<NativeUsageAccounting>, StoreError> {
+        self.verify_identity()?;
+        let mut statement = self
+            .connection
+            .prepare(
+            "SELECT t.invocation_id,t.purpose,u.raw_json, \
+                (SELECT COUNT(DISTINCT ux.transport_session) FROM native_usage ux WHERE ux.invocation_id=t.invocation_id) \
+             FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id \
+             LEFT JOIN native_usage u ON u.invocation_id=t.invocation_id \
+             WHERE s.subject_id=?1 \
+             ORDER BY t.entered_wall_ms,t.invocation_id,u.transport_session,u.sequence",
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let rows = statement
+            .query_map([subject.as_str()], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, Option<Vec<u8>>>(2)?,
+                    r.get::<_, i64>(3)?,
+                ))
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        let mut result: Vec<NativeUsageAccounting> = Vec::new();
+        for row in rows {
+            let (invocation_id, purpose, raw, transport_count) =
+                row.map_err(|_| StoreError::Unavailable)?;
+            if result
+                .last()
+                .is_none_or(|last| last.invocation_id != invocation_id)
+            {
+                result.push(NativeUsageAccounting {
+                    invocation_id,
+                    purpose,
+                    units: None,
+                    raw_events: 0,
+                });
+            }
+            if let Some(raw) = raw {
+                let last = result.last_mut().ok_or(StoreError::Unavailable)?;
+                last.raw_events += 1;
+                last.units = if transport_count == 1 {
+                    normalized_usage(&raw)
+                } else {
+                    None
+                };
+            }
+        }
+        Ok(result)
     }
 
     /// Query-only recovery; absence of native history never means non-entry.
@@ -1953,6 +2943,157 @@ mod tests {
         WallTimeMs,
     };
     use tempfile::tempdir;
+
+    #[test]
+    fn native_observation_distinguishes_empty_capacity_and_storage_failure() {
+        let root = tempdir().unwrap();
+        let store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:bounded-read").unwrap();
+        // Owner-local query fixture: temp relations isolate the exact production
+        // SELECT and its row bound, not admission or persisted schema coherence.
+        store.connection.execute_batch(
+            "CREATE TEMP TABLE native_delivery_segments(queue_attempt_id TEXT,invocation_id TEXT,segment_no INTEGER,predecessor_invocation_id TEXT,transition_id TEXT,state TEXT);
+             CREATE TEMP TABLE native_turns(invocation_id TEXT,session_id TEXT,attempt_id TEXT,state TEXT,send_intent INTEGER,thread_id TEXT,turn_id TEXT,final_sha256 TEXT,history_status TEXT);
+             CREATE TEMP TABLE native_sessions(session_id TEXT,context_id TEXT);
+             CREATE TEMP TABLE attempts(attempt_id TEXT,effect_id TEXT);
+             CREATE TEMP TABLE effects(effect_id TEXT,input_id TEXT,subject_id TEXT);
+             CREATE TEMP TABLE inputs(input_id TEXT,delivery_id TEXT,sequence INTEGER,state TEXT);
+             INSERT INTO native_sessions VALUES ('session','context');
+             INSERT INTO attempts VALUES ('queue-attempt','effect');
+             INSERT INTO effects VALUES ('effect','input','subject:bounded-read');
+             INSERT INTO inputs VALUES ('input','delivery',1,'active');"
+        ).unwrap();
+        let NativeDeliveryObservation::Complete(empty) =
+            store.native_delivery_status(&subject).unwrap()
+        else {
+            panic!("empty query refused")
+        };
+        assert_eq!(empty["segments"], serde_json::json!([]));
+        for ordinal in 0..65 {
+            let invocation = format!("invocation-{ordinal}");
+            store.connection.execute("INSERT INTO native_turns VALUES (?1,'session','native-attempt','completed',1,'thread','turn',NULL,'complete')", [&invocation]).unwrap();
+            store.connection.execute("INSERT INTO native_delivery_segments VALUES ('queue-attempt',?1,?2,NULL,NULL,'completed')", params![invocation,ordinal]).unwrap();
+            if ordinal == 63 {
+                let NativeDeliveryObservation::Complete(full) =
+                    store.native_delivery_status(&subject).unwrap()
+                else {
+                    panic!("64 rows refused")
+                };
+                assert_eq!(full["segments"].as_array().unwrap().len(), 64);
+            }
+        }
+        assert_eq!(
+            store.native_delivery_status(&subject).unwrap(),
+            NativeDeliveryObservation::CapacityExceeded { limit: 64 }
+        );
+        store
+            .connection
+            .execute_batch(
+                "ALTER TABLE temp.native_turns RENAME COLUMN thread_id TO missing_thread;",
+            )
+            .unwrap();
+        assert!(matches!(
+            store.native_delivery_status(&subject),
+            Err(StoreError::Unavailable)
+        ));
+    }
+
+    #[test]
+    fn native_usage_keeps_missing_distinct_from_zero_and_partitions_counters() {
+        assert_eq!(normalized_usage(b"{}"), None);
+        let raw = |all, input, cached, writes, output, reasoning| {
+            serde_json::to_vec(&serde_json::json!({"params":{"tokenUsage":{"total":{
+                "totalTokens":all,"inputTokens":input,"cachedInputTokens":cached,
+                "cacheWriteInputTokens":writes,"outputTokens":output,
+                "reasoningOutputTokens":reasoning
+            }}}}))
+            .unwrap()
+        };
+        assert_eq!(
+            normalized_usage(&raw(0, 0, 0, 0, 0, 0)),
+            Some(NativeUsageUnits {
+                uncached_input: 0,
+                cached_input: 0,
+                cache_write_input: 0,
+                nonreasoning_output: 0,
+                reasoning_output: 0,
+            })
+        );
+        assert_eq!(
+            normalized_usage(&raw(20, 15, 3, 2, 5, 1)),
+            Some(NativeUsageUnits {
+                uncached_input: 10,
+                cached_input: 3,
+                cache_write_input: 2,
+                nonreasoning_output: 4,
+                reasoning_output: 1,
+            })
+        );
+        assert_eq!(normalized_usage(&raw(20, 15, 12, 4, 5, 1)), None);
+        assert_eq!(normalized_usage(&raw(20, 15, 3, 2, 5, 6)), None);
+        assert_eq!(normalized_usage(&raw(19, 15, 3, 2, 5, 1)), None);
+    }
+
+    #[test]
+    fn native_usage_accounting_uses_last_cumulative_event_once_per_purpose() {
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("subject:usage").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                ContextGeneration::parse("context:usage").unwrap(),
+                BuildId::parse("build:usage").unwrap(),
+                ProofRunId::parse("proof:usage").unwrap(),
+                clock(),
+            )
+            .unwrap();
+        store.connection.execute_batch("\
+            INSERT INTO grants VALUES('grant:usage','trusted','principal:usage','subject:usage','context:usage','build:usage','proof:usage','native_turn',100,1,0); \
+            INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,thread_id,created_wall_ms,role) \
+              VALUES('session:usage','subject:usage','context:usage','incarnation:usage','profile','binary','protocol','snapshot:usage','manifest','bound','thread:usage',10,'domain'); \
+            INSERT INTO native_turns(invocation_id,session_id,attempt_id,grant_id,grant_revision,purpose,prompt_sha256,prompt,profile_digest,state,thread_id,entered_wall_ms) \
+              VALUES('invocation:work','session:usage','attempt:work','grant:usage',1,'domain_work','prompt',x'00','profile','completed_settled','thread:usage',11), \
+                    ('invocation:control','session:usage','attempt:control','grant:usage',1,'semantic_compile','prompt',x'00','profile','completed_settled','thread:usage',12), \
+                    ('invocation:rehydrate','session:usage','attempt:rehydrate','grant:usage',1,'successor_rehydrate','prompt',x'00','profile','completed_settled','thread:usage',13);
+        ").unwrap();
+        let event = |all, input, output| {
+            serde_json::to_vec(&serde_json::json!({"params":{"tokenUsage":{"total":{
+                "totalTokens":all,"inputTokens":input,"cachedInputTokens":0,
+                "cacheWriteInputTokens":0,"outputTokens":output,"reasoningOutputTokens":0
+            }}}}))
+            .unwrap()
+        };
+        for (sequence, invocation, raw) in [
+            (1, "invocation:work", event(10, 8, 2)),
+            (2, "invocation:work", event(20, 15, 5)),
+            (3, "invocation:control", event(0, 0, 0)),
+        ] {
+            store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,item_id,observed_wall_ms) VALUES('transport:usage',?1,'raw',?2,'qualified','thread/tokenUsage/updated','thread:usage','turn:usage',NULL,?1)",
+                params![sequence, &raw]).unwrap();
+            store.connection.execute("INSERT INTO native_usage VALUES('transport:usage',?1,?2,'native_cumulative',?3)",
+                params![sequence, invocation, raw]).unwrap();
+        }
+        let rows = store.native_usage_accounting(&subject).unwrap();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[0].purpose, "domain_work");
+        assert_eq!(rows[0].raw_events, 2);
+        assert_eq!(rows[0].units.unwrap().uncached_input, 15);
+        assert_eq!(rows[0].units.unwrap().nonreasoning_output, 5);
+        assert_eq!(rows[1].purpose, "semantic_compile");
+        assert_eq!(rows[1].units.unwrap().uncached_input, 0);
+        assert_eq!(rows[2].purpose, "successor_rehydrate");
+        assert_eq!(rows[2].units, None);
+        assert_eq!(rows[2].raw_events, 0);
+        let ambiguous = event(30, 22, 8);
+        store.connection.execute("INSERT INTO native_ingress(transport_session,sequence,raw_sha256,raw,decode_status,method,thread_id,turn_id,item_id,observed_wall_ms) VALUES('transport:reconnected',1,'raw',?1,'qualified','thread/tokenUsage/updated','thread:usage','turn:usage',NULL,14)",
+            params![&ambiguous]).unwrap();
+        store.connection.execute("INSERT INTO native_usage VALUES('transport:reconnected',1,'invocation:work','native_cumulative',?1)",
+            params![ambiguous]).unwrap();
+        let after_reconnect = store.native_usage_accounting(&subject).unwrap();
+        assert_eq!(after_reconnect[0].raw_events, 3);
+        assert_eq!(after_reconnect[0].units, None);
+    }
 
     fn clock() -> ClockSample {
         ClockSample {
@@ -2592,21 +3733,30 @@ mod tests {
 
     #[test]
     fn completed_native_turn_cannot_settle_async_question_or_unsupported_descendant() {
-        for (item, ingress_method, history_only) in [
+        for (item, ingress_method, history_only, ingress_status) in [
             (
                 serde_json::json!({"type":"agentMessage","text":"Need answer","questions":[{"id":"q1"}]}),
                 "item/completed",
                 false,
+                "qualified",
             ),
             (
                 serde_json::json!({"type":"dynamicToolCall","id":"call:running","namespace":"workspace","tool":"snapshot_read","status":"inProgress"}),
                 "item/started",
                 false,
+                "qualified",
             ),
             (
                 serde_json::json!({"type":"remoteToolCall","id":"remote:one","status":"completed"}),
                 "item/completed",
                 true,
+                "qualified",
+            ),
+            (
+                serde_json::json!({"type":"compaction","id":"compaction:unexpected"}),
+                "thread/compacted",
+                false,
+                "unsupported",
             ),
         ] {
             let root = tempdir().unwrap();
@@ -2684,12 +3834,14 @@ mod tests {
             let mut ingress = vec![(
                 1,
                 "turn/completed",
+                "qualified",
                 serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:adverse","turn":{"id":"turn:adverse","status":"completed"}}}),
             )];
             if !history_only {
                 ingress.push((
                     2,
                     ingress_method,
+                    ingress_status,
                     serde_json::json!({"method":ingress_method,"params":{"threadId":"thread:adverse","turnId":"turn:adverse","item":item.clone()}}),
                 ));
             }
@@ -2698,16 +3850,17 @@ mod tests {
             ingress.push((
                 3,
                 "item/completed",
+                "qualified",
                 serde_json::json!({"method":"item/completed","params":{"threadId":"thread:adverse","turnId":"turn:adverse","item":final_item.clone()}}),
             ));
-            for (sequence, method, value) in ingress {
+            for (sequence, method, status, value) in ingress {
                 store
                     .record_native_ingress(
                         &NativeSessionId::parse("session:adverse").unwrap(),
                         "transport:adverse",
                         sequence,
                         &serde_json::to_vec(&value).unwrap(),
-                        "qualified",
+                        status,
                         Some(method),
                         Some("thread:adverse"),
                         Some("turn:adverse"),

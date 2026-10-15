@@ -10,6 +10,259 @@ use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 use work_engine_types::CodecContract;
 
+fn write_capsule_manifest(receipt: &mut lifecycle_store::CapsuleReceipt) {
+    receipt.capsule_sha256.clear();
+    receipt.capsule_sha256 = format!("{:x}", Sha256::digest(serde_json::to_vec(receipt).unwrap()));
+    fs::write(
+        receipt.capsule_root.join("manifest.json"),
+        serde_json::to_vec(receipt).unwrap(),
+    )
+    .unwrap();
+}
+
+// This is a real empty schema4 image, never a schema5 image with its version
+// changed. No execution/custody row is fabricated to stand in for adoption.
+fn schema_four_capsule(root: &std::path::Path) -> lifecycle_store::CapsuleReceipt {
+    fs::create_dir(root).unwrap();
+    fs::create_dir_all(root.join("artifacts/blobs")).unwrap();
+    let database = root.join("lifecycle.sqlite");
+    let conn = rusqlite::Connection::open(&database).unwrap();
+    for sql in [
+        include_str!("../../lifecycle-store/migrations/0001_initial.sql"),
+        include_str!("../../lifecycle-store/migrations/0002_service.sql"),
+        include_str!("../../lifecycle-store/migrations/0003_native_operation.sql"),
+        include_str!("../../lifecycle-store/migrations/0004_composite_s67.sql"),
+    ] {
+        conn.execute_batch(sql).unwrap();
+    }
+    conn.execute(
+        "INSERT INTO store_identity(singleton,store_id) VALUES(1,'store:archived-four')",
+        [],
+    )
+    .unwrap();
+    conn.pragma_update(None, "user_version", 4).unwrap();
+    let revision = conn
+        .query_row(
+            "SELECT revision FROM admin_custody_revision WHERE singleton=1",
+            [],
+            |r| r.get::<_, u64>(0),
+        )
+        .unwrap();
+    drop(conn);
+    let mut receipt = lifecycle_store::CapsuleReceipt {
+        version: 1,
+        capsule_root: root.to_owned(),
+        source_store_id: "store:archived-four".into(),
+        source_revision: revision,
+        source_schema: 4,
+        database_sha256: format!("{:x}", Sha256::digest(fs::read(database).unwrap())),
+        artifacts: Vec::new(),
+        semantic_artifact_digests: Vec::new(),
+        native_invocation_ids: Vec::new(),
+        capsule_sha256: String::new(),
+    };
+    write_capsule_manifest(&mut receipt);
+    receipt
+}
+
+fn capsule_bytes(
+    root: &std::path::Path,
+) -> std::collections::BTreeMap<std::path::PathBuf, Vec<u8>> {
+    let mut result = std::collections::BTreeMap::new();
+    let mut pending = vec![root.to_owned()];
+    while let Some(dir) = pending.pop() {
+        for entry in fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else {
+                result.insert(
+                    path.strip_prefix(root).unwrap().to_owned(),
+                    fs::read(path).unwrap(),
+                );
+            }
+        }
+    }
+    result
+}
+
+#[test]
+fn genuine_four_capsule_read_is_immutable_and_adoption_migrates_only_inactive_copy() {
+    let temp = tempdir().unwrap();
+    let root = temp.path().join("four");
+    let receipt = schema_four_capsule(&root);
+    let before = capsule_bytes(&root);
+    assert_eq!(SqliteLifecycleStore::read_capsule(&root).unwrap(), receipt);
+    assert_eq!(capsule_bytes(&root), before);
+    let destination = temp.path().join("destination");
+    let handoff = lifecycle_core::HandoffId::parse("handoff:four-to-five").unwrap();
+    let (mut adopted, accepted) = SqliteLifecycleStore::adopt_inactive(
+        &receipt,
+        &destination,
+        &handoff,
+        "test-issuer".into(),
+    )
+    .unwrap();
+    assert_eq!(accepted.source_store_id, receipt.source_store_id);
+    assert_eq!(accepted.source_revision, receipt.source_revision);
+    assert_eq!(accepted.capsule_sha256, receipt.capsule_sha256);
+    assert_ne!(accepted.destination_store_id, receipt.source_store_id);
+    assert_eq!(adopted.admin_ownership().unwrap().status, "inactive");
+    assert!(
+        adopted
+            .prepare_next_input(&SubjectId::parse("subject:absent").unwrap())
+            .is_err()
+    );
+    assert!(
+        adopted
+            .export_current(&temp.path().join("must-not-export"))
+            .is_err()
+    );
+    let connection = rusqlite::Connection::open_with_flags(
+        destination.join("lifecycle.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .unwrap();
+    assert_eq!(
+        connection
+            .query_row("PRAGMA user_version", [], |r| r.get::<_, u32>(0))
+            .unwrap(),
+        5
+    );
+    drop(connection);
+    drop(adopted);
+    let (reopened, same) = SqliteLifecycleStore::open_adopted_inactive(
+        &destination,
+        &handoff,
+        &receipt.capsule_sha256,
+        "test-issuer".into(),
+    )
+    .unwrap();
+    assert_eq!(same, accepted);
+    assert_eq!(reopened.admin_ownership().unwrap().status, "inactive");
+    assert_eq!(capsule_bytes(&root), before);
+    assert_eq!(SqliteLifecycleStore::read_capsule(&root).unwrap(), receipt);
+}
+
+#[test]
+fn manifest_schema_must_equal_actual_database_and_unknown_or_incoherent_images_refuse() {
+    let temp = tempdir().unwrap();
+    let four = temp.path().join("four");
+    let mut old = schema_four_capsule(&four);
+    old.source_schema = 5;
+    write_capsule_manifest(&mut old);
+    let before = capsule_bytes(&four);
+    assert!(SqliteLifecycleStore::read_capsule(&four).is_err());
+    assert_eq!(capsule_bytes(&four), before);
+
+    let source =
+        SqliteLifecycleStore::open(&temp.path().join("source"), "test-issuer".into()).unwrap();
+    let five = temp.path().join("five");
+    let mut current = source.export_current(&five).unwrap();
+    assert_eq!(current.source_schema, 5);
+    assert_eq!(SqliteLifecycleStore::read_capsule(&five).unwrap(), current);
+    for unsupported_or_mismatched in [3, 4, 6] {
+        current.source_schema = unsupported_or_mismatched;
+        write_capsule_manifest(&mut current);
+        let before = capsule_bytes(&five);
+        assert!(SqliteLifecycleStore::read_capsule(&five).is_err());
+        assert_eq!(capsule_bytes(&five), before);
+    }
+    current.source_schema = 5;
+    let connection = rusqlite::Connection::open(five.join("lifecycle.sqlite")).unwrap();
+    connection
+        .execute_batch("DROP TRIGGER custody_revision_store_identity_insert")
+        .unwrap();
+    drop(connection);
+    current.database_sha256 = format!(
+        "{:x}",
+        Sha256::digest(fs::read(five.join("lifecycle.sqlite")).unwrap())
+    );
+    write_capsule_manifest(&mut current);
+    let before = capsule_bytes(&five);
+    assert!(SqliteLifecycleStore::read_capsule(&five).is_err());
+    assert_eq!(capsule_bytes(&five), before);
+}
+
+fn source_custody_revision(root: &std::path::Path) -> u64 {
+    rusqlite::Connection::open_with_flags(
+        root.join("lifecycle.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
+    )
+    .unwrap()
+    .query_row(
+        "SELECT revision FROM admin_custody_revision WHERE singleton=1",
+        [],
+        |r| r.get(0),
+    )
+    .unwrap()
+}
+
+#[test]
+fn capsule_revision_must_match_snapshot_for_schema_four_and_five() {
+    let temporary = tempdir().unwrap();
+    let four_root = temporary.path().join("four");
+    let mut four = schema_four_capsule(&four_root);
+    four.source_revision += 1;
+    write_capsule_manifest(&mut four);
+    let four_before = capsule_bytes(&four_root);
+    assert!(SqliteLifecycleStore::read_capsule(&four_root).is_err());
+    assert_eq!(capsule_bytes(&four_root), four_before);
+
+    let source_root = temporary.path().join("source");
+    let five_root = temporary.path().join("five");
+    let mut source = SqliteLifecycleStore::open(&source_root, "test-issuer".into()).unwrap();
+    source
+        .register_subject(
+            SubjectId::parse("subject-revision-before").unwrap(),
+            ContextGeneration::parse("context-revision-before").unwrap(),
+            BuildId::parse("build-revision-before").unwrap(),
+            ProofRunId::parse("proof-revision-before").unwrap(),
+            clock(100),
+        )
+        .unwrap();
+    let mut five = source.export_current(&five_root).unwrap();
+    let snapshot_revision = five.source_revision;
+    source
+        .register_subject(
+            SubjectId::parse("subject-revision-after").unwrap(),
+            ContextGeneration::parse("context-revision-after").unwrap(),
+            BuildId::parse("build-revision-after").unwrap(),
+            ProofRunId::parse("proof-revision-after").unwrap(),
+            clock(101),
+        )
+        .unwrap();
+    let current_revision = source_custody_revision(&source_root);
+    assert!(current_revision > snapshot_revision);
+    five.source_revision = current_revision;
+    write_capsule_manifest(&mut five);
+
+    // The forged manifest is internally rehashed and claims the current source
+    // revision, while the immutable snapshot database still carries the prior one.
+    let five_before = capsule_bytes(&five_root);
+    let source_before = capsule_bytes(&source_root);
+    assert!(SqliteLifecycleStore::read_capsule(&five_root).is_err());
+    assert_eq!(capsule_bytes(&five_root), five_before);
+    assert_eq!(capsule_bytes(&source_root), source_before);
+    assert!(source.export_current(&five_root).is_err());
+    assert_eq!(capsule_bytes(&five_root), five_before);
+    assert_eq!(capsule_bytes(&source_root), source_before);
+
+    let destination = temporary.path().join("destination");
+    assert!(
+        SqliteLifecycleStore::adopt_inactive(
+            &five,
+            &destination,
+            &lifecycle_core::HandoffId::parse("handoff:stale-capsule").unwrap(),
+            "test-issuer".into(),
+        )
+        .is_err()
+    );
+    assert!(!destination.exists());
+    assert_eq!(capsule_bytes(&five_root), five_before);
+    assert_eq!(capsule_bytes(&source_root), source_before);
+}
+
 fn clock(wall: i64) -> ClockSample {
     ClockSample {
         wall: WallTimeMs::new(wall),
@@ -41,7 +294,7 @@ fn coherent_export_includes_committed_artifact_and_rejects_partial_or_corrupt_cl
     let published = store.publish_artifact(staged, clock(101)).unwrap();
 
     let first = store.export_current(&capsule_one).unwrap();
-    assert_eq!(first.source_schema, 4);
+    assert_eq!(first.source_schema, 5);
     assert_eq!(first.artifacts.len(), 1);
     assert_eq!(first.artifacts[0].digest_hex, published.digest_hex);
     assert_eq!(store.export_current(&capsule_one).unwrap(), first);

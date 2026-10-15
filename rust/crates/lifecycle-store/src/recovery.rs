@@ -190,7 +190,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if !matches!(version, 2..=4) {
+        if !matches!(version, 2..=5) {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -247,7 +247,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if !matches!(version, 2..=4) {
+    if !matches!(version, 2..=5) {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -258,7 +258,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     if foreign_key_error {
         return Err(StoreError::Unavailable);
     }
-    if version == 4 {
+    if version >= 4 {
         let revision: i64 = connection
             .query_row(
                 "SELECT revision FROM admin_custody_revision WHERE singleton=1",
@@ -272,7 +272,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
             connection,
             "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
         )?;
-        if revision < 0 || trigger_count != 102 {
+        if revision < 0 || trigger_count != if version >= 5 { 111 } else { 102 } {
             return Err(StoreError::Unavailable);
         }
     }
@@ -309,21 +309,36 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         "SELECT COUNT(*) FROM verifier_results v JOIN transitions t ON t.transition_id=v.transition_id WHERE NOT EXISTS (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
     )?;
     let native_mismatch = if version >= 3 {
-        count(
-            connection,
-            "SELECT COUNT(*) FROM transitions t JOIN native_turns n ON n.invocation_id=t.native_basis_source \
-             JOIN native_sessions s ON s.session_id=n.session_id WHERE s.subject_id!=t.subject_id OR \
-             s.context_id!=t.predecessor_context OR n.state!='completed_settled' OR n.purpose!='domain_work'",
-        )? + count(
-            connection,
-            "SELECT COUNT(*) FROM native_verifier_results v JOIN transitions t ON t.transition_id=v.transition_id \
+        let transition_mismatch = if version >= 5 {
+            count(
+                connection,
+                "SELECT COUNT(*) FROM transitions t JOIN native_turns n ON n.invocation_id=t.native_basis_source \
+                 JOIN native_sessions s ON s.session_id=n.session_id WHERE s.subject_id!=t.subject_id OR \
+                 s.context_id!=t.predecessor_context OR n.purpose!='domain_work' OR \
+                 (n.state!='completed_settled' AND NOT (t.stage='quiescing' AND n.state='entered_uncertain' \
+                  AND EXISTS(SELECT 1 FROM native_delivery_segments d WHERE d.invocation_id=n.invocation_id \
+                             AND d.state='entered')))",
+            )?
+        } else {
+            count(
+                connection,
+                "SELECT COUNT(*) FROM transitions t JOIN native_turns n ON n.invocation_id=t.native_basis_source \
+                 JOIN native_sessions s ON s.session_id=n.session_id WHERE s.subject_id!=t.subject_id OR \
+                 s.context_id!=t.predecessor_context OR n.state!='completed_settled' OR n.purpose!='domain_work'",
+            )?
+        };
+        transition_mismatch
+            + count(
+                connection,
+                "SELECT COUNT(*) FROM native_verifier_results v JOIN transitions t ON t.transition_id=v.transition_id \
                  WHERE v.source_id!='native:'||t.native_basis_source OR NOT EXISTS \
                  (SELECT 1 FROM journal j WHERE j.subject_id=t.subject_id AND j.event_kind='verifier_resolved' AND j.event_ref=v.transition_id)",
-        )? + count(
-            connection,
-            "SELECT COUNT(*) FROM native_turns WHERE state='completed_settled' AND \
+            )?
+            + count(
+                connection,
+                "SELECT COUNT(*) FROM native_turns WHERE state='completed_settled' AND \
                  (final_text IS NULL OR final_sha256 IS NULL OR turn_id IS NULL OR history_transport_session IS NULL OR history_sequence IS NULL)",
-        )?
+            )?
     } else {
         0
     };

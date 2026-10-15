@@ -1,0 +1,25 @@
+[package]
+name = "work-engine-task-host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+controlled-proof = ["lifecycle-service/native-sim-proof", "lifecycle-service/controlled-proof", "retained-task-workflow/controlled-proof"]
+
+[dependencies]
+retained-task-workflow = { path = "../retained-task-workflow" }
+lifecycle-service = { path = "../lifecycle-service" }
+lifecycle-wire = { path = "../lifecycle-wire" }
+work-engine-types = { path = "../work-engine-types" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+getrandom = "=0.3.4"
+
+[dev-dependencies]
+tempfile = "=3.27.0"

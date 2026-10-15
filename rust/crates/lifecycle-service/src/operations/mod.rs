@@ -63,6 +63,41 @@ pub enum NativeMessage {
     },
 }
 
+/// Commands from the lifecycle actor to the one owned native transport. The
+/// actor alone chooses FIFO work and successor allocation; the runner cannot
+/// advance a delivery from configured followups or a caller callback.
+pub enum NativeTaskWork {
+    RunTurn(NativeFollowupTurn),
+    StartSuccessor,
+}
+
+fn domain_thread_start(work: &Path, task_profile: bool) -> Value {
+    let mut tools = vec![json!({"type":"namespace","name":"workspace",
+    "description":"Read exact approved immutable workspace snapshot bytes.","tools":[{
+        "type":"function","name":"snapshot_read",
+        "description":"Read one approved snapshot member and bounded range.",
+        "inputSchema":{"type":"object","properties":{"snapshot_id":{"type":"string"},
+            "member_id":{"type":"string"},"offset":{"type":"integer","minimum":0},
+            "length":{"type":"integer","minimum":1,"maximum":65536}},
+            "required":["snapshot_id","member_id","offset","length"],"additionalProperties":false}
+    }]})];
+    if task_profile {
+        tools.push(json!({"type":"namespace","name":"task",
+            "description":"Commit bounded task-owner questions or attributed results through lifecycle custody.",
+            "tools":[
+                {"type":"function","name":"question_open","description":"Open a pending question for an authorized human recipient; this does not answer it.",
+                 "inputSchema":{"type":"object","properties":{"question_id":{"type":"string"},"recipient_ref":{"type":"string"},"scope_ref":{"type":"string"},"text":{"type":"string"}},
+                 "required":["question_id","recipient_ref","scope_ref","text"],"additionalProperties":false}},
+                {"type":"function","name":"result_publish","description":"Publish an attributed result under current owner and grant authority.",
+                 "inputSchema":{"type":"object","properties":{"result_id":{"type":"string"},"body":{"type":"string"},"source_refs":{"type":"array","items":{"type":"object"}},"attribution":{"type":"string"}},
+                 "required":["result_id","body","source_refs","attribution"],"additionalProperties":false}}
+            ]}));
+    }
+    json!({"cwd":work,"model":"gpt-6-sol",
+        "modelProvider":"local_probe","approvalPolicy":"never","sandbox":"read-only",
+        "environments":[],"dynamicTools":tools,"ephemeral":false,"historyMode":"legacy"})
+}
+
 struct Runner {
     harness: NativeHarness,
     messages: mpsc::Sender<NativeMessage>,
@@ -220,12 +255,13 @@ impl Runner {
         &mut self,
         config: &NativeConfig,
         launch: &NativeLaunch,
+        mut task_work: Option<mpsc::Receiver<NativeTaskWork>>,
     ) -> Result<(), StoreError> {
         let (init,_)=self.rpc("initialize",json!({"clientInfo":{"name":"work_engine_s5","version":"0.1.0"},"capabilities":{"experimentalApi":true}})).await?;
         if !init
             .get("userAgent")
             .and_then(Value::as_str)
-            .is_some_and(|s| s.contains("0.160.1"))
+            .is_some_and(|s| s.contains("0.162.1"))
             || init.get("codexHome").and_then(Value::as_str) != launch.codex_home.to_str()
         {
             return Err(StoreError::Rejected);
@@ -250,18 +286,14 @@ impl Runner {
         {
             return Err(StoreError::Rejected);
         }
-        let (started,_)=self.rpc("thread/start",json!({"cwd":launch.work,"model":"gpt-6-sol",
-            "modelProvider":"local_probe","approvalPolicy":"never","sandbox":"read-only",
-            "environments":[],"dynamicTools":[{"type":"namespace","name":"workspace",
-            "description":"Read exact approved immutable workspace snapshot bytes.","tools":[{
-                "type":"function","name":"snapshot_read",
-                "description":"Read one approved snapshot member and bounded range.",
-                "inputSchema":{"type":"object","properties":{"snapshot_id":{"type":"string"},
-                    "member_id":{"type":"string"},"offset":{"type":"integer","minimum":0},
-                    "length":{"type":"integer","minimum":1,"maximum":65536}},
-                    "required":["snapshot_id","member_id","offset","length"],"additionalProperties":false}
-            }]}],"ephemeral":false,"historyMode":"legacy"})).await?;
-        let thread = started["thread"]["id"]
+        let task_profile = task_work.is_some();
+        let (started, _) = self
+            .rpc(
+                "thread/start",
+                domain_thread_start(&launch.work, task_profile),
+            )
+            .await?;
+        let mut thread = started["thread"]["id"]
             .as_str()
             .ok_or(StoreError::Unavailable)?
             .to_owned();
@@ -294,6 +326,62 @@ impl Runner {
                 launch.proof_barrier_dir.as_deref(),
             )
             .await?;
+        }
+        if let Some(receiver) = task_work.as_mut() {
+            while let Some(work) = receiver.recv().await {
+                // Dropping the sender during shutdown may leave previously
+                // buffered work. The closed gate forbids a fresh native entry.
+                if self.gate.load(Ordering::SeqCst) {
+                    return Err(StoreError::Rejected);
+                }
+                match work {
+                    NativeTaskWork::RunTurn(turn) => {
+                        self.run_turn(
+                            &thread,
+                            &turn,
+                            lifecycle_core::NativeInvocationPurpose::DomainWork,
+                            launch.proof_barrier_dir.as_deref(),
+                        )
+                        .await?;
+                    }
+                    NativeTaskWork::StartSuccessor => {
+                        let (started, _) = self
+                            .rpc("thread/start", domain_thread_start(&launch.work, true))
+                            .await?;
+                        let successor = started["thread"]["id"]
+                            .as_str()
+                            .ok_or(StoreError::Unavailable)?
+                            .to_owned();
+                        if started["thread"]["ephemeral"] != false || successor == thread {
+                            return Err(StoreError::Rejected);
+                        }
+                        let (reply, answer) = oneshot::channel();
+                        self.messages
+                            .send(NativeMessage::BindThread {
+                                thread: successor.clone(),
+                                reply,
+                            })
+                            .await
+                            .map_err(|_| StoreError::Unavailable)?;
+                        let rehydration = answer.await.map_err(|_| StoreError::Unavailable)??;
+                        let prompt = rehydration.ok_or(StoreError::Rejected)?;
+                        let receipt = NativeFollowupTurn {
+                            invocation_id: format!("rehydrate:{}", successor),
+                            attempt_id: format!("rehydrate:{}", successor),
+                            prompt,
+                        };
+                        self.run_turn(
+                            &successor,
+                            &receipt,
+                            lifecycle_core::NativeInvocationPurpose::SuccessorRehydrate,
+                            launch.proof_barrier_dir.as_deref(),
+                        )
+                        .await?;
+                        thread = successor;
+                    }
+                }
+            }
+            return Ok(());
         }
         let mut turns = vec![NativeFollowupTurn {
             invocation_id: config.invocation_id.clone(),
@@ -403,13 +491,23 @@ pub async fn run_native(
     transport_session: String,
     messages: mpsc::Sender<NativeMessage>,
     gate: Arc<AtomicBool>,
+    task_work: Option<mpsc::Receiver<NativeTaskWork>>,
 ) {
-    if gate.load(Ordering::SeqCst) {
+    let before_spawn = if gate.load(Ordering::SeqCst) {
+        Ok(())
+    } else {
+        optional_native_barrier(launch.proof_barrier_dir.as_deref(), "native_before_spawn")
+    };
+    if before_spawn.is_err() || gate.load(Ordering::SeqCst) {
         let (reply, acknowledged) = oneshot::channel();
         if messages
             .send(NativeMessage::Done {
                 exit: None,
-                outcome_kind: "shutdown",
+                outcome_kind: if gate.load(Ordering::SeqCst) {
+                    "shutdown"
+                } else {
+                    "transport_error"
+                },
                 reply,
             })
             .await
@@ -427,6 +525,26 @@ pub async fn run_native(
         transport_session,
     ) {
         Ok(harness) => {
+            let before_registration = (|| {
+                if cfg!(feature = "native-sim-proof")
+                    && let Some(root) = launch.proof_barrier_dir.as_deref()
+                    && root
+                        .join("native_after_spawn_before_registration.arm")
+                        .exists()
+                {
+                    let pid = harness.pid().ok_or(StoreError::Unavailable)?;
+                    let mut marker =
+                        fs::File::create(root.join("native_after_spawn_before_registration.pid"))
+                            .map_err(|_| StoreError::Unavailable)?;
+                    use std::io::Write as _;
+                    writeln!(marker, "{pid}").map_err(|_| StoreError::Unavailable)?;
+                    marker.sync_all().map_err(|_| StoreError::Unavailable)?;
+                }
+                optional_native_barrier(
+                    launch.proof_barrier_dir.as_deref(),
+                    "native_after_spawn_before_registration",
+                )
+            })();
             let mut runner = Runner {
                 harness,
                 messages: messages.clone(),
@@ -436,7 +554,11 @@ pub async fn run_native(
                 tool_calls: 0,
                 gate: gate.clone(),
             };
-            let outcome = runner.run(&config, &launch).await;
+            let outcome = if before_registration.is_err() || gate.load(Ordering::SeqCst) {
+                Err(StoreError::Rejected)
+            } else {
+                runner.run(&config, &launch, task_work).await
+            };
             let cleanup = runner.harness.terminate_and_reap().await;
             let (exit, outcome_kind) = match cleanup {
                 Ok(exit) if gate.load(Ordering::SeqCst) => (Some(exit), "shutdown"),

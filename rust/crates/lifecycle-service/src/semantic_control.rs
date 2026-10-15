@@ -250,8 +250,15 @@ pub async fn run_control_turn(
         SemanticControlRole::Verify => "verify",
         SemanticControlRole::SuccessorVerify => "successor_verify",
     };
+    let (control_grant_ref, control_grant_revision) = semantic.grant_for_phase(spec.phase);
     let mut isolated = native.clone();
-    isolated.root = native.root.join(role_name);
+    // Each control session owns fresh app-server state. Reusing the role path
+    // after transition A would make transition B fail before native entry.
+    isolated.root = native.root.join(format!(
+        "{}-{}",
+        role_name,
+        lifecycle_semantic::sha256_hex(spec.session_id.as_bytes())
+    ));
     fs::create_dir(&isolated.root).map_err(|_| StoreError::Unavailable)?;
     fs::set_permissions(&isolated.root, fs::Permissions::from_mode(0o700))
         .map_err(|_| StoreError::Unavailable)?;
@@ -292,7 +299,7 @@ pub async fn run_control_turn(
     };
     let execution=async {
         let (init,_)=runner.rpc("initialize",json!({"clientInfo":{"name":"work_engine_s6","version":"0.1.0"},"capabilities":{"experimentalApi":true}})).await?;
-        if !init.get("userAgent").and_then(Value::as_str).is_some_and(|s|s.contains("0.160.1"))
+        if !init.get("userAgent").and_then(Value::as_str).is_some_and(|s|s.contains("0.162.1"))
             || init.get("codexHome").and_then(Value::as_str)!=launch.codex_home.to_str() {return Err(StoreError::Rejected);}
         runner.harness.send_notification("initialized",json!({})).await.map_err(|_|StoreError::Unavailable)?;
         let (effective,_)=runner.rpc("config/read",json!({"includeLayers":false})).await?;
@@ -314,20 +321,20 @@ pub async fn run_control_turn(
             purpose:if spec.phase==SemanticPhase::Compile {NativeInvocationPurpose::SemanticCompile} else {NativeInvocationPurpose::SemanticVerify},
             invocation_id:spec.invocation_id.into(),attempt_id:spec.attempt_id.into(),
             session_id:spec.session_id.into(),thread_id:thread.clone(),policy_id:spec.policy_id.into(),
-            exposure_id:spec.exposure_id.clone(),grant_ref:semantic.control_grant_ref.clone(),
-            grant_revision:semantic.control_grant_revision};
+            exposure_id:spec.exposure_id.clone(),grant_ref:control_grant_ref.into(),
+            grant_revision:control_grant_revision};
         operations::optional_native_barrier(proof_dir,&format!("semantic_{role_name}_before_entry"))?;
         optional_proof_revoke(runner.store,proof_dir,&format!("semantic_{role_name}_before_entry"),
-            &semantic.control_grant_ref,semantic.control_grant_revision)?;
+            control_grant_ref,control_grant_revision)?;
         let mut turn=runner.store.claim_control_turn(&session,NativeTurnRequest{
             invocation_id:spec.invocation_id.into(),attempt:AttemptId::parse(spec.attempt_id.to_owned()).map_err(|_|StoreError::Rejected)?,
-            grant:GrantId::parse(semantic.control_grant_ref.clone()).map_err(|_|StoreError::Rejected)?,
-            grant_revision:semantic.control_grant_revision,purpose:binding.purpose,prompt:spec.prompt.as_bytes().to_vec(),
+            grant:GrantId::parse(control_grant_ref).map_err(|_|StoreError::Rejected)?,
+            grant_revision:control_grant_revision,purpose:binding.purpose,prompt:spec.prompt.as_bytes().to_vec(),
         },&binding,principal,clock_sample())?;
         runner.store.mark_native_send_intent(&turn)?;
         operations::optional_native_barrier(proof_dir,&format!("semantic_{role_name}_after_entry"))?;
         optional_proof_revoke(runner.store,proof_dir,&format!("semantic_{role_name}_after_entry"),
-            &semantic.control_grant_ref,semantic.control_grant_revision)?;
+            control_grant_ref,control_grant_revision)?;
         let (response,_)=runner.rpc("turn/start",json!({"threadId":thread,"input":[{"type":"text","text":spec.prompt}],"environments":[]})).await?;
         let turn_id=response["turn"]["id"].as_str().ok_or(StoreError::Unavailable)?.to_owned();
         runner.store.bind_native_turn(&mut turn,ProviderTurnId::parse(turn_id.clone()).map_err(|_|StoreError::Rejected)?)?;

@@ -1305,6 +1305,7 @@ dependencies = [
  "ratatui-textarea",
  "serde",
  "serde_json",
+ "socket2",
  "syntect",
  "tuirealm",
  "unicode-segmentation",

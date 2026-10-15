@@ -465,7 +465,7 @@ fn signed_exact_prepared_retirement_keeps_original_outcome_and_rejects_forgery()
 
     let capsule_before_retirement = temporary.path().join("capsule-before-retirement");
     let exported_before_retirement = store.export_current(&capsule_before_retirement).unwrap();
-    assert_eq!(exported_before_retirement.source_schema, 4);
+    assert_eq!(exported_before_retirement.source_schema, 5);
     let stale_handoff = HandoffId::parse("handoff-before-retirement").unwrap();
     let (_inactive, stale_adoption) = SqliteLifecycleStore::adopt_inactive(
         &exported_before_retirement,

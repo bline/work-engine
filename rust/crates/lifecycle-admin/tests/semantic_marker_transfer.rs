@@ -1,7 +1,8 @@
 use std::fs;
+use std::path::Path;
 
 use lifecycle_admin::selection::{FileLaunchSelectionPort, SelectionRecord};
-use lifecycle_admin::transfer::transfer_current;
+use lifecycle_admin::transfer::{resume_transfer, transfer_current};
 use lifecycle_core::{
     AttemptId, AuthorityExpiresAt, BuildId, ClockSample, Command, CommandAdmission, CommandId,
     CommandOutcome, CommandRequest, ContextGeneration, GrantId, GrantScope, HandoffId,
@@ -11,6 +12,7 @@ use lifecycle_core::{
 };
 use lifecycle_store::SqliteLifecycleStore;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 use work_engine_types::CodecContract;
 
@@ -227,7 +229,7 @@ fn semantic_required_marker_survives_export_adoption_and_current_rollback() {
         "test-issuer".into(),
     )
     .unwrap();
-    assert_eq!(first.capsule.source_schema, 4);
+    assert_eq!(first.capsule.source_schema, 5);
     assert!(SqliteLifecycleStore::read_capsule(&capsule_one).is_ok());
     let mut candidate = SqliteLifecycleStore::open(&candidate_root, "test-issuer".into()).unwrap();
     assert!(candidate.semantic_transition_required(&transition).unwrap());
@@ -248,4 +250,106 @@ fn semantic_required_marker_survives_export_adoption_and_current_rollback() {
     assert_eq!(rollback.admin_ownership().unwrap().status, "active");
     assert_eq!(source.admin_ownership().unwrap().status, "fenced");
     assert_eq!(candidate.admin_ownership().unwrap().status, "fenced");
+}
+
+fn tree_bytes(root: &Path) -> std::collections::BTreeMap<std::path::PathBuf, Vec<u8>> {
+    let mut result = std::collections::BTreeMap::new();
+    let mut pending = vec![root.to_owned()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else {
+                result.insert(
+                    path.strip_prefix(root).unwrap().to_owned(),
+                    fs::read(path).unwrap(),
+                );
+            }
+        }
+    }
+    result
+}
+
+fn source_custody_revision(root: &Path) -> u64 {
+    rusqlite::Connection::open_with_flags(
+        root.join("lifecycle.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
+    )
+    .unwrap()
+    .query_row(
+        "SELECT revision FROM admin_custody_revision WHERE singleton=1",
+        [],
+        |row| row.get(0),
+    )
+    .unwrap()
+}
+
+fn rewrite_capsule_manifest(receipt: &mut lifecycle_store::CapsuleReceipt) {
+    receipt.capsule_sha256.clear();
+    receipt.capsule_sha256 = format!("{:x}", Sha256::digest(serde_json::to_vec(receipt).unwrap()));
+    fs::write(
+        receipt.capsule_root.join("manifest.json"),
+        serde_json::to_vec(receipt).unwrap(),
+    )
+    .unwrap();
+}
+
+#[test]
+fn resume_transfer_refuses_rehashed_capsule_with_stale_snapshot_revision_without_mutation() {
+    let temporary = tempdir().unwrap();
+    let source_root = temporary.path().join("source");
+    let capsule_root = temporary.path().join("capsule");
+    let destination_root = temporary.path().join("destination");
+    let selector_root = temporary.path().join("selector");
+    fs::create_dir(&selector_root).unwrap();
+    let mut source = SqliteLifecycleStore::open(&source_root, "test-issuer".into()).unwrap();
+    create_semantic_required_transition(&mut source);
+    let expected = SelectionRecord {
+        generation: 0,
+        store_id: source.admin_store_identity().unwrap(),
+        root: source.root().to_owned(),
+        handoff_id: None,
+        capsule_digest: None,
+    };
+    let mut selection =
+        FileLaunchSelectionPort::initialize(&selector_root, expected.clone()).unwrap();
+    let mut capsule = source.export_current(&capsule_root).unwrap();
+    source
+        .register_subject(
+            SubjectId::parse("subject-after-capsule").unwrap(),
+            ContextGeneration::parse("context-after-capsule").unwrap(),
+            BuildId::parse("build-after-capsule").unwrap(),
+            ProofRunId::parse("proof-after-capsule").unwrap(),
+            clock(200),
+        )
+        .unwrap();
+    let current_revision = source_custody_revision(&source_root);
+    assert!(current_revision > capsule.source_revision);
+    capsule.source_revision = current_revision;
+    rewrite_capsule_manifest(&mut capsule);
+
+    let source_before = tree_bytes(&source_root);
+    let capsule_before = tree_bytes(&capsule_root);
+    let selection_before = fs::read(selector_root.join("selection.json")).unwrap();
+    assert!(
+        resume_transfer(
+            &mut source,
+            &mut selection,
+            &expected,
+            &capsule_root,
+            &destination_root,
+            &HandoffId::parse("handoff:stale-resume").unwrap(),
+            "test-issuer".into(),
+        )
+        .is_err()
+    );
+    assert!(!destination_root.exists());
+    assert_eq!(source.admin_ownership().unwrap().status, "active");
+    assert_eq!(tree_bytes(&source_root), source_before);
+    assert_eq!(tree_bytes(&capsule_root), capsule_before);
+    assert_eq!(
+        fs::read(selector_root.join("selection.json")).unwrap(),
+        selection_before
+    );
 }

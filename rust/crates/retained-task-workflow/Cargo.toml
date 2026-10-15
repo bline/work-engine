@@ -1,0 +1,23 @@
+[package]
+name = "retained-task-workflow"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+controlled-proof = []
+
+[dependencies]
+lifecycle-core = { path = "../lifecycle-core" }
+lifecycle-semantic = { path = "../lifecycle-semantic" }
+lifecycle-service = { path = "../lifecycle-service" }
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "=3.27.0"

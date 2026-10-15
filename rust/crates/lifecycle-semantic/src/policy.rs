@@ -34,9 +34,22 @@ impl Default for SemanticPolicy {
 }
 
 impl SemanticPolicy {
+    /// The bounded ordinary retained-task profile admits the full task input
+    /// envelope while keeping the S6 synthetic policy unchanged.
+    pub fn retained_repository_analysis() -> Self {
+        Self {
+            id: "retained-repository-analysis-v1".into(),
+            max_domain_prompt_bytes: 8192,
+            ..Self::default()
+        }
+    }
+
     pub fn within_frozen_limits(&self) -> bool {
         self.schema_version == 1
-            && self.id == "s6-strict-synthetic-v1"
+            && matches!(
+                self.id.as_str(),
+                "s6-strict-synthetic-v1" | "retained-repository-analysis-v1"
+            )
             && self.max_source_items > 0
             && self.max_source_items <= 64
             && self.max_source_item_bytes > 0
@@ -48,7 +61,12 @@ impl SemanticPolicy {
             && self.max_control_output_bytes > 0
             && self.max_control_output_bytes <= 64 * 1024
             && self.max_domain_prompt_bytes > 0
-            && self.max_domain_prompt_bytes <= 2048
+            && self.max_domain_prompt_bytes
+                <= if self.id == "retained-repository-analysis-v1" {
+                    8192
+                } else {
+                    2048
+                }
             && self.require_isolated_verifier
     }
 }

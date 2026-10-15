@@ -1,5 +1,8 @@
 #![recursion_limit = "256"]
 
+#[path = "support/native_binding.rs"]
+mod native_binding;
+
 use std::{
     fs,
     io::{BufRead, BufReader, Read, Write},
@@ -49,6 +52,7 @@ struct LocalSimulator {
 
 impl LocalSimulator {
     fn start(outputs: Vec<String>) -> Self {
+        native_binding::checked();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         listener.set_nonblocking(true).unwrap();
@@ -496,11 +500,7 @@ fn wait_socket(path: &Path) {
 }
 
 fn native_binary() -> PathBuf {
-    let path = PathBuf::from(
-        "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
-    );
-    assert!(path.is_file(), "pinned S5 native binary is absent");
-    path
+    native_binding::checked().binary.clone()
 }
 
 fn service_config(root: &Path, base_url: &str, generation: u8) -> Value {
@@ -608,14 +608,8 @@ impl ServiceChild {
             ])
             .env("S6_CHILD_CONFIG", config_path)
             .env("S6_CHILD_UPDATE_DIR", update_dir)
-            .env(
-                "TMPDIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/tmp",
-            )
-            .env(
-                "CARGO_TARGET_DIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/target",
-            )
+            .env("TMPDIR", &native_binding::checked().temporary)
+            .env("CARGO_TARGET_DIR", &native_binding::checked().target)
             .stdout(Stdio::null())
             .stderr(Stdio::inherit())
             .spawn()
@@ -633,14 +627,8 @@ impl ServiceChild {
                 "--test-threads=1",
             ])
             .env("S6_DISABLED_CONFIG", config_path)
-            .env(
-                "TMPDIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/tmp",
-            )
-            .env(
-                "CARGO_TARGET_DIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/target",
-            )
+            .env("TMPDIR", &native_binding::checked().temporary)
+            .env("CARGO_TARGET_DIR", &native_binding::checked().target)
             .stdout(Stdio::null())
             .stderr(Stdio::inherit())
             .spawn()
@@ -651,14 +639,8 @@ impl ServiceChild {
     fn terminate(&mut self) {
         let result = Command::new("kill")
             .args(["-TERM", &self.0.id().to_string()])
-            .env(
-                "TMPDIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/tmp",
-            )
-            .env(
-                "CARGO_TARGET_DIR",
-                "/home/bline/code/.work-engine-tmp/s4-20261007/target",
-            )
+            .env("TMPDIR", &native_binding::checked().temporary)
+            .env("CARGO_TARGET_DIR", &native_binding::checked().target)
             .status()
             .unwrap();
         assert!(result.success());

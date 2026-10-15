@@ -1,5 +1,8 @@
 //! Installed native S5 path with the optional S6 semantic port disabled.
 
+#[path = "support/native_binding.rs"]
+mod native_binding;
+
 use std::{
     fs,
     io::{BufRead, BufReader, Read, Write},
@@ -8,7 +11,7 @@ use std::{
         fs::{MetadataExt, PermissionsExt},
         net::UnixStream,
     },
-    path::{Path, PathBuf},
+    path::Path,
     process::{Child, Command, Stdio},
     sync::{
         Arc, Mutex,
@@ -20,11 +23,9 @@ use std::{
 
 use rusqlite::{Connection, OpenFlags};
 use serde_json::{Value, json};
-use tempfile::tempdir;
+use tempfile::{TempDir, tempdir};
 use work_engine_types::CodecContract;
 
-const TMP: &str = "/home/bline/code/.work-engine-tmp/s4-20261007/tmp";
-const TARGET: &str = "/home/bline/code/.work-engine-tmp/s4-20261007/target";
 const PREDECESSOR: &str = "{\"checkpoint_ready\":true,\"predecessor_safe\":true,\"protocol_version\":1,\"source_frozen\":true,\"successor_context\":\"context:s5-next\",\"switch_authorized\":true}";
 
 struct Simulator {
@@ -36,6 +37,7 @@ struct Simulator {
 
 impl Simulator {
     fn start() -> Self {
+        native_binding::checked();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         listener.set_nonblocking(true).unwrap();
         let address = listener.local_addr().unwrap();
@@ -200,10 +202,7 @@ fn config(root: &Path, base_url: &str, generation: u8, verifier: &Path) -> Value
     } else {
         "grant:s5-next-snapshot"
     };
-    let binary = PathBuf::from(
-        "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
-    );
-    assert!(binary.is_file(), "pinned S5 native binary is absent");
+    let binary = native_binding::checked().binary.clone();
     json!({
         "profile":"native_simulated","store_root":root.join("store"),
         "socket_path":root.join(format!("service-{suffix}.sock")),
@@ -230,6 +229,34 @@ fn config(root: &Path, base_url: &str, generation: u8, verifier: &Path) -> Value
 
 struct ServiceChild(Child);
 
+struct FailureEvidence {
+    root: Option<TempDir>,
+    requests: Arc<Mutex<Vec<Value>>>,
+}
+
+impl FailureEvidence {
+    fn path(&self) -> &Path {
+        self.root.as_ref().unwrap().path()
+    }
+}
+
+impl Drop for FailureEvidence {
+    fn drop(&mut self) {
+        if thread::panicking() {
+            let root = self.root.take().unwrap().keep();
+            if let Ok(requests) = self.requests.lock()
+                && let Ok(bytes) = serde_json::to_vec_pretty(&*requests)
+            {
+                let _ = fs::write(root.join("simulator-requests.json"), bytes);
+            }
+            eprintln!(
+                "S5 compatibility failure evidence retained at {}",
+                root.display()
+            );
+        }
+    }
+}
+
 impl ServiceChild {
     fn start(config_path: &Path) -> Self {
         let child = Command::new(std::env::current_exe().unwrap())
@@ -240,10 +267,14 @@ impl ServiceChild {
                 "--test-threads=1",
             ])
             .env("S5_CHILD_CONFIG", config_path)
-            .env("TMPDIR", TMP)
-            .env("CARGO_TARGET_DIR", TARGET)
-            .stdout(Stdio::null())
-            .stderr(Stdio::inherit())
+            .env("TMPDIR", &native_binding::checked().temporary)
+            .env("CARGO_TARGET_DIR", &native_binding::checked().target)
+            .stdout(Stdio::from(
+                fs::File::create(config_path.with_extension("stdout")).unwrap(),
+            ))
+            .stderr(Stdio::from(
+                fs::File::create(config_path.with_extension("stderr")).unwrap(),
+            ))
             .spawn()
             .unwrap();
         Self(child)
@@ -253,8 +284,8 @@ impl ServiceChild {
         assert!(
             Command::new("kill")
                 .args(["-TERM", &self.0.id().to_string()])
-                .env("TMPDIR", TMP)
-                .env("CARGO_TARGET_DIR", TARGET)
+                .env("TMPDIR", &native_binding::checked().temporary)
+                .env("CARGO_TARGET_DIR", &native_binding::checked().target)
                 .status()
                 .unwrap()
                 .success()
@@ -323,6 +354,48 @@ fn read_db(db: &Path, sql: &str) -> Option<String> {
         .ok()
 }
 
+fn wait_for_gen1_settlement(db: &Path) {
+    wait_until("gen1 domain settlement", Duration::from_secs(30), || {
+        // Exit is committed after turn state. Read it first so a concurrent
+        // successful completion cannot pair an old turn state with a new exit.
+        let outcome = read_db(
+            db,
+            "SELECT outcome_kind FROM native_process_exits WHERE session_id='session:s5:g1'",
+        );
+        let state = read_db(
+            db,
+            "SELECT state FROM native_turns WHERE invocation_id='invocation:s5:domain:g1'",
+        );
+        if state.as_deref() == Some("completed_settled") {
+            return true;
+        }
+        assert!(
+            outcome.is_none(),
+            "gen1 native process ended before settlement: outcome={outcome:?}, turn_state={state:?}"
+        );
+        false
+    });
+}
+
+#[test]
+fn native_failure_reports_outcome_before_settlement_timeout() {
+    let root = tempdir().unwrap();
+    let db = root.path().join("failure.sqlite");
+    let connection = Connection::open(&db).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE native_turns(invocation_id TEXT, state TEXT);
+         CREATE TABLE native_process_exits(session_id TEXT, outcome_kind TEXT);
+         INSERT INTO native_process_exits VALUES('session:s5:g1', 'transport_error');",
+        )
+        .unwrap();
+    let panic = std::panic::catch_unwind(|| wait_for_gen1_settlement(&db))
+        .expect_err("terminal native failure must reject settlement");
+    let message = panic.downcast_ref::<String>().unwrap();
+    assert!(message.contains("gen1 native process ended before settlement"));
+    assert!(message.contains("transport_error"));
+}
+
 fn revision(db: &Path) -> u64 {
     read_db(
         db,
@@ -357,7 +430,10 @@ fn request_replacement(socket: &Path, revision: u64) -> Value {
 #[test]
 fn installed_native_s5_rehydrates_without_semantic_control() {
     let simulator = Simulator::start();
-    let root = tempdir().unwrap();
+    let root = FailureEvidence {
+        root: Some(tempdir().unwrap()),
+        requests: simulator.requests.clone(),
+    };
     fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
     let verifier = root.path().join("verifier.sh");
     fs::write(&verifier, "#!/bin/sh\n[ \"$1\" = verify ] || exit 2\n[ -f \"$2\" ] || exit 2\n[ -n \"$3\" ] || exit 2\n[ ${#4} -eq 64 ] || exit 2\nIFS= read -r activation\n[ \"$activation\" = GO ] || exit 2\n").unwrap();
@@ -374,14 +450,7 @@ fn installed_native_s5_rehydrates_without_semantic_control() {
     wait_until("gen1 socket", Duration::from_secs(20), || {
         UnixStream::connect(&first_socket).is_ok()
     });
-    wait_until("gen1 domain settlement", Duration::from_secs(30), || {
-        read_db(
-            &db,
-            "SELECT state FROM native_turns WHERE invocation_id='invocation:s5:domain:g1'",
-        )
-        .as_deref()
-            == Some("completed_settled")
-    });
+    wait_for_gen1_settlement(&db);
     let reply = request_replacement(&first_socket, revision(&db));
     assert_eq!(reply["accepted"], true, "{reply}");
     wait_until("S5 switching", Duration::from_secs(30), || {

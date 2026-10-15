@@ -19,6 +19,8 @@ pub enum GrantScope {
     NativeTurn,
     SemanticControl,
     SnapshotRead,
+    TaskQuestionOpen,
+    TaskResultPublish,
     RetireNoRetry,
 }
 
@@ -31,6 +33,8 @@ impl GrantScope {
             Self::NativeTurn => "native_turn",
             Self::SemanticControl => "semantic_control",
             Self::SnapshotRead => "snapshot_read",
+            Self::TaskQuestionOpen => "task_question_open",
+            Self::TaskResultPublish => "task_result_publish",
             Self::RetireNoRetry => "retire_no_retry",
         }
     }
@@ -43,6 +47,8 @@ impl GrantScope {
             "native_turn" => Some(Self::NativeTurn),
             "semantic_control" => Some(Self::SemanticControl),
             "snapshot_read" => Some(Self::SnapshotRead),
+            "task_question_open" => Some(Self::TaskQuestionOpen),
+            "task_result_publish" => Some(Self::TaskResultPublish),
             "retire_no_retry" => Some(Self::RetireNoRetry),
             _ => None,
         }

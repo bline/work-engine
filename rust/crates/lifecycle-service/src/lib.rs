@@ -10,6 +10,7 @@ mod projection;
 mod semantic;
 mod semantic_control;
 mod socket;
+mod task_port;
 
 use std::path::PathBuf;
 
@@ -19,6 +20,11 @@ use std::sync::Arc;
 use thiserror::Error;
 
 pub use material_port::{CanonicalMaterialPort, MaterialPortError};
+pub use task_port::{
+    CompletedTaskEffect, GrantFence, QuestionOpenPayload, ResultPublishPayload, TaskCursorBinding,
+    TaskInputBinding, TaskOperationCommit, TaskOperationError, TaskOperationPort,
+    ValidatedTaskOperationEntry,
+};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -70,6 +76,15 @@ pub struct NativeConfig {
     pub snapshot: TrustedSnapshot,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub semantic: Option<SemanticNativeConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub semantic_contexts: Vec<SemanticContextConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SemanticContextConfig {
+    pub predecessor_context: String,
+    pub semantic: SemanticNativeConfig,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -89,6 +104,24 @@ pub struct SemanticNativeConfig {
     pub challenge_text: String,
     pub control_grant_ref: String,
     pub control_grant_revision: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub successor_control_grant_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub successor_control_grant_revision: Option<u64>,
+}
+
+impl SemanticNativeConfig {
+    fn grant_for_phase(&self, phase: lifecycle_semantic::SemanticPhase) -> (&str, u64) {
+        if phase == lifecycle_semantic::SemanticPhase::SuccessorAdequacy
+            && let (Some(reference), Some(revision)) = (
+                self.successor_control_grant_ref.as_deref(),
+                self.successor_control_grant_revision,
+            )
+        {
+            return (reference, revision);
+        }
+        (&self.control_grant_ref, self.control_grant_revision)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -132,12 +165,22 @@ pub enum ServiceError {
 }
 
 pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
-    socket::run(config, None).await
+    socket::run(config, None, None).await
 }
 
 pub async fn run_with_material_port(
     config: ServiceConfig,
     material_port: Arc<dyn CanonicalMaterialPort>,
 ) -> Result<(), ServiceError> {
-    socket::run(config, Some(material_port)).await
+    socket::run(config, Some(material_port), None).await
+}
+
+/// Compose one permanent domain owner with the lifecycle service. Both ports
+/// belong to the same canonical task owner and are selected by trusted startup.
+pub async fn run_with_task_ports(
+    config: ServiceConfig,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+) -> Result<(), ServiceError> {
+    socket::run(config, Some(material_port), Some(task_operation_port)).await
 }

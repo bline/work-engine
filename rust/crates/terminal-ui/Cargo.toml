@@ -23,5 +23,6 @@ serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
 lifecycle-wire = { path = "../lifecycle-wire" }
 lifecycle-client = { path = "../lifecycle-client" }
+socket2 = "=0.6.5"
 
 [workspace]
