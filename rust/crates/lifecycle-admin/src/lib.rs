@@ -1,5 +1,6 @@
 //! Offline, disposable lifecycle recovery and custody administration.
 
+pub mod legacy_v28;
 pub mod recovery;
 pub mod selection;
 pub mod startup;
