@@ -32,7 +32,7 @@ The app opens on a passive observation. The header names the selected subject an
 socket. Ctrl-P offers `connection refresh`, `connection reconnect`, and
 `connection disconnect`. Refresh and reconnect re-read with the last known
 store, stream, and cursor; a changed identity or regressed revision is rejected.
-There is no automatic polling. A service outage or read timeout leaves any
+This lifecycle-only mode has no automatic polling. A service outage or read timeout leaves any
 prior observation labeled **last known only**. Explicit disconnect has its own
 status; a later reconnect uses the same selected endpoint. Choosing a fixture,
 contract example, or archive view invalidates pending replies and returns to
@@ -43,6 +43,31 @@ budget; it joins on exit.
 The connection displays the service's typed snapshot fields, including explicit
 unknown and unavailable values. It supplies no agent text or calculated context
 percentage.
+
+For a retained-task host supporting `task.observe.v2`, select a task instead:
+
+```sh
+cargo run --locked --manifest-path rust/crates/terminal-ui/Cargo.toml -- \
+  --connect /absolute/path/to/service.sock --task task-id
+```
+
+Optional `--delivery delivery-id` and `--command command-id` qualify reads;
+command observations retain their explicit **task binding not established**
+status and have no graph edge to the task. Overview, Graph, Conversation, and
+Lifecycle use the same observed components. Inputs, questions/answers, and
+published results are grouped owner publications, not a chronological transcript.
+Selecting a graph node scopes Conversation without changing the message recipient.
+
+Task mode refreshes every four seconds after each completed read, with one read
+in progress, one bounded request slot, and a 600 ms transport budget. The same
+Ctrl-P connection commands refresh, disconnect, or reconnect. Disconnect stops
+automatic reads and invalidates in-flight replies. Failures retain compatible
+last-known components with stale labels; host identity or target changes clear
+incompatible anchors. Unsupported versions are reported without v1 fallback.
+Capacity refusal remains distinct from unavailability or an empty collection.
+Per-component scope, revisions, completeness, host identity, and source references
+remain inspectable in Context. A result publication does not imply settlement.
+Drafts are retained and sends remain disabled. No real provider is launched.
 
 Use a terminal around **128×40** for the graph and side panel together. At less
 than 110 columns, Ctrl-P → `panel context` brings context forward; `panel main` returns to the main view. Short
@@ -429,7 +454,8 @@ and richer target discovery remain future work.
 `fixture.rs` owns invented projection data; `model.rs` owns temporary UI state
 and simulated interactions; `ui.rs` owns rendering and tui-realm components;
 `main.rs` owns terminal lifetime and event dispatch; `connection.rs` owns a single
-bounded passive socket worker. These Rust types are **not**
+bounded passive lifecycle socket worker; `task_live.rs` owns the task worker and
+UI projection over S8's `task_observation.rs` reader. These UI types are **not**
 a proposed canonical engine schema. The app lives separately from the Node app-server and
 has its own Cargo workspace and lockfile.
 
@@ -452,7 +478,7 @@ python3 rust/crates/terminal-ui/scripts/connection_smoke.py \
 
 If using `CARGO_TARGET_DIR`, pass that directory's binary to the PTY script.
 The PTY check requires a Unix host and Python 3, with no third-party modules.
-Forty-seven Rust tests cover the full dependency-to-conversation journey, historical
+Rust tests cover the full dependency-to-conversation journey, historical
 send refusal, per-recipient drafts, selection/recipient separation, Unicode
 editing, framework event order, progressive detail, and resize/composer-target retention. Additional command checks cover completion versus
 execution, unavailable targets, draft preservation, literal slashes, unknown

@@ -60,6 +60,7 @@ pub enum SourceId {
     WorkFixture(crate::fixture::Scope),
     ChatExample,
     Task(crate::task::Case, usize),
+    LiveTask(u64, usize),
     Archive(&'static str),
     Contract(crate::contract::Case),
     #[allow(dead_code)]

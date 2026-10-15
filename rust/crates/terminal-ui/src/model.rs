@@ -60,6 +60,7 @@ pub struct Connection {
 
 pub struct Model {
     pub task: Option<crate::task::Task>,
+    pub task_connection: Option<crate::task_live::Connection>,
     last_task_click: Option<(usize, std::time::Instant)>,
     conversation_source: Option<SourceId>,
     pub contract_case: Option<crate::contract::Case>,
@@ -120,6 +121,9 @@ impl Model {
                 && self.view == View::Conversation
     }
     pub fn open_task(&mut self, case: crate::task::Case) {
+        if let Some(c) = &mut self.task_connection {
+            c.disconnect();
+        }
         self.leave_connection_view();
         self.task = Some(crate::task::Task::fixture(case));
         self.client_observation = None;
@@ -137,8 +141,81 @@ impl Model {
         self.notice =
             "PROVISIONAL TASK FIXTURE · non-atomic components · no host connection".into();
     }
+    pub fn connect_task(
+        &mut self,
+        endpoint: PathBuf,
+        request: work_engine_terminal_ui::task_observation::Request,
+    ) {
+        self.open_task(crate::task::Case::Pending);
+        if let Some(c) = &mut self.task_connection {
+            if c.endpoint != endpoint || c.request != request {
+                c.host = "not observed".into();
+            }
+            c.endpoint = endpoint;
+            c.request = request;
+        } else {
+            self.task_connection = Some(crate::task_live::Connection::new(endpoint, request));
+        }
+        self.task_connection.as_mut().unwrap().read();
+        self.project_task();
+    }
+    fn project_task(&mut self) {
+        if let Some(c) = &self.task_connection {
+            let mut projected = c.project(self.task.as_ref());
+            let same_source = self.task.as_ref().is_some_and(|old| {
+                old.nodes == projected.nodes
+                    && old
+                        .live
+                        .as_ref()
+                        .is_some_and(|live| live.host == c.host && live.request == c.request)
+            });
+            if same_source {
+                projected.live.as_mut().unwrap().revision =
+                    self.task.as_ref().unwrap().live.as_ref().unwrap().revision;
+            } else {
+                self.transcript.clear();
+            }
+            self.notice = projected.live.as_ref().unwrap().status.clone();
+            self.task = Some(projected);
+        }
+    }
+    pub fn task_tick(&mut self) -> Option<crate::task_live::Job> {
+        let visible = self.task.as_ref().is_some_and(|t| t.live.is_some());
+        let c = self.task_connection.as_mut()?;
+        if !visible || c.disconnected {
+            return None;
+        }
+        if !c.refreshing && std::time::Instant::now() >= c.next_refresh {
+            c.read();
+        }
+        if !c.pending {
+            return None;
+        }
+        c.pending = false;
+        let job = crate::task_live::Job {
+            generation: c.generation,
+            endpoint: c.endpoint.clone(),
+            request: c.request.clone(),
+        };
+        self.project_task();
+        Some(job)
+    }
+    pub fn apply_task_reply(&mut self, reply: crate::task_live::Reply) {
+        if self
+            .task_connection
+            .as_mut()
+            .is_some_and(|c| c.apply(reply))
+            && self.task.as_ref().is_some_and(|t| t.live.is_some())
+        {
+            self.project_task();
+        }
+    }
     pub fn connect(&mut self, socket: PathBuf, subject: lifecycle_client::SubjectRef) {
+        if let Some(c) = &mut self.task_connection {
+            c.disconnect();
+        }
         self.task = None;
+        self.task_connection = None;
         self.connection_generation += 1;
         self.client_source_sequence += 1;
         self.connection = Some(Connection {
@@ -162,6 +239,15 @@ impl Model {
         self.notice = "PASSIVE CLIENT · connecting · read-only; drafts retained".into();
     }
     pub fn request_connection_read(&mut self, kind: ReadKind) {
+        if let Some(c) = &mut self.task_connection {
+            if c.disconnected && kind == ReadKind::Refresh {
+                self.notice = "Disconnected. Use connection reconnect.".into();
+                return;
+            }
+            c.read();
+            self.project_task();
+            return;
+        }
         let Some(connection) = &mut self.connection else {
             self.notice = "No endpoint selected. Launch with --connect PATH --subject ID.".into();
             return;
@@ -196,6 +282,11 @@ impl Model {
     /// Leaving passive inspection invalidates any in-flight reply without losing
     /// the endpoint's prior observation for an explicit later reconnect.
     pub fn leave_connection_view(&mut self) {
+        if self.task.is_none()
+            && let Some(c) = &mut self.task_connection
+        {
+            c.disconnect();
+        }
         if let Some(connection) = &mut self.connection {
             self.connection_generation += 1;
             connection.generation = self.connection_generation;
@@ -206,6 +297,11 @@ impl Model {
         }
     }
     pub fn disconnect_connection(&mut self) {
+        if let Some(c) = &mut self.task_connection {
+            c.disconnect();
+            self.project_task();
+            return;
+        }
         if let Some(connection) = &mut self.connection {
             self.task = None;
             self.connection_generation += 1;
@@ -627,6 +723,7 @@ impl Model {
         drafts.insert("planner:main", editor());
         Self {
             task: None,
+            task_connection: None,
             last_task_click: None,
             conversation_source: None,
             contract_case: None,

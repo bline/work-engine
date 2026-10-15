@@ -494,6 +494,7 @@ impl Model {
                     Action::Task(case) => self.open_task(case),
                     Action::WorkFixture => {
                         self.task = None;
+                        self.leave_connection_view();
                         self.view = View::Dashboard;
                     }
                     Action::View(view) => {

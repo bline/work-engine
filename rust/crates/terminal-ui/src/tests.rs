@@ -1264,6 +1264,7 @@ fn every_conversation_source_feeds_the_same_palette_and_transcript_rows() {
             );
             m.handle(key(Key::Esc));
             match presentation.source {
+                SourceId::LiveTask(_, _) => panic!("fixture test opened a live task"),
                 SourceId::WorkFixture(_) => assert!(presentation.simulated_activity),
                 SourceId::ChatExample => {
                     assert!(presentation.banner.contains("not captured output"));
@@ -1919,7 +1920,13 @@ fn task_publications_are_grouped_and_component_freshness_is_independent() {
     let pending = Task::fixture(Case::Pending);
     assert_eq!(pending.components[6].availability, Availability::Absent);
     assert!(pending.components[1].detail.contains("running"));
-    assert!(pending.nodes[2].text.unwrap().contains("Pending q1"));
+    assert!(
+        pending.nodes[2]
+            .text
+            .as_ref()
+            .unwrap()
+            .contains("Pending q1")
+    );
     let result = Task::fixture(Case::Result);
     assert_eq!(result.components[6].availability, Availability::Present);
     assert!(result.components[1].detail.contains("unsettled"));
@@ -1978,7 +1985,7 @@ fn task_publications_are_grouped_and_component_freshness_is_independent() {
     );
     assert_eq!(refused.components[5].availability, Availability::Unknown);
     for node in &pending.nodes {
-        if let Some(parent) = node.parent {
+        if let Some(parent) = node.parent.as_deref() {
             assert!(pending.nodes.iter().any(|n| n.id == parent));
         }
     }

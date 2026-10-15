@@ -13,6 +13,9 @@ mod mouse;
 mod presentation;
 mod replay;
 mod task;
+mod task_live;
+#[cfg(test)]
+mod task_live_tests;
 #[cfg(test)]
 mod tests;
 mod theme;
@@ -88,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|a| a == "--help" || a == "-h") {
         println!(
-            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
+            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--connect /path/to/socket --task TASK [--delivery ID] [--command ID] opens read-only task observation v2, refreshed every four seconds.\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
         );
         return Ok(());
     }
@@ -234,7 +237,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let selected_connection = if args.is_empty() || task_case.is_some() {
+    let selected_task = parse_task_connection(&args)?;
+    let selected_connection = if args.is_empty() || task_case.is_some() || selected_task.is_some() {
         None
     } else if args.len() == 4 && args[0] == "--connect" && args[2] == "--subject" {
         let socket = PathBuf::from(&args[1]);
@@ -282,9 +286,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         model.borrow_mut().connect(socket, subject);
         connection::Worker::start()
     });
+    let task_worker = selected_task.map(|(endpoint, request)| {
+        model.borrow_mut().connect_task(endpoint, request);
+        task_live::Worker::start()
+    });
     let mut last_pulse = Instant::now();
     let mut last_drag_scroll = Instant::now();
     while !model.borrow().quit {
+        if let Some(worker) = &task_worker {
+            while let Some(reply) = worker.try_reply() {
+                model.borrow_mut().apply_task_reply(reply);
+            }
+            let job = model.borrow_mut().task_tick();
+            if let Some(job) = job {
+                let generation = job.generation;
+                if worker.request(job).is_err() {
+                    model.borrow_mut().apply_task_reply(task_live::Reply {
+                        generation,
+                        result: Err(
+                            work_engine_terminal_ui::task_observation::ReadError::Unavailable,
+                        ),
+                    });
+                }
+            }
+        }
         if let Some(worker) = &worker {
             while let Some(reply) = worker.try_reply() {
                 model.borrow_mut().apply_connection_reply(reply);
@@ -322,4 +347,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+fn parse_task_connection(
+    args: &[String],
+) -> Result<
+    Option<(PathBuf, work_engine_terminal_ui::task_observation::Request)>,
+    Box<dyn std::error::Error>,
+> {
+    if !args.iter().any(|a| a == "--task") {
+        return Ok(None);
+    }
+    if args.len() < 4
+        || args[0] != "--connect"
+        || args[2] != "--task"
+        || !args.len().is_multiple_of(2)
+    {
+        return Err("use --connect PATH --task ID [--delivery ID] [--command ID]".into());
+    }
+    let endpoint = PathBuf::from(&args[1]);
+    if !endpoint.is_absolute() {
+        return Err("--connect requires an absolute Unix socket path".into());
+    }
+    let mut request = work_engine_terminal_ui::task_observation::Request {
+        task_id: args[3].clone(),
+        delivery_id: None,
+        command_id: None,
+    };
+    for pair in args[4..].chunks_exact(2) {
+        let target = match pair[0].as_str() {
+            "--delivery" => &mut request.delivery_id,
+            "--command" => &mut request.command_id,
+            _ => return Err("unknown task option".into()),
+        };
+        if target.replace(pair[1].clone()).is_some() {
+            return Err("duplicate task option".into());
+        }
+    }
+    request
+        .validate()
+        .map_err(|_| "invalid task/delivery/command identifier")?;
+    Ok(Some((endpoint, request)))
 }

@@ -103,7 +103,7 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
         area,
     );
     if area.width < 60 || area.height < 18 {
-        frame.render_widget(Paragraph::new(format!("WORK ENGINE / {}\nResize to at least 60x18.\nDrafts retained. Ctrl-C exits (y confirms if a draft exists).", if model.borrow().task.is_some() { "PROVISIONAL TASK FIXTURE · READ-ONLY" } else if model.borrow().connection.is_some() { "PASSIVE CLIENT · READ-ONLY" } else if model.borrow().replay.is_some() { "HISTORICAL REPLAY" } else { "FIXTURE" }))
+        frame.render_widget(Paragraph::new(format!("WORK ENGINE / {}\nResize to at least 60x18.\nDrafts retained. Ctrl-C exits (y confirms if a draft exists).", if model.borrow().task.as_ref().is_some_and(|t| t.live.is_some()) { "TASK OBSERVATION · READ-ONLY" } else if model.borrow().task.is_some() { "PROVISIONAL TASK FIXTURE · READ-ONLY" } else if model.borrow().connection.is_some() { "PASSIVE CLIENT · READ-ONLY" } else if model.borrow().replay.is_some() { "HISTORICAL REPLAY" } else { "FIXTURE" }))
             .wrap(Wrap {trim:false}),area);
         return;
     }
@@ -158,8 +158,12 @@ pub fn render(frame: &mut Frame, app: &mut App, model: &Shared) {
                     ),
                     Span::raw("  Supervision desk"),
                     Span::styled(
-                        if m.task.is_some() {
-                            "    PROVISIONAL TASK FIXTURE"
+                        if let Some(task) = &m.task {
+                            if task.live.is_some() {
+                                "    TASK OBSERVATION · READ-ONLY"
+                            } else {
+                                "    PROVISIONAL TASK FIXTURE"
+                            }
                         } else if let Some(connection) = m.connection.as_ref().filter(|_| {
                             m.client_observation.is_some() && m.view == View::Conversation
                         }) {
@@ -1001,7 +1005,7 @@ fn task_view(frame: &mut Frame, area: Rect, m: &mut Model) {
             .join("\n\n");
         let b = block("Task lifecycle · independent components", !m.show_context);
         let inner = b.inner(area);
-        let paragraph = Paragraph::new(format!("PROVISIONAL TASK FIXTURE · non-atomic reads\n\n{text}\n\nNative state is not task completion. Source references and bound segments are available in Graph.")).wrap(Wrap { trim:false });
+        let paragraph = Paragraph::new(format!("{} · non-atomic reads\n\n{text}\n\nNative state is not task completion. Source references and bound segments are available in Graph.", if task.live.is_some() { "TASK OBSERVATION" } else { "PROVISIONAL TASK FIXTURE" })).wrap(Wrap { trim:false });
         m.scroll = m.scroll.min(
             paragraph
                 .line_count(inner.width)
@@ -1095,40 +1099,75 @@ fn task_graph(frame: &mut Frame, area: Rect, m: &mut Model) {
     }
     let width = ((inner.width - 12) / 3).min(28);
     let columns = [inner.x + 1, inner.x + width + 6, inner.x + 2 * width + 11];
-    let root = task.nodes.iter().position(|n| n.parent.is_none()).unwrap();
-    let mut placements = vec![(root, Rect::new(columns[0], inner.y + 10, width, 3))];
-    let mut child_row = 0;
-    for (index, node) in task.nodes.iter().enumerate() {
-        if node.parent == Some(task.nodes[root].id) {
-            placements.push((
-                index,
-                Rect::new(columns[1], inner.y + child_row * 5, width, 3),
-            ));
-            child_row += 1;
-        }
-    }
-    let delivery = placements
-        .iter()
-        .find(|(i, _)| task.nodes[*i].id == "delivery:d1")
-        .map(|(_, r)| *r);
-    if let Some(delivery) = delivery {
-        for (offset, (index, _)) in task
+    let mut placements = Vec::new();
+    if task.live.is_some() {
+        let roots: Vec<_> = task
             .nodes
             .iter()
             .enumerate()
-            .filter(|(_, n)| n.parent == Some("delivery:d1"))
+            .filter(|(_, n)| n.parent.is_none())
+            .collect();
+        let children: Vec<_> = task
+            .nodes
+            .iter()
             .enumerate()
-        {
-            placements.push((
-                index,
-                Rect::new(columns[2], delivery.y + offset as u16 * 5, width, 3),
-            ));
+            .filter(|(_, n)| n.parent.as_deref() == Some(task.nodes[0].id.as_ref()))
+            .collect();
+        let leaves: Vec<_> = task
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| n.parent.as_deref() == Some("native_delivery_status"))
+            .collect();
+        let capacity = (inner.height.saturating_sub(1) / 4) as usize;
+        if roots.len().max(children.len()).max(leaves.len()) > capacity {
+            task_graph_list(frame, inner, m);
+            return;
+        }
+        for (column, nodes) in [roots, children, leaves].into_iter().enumerate() {
+            for (row, (index, _)) in nodes.into_iter().enumerate() {
+                placements.push((
+                    index,
+                    Rect::new(columns[column], inner.y + row as u16 * 4, width, 3),
+                ));
+            }
+        }
+    } else {
+        let root = task.nodes.iter().position(|n| n.parent.is_none()).unwrap();
+        placements.push((root, Rect::new(columns[0], inner.y + 10, width, 3)));
+        let mut child_row = 0;
+        for (index, node) in task.nodes.iter().enumerate() {
+            if node.parent.as_deref() == Some(task.nodes[root].id.as_ref()) {
+                placements.push((
+                    index,
+                    Rect::new(columns[1], inner.y + child_row * 5, width, 3),
+                ));
+                child_row += 1;
+            }
+        }
+        let delivery = placements
+            .iter()
+            .find(|(i, _)| task.nodes[*i].id == "delivery:d1")
+            .map(|(_, r)| *r);
+        if let Some(delivery) = delivery {
+            for (offset, (index, _)) in task
+                .nodes
+                .iter()
+                .enumerate()
+                .filter(|(_, n)| n.parent.as_deref() == Some("delivery:d1"))
+                .enumerate()
+            {
+                placements.push((
+                    index,
+                    Rect::new(columns[2], delivery.y + offset as u16 * 5, width, 3),
+                ));
+            }
         }
     }
     let edge_style = Style::default().fg(MUTED);
     for (index, rect) in &placements {
         let node = &task.nodes[*index];
-        if let Some(parent) = node.parent.and_then(|id| {
+        if let Some(parent) = node.parent.as_deref().and_then(|id| {
             placements
                 .iter()
                 .find(|(i, _)| task.nodes[*i].id == id)
@@ -1171,6 +1210,8 @@ fn task_graph(frame: &mut Frame, area: Rect, m: &mut Model) {
         );
         let status = if component.stale {
             "STALE · last known"
+        } else if task.live.is_some() {
+            node.status()
         } else if node.id.starts_with("segment:") {
             if node.id == "segment:n1" {
                 "seq 1 · context A"
@@ -1199,8 +1240,10 @@ fn task_graph(frame: &mut Frame, area: Rect, m: &mut Model) {
         );
         m.mouse.items.push((rect, index));
     }
-    let note = if task.components[2].availability == crate::task::Availability::Refused {
-        "Native history refused: capacity · no segment nodes available"
+    let note = if task.live.is_some() {
+        "Edges show supplied scope bindings; command/task binding is not established."
+    } else if task.components[2].availability == crate::task::Availability::Refused {
+        "Native history refused: capacity · retained nodes, if any, are last known"
     } else if task.components[0].stale {
         "Owner/native reads unavailable · STALE nodes retain last-known data"
     } else {
@@ -1240,6 +1283,7 @@ fn task_graph_list(frame: &mut Frame, area: Rect, m: &mut Model) {
             .bg(if selected { SELECTED } else { BG });
         let parent = node
             .parent
+            .as_deref()
             .and_then(|id| task.nodes.iter().find(|n| n.id == id))
             .map(|n| n.caption());
         lines.push(Line::styled(
