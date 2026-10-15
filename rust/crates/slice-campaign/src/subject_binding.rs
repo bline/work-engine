@@ -162,12 +162,39 @@ pub(crate) fn verify_gate(
             "gate input differs from frozen trusted SC0 capture".into(),
         ));
     }
+    verify_gate_dynamic(capture_raw, manifest_raw, receipt_raw)
+}
+
+/// Schema 4 accepts a new immutable gate capture while retaining the pinned
+/// producer, isolated interpreter and exact tree/path checks. The accepted
+/// capture bytes are bound into the trusted configuration digest.
+pub(crate) fn verify_gate_dynamic(
+    capture_raw: &[u8],
+    manifest_raw: &[u8],
+    receipt_raw: &[u8],
+) -> Result<VerifiedGate> {
+    let capture_digest = raw_sha256(capture_raw);
+    let manifest_digest = raw_sha256(manifest_raw);
+    let receipt_digest = raw_sha256(receipt_raw);
     let capture = parse(capture_raw, "gate capture")?;
     let manifest = parse(manifest_raw, "gate manifest")?;
     let receipt = parse(receipt_raw, "gate receipt")?;
+    let checks = receipt["checks"]
+        .as_array()
+        .ok_or_else(|| CampaignError::Subject("gate checks absent".into()))?;
+    if checks.is_empty()
+        || checks.iter().any(|check| check["state"] != "passed")
+        || receipt["totals"]
+            != json!({"configured":checks.len(),"executed":checks.len(),
+            "failed":0,"passed":checks.len()})
+    {
+        return Err(CampaignError::Subject(
+            "gate checks or totals differ".into(),
+        ));
+    }
     if str_at(&capture, "producer")? != "skills/slice-builder/scripts/run_gate.py"
         || str_at(&capture, "producer_sha256_before_after")? != GATE_RUNNER_SOURCE_SHA256
-        || capture["argv_manifest_sha256"] != SC0_GATE_MANIFEST_SHA256
+        || capture["argv_manifest_sha256"] != manifest_digest
         || capture["child_interpreter_sha256"] != PYTHON_EXE_SHA256
         || capture["git_runtime_before_after"]["executable_sha256"] != GIT_EXE_SHA256
         || capture["python_runtime_before_after"]["executable_sha256"] != PYTHON_EXE_SHA256
@@ -180,14 +207,7 @@ pub(crate) fn verify_gate(
         || capture["tested_path_sha256"] != capture["candidate_tree_path_sha256"]
         || capture["tested_path_sha256"] != capture["candidate_manifest_path_sha256"]
         || receipt["status"] != "passed"
-        || receipt["totals"] != json!({"configured":1,"executed":1,"failed":0,"passed":1})
         || receipt["failed_check"] != Value::Null
-        || receipt["checks"].as_array().is_none_or(|checks| {
-            checks.len() != 1
-                || checks[0]["state"] != "passed"
-                || checks[0]["identity"] != "frozen-tree-exact-path-bytes"
-                || checks[0]["requirement"] != "controlled_subject_validation"
-        })
         || manifest
             != serde_json::from_str::<Value>(
                 capture["argv"][4]
@@ -218,8 +238,8 @@ pub(crate) fn verify_gate(
         require_sha(hash, "gate path SHA").map_err(|e| CampaignError::Subject(e.to_string()))?;
     }
     Ok(VerifiedGate {
-        capture_digest: SC0_GATE_CAPTURE_SHA256.into(),
-        receipt_digest: SC0_GATE_RECEIPT_SHA256.into(),
+        capture_digest,
+        receipt_digest,
         tested_tree: str_at(&capture, "frozen_gate_tree_oid")?.into(),
         paths,
     })
@@ -238,6 +258,47 @@ pub fn verify_existing_subject(
 ) -> Result<VerifiedCandidate> {
     anchored_repository(repository)?;
     let gate = verify_gate(gate_capture_raw, gate_manifest_raw, gate_receipt_raw)?;
+    verify_existing_subject_with_gate(
+        repository,
+        identity,
+        baseline,
+        candidate_raw,
+        profile_raw,
+        gate,
+    )
+}
+
+#[allow(clippy::too_many_arguments)] // Exact successor receipt, profile and gate evidence are separate raw inputs.
+pub(crate) fn verify_existing_subject_dynamic(
+    repository: &Path,
+    identity: &CampaignIdentity,
+    baseline: &Baseline,
+    candidate_raw: &[u8],
+    profile_raw: &[u8],
+    gate_capture_raw: &[u8],
+    gate_manifest_raw: &[u8],
+    gate_receipt_raw: &[u8],
+) -> Result<VerifiedCandidate> {
+    anchored_repository(repository)?;
+    let gate = verify_gate_dynamic(gate_capture_raw, gate_manifest_raw, gate_receipt_raw)?;
+    verify_existing_subject_with_gate(
+        repository,
+        identity,
+        baseline,
+        candidate_raw,
+        profile_raw,
+        gate,
+    )
+}
+
+fn verify_existing_subject_with_gate(
+    repository: &Path,
+    identity: &CampaignIdentity,
+    baseline: &Baseline,
+    candidate_raw: &[u8],
+    profile_raw: &[u8],
+    gate: VerifiedGate,
+) -> Result<VerifiedCandidate> {
     let candidate = parse(candidate_raw, "candidate receipt")?;
     let profile = parse(profile_raw, "physical profile")?;
     verify_candidate(repository, identity, baseline, &candidate, &gate)?;

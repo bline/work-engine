@@ -263,6 +263,142 @@ fn revision(reply: &JsValue) -> Revision {
 }
 
 #[test]
+fn remediation_read_admits_only_native_subject_lineage() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("native-root");
+    let selection = init(&root);
+    let authority = selected_authority();
+    let identity = authority.identity().clone();
+    let begin = request(
+        "begin",
+        "begin",
+        &selection,
+        JsValue::object([
+            ("authority", authority.value().clone()),
+            ("transitionId", JsValue::text("begin")),
+            ("unresolvedQuestions", JsValue::Array(vec![])),
+        ]),
+    );
+    let first = revision(&write_native(&root, &selection, &begin, None));
+    let result = parse_json(ACCEPTABLE).unwrap();
+    let record = request(
+        "transition",
+        "initial-result",
+        &selection,
+        JsValue::object([
+            ("authority", authority.value().clone()),
+            ("expectedRevision", first.value()),
+            ("transitionId", JsValue::text("initial-result")),
+            ("action", JsValue::text("record_result")),
+            (
+                "payload",
+                JsValue::object([
+                    ("result", result),
+                    ("unresolvedQuestions", JsValue::Array(vec![])),
+                ]),
+            ),
+        ]),
+    );
+    let second = revision(&write_native(&root, &selection, &record, Some(&first.0)));
+    let subject = changed(
+        authority.initial_subject(),
+        "sha256",
+        JsValue::text(&"b".repeat(64)),
+    );
+    let payload = JsValue::object([("subject", subject.clone())]);
+    let content = JsValue::object([
+        ("action", JsValue::text("record_remediation_subject")),
+        ("payload", payload.clone()),
+    ]);
+    let remediation = request(
+        "transition",
+        "remediation-subject",
+        &selection,
+        JsValue::object([
+            ("authority", authority.value().clone()),
+            ("expectedRevision", second.value()),
+            ("transitionId", JsValue::text("remediation-subject")),
+            ("action", JsValue::text("record_remediation_subject")),
+            ("payload", payload),
+        ]),
+    );
+    let third = revision(&write_native(
+        &root,
+        &selection,
+        &remediation,
+        Some(&second.0),
+    ));
+    let target = EpisodeReadTarget::Transition {
+        transition_id: JsString::new("remediation-subject"),
+        content_digest: Revision(digest(&content)),
+    };
+    let scoped = EpisodeReadRequest::Transition {
+        identity: identity.clone(),
+        transition_id: JsString::new("remediation-subject"),
+        content_digest: Revision(digest(&content)),
+    };
+    let open = |authority| {
+        Application::open_read_only(
+            &root,
+            selection.clone(),
+            TrustedEpisodeReadScope::new(authority, vec![target.clone()]).unwrap(),
+            StoreOptions::default(),
+            DEFAULT_RESPONSE_LIMIT,
+        )
+        .unwrap()
+    };
+    let mut reader = open(authority.clone());
+    assert!(reader.read_checked(&scoped).is_err());
+    let admitted = reader.read_remediation_checked(&scoped).unwrap();
+    assert_eq!(admitted.resolved_revision(), Some(&third));
+    assert_eq!(admitted.state().unwrap().get("subject"), &subject);
+    let forged_authority = Authority::parse(changed(
+        authority.value(),
+        "initialSubject",
+        changed(
+            authority.initial_subject(),
+            "sha256",
+            JsValue::text(&"c".repeat(64)),
+        ),
+    ))
+    .unwrap();
+    assert!(
+        open(forged_authority)
+            .read_remediation_checked(&scoped)
+            .is_err()
+    );
+    drop(reader);
+
+    // A well-formed, self-hashed row with an unexplained subject change must
+    // still fail the checked read, even though the store hash chain is valid.
+    let mut store = EpisodeStore::open_native_read_only(&root, StoreOptions::default())
+        .unwrap()
+        .0;
+    let snapshot = store.read(&identity.key().0).unwrap();
+    let final_state = snapshot.current.unwrap();
+    drop(store);
+    let semantic = changed(
+        &final_state.semantic(),
+        "subject",
+        changed(&subject, "sha256", JsValue::text(&"d".repeat(64))),
+    );
+    let forged = review_episode_core::state::ReviewEpisodeState::publish(semantic).unwrap();
+    let serialized = canonical_json(forged.value());
+    let db = Connection::open(root.join("review-episodes.sqlite")).unwrap();
+    db.execute(
+        "UPDATE review_episode_history SET revision=?1,state_json=?2 WHERE revision=?3",
+        rusqlite::params![forged.revision().0, serialized, third.0],
+    )
+    .unwrap();
+    db.execute(
+        "UPDATE review_episode_current SET revision=?1,state_json=?2 WHERE identity_key=?3",
+        rusqlite::params![forged.revision().0, serialized, identity.key().0],
+    )
+    .unwrap();
+    assert!(open(authority).read_remediation_checked(&scoped).is_err());
+}
+
+#[test]
 fn checked_historical_readback_and_refusals() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("native-root");

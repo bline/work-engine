@@ -15,6 +15,7 @@
 //! }
 //! ```
 
+pub mod claude;
 mod contract;
 mod process;
 mod producer;

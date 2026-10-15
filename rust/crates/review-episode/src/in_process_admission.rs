@@ -300,6 +300,24 @@ impl Application<InProcessReadAdmission> {
         &mut self,
         request: &EpisodeReadRequest,
     ) -> AppResult<CheckedEpisodeReadback> {
+        self.read_with_subject_policy(request, false)
+    }
+
+    /// Read a retained episode after one or more native remediation-subject
+    /// transitions. Every changed subject must be explained by the transition
+    /// introduced at that exact history cut; the initial authority is fixed.
+    pub fn read_remediation_checked(
+        &mut self,
+        request: &EpisodeReadRequest,
+    ) -> AppResult<CheckedEpisodeReadback> {
+        self.read_with_subject_policy(request, true)
+    }
+
+    fn read_with_subject_policy(
+        &mut self,
+        request: &EpisodeReadRequest,
+        remediation: bool,
+    ) -> AppResult<CheckedEpisodeReadback> {
         let identity = request.identity();
         let target = request.target();
         self.port.scope.admits(identity, &target)?;
@@ -311,17 +329,40 @@ impl Application<InProcessReadAdmission> {
         let expected_binding = self.port.scope.authority.binding();
         let expected_writer = self.port.scope.authority.writer_value();
         let expected_subject = self.port.scope.authority.initial_subject();
+        let mut previous: Option<&ReviewEpisodeState> = None;
         for entry in &snapshot.history {
             let state = &entry.state;
             if state.identity() != identity
                 || state.get("authority") != &expected_binding
                 || state.get("writer") != &expected_writer
-                || state.get("subject") != expected_subject
             {
                 return Err(AppError::Admission(
                     "episode history differs from read authority".into(),
                 ));
             }
+            match previous {
+                None if state.get("subject") != expected_subject => {
+                    return Err(AppError::Admission(
+                        "episode initial subject differs".into(),
+                    ));
+                }
+                Some(prior) if state.get("subject") != prior.get("subject") => {
+                    if !remediation
+                        || !valid_remediation_subject_cut(prior, state, &self.port.scope.authority)?
+                    {
+                        return Err(AppError::Admission(
+                            "episode subject has no admitted remediation transition".into(),
+                        ));
+                    }
+                }
+                _ => {}
+            }
+            if !remediation && state.get("subject") != expected_subject {
+                return Err(AppError::Admission(
+                    "episode history differs from read authority".into(),
+                ));
+            }
+            previous = Some(state);
         }
         let observed_revision = snapshot
             .current
@@ -420,4 +461,31 @@ impl Application<InProcessReadAdmission> {
             result_digest,
         })
     }
+}
+
+fn valid_remediation_subject_cut(
+    prior: &ReviewEpisodeState,
+    state: &ReviewEpisodeState,
+    authority: &Authority,
+) -> AppResult<bool> {
+    use review_episode_core::command::{Action, TransitionCommand};
+    use review_episode_core::reducer::{self, TransitionOutcome};
+    let before = prior.get("handledTransitions").as_object()?;
+    let after = state.get("handledTransitions").as_object()?;
+    let introduced: Vec<_> = after
+        .iter()
+        .filter(|(id, _)| !before.contains_key(*id))
+        .collect();
+    if introduced.len() != 1 {
+        return Ok(false);
+    }
+    let command = TransitionCommand::new_utf16(
+        authority.clone(),
+        prior.revision().clone(),
+        introduced[0].0.clone(),
+        Action::RecordRemediationSubject,
+        JsValue::object([("subject", state.get("subject").clone())]),
+    )?;
+    Ok(matches!(reducer::transition(prior, &command),
+        Ok(TransitionOutcome::Applied(expected)) if expected.value() == state.value()))
 }

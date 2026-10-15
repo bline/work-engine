@@ -46,6 +46,21 @@ pub(crate) fn selected_campaign(
     slice_campaign::Snapshot,
     Box<dyn Fn() -> TrustedConfig>,
 ) {
+    selected_campaign_with_profile(specialist_count, all_selected, false)
+}
+
+#[allow(dead_code)]
+pub(crate) fn selected_campaign_with_profile(
+    specialist_count: usize,
+    all_selected: bool,
+    remediation_v4: bool,
+) -> (
+    CorpusRoot,
+    slice_campaign::Campaign,
+    CampaignIdentity,
+    slice_campaign::Snapshot,
+    Box<dyn Fn() -> TrustedConfig>,
+) {
     use slice_campaign::{AdmitRequest, AdvancePhase, Campaign, Consequence};
     let (temp, repo, workspace, identity, baseline, boundary) =
         if let Ok(fixed) = std::env::var("P1_CORPUS_ROOT") {
@@ -72,7 +87,26 @@ pub(crate) fn selected_campaign(
                 boundary,
             )
         };
-    let initial_configuration = config(
+    let configuration = move |root, repo, workspace, identity, baseline, boundary| {
+        if remediation_v4 {
+            TrustedConfig::remediation_v4(
+                root,
+                repo,
+                workspace,
+                identity,
+                boundary,
+                baseline,
+                "sc3-fixture-writer".into(),
+                fixture("f52792e22d2a1b73e007bc7078607d6657989248a35de1371a1180d23101d206"),
+                fixture("d155cc2ac1cf1ab26b0e186d6a6ac86f547b1a0b9c3ce74f0ba69eecd37a2f34"),
+                fixture("c927b51b887e37f6fdc02e1fabfadddd211d0ac30712cbc6c5028993ad3889c2"),
+            )
+            .unwrap()
+        } else {
+            config(root, repo, workspace, identity, baseline, boundary)
+        }
+    };
+    let initial_configuration = configuration(
         temp.path().join("campaign"),
         repo.clone(),
         workspace.clone(),
@@ -87,7 +121,7 @@ pub(crate) fn selected_campaign(
     let reopen_baseline = baseline.clone();
     let reopen_boundary = boundary.clone();
     let reopen = Box::new(move || {
-        config(
+        configuration(
             reopen_root.clone(),
             reopen_repo.clone(),
             reopen_workspace.clone(),

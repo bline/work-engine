@@ -679,6 +679,16 @@ impl CampaignInner {
             .store
             .read(&self.config.identity)?
             .ok_or_else(|| CampaignError::Integrity("campaign absent".into()))?;
+        if state.remediation.as_ref().is_some_and(|progress| {
+            progress.rounds.iter().any(|round| {
+                round.completion.as_ref().is_some_and(|intent| {
+                    intent.campaign_operation_id == binding.campaign_operation_id
+                        && intent.attempt_id == binding.attempt_id
+                })
+            })
+        }) {
+            return self.check_remediation_production_path_admission(&state, binding, request);
+        }
         let current = state
             .obligations
             .iter()
@@ -769,6 +779,102 @@ impl CampaignInner {
         }
         if stage.kind.is_j2() || stage.owner_locator.is_null() {
             return Err(CampaignError::Conflict("CE3 locator absent".into()));
+        }
+        intent.execution_evidence_ref.checked()
+    }
+}
+
+impl CampaignInner {
+    fn check_remediation_production_path_admission(
+        &self,
+        state: &Snapshot,
+        binding: &ProductionPathAdmissionBinding,
+        request: &ProductionPathRequest,
+    ) -> Result<ExecutionEvidenceRef> {
+        let progress = state
+            .remediation
+            .as_ref()
+            .ok_or_else(|| CampaignError::Conflict("remediation absent".into()))?;
+        let round = progress
+            .rounds
+            .iter()
+            .find(|round| {
+                round.completion.as_ref().is_some_and(|intent| {
+                    intent.campaign_operation_id == binding.campaign_operation_id
+                        && intent.attempt_id == binding.attempt_id
+                })
+            })
+            .ok_or_else(|| CampaignError::Conflict("remediation completion absent".into()))?;
+        let intent = round.completion.as_ref().unwrap();
+        let dispatch = round
+            .dispatch
+            .as_ref()
+            .ok_or_else(|| CampaignError::Conflict("remediation dispatch absent".into()))?;
+        let join = self
+            .initial_join
+            .as_ref()
+            .ok_or_else(|| CampaignError::Conflict("remediation owner absent".into()))?;
+        if binding.campaign_root_id != self.store.root_id
+            || binding.obligation_id != round.request.obligation_id
+            || binding.candidate_digest != round.request.candidate.receipt_sha256
+            || binding.selection_digest != round.request.selection.campaign_digest
+            || binding.profile_digest != round.request.profile_digest
+            || binding.prepared_request_sha256 != round.request.request_digest
+            || binding.review_episode_id != dispatch.command.episode_id
+            || binding.native_result_sha256 != intent.native_result_claim_sha256
+            || intent.owner_selection_digest != join.digest
+            || self
+                .store
+                .dispatch_slot(&state.identity, &round.request.obligation_id)?
+                != Some((Some(dispatch.operation_id.clone()), true))
+        {
+            return Err(CampaignError::Conflict(
+                "remediation CE binding differs".into(),
+            ));
+        }
+        let request_sha = production_path_request_sha256(request)
+            .map_err(|e| CampaignError::Contract(e.to_string()))?;
+        if binding.child_request_sha256 != request_sha {
+            return Err(CampaignError::Conflict(
+                "remediation CE request differs".into(),
+            ));
+        }
+        let stage = intent
+            .stages
+            .iter()
+            .find(|stage| {
+                stage.request_sha256 == request_sha
+                    && stage.original_admission_sha256 == binding.original_digest()
+            })
+            .ok_or_else(|| CampaignError::Conflict("remediation CE stage unregistered".into()))?;
+        let original = decode_binding(&stage.original_admission)?;
+        if original.access != ProductionPathAccess::Original
+            || original.original_digest() != binding.original_digest()
+            || stage.owner_selection_digest != join.digest
+            || stage.evidence_ref != intent.execution_evidence_ref
+            || stage.command != command_value(request)?
+            || stage.owner_locator.is_null()
+        {
+            return Err(CampaignError::Conflict(
+                "remediation CE stage differs".into(),
+            ));
+        }
+        let receipt = self
+            .store
+            .receipt(&stage.registration_operation_id)?
+            .ok_or_else(|| {
+                CampaignError::Integrity("remediation CE registration receipt absent".into())
+            })?;
+        if receipt.kind != "register_remediation_stage"
+            || receipt.prior_revision.as_ref() != Some(&stage.registration_base_revision)
+            || receipt.identity != state.identity
+            || receipt.root_id != self.store.root_id
+            || (binding.access == ProductionPathAccess::Original
+                && state.revision != receipt.result_revision)
+        {
+            return Err(CampaignError::Conflict(
+                "remediation CE registration differs".into(),
+            ));
         }
         intent.execution_evidence_ref.checked()
     }

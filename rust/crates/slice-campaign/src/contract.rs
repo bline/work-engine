@@ -8,6 +8,7 @@ use crate::completion::CampaignProgress;
 use crate::{CampaignError, Result, require_sha, require_text};
 
 pub const PROFILE: &str = "campaign-native-initial-v3";
+pub const REMEDIATION_PROFILE: &str = "campaign-native-remediation-v4";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -172,6 +173,8 @@ pub struct Snapshot {
     pub obligations: Vec<Obligation>,
     #[serde(default)]
     pub progress: CampaignProgress,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remediation: Option<crate::application::RemediationProgress>,
     pub revision: CampaignRevision,
 }
 

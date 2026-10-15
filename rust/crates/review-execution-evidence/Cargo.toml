@@ -21,3 +21,11 @@ serde_json.workspace = true
 
 [dev-dependencies]
 tempfile = "=3.27.0"
+
+[[bin]]
+name = "claude_cbm_restricted"
+path = "src/claude/cbm_launcher.rs"
+
+[[bin]]
+name = "claude_cbm_client"
+path = "src/claude/cbm_client.rs"

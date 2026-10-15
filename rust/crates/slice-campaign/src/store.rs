@@ -14,10 +14,24 @@ use crate::contract::{CampaignIdentity, CampaignRevision, Snapshot};
 use crate::recovery::{OperationReceipt, Reconcile, RecoveryLocator};
 use crate::{CampaignError, Result};
 
-const MARKER: &str = ".campaign-native-initial-v3";
+const MARKER_V3: &str = ".campaign-native-initial-v3";
+const MARKER_V4: &str = ".campaign-native-remediation-v4";
 const DATABASE: &str = "slice-campaign.sqlite";
 const LOCK: &str = ".writer.lock";
-const SCHEMA: &str = include_str!("../migrations/0003_new_root.sql");
+const SCHEMA_V3: &str = include_str!("../migrations/0003_new_root.sql");
+const SCHEMA_V4: &str = include_str!("../migrations/0004_remediation.sql");
+
+fn marker_name(version: u32) -> &'static str {
+    if version == 4 { MARKER_V4 } else { MARKER_V3 }
+}
+
+fn profile(version: u32) -> &'static str {
+    if version == 4 {
+        crate::contract::REMEDIATION_PROFILE
+    } else {
+        crate::contract::PROFILE
+    }
+}
 
 #[cfg(test)]
 mod read_profile {
@@ -148,14 +162,20 @@ impl Store {
         root: &Path,
         config_digest: &str,
         writer_identity: &str,
+        schema_version: u32,
     ) -> Result<Self> {
+        if !matches!(schema_version, 3 | 4) {
+            return Err(CampaignError::Unsupported(
+                "campaign schema unsupported".into(),
+            ));
+        }
         anchored_parent(root)?;
         fs::create_dir(root).map_err(|e| CampaignError::Root(e.to_string()))?;
         fs::set_permissions(root, fs::Permissions::from_mode(0o700))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         let marker = Marker {
-            schema_version: 3,
-            profile: crate::contract::PROFILE.into(),
+            schema_version,
+            profile: profile(schema_version).into(),
             root_id: random_id()?,
             anchored_root_sha256: root_path_digest(root),
             trusted_config_digest: config_digest.into(),
@@ -166,7 +186,7 @@ impl Store {
             .write(true)
             .create_new(true)
             .mode(0o600)
-            .open(root.join(MARKER))
+            .open(root.join(marker_name(schema_version)))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         use std::io::Write;
         file.write_all(&bytes)
@@ -177,22 +197,36 @@ impl Store {
         fs::set_permissions(root.join(DATABASE), fs::Permissions::from_mode(0o600))
             .map_err(|e| CampaignError::Io(e.to_string()))?;
         configure(&conn)?;
-        conn.execute_batch(SCHEMA)
-            .map_err(|e| CampaignError::Io(e.to_string()))?;
+        conn.execute_batch(if schema_version == 4 {
+            SCHEMA_V4
+        } else {
+            SCHEMA_V3
+        })
+        .map_err(|e| CampaignError::Io(e.to_string()))?;
         conn.execute(
             "INSERT INTO store_identity(singleton,root_id,anchored_root_sha256,profile,trusted_config_digest,writer_identity) VALUES(1,?1,?2,?3,?4,?5)",
             params![marker.root_id, marker.anchored_root_sha256, marker.profile, marker.trusted_config_digest, marker.writer_identity],
         ).map_err(|e| CampaignError::Io(e.to_string()))?;
-        conn.execute_batch("PRAGMA user_version = 3")
+        conn.execute_batch(&format!("PRAGMA user_version = {schema_version}"))
             .map_err(|e| CampaignError::Io(e.to_string()))?;
         drop(conn);
         File::open(root)
             .and_then(|directory| directory.sync_all())
             .map_err(|e| CampaignError::Io(e.to_string()))?;
-        Self::open(root, config_digest, writer_identity)
+        Self::open(root, config_digest, writer_identity, schema_version)
     }
 
-    pub(crate) fn open(root: &Path, config_digest: &str, writer_identity: &str) -> Result<Self> {
+    pub(crate) fn open(
+        root: &Path,
+        config_digest: &str,
+        writer_identity: &str,
+        schema_version: u32,
+    ) -> Result<Self> {
+        if !matches!(schema_version, 3 | 4) {
+            return Err(CampaignError::Unsupported(
+                "campaign schema unsupported".into(),
+            ));
+        }
         anchored_parent(root)?;
         let metadata =
             fs::symlink_metadata(root).map_err(|e| CampaignError::Root(e.to_string()))?;
@@ -204,11 +238,11 @@ impl Store {
                 "root is not an anchored private directory".into(),
             ));
         }
-        let marker_file = regular_nofollow(&root.join(MARKER))?;
+        let marker_file = regular_nofollow(&root.join(marker_name(schema_version)))?;
         let marker: Marker =
             serde_json::from_reader(marker_file).map_err(|e| CampaignError::Root(e.to_string()))?;
-        if marker.schema_version != 3
-            || marker.profile != crate::contract::PROFILE
+        if marker.schema_version != schema_version
+            || marker.profile != profile(schema_version)
             || marker.trusted_config_digest != config_digest
             || marker.writer_identity != writer_identity
             || marker.anchored_root_sha256 != root_path_digest(root)
@@ -257,7 +291,7 @@ impl Store {
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         drop(probe);
-        if version != 3 {
+        if version != i64::from(schema_version) {
             return Err(CampaignError::Root(
                 "unsupported campaign store schema".into(),
             ));
@@ -276,7 +310,7 @@ impl Store {
         if conn
             .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
             .map_err(|e| CampaignError::Io(e.to_string()))?
-            != 3
+            != i64::from(schema_version)
         {
             return Err(CampaignError::Root(
                 "unsupported campaign store schema".into(),
@@ -323,8 +357,9 @@ impl Store {
                 "database path or inode differs".into(),
             ));
         }
-        let marker_file = regular_nofollow(&self.root.join(MARKER))
-            .map_err(|e| CampaignError::Integrity(e.to_string()))?;
+        let marker_file =
+            regular_nofollow(&self.root.join(marker_name(self.marker.schema_version)))
+                .map_err(|e| CampaignError::Integrity(e.to_string()))?;
         let marker: Marker = serde_json::from_reader(marker_file)
             .map_err(|e| CampaignError::Integrity(e.to_string()))?;
         if marker.schema_version != self.marker.schema_version
@@ -436,7 +471,7 @@ impl Store {
 
     /// Receipt-bound historical result for validating current J1 projections.
     /// This deliberately does not recurse into historical progress validation.
-    fn projection_result(
+    pub(crate) fn projection_result(
         &self,
         operation_id: &str,
         identity: &CampaignIdentity,
@@ -471,7 +506,7 @@ impl Store {
             || receipt.request_digest != request_digest
             || receipt.identity.key() != identity_key
             || state.identity != receipt.identity
-            || state.schema_version != 3
+            || state.schema_version != self.marker.schema_version
             || state.revision != receipt.result_revision
             || receipt.profile_digest != self.marker.trusted_config_digest
             || receipt.result_reference
@@ -511,7 +546,13 @@ impl Store {
             counts.decoded_snapshots += 1;
             counts.decoded_bytes += json.len();
         });
-        if json.len() > 1_048_576 {
+        if json.len()
+            > if self.marker.schema_version == 4 {
+                8_388_608
+            } else {
+                1_048_576
+            }
+        {
             return Err(CampaignError::Integrity(
                 "stored campaign exceeds capacity".into(),
             ));
@@ -519,7 +560,7 @@ impl Store {
         let state: Snapshot =
             serde_json::from_str(json).map_err(|e| CampaignError::Integrity(e.to_string()))?;
         if state.identity != *identity
-            || state.schema_version != 3
+            || state.schema_version != self.marker.schema_version
             || state_revision(&state)? != state.revision
         {
             return Err(CampaignError::Integrity(
@@ -644,6 +685,7 @@ impl Store {
                 || slot.request_digest != request.request_digest
                 || slot.prepared_revision != request.prepared_revision.as_str()
                 || (!historical
+                    && state.remediation.is_none()
                     && slot.active
                         != (latest_by_obligation
                             .get(slot.obligation_id.as_str())
@@ -941,7 +983,7 @@ impl Store {
                     || request.prepared_revision.as_str() != slot.prepared_revision
                     || request.selection != *state.selection_ref.as_ref().ok_or_else(fail)?
                     || request.candidate != *state.candidate.as_ref().ok_or_else(fail)?
-                    || !slot.active && !historical
+                    || !slot.active && !historical && state.remediation.is_none()
                     || match obligation.status.as_str() {
                         "executing" => attempt.outcome.is_some(),
                         "completed" => !matches!(
@@ -1007,6 +1049,8 @@ impl Store {
             }
         }
         crate::application::validate_j2_evaluations(state).map_err(|_| fail())?;
+        crate::application::validate_remediation_progress(self, state, historical)
+            .map_err(|_| fail())?;
         Ok(())
     }
 
@@ -1027,7 +1071,14 @@ impl Store {
             serde_json::to_string(state).map_err(|e| CampaignError::Contract(e.to_string()))?;
         let receipt_json =
             serde_json::to_string(operation).map_err(|e| CampaignError::Contract(e.to_string()))?;
-        if state_json.len() > 1_048_576 || receipt_json.len() > 65_536 {
+        if state_json.len()
+            > if self.marker.schema_version == 4 {
+                8_388_608
+            } else {
+                1_048_576
+            }
+            || receipt_json.len() > 65_536
+        {
             return Err(CampaignError::Contract(
                 "encoded result exceeds capacity".into(),
             ));
@@ -1101,6 +1152,58 @@ impl Store {
             tx.execute("INSERT INTO request_slot(identity_key,obligation_id,attempt_id,operation_id,request_digest,prepared_revision,active) VALUES(?1,?2,?3,?4,?5,?6,1)", params![state.identity.key(),obligation_id,attempt.attempt_id,request.operation_id,request.request_digest,request.prepared_revision.as_str()])
                 .map_err(|e| CampaignError::Conflict(e.to_string()))?;
         }
+        if operation.kind == "prepare_remediation" {
+            if self.marker.schema_version != 4 {
+                return Err(CampaignError::Contract(
+                    "schema 3 cannot prepare remediation".into(),
+                ));
+            }
+            let round = state
+                .remediation
+                .as_ref()
+                .and_then(|p| p.rounds.last())
+                .ok_or_else(|| CampaignError::Integrity("remediation round absent".into()))?;
+            let request = &round.request;
+            if request.operation_id != operation.operation_id
+                || request.prepared_revision != state.revision
+                || round.predecessor_generation + 1 != request.generation
+            {
+                return Err(CampaignError::Integrity(
+                    "remediation reservation differs".into(),
+                ));
+            }
+            let predecessor_operation = if request.generation == 1 {
+                state
+                    .obligations
+                    .iter()
+                    .find(|o| o.obligation_id == request.obligation_id)
+                    .and_then(|o| o.request.as_ref())
+                    .map(|r| r.operation_id.as_str())
+            } else {
+                state
+                    .remediation
+                    .as_ref()
+                    .and_then(|p| p.rounds.iter().rev().nth(1))
+                    .map(|r| r.request.operation_id.as_str())
+            }
+            .ok_or_else(|| {
+                CampaignError::Integrity("remediation predecessor slot absent".into())
+            })?;
+            let retired = tx.execute(
+                "UPDATE request_slot SET active=0 WHERE identity_key=?1 AND obligation_id=?2 AND operation_id=?3 AND active=1 AND dispatch_operation_id IS NOT NULL AND may_have_entered=1",
+                params![state.identity.key(),request.obligation_id,predecessor_operation],
+            ).map_err(|e| CampaignError::Io(e.to_string()))?;
+            if retired != 1 {
+                return Err(CampaignError::Conflict(
+                    "remediation predecessor slot differs".into(),
+                ));
+            }
+            tx.execute(
+                "INSERT INTO request_slot(identity_key,obligation_id,attempt_id,operation_id,request_digest,prepared_revision,active) VALUES(?1,?2,?3,?4,?5,?6,1)",
+                params![state.identity.key(),request.obligation_id,request.execution_attempt_id,
+                    request.operation_id,request.request_digest,request.prepared_revision.as_str()],
+            ).map_err(|e| CampaignError::Conflict(e.to_string()))?;
+        }
         if operation.kind == "authorize_dispatch" {
             let attempt = state
                 .progress
@@ -1129,6 +1232,35 @@ impl Store {
             ).map_err(|e| CampaignError::Io(e.to_string()))?;
             if changed != 1 {
                 return Err(CampaignError::Conflict("dispatch slot differs".into()));
+            }
+        }
+        if operation.kind == "authorize_remediation_dispatch" {
+            let round = state
+                .remediation
+                .as_ref()
+                .and_then(|p| p.rounds.last())
+                .ok_or_else(|| {
+                    CampaignError::Integrity("remediation dispatch round absent".into())
+                })?;
+            let dispatch = round.dispatch.as_ref().ok_or_else(|| {
+                CampaignError::Integrity("remediation dispatch record absent".into())
+            })?;
+            if dispatch.operation_id != operation.operation_id
+                || !dispatch.may_have_entered
+                || dispatch.request_digest != round.request.request_digest
+            {
+                return Err(CampaignError::Integrity(
+                    "remediation dispatch differs".into(),
+                ));
+            }
+            let changed = tx.execute(
+                "UPDATE request_slot SET dispatch_operation_id=?1,may_have_entered=1 WHERE identity_key=?2 AND operation_id=?3 AND request_digest=?4 AND dispatch_operation_id IS NULL AND may_have_entered=0 AND active=1",
+                params![dispatch.operation_id,state.identity.key(),round.request.operation_id,round.request.request_digest],
+            ).map_err(|e| CampaignError::Io(e.to_string()))?;
+            if changed != 1 {
+                return Err(CampaignError::Conflict(
+                    "remediation dispatch slot differs".into(),
+                ));
             }
         }
         crate::fault_cut("before_commit");
@@ -1271,6 +1403,20 @@ fn strip_revision(value: &mut serde_json::Value) -> Result<()> {
     {
         for obligation in obligations {
             if let Some(request) = obligation
+                .get_mut("request")
+                .and_then(serde_json::Value::as_object_mut)
+            {
+                request.remove("preparedRevision");
+            }
+        }
+    }
+    if let Some(rounds) = value
+        .get_mut("remediation")
+        .and_then(|v| v.get_mut("rounds"))
+        .and_then(serde_json::Value::as_array_mut)
+    {
+        for round in rounds {
+            if let Some(request) = round
                 .get_mut("request")
                 .and_then(serde_json::Value::as_object_mut)
             {

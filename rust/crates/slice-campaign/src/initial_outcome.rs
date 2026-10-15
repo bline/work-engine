@@ -354,6 +354,7 @@ impl J2Locator {
             operation_id: ce(OperationId::new(self.operation_id))?,
             action: match self.action.as_str() {
                 "create_claim" => "create_claim",
+                "publish_revision" => "publish_revision",
                 "record_reliance" => "record_reliance",
                 _ => return Err(j2_error("J2 locator action differs")),
             },
@@ -2015,6 +2016,14 @@ impl CampaignInner {
             .store
             .read(&self.config.identity)?
             .ok_or_else(|| j2_error("campaign absent"))?;
+        if state.remediation.as_ref().is_some_and(|progress| {
+            progress
+                .rounds
+                .iter()
+                .any(|round| round.request.request_digest == b.prepared_request_sha256)
+        }) {
+            return self.check_remediation_finding_admission(&state, b);
+        }
         let intent = state
             .progress
             .attempts
@@ -2171,6 +2180,20 @@ impl Campaign {
             });
         }
         self.owner()?.current(identity, expected)?;
+        if self
+            .owner()?
+            .store
+            .read(identity)?
+            .as_ref()
+            .is_some_and(|state| {
+                state
+                    .remediation
+                    .as_ref()
+                    .is_some_and(|progress| progress.current_generation > 0)
+            })
+        {
+            return Err(j2_error("initial generation is no longer current"));
+        }
         let (_, intent) = validate_completion_locator(self, joined)?;
         let m = manifest(&intent)?;
         let checked = check_initial(self, joined, &m.operation_id, owners)?;

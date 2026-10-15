@@ -23,10 +23,16 @@ pub use application::{
     AdmitRequest, BuilderEvaluationDecision, BuilderEvaluationLocator, BuilderEvaluationPrepared,
     BuilderEvaluationProgress, BuilderEvaluationState, BuilderEvaluationView,
     CE3CampaignClaimsAdmission, Campaign, CampaignClaimsAdmission, CompletionSelection,
-    InitialClaimsOwner, InitialCompletionLocator, InitialCompletionOwners,
+    DispatchedRemediation, InitialClaimsOwner, InitialCompletionLocator, InitialCompletionOwners,
     InitialCompletionPrepared, InitialCompletionProgress, InitialEpisodeReadRegistered,
     InitialJoinSelection, InitialOutcomeKind, InitialOutcomeLocator, InitialOutcomeProgress,
-    InitialOutcomeState, InitialOutcomeView, InitialProgressState, TrustedConfig,
+    InitialOutcomeState, InitialOutcomeView, InitialProgressState,
+    RemediationBuilderEvaluationPrepared, RemediationCompletionPrepared,
+    RemediationDispatchCommand, RemediationDispatchEffect, RemediationDispatchPermit,
+    RemediationEvaluationRecord, RemediationPreparation, RemediationPrepared, RemediationProgress,
+    RemediationRecovery, RemediationRequestRef, RemediationRound, RemediationSelection,
+    RemediationSelectionParts, RemediationSessionRef, RemediationStageOutcome,
+    RemediationSubjectRead, TrustedConfig,
 };
 pub use completion::{
     CampaignProgress, DispatchCommand, DispatchEffect, DispatchPermit, DispatchRecord,

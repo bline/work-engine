@@ -25,10 +25,13 @@ use crate::{CampaignError, Result, require_text};
 
 const SC0_ACCEPTED_PLAN_SHA256: &str =
     "f45b94d3ef985a446002e21a795a51004a5c732e5b150208be09f964152662ef";
+const SC3_ACCEPTED_CONTRACT_SHA256: &str =
+    "4cd4aee887613a76e13db78551b98d22b479397f3f3c50202d7eedde52415b26";
 
 /// Constructed at the trusted host boundary, never from a serialized request.
 /// The current profile pins the exact SC0 gate capture and historical producer.
 pub struct TrustedConfig {
+    schema_version: u32,
     root: PathBuf,
     repository: PathBuf,
     workspace: PathBuf,
@@ -562,7 +565,7 @@ mod core_tests {
         ];
         let inventory = |name: &str| fs::read(root.join(name)).ok();
         let before_sidecars: Vec<_> = sidecars.iter().map(|name| inventory(name)).collect();
-        assert!(Store::open(&root, &config_digest, &writer_identity).is_err());
+        assert!(Store::open(&root, &config_digest, &writer_identity, 3).is_err());
         assert_eq!(
             raw_sha256(&fs::read(&database).unwrap()),
             raw_sha256(&before)
@@ -763,6 +766,80 @@ impl TrustedConfig {
             gate_receipt_sha256: raw_sha256(&gate_receipt),
         })?;
         Ok(Self {
+            schema_version: 3,
+            root,
+            repository,
+            workspace,
+            identity,
+            accepted_boundary,
+            baseline,
+            writer_identity,
+            gate_capture,
+            gate_manifest,
+            gate_receipt,
+            digest,
+        })
+    }
+
+    /// A trusted composition installs this fresh-root profile after accepting
+    /// the campaign boundary and exact gate evidence. Request JSON cannot
+    /// select the profile or create a writer for an existing schema-3 root.
+    #[allow(clippy::too_many_arguments)]
+    pub fn remediation_v4(
+        root: PathBuf,
+        repository: PathBuf,
+        workspace: PathBuf,
+        identity: CampaignIdentity,
+        accepted_boundary: AcceptedBoundary,
+        baseline: Baseline,
+        writer_identity: String,
+        gate_capture: Vec<u8>,
+        gate_manifest: Vec<u8>,
+        gate_receipt: Vec<u8>,
+    ) -> Result<Self> {
+        identity.validate()?;
+        require_text(&accepted_boundary.reference, "accepted boundary reference")?;
+        crate::require_sha(&accepted_boundary.sha256, "accepted boundary digest")?;
+        require_text(&writer_identity, "writer identity")?;
+        if !repository.is_absolute()
+            || std::fs::canonicalize(&repository).ok().as_deref() != Some(repository.as_path())
+            || !workspace.is_absolute()
+            || std::fs::canonicalize(&workspace).ok().as_deref() != Some(workspace.as_path())
+        {
+            return Err(CampaignError::Root(
+                "repository or workspace is not anchored".into(),
+            ));
+        }
+        for value in [
+            &baseline.accepted_commit,
+            &baseline.accepted_tree,
+            &baseline.inter_slice_commit,
+        ] {
+            if ![40, 64].contains(&value.len())
+                || !value
+                    .bytes()
+                    .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+            {
+                return Err(CampaignError::Contract("baseline Git OID invalid".into()));
+            }
+        }
+        crate::subject_binding::verify_gate_dynamic(&gate_capture, &gate_manifest, &gate_receipt)?;
+        let digest = trusted_digest(&json!({
+            "schemaVersion": 4,
+            "profile": crate::contract::REMEDIATION_PROFILE,
+            "acceptedContractSha256": SC3_ACCEPTED_CONTRACT_SHA256,
+            "repository": repository,
+            "workspace": workspace,
+            "identity": identity,
+            "boundary": accepted_boundary,
+            "baseline": baseline,
+            "writerIdentity": writer_identity,
+            "gateCaptureSha256": raw_sha256(&gate_capture),
+            "gateManifestSha256": raw_sha256(&gate_manifest),
+            "gateReceiptSha256": raw_sha256(&gate_receipt),
+        }))?;
+        Ok(Self {
+            schema_version: 4,
             root,
             repository,
             workspace,
@@ -832,11 +909,21 @@ impl FindingAdmissionPort for CampaignClaimsAdmission {
 
 impl Campaign {
     pub fn initialize(config: TrustedConfig) -> Result<Self> {
-        let store = Store::initialize(&config.root, &config.digest, &config.writer_identity)?;
+        let store = Store::initialize(
+            &config.root,
+            &config.digest,
+            &config.writer_identity,
+            config.schema_version,
+        )?;
         Ok(Self::with_store(store, config))
     }
     pub fn open(config: TrustedConfig) -> Result<Self> {
-        let store = Store::open(&config.root, &config.digest, &config.writer_identity)?;
+        let store = Store::open(
+            &config.root,
+            &config.digest,
+            &config.writer_identity,
+            config.schema_version,
+        )?;
         Ok(Self::with_store(store, config))
     }
     fn with_store(store: Store, config: TrustedConfig) -> Self {
@@ -977,6 +1064,7 @@ impl Campaign {
 
 include!("owner_readback.rs");
 include!("initial_outcome.rs");
+include!("remediation.rs");
 
 impl CampaignInner {
     fn check_finding_admission(&self, _binding: &AdmissionBinding) -> Result<()> {
@@ -1136,7 +1224,7 @@ impl CampaignInner {
             return Ok(Effect::NoEffect("campaign already admitted".into()));
         }
         let mut state = Snapshot {
-            schema_version: 3,
+            schema_version: self.config.schema_version,
             identity: request.identity,
             workspace: request.workspace.to_string_lossy().into_owned(),
             repository: request.repository.to_string_lossy().into_owned(),
@@ -1153,6 +1241,7 @@ impl CampaignInner {
             selection_ref: None,
             obligations: Vec::new(),
             progress: Default::default(),
+            remediation: None,
             revision: CampaignRevision::new("0".repeat(64))?,
         };
         state.revision = state_revision(&state)?;
@@ -1190,11 +1279,19 @@ impl CampaignInner {
             return Ok(Effect::NoEffect("invalid phase transition".into()));
         }
         if matches!(phase, AdvancePhase::GateReady) {
-            let gate = verify_gate(
-                &self.config.gate_capture,
-                &self.config.gate_manifest,
-                &self.config.gate_receipt,
-            )?;
+            let gate = if self.config.schema_version == 4 {
+                crate::subject_binding::verify_gate_dynamic(
+                    &self.config.gate_capture,
+                    &self.config.gate_manifest,
+                    &self.config.gate_receipt,
+                )?
+            } else {
+                verify_gate(
+                    &self.config.gate_capture,
+                    &self.config.gate_manifest,
+                    &self.config.gate_receipt,
+                )?
+            };
             state.gate_capture_digest = Some(gate.capture_digest);
         }
         if matches!(phase, AdvancePhase::ReviewReady)
@@ -1248,16 +1345,29 @@ impl CampaignInner {
                 "candidate binding requires unused gate-ready state".into(),
             ));
         }
-        let verified = verify_existing_subject(
-            &self.config.repository,
-            identity,
-            &state.baseline,
-            candidate_raw,
-            profile_raw,
-            &self.config.gate_capture,
-            &self.config.gate_manifest,
-            &self.config.gate_receipt,
-        )?;
+        let verified = if self.config.schema_version == 4 {
+            crate::subject_binding::verify_existing_subject_dynamic(
+                &self.config.repository,
+                identity,
+                &state.baseline,
+                candidate_raw,
+                profile_raw,
+                &self.config.gate_capture,
+                &self.config.gate_manifest,
+                &self.config.gate_receipt,
+            )?
+        } else {
+            verify_existing_subject(
+                &self.config.repository,
+                identity,
+                &state.baseline,
+                candidate_raw,
+                profile_raw,
+                &self.config.gate_capture,
+                &self.config.gate_manifest,
+                &self.config.gate_receipt,
+            )?
+        };
         state.candidate = Some(verified.reference);
         state.candidate_receipt = Some(verified.candidate_receipt);
         state.physical_profile = Some(verified.physical_profile);
