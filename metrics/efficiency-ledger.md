@@ -115,6 +115,35 @@ context replacement, and the band curve's low-context end. If cached input is in
 fact cheaper than one tenth, those low-cache events are a larger share of spend
 than stated here, not smaller.
 
+**Why the aggregate data cannot approximate the cache ratio.** The obstacle is
+not the regression, it is the absence of contrast. Across 92 Pro-plan segments
+at a 10-point quota step, the **cached share of input is 0.945 to 0.993**, p10
+0.968, median 0.982; at a 5-point step and 176 segments it is 0.939 to 0.993.
+Output is 0.17% to 0.81% of input. A scale-free fit on the mix rather than the
+volume still returns cached/uncached of -0.024 at R² 0.22, because every segment
+has essentially the same composition. The rare low-cache events are too small to
+move it: 69 resumes at a median 165K context contribute about 11M uncached
+tokens against 4,407M total input, a quarter of one percent.
+
+That bounds what the corroboration above actually established. With cached at
+98% of input, the `cached/10` term is roughly three quarters of every weighted
+total, so the fitted 0.684 percent-per-million-weighted pins the **product** of
+the cached ratio and the coefficient, not either separately. A true cached ratio
+of 0.05 with a coefficient near 14 would fit the same observations. **Total
+spend estimates are therefore robust; the split between cached and uncached is
+not independently verified.** The practical bound on the mix-sensitive figures:
+a resume's first call costs the stated 1.18 Plus-units if cached is one tenth,
+and as little as ~0.2 units — one ordinary call at that context — if cached
+costs the same as uncached, which is its ceiling. Everything in between leaves
+the finding's direction intact.
+
+Identifying the ratio needs a deliberate contrast rather than more history: one
+quota segment spent on many fresh short sessions, whose traffic is largely
+uncached, against one spent on a single long-running session at 99% cache, with
+`used_percent` read at both boundaries. Two segments with genuinely different
+composition separate the two prices; 277 replacements of uniform composition
+never will.
+
 Two consequences for how levers are judged. First, session cost is close to
 `calls × context size`; effort level and task type act on the **number** of
 calls, not on the price of a call, so a cheaper session is normally a session
