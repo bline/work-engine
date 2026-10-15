@@ -147,8 +147,9 @@ thousand tokens and swamps the effect.
 predicted above. The prediction was high by a factor of ~2 because the unused
 plugin surface was nearer 2.5K than 5K.
 
-`standing.py` itemizes where the floor actually comes from and attributes the
-change component by component:
+`standing.py` reports each standing component's size **in rollout bytes** —
+not in tokens, for the reason given under the retraction below — and attributes
+the change component by component:
 
 | component | pre-trim bytes | post-trim bytes | Δ |
 |---|---|---|---|
@@ -158,66 +159,106 @@ change component by component:
 | `world_state.agents_md` | 7,150 | 7,150 | 0 |
 
 So the plugin trim did take effect, as a smaller harness base prompt and a
-shorter skills index. The four MCP servers contributed almost nothing: their
-schemas are not in the rollout, and the residual after accounting for the two
-components above is a few hundred tokens — `playwright` was evidently never
-loading, which also explains its zero calls.
+shorter skills index. `codex debug prompt-input` confirms the second half
+independently: re-enabling the ten plugins adds 2,803 bytes to developer
+message [0], against the 2,813-byte `host_skills` shrink seen here. The four
+MCP servers contributed little: their schemas appear nowhere in the rollout, and
+the residual once the two components above are accounted for is a few hundred
+tokens — `playwright` was evidently never loading, which also explains its zero
+calls.
 
 `disabled_plugin_ids` in `turn_context` is **not** evidence either way: it reads
 `[]` in pre-trim and post-trim sessions alike, so it does not list
 config-disabled plugins.
 
-## The larger lever this exposed: stale approval rules
+## Retracted: the approval rules cost nothing
 
-`world_state.permissions.approved_command_prefixes` is **31,627 bytes, 32.6% of
-the standing payload, an estimated 5,780 tokens** — the single largest item,
-larger than the harness base prompt. It is byte-identical in all 236 sessions
-from 2026-09-01 to 10-15 and is re-sent on every model call.
+**This section previously claimed the 133 stale approval rules were ~5,780
+tokens and 3.0% of a round. That was wrong, and the measurement below is why.**
 
-It is `~/.codex/rules/default.rules`: **133 approval rules, 36,590 bytes, last
-modified 2026-08-05**. Not one mentions this repository. They are one-off
-approvals from the `locus`/`geobridge` work — `ogrinfo` reads of specific INEGI
-shapefiles, `docker logs` for `compose-locus-cli-run` container IDs, and
-multi-hundred-byte `perl -0777 -i -pe s/.../.../` source rewrites of files in
-another project. The five longest entries are 522–1,491 bytes each.
+`world_state.permissions.approved_command_prefixes` is 31,627 bytes, 32.6% of
+the standing *payload recorded in the rollout*, and it is byte-identical across
+all 236 sessions since 2026-09-01. It is `~/.codex/rules/default.rules`: 133
+allow-rules last modified 2026-08-05, not one of them for this repository,
+mostly `ogrinfo` reads of specific shapefiles and multi-hundred-byte
+`perl -0777 -i -pe s/.../.../` rewrites of another project's source. They are
+also never consulted here — all 110 October sessions ran `approval_policy =
+"never"`.
 
-They are also inert here: **all 110 October sessions ran `approval_policy =
-"never"`** (109 `danger-full-access`, 1 `read-only`), so no allow-rule is ever
-consulted. This is dead weight at 2.4× the size of what the plugin trim removed.
+So they are stale and worth deleting for tidiness. They are **not** a token
+cost. The operator installed the trimmed 461-byte file at 2026-10-15T15:56
+local, which produced five `codex-tui` sessions byte-identical in every other
+standing component:
 
-`default.rules.trimmed` in this directory keeps the 8 short generic rules
-(`cargo test`, `cargo fmt --all`, `docker ps|logs|inspect`, `set -euo pipefail`,
-`dmesg`, `sort`) and drops the 125 project-specific ones: **461 bytes, down from
-36,590**. To apply:
+| session | started | approval-rule bytes | first-call tokens |
+|---|---|---|---|
+| `01a1403f` | 15:47 | **31,627** | 18,348 |
+| `01a140ba` | 18:02 | 248 | 18,348 / 18,344 |
+| `01a140bc` | 18:04 | 248 | 18,348 / 18,344 |
+
+**−2 tokens for 31,379 bytes removed.** Same base prompt (21,420 B), same
+messages (25,532 B), same skills index (13,858 B), same `AGENTS.md` (7,150 B).
+
+## The mistake, and the method that replaces it
+
+The error was treating **bytes recorded in the rollout** as **bytes sent to the
+model**. `world_state` is the client's own state snapshot, written to the
+rollout so a reader can reconstruct what the session knew. Only part of it
+becomes prompt input: `agents_md` does, as a user-role message;
+`approved_command_prefixes` does not. Dividing total rollout payload bytes by
+the first call's `input_tokens` produced one average ratio, and applying that
+ratio back to a component silently assumed every component is prompt input.
+
+Two claims die with it:
+
+- The approval rules are not 5,780 tokens. They are zero.
+- **`AGENTS.md` is not sent twice.** `world_state.agents_md.text` and the
+  user-role message that carries it are the same content recorded in two places
+  in the rollout; `codex debug prompt-input` shows the body appearing **once**
+  in the model-visible list.
+
+What survives is the plugin-trim measurement above, because both sides of it
+were measured as first-call `input_tokens` rather than estimated from bytes.
+
+### `codex debug prompt-input` is the right instrument, and it is free
+
+It renders the model-visible prompt list as JSON without a model call, and `-c`
+overrides let any configuration change be A/B tested before a single session is
+restarted:
 
 ```bash
-cp ~/.codex/rules/default.rules ~/.codex/rules/default.rules.bak   # if absent
-cp default.rules.trimmed ~/.codex/rules/default.rules
+codex debug prompt-input "ok" > before.json
+codex debug prompt-input -c 'plugins."chrome@openai-bundled".enabled=true' "ok" > after.json
 ```
 
-Expected: about **−5,700 tokens**, 0.0045 Plus-units per call, **3.0% of a
-338-unit round**. One fresh session measures it: run `floor.py` again and the
-floor should land near 12K. The one cost is outside this repository — a `locus`
-session with approvals enabled would prompt again for those commands.
+Re-enabling the ten disabled plugins measures as **+2,803 bytes**, all of it in
+developer message [0] — which matches the `host_skills` shrink of 2,813 bytes
+seen in the rollouts, and confirms that message carries the skills index.
 
-## Standing-context inventory, 2026-10-15
+The model-visible list under the current configuration is 5 messages,
+**23,181 bytes**:
 
-Measured from one post-trim root session: 96,951 bytes of standing payload
-against 17,716 first-call tokens, 5.47 bytes per token overall. Per-component
-token figures below are that ratio applied, which assumes a component tokenizes
-like the average; JSON-escaped shell strings do not, so only the total is
-measured.
+| | role | bytes | content |
+|---|---|---|---|
+| [0] | developer | 13,105 | harness guidance (`wait_agent` timeouts) plus the skills index |
+| [1] | developer | 2,400 | `<multi_agent_role>` |
+| [2] | developer | 271 | `<multi_agent_mode>` |
+| [3] | user | 7,403 | `AGENTS.md` for this repository, wrapped in `<INSTRUCTIONS>` and `<environment_context>` |
+| [4] | user | — | the actual prompt |
 
-| component | bytes | share | est tokens | client-side lever |
-|---|---|---|---|---|
-| `world_state.permissions` | 31,627 | 32.6% | 5,780 | **yes** — stale, inert, see above |
-| pre-first-call messages | 25,532 | 26.3% | 4,666 | partly — 15,458 of it is harness developer text |
-| `base_instructions` | 18,037 | 18.6% | 3,296 | no |
-| `world_state.host_skills` | 13,858 | 14.3% | 2,532 | partly — 41 skills, `pages` listed 4×; `[[skills.config]] enabled = false` works |
-| `world_state.agents_md` | 7,150 | 7.4% | 1,307 | **duplicate** — see below |
+What it does **not** render: the base prompt and the tool schemas. Those are the
+remaining unattributed part of the floor, and the rollout does not record them
+either, so the only way to size them is a matched-pair comparison of first-call
+`input_tokens` across a config change — the method that worked above.
 
-`AGENTS.md` is sent **twice**: `world_state.agents_md.text` (6,929 bytes) is a
-strict substring of the user-role message that also carries it (7,403 bytes).
-About 1,300 tokens per window are pure duplication. This is harness behavior,
-not configuration, but it means every byte trimmed from `AGENTS.md` is paid back
-twice.
+### Remaining client-side levers, on this basis
+
+| lever | size | how to measure it for free |
+|---|---|---|
+| the skills index in message [0] | 2,803 B attributable to plugins, already removed; 41 skills still listed, `pages` four times | `-c '[[skills.config]]'` A/B through `prompt-input` |
+| `AGENTS.md` | 7,403 B, sent once | edit and re-render |
+| harness guidance in message [0] | the balance of 13,105 B | not configurable |
+
+A fresh session's floor is about 17.7K tokens against 23,181 bytes of
+model-visible messages, so most of the floor is still the base prompt and tool
+schemas — neither of which this package has yet sized.

@@ -11,11 +11,21 @@ all re-sent on every later model call in the window:
   world_state.state                     permissions, host_skills, agents_md, ...
   the response_item messages before the first token_count
 
-Bytes are exact. Tokens are not: the whole standing payload divided by the
-session's first-call input_tokens gives one bytes-per-token ratio, and applying
-it to a component assumes that component tokenizes like the average. JSON-escaped
-shell strings do not, so per-component token figures are an estimate and are
-printed as such. Only the first-call total is measured.
+Bytes are exact. **Do not convert them to tokens.** world_state is the client's
+own state snapshot, written to the rollout so a reader can reconstruct what the
+session knew; only part of it becomes prompt input. agents_md does, as a
+user-role message. approved_command_prefixes does not: five codex-tui sessions
+identical in every other component measured 18,348 first-call tokens with
+31,627 bytes of approval rules and 18,348 with 248 bytes -- two tokens apart.
+An earlier version of this script printed an "est tokens" column derived from
+one average bytes-per-token ratio, and that column produced a false 5,780-token
+reading of those rules. It is gone.
+
+To size a component in tokens, compare first-call input_tokens across a change
+that moves only that component (floor.py), or A/B the model-visible prompt for
+free with `codex debug prompt-input -c <override>`, which renders the message
+list without a model call. Neither the base prompt nor the tool schemas appear
+in the rollout or in prompt-input, so they can only be sized the first way.
 """
 import json
 import pathlib
@@ -65,14 +75,18 @@ if not rows:
 rows.sort(key=lambda r: r["started"])
 latest = rows[-1]
 total = sum(latest["items"].values())
-ratio = total / latest["first_call_tokens"]
 print("%s  %s  %s" % (latest["started"][:19], latest["id"], latest["agent"]))
-print("standing payload %d bytes -> %d first-call tokens (%.2f bytes/token overall)\n"
-      % (total, latest["first_call_tokens"], ratio))
-print("%-34s %9s %7s  %9s" % ("component", "bytes", "share", "est tokens"))
+print("standing payload recorded in the rollout: %d bytes" % total)
+print("first call: %d input tokens -- NOT a sum over the components below\n"
+      % latest["first_call_tokens"])
+print("%-34s %9s %7s  %s" % ("component", "bytes", "share", "prompt input?"))
+SENT = {"world_state.agents_md": "yes, as a user message",
+        "world_state.permissions": "NO, client-side only (measured)",
+        "world_state.host_skills": "in part, inside developer message [0]",
+        "base_instructions": "yes", "pre-first-call messages": "yes"}
 for name, size in sorted(latest["items"].items(), key=lambda kv: -kv[1]):
     if size < 100: continue
-    print("%-34s %9d %6.1f%%  %9.0f" % (name, size, 100 * size / total, size / ratio))
+    print("%-34s %9d %6.1f%%  %s" % (name, size, 100 * size / total, SENT.get(name, "unknown")))
 
 print("\nper-component change across sessions (bytes):")
 names = [n for n, s in sorted(latest["items"].items(), key=lambda kv: -kv[1]) if s >= 1000]
