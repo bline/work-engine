@@ -496,18 +496,18 @@ fn legacy_required_text<'a>(value: &'a Value, name: &str) -> T<&'a str> {
 }
 
 // A documented fail-closed subset of v28 Date.parse: extended UTC with no
-// fraction or exactly three fractional digits. Other parseable JS dates remain
+// fraction or one through nine fractional digits. Other parseable JS dates remain
 // unsupported evidence, never silently reinterpreted.
 fn supported_legacy_utc_timestamp(text: &str) -> bool {
     let bytes = text.as_bytes();
-    if !matches!(bytes.len(), 20 | 24)
+    if !(bytes.len() == 20 || (22..=30).contains(&bytes.len()))
         || bytes[4] != b'-'
         || bytes[7] != b'-'
         || bytes[10] != b'T'
         || bytes[13] != b':'
         || bytes[16] != b':'
         || bytes[bytes.len() - 1] != b'Z'
-        || (bytes.len() == 24 && bytes[19] != b'.')
+        || (bytes.len() != 20 && bytes[19] != b'.')
     {
         return false;
     }
@@ -527,7 +527,7 @@ fn supported_legacy_utc_timestamp(text: &str) -> bool {
     ) else {
         return false;
     };
-    if bytes.len() == 24 && number(20, 23).is_none() {
+    if bytes.len() != 20 && !bytes[20..bytes.len() - 1].iter().all(u8::is_ascii_digit) {
         return false;
     }
     let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);

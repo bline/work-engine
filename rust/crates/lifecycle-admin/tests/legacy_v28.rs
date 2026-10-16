@@ -2299,3 +2299,76 @@ fn capture_envelopes_reject_nested_duplicate_keys_and_nonfinite_numbers() {
         }
     }
 }
+
+#[test]
+fn utc_fraction_widths_preserve_exact_legacy_bytes_and_revisions() {
+    for digits in 0..=9 {
+        let f = fixture();
+        let fraction = if digits == 0 {
+            String::new()
+        } else {
+            format!(".{}", &"395827702"[..digits])
+        };
+        let timestamp = format!("2024-02-29T23:59:59{fraction}Z");
+        rewrite_q4_record(&f, |record, _| {
+            record["successorAcceptance"]["acceptedAt"] = json!(timestamp);
+        });
+        let conn =
+            Connection::open(f.attempt.join("capture/image/semantic-context.sqlite3")).unwrap();
+        let original: Vec<u8> = conn.query_row(
+            "SELECT CAST(record_json AS BLOB) FROM legacy_context_input_dispositions WHERE disposition='durable_restart'",
+            [], |row| row.get(0)).unwrap();
+        drop(conn);
+        let expected: Value = serde_json::from_slice(&original).unwrap();
+        let result = translate_v28_capture(&f.attempt, &f.output).unwrap();
+        verify_completed_translation(&f.attempt, &f.output, &result).unwrap();
+        let copied = fs::read(f.output.join("raw/q4-disposition.json")).unwrap();
+        assert_eq!(copied, original);
+        let actual: Value = serde_json::from_slice(&copied).unwrap();
+        assert_eq!(actual["successorAcceptance"]["acceptedAt"], timestamp);
+        assert_eq!(actual["recordRevision"], expected["recordRevision"]);
+        assert_eq!(
+            actual["successorAcceptance"]["acceptanceRevision"],
+            expected["successorAcceptance"]["acceptanceRevision"]
+        );
+        assert_eq!(
+            fs::read(f.output.join("raw/q4-input.json")).unwrap(),
+            f.q4_bytes
+        );
+    }
+}
+
+#[test]
+fn malformed_fractional_utc_timestamps_remain_refused() {
+    for timestamp in [
+        "2024-02-29T23:59:59.Z",
+        "2024-02-29T23:59:59.1234567890Z",
+        "2024-02-29T23:59:59.12345678xZ",
+        "2024-02-29T23:59:59.１２３Z",
+        "2024-02-29T23:59:59.123456789+00:00",
+        "2024-02-29T23:59:59,123456789Z",
+        "2025-02-29T23:59:59.123456789Z",
+        "1900-02-29T23:59:59.1Z",
+        "2024-04-31T23:59:59.123456789Z",
+        "2024-00-01T23:59:59.1Z",
+        "2024-01-00T23:59:59.1Z",
+        "2024-02-29T24:00:00.1Z",
+        "2024-02-29T23:60:00.1Z",
+        "2024-02-29T23:59:60.1Z",
+        "0000-02-29T23:59:59.1Z",
+        "+002024-02-29T23:59:59.1Z",
+    ] {
+        let f = fixture();
+        rewrite_q4_record(&f, |record, _| {
+            record["successorAcceptance"]["acceptedAt"] = json!(timestamp);
+        });
+        let error = translate_v28_capture(&f.attempt, &f.output)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("acceptedAt unsupported"),
+            "{timestamp}: {error}"
+        );
+        assert!(!f.output.exists());
+    }
+}
