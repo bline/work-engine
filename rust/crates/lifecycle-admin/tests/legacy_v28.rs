@@ -502,7 +502,9 @@ pub(crate) fn fixture() -> Fixture {
         "binary":{"sha256":BINARY},"source_aggregate_sha256":SOURCE,
         "child_receipt":{"sha256":child_sha},"child_manifest_sha256":manifest_sha,
         "source_hashes_before":source_hashes,"source_hashes_after":source_hashes,
-        "selection_claim":"current_selection_unestablished","source_root":source,"artifacts":artifacts
+        "selection_claim":"current_selection_unestablished","duration_seconds":0.381,
+        "argv":["synthetic-capture","--source-root",source,"--output-root",attempt.join("capture")],
+        "artifacts":artifacts
     });
     write_json(&attempt.join("attempt-receipt.json"), &outer);
     let output = temp.path().join("translation");
@@ -2154,4 +2156,146 @@ fn open_admission_remains_unclassified_and_blocks_transfer() {
     let receipt = translate_v28_capture(&f.attempt, &f.output).unwrap();
     assert_eq!(receipt.transfer_eligibility, "blocked_unclassified");
     assert_eq!(receipt.unclassified_rows, 1);
+}
+
+// Rebind only envelope bytes for deliberately malformed synthetic metadata.
+fn rebind_capture_envelopes(attempt: &Path) {
+    let manifest_sha = sha(&fs::read(attempt.join("capture/source-manifest.json")).unwrap());
+    let child_path = attempt.join("capture/receipt.json");
+    let mut child: Value = serde_json::from_slice(&fs::read(&child_path).unwrap()).unwrap();
+    child["manifest_sha256"] = json!(manifest_sha);
+    write_json(&child_path, &child);
+    let outer_path = attempt.join("attempt-receipt.json");
+    let mut outer: Value = serde_json::from_slice(&fs::read(&outer_path).unwrap()).unwrap();
+    outer["child_manifest_sha256"] = json!(manifest_sha);
+    outer["child_receipt"]["sha256"] = json!(sha(&fs::read(child_path).unwrap()));
+    write_json(&outer_path, &outer);
+}
+
+#[test]
+fn producer_shaped_outer_metadata_preserves_raw_hash_and_completed_readback() {
+    let f = fixture();
+    let path = f.attempt.join("attempt-receipt.json");
+    let original = fs::read(&path).unwrap();
+    let outer: Value = serde_json::from_slice(&original).unwrap();
+    assert!(outer.get("source_root").is_none());
+    assert_eq!(outer["duration_seconds"], json!(0.381));
+    let result = translate_v28_capture(&f.attempt, &f.output).unwrap();
+    assert_eq!(result.source_attempt_sha256, sha(&original));
+    verify_completed_translation(&f.attempt, &f.output, &result).unwrap();
+    assert_eq!(fs::read(path).unwrap(), original);
+}
+
+#[test]
+fn contradictory_capture_root_provenance_is_rejected() {
+    for target in ["child", "manifest", "outer", "argv"] {
+        let f = fixture();
+        let path = f.attempt.join(match target {
+            "child" => "capture/receipt.json",
+            "manifest" => "capture/source-manifest.json",
+            _ => "attempt-receipt.json",
+        });
+        let mut value: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        if target == "argv" {
+            value["argv"][2] = json!("/synthetic-contradictory-root");
+        } else {
+            value["source_root"] = json!("/synthetic-contradictory-root");
+        }
+        write_json(&path, &value);
+        rebind_capture_envelopes(&f.attempt);
+        let error = translate_v28_capture(&f.attempt, &f.output)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("source-root"), "{target}: {error}");
+        assert!(!f.output.exists());
+    }
+}
+
+#[test]
+fn ambiguous_or_malformed_capture_root_arguments_are_rejected() {
+    for argv in [
+        Value::Null,
+        json!([]),
+        json!(["synthetic-capture"]),
+        json!(["synthetic-capture", "--source-root"]),
+        json!(["synthetic-capture", "--source-root", 1]),
+        json!(["synthetic-capture", "--source-root=/synthetic", "ignored"]),
+    ] {
+        let f = fixture();
+        let path = f.attempt.join("attempt-receipt.json");
+        let mut outer: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        outer["argv"] = argv;
+        write_json(&path, &outer);
+        let error = translate_v28_capture(&f.attempt, &f.output)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("source-root"), "{error}");
+    }
+    let f = fixture();
+    let path = f.attempt.join("attempt-receipt.json");
+    let mut outer: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    outer["argv"]
+        .as_array_mut()
+        .unwrap()
+        .extend([json!("--source-root"), json!(f.source)]);
+    write_json(&path, &outer);
+    let error = translate_v28_capture(&f.attempt, &f.output)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("source-root argv missing or repeated"),
+        "{error}"
+    );
+}
+
+#[test]
+fn capture_metadata_numbers_do_not_relax_required_integer_versions() {
+    for name in [
+        "attempt-receipt.json",
+        "capture/receipt.json",
+        "capture/source-manifest.json",
+    ] {
+        for version in [json!(1.0), json!(1.5), json!("1"), Value::Null] {
+            let f = fixture();
+            let path = f.attempt.join(name);
+            let mut value: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+            value["schema_version"] = version;
+            write_json(&path, &value);
+            rebind_capture_envelopes(&f.attempt);
+            let error = translate_v28_capture(&f.attempt, &f.output)
+                .unwrap_err()
+                .to_string();
+            assert!(
+                error.contains("receipt/manifest version"),
+                "{name}: {error}"
+            );
+        }
+    }
+}
+
+#[test]
+fn capture_envelopes_reject_nested_duplicate_keys_and_nonfinite_numbers() {
+    for name in [
+        "attempt-receipt.json",
+        "capture/receipt.json",
+        "capture/source-manifest.json",
+    ] {
+        for (member, expected) in [
+            (
+                "\"timing\": {\"seconds\": 0.381, \"seconds\": 0.382},",
+                "duplicate JSON key seconds",
+            ),
+            ("\"duration_seconds\": 1e400,", "number out of range"),
+        ] {
+            let f = fixture();
+            let path = f.attempt.join(name);
+            let original = fs::read_to_string(&path).unwrap();
+            fs::write(path, original.replacen('{', &format!("{{{member}"), 1)).unwrap();
+            let error = translate_v28_capture(&f.attempt, &f.output)
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{name}: {error}");
+            assert!(!f.output.exists());
+        }
+    }
 }

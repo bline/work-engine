@@ -585,6 +585,16 @@ fn json_file(path: &Path, max_len: u64) -> T<(Value, String)> {
     Ok((value, sha(&bytes)))
 }
 
+// Capture receipts contain timing metadata, not legacy revision-bearing values.
+// Keep their exact byte digest and duplicate-key rejection while allowing finite
+// JSON numbers. Image JSON and historical records still use the strict parser.
+fn capture_json_file(path: &Path, max_len: u64) -> T<(Value, String)> {
+    let bytes = checked_file(path, max_len)?;
+    let value = serde_json::from_slice::<UniqueValue<true>>(&bytes)
+        .map_err(|e| format!("capture JSON {}: {e}", path.display()))?;
+    Ok((value.0, sha(&bytes)))
+}
+
 fn checked_file(path: &Path, max_len: u64) -> T<Vec<u8>> {
     let before = Identity::of(path, max_len)?;
     let bytes = fs::read(path).map_err(|e| format!("read {}: {e}", path.display()))?;
@@ -668,9 +678,11 @@ fn validate_capture(attempt_root: &Path) -> T<Loaded> {
     // The file-set gate precedes even constructing a SQLite connection.
     image_names(&image)?;
 
-    let (outer, outer_hash) = json_file(&attempt_root.join("attempt-receipt.json"), 4_000_000)?;
-    let (child, child_hash) = json_file(&capture.join("receipt.json"), 4_000_000)?;
-    let (manifest, manifest_hash) = json_file(&capture.join("source-manifest.json"), 4_000_000)?;
+    let (outer, outer_hash) =
+        capture_json_file(&attempt_root.join("attempt-receipt.json"), 4_000_000)?;
+    let (child, child_hash) = capture_json_file(&capture.join("receipt.json"), 4_000_000)?;
+    let (manifest, manifest_hash) =
+        capture_json_file(&capture.join("source-manifest.json"), 4_000_000)?;
     for (label, value) in [
         ("outer", &outer),
         ("child", &child),
@@ -734,10 +746,37 @@ fn validate_capture(attempt_root: &Path) -> T<Loaded> {
     {
         return fail("unsupported capture coherence label");
     }
-    if outer.get("source_root") != manifest.get("source_root")
-        || outer.get("source_root") != child.get("source_root")
+    let source_root = string(&manifest, "source_root")?;
+    if string(&child, "source_root")? != source_root
+        || outer
+            .get("source_root")
+            .is_some_and(|root| root.as_str() != Some(source_root))
     {
         return fail("capture source-root provenance mismatch");
+    }
+    // The qualified outer producer records COMMAND as argv, without a top-level
+    // source_root. Its flag/value operand must agree with the hash-bound child
+    // and manifest. Original source paths remain provenance only; never open them.
+    let argv = field(&outer, "argv")?
+        .as_array()
+        .ok_or("capture source-root argv invalid")?;
+    if argv.is_empty() || argv.iter().any(|arg| !arg.is_string()) {
+        return fail("capture source-root argv invalid");
+    }
+    let mut roots = 0;
+    for pair in argv[1..].chunks(2) {
+        if pair.len() != 2 || pair[0].as_str().unwrap().starts_with("--source-root=") {
+            return fail("capture source-root argv invalid");
+        }
+        if pair[0] == "--source-root" {
+            roots += 1;
+            if pair[1].as_str() != Some(source_root) {
+                return fail("capture source-root argv mismatch");
+            }
+        }
+    }
+    if roots != 1 {
+        return fail("capture source-root argv missing or repeated");
     }
     let files = field(&manifest, "files")?
         .as_array()
@@ -915,13 +954,13 @@ fn parsed_json(bytes: &[u8], label: &str) -> T<Value> {
 
 // serde_json::Value accepts duplicate object keys with last-wins semantics.
 // Legacy revision validation must reject them before a lossy reparse.
-struct UniqueValue(Value);
+struct UniqueValue<const CAPTURE_METADATA: bool = false>(Value);
 
-impl<'de> Deserialize<'de> for UniqueValue {
+impl<'de, const CAPTURE_METADATA: bool> Deserialize<'de> for UniqueValue<CAPTURE_METADATA> {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct UniqueVisitor;
-        impl<'de> Visitor<'de> for UniqueVisitor {
-            type Value = UniqueValue;
+        struct UniqueVisitor<const CAPTURE_METADATA: bool>;
+        impl<'de, const CAPTURE_METADATA: bool> Visitor<'de> for UniqueVisitor<CAPTURE_METADATA> {
+            type Value = UniqueValue<CAPTURE_METADATA>;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str("JSON without duplicate object keys")
@@ -935,8 +974,13 @@ impl<'de> Deserialize<'de> for UniqueValue {
             fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {
                 Ok(UniqueValue(Value::Number(value.into())))
             }
-            fn visit_f64<E: de::Error>(self, _value: f64) -> Result<Self::Value, E> {
-                Err(E::custom("floating-point legacy JSON is unsupported"))
+            fn visit_f64<E: de::Error>(self, value: f64) -> Result<Self::Value, E> {
+                if !CAPTURE_METADATA {
+                    return Err(E::custom("floating-point legacy JSON is unsupported"));
+                }
+                serde_json::Number::from_f64(value)
+                    .map(|number| UniqueValue(Value::Number(number)))
+                    .ok_or_else(|| E::custom("non-finite capture JSON number"))
             }
             fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
                 Ok(UniqueValue(Value::String(value.to_string())))
@@ -955,14 +999,16 @@ impl<'de> Deserialize<'de> for UniqueValue {
                 mut sequence: A,
             ) -> Result<Self::Value, A::Error> {
                 let mut values = Vec::new();
-                while let Some(value) = sequence.next_element::<UniqueValue>()? {
+                while let Some(value) = sequence.next_element::<UniqueValue<CAPTURE_METADATA>>()? {
                     values.push(value.0);
                 }
                 Ok(UniqueValue(Value::Array(values)))
             }
             fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
                 let mut values = serde_json::Map::new();
-                while let Some((key, value)) = map.next_entry::<String, UniqueValue>()? {
+                while let Some((key, value)) =
+                    map.next_entry::<String, UniqueValue<CAPTURE_METADATA>>()?
+                {
                     if values.insert(key.clone(), value.0).is_some() {
                         return Err(de::Error::custom(format!("duplicate JSON key {key}")));
                     }
@@ -970,7 +1016,7 @@ impl<'de> Deserialize<'de> for UniqueValue {
                 Ok(UniqueValue(Value::Object(values)))
             }
         }
-        deserializer.deserialize_any(UniqueVisitor)
+        deserializer.deserialize_any(UniqueVisitor::<CAPTURE_METADATA>)
     }
 }
 
@@ -2535,7 +2581,8 @@ pub fn verify_completed_translation(
     {
         return fail("successful invocation result missing or unbound");
     }
-    let (outer, outer_hash) = json_file(&attempt_root.join("attempt-receipt.json"), 4_000_000)?;
+    let (outer, outer_hash) =
+        capture_json_file(&attempt_root.join("attempt-receipt.json"), 4_000_000)?;
     if outer_hash != result.source_attempt_sha256 || outer["status"] != "qualified_candidate_root" {
         return fail("successful result source capture mismatch");
     }

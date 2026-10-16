@@ -256,7 +256,10 @@ fn outer_from_actual(source: &Path, attempt: &Path, child: &Value, pre: Value, p
         "source_hashes_before":child["source_hashes"],
         "source_hashes_after":child["source_hashes"],
         "selection_claim":"current_selection_unestablished",
-        "source_root":source,
+        "duration_seconds":0.381,
+        "argv":[binary(),"--source-root",source,"--output-root",child_root,
+            "--socket-path",attempt.parent().unwrap().join("absent-synthetic.sock"),
+            "--operator","s9-a-synthetic-qualification","--deadline-seconds","120"],
         "artifacts":artifacts
     });
     write_json(&attempt.join("attempt-receipt.json"), &outer);
