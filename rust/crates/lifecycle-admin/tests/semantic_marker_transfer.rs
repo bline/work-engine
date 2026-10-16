@@ -229,7 +229,7 @@ fn semantic_required_marker_survives_export_adoption_and_current_rollback() {
         "test-issuer".into(),
     )
     .unwrap();
-    assert_eq!(first.capsule.source_schema, 5);
+    assert_eq!(first.capsule.source_schema, 6);
     assert!(SqliteLifecycleStore::read_capsule(&capsule_one).is_ok());
     let mut candidate = SqliteLifecycleStore::open(&candidate_root, "test-issuer".into()).unwrap();
     assert!(candidate.semantic_transition_required(&transition).unwrap());

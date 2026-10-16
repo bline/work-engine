@@ -10,6 +10,7 @@ mod sqlite;
 pub use admin::{
     AdoptionReceipt, CapsuleArtifact, CapsuleReceipt, DispositionGrant, DispositionReceipt,
     EffectCoverage, ExactAttemptRecovery, ExactAttemptSelector, FenceReceipt, HandoffProjection,
+    HeldArtifactInput, HeldCapsuleReceipt, HeldEvidence, HeldProjection, HeldSourceWitness,
     ObservationAvailability, OwnershipReceipt, QualifiedRecoveryFact, RecoveryApplyReceipt,
     SelectionEvidence, SignedDispositionRequest, StoreOwnershipProjection,
 };

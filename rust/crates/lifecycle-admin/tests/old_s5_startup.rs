@@ -45,7 +45,7 @@ fn all_bytes(root: &Path) -> BTreeMap<PathBuf, String> {
 
 #[test]
 #[ignore = "requires LIFECYCLE_S5_BINARY built from the published S5 commit"]
-fn published_s5_binary_refuses_current_v5_without_mutating_any_store_byte() {
+fn published_s5_binary_refuses_current_v6_without_mutating_any_store_byte() {
     let binary = PathBuf::from(std::env::var_os("LIFECYCLE_S5_BINARY").unwrap());
     let binary_hash = format!("{:x}", Sha256::digest(fs::read(&binary).unwrap()));
     assert_eq!(
@@ -59,7 +59,7 @@ fn published_s5_binary_refuses_current_v5_without_mutating_any_store_byte() {
         0o700
     );
     let source_root = temporary.path().join("source");
-    let capsule_root = temporary.path().join("v5-capsule");
+    let capsule_root = temporary.path().join("v6-capsule");
     let socket_path = temporary.path().join("old-service.sock");
     let peer_path = temporary.path().join("no-peer.sock");
     let config_path = temporary.path().join("old-service.json");
@@ -90,7 +90,7 @@ fn published_s5_binary_refuses_current_v5_without_mutating_any_store_byte() {
         )
         .unwrap();
     let receipt = store.export_current(&capsule_root).unwrap();
-    assert_eq!(receipt.source_schema, 5);
+    assert_eq!(receipt.source_schema, 6);
     drop(store);
     // Adopted store roots carry this empty lock; the export capsule itself does not.
     fs::write(capsule_root.join("writer.lock"), b"").unwrap();
@@ -127,7 +127,7 @@ fn published_s5_binary_refuses_current_v5_without_mutating_any_store_byte() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert_eq!(before, after, "S5 startup changed the v4 store directory");
+    assert_eq!(before, after, "S5 startup changed the v6 store directory");
     assert!(!temporary.path().join("old-service.sock").exists());
     assert_eq!(
         SqliteLifecycleStore::read_capsule(&capsule_root).unwrap(),

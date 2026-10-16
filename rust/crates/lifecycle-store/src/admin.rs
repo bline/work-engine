@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use ed25519_dalek::{Signature, VerifyingKey};
 use lifecycle_core::HandoffId;
 use rusqlite::{OptionalExtension, TransactionBehavior, params};
+use serde::de::{self, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use work_engine_types::CodecContract;
 
@@ -16,7 +17,7 @@ use crate::{SqliteLifecycleStore, StoreError};
 // Offline custody capsules retain their actual schema across read-only inspection.
 // Writable migration remains owned by SqliteLifecycleStore::open_inner.
 fn supported_admin_schema(version: i64) -> bool {
-    matches!(version, 4 | 5)
+    matches!(version, 4..=6)
 }
 
 type EffectRecoveryRow = (
@@ -47,6 +48,15 @@ type HandoffCommitRow = (
     Option<i64>,
     Option<String>,
     Option<String>,
+);
+type HeldMarkerRow = (
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    i64,
+    i64,
 );
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -208,6 +218,73 @@ pub struct CapsuleReceipt {
     pub semantic_artifact_digests: Vec<String>,
     pub native_invocation_ids: Vec<String>,
     pub capsule_sha256: String,
+}
+
+/// Raw historical closure. Its fields are data, never source authority.
+#[derive(Clone, Debug)]
+pub struct HeldEvidence {
+    pub artifacts: Vec<HeldArtifactInput>,
+}
+
+#[derive(Clone, Debug)]
+pub struct HeldArtifactInput {
+    pub name: String,
+    pub raw_bytes: Vec<u8>,
+}
+
+/// No production constructor exists until the permanent source verifier joins.
+/// A data file, trait implementation or deserializer cannot mint this value.
+///
+/// ```compile_fail
+/// use lifecycle_store::HeldSourceWitness;
+/// let _forged = HeldSourceWitness {
+///     handoff_id: "self-authored".into(),
+///     source_capture_sha256: "self-authored".into(),
+///     capsule_sha256: "self-authored".into(),
+///     _sealed: (),
+/// };
+/// ```
+///
+/// ```compile_fail
+/// let _: lifecycle_store::HeldSourceWitness = serde_json::from_str("{}").unwrap();
+/// ```
+pub struct HeldSourceWitness {
+    handoff_id: String,
+    source_capture_sha256: String,
+    capsule_sha256: String,
+    _sealed: (),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct HeldProjection {
+    pub store_id: String,
+    pub ownership_status: String,
+    pub handoff_id: String,
+    pub source_capture_sha256: String,
+    pub capsule_sha256: String,
+    pub inventory_sha256: String,
+    pub row_count: u64,
+    pub unclassified_count: u64,
+    pub custody_revision: u64,
+    pub artifact_digests: Vec<(String, String)>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct HeldCapsuleReceipt {
+    pub format: String,
+    pub capsule_root: PathBuf,
+    pub source_store_id: String,
+    pub source_revision: u64,
+    pub source_custody_phase: String,
+    pub database_sha256: String,
+    pub handoff_id: String,
+    pub source_capture_sha256: String,
+    pub origin_capsule_sha256: String,
+    pub inventory_sha256: String,
+    pub row_count: u64,
+    pub unclassified_count: u64,
+    pub artifact_digests: Vec<(String, String)>,
+    pub receipt_sha256: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -842,6 +919,9 @@ impl SqliteLifecycleStore {
 
     pub fn export_current(&self, destination: &Path) -> Result<CapsuleReceipt, StoreError> {
         self.verify_identity()?;
+        if held_quarantine(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let ownership = self.admin_ownership()?;
         if ownership.status != "active" {
             return Err(StoreError::Rejected);
@@ -1011,6 +1091,9 @@ impl SqliteLifecycleStore {
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|_| StoreError::Unavailable)?;
         if !supported_admin_schema(version) || version != i64::from(receipt.source_schema) {
+            return Err(StoreError::Rejected);
+        }
+        if version == 6 && held_quarantine(&inspection)? {
             return Err(StoreError::Rejected);
         }
         let store_id: String = inspection
@@ -1558,6 +1641,9 @@ impl SqliteLifecycleStore {
         selection: &SelectionEvidence,
     ) -> Result<OwnershipReceipt, StoreError> {
         self.verify_identity()?;
+        if held_quarantine(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let destination_store_id = self.admin_store_id()?;
         if fence.handoff_id != handoff.as_str()
             || selection.handoff_id != handoff.as_str()
@@ -1849,5 +1935,2488 @@ pub(crate) fn admission_open(connection: &rusqlite::Connection) -> Result<bool, 
             |r| r.get(0),
         )
         .map_err(|_| StoreError::Unavailable)?;
-    Ok(status == "active")
+    Ok(status == "active" && !held_quarantine(connection)?)
+}
+
+pub(crate) fn held_quarantine(connection: &rusqlite::Connection) -> Result<bool, StoreError> {
+    let mode: String = connection
+        .query_row(
+            "SELECT mode FROM legacy_held_state WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    match mode.as_str() {
+        "ordinary" => Ok(false),
+        "held_quarantine" => Ok(true),
+        _ => Err(StoreError::Unavailable),
+    }
+}
+
+const HELD_ARTIFACT_NAMES: [&str; 16] = [
+    "source/attempt-receipt.json",
+    "source/capture/source-manifest.json",
+    "source/capture/receipt.json",
+    "source/capture/image/semantic-context.sqlite3",
+    "source/capture/image/role-bindings.json",
+    "source/capture/image/generation-state.json",
+    "source/capture/image/switchboard-attachment.json",
+    "output/capsule.json",
+    "output/inventory-private.json",
+    "output/report-redacted.json",
+    "output/manifest.json",
+    "output/receipt.json",
+    "output/raw/q3-disposition.json",
+    "output/raw/q3-input.json",
+    "output/raw/q4-disposition.json",
+    "output/raw/q4-input.json",
+];
+
+type HeldRow = (String, String, Option<String>, String, String, Vec<u8>);
+type ValidatedHeld = (
+    Vec<(String, String, Vec<u8>)>,
+    Vec<HeldRow>,
+    String,
+    String,
+    String,
+    u64,
+);
+
+// The A closure refuses duplicate object keys before any lossy Value parse.
+// Recheck that byte-level property where the held store consumes copied bytes.
+struct HeldUniqueJson(serde_json::Value);
+
+impl<'de> Deserialize<'de> for HeldUniqueJson {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct UniqueVisitor;
+        impl<'de> Visitor<'de> for UniqueVisitor {
+            type Value = HeldUniqueJson;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("JSON without duplicate object keys")
+            }
+            fn visit_bool<E: de::Error>(self, value: bool) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::Bool(value)))
+            }
+            fn visit_i64<E: de::Error>(self, value: i64) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::Number(value.into())))
+            }
+            fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::Number(value.into())))
+            }
+            fn visit_f64<E: de::Error>(self, value: f64) -> Result<Self::Value, E> {
+                serde_json::Number::from_f64(value)
+                    .map(|n| HeldUniqueJson(serde_json::Value::Number(n)))
+                    .ok_or_else(|| E::custom("non-finite JSON number"))
+            }
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::String(value.into())))
+            }
+            fn visit_string<E: de::Error>(self, value: String) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::String(value)))
+            }
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::Null))
+            }
+            fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(HeldUniqueJson(serde_json::Value::Null))
+            }
+            fn visit_seq<A: SeqAccess<'de>>(
+                self,
+                mut sequence: A,
+            ) -> Result<Self::Value, A::Error> {
+                let mut values = Vec::new();
+                while let Some(value) = sequence.next_element::<HeldUniqueJson>()? {
+                    values.push(value.0);
+                }
+                Ok(HeldUniqueJson(serde_json::Value::Array(values)))
+            }
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut values = serde_json::Map::new();
+                while let Some((key, value)) = map.next_entry::<String, HeldUniqueJson>()? {
+                    if values.insert(key, value.0).is_some() {
+                        return Err(de::Error::custom("duplicate JSON key"));
+                    }
+                }
+                Ok(HeldUniqueJson(serde_json::Value::Object(values)))
+            }
+        }
+        deserializer.deserialize_any(UniqueVisitor)
+    }
+}
+
+fn held_json(bytes: &[u8]) -> Result<serde_json::Value, StoreError> {
+    std::str::from_utf8(bytes).map_err(|_| StoreError::Rejected)?;
+    serde_json::from_slice::<HeldUniqueJson>(bytes)
+        .map(|v| v.0)
+        .map_err(|_| StoreError::Rejected)
+}
+
+fn validate_held_evidence(evidence: &HeldEvidence) -> Result<ValidatedHeld, StoreError> {
+    if evidence.artifacts.len() != HELD_ARTIFACT_NAMES.len() {
+        return Err(StoreError::Rejected);
+    }
+    let mut artifacts = std::collections::BTreeMap::new();
+    for artifact in &evidence.artifacts {
+        if !HELD_ARTIFACT_NAMES.contains(&artifact.name.as_str())
+            || artifacts
+                .insert(artifact.name.as_str(), artifact.raw_bytes.as_slice())
+                .is_some()
+        {
+            return Err(StoreError::Rejected);
+        }
+    }
+    let raw = |name: &str| artifacts.get(name).copied().ok_or(StoreError::Rejected);
+    let source_manifest = held_json(raw("source/capture/source-manifest.json")?)?;
+    let capture_receipt = held_json(raw("source/capture/receipt.json")?)?;
+    let attempt_receipt = held_json(raw("source/attempt-receipt.json")?)?;
+    let source_files = source_manifest["files"]
+        .as_array()
+        .ok_or(StoreError::Rejected)?;
+    if source_manifest["schema_version"] != 1
+        || source_manifest["selection_claim"] != "current_selection_unestablished"
+        || capture_receipt["schema_version"] != 1
+        || capture_receipt["status"] != "qualified_candidate_root"
+        || capture_receipt["selection_claim"] != "current_selection_unestablished"
+        || capture_receipt["manifest_sha256"].as_str()
+            != Some(digest(raw("source/capture/source-manifest.json")?)?.as_str())
+        || attempt_receipt["schema_version"] != 1
+        || attempt_receipt["status"] != "qualified_candidate_root"
+        || attempt_receipt["selection_claim"] != "current_selection_unestablished"
+        || attempt_receipt["child_manifest_sha256"].as_str()
+            != Some(digest(raw("source/capture/source-manifest.json")?)?.as_str())
+        || attempt_receipt["child_receipt"]["sha256"].as_str()
+            != Some(digest(raw("source/capture/receipt.json")?)?.as_str())
+        || source_files.len() != 4
+    {
+        return Err(StoreError::Rejected);
+    }
+    let mut image_hashes = std::collections::BTreeMap::new();
+    let mut capture_root: Option<PathBuf> = None;
+    for name in [
+        "semantic-context.sqlite3",
+        "role-bindings.json",
+        "generation-state.json",
+        "switchboard-attachment.json",
+    ] {
+        let source_name = format!("source/capture/image/{name}");
+        let bytes = raw(&source_name)?;
+        let hash = digest(bytes)?;
+        let manifest_entry = source_files
+            .iter()
+            .find(|entry| {
+                entry["copy"]
+                    .as_str()
+                    .is_some_and(|copy| Path::new(copy).ends_with(Path::new("image").join(name)))
+            })
+            .ok_or(StoreError::Rejected)?;
+        let copy = Path::new(
+            manifest_entry["copy"]
+                .as_str()
+                .ok_or(StoreError::Rejected)?,
+        );
+        let root = copy
+            .parent()
+            .and_then(Path::parent)
+            .ok_or(StoreError::Rejected)?;
+        if !copy.is_absolute()
+            || copy != root.join("image").join(name)
+            || capture_root.as_ref().is_some_and(|prior| prior != root)
+        {
+            return Err(StoreError::Rejected);
+        }
+        capture_root = Some(root.to_path_buf());
+        if manifest_entry["sha256"].as_str() != Some(hash.as_str())
+            || manifest_entry["copy_sha256"].as_str() != Some(hash.as_str())
+        {
+            return Err(StoreError::Rejected);
+        }
+        let attempt_name = format!("capture/image/{name}");
+        let attempt_entry = &attempt_receipt["artifacts"][&attempt_name];
+        if attempt_entry["sha256"].as_str() != Some(hash.as_str())
+            || attempt_entry["bytes"]
+                .as_u64()
+                .is_some_and(|length| length != bytes.len() as u64)
+            || attempt_entry["path"]
+                .as_str()
+                .is_some_and(|path| Some(path) != copy.to_str())
+        {
+            return Err(StoreError::Rejected);
+        }
+        if name != "semantic-context.sqlite3" {
+            let _ = held_json(bytes)?;
+        } else if bytes.len() < 100
+            || &bytes[..16] != b"SQLite format 3\0"
+            || u32::from_be_bytes(bytes[60..64].try_into().map_err(|_| StoreError::Rejected)?) != 12
+        {
+            return Err(StoreError::Rejected);
+        }
+        image_hashes.insert(name.to_owned(), hash);
+    }
+    let capture_root = capture_root.ok_or(StoreError::Rejected)?;
+    if capture_receipt["output_root"]
+        .as_str()
+        .is_some_and(|path| path != capture_root.to_str().unwrap_or(""))
+    {
+        return Err(StoreError::Rejected);
+    }
+    for (name, source_name) in [
+        (
+            "capture/source-manifest.json",
+            "source/capture/source-manifest.json",
+        ),
+        ("capture/receipt.json", "source/capture/receipt.json"),
+    ] {
+        let bytes = raw(source_name)?;
+        if let Some(entry) = attempt_receipt["artifacts"].get(name)
+            && (entry["sha256"].as_str() != Some(digest(bytes)?.as_str())
+                || entry["bytes"].as_u64() != Some(bytes.len() as u64)
+                || entry["path"].as_str()
+                    != capture_root
+                        .join(name.strip_prefix("capture/").ok_or(StoreError::Rejected)?)
+                        .to_str())
+        {
+            return Err(StoreError::Rejected);
+        }
+    }
+    let output_manifest = held_json(raw("output/manifest.json")?)?;
+    let listed_files = output_manifest["files"]
+        .as_array()
+        .ok_or(StoreError::Rejected)?;
+    if output_manifest["schema_version"] != 1 || listed_files.len() != 7 {
+        return Err(StoreError::Rejected);
+    }
+    let mut listed_names = std::collections::BTreeSet::new();
+    for entry in listed_files {
+        let path = entry["path"].as_str().ok_or(StoreError::Rejected)?;
+        let name = format!("output/{path}");
+        if path == "manifest.json"
+            || path == "receipt.json"
+            || !listed_names.insert(name.clone())
+            || entry["sha256"].as_str() != Some(digest(raw(&name)?)?.as_str())
+            || entry["length"].as_u64() != Some(raw(&name)?.len() as u64)
+        {
+            return Err(StoreError::Rejected);
+        }
+    }
+    let expected_listed: std::collections::BTreeSet<_> = HELD_ARTIFACT_NAMES
+        .iter()
+        .filter(|name| {
+            name.starts_with("output/")
+                && **name != "output/manifest.json"
+                && **name != "output/receipt.json"
+        })
+        .map(|name| (*name).to_owned())
+        .collect();
+    if listed_names != expected_listed {
+        return Err(StoreError::Rejected);
+    }
+    let output_receipt = held_json(raw("output/receipt.json")?)?;
+    if output_receipt["schema_version"] != 1
+        || output_receipt["capsule_version"] != "s9-v28-obligations-v2"
+        || output_receipt["status"] != "qualified_translation_only"
+        || output_receipt["transfer_eligibility"] != "blocked_unclassified"
+        || output_receipt["source_attempt_sha256"].as_str()
+            != Some(digest(raw("source/attempt-receipt.json")?)?.as_str())
+        || output_receipt["source_manifest_sha256"].as_str()
+            != Some(digest(raw("source/capture/source-manifest.json")?)?.as_str())
+        || output_receipt["source_child_receipt_sha256"].as_str()
+            != Some(digest(raw("source/capture/receipt.json")?)?.as_str())
+        || output_receipt["manifest_sha256"].as_str()
+            != Some(digest(raw("output/manifest.json")?)?.as_str())
+        || output_receipt["capsule_sha256"].as_str()
+            != Some(digest(raw("output/capsule.json")?)?.as_str())
+    {
+        return Err(StoreError::Rejected);
+    }
+    let capsule_raw = raw("output/capsule.json")?;
+    let inventory_raw = raw("output/inventory-private.json")?;
+    let capsule = held_json(capsule_raw)?;
+    let inventory = held_json(inventory_raw)?;
+    if capsule["schema_version"] != "s9-v28-obligations-v2"
+        || capsule["translation_status"] != "qualified"
+        || capsule["transfer_eligibility"] != "blocked_unclassified"
+        || capsule["selection_claim"] != "current_selection_unestablished"
+        || capsule["source_attempt_sha256"].as_str()
+            != Some(digest(raw("source/attempt-receipt.json")?)?.as_str())
+        || capsule["source_child_receipt_sha256"].as_str()
+            != Some(digest(raw("source/capture/receipt.json")?)?.as_str())
+        || capsule["source_manifest_sha256"].as_str()
+            != Some(digest(raw("source/capture/source-manifest.json")?)?.as_str())
+        || capsule["copied_image_sha256"] != serde_json::json!(image_hashes)
+        || capsule["relation_census"].as_array().map(Vec::len) != Some(28)
+        || capsule["q3"]["physical_delivery"] != "not_applicable"
+        || capsule["q4"]["physical_delivery"] != "not_proved"
+    {
+        return Err(StoreError::Rejected);
+    }
+    for label in ["q3", "q4"] {
+        let disposition = held_json(raw(&format!("output/raw/{label}-disposition.json"))?)?;
+        let input_raw = raw(&format!("output/raw/{label}-input.json"))?;
+        let input = held_json(input_raw)?;
+        let projection = &capsule[label];
+        let target = &disposition["target"];
+        if projection["queue_id"] != target["queueId"]
+            || projection["input_revision"] != input["inputRevision"]
+            || projection["disposition_revision"] != disposition["recordRevision"]
+            || projection["authority_revision"] != disposition["authorityRevision"]
+            || target["inputRevision"] != input["inputRevision"]
+            || target["logicalRoleInstanceId"] != input["logicalRoleInstanceId"]
+            || target["clientUserMessageId"] != input["clientUserMessageId"]
+            || target["bindingRevision"] != input["bindingRevision"]
+            || target["inputJsonSha256"].as_str() != Some(digest(input_raw)?.as_str())
+        {
+            return Err(StoreError::Rejected);
+        }
+        let successor = &disposition["successorAcceptance"];
+        if label == "q3" {
+            if !successor.is_null() || !projection["successor_acceptance_revision"].is_null() {
+                return Err(StoreError::Rejected);
+            }
+        } else if successor["acceptanceRevision"] != projection["successor_acceptance_revision"]
+            || successor["successorLogicalRoleInstanceId"]
+                != projection["successor_logical_role_instance_id"]
+            || successor["successorDeliveryIdentity"] != projection["successor_delivery_identity"]
+        {
+            return Err(StoreError::Rejected);
+        }
+    }
+    let rows = inventory.as_array().ok_or(StoreError::Rejected)?;
+    let classification_digests = capsule["row_classification_digests"]
+        .as_array()
+        .ok_or(StoreError::Rejected)?;
+    if rows.len() != classification_digests.len() || rows.is_empty() {
+        return Err(StoreError::Rejected);
+    }
+    let inventory_canonical =
+        serde_json::to_string(&inventory).map_err(|_| StoreError::Rejected)?;
+    let inventory_sha = digest(inventory_canonical.as_bytes())?;
+    if capsule["inventory_digest_sha256"].as_str() != Some(inventory_sha.as_str()) {
+        return Err(StoreError::Rejected);
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    let mut stored_rows = Vec::with_capacity(rows.len());
+    let mut unclassified = 0u64;
+    let mut retired = 0u64;
+    let mut pending = 0u64;
+    for (row, listed) in rows.iter().zip(classification_digests) {
+        let table = row["table"]
+            .as_str()
+            .filter(|x| !x.is_empty())
+            .ok_or(StoreError::Rejected)?;
+        let identity = row["identity"]
+            .as_str()
+            .filter(|x| !x.is_empty())
+            .ok_or(StoreError::Rejected)?;
+        let revision = row["revision"].as_str().map(str::to_owned);
+        let projection = row["source_projection_sha256"]
+            .as_str()
+            .filter(|x| hex_digest(x))
+            .ok_or(StoreError::Rejected)?;
+        let class = row["classification"]
+            .as_str()
+            .filter(|x| !x.is_empty())
+            .ok_or(StoreError::Rejected)?;
+        let key = (
+            table.to_owned(),
+            identity.to_owned(),
+            revision.clone(),
+            projection.to_owned(),
+        );
+        if !seen.insert(key) {
+            return Err(StoreError::Rejected);
+        }
+        if listed["table"] != table
+            || listed["identity_sha256"].as_str() != Some(digest(identity.as_bytes())?.as_str())
+            || listed["source_projection_sha256"] != projection
+            || listed["classification"] != class
+        {
+            return Err(StoreError::Rejected);
+        }
+        unclassified += u64::from(class == "unclassified");
+        retired += u64::from(class == "terminally_retired_no_replay");
+        pending += u64::from(class == "pending_accepted_undelivered");
+        stored_rows.push((
+            table.into(),
+            identity.into(),
+            revision,
+            projection.into(),
+            class.into(),
+            serde_json::to_vec(row).map_err(|_| StoreError::Rejected)?,
+        ));
+    }
+    if unclassified == 0 || retired == 0 || pending == 0 {
+        return Err(StoreError::Rejected);
+    }
+    let mut stored_artifacts = Vec::with_capacity(HELD_ARTIFACT_NAMES.len());
+    for name in HELD_ARTIFACT_NAMES {
+        let bytes = raw(name)?;
+        stored_artifacts.push((name.to_owned(), digest(bytes)?, bytes.to_vec()));
+    }
+    Ok((
+        stored_artifacts,
+        stored_rows,
+        digest(raw("source/capture/source-manifest.json")?)?,
+        digest(capsule_raw)?,
+        digest(inventory_raw)?,
+        unclassified,
+    ))
+}
+
+pub(crate) fn check_held_coherence(connection: &rusqlite::Connection) -> Result<(), StoreError> {
+    let marker_count: i64 = connection
+        .query_row("SELECT COUNT(*) FROM legacy_held_state", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    let guard_count: i64 = connection.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'held_quarantine_*'", [], |r| r.get(0)).map_err(|_| StoreError::Unavailable)?;
+    if marker_count != 1 || guard_count != 93 {
+        return Err(StoreError::Unavailable);
+    }
+    let (mode, handoff, rows, unknown): (String, Option<String>, i64, i64) = connection
+        .query_row(
+            "SELECT mode,handoff_id,row_count,unclassified_count FROM legacy_held_state WHERE singleton=1",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    let actual_rows: i64 = connection
+        .query_row("SELECT COUNT(*) FROM legacy_held_rows", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    let artifact_count: i64 = connection
+        .query_row("SELECT COUNT(*) FROM legacy_held_artifacts", [], |r| {
+            r.get(0)
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    let lineage_count: i64 = connection
+        .query_row("SELECT COUNT(*) FROM legacy_held_lineage", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    if mode == "ordinary" {
+        if rows != 0
+            || unknown != 0
+            || actual_rows != 0
+            || artifact_count != 0
+            || lineage_count != 0
+        {
+            return Err(StoreError::Unavailable);
+        }
+        return Ok(());
+    }
+    if mode != "held_quarantine" || actual_rows != rows || artifact_count != 16 {
+        return Err(StoreError::Unavailable);
+    }
+    let handoff = handoff.ok_or(StoreError::Unavailable)?;
+    let (current_store, custody_revision): (String, i64) = connection
+        .query_row("SELECT s.store_id,c.revision FROM store_identity s JOIN admin_custody_revision c ON c.singleton=s.singleton WHERE s.singleton=1", [], |r| Ok((r.get(0)?, r.get(1)?)))
+        .map_err(|_| StoreError::Unavailable)?;
+    let immediate: Option<(String, String, String, i64)> = connection
+        .query_row("SELECT source_store_id,capsule_sha256,handoff_id,source_revision FROM admin_store_lineage WHERE singleton=1", [], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
+        .optional()
+        .map_err(|_| StoreError::Unavailable)?;
+    let mut lineage_stmt = connection
+        .prepare("SELECT ordinal,source_store_id,destination_store_id,source_revision,capsule_sha256,handoff_id FROM legacy_held_lineage ORDER BY ordinal")
+        .map_err(|_| StoreError::Unavailable)?;
+    let lineage_rows = lineage_stmt
+        .query_map([], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, i64>(3)?,
+                r.get::<_, String>(4)?,
+                r.get::<_, String>(5)?,
+            ))
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    let mut prior_destination: Option<String> = None;
+    let mut prior_revision = -1_i64;
+    let mut last: Option<(String, String, String, i64)> = None;
+    let mut observed_lineage = 0_i64;
+    for (expected, row) in lineage_rows.enumerate() {
+        let (ordinal, source, destination, revision, capsule, lineage_handoff) =
+            row.map_err(|_| StoreError::Unavailable)?;
+        if ordinal != i64::try_from(expected).map_err(|_| StoreError::Unavailable)?
+            || source == destination
+            || prior_destination
+                .as_ref()
+                .is_some_and(|prior| prior != &source)
+            || revision <= prior_revision
+            || revision >= custody_revision
+            || !hex_digest(&capsule)
+            || lineage_handoff != handoff
+        {
+            return Err(StoreError::Unavailable);
+        }
+        prior_destination = Some(destination);
+        prior_revision = revision;
+        last = Some((source, capsule, lineage_handoff, revision));
+        observed_lineage += 1;
+    }
+    if observed_lineage != lineage_count
+        || prior_destination
+            .as_ref()
+            .is_some_and(|id| id != &current_store)
+        || immediate != last
+    {
+        return Err(StoreError::Unavailable);
+    }
+    let actual_unknown: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM legacy_held_rows WHERE classification='unclassified'",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    if actual_unknown != unknown {
+        return Err(StoreError::Unavailable);
+    }
+    // All normal state remains empty while its source effects are unresolved.
+    for table in [
+        "artifacts",
+        "attempts",
+        "commands",
+        "effects",
+        "grant_contractions",
+        "grants",
+        "inputs",
+        "interruption_requests",
+        "journal",
+        "native_delivery_segments",
+        "native_ingress",
+        "native_ingress_conflicts",
+        "native_operations",
+        "native_process_exits",
+        "native_sessions",
+        "native_task_operations",
+        "native_turns",
+        "native_usage",
+        "native_verifier_results",
+        "observation_conflicts",
+        "observations",
+        "semantic_attempts",
+        "semantic_captures",
+        "semantic_material_rejections",
+        "semantic_results",
+        "service_closes",
+        "subjects",
+        "task_results",
+        "transition_evidence",
+        "transitions",
+        "verifier_results",
+    ] {
+        let sql = format!("SELECT COUNT(*) FROM {table}");
+        let count: i64 = connection
+            .query_row(&sql, [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if count != 0 {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    let mut statement = connection
+        .prepare(
+            "SELECT name,sha256,byte_length,raw_bytes FROM legacy_held_artifacts ORDER BY name",
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    let records = statement
+        .query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, i64>(2)?,
+                r.get::<_, Vec<u8>>(3)?,
+            ))
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    let mut seen = std::collections::BTreeSet::new();
+    for record in records {
+        let (name, sha, len, bytes) = record.map_err(|_| StoreError::Unavailable)?;
+        if !HELD_ARTIFACT_NAMES.contains(&name.as_str())
+            || !seen.insert(name)
+            || len != bytes.len() as i64
+            || digest(&bytes)? != sha
+        {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    if seen.len() != 16 {
+        return Err(StoreError::Unavailable);
+    }
+    let mut rows_stmt = connection.prepare("SELECT table_name,source_identity,source_revision,source_projection_sha256,classification,row_json FROM legacy_held_rows ORDER BY ordinal")
+        .map_err(|_| StoreError::Unavailable)?;
+    let row_records = rows_stmt
+        .query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, Option<String>>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, String>(4)?,
+                r.get::<_, Vec<u8>>(5)?,
+            ))
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    for row in row_records {
+        let (table, id, rev, projection, class, raw) = row.map_err(|_| StoreError::Unavailable)?;
+        let value: serde_json::Value =
+            serde_json::from_slice(&raw).map_err(|_| StoreError::Unavailable)?;
+        if value["table"] != table
+            || value["identity"] != id
+            || value["revision"].as_str() != rev.as_deref()
+            || value["source_projection_sha256"] != projection
+            || value["classification"] != class
+        {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    let mut artifact_stmt = connection
+        .prepare("SELECT name,raw_bytes FROM legacy_held_artifacts ORDER BY name")
+        .map_err(|_| StoreError::Unavailable)?;
+    let artifact_inputs = artifact_stmt
+        .query_map([], |r| {
+            Ok(HeldArtifactInput {
+                name: r.get(0)?,
+                raw_bytes: r.get(1)?,
+            })
+        })
+        .map_err(|_| StoreError::Unavailable)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| StoreError::Unavailable)?;
+    let (_, expected_rows, capture_sha, capsule_sha, inventory_sha, expected_unknown) =
+        validate_held_evidence(&HeldEvidence {
+            artifacts: artifact_inputs,
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    let (saved_capture, saved_capsule, saved_inventory): (String,String,String) = connection.query_row(
+        "SELECT source_capture_sha256,capsule_sha256,inventory_sha256 FROM legacy_held_state WHERE singleton=1",
+        [], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
+    ).map_err(|_| StoreError::Unavailable)?;
+    if capture_sha != saved_capture
+        || capsule_sha != saved_capsule
+        || inventory_sha != saved_inventory
+        || expected_rows.len() as i64 != rows
+        || expected_unknown as i64 != unknown
+    {
+        return Err(StoreError::Unavailable);
+    }
+    let mut stored_stmt = connection.prepare("SELECT table_name,source_identity,source_revision,source_projection_sha256,classification,row_json FROM legacy_held_rows ORDER BY ordinal")
+        .map_err(|_| StoreError::Unavailable)?;
+    let stored_rows = stored_stmt
+        .query_map([], |r| {
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get(5)?,
+            ))
+        })
+        .map_err(|_| StoreError::Unavailable)?
+        .collect::<Result<Vec<HeldRow>, _>>()
+        .map_err(|_| StoreError::Unavailable)?;
+    if stored_rows != expected_rows {
+        return Err(StoreError::Unavailable);
+    }
+    Ok(())
+}
+
+fn held_projection_from(connection: &rusqlite::Connection) -> Result<HeldProjection, StoreError> {
+    let (mode, handoff, capture, capsule, inventory, rows, unknown): HeldMarkerRow = connection.query_row(
+            "SELECT mode,handoff_id,source_capture_sha256,capsule_sha256,inventory_sha256,row_count,unclassified_count FROM legacy_held_state WHERE singleton=1",
+            [], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?)),
+        ).map_err(|_| StoreError::Unavailable)?;
+    if mode != "held_quarantine" {
+        return Err(StoreError::Rejected);
+    }
+    let (store_id, ownership_status, revision): (String, String, i64) = connection.query_row(
+        "SELECT s.store_id,o.status,c.revision FROM store_identity s JOIN admin_ownership o ON o.singleton=s.singleton JOIN admin_custody_revision c ON c.singleton=s.singleton WHERE s.singleton=1",
+        [], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
+    ).map_err(|_| StoreError::Unavailable)?;
+    let mut stmt = connection
+        .prepare("SELECT name,sha256 FROM legacy_held_artifacts ORDER BY name")
+        .map_err(|_| StoreError::Unavailable)?;
+    let artifact_digests = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        .map_err(|_| StoreError::Unavailable)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| StoreError::Unavailable)?;
+    Ok(HeldProjection {
+        store_id,
+        ownership_status,
+        handoff_id: handoff.ok_or(StoreError::Unavailable)?,
+        source_capture_sha256: capture.ok_or(StoreError::Unavailable)?,
+        capsule_sha256: capsule.ok_or(StoreError::Unavailable)?,
+        inventory_sha256: inventory.ok_or(StoreError::Unavailable)?,
+        row_count: u64::try_from(rows).map_err(|_| StoreError::Unavailable)?,
+        unclassified_count: u64::try_from(unknown).map_err(|_| StoreError::Unavailable)?,
+        custody_revision: u64::try_from(revision).map_err(|_| StoreError::Unavailable)?,
+        artifact_digests,
+    })
+}
+
+fn held_receipt_digest(receipt: &HeldCapsuleReceipt) -> Result<String, StoreError> {
+    let mut unsigned = receipt.clone();
+    unsigned.receipt_sha256.clear();
+    digest(&serde_json::to_vec(&unsigned).map_err(|_| StoreError::Unavailable)?)
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum HeldReservationOperation {
+    Bootstrap {
+        evidence_sha256: String,
+    },
+    Adopt {
+        receipt_sha256: String,
+        source_store_id: String,
+        source_revision: u64,
+        source_custody_phase: String,
+        source_database_sha256: String,
+        capsule_root: PathBuf,
+    },
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct HeldDestinationReservation {
+    format: String,
+    destination: PathBuf,
+    stage: PathBuf,
+    handoff_id: String,
+    source_capture_sha256: String,
+    capsule_sha256: String,
+    inventory_sha256: String,
+    trusted_issuer: String,
+    operation: HeldReservationOperation,
+}
+
+fn held_evidence_digest(evidence: &HeldEvidence) -> Result<String, StoreError> {
+    let mut members = evidence
+        .artifacts
+        .iter()
+        .map(|a| Ok((a.name.as_str(), a.raw_bytes.len(), digest(&a.raw_bytes)?)))
+        .collect::<Result<Vec<_>, StoreError>>()?;
+    members.sort();
+    digest(&serde_json::to_vec(&members).map_err(|_| StoreError::Unavailable)?)
+}
+
+fn held_destination_reservation_path(destination: &Path) -> Result<PathBuf, StoreError> {
+    let parent = destination.parent().ok_or(StoreError::Rejected)?;
+    let name = destination.file_name().ok_or(StoreError::Rejected)?;
+    Ok(parent.join(format!(
+        ".{}.held-destination-reservation.json",
+        name.to_string_lossy()
+    )))
+}
+
+fn create_held_destination_reservation(
+    destination: &Path,
+    witness: &HeldSourceWitness,
+    inventory_sha256: &str,
+    trusted_issuer: &str,
+    operation: HeldReservationOperation,
+) -> Result<(File, PathBuf), StoreError> {
+    check_held_destination_path(destination)?;
+    let stable = held_destination_reservation_path(destination)?;
+    let parent = destination.parent().ok_or(StoreError::Rejected)?;
+    if !stable.exists() {
+        if destination.exists() {
+            return Err(StoreError::ClaimConflict);
+        }
+        let mut random = [0u8; 16];
+        getrandom::fill(&mut random).map_err(|_| StoreError::Unavailable)?;
+        let suffix = random
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        let name = destination.file_name().ok_or(StoreError::Rejected)?;
+        let stage = parent.join(format!(".{}.held-stage-{suffix}", name.to_string_lossy()));
+        let candidate = HeldDestinationReservation {
+            format: "legacy-v28-held-destination-reservation-v1".into(),
+            destination: destination.to_path_buf(),
+            stage,
+            handoff_id: witness.handoff_id.clone(),
+            source_capture_sha256: witness.source_capture_sha256.clone(),
+            capsule_sha256: witness.capsule_sha256.clone(),
+            inventory_sha256: inventory_sha256.into(),
+            trusted_issuer: trusted_issuer.into(),
+            operation: operation.clone(),
+        };
+        let temporary = parent.join(format!(
+            ".{}.held-reservation-{suffix}",
+            name.to_string_lossy()
+        ));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| StoreError::ClaimConflict)?;
+        file.write_all(&serde_json::to_vec(&candidate).map_err(|_| StoreError::Unavailable)?)
+            .map_err(|_| StoreError::Unavailable)?;
+        file.sync_all().map_err(|_| StoreError::Unavailable)?;
+        if publish_held_stage(&temporary, &stable).is_err() {
+            // Another exact reservation may have won. No stage exists for our
+            // unpublished candidate, so its temporary file can be removed.
+            fs::remove_file(&temporary).map_err(|_| StoreError::Unavailable)?;
+            if !stable.exists() {
+                return Err(StoreError::Unavailable);
+            }
+        }
+    }
+    if !fs::symlink_metadata(&stable)
+        .map_err(|_| StoreError::Unavailable)?
+        .file_type()
+        .is_file()
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&stable)
+        .map_err(|_| StoreError::Unavailable)?;
+    lock.try_lock().map_err(|_| StoreError::ClaimConflict)?;
+    let saved: HeldDestinationReservation =
+        serde_json::from_slice(&fs::read(&stable).map_err(|_| StoreError::Unavailable)?)
+            .map_err(|_| StoreError::ClaimConflict)?;
+    let name = destination.file_name().ok_or(StoreError::Rejected)?;
+    let stage_name = saved
+        .stage
+        .file_name()
+        .ok_or(StoreError::ClaimConflict)?
+        .to_string_lossy();
+    let stage_prefix = format!(".{}.held-stage-", name.to_string_lossy());
+    let suffix = stage_name
+        .strip_prefix(&stage_prefix)
+        .ok_or(StoreError::ClaimConflict)?;
+    if saved.format != "legacy-v28-held-destination-reservation-v1"
+        || saved.destination != destination
+        || saved.stage.parent() != Some(parent)
+        || suffix.len() != 32
+        || !suffix.bytes().all(|b| b.is_ascii_hexdigit())
+        || saved.handoff_id != witness.handoff_id
+        || saved.source_capture_sha256 != witness.source_capture_sha256
+        || saved.capsule_sha256 != witness.capsule_sha256
+        || saved.inventory_sha256 != inventory_sha256
+        || saved.trusted_issuer != trusted_issuer
+        || saved.operation != operation
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    Ok((lock, saved.stage))
+}
+
+fn ensure_held_destination_stage(stage: &Path) -> Result<(), StoreError> {
+    let intent = crate::sqlite::adoption_intent_path(stage)?;
+    let parent = stage.parent().ok_or(StoreError::Rejected)?;
+    let marker = b"legacy-v28-held-destination-stage-v1";
+    if !intent.exists() {
+        if stage.exists() {
+            return Err(StoreError::ClaimConflict);
+        }
+        let mut random = [0u8; 16];
+        getrandom::fill(&mut random).map_err(|_| StoreError::Unavailable)?;
+        let suffix = random
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        let temporary = parent.join(format!(
+            "{}.preparing-{suffix}",
+            intent
+                .file_name()
+                .ok_or(StoreError::Rejected)?
+                .to_string_lossy()
+        ));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| StoreError::ClaimConflict)?;
+        file.write_all(marker)
+            .map_err(|_| StoreError::Unavailable)?;
+        file.sync_all().map_err(|_| StoreError::Unavailable)?;
+        publish_held_stage(&temporary, &intent)?;
+    }
+    if !fs::symlink_metadata(&intent)
+        .map_err(|_| StoreError::Unavailable)?
+        .file_type()
+        .is_file()
+        || fs::read(&intent).map_err(|_| StoreError::Unavailable)? != marker
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    if !stage.exists() {
+        fs::create_dir(stage).map_err(|_| StoreError::ClaimConflict)?;
+        sync_dir(parent)?;
+    } else if !fs::symlink_metadata(stage)
+        .map_err(|_| StoreError::Unavailable)?
+        .file_type()
+        .is_dir()
+        || fs::canonicalize(stage).map_err(|_| StoreError::Unavailable)? != stage
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    Ok(())
+}
+
+fn ensure_held_adoption_copy(stage: &Path, capsule: &HeldCapsuleReceipt) -> Result<(), StoreError> {
+    ensure_held_destination_stage(stage)?;
+    let destination = stage.join("lifecycle.sqlite");
+    if destination.exists() {
+        if !fs::symlink_metadata(&destination)
+            .map_err(|_| StoreError::Unavailable)?
+            .file_type()
+            .is_file()
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        if fs::symlink_metadata(stage.join(".lifecycle.sqlite.copying")).is_ok() {
+            return Err(StoreError::ClaimConflict);
+        }
+        return Ok(());
+    }
+    let temporary = stage.join(".lifecycle.sqlite.copying");
+    if let Ok(meta) = fs::symlink_metadata(&temporary) {
+        if !meta.file_type().is_file() {
+            return Err(StoreError::ClaimConflict);
+        }
+        // Only an incomplete copy inside this locked, unpublished stage is
+        // replaceable. The reservation, stage and external intent survive.
+        fs::remove_file(&temporary).map_err(|_| StoreError::Unavailable)?;
+    }
+    durable_copy(&capsule.capsule_root.join("lifecycle.sqlite"), &temporary)?;
+    if digest(&fs::read(&temporary).map_err(|_| StoreError::Unavailable)?)?
+        != capsule.database_sha256
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    publish_held_stage(&temporary, &destination)
+}
+
+fn check_held_destination_path(destination: &Path) -> Result<(), StoreError> {
+    if !destination.is_absolute() {
+        return Err(StoreError::Rejected);
+    }
+    let parent = destination.parent().ok_or(StoreError::Rejected)?;
+    if !fs::symlink_metadata(parent)
+        .map_err(|_| StoreError::Unavailable)?
+        .file_type()
+        .is_dir()
+        || fs::canonicalize(parent).map_err(|_| StoreError::Unavailable)? != parent
+    {
+        return Err(StoreError::Rejected);
+    }
+    if let Ok(meta) = fs::symlink_metadata(destination)
+        && (!meta.file_type().is_dir()
+            || fs::canonicalize(destination).map_err(|_| StoreError::Unavailable)? != destination)
+    {
+        return Err(StoreError::Rejected);
+    }
+    Ok(())
+}
+
+fn inspect_existing_held_root(root: &Path) -> Result<HeldProjection, StoreError> {
+    let db = root.join("lifecycle.sqlite");
+    if !fs::symlink_metadata(&db)
+        .map_err(|_| StoreError::ClaimConflict)?
+        .file_type()
+        .is_file()
+    {
+        return Err(StoreError::Rejected);
+    }
+    let connection = rusqlite::Connection::open_with_flags(
+        &db,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
+    )
+    .map_err(|_| StoreError::Unavailable)?;
+    let version: i64 = connection
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    if version != 6 {
+        return Err(StoreError::ClaimConflict);
+    }
+    crate::recovery::check_coherence(&connection)?;
+    held_projection_from(&connection)
+}
+
+#[cfg(target_os = "linux")]
+fn publish_held_stage(stage: &Path, destination: &Path) -> Result<(), StoreError> {
+    use std::os::unix::ffi::OsStrExt;
+    unsafe extern "C" {
+        fn renameat2(
+            olddirfd: i32,
+            oldpath: *const i8,
+            newdirfd: i32,
+            newpath: *const i8,
+            flags: u32,
+        ) -> i32;
+    }
+    let old =
+        std::ffi::CString::new(stage.as_os_str().as_bytes()).map_err(|_| StoreError::Rejected)?;
+    let new = std::ffi::CString::new(destination.as_os_str().as_bytes())
+        .map_err(|_| StoreError::Rejected)?;
+    // RENAME_NOREPLACE prevents an overlapping actor's empty root from being replaced.
+    let changed = unsafe { renameat2(-100, old.as_ptr(), -100, new.as_ptr(), 1) };
+    if changed != 0 {
+        return Err(StoreError::ClaimConflict);
+    }
+    sync_dir(destination.parent().ok_or(StoreError::Rejected)?)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn publish_held_stage(_stage: &Path, _destination: &Path) -> Result<(), StoreError> {
+    Err(StoreError::Rejected)
+}
+
+impl SqliteLifecycleStore {
+    /// Validate A-v2-shaped bytes without creating a destination or authority.
+    pub fn inspect_held_evidence(evidence: &HeldEvidence) -> Result<(u64, u64), StoreError> {
+        let (_, rows, _, _, _, unknown) = validate_held_evidence(evidence)?;
+        Ok((rows.len() as u64, unknown))
+    }
+
+    /// A read-only held projection, separate from normal recovery work.
+    pub fn held_projection(&self) -> Result<HeldProjection, StoreError> {
+        self.verify_identity()?;
+        crate::recovery::check_coherence(&self.connection)?;
+        held_projection_from(&self.connection)
+    }
+
+    /// No production caller can mint the required witness in B1.
+    pub fn bootstrap_held(
+        witness: &HeldSourceWitness,
+        evidence: &HeldEvidence,
+        destination: &Path,
+        trusted_issuer: String,
+    ) -> Result<Self, StoreError> {
+        check_held_destination_path(destination)?;
+        if trusted_issuer.is_empty() || witness.handoff_id.is_empty() {
+            return Err(StoreError::Rejected);
+        }
+        let (artifacts, rows, capture_sha, capsule_sha, inventory_sha, unknown) =
+            validate_held_evidence(evidence)?;
+        if capture_sha != witness.source_capture_sha256 || capsule_sha != witness.capsule_sha256 {
+            return Err(StoreError::Rejected);
+        }
+        let evidence_sha = held_evidence_digest(evidence)?;
+        let (_reservation_lock, stage) = create_held_destination_reservation(
+            destination,
+            witness,
+            &inventory_sha,
+            &trusted_issuer,
+            HeldReservationOperation::Bootstrap {
+                evidence_sha256: evidence_sha,
+            },
+        )?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("after_reservation") {
+            std::process::exit(84);
+        }
+        if destination.exists() {
+            let projection = inspect_existing_held_root(destination)?;
+            if projection.handoff_id == witness.handoff_id
+                && projection.source_capture_sha256 == capture_sha
+                && projection.capsule_sha256 == capsule_sha
+                && projection.inventory_sha256 == inventory_sha
+                && projection.ownership_status == "inactive"
+            {
+                let store = Self::open(destination, trusted_issuer)?;
+                if store.held_projection()? != projection {
+                    return Err(StoreError::ClaimConflict);
+                }
+                let stage_intent = crate::sqlite::adoption_intent_path(&stage)?;
+                if stage_intent.exists() && !stage.exists() {
+                    fs::remove_file(stage_intent).map_err(|_| StoreError::Unavailable)?;
+                    sync_dir(destination.parent().ok_or(StoreError::Rejected)?)?;
+                }
+                return Ok(store);
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        ensure_held_destination_stage(&stage)?;
+        {
+            let mut store = Self::open_adoption_pending(&stage, trusted_issuer.clone())?;
+            #[cfg(test)]
+            if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("after_stage_open") {
+                std::process::exit(83);
+            }
+            if held_quarantine(&store.connection)? {
+                let projection = store.held_projection()?;
+                let mut expected_digests = artifacts
+                    .iter()
+                    .map(|(name, sha, _)| (name.clone(), sha.clone()))
+                    .collect::<Vec<_>>();
+                expected_digests.sort();
+                if projection.handoff_id != witness.handoff_id
+                    || projection.source_capture_sha256 != capture_sha
+                    || projection.capsule_sha256 != capsule_sha
+                    || projection.inventory_sha256 != inventory_sha
+                    || projection.row_count != rows.len() as u64
+                    || projection.unclassified_count != unknown
+                    || projection.ownership_status != "inactive"
+                    || projection.artifact_digests != expected_digests
+                {
+                    return Err(StoreError::ClaimConflict);
+                }
+            } else {
+                let tx = store
+                    .connection
+                    .transaction_with_behavior(TransactionBehavior::Immediate)
+                    .map_err(|_| StoreError::Unavailable)?;
+                for (name, sha, bytes) in &artifacts {
+                    tx.execute("INSERT INTO legacy_held_artifacts(name,sha256,byte_length,raw_bytes) VALUES (?1,?2,?3,?4)",
+                    params![name,sha,i64::try_from(bytes.len()).map_err(|_| StoreError::Rejected)?,bytes])
+                    .map_err(|_| StoreError::Unavailable)?;
+                }
+                for (ordinal, (table, id, revision, projection, class, raw)) in
+                    rows.iter().enumerate()
+                {
+                    tx.execute("INSERT INTO legacy_held_rows(ordinal,table_name,source_identity,source_revision,source_projection_sha256,classification,row_json) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+                    params![i64::try_from(ordinal).map_err(|_| StoreError::Rejected)?,table,id,revision,projection,class,raw])
+                    .map_err(|_| StoreError::Unavailable)?;
+                }
+                tx.execute("UPDATE admin_ownership SET status='inactive',revision=revision+1,handoff_id=?1,capsule_sha256=?2,peer_store_id=NULL,selection_revision=NULL WHERE singleton=1 AND status='active'",
+                params![&witness.handoff_id,&capsule_sha]).map_err(|_| StoreError::Unavailable)?;
+                tx.execute("UPDATE legacy_held_state SET mode='held_quarantine',handoff_id=?1,source_capture_sha256=?2,capsule_sha256=?3,inventory_sha256=?4,row_count=?5,unclassified_count=?6 WHERE singleton=1 AND mode='ordinary'",
+                params![&witness.handoff_id,&capture_sha,&capsule_sha,&inventory_sha,i64::try_from(rows.len()).map_err(|_| StoreError::Rejected)?,i64::try_from(unknown).map_err(|_| StoreError::Rejected)?])
+                .map_err(|_| StoreError::Unavailable)?;
+                tx.commit().map_err(|_| StoreError::Unavailable)?;
+            }
+            let projection = store.held_projection()?;
+            if projection.row_count != rows.len() as u64
+                || projection.unclassified_count != unknown
+                || projection.ownership_status != "inactive"
+            {
+                return Err(StoreError::Unavailable);
+            }
+            store
+                .connection
+                .execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+                .map_err(|_| StoreError::Unavailable)?;
+        }
+        sync_dir(&stage)?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("before_publish") {
+            std::process::exit(81);
+        }
+        publish_held_stage(&stage, destination)?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("after_publish") {
+            std::process::exit(82);
+        }
+        fs::remove_file(crate::sqlite::adoption_intent_path(&stage)?)
+            .map_err(|_| StoreError::Unavailable)?;
+        sync_dir(destination.parent().ok_or(StoreError::Rejected)?)?;
+        let store = Self::open(destination, trusted_issuer)?;
+        store.held_projection()?;
+        Ok(store)
+    }
+
+    /// Distinct held format. Ordinary export_current still refuses this root.
+    pub fn export_held(&self, destination: &Path) -> Result<HeldCapsuleReceipt, StoreError> {
+        let projection = self.held_projection()?;
+        if projection.ownership_status != "inactive" && projection.ownership_status != "active" {
+            return Err(StoreError::Rejected);
+        }
+        if destination.exists() {
+            let prior = Self::read_held_capsule(destination)?;
+            if prior.source_store_id == projection.store_id
+                && prior.source_revision == projection.custody_revision
+            {
+                return Ok(prior);
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        let parent = destination.parent().ok_or(StoreError::Rejected)?;
+        if !fs::symlink_metadata(parent)
+            .map_err(|_| StoreError::Unavailable)?
+            .file_type()
+            .is_dir()
+        {
+            return Err(StoreError::Rejected);
+        }
+        fs::create_dir(destination).map_err(|_| StoreError::ClaimConflict)?;
+        sync_dir(parent)?;
+        self.snapshot_to(&destination.join("lifecycle.sqlite"))?;
+        let db_bytes =
+            fs::read(destination.join("lifecycle.sqlite")).map_err(|_| StoreError::Unavailable)?;
+        let mut receipt = HeldCapsuleReceipt {
+            format: "legacy-v28-held-custody-v1".into(),
+            capsule_root: destination.to_path_buf(),
+            source_store_id: projection.store_id,
+            source_revision: projection.custody_revision,
+            source_custody_phase: if projection.ownership_status == "inactive" {
+                "inactive".into()
+            } else {
+                "recovery_only".into()
+            },
+            database_sha256: digest(&db_bytes)?,
+            handoff_id: projection.handoff_id,
+            source_capture_sha256: projection.source_capture_sha256,
+            origin_capsule_sha256: projection.capsule_sha256,
+            inventory_sha256: projection.inventory_sha256,
+            row_count: projection.row_count,
+            unclassified_count: projection.unclassified_count,
+            artifact_digests: projection.artifact_digests,
+            receipt_sha256: String::new(),
+        };
+        receipt.receipt_sha256 = held_receipt_digest(&receipt)?;
+        let bytes = serde_json::to_vec(&receipt).map_err(|_| StoreError::Unavailable)?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(destination.join("held-manifest.json"))
+            .map_err(|_| StoreError::Unavailable)?;
+        file.write_all(&bytes)
+            .map_err(|_| StoreError::Unavailable)?;
+        file.sync_all().map_err(|_| StoreError::Unavailable)?;
+        sync_dir(destination)?;
+        let readback = Self::read_held_capsule(destination)?;
+        if readback != receipt {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(receipt)
+    }
+
+    pub fn read_held_capsule(root: &Path) -> Result<HeldCapsuleReceipt, StoreError> {
+        if !fs::symlink_metadata(root)
+            .map_err(|_| StoreError::Unavailable)?
+            .file_type()
+            .is_dir()
+        {
+            return Err(StoreError::Rejected);
+        }
+        let receipt: HeldCapsuleReceipt = serde_json::from_slice(
+            &fs::read(root.join("held-manifest.json")).map_err(|_| StoreError::Unavailable)?,
+        )
+        .map_err(|_| StoreError::Rejected)?;
+        if receipt.format != "legacy-v28-held-custody-v1"
+            || receipt.capsule_root != root
+            || receipt.receipt_sha256 != held_receipt_digest(&receipt)?
+        {
+            return Err(StoreError::Rejected);
+        }
+        let db = root.join("lifecycle.sqlite");
+        if !fs::symlink_metadata(&db)
+            .map_err(|_| StoreError::Unavailable)?
+            .file_type()
+            .is_file()
+            || digest(&fs::read(&db).map_err(|_| StoreError::Unavailable)?)?
+                != receipt.database_sha256
+        {
+            return Err(StoreError::Rejected);
+        }
+        let connection = rusqlite::Connection::open_with_flags(
+            &db,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+        crate::recovery::check_coherence(&connection)?;
+        let projection = held_projection_from(&connection)?;
+        if projection.store_id != receipt.source_store_id
+            || projection.custody_revision != receipt.source_revision
+            || (if projection.ownership_status == "inactive" {
+                "inactive"
+            } else if projection.ownership_status == "active" {
+                "recovery_only"
+            } else {
+                "invalid"
+            }) != receipt.source_custody_phase
+            || projection.handoff_id != receipt.handoff_id
+            || projection.source_capture_sha256 != receipt.source_capture_sha256
+            || projection.capsule_sha256 != receipt.origin_capsule_sha256
+            || projection.inventory_sha256 != receipt.inventory_sha256
+            || projection.row_count != receipt.row_count
+            || projection.unclassified_count != receipt.unclassified_count
+            || projection.artifact_digests != receipt.artifact_digests
+        {
+            return Err(StoreError::Rejected);
+        }
+        Ok(receipt)
+    }
+
+    /// A held snapshot can only be adopted under a witness; the result remains inactive.
+    pub fn adopt_held_inactive(
+        witness: &HeldSourceWitness,
+        capsule: &HeldCapsuleReceipt,
+        destination: &Path,
+        trusted_issuer: String,
+    ) -> Result<Self, StoreError> {
+        check_held_destination_path(destination)?;
+        if trusted_issuer.is_empty() {
+            return Err(StoreError::Rejected);
+        }
+        let checked = Self::read_held_capsule(&capsule.capsule_root)?;
+        if &checked != capsule
+            || witness.handoff_id != capsule.handoff_id
+            || witness.source_capture_sha256 != capsule.source_capture_sha256
+            || witness.capsule_sha256 != capsule.origin_capsule_sha256
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        let (_reservation_lock, stage) = create_held_destination_reservation(
+            destination,
+            witness,
+            &capsule.inventory_sha256,
+            &trusted_issuer,
+            HeldReservationOperation::Adopt {
+                receipt_sha256: capsule.receipt_sha256.clone(),
+                source_store_id: capsule.source_store_id.clone(),
+                source_revision: capsule.source_revision,
+                source_custody_phase: capsule.source_custody_phase.clone(),
+                source_database_sha256: capsule.database_sha256.clone(),
+                capsule_root: capsule.capsule_root.clone(),
+            },
+        )?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("adopt_after_reservation") {
+            std::process::exit(94);
+        }
+        if destination.exists() {
+            let projection = inspect_existing_held_root(destination)?;
+            let store = Self::open(destination, trusted_issuer)?;
+            if store.held_projection()? != projection {
+                return Err(StoreError::ClaimConflict);
+            }
+            let lineage: Option<(String,String,i64)> = store.connection.query_row(
+                "SELECT source_store_id,capsule_sha256,source_revision FROM admin_store_lineage WHERE singleton=1", [],
+                |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?)),
+            ).optional().map_err(|_| StoreError::Unavailable)?;
+            if projection.ownership_status == "inactive"
+                && projection.handoff_id == witness.handoff_id
+                && projection.source_capture_sha256 == witness.source_capture_sha256
+                && lineage
+                    == Some((
+                        capsule.source_store_id.clone(),
+                        capsule.receipt_sha256.clone(),
+                        to_i64(capsule.source_revision)?,
+                    ))
+            {
+                if stage.exists() {
+                    return Err(StoreError::ClaimConflict);
+                }
+                let intent = crate::sqlite::adoption_intent_path(&stage)?;
+                if intent.exists() {
+                    fs::remove_file(intent).map_err(|_| StoreError::Unavailable)?;
+                    sync_dir(destination.parent().ok_or(StoreError::Rejected)?)?;
+                }
+                return Ok(store);
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        ensure_held_adoption_copy(&stage, capsule)?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("adopt_after_copy") {
+            std::process::exit(93);
+        }
+        {
+            let mut store = Self::open_adoption_pending(&stage, trusted_issuer.clone())?;
+            let prior = store.held_projection()?;
+            #[cfg(test)]
+            if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("adopt_after_stage_open") {
+                std::process::exit(92);
+            }
+            if prior.handoff_id != witness.handoff_id
+                || prior.source_capture_sha256 != witness.source_capture_sha256
+                || prior.capsule_sha256 != witness.capsule_sha256
+                || prior.inventory_sha256 != capsule.inventory_sha256
+                || prior.row_count != capsule.row_count
+                || prior.unclassified_count != capsule.unclassified_count
+                || prior.artifact_digests != capsule.artifact_digests
+            {
+                return Err(StoreError::ClaimConflict);
+            }
+            if prior.store_id == capsule.source_store_id {
+                if prior.custody_revision != capsule.source_revision
+                    || (if prior.ownership_status == "inactive" {
+                        "inactive"
+                    } else if prior.ownership_status == "active" {
+                        "recovery_only"
+                    } else {
+                        "invalid"
+                    }) != capsule.source_custody_phase
+                {
+                    return Err(StoreError::ClaimConflict);
+                }
+                let prior_lineage_count: i64 = store
+                    .connection
+                    .query_row("SELECT COUNT(*) FROM legacy_held_lineage", [], |r| r.get(0))
+                    .map_err(|_| StoreError::Unavailable)?;
+                let mut random = [0u8; 16];
+                getrandom::fill(&mut random).map_err(|_| StoreError::Unavailable)?;
+                let new_id = format!(
+                    "store:{}",
+                    random
+                        .iter()
+                        .map(|b| format!("{b:02x}"))
+                        .collect::<String>()
+                );
+                let tx = store
+                    .connection
+                    .transaction_with_behavior(TransactionBehavior::Immediate)
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.execute(
+                    "UPDATE store_identity SET store_id=?1 WHERE singleton=1",
+                    [&new_id],
+                )
+                .map_err(|_| StoreError::Unavailable)?;
+                tx.execute("UPDATE admin_ownership SET status='inactive',selection_revision=NULL,revision=revision+1 WHERE singleton=1 AND status IN ('inactive','active')",[])
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.execute("INSERT INTO admin_store_lineage(singleton,source_store_id,capsule_sha256,handoff_id,source_revision) VALUES (1,?1,?2,?3,?4) ON CONFLICT(singleton) DO UPDATE SET source_store_id=excluded.source_store_id,capsule_sha256=excluded.capsule_sha256,handoff_id=excluded.handoff_id,source_revision=excluded.source_revision",
+                    params![&capsule.source_store_id,&capsule.receipt_sha256,&witness.handoff_id,to_i64(capsule.source_revision)?])
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.execute("INSERT INTO legacy_held_lineage(ordinal,source_store_id,destination_store_id,source_revision,capsule_sha256,handoff_id) VALUES (?1,?2,?3,?4,?5,?6)",
+                    params![prior_lineage_count,&capsule.source_store_id,&new_id,to_i64(capsule.source_revision)?,&capsule.receipt_sha256,&witness.handoff_id])
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.commit().map_err(|_| StoreError::Unavailable)?;
+                #[cfg(test)]
+                if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref()
+                    == Ok("adopt_after_lineage_commit")
+                {
+                    std::process::exit(91);
+                }
+            }
+            let after = store.held_projection()?;
+            let latest: (String, String, i64, String, String, String) = store
+                .connection
+                .query_row(
+                    "SELECT source_store_id,destination_store_id,source_revision,capsule_sha256,handoff_id,(SELECT capsule_sha256 FROM admin_store_lineage WHERE singleton=1) FROM legacy_held_lineage ORDER BY ordinal DESC LIMIT 1",
+                    [],
+                    |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)),
+                )
+                .map_err(|_| StoreError::Unavailable)?;
+            let singleton: (String, String, String, i64) = store
+                .connection
+                .query_row(
+                    "SELECT source_store_id,capsule_sha256,handoff_id,source_revision FROM admin_store_lineage WHERE singleton=1",
+                    [],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+                )
+                .map_err(|_| StoreError::Unavailable)?;
+            if after.store_id == capsule.source_store_id
+                || after.custody_revision <= capsule.source_revision
+                || after.ownership_status != "inactive"
+                || singleton
+                    != (
+                        capsule.source_store_id.clone(),
+                        capsule.receipt_sha256.clone(),
+                        witness.handoff_id.clone(),
+                        to_i64(capsule.source_revision)?,
+                    )
+                || latest
+                    != (
+                        capsule.source_store_id.clone(),
+                        after.store_id.clone(),
+                        to_i64(capsule.source_revision)?,
+                        capsule.receipt_sha256.clone(),
+                        witness.handoff_id.clone(),
+                        capsule.receipt_sha256.clone(),
+                    )
+            {
+                return Err(StoreError::ClaimConflict);
+            }
+            store
+                .connection
+                .execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+                .map_err(|_| StoreError::Unavailable)?;
+        }
+        sync_dir(&stage)?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("adopt_before_publish") {
+            std::process::exit(90);
+        }
+        publish_held_stage(&stage, destination)?;
+        #[cfg(test)]
+        if std::env::var("LIFECYCLE_HELD_TEST_CUT").as_deref() == Ok("adopt_after_publish") {
+            std::process::exit(89);
+        }
+        fs::remove_file(crate::sqlite::adoption_intent_path(&stage)?)
+            .map_err(|_| StoreError::Unavailable)?;
+        sync_dir(destination.parent().ok_or(StoreError::Rejected)?)?;
+        let store = Self::open(destination, trusted_issuer)?;
+        store.held_projection()?;
+        Ok(store)
+    }
+}
+
+#[cfg(test)]
+impl HeldSourceWitness {
+    fn synthetic(handoff: &str, capture: &str, capsule: &str) -> Self {
+        Self {
+            handoff_id: handoff.into(),
+            source_capture_sha256: capture.into(),
+            capsule_sha256: capsule.into(),
+            _sealed: (),
+        }
+    }
+}
+
+#[cfg(test)]
+mod held_tests {
+    use super::*;
+    use serde_json::{Value, json};
+
+    fn synthetic_evidence() -> HeldEvidence {
+        let mut rows = Vec::new();
+        let unresolved_tables = [
+            ("active_turn_lifecycle", 81usize),
+            ("context_input_admissions", 5),
+            ("context_input_queue", 3),
+            ("aborted_context_input_releases", 3),
+            ("context_input_admission_handoffs", 2),
+            ("checkpoint_fences", 5),
+            ("checkpoint_publications", 1),
+            ("lifecycle_ledger_heads", 1),
+            ("role-bindings.json/bindings", 2),
+            ("role-bindings.json/deliveries", 5),
+        ];
+        assert_eq!(unresolved_tables.iter().map(|(_, n)| n).sum::<usize>(), 108);
+        for ordinal in 0..274 {
+            let class = if ordinal == 0 {
+                "terminally_retired_no_replay"
+            } else if ordinal == 1 {
+                "pending_accepted_undelivered"
+            } else if ordinal < 110 {
+                "unclassified"
+            } else {
+                "historical_observation"
+            };
+            let identity = format!("synthetic-row-{ordinal}");
+            let table = if ordinal < 2 {
+                "context_input_queue"
+            } else if ordinal < 110 {
+                let mut offset = ordinal - 2;
+                let mut selected = "active_turn_lifecycle";
+                for (name, n) in unresolved_tables {
+                    if offset < n {
+                        selected = name;
+                        break;
+                    }
+                    offset -= n;
+                }
+                selected
+            } else {
+                "lifecycle_episodes"
+            };
+            rows.push(json!({
+                "table":table, "identity":identity,
+                "revision":format!("synthetic-revision-{ordinal}"),
+                "status":"synthetic", "reason":if class=="unclassified" {Some("effect unresolved")} else {None},
+                "source_projection_sha256":digest(format!("projection:{ordinal}").as_bytes()).unwrap(),
+                "classification":class,
+            }));
+        }
+        let inventory = Value::Array(rows.clone());
+        let listed: Vec<Value> = rows
+            .iter()
+            .map(|row| {
+                json!({
+                    "table":row["table"],
+                    "identity_sha256":digest(row["identity"].as_str().unwrap().as_bytes()).unwrap(),
+                    "source_projection_sha256":row["source_projection_sha256"],
+                    "classification":row["classification"],
+                })
+            })
+            .collect();
+        let canonical = serde_json::to_string(&inventory).unwrap();
+        let mut capsule = json!({
+            "schema_version":"s9-v28-obligations-v2",
+            "translation_status":"qualified",
+            "transfer_eligibility":"blocked_unclassified",
+            "selection_claim":"current_selection_unestablished",
+            "relation_census":(0..28).map(|n| format!("synthetic-relation-{n}")).collect::<Vec<_>>(),
+            "inventory_digest_sha256":digest(canonical.as_bytes()).unwrap(),
+            "row_classification_digests":listed,
+            "q3":{"physical_delivery":"not_applicable"},
+            "q4":{"physical_delivery":"not_proved"},
+        });
+        let mut artifacts = HELD_ARTIFACT_NAMES
+            .iter()
+            .map(|name| HeldArtifactInput {
+                name: (*name).into(),
+                raw_bytes: format!("synthetic exact bytes: {name}").into_bytes(),
+            })
+            .collect::<Vec<_>>();
+        fn put(artifacts: &mut [HeldArtifactInput], name: &str, bytes: Vec<u8>) {
+            artifacts
+                .iter_mut()
+                .find(|a| a.name == name)
+                .unwrap()
+                .raw_bytes = bytes;
+        }
+        // Store-mechanics fixture only. The separate A integration fixture
+        // below proves canonical schema/codec translation through bootstrap.
+        let db_root = tempfile::tempdir().unwrap();
+        let db = db_root.path().join("synthetic.sqlite3");
+        let connection = rusqlite::Connection::open(&db).unwrap();
+        connection
+            .execute_batch("CREATE TABLE synthetic(x INTEGER); PRAGMA user_version=12;")
+            .unwrap();
+        drop(connection);
+        put(
+            &mut artifacts,
+            "source/capture/image/semantic-context.sqlite3",
+            fs::read(&db).unwrap(),
+        );
+        for name in [
+            "role-bindings.json",
+            "generation-state.json",
+            "switchboard-attachment.json",
+        ] {
+            put(
+                &mut artifacts,
+                &format!("source/capture/image/{name}"),
+                b"{}".to_vec(),
+            );
+        }
+        let image_names = [
+            "semantic-context.sqlite3",
+            "role-bindings.json",
+            "generation-state.json",
+            "switchboard-attachment.json",
+        ];
+        let get = |name: &str, values: &[HeldArtifactInput]| {
+            values
+                .iter()
+                .find(|a| a.name == name)
+                .unwrap()
+                .raw_bytes
+                .clone()
+        };
+        let mut source_entries = Vec::new();
+        let mut attempt_artifacts = serde_json::Map::new();
+        let mut image_hashes = serde_json::Map::new();
+        for name in image_names {
+            let bytes = get(&format!("source/capture/image/{name}"), &artifacts);
+            let hash = digest(&bytes).unwrap();
+            source_entries.push(json!({"copy":format!("/synthetic-b1/capture/image/{name}"),"copy_sha256":hash,"sha256":hash,"source":format!("/synthetic-b1/source/{name}"),"identity":{}}));
+            attempt_artifacts.insert(format!("capture/image/{name}"), json!({"sha256":hash}));
+            image_hashes.insert(name.into(), json!(hash));
+        }
+        let source_manifest = json!({"schema_version":1,"selection_claim":"current_selection_unestablished","files":source_entries});
+        let source_manifest_bytes = serde_json::to_vec(&source_manifest).unwrap();
+        put(
+            &mut artifacts,
+            "source/capture/source-manifest.json",
+            source_manifest_bytes.clone(),
+        );
+        let child_receipt = json!({"schema_version":1,"status":"qualified_candidate_root","selection_claim":"current_selection_unestablished","manifest_sha256":digest(&source_manifest_bytes).unwrap()});
+        let child_receipt_bytes = serde_json::to_vec(&child_receipt).unwrap();
+        put(
+            &mut artifacts,
+            "source/capture/receipt.json",
+            child_receipt_bytes.clone(),
+        );
+        let attempt = json!({"schema_version":1,"status":"qualified_candidate_root","selection_claim":"current_selection_unestablished","child_manifest_sha256":digest(&source_manifest_bytes).unwrap(),"child_receipt":{"sha256":digest(&child_receipt_bytes).unwrap()},"artifacts":attempt_artifacts});
+        let attempt_bytes = serde_json::to_vec(&attempt).unwrap();
+        put(
+            &mut artifacts,
+            "source/attempt-receipt.json",
+            attempt_bytes.clone(),
+        );
+        capsule["source_attempt_sha256"] = json!(digest(&attempt_bytes).unwrap());
+        capsule["source_child_receipt_sha256"] = json!(digest(&child_receipt_bytes).unwrap());
+        capsule["source_manifest_sha256"] = json!(digest(&source_manifest_bytes).unwrap());
+        capsule["copied_image_sha256"] = json!(image_hashes);
+        for label in ["q3", "q4"] {
+            let input = json!({"inputRevision":format!("input-{label}"),"logicalRoleInstanceId":format!("role-{label}"),"clientUserMessageId":format!("message-{label}"),"bindingRevision":1});
+            let input_bytes = serde_json::to_vec(&input).unwrap();
+            let successor = if label == "q3" {
+                serde_json::Value::Null
+            } else {
+                json!({"acceptanceRevision":"accept-q4","successorLogicalRoleInstanceId":"role-successor-q4","successorDeliveryIdentity":"delivery-q4"})
+            };
+            let disposition = json!({"target":{"queueId":format!("queue-{label}"),"inputRevision":input["inputRevision"],"logicalRoleInstanceId":input["logicalRoleInstanceId"],"clientUserMessageId":input["clientUserMessageId"],"bindingRevision":input["bindingRevision"],"inputJsonSha256":digest(&input_bytes).unwrap()},"recordRevision":format!("disposition-{label}"),"authorityRevision":format!("authority-{label}"),"successorAcceptance":successor});
+            put(
+                &mut artifacts,
+                &format!("output/raw/{label}-input.json"),
+                input_bytes,
+            );
+            put(
+                &mut artifacts,
+                &format!("output/raw/{label}-disposition.json"),
+                serde_json::to_vec(&disposition).unwrap(),
+            );
+            capsule[label] = json!({"physical_delivery":if label=="q3" {"not_applicable"} else {"not_proved"},"queue_id":disposition["target"]["queueId"],"input_revision":input["inputRevision"],"disposition_revision":disposition["recordRevision"],"authority_revision":disposition["authorityRevision"],"successor_acceptance_revision":if label=="q3" {serde_json::Value::Null} else {json!("accept-q4")},"successor_logical_role_instance_id":if label=="q3" {serde_json::Value::Null} else {json!("role-successor-q4")},"successor_delivery_identity":if label=="q3" {serde_json::Value::Null} else {json!("delivery-q4")}});
+        }
+        artifacts
+            .iter_mut()
+            .find(|a| a.name == "output/inventory-private.json")
+            .unwrap()
+            .raw_bytes = serde_json::to_vec(&inventory).unwrap();
+        artifacts
+            .iter_mut()
+            .find(|a| a.name == "output/capsule.json")
+            .unwrap()
+            .raw_bytes = serde_json::to_vec(&capsule).unwrap();
+        let mut files = artifacts
+            .iter()
+            .filter(|a| {
+                a.name.starts_with("output/")
+                    && a.name != "output/manifest.json"
+                    && a.name != "output/receipt.json"
+            })
+            .map(|a| {
+                json!({"path":a.name.strip_prefix("output/").unwrap(),
+                "length":a.raw_bytes.len(),"sha256":digest(&a.raw_bytes).unwrap()})
+            })
+            .collect::<Vec<_>>();
+        files.sort_by(|a, b| a["path"].as_str().cmp(&b["path"].as_str()));
+        let manifest = json!({"schema_version":1,"files":files});
+        artifacts
+            .iter_mut()
+            .find(|a| a.name == "output/manifest.json")
+            .unwrap()
+            .raw_bytes = serde_json::to_vec(&manifest).unwrap();
+        let get = |name: &str| {
+            artifacts
+                .iter()
+                .find(|a| a.name == name)
+                .unwrap()
+                .raw_bytes
+                .clone()
+        };
+        let receipt = json!({
+            "schema_version":1,"capsule_version":"s9-v28-obligations-v2",
+            "status":"qualified_translation_only","transfer_eligibility":"blocked_unclassified",
+            "source_attempt_sha256":digest(&get("source/attempt-receipt.json")).unwrap(),
+            "source_manifest_sha256":digest(&get("source/capture/source-manifest.json")).unwrap(),
+            "source_child_receipt_sha256":digest(&get("source/capture/receipt.json")).unwrap(),
+            "manifest_sha256":digest(&get("output/manifest.json")).unwrap(),
+            "capsule_sha256":digest(&get("output/capsule.json")).unwrap(),
+        });
+        artifacts
+            .iter_mut()
+            .find(|a| a.name == "output/receipt.json")
+            .unwrap()
+            .raw_bytes = serde_json::to_vec(&receipt).unwrap();
+        HeldEvidence { artifacts }
+    }
+
+    fn witness(evidence: &HeldEvidence) -> HeldSourceWitness {
+        let (_, _, capture, capsule, _, _) = validate_held_evidence(evidence).unwrap();
+        HeldSourceWitness::synthetic("handoff:synthetic-b1", &capture, &capsule)
+    }
+
+    #[test]
+    fn held_bootstrap_crash_cut_child() {
+        let Ok(destination) = std::env::var("LIFECYCLE_HELD_TEST_DEST") else {
+            return;
+        };
+        let evidence = synthetic_evidence();
+        let witness = witness(&evidence);
+        let _ = SqliteLifecycleStore::bootstrap_held(
+            &witness,
+            &evidence,
+            Path::new(&destination),
+            "issuer".into(),
+        );
+        panic!("requested crash cut did not stop child");
+    }
+
+    #[test]
+    fn held_bootstrap_exact_retry_after_both_publish_cuts() {
+        let temp = tempfile::tempdir().unwrap();
+        for (phase, code) in [
+            ("after_reservation", 84),
+            ("after_stage_open", 83),
+            ("before_publish", 81),
+            ("after_publish", 82),
+        ] {
+            let destination = temp.path().join(format!("dest-{phase}"));
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .arg("--exact")
+                .arg("admin::held_tests::held_bootstrap_crash_cut_child")
+                .env("LIFECYCLE_HELD_TEST_DEST", &destination)
+                .env("LIFECYCLE_HELD_TEST_CUT", phase)
+                .status()
+                .unwrap();
+            assert_eq!(status.code(), Some(code));
+            assert_eq!(destination.exists(), phase == "after_publish");
+            let reservation: HeldDestinationReservation = serde_json::from_slice(
+                &fs::read(held_destination_reservation_path(&destination).unwrap()).unwrap(),
+            )
+            .unwrap();
+            let original_id = if phase == "after_reservation" {
+                assert!(!reservation.stage.exists());
+                None
+            } else {
+                let recorded_root = if phase == "after_publish" {
+                    &destination
+                } else {
+                    &reservation.stage
+                };
+                let inspected = rusqlite::Connection::open_with_flags(
+                    recorded_root.join("lifecycle.sqlite"),
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+                )
+                .unwrap();
+                let id: String = inspected
+                    .query_row(
+                        "SELECT store_id FROM store_identity WHERE singleton=1",
+                        [],
+                        |r| r.get(0),
+                    )
+                    .unwrap();
+                Some(id)
+            };
+            if phase != "after_publish" && phase != "after_reservation" {
+                assert!(SqliteLifecycleStore::open(&reservation.stage, "issuer".into()).is_err());
+            }
+            let evidence = synthetic_evidence();
+            let witness = witness(&evidence);
+            let mut changed_evidence = evidence.clone();
+            changed_evidence
+                .artifacts
+                .iter_mut()
+                .find(|a| a.name == "output/report-redacted.json")
+                .unwrap()
+                .raw_bytes = b"{}".to_vec();
+            let mut changed_manifest: Value = serde_json::from_slice(
+                &changed_evidence
+                    .artifacts
+                    .iter()
+                    .find(|a| a.name == "output/manifest.json")
+                    .unwrap()
+                    .raw_bytes,
+            )
+            .unwrap();
+            let report = changed_manifest["files"]
+                .as_array_mut()
+                .unwrap()
+                .iter_mut()
+                .find(|entry| entry["path"] == "report-redacted.json")
+                .unwrap();
+            report["sha256"] = json!(digest(b"{}").unwrap());
+            report["length"] = json!(2);
+            let manifest_bytes = serde_json::to_vec(&changed_manifest).unwrap();
+            changed_evidence
+                .artifacts
+                .iter_mut()
+                .find(|a| a.name == "output/manifest.json")
+                .unwrap()
+                .raw_bytes = manifest_bytes.clone();
+            let mut changed_receipt: Value = serde_json::from_slice(
+                &changed_evidence
+                    .artifacts
+                    .iter()
+                    .find(|a| a.name == "output/receipt.json")
+                    .unwrap()
+                    .raw_bytes,
+            )
+            .unwrap();
+            changed_receipt["manifest_sha256"] = json!(digest(&manifest_bytes).unwrap());
+            changed_evidence
+                .artifacts
+                .iter_mut()
+                .find(|a| a.name == "output/receipt.json")
+                .unwrap()
+                .raw_bytes = serde_json::to_vec(&changed_receipt).unwrap();
+            assert!(SqliteLifecycleStore::inspect_held_evidence(&changed_evidence).is_ok());
+            let wrong = HeldSourceWitness::synthetic(
+                "handoff:conflict",
+                &witness.source_capture_sha256,
+                &witness.capsule_sha256,
+            );
+            assert!(matches!(
+                SqliteLifecycleStore::bootstrap_held(
+                    &wrong,
+                    &evidence,
+                    &destination,
+                    "issuer".into()
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            assert!(matches!(
+                SqliteLifecycleStore::bootstrap_held(
+                    &witness,
+                    &evidence,
+                    &destination,
+                    "different-issuer".into()
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            assert!(matches!(
+                SqliteLifecycleStore::bootstrap_held(
+                    &witness,
+                    &changed_evidence,
+                    &destination,
+                    "issuer".into()
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            let store = SqliteLifecycleStore::bootstrap_held(
+                &witness,
+                &evidence,
+                &destination,
+                "issuer".into(),
+            )
+            .unwrap();
+            let projection = store.held_projection().unwrap();
+            if let Some(original_id) = original_id {
+                assert_eq!(projection.store_id, original_id);
+            }
+            assert_eq!(
+                (projection.row_count, projection.unclassified_count),
+                (274, 108)
+            );
+            assert_eq!(projection.ownership_status, "inactive");
+        }
+    }
+
+    #[test]
+    fn held_adoption_crash_cut_child() {
+        let Ok(destination) = std::env::var("LIFECYCLE_HELD_TEST_DEST") else {
+            return;
+        };
+        let capsule_root = PathBuf::from(std::env::var("LIFECYCLE_HELD_TEST_CAPSULE").unwrap());
+        let capsule = SqliteLifecycleStore::read_held_capsule(&capsule_root).unwrap();
+        let witness = HeldSourceWitness::synthetic(
+            &capsule.handoff_id,
+            &capsule.source_capture_sha256,
+            &capsule.origin_capsule_sha256,
+        );
+        let _ = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &capsule,
+            Path::new(&destination),
+            "issuer".into(),
+        );
+        panic!("requested adoption crash cut did not stop child");
+    }
+
+    #[test]
+    fn held_adoption_exact_retry_all_crash_cuts_and_cross_operation_conflicts() {
+        let temp = tempfile::tempdir().unwrap();
+        let evidence = synthetic_evidence();
+        let witness = witness(&evidence);
+        let source_root = temp.path().join("source");
+        let source = SqliteLifecycleStore::bootstrap_held(
+            &witness,
+            &evidence,
+            &source_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        let capsule = source.export_held(&temp.path().join("capsule-v1")).unwrap();
+        source
+            .connection
+            .execute(
+                "UPDATE admin_ownership SET revision=revision+1 WHERE singleton=1 AND status='inactive'",
+                [],
+            )
+            .unwrap();
+        let changed_capsule = source.export_held(&temp.path().join("capsule-v2")).unwrap();
+        assert_ne!(capsule.receipt_sha256, changed_capsule.receipt_sha256);
+        assert_ne!(capsule.source_revision, changed_capsule.source_revision);
+        drop(source);
+        for (phase, code) in [
+            ("adopt_after_reservation", 94),
+            ("adopt_after_copy", 93),
+            ("adopt_after_stage_open", 92),
+            ("adopt_after_lineage_commit", 91),
+            ("adopt_before_publish", 90),
+            ("adopt_after_publish", 89),
+        ] {
+            let destination = temp.path().join(format!("adopt-{phase}"));
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .arg("--exact")
+                .arg("admin::held_tests::held_adoption_crash_cut_child")
+                .env("LIFECYCLE_HELD_TEST_DEST", &destination)
+                .env("LIFECYCLE_HELD_TEST_CAPSULE", &capsule.capsule_root)
+                .env("LIFECYCLE_HELD_TEST_CUT", phase)
+                .status()
+                .unwrap();
+            assert_eq!(status.code(), Some(code), "cut {phase}");
+            assert_eq!(destination.exists(), phase == "adopt_after_publish");
+            let reservation: HeldDestinationReservation = serde_json::from_slice(
+                &fs::read(held_destination_reservation_path(&destination).unwrap()).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(reservation.destination, destination);
+            assert_eq!(reservation.handoff_id, witness.handoff_id);
+            assert_eq!(reservation.trusted_issuer, "issuer");
+            assert_eq!(
+                reservation.operation,
+                HeldReservationOperation::Adopt {
+                    receipt_sha256: capsule.receipt_sha256.clone(),
+                    source_store_id: capsule.source_store_id.clone(),
+                    source_revision: capsule.source_revision,
+                    source_custody_phase: capsule.source_custody_phase.clone(),
+                    source_database_sha256: capsule.database_sha256.clone(),
+                    capsule_root: capsule.capsule_root.clone(),
+                }
+            );
+            let original_id = if phase == "adopt_after_reservation" {
+                assert!(!reservation.stage.exists());
+                ensure_held_destination_stage(&reservation.stage).unwrap();
+                fs::write(
+                    reservation.stage.join(".lifecycle.sqlite.copying"),
+                    b"partial copy",
+                )
+                .unwrap();
+                None
+            } else {
+                let recorded_root = if phase == "adopt_after_publish" {
+                    &destination
+                } else {
+                    &reservation.stage
+                };
+                let conn = rusqlite::Connection::open_with_flags(
+                    recorded_root.join("lifecycle.sqlite"),
+                    rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+                )
+                .unwrap();
+                let id: String = conn
+                    .query_row(
+                        "SELECT store_id FROM store_identity WHERE singleton=1",
+                        [],
+                        |r| r.get(0),
+                    )
+                    .unwrap();
+                if phase != "adopt_after_publish" {
+                    assert!(
+                        SqliteLifecycleStore::open(&reservation.stage, "issuer".into()).is_err()
+                    );
+                }
+                Some(id)
+            };
+            assert!(matches!(
+                SqliteLifecycleStore::adopt_held_inactive(
+                    &witness,
+                    &changed_capsule,
+                    &destination,
+                    "issuer".into(),
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            assert!(matches!(
+                SqliteLifecycleStore::adopt_held_inactive(
+                    &witness,
+                    &capsule,
+                    &destination,
+                    "other-issuer".into(),
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            assert!(matches!(
+                SqliteLifecycleStore::bootstrap_held(
+                    &witness,
+                    &evidence,
+                    &destination,
+                    "issuer".into(),
+                ),
+                Err(StoreError::ClaimConflict)
+            ));
+            let adopted = SqliteLifecycleStore::adopt_held_inactive(
+                &witness,
+                &capsule,
+                &destination,
+                "issuer".into(),
+            )
+            .unwrap();
+            let projection = adopted.held_projection().unwrap();
+            assert_eq!(projection.ownership_status, "inactive");
+            assert_eq!(projection.row_count, 274);
+            assert_eq!(projection.unclassified_count, 108);
+            if let Some(original_id) = original_id
+                && phase != "adopt_after_copy"
+                && phase != "adopt_after_stage_open"
+            {
+                assert_eq!(projection.store_id, original_id);
+            }
+            let lineages: i64 = adopted
+                .connection
+                .query_row("SELECT COUNT(*) FROM legacy_held_lineage", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(lineages, 1);
+            drop(adopted);
+            assert_eq!(
+                SqliteLifecycleStore::adopt_held_inactive(
+                    &witness,
+                    &capsule,
+                    &destination,
+                    "issuer".into(),
+                )
+                .unwrap()
+                .held_projection()
+                .unwrap(),
+                projection
+            );
+            assert!(!reservation.stage.exists());
+            assert!(
+                !crate::sqlite::adoption_intent_path(&reservation.stage)
+                    .unwrap()
+                    .exists()
+            );
+        }
+        let reserved_bootstrap = temp.path().join("bootstrap-before-adopt");
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--exact")
+            .arg("admin::held_tests::held_bootstrap_crash_cut_child")
+            .env("LIFECYCLE_HELD_TEST_DEST", &reserved_bootstrap)
+            .env("LIFECYCLE_HELD_TEST_CUT", "after_reservation")
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(84));
+        assert!(matches!(
+            SqliteLifecycleStore::adopt_held_inactive(
+                &witness,
+                &capsule,
+                &reserved_bootstrap,
+                "issuer".into(),
+            ),
+            Err(StoreError::ClaimConflict)
+        ));
+        assert!(!reserved_bootstrap.exists());
+    }
+
+    #[test]
+    fn held_evidence_tamper_and_conflicting_retry_refuse() {
+        let evidence = synthetic_evidence();
+        let witness = witness(&evidence);
+        let temp = tempfile::tempdir().unwrap();
+        let destination = temp.path().join("target");
+        let prepopulated = temp.path().join("prepopulated");
+        fs::create_dir(&prepopulated).unwrap();
+        assert!(
+            SqliteLifecycleStore::bootstrap_held(
+                &witness,
+                &evidence,
+                &prepopulated,
+                "issuer".into()
+            )
+            .is_err()
+        );
+        assert_eq!(fs::read_dir(&prepopulated).unwrap().count(), 0);
+        let mut tampered = evidence.clone();
+        tampered
+            .artifacts
+            .iter_mut()
+            .find(|a| a.name == "output/inventory-private.json")
+            .unwrap()
+            .raw_bytes
+            .push(b' ');
+        assert!(SqliteLifecycleStore::inspect_held_evidence(&tampered).is_err());
+        assert!(
+            SqliteLifecycleStore::bootstrap_held(
+                &witness,
+                &tampered,
+                &destination,
+                "issuer".into()
+            )
+            .is_err()
+        );
+        assert!(!destination.exists());
+        let mut missing = evidence.clone();
+        missing
+            .artifacts
+            .retain(|a| a.name != "output/raw/q4-input.json");
+        assert!(SqliteLifecycleStore::inspect_held_evidence(&missing).is_err());
+        let store = SqliteLifecycleStore::bootstrap_held(
+            &witness,
+            &evidence,
+            &destination,
+            "issuer".into(),
+        )
+        .unwrap();
+        drop(store);
+        let alias = temp.path().join("alias");
+        std::os::unix::fs::symlink(&destination, &alias).unwrap();
+        assert!(
+            SqliteLifecycleStore::bootstrap_held(&witness, &evidence, &alias, "issuer".into())
+                .is_err()
+        );
+        let conflict = HeldSourceWitness::synthetic(
+            "handoff:other",
+            &witness.source_capture_sha256,
+            &witness.capsule_sha256,
+        );
+        assert!(matches!(
+            SqliteLifecycleStore::bootstrap_held(
+                &conflict,
+                &evidence,
+                &destination,
+                "issuer".into()
+            ),
+            Err(StoreError::ClaimConflict)
+        ));
+    }
+
+    #[test]
+    fn synthetic_274_108_bootstrap_quarantine_export_and_readopt() {
+        let temp = tempfile::tempdir().unwrap();
+        let evidence = synthetic_evidence();
+        let witness = witness(&evidence);
+        let target = temp.path().join("absent-held-target");
+        assert!(!target.exists());
+        let mut store =
+            SqliteLifecycleStore::bootstrap_held(&witness, &evidence, &target, "issuer".into())
+                .unwrap();
+        let first = store.held_projection().unwrap();
+        assert_eq!((first.row_count, first.unclassified_count), (274, 108));
+        assert_eq!(first.ownership_status, "inactive");
+        assert_eq!(first.artifact_digests.len(), 16);
+        assert!(!admission_open(&store.connection).unwrap());
+        use lifecycle_core::{
+            AuthorityExpiresAt, BuildId, ClockSample, ContextGeneration, GrantId, GrantScope,
+            ProofRunId, Revision, SubjectId, TrustedGrant, WaitBudgetMs, WallTimeMs,
+        };
+        let subject = SubjectId::parse("brand-new-ordinary-subject").unwrap();
+        let context = ContextGeneration::parse("brand-new-context").unwrap();
+        let build = BuildId::parse("brand-new-build").unwrap();
+        let proof = ProofRunId::parse("brand-new-proof").unwrap();
+        assert!(
+            store
+                .register_subject(
+                    subject.clone(),
+                    context.clone(),
+                    build.clone(),
+                    proof.clone(),
+                    ClockSample {
+                        wall: WallTimeMs::new(10),
+                        wait_budget: WaitBudgetMs::new(10),
+                    }
+                )
+                .is_err()
+        );
+        assert!(
+            store
+                .install_trusted_grant(TrustedGrant {
+                    id: GrantId::parse("brand-new-valid-grant").unwrap(),
+                    issuer: "issuer".into(),
+                    principal: "operator:synthetic".into(),
+                    subject,
+                    context,
+                    build,
+                    proof_run: proof,
+                    scope: GrantScope::EnqueueInput,
+                    expires: AuthorityExpiresAt::new(WallTimeMs::new(1000)),
+                    revision: Revision::new(1),
+                    revoked: false,
+                })
+                .is_err()
+        );
+        assert!(store.connection.execute("INSERT INTO subjects(subject_id,context_id,build_id,proof_run_id,revision,semantic_revision,queue_revision,owner_kind,last_wall_ms) VALUES ('sql-new-id','ctx','build','proof',0,0,0,'domain',10)",[]).is_err());
+        assert!(store.connection.execute("INSERT INTO legacy_held_artifacts(name,sha256,byte_length,raw_bytes) VALUES ('late','00',0,X'')",[]).is_err());
+        assert!(store.connection.execute("INSERT INTO legacy_held_rows(ordinal,table_name,source_identity,source_revision,source_projection_sha256,classification,row_json) VALUES (274,'late','late',NULL,'00','unclassified',X'7B7D')",[]).is_err());
+        assert!(
+            store
+                .export_current(&temp.path().join("ordinary-refused"))
+                .is_err()
+        );
+        assert!(!temp.path().join("ordinary-refused").exists());
+        assert!(
+            store
+                .commit_destination(
+                    &lifecycle_core::HandoffId::parse("handoff:synthetic-b1").unwrap(),
+                    &FenceReceipt {
+                        handoff_id: "bad".into(),
+                        source_store_id: "bad".into(),
+                        source_root: temp.path().join("bad"),
+                        destination_store_id: "bad".into(),
+                        capsule_sha256: "bad".into(),
+                        source_revision: 0
+                    },
+                    &SelectionEvidence {
+                        handoff_id: "bad".into(),
+                        source_store_id: "bad".into(),
+                        destination_store_id: "bad".into(),
+                        capsule_sha256: "bad".into(),
+                        prior_selection_revision: 0,
+                        current_selection_revision: 0,
+                        current_selection_digest: "bad".into(),
+                        launch_guard_id: "bad".into()
+                    }
+                )
+                .is_err()
+        );
+        let capsule_root = temp.path().join("held-export");
+        let receipt = store.export_held(&capsule_root).unwrap();
+        assert_eq!(
+            SqliteLifecycleStore::read_held_capsule(&capsule_root).unwrap(),
+            receipt
+        );
+        assert!(SqliteLifecycleStore::read_capsule(&capsule_root).is_err());
+        drop(store);
+        let reopened = SqliteLifecycleStore::open(&target, "issuer".into()).unwrap();
+        assert_eq!(reopened.held_projection().unwrap(), first);
+        drop(reopened);
+        let retry =
+            SqliteLifecycleStore::bootstrap_held(&witness, &evidence, &target, "issuer".into())
+                .unwrap();
+        assert_eq!(retry.held_projection().unwrap(), first);
+        drop(retry);
+        let adopted_root = temp.path().join("readopt-held-target");
+        let adopted = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &receipt,
+            &adopted_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        let after = adopted.held_projection().unwrap();
+        assert_eq!((after.row_count, after.unclassified_count), (274, 108));
+        assert_eq!(after.artifact_digests, first.artifact_digests);
+        assert!(after.custody_revision > first.custody_revision);
+        assert_ne!(after.store_id, first.store_id);
+        assert_eq!(after.ownership_status, "inactive");
+        let second_capsule = adopted
+            .export_held(&temp.path().join("held-export-from-b"))
+            .unwrap();
+        drop(adopted);
+        let retry_adopt = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &receipt,
+            &adopted_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        assert_eq!(retry_adopt.held_projection().unwrap(), after);
+        drop(retry_adopt);
+        let third_root = temp.path().join("held-third-root");
+        let third = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &second_capsule,
+            &third_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        let third_projection = third.held_projection().unwrap();
+        assert_ne!(third_projection.store_id, after.store_id);
+        assert!(third_projection.custody_revision > after.custody_revision);
+        assert_eq!(third_projection.artifact_digests, first.artifact_digests);
+        assert_eq!(third_projection.ownership_status, "inactive");
+        assert_eq!(
+            third
+                .connection
+                .query_row("SELECT COUNT(*) FROM legacy_held_lineage", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        let predecessor: String = third
+            .connection
+            .query_row(
+                "SELECT source_store_id FROM admin_store_lineage WHERE singleton=1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(predecessor, after.store_id);
+        drop(third);
+        let third_retry = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &second_capsule,
+            &third_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        assert_eq!(third_retry.held_projection().unwrap(), third_projection);
+        drop(third_retry);
+        // Synthetic recovery-only phase: the held marker still vetoes normal
+        // admission even if a future selected owner has active admin status.
+        let source = SqliteLifecycleStore::open(&target, "issuer".into()).unwrap();
+        source.connection.execute("UPDATE admin_ownership SET status='active',revision=revision+1 WHERE singleton=1 AND status='inactive'",[]).unwrap();
+        assert!(!admission_open(&source.connection).unwrap());
+        let active_capsule_root = temp.path().join("recovery-only-export");
+        let active_receipt = source.export_held(&active_capsule_root).unwrap();
+        assert_eq!(active_receipt.source_custody_phase, "recovery_only");
+        drop(source);
+        let forward_root = temp.path().join("recovery-only-readopt");
+        let forward = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &active_receipt,
+            &forward_root,
+            "issuer".into(),
+        )
+        .unwrap();
+        assert_eq!(
+            forward.held_projection().unwrap().ownership_status,
+            "inactive"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires S9_B1_SYNTHETIC_CLOSURE_ROOT produced by pinned native capture and production A-v2 readback"]
+    fn verified_native_a_v2_closure_bootstraps_same_held_store_path() {
+        let root = PathBuf::from(std::env::var("S9_B1_SYNTHETIC_CLOSURE_ROOT").unwrap());
+        let evidence = HeldEvidence {
+            artifacts: HELD_ARTIFACT_NAMES
+                .iter()
+                .map(|name| HeldArtifactInput {
+                    name: (*name).into(),
+                    raw_bytes: fs::read(root.join(name)).unwrap(),
+                })
+                .collect(),
+        };
+        assert_eq!(
+            SqliteLifecycleStore::inspect_held_evidence(&evidence).unwrap(),
+            (274, 108)
+        );
+        let witness = witness(&evidence);
+        let temp = tempfile::tempdir().unwrap();
+        let destination = temp.path().join("native-a-v2-held");
+        let store = SqliteLifecycleStore::bootstrap_held(
+            &witness,
+            &evidence,
+            &destination,
+            "issuer".into(),
+        )
+        .unwrap();
+        let projection = store.held_projection().unwrap();
+        assert_eq!(
+            (projection.row_count, projection.unclassified_count),
+            (274, 108)
+        );
+        assert_eq!(projection.ownership_status, "inactive");
+        assert_eq!(projection.artifact_digests.len(), 16);
+        assert!(!admission_open(&store.connection).unwrap());
+        let stored_rows: i64 = store
+            .connection
+            .query_row("SELECT COUNT(*) FROM legacy_held_rows", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(stored_rows, 274);
+        drop(store);
+        let reopened = SqliteLifecycleStore::open(&destination, "issuer".into()).unwrap();
+        assert_eq!(reopened.held_projection().unwrap(), projection);
+        drop(reopened);
+        for name in [
+            "source/attempt-receipt.json",
+            "source/capture/source-manifest.json",
+            "source/capture/receipt.json",
+            "source/capture/image/semantic-context.sqlite3",
+            "source/capture/image/role-bindings.json",
+            "source/capture/image/generation-state.json",
+            "source/capture/image/switchboard-attachment.json",
+        ] {
+            let mut changed = evidence.clone();
+            changed
+                .artifacts
+                .iter_mut()
+                .find(|a| a.name == name)
+                .unwrap()
+                .raw_bytes
+                .push(b' ');
+            assert!(
+                SqliteLifecycleStore::inspect_held_evidence(&changed).is_err(),
+                "changed source member {name} passed"
+            );
+            assert!(
+                SqliteLifecycleStore::bootstrap_held(
+                    &witness,
+                    &changed,
+                    &temp.path().join("changed-source"),
+                    "issuer".into()
+                )
+                .is_err()
+            );
+        }
+        assert!(held_json(br#"{"x":1,"x":2}"#).is_err());
+        assert!(held_json(b"{\xff}").is_err());
+        let mut bad_schema = evidence.clone();
+        let database = &mut bad_schema
+            .artifacts
+            .iter_mut()
+            .find(|a| a.name == "source/capture/image/semantic-context.sqlite3")
+            .unwrap()
+            .raw_bytes;
+        database[60..64].copy_from_slice(&11_u32.to_be_bytes());
+        assert!(SqliteLifecycleStore::inspect_held_evidence(&bad_schema).is_err());
+    }
 }

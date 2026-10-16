@@ -2855,6 +2855,9 @@ fn check_grant(
     tx: &rusqlite::Transaction<'_>,
     expected: GrantExpectation<'_>,
 ) -> Result<(), StoreError> {
+    if crate::admin::held_quarantine(tx)? {
+        return Err(StoreError::ClaimConflict);
+    }
     let active: bool = tx
         .query_row(
             "SELECT status='active' FROM admin_ownership WHERE singleton=1",
@@ -2943,6 +2946,75 @@ mod tests {
         WallTimeMs,
     };
     use tempfile::tempdir;
+
+    #[test]
+    fn held_mode_blocks_an_otherwise_valid_new_native_grant() {
+        let root = tempdir().unwrap();
+        let mut store = SqliteLifecycleStore::open(root.path(), "trusted".into()).unwrap();
+        let subject = SubjectId::parse("new-unrelated-subject").unwrap();
+        let context = ContextGeneration::parse("new-unrelated-context").unwrap();
+        let build = BuildId::parse("new-unrelated-build").unwrap();
+        let proof = ProofRunId::parse("new-unrelated-proof").unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                build.clone(),
+                proof.clone(),
+                clock(),
+            )
+            .unwrap();
+        let grant = GrantId::parse("new-unrelated-valid-grant").unwrap();
+        store
+            .install_trusted_grant(TrustedGrant {
+                id: grant.clone(),
+                issuer: "trusted".into(),
+                principal: "operator:synthetic".into(),
+                subject: subject.clone(),
+                context: context.clone(),
+                build,
+                proof_run: proof,
+                scope: GrantScope::parse("native_turn").unwrap(),
+                expires: AuthorityExpiresAt::new(WallTimeMs::new(100)),
+                revision: Revision::new(1),
+                revoked: false,
+            })
+            .unwrap();
+        let expected = GrantExpectation {
+            issuer: "trusted",
+            principal: "operator:synthetic",
+            grant: &grant,
+            revision: 1,
+            subject: subject.as_str(),
+            context: context.as_str(),
+            scope: "native_turn",
+            clock: clock(),
+            successor_rehydrate: false,
+        };
+        let tx = store.connection.transaction().unwrap();
+        assert!(check_grant(&tx, expected).is_ok());
+        tx.commit().unwrap();
+        // This deliberately simulates an already-valid grant surviving a later
+        // held marker. Full held readback would reject the ordinary rows; the
+        // entry guard must still deny before any provider effect.
+        store.connection.execute("UPDATE legacy_held_state SET mode='held_quarantine',handoff_id='synthetic',source_capture_sha256='capture',capsule_sha256='capsule',inventory_sha256='inventory',row_count=1,unclassified_count=1 WHERE singleton=1",[]).unwrap();
+        let tx = store.connection.transaction().unwrap();
+        let expected = GrantExpectation {
+            issuer: "trusted",
+            principal: "operator:synthetic",
+            grant: &grant,
+            revision: 1,
+            subject: subject.as_str(),
+            context: context.as_str(),
+            scope: "native_turn",
+            clock: clock(),
+            successor_rehydrate: false,
+        };
+        assert!(matches!(
+            check_grant(&tx, expected),
+            Err(StoreError::ClaimConflict)
+        ));
+    }
 
     #[test]
     fn native_observation_distinguishes_empty_capacity_and_storage_failure() {

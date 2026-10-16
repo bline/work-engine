@@ -190,7 +190,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if !matches!(version, 2..=5) {
+        if !matches!(version, 2..=6) {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -247,7 +247,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if !matches!(version, 2..=5) {
+    if !matches!(version, 2..=6) {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -272,8 +272,16 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
             connection,
             "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
         )?;
-        if revision < 0 || trigger_count != if version >= 5 { 111 } else { 102 } {
+        let expected = match version {
+            6 => 123,
+            5 => 111,
+            _ => 102,
+        };
+        if revision < 0 || trigger_count != expected {
             return Err(StoreError::Unavailable);
+        }
+        if version == 6 {
+            crate::admin::check_held_coherence(connection)?;
         }
     }
     let effect_mismatch = count(

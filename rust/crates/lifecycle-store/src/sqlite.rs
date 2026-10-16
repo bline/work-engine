@@ -232,6 +232,7 @@ impl SqliteLifecycleStore {
         lock_file.try_lock().map_err(|_| StoreError::Unavailable)?;
         let database = root.join("lifecycle.sqlite");
         reject_hard_link(&database)?;
+        let mut defer_wal_until_validated_upgrade = false;
         if database.exists() {
             // Incompatible readers refuse before WAL/pragma or schema mutation.
             let inspection = Connection::open_with_flags(
@@ -246,8 +247,18 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=5).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=6).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
+            }
+            if matches!(version, 4 | 5) {
+                let integrity: String = inspection
+                    .query_row("PRAGMA quick_check", [], |row| row.get(0))
+                    .map_err(|_| StoreError::Unavailable)?;
+                if integrity != "ok" {
+                    return Err(StoreError::Unavailable);
+                }
+                crate::recovery::check_coherence(&inspection)?;
+                defer_wal_until_validated_upgrade = true;
             }
         }
         let mut connection = Connection::open_with_flags(
@@ -259,9 +270,14 @@ impl SqliteLifecycleStore {
         .map_err(|_| StoreError::Unavailable)?;
         connection
             .execute_batch(
-                "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=250;",
+                "PRAGMA foreign_keys=ON; PRAGMA synchronous=FULL; PRAGMA busy_timeout=250;",
             )
             .map_err(|_| StoreError::Unavailable)?;
+        if !defer_wal_until_validated_upgrade {
+            connection
+                .execute_batch("PRAGMA journal_mode=WAL;")
+                .map_err(|_| StoreError::Unavailable)?;
+        }
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
@@ -281,6 +297,7 @@ impl SqliteLifecycleStore {
             3 => {}
             4 => {}
             5 => {}
+            6 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {
@@ -346,13 +363,51 @@ impl SqliteLifecycleStore {
                 .map_err(|_| StoreError::Unavailable)?;
             migration?;
         }
-        if version < 5 {
+        if defer_wal_until_validated_upgrade {
+            // A v4/v5 image has already passed read-only coherence. Both steps
+            // and final coherence must succeed in one rollback-able transaction
+            // before changing its journal mode or committing schema6.
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            if version == 4 {
+                tx.execute_batch(include_str!("../migrations/0005_retained_task.sql"))
+                    .map_err(|_| StoreError::Unavailable)?;
+                tx.pragma_update(None, "user_version", 5)
+                    .map_err(|_| StoreError::Unavailable)?;
+            }
+            tx.execute_batch(include_str!("../migrations/0006_legacy_v28_held.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 6)
+                .map_err(|_| StoreError::Unavailable)?;
+            let integrity: String = tx
+                .query_row("PRAGMA quick_check", [], |row| row.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            if integrity != "ok" {
+                return Err(StoreError::Unavailable);
+            }
+            crate::recovery::check_coherence(&tx)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+            connection
+                .execute_batch("PRAGMA journal_mode=WAL;")
+                .map_err(|_| StoreError::Unavailable)?;
+        } else if version < 5 {
             let tx = connection
                 .transaction_with_behavior(TransactionBehavior::Immediate)
                 .map_err(|_| StoreError::Unavailable)?;
             tx.execute_batch(include_str!("../migrations/0005_retained_task.sql"))
                 .map_err(|_| StoreError::Unavailable)?;
             tx.pragma_update(None, "user_version", 5)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.commit().map_err(|_| StoreError::Unavailable)?;
+        }
+        if !defer_wal_until_validated_upgrade && version < 6 {
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute_batch(include_str!("../migrations/0006_legacy_v28_held.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 6)
                 .map_err(|_| StoreError::Unavailable)?;
             tx.commit().map_err(|_| StoreError::Unavailable)?;
         }
@@ -402,6 +457,9 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<(), StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -422,6 +480,9 @@ impl SqliteLifecycleStore {
     /// The service must resolve and verify the grant before this restricted call.
     pub fn install_trusted_grant(&mut self, grant: TrustedGrant) -> Result<(), StoreError> {
         self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
         if grant.issuer != self.trusted_issuer {
             return Err(StoreError::Rejected);
         }
