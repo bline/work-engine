@@ -2,6 +2,7 @@
 
 mod admin;
 mod artifact;
+mod held_selection;
 mod native;
 mod recovery;
 mod semantic;

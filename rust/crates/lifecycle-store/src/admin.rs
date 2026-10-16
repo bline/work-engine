@@ -4352,6 +4352,58 @@ mod held_tests {
         let witness = witness(&evidence);
         let temp = tempfile::tempdir().unwrap();
         let destination = temp.path().join("native-a-v2-held");
+        let source = temp.path().join("synthetic-legacy-source");
+        fs::create_dir(&source).unwrap();
+        let selector_root = temp.path().join("synthetic-selector");
+        let legacy = crate::held_selection::LegacySelection {
+            version: 1,
+            generation: 0,
+            root: source,
+            owner_id: "synthetic-v28-owner".into(),
+            owner_revision: "synthetic-v28-revision".into(),
+            executable_sha256: digest(b"synthetic-legacy-executable").unwrap(),
+            config_sha256: digest(b"synthetic-legacy-config").unwrap(),
+        };
+        let mut spec = crate::held_selection::CutSpec {
+            predecessor: legacy.clone(),
+            handoff_id: witness.handoff_id.clone(),
+            destination_root: destination.clone(),
+            capture_sha256: witness.source_capture_sha256.clone(),
+            capsule_sha256: witness.capsule_sha256.clone(),
+            source_fence_sha256: digest(b"synthetic-excluded-source-fence").unwrap(),
+            build_sha256: digest(b"synthetic-recovery-only-build").unwrap(),
+            config_sha256: digest(b"synthetic-recovery-only-config").unwrap(),
+        };
+        let selector =
+            crate::held_selection::HeldCutSession::synthetic_initialize(&selector_root, &legacy)
+                .unwrap();
+        selector.reserve(spec.clone()).unwrap();
+        selector.reserve(spec.clone()).unwrap();
+        spec.handoff_id = "handoff:conflicting-synthetic".into();
+        assert!(selector.reserve(spec.clone()).is_err());
+        spec.handoff_id = witness.handoff_id.clone();
+        drop(selector);
+        let selector =
+            crate::held_selection::HeldCutSession::synthetic_resume(&selector_root).unwrap();
+        selector.reserve(spec.clone()).unwrap();
+        let mut changed_before_bootstrap = evidence.clone();
+        changed_before_bootstrap
+            .artifacts
+            .iter_mut()
+            .find(|a| a.name == "source/capture/image/role-bindings.json")
+            .unwrap()
+            .raw_bytes
+            .push(b' ');
+        assert!(
+            SqliteLifecycleStore::bootstrap_held(
+                &witness,
+                &changed_before_bootstrap,
+                &destination,
+                "issuer".into(),
+            )
+            .is_err()
+        );
+        assert!(!destination.exists());
         let store = SqliteLifecycleStore::bootstrap_held(
             &witness,
             &evidence,
@@ -4367,6 +4419,52 @@ mod held_tests {
         assert_eq!(projection.ownership_status, "inactive");
         assert_eq!(projection.artifact_digests.len(), 16);
         assert!(!admission_open(&store.connection).unwrap());
+        assert!(selector.synthetic_select(&store, false).is_err());
+        assert!(
+            selector
+                .synthetic_fence(&digest(b"wrong-fence").unwrap())
+                .is_err()
+        );
+        selector.synthetic_fence(&spec.source_fence_sha256).unwrap();
+        selector.synthetic_fence(&spec.source_fence_sha256).unwrap();
+        drop(selector);
+        let selector =
+            crate::held_selection::HeldCutSession::synthetic_resume(&selector_root).unwrap();
+        assert!(selector.synthetic_select(&store, true).is_err());
+        drop(selector);
+        let selector =
+            crate::held_selection::HeldCutSession::synthetic_resume(&selector_root).unwrap();
+        let selected = selector.synthetic_select(&store, false).unwrap();
+        assert_eq!(selected.phase, "selected_recovery_only");
+        assert_eq!(selected.destination_store_id, projection.store_id);
+        assert_eq!(
+            selected.destination_custody_revision,
+            projection.custody_revision
+        );
+        assert_eq!(selector.verify_selected(&store).unwrap(), selected);
+        selector.reserve(spec.clone()).unwrap();
+        selector.synthetic_fence(&spec.source_fence_sha256).unwrap();
+        assert_eq!(selector.synthetic_select(&store, false).unwrap(), selected);
+        assert_eq!(store.admin_ownership().unwrap().status, "inactive");
+        let held_capsule = temp.path().join("held-export");
+        let receipt = store.export_held(&held_capsule).unwrap();
+        assert_eq!(receipt.source_custody_phase, "inactive");
+        assert_eq!(
+            SqliteLifecycleStore::read_held_capsule(&held_capsule).unwrap(),
+            receipt
+        );
+        let adopted = SqliteLifecycleStore::adopt_held_inactive(
+            &witness,
+            &receipt,
+            &temp.path().join("held-adopted"),
+            "issuer".into(),
+        )
+        .unwrap();
+        assert_eq!(
+            adopted.held_projection().unwrap().ownership_status,
+            "inactive"
+        );
+        assert!(selector.verify_selected(&adopted).is_err());
         let stored_rows: i64 = store
             .connection
             .query_row("SELECT COUNT(*) FROM legacy_held_rows", [], |r| r.get(0))
@@ -4375,6 +4473,13 @@ mod held_tests {
         drop(store);
         let reopened = SqliteLifecycleStore::open(&destination, "issuer".into()).unwrap();
         assert_eq!(reopened.held_projection().unwrap(), projection);
+        assert_eq!(selector.verify_selected(&reopened).unwrap(), selected);
+        drop(reopened);
+        drop(selector);
+        let selector =
+            crate::held_selection::HeldCutSession::synthetic_resume(&selector_root).unwrap();
+        let reopened = SqliteLifecycleStore::open(&destination, "issuer".into()).unwrap();
+        assert_eq!(selector.verify_selected(&reopened).unwrap(), selected);
         drop(reopened);
         for name in [
             "source/attempt-receipt.json",
@@ -4418,5 +4523,166 @@ mod held_tests {
             .raw_bytes;
         database[60..64].copy_from_slice(&11_u32.to_be_bytes());
         assert!(SqliteLifecycleStore::inspect_held_evidence(&bad_schema).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires S9_B1_SYNTHETIC_CLOSURE_ROOT produced by pinned native capture and production A-v2 readback"]
+    fn verified_native_a_v2_selector_crash_boundary_matrix() {
+        use crate::held_selection::{
+            CutSpec, HeldCutSession, LegacySelection, WriteCut, WriteKind, arm_test_cut,
+            clear_test_cut,
+        };
+
+        let root = PathBuf::from(std::env::var("S9_B1_SYNTHETIC_CLOSURE_ROOT").unwrap());
+        let evidence = HeldEvidence {
+            artifacts: HELD_ARTIFACT_NAMES
+                .iter()
+                .map(|name| HeldArtifactInput {
+                    name: (*name).into(),
+                    raw_bytes: fs::read(root.join(name)).unwrap(),
+                })
+                .collect(),
+        };
+        assert_eq!(
+            SqliteLifecycleStore::inspect_held_evidence(&evidence).unwrap(),
+            (274, 108)
+        );
+        let witness = witness(&evidence);
+        let recoverable = [
+            WriteCut::Write,
+            WriteCut::FileSync,
+            WriteCut::StageDirSync,
+            WriteCut::Rename,
+            WriteCut::PublishDirSync,
+        ];
+        for kind in [
+            WriteKind::Reserve,
+            WriteKind::Fence,
+            WriteKind::Selector,
+            WriteKind::SelectedIntent,
+        ] {
+            for cut in recoverable.into_iter().chain([WriteCut::Create]) {
+                let temp = tempfile::tempdir().unwrap();
+                let source = temp.path().join("synthetic-legacy-source");
+                fs::create_dir(&source).unwrap();
+                let destination = temp.path().join("native-a-v2-held");
+                let selector_root = temp.path().join("synthetic-selector");
+                let legacy = LegacySelection {
+                    version: 1,
+                    generation: 0,
+                    root: source,
+                    owner_id: "synthetic-v28-owner".into(),
+                    owner_revision: "synthetic-v28-revision".into(),
+                    executable_sha256: digest(b"synthetic-legacy-executable").unwrap(),
+                    config_sha256: digest(b"synthetic-legacy-config").unwrap(),
+                };
+                let spec = CutSpec {
+                    predecessor: legacy.clone(),
+                    handoff_id: witness.handoff_id.clone(),
+                    destination_root: destination.clone(),
+                    capture_sha256: witness.source_capture_sha256.clone(),
+                    capsule_sha256: witness.capsule_sha256.clone(),
+                    source_fence_sha256: digest(b"synthetic-excluded-source-fence").unwrap(),
+                    build_sha256: digest(b"synthetic-recovery-only-build").unwrap(),
+                    config_sha256: digest(b"synthetic-recovery-only-config").unwrap(),
+                };
+                let selector =
+                    HeldCutSession::synthetic_initialize(&selector_root, &legacy).unwrap();
+                if kind == WriteKind::Reserve {
+                    arm_test_cut(kind, cut);
+                    assert!(selector.reserve(spec.clone()).is_err(), "{kind:?} {cut:?}");
+                    clear_test_cut();
+                    drop(selector);
+                } else {
+                    selector.reserve(spec.clone()).unwrap();
+                    drop(selector);
+                }
+                let selector = HeldCutSession::synthetic_resume(&selector_root).unwrap();
+                let mut conflict = spec.clone();
+                conflict.handoff_id = "handoff:conflicting-synthetic".into();
+                assert!(selector.reserve(conflict).is_err(), "{kind:?} {cut:?}");
+                if kind == WriteKind::Reserve && cut == WriteCut::Create {
+                    // An empty stage cannot establish an intent; it is held for
+                    // explicit repair, and no B1 destination has been written.
+                    assert!(selector.reserve(spec).is_err());
+                    assert!(!destination.exists());
+                    continue;
+                }
+                selector.reserve(spec.clone()).unwrap();
+                let store = SqliteLifecycleStore::bootstrap_held(
+                    &witness,
+                    &evidence,
+                    &destination,
+                    "issuer".into(),
+                )
+                .unwrap();
+                let projection = store.held_projection().unwrap();
+                assert_eq!(
+                    (projection.row_count, projection.unclassified_count),
+                    (274, 108)
+                );
+                assert_eq!(projection.ownership_status, "inactive");
+                assert_eq!(projection.artifact_digests.len(), 16);
+                assert!(!admission_open(&store.connection).unwrap());
+
+                if kind == WriteKind::Fence {
+                    arm_test_cut(kind, cut);
+                    assert!(selector.synthetic_fence(&spec.source_fence_sha256).is_err());
+                    clear_test_cut();
+                    drop(selector);
+                } else {
+                    selector.synthetic_fence(&spec.source_fence_sha256).unwrap();
+                    drop(selector);
+                }
+                let selector = HeldCutSession::synthetic_resume(&selector_root).unwrap();
+                let mut conflict = spec.clone();
+                conflict.handoff_id = "handoff:conflicting-synthetic".into();
+                assert!(selector.reserve(conflict).is_err(), "{kind:?} {cut:?}");
+                if kind == WriteKind::Fence && cut == WriteCut::Create {
+                    assert!(selector.synthetic_fence(&spec.source_fence_sha256).is_err());
+                    assert!(selector.verify_selected(&store).is_err());
+                    assert_eq!(store.held_projection().unwrap(), projection);
+                    continue;
+                }
+                selector.synthetic_fence(&spec.source_fence_sha256).unwrap();
+
+                if kind == WriteKind::Selector || kind == WriteKind::SelectedIntent {
+                    arm_test_cut(kind, cut);
+                    assert!(selector.synthetic_select(&store, false).is_err());
+                    clear_test_cut();
+                    drop(selector);
+                } else {
+                    drop(selector);
+                }
+                let selector = HeldCutSession::synthetic_resume(&selector_root).unwrap();
+                let mut conflict = spec.clone();
+                conflict.handoff_id = "handoff:conflicting-synthetic".into();
+                assert!(selector.reserve(conflict).is_err(), "{kind:?} {cut:?}");
+                if matches!(kind, WriteKind::Selector | WriteKind::SelectedIntent)
+                    && cut == WriteCut::Create
+                {
+                    assert!(selector.synthetic_select(&store, false).is_err());
+                    assert!(selector.verify_selected(&store).is_err());
+                    assert_eq!(store.held_projection().unwrap(), projection);
+                    continue;
+                }
+                drop(store);
+                let reopened = SqliteLifecycleStore::open(&destination, "issuer".into()).unwrap();
+                assert_eq!(reopened.held_projection().unwrap(), projection);
+                assert!(!admission_open(&reopened.connection).unwrap());
+                let selected = selector.synthetic_select(&reopened, false).unwrap();
+                assert_eq!(selected.phase, "selected_recovery_only");
+                assert_eq!(selected.destination_store_id, projection.store_id);
+                assert_eq!(
+                    selected.destination_custody_revision,
+                    projection.custody_revision
+                );
+                assert_eq!(selector.verify_selected(&reopened).unwrap(), selected);
+                drop(selector);
+                let selector = HeldCutSession::synthetic_resume(&selector_root).unwrap();
+                assert_eq!(selector.verify_selected(&reopened).unwrap(), selected);
+                assert_eq!(reopened.held_projection().unwrap(), projection);
+            }
+        }
     }
 }
