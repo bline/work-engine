@@ -17,6 +17,12 @@ The app retains its own Cargo workspace and lockfile until shared-workspace
 integration is coordinated. This move does not establish runtime readiness.
 Existing Python validation/export scripts remain transitional development tooling.
 
+The optional `--history-connect SOCKET` mode reads the bounded August S5
+checkpoint/gate/review investigation from a locally admitted
+[historical evidence host](../historical-evidence-read/README.md). Its candidate
+and reviewer navigation is read-only; provider, scheduler and complete UI-0
+coverage remain outside that mode.
+
 ## Run
 
 From the repository root, with Rust 1.88+ and Cargo:

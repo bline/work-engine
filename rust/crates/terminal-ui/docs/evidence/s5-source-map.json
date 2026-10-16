@@ -1,9 +1,9 @@
 {
-  "purpose": "Bounded UI-0 source discovery; not a complete golden corpus or owner acceptance",
+  "purpose": "Bounded UI-0 historical evidence map; selected exact records, with owner-read and full acceptance limits",
   "observed_utc_date": "2026-10-16",
   "campaign": "skills-migration-app-server-20260828",
   "slice_number": 6,
-  "slice_title": "S5 \u2014 Hidden context-lifecycle integration with compiled roles",
+  "slice_title": "S5 — Hidden context-lifecycle integration with compiled roles",
   "candidates": [
     {
       "name": "candidate-1",
@@ -297,11 +297,693 @@
     "observed_change": "record_remediation_subject admits active reported as well as remediation; reported result does not retire episode"
   },
   "unresolved": [
-    "Exact per-attempt provider telemetry and quota event",
-    "Exact role-scheduler retry item and revisions",
-    "Raw gate receipts behind checkpoint gate digests",
-    "Full predecessor history/authority manifest validation and owner-admitted reader projection",
-    "Frozen comparison cohort and cost non-overlap proof",
-    "Read-access/confidentiality policy for UI projection"
-  ]
+    "Metrics owner must establish stage_total semantics and issue a revision-bound correction or explanation for eight versus five named checks; preserve frozen row",
+    "Clarify frozen metrics thinking-token exclusion of the failed 429 result (27 tokens) before treating all aggregate fields as uniform",
+    "Owner-admitted historical reads and projection access policy for review, gates, provider attempts, and scheduler",
+    "Realized historical reviewer capability grant and source selection authority beyond matching retained manifest binding",
+    "Scheduler mutation/presentation history beyond current retained row (presented_at is null)",
+    "Frozen comparison cohort, pricing verification, and causal savings claim",
+    "Complete UI-0 golden trace and confidentiality policy; no UI-0 acceptance"
+  ],
+  "review_histories": [
+    {
+      "label": "original-generic",
+      "head_revision": "f5773967f8f6a8470161ac4b1552738d49a23d8c",
+      "revision_count": 4,
+      "complete_linked_history_to_null_predecessor": true,
+      "revisions": [
+        {
+          "revision": "f5773967f8f6a8470161ac4b1552738d49a23d8c",
+          "predecessor_revision": "0c949faef44f6b2240c740e5b79fde9297509d55",
+          "payload_sha256": "1efdd905f18946004916b22e657f6fd0e56222a7fb187359b86ff1481b5a7b1b",
+          "phase": "reported",
+          "status": "active",
+          "subject_revision": "fd66ba9dbb9892596755c496dee6a54e491fd193",
+          "finding_statuses": {
+            "s5c1-manifest-lifecycle-001-uncompiled-role-untested": "verified_resolved",
+            "s5c1-context-lease-002-unreachable-none-branch": "withdrawn",
+            "s5c1-context-lease-003-dead-code": "withdrawn"
+          }
+        },
+        {
+          "revision": "0c949faef44f6b2240c740e5b79fde9297509d55",
+          "predecessor_revision": "cbf86a8123636e0034e9b1e9af77851e7088e7e1",
+          "payload_sha256": "d86f63f7f20fd4c0d1ee7dafec0ade113229b1a0d969b6007089ec0e5d1b0f85",
+          "phase": "re_evaluation",
+          "status": "active",
+          "subject_revision": "fd66ba9dbb9892596755c496dee6a54e491fd193",
+          "finding_statuses": {
+            "s5c1-manifest-lifecycle-001-uncompiled-role-untested": "open",
+            "s5c1-context-lease-002-unreachable-none-branch": "open",
+            "s5c1-context-lease-003-dead-code": "open"
+          }
+        },
+        {
+          "revision": "cbf86a8123636e0034e9b1e9af77851e7088e7e1",
+          "predecessor_revision": "f69929bef80fa46144315f5ec8341f78e71e890c",
+          "payload_sha256": "1b418c04f49abdddfcf6843a5c6c192fb233f4e40d4031432a1a37c6fc9a1440",
+          "phase": "remediation",
+          "status": "active",
+          "subject_revision": "2cfc945627f4f6d141385c46bd10f242601fef0b",
+          "finding_statuses": {
+            "s5c1-manifest-lifecycle-001-uncompiled-role-untested": "open",
+            "s5c1-context-lease-002-unreachable-none-branch": "open",
+            "s5c1-context-lease-003-dead-code": "open"
+          }
+        },
+        {
+          "revision": "f69929bef80fa46144315f5ec8341f78e71e890c",
+          "predecessor_revision": null,
+          "payload_sha256": "160e4e15d11d0aff7dcd186cf95a6391c272c7698724a187799d04823c140059",
+          "phase": "initial_review",
+          "status": "active",
+          "subject_revision": "2cfc945627f4f6d141385c46bd10f242601fef0b",
+          "finding_statuses": {}
+        }
+      ]
+    },
+    {
+      "label": "instruction",
+      "head_revision": "e70f2b5caecacfafca3257586c5e4a09587f6ed9",
+      "revision_count": 4,
+      "complete_linked_history_to_null_predecessor": true,
+      "revisions": [
+        {
+          "revision": "e70f2b5caecacfafca3257586c5e4a09587f6ed9",
+          "predecessor_revision": "787b4d3a19ef47af4768c1e22e929baf8925cbab",
+          "payload_sha256": "e6538ad0da284e99b6feffd594e8cd5e1d4aa47913da08c8b917fc3f2c53f4e0",
+          "phase": "reported",
+          "status": "active",
+          "subject_revision": "649349f57435b34d952b8ebd9e8f67a622d10dda",
+          "finding_statuses": {
+            "AIR-CAND2-001": "verified_resolved",
+            "AIR-CAND2-002": "verified_resolved"
+          }
+        },
+        {
+          "revision": "787b4d3a19ef47af4768c1e22e929baf8925cbab",
+          "predecessor_revision": "f0b3e8a522250605f120e617d4d737832f7aa804",
+          "payload_sha256": "bf42f12803f365fc67a084873890b66615f487ef144e0ccb0d3feceef27374d9",
+          "phase": "re_evaluation",
+          "status": "active",
+          "subject_revision": "649349f57435b34d952b8ebd9e8f67a622d10dda",
+          "finding_statuses": {
+            "AIR-CAND2-001": "open",
+            "AIR-CAND2-002": "open"
+          }
+        },
+        {
+          "revision": "f0b3e8a522250605f120e617d4d737832f7aa804",
+          "predecessor_revision": "c47fd737269f27310ecdd1ed746eb377e01f5ca3",
+          "payload_sha256": "5ed824c574656a0758332c716b5d92772b1b123777363c5faae9bfba02684688",
+          "phase": "remediation",
+          "status": "active",
+          "subject_revision": "fd66ba9dbb9892596755c496dee6a54e491fd193",
+          "finding_statuses": {
+            "AIR-CAND2-001": "open",
+            "AIR-CAND2-002": "open"
+          }
+        },
+        {
+          "revision": "c47fd737269f27310ecdd1ed746eb377e01f5ca3",
+          "predecessor_revision": null,
+          "payload_sha256": "719cedafea632125d2cf0637ffadee985617e6e38471eac54e6265b52117111c",
+          "phase": "initial_review",
+          "status": "active",
+          "subject_revision": "fd66ba9dbb9892596755c496dee6a54e491fd193",
+          "finding_statuses": {}
+        }
+      ]
+    },
+    {
+      "label": "replacement-generic",
+      "head_revision": "24f3f38e5351b48bcd3e069978b22a597f590e82",
+      "revision_count": 6,
+      "complete_linked_history_to_null_predecessor": true,
+      "revisions": [
+        {
+          "revision": "24f3f38e5351b48bcd3e069978b22a597f590e82",
+          "predecessor_revision": "4eb5b6e0b41b41fed9fee9ec567d4ddebbc24391",
+          "payload_sha256": "2baefd276e9f614a7d3010117a47ce558489106af72eb71ec3cabb6d01e5aeee",
+          "phase": "reported",
+          "status": "active",
+          "subject_revision": "c1a90a55ce326898996b5ab0b5925b91480b9f1c",
+          "finding_statuses": {
+            "candidate3-runtime-env-none-satisfaction-dead-branch": "withdrawn",
+            "candidate3-missing-role-identity-cross-check": "verified_resolved"
+          }
+        },
+        {
+          "revision": "4eb5b6e0b41b41fed9fee9ec567d4ddebbc24391",
+          "predecessor_revision": "034b4df528510e5f65029aa029f3fd2f78ef39d1",
+          "payload_sha256": "fddc9e2b9526a6302ca93b7c628eae91b398fe179627dc6ebc1369580971ef39",
+          "phase": "re_evaluation",
+          "status": "active",
+          "subject_revision": "c1a90a55ce326898996b5ab0b5925b91480b9f1c",
+          "finding_statuses": {
+            "candidate3-runtime-env-none-satisfaction-dead-branch": "withdrawn",
+            "candidate3-missing-role-identity-cross-check": "verified_resolved"
+          }
+        },
+        {
+          "revision": "034b4df528510e5f65029aa029f3fd2f78ef39d1",
+          "predecessor_revision": "baee81cc236d540c5bd5759c8a6d2a6b11ea6591",
+          "payload_sha256": "2a92d4f6217457bccec4f578aa24c2079054e65bf1d2449ef736d502881f773c",
+          "phase": "reported",
+          "status": "active",
+          "subject_revision": "0195378488a65f3d1926ecb15f3613ab095971a2",
+          "finding_statuses": {
+            "candidate3-runtime-env-none-satisfaction-dead-branch": "withdrawn",
+            "candidate3-missing-role-identity-cross-check": "verified_resolved"
+          }
+        },
+        {
+          "revision": "baee81cc236d540c5bd5759c8a6d2a6b11ea6591",
+          "predecessor_revision": "c02c6bf02836f1c0ee095d8d57335820fe60bf67",
+          "payload_sha256": "1f7c03c5546cc85f7e7a5523393cb5ada428f77db09629526ec23e5c029c097c",
+          "phase": "re_evaluation",
+          "status": "active",
+          "subject_revision": "0195378488a65f3d1926ecb15f3613ab095971a2",
+          "finding_statuses": {
+            "candidate3-runtime-env-none-satisfaction-dead-branch": "open",
+            "candidate3-missing-role-identity-cross-check": "open"
+          }
+        },
+        {
+          "revision": "c02c6bf02836f1c0ee095d8d57335820fe60bf67",
+          "predecessor_revision": "359287d9d7e2618429119541f085794c64c333c2",
+          "payload_sha256": "634c7a6fb8346cb32c1af76b00a8325079c199f04c868d7004d1fcd1f455ec49",
+          "phase": "remediation",
+          "status": "active",
+          "subject_revision": "649349f57435b34d952b8ebd9e8f67a622d10dda",
+          "finding_statuses": {
+            "candidate3-runtime-env-none-satisfaction-dead-branch": "open",
+            "candidate3-missing-role-identity-cross-check": "open"
+          }
+        },
+        {
+          "revision": "359287d9d7e2618429119541f085794c64c333c2",
+          "predecessor_revision": null,
+          "payload_sha256": "c93614462a990c539f5f554d60615f3c0e8136bd5377d365a260023fb5d34f0b",
+          "phase": "initial_review",
+          "status": "active",
+          "subject_revision": "649349f57435b34d952b8ebd9e8f67a622d10dda",
+          "finding_statuses": {}
+        }
+      ]
+    }
+  ],
+  "review_authority_manifests": [
+    {
+      "label": "original-generic",
+      "grant_id": "skills-migration-s5-candidate-1-generic-review-generation-1",
+      "manifest_sha256": "9eaa7e3f98bd3acc63e53d0ef52ec1efec3f3b4428c423acd2bb50b61b3565ef",
+      "historical_creation_rollout_id": "32b3e26e97ed",
+      "historical_creation_line": 501,
+      "source": {
+        "owner": "slice-supervisor",
+        "reference": "review-selection:sha256:ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "revision": "candidate-1-selection",
+        "integrity_sha256": "ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "freshness_rule": "exact_immutable_selection"
+      },
+      "writer_generation": 1,
+      "writer_provider": "claude",
+      "reader_roles": [
+        "independent_reviewer",
+        "coordinating_builder",
+        "slice_supervisor"
+      ],
+      "verification": "historical patch JSON passes current schema validator; canonical SHA-256 matches retained state authority_binding; historical /tmp file is not present"
+    },
+    {
+      "label": "instruction",
+      "grant_id": "skills-migration-s5-candidate-2-air-generation-1",
+      "manifest_sha256": "aa5ca4c287fc243dd8e57ac8c844a5b1a9338e24420da02960fc300aa268d865",
+      "historical_creation_rollout_id": "32b3e26e97ed",
+      "historical_creation_line": 872,
+      "source": {
+        "owner": "slice-supervisor",
+        "reference": "review-selection:sha256:ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "revision": "candidate-2-air-selection",
+        "integrity_sha256": "ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "freshness_rule": "exact_immutable_selection"
+      },
+      "writer_generation": 1,
+      "writer_provider": "claude",
+      "reader_roles": [
+        "independent_reviewer",
+        "coordinating_builder",
+        "slice_supervisor"
+      ],
+      "verification": "historical patch JSON passes current schema validator; canonical SHA-256 matches retained state authority_binding; historical /tmp file is not present"
+    },
+    {
+      "label": "replacement-generic",
+      "grant_id": "skills-migration-s5-candidate-3-generic-replacement-generation-1",
+      "manifest_sha256": "3fb37c4cb1223ec7a908c600fac3e8e7e1228117f13b5eb2d6e8abf1ac6ef991",
+      "historical_creation_rollout_id": "32b3e26e97ed",
+      "historical_creation_line": 1138,
+      "source": {
+        "owner": "slice-supervisor",
+        "reference": "replacement-authority:reported_episode_cannot_bind_later_candidate:refs/work-engine/independent-review-state/7e476a2c09555a7b29a112b17f3c3015997e02d12602832b496ed5019a190966@f5773967f8f6a8470161ac4b1552738d49a23d8c",
+        "revision": "candidate-3-replacement-selection",
+        "integrity_sha256": "465eb776fc5fb5030b8c4ad6da5325a2979b5947753f1d176edc7a6b92b4bd6c",
+        "freshness_rule": "exact_replacement_authority"
+      },
+      "writer_generation": 1,
+      "writer_provider": "claude",
+      "reader_roles": [
+        "independent_reviewer",
+        "coordinating_builder",
+        "slice_supervisor"
+      ],
+      "verification": "historical patch JSON passes current schema validator; canonical SHA-256 matches retained state authority_binding; historical /tmp file is not present"
+    }
+  ],
+  "gate_results": [
+    {
+      "candidate": "candidate-1",
+      "gate_receipt_digest": "55fd568e393c0c1d4bd31035f47eb22c2b7b5b6ec663580236f387f4b1f735a3",
+      "source_class": "producer_result_in_historical_codex_rollout",
+      "status": "passed",
+      "totals": {
+        "configured": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0
+      },
+      "rollout_id": "32b3e26e97ed",
+      "line": 407,
+      "tool_call_id": "call_94e5MXizpiK5h4yfHqamHMeN",
+      "verification": "canonical JSON SHA-256 matches checkpoint gate_receipt_digest"
+    },
+    {
+      "candidate": "candidate-2",
+      "gate_receipt_digest": "0d33932c6e22641b04d0763aae6c2a54ac22080fcbced84a7c2ce1bd6cd3bd01",
+      "source_class": "producer_result_in_historical_codex_rollout",
+      "status": "passed",
+      "totals": {
+        "configured": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "rollout_id": "32b3e26e97ed",
+      "line": 704,
+      "tool_call_id": "call_jjCGtQtkIYOwbtr9GHOHNpBe",
+      "verification": "canonical JSON SHA-256 matches checkpoint gate_receipt_digest"
+    },
+    {
+      "candidate": "candidate-3",
+      "gate_receipt_digest": "ea297a3ec785315d43c98b5de5948c88a7b0faa9725e05adfcce2e416721a008",
+      "source_class": "producer_result_in_historical_codex_rollout",
+      "status": "passed",
+      "totals": {
+        "configured": 6,
+        "executed": 6,
+        "passed": 6,
+        "failed": 0
+      },
+      "rollout_id": "32b3e26e97ed",
+      "line": 1020,
+      "tool_call_id": "call_7UrwFr0lrlho3ktHYwto1x3v",
+      "verification": "canonical JSON SHA-256 matches checkpoint gate_receipt_digest"
+    },
+    {
+      "candidate": "candidate-4",
+      "gate_receipt_digest": "aee063649958388800b3e9b488552a5454db05f6ea3a2ec942c73508d9edea57",
+      "source_class": "producer_result_in_historical_codex_rollout",
+      "status": "passed",
+      "totals": {
+        "configured": 8,
+        "executed": 8,
+        "passed": 8,
+        "failed": 0
+      },
+      "rollout_id": "32b3e26e97ed",
+      "line": 1278,
+      "tool_call_id": "call_QTcmyBYQpykRIf9LBOYlPvmw",
+      "verification": "canonical JSON SHA-256 matches checkpoint gate_receipt_digest"
+    },
+    {
+      "candidate": "candidate-5",
+      "gate_receipt_digest": "f219580842993abb88b662bef94059239f34955fb84d1ce9afb32e6a6b0ec7c9",
+      "source_class": "historical_coordinator_constructed_receipt",
+      "schema_kind": "deterministic_gate_receipt",
+      "status": "all_reported_checks_passed",
+      "check_count": 5,
+      "check_identities": [
+        "exact-nine-path-boundary",
+        "focused-migration-lifecycle",
+        "portfolio-inventory-refresh",
+        "diff-hygiene",
+        "full-app-server-suite"
+      ],
+      "rollout_id": "89420c4e9c91",
+      "line": 2072,
+      "event_line": 2071,
+      "event_id": "exec-1cef6c04-498e-4acc-af52-47f6394fc327",
+      "tool_call_id": "call_kb6HmBBap9VyqH5tmhEjpYYt",
+      "verification": "canonical JSON SHA-256 matches checkpoint gate_receipt_digest; five result checks report passed",
+      "limitation": "frozen metrics row has stage_total=8 for same digest; retained producer manually copied the prior slice row and entered eight with S5 digest; no separate eight-stage source found in bounded producer path"
+    }
+  ],
+  "provider_attempts": [
+    {
+      "ordinal": 1,
+      "review_label": "original-generic",
+      "session_id": "127e1404-e5a6-4597-968e-4a061567a953",
+      "result_uuid": "be6fa179-5b33-4bae-9291-1a522d71bca1",
+      "rollout_id": "32b3e26e97ed",
+      "line": 591,
+      "event_id": "exec-4f16220b-b011-4887-a153-206e4cb9d6fc",
+      "completed_at_ms": 1787975880162,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 2.1413145,
+      "usage": {
+        "input_tokens": 52,
+        "cache_creation_input_tokens": 143524,
+        "cache_read_input_tokens": 2520465,
+        "output_tokens": 34925,
+        "thinking_tokens": 17206
+      },
+      "provider_stdout_sha256": "5c0c96d546d700a17a281ab1b8cd34006efbb68220f47d50326d2514940ac1b5",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 480565,
+      "duration_api_ms": 454688
+    },
+    {
+      "ordinal": 2,
+      "review_label": "original-generic",
+      "session_id": "127e1404-e5a6-4597-968e-4a061567a953",
+      "result_uuid": "5a5c6731-3254-4929-be5d-7de9a1b89cc9",
+      "rollout_id": "32b3e26e97ed",
+      "line": 802,
+      "event_id": "exec-1a087668-5661-46d4-9a13-7220c14122ba",
+      "completed_at_ms": 1787976540729,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 1.6940937,
+      "usage": {
+        "input_tokens": 12,
+        "cache_creation_input_tokens": 207114,
+        "cache_read_input_tokens": 844829,
+        "output_tokens": 13195,
+        "thinking_tokens": 6266
+      },
+      "provider_stdout_sha256": "91575ea09bab24330cc05f312779df369d387486d85a8686427e39a8894b68ae",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 244813,
+      "duration_api_ms": 241419
+    },
+    {
+      "ordinal": 3,
+      "review_label": "instruction",
+      "session_id": "4cfad03d-2912-4391-924c-58f0e08ded11",
+      "result_uuid": "a0beac18-e08e-4151-b243-2c282fe07272",
+      "rollout_id": "32b3e26e97ed",
+      "line": 961,
+      "event_id": "exec-2fa82d5b-6366-471f-8993-2d48b59903cb",
+      "completed_at_ms": 1787977251409,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 2.0389467,
+      "usage": {
+        "input_tokens": 34,
+        "cache_creation_input_tokens": 158358,
+        "cache_read_input_tokens": 1452789,
+        "output_tokens": 43524,
+        "thinking_tokens": 29324
+      },
+      "provider_stdout_sha256": "6f9df0bb83db16421b2205c3650b2fd9e642f4b846cd696ca8581c54c7709c8a",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 510231,
+      "duration_api_ms": 481608
+    },
+    {
+      "ordinal": 4,
+      "review_label": "instruction",
+      "session_id": "4cfad03d-2912-4391-924c-58f0e08ded11",
+      "result_uuid": "902e02e0-1c3c-417f-a71f-80514920e29f",
+      "rollout_id": "32b3e26e97ed",
+      "line": 1083,
+      "event_id": "exec-df8b3690-1d53-43b7-8ce8-200623480aa5",
+      "completed_at_ms": 1787977663115,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 1.7264928,
+      "usage": {
+        "input_tokens": 14,
+        "cache_creation_input_tokens": 203048,
+        "cache_read_input_tokens": 1074026,
+        "output_tokens": 12397,
+        "thinking_tokens": 3771
+      },
+      "provider_stdout_sha256": "e0145ef1701f3ad5d7f5e6e8bd1cb2f035ad0828cf9f390a55fefac60d2f4eba",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 171122,
+      "duration_api_ms": 166432
+    },
+    {
+      "ordinal": 5,
+      "review_label": "replacement-generic",
+      "session_id": "f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+      "result_uuid": "dcbda728-3ffd-4cce-b901-2ff1348472f6",
+      "rollout_id": "32b3e26e97ed",
+      "line": 1213,
+      "event_id": "exec-39aa69b4-2529-48d5-942e-f87f781d5291",
+      "completed_at_ms": 1787978353213,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 2.245674,
+      "usage": {
+        "input_tokens": 42,
+        "cache_creation_input_tokens": 161207,
+        "cache_read_input_tokens": 2335570,
+        "output_tokens": 38509,
+        "thinking_tokens": 27533
+      },
+      "provider_stdout_sha256": "13e371fd80de49038f99b6c42bff8c148d1ae6c59d991992f92d14db777f8d13",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 448539,
+      "duration_api_ms": 413874
+    },
+    {
+      "ordinal": 6,
+      "review_label": "replacement-generic",
+      "session_id": "f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+      "result_uuid": "c078c477-7d6b-4b93-96e4-bbd8ea508b37",
+      "rollout_id": "32b3e26e97ed",
+      "line": 1318,
+      "event_id": "exec-2d218035-ca90-4643-9546-e01afe151f08",
+      "completed_at_ms": 1787978637780,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 1,
+      "is_error": true,
+      "api_error_status": 429,
+      "cost_usd": 1.107375,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 184389,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 69,
+        "thinking_tokens": 27
+      },
+      "provider_stdout_sha256": "fe8a542d219e4b383b21e0444132e50775a208c5b9b293d916ff25cfe00c952e",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "api_error",
+      "duration_ms": 14887,
+      "duration_api_ms": 9428
+    },
+    {
+      "ordinal": 7,
+      "review_label": "replacement-generic",
+      "session_id": "f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+      "result_uuid": "d4ae9cb6-5cec-4dee-a98a-92fb7474ae86",
+      "rollout_id": "89420c4e9c91",
+      "line": 1134,
+      "event_id": "exec-f9a628ba-277d-413f-807e-7f3e6003c5b1",
+      "completed_at_ms": 1787989592784,
+      "command_kind": "historical_shell_replay",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 2.0792646,
+      "usage": {
+        "input_tokens": 18,
+        "cache_creation_input_tokens": 226618,
+        "cache_read_input_tokens": 1636542,
+        "output_tokens": 15236,
+        "thinking_tokens": 7066
+      },
+      "provider_stdout_sha256": "b3809b99cbfa50ff1fb99f0a5a936ed1f803cf0850366a6aa25d98a07db1c255",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 183615,
+      "duration_api_ms": 176197
+    },
+    {
+      "ordinal": 8,
+      "review_label": "replacement-generic",
+      "session_id": "f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+      "result_uuid": "645866c6-efe6-40b9-b98a-38dfd1f5baee",
+      "rollout_id": "89420c4e9c91",
+      "line": 2148,
+      "event_id": "exec-a38f7dfc-4ddf-4546-ba4a-a9bb0a3c8719",
+      "completed_at_ms": 1787994583419,
+      "command_kind": "direct_claude_cli",
+      "exit_code": 0,
+      "is_error": false,
+      "api_error_status": null,
+      "cost_usd": 2.7213881999999994,
+      "usage": {
+        "input_tokens": 24,
+        "cache_creation_input_tokens": 272468,
+        "cache_read_input_tokens": 2714244,
+        "output_tokens": 18149,
+        "thinking_tokens": 10031
+      },
+      "provider_stdout_sha256": "1ad0e0216e34d0cfef5dbe9dcfc0577ce0cd20843b86c69b7824d89d46e95bd1",
+      "model": "claude-sonnet-5",
+      "terminal_reason": "completed",
+      "duration_ms": 239183,
+      "duration_api_ms": 224844
+    }
+  ],
+  "provider_attempt_reconciliation": {
+    "attempt_count": 8,
+    "unique_result_uuid_count": 8,
+    "successful_result_count": 7,
+    "error_result_count": 1,
+    "quota_429_result_count": 1,
+    "cost_sum_usd": 15.7545495,
+    "matches_frozen_metrics_cost_and_selected_token_totals": "cost, input, cache creation, cache read, and output totals match exactly",
+    "limit": "Direct historical CLI envelopes and frozen reported aggregate; no owner-normalized event stream, price recalculation, or comparison cohort qualification",
+    "raw_thinking_tokens_sum": 101224,
+    "frozen_metrics_thinking_tokens": 101197,
+    "thinking_token_difference": 27,
+    "thinking_token_difference_attribution": "The failed HTTP 429 envelope reports exactly 27 thinking tokens; frozen metrics thinking total equals the seven successful envelopes, while its other token/cost totals include the failure."
+  },
+  "scheduler_item": {
+    "id": "skills-migration-s5-candidate4-generic-review-quota-retry-20260829",
+    "store": "repository Git-common-dir/work-engine/role-scheduler/scheduler.sqlite3",
+    "store_revision_at_read": 15,
+    "canonical_selected_row_sha256": "a74079c406818655640bd60c5cc36a6ee9cac1ce52810b3560540101852b3bc5",
+    "repository_id": "/home/bline/code/work-engine",
+    "logical_role": "slice-supervisor",
+    "due_at": "2026-08-29T07:40:00+00:00",
+    "created_at": "2026-08-29T04:45:44.979592+00:00",
+    "updated_at": "2026-08-29T08:05:06.722830+00:00",
+    "presented_at": null,
+    "status": "acknowledged",
+    "on_due": "execute_and_report",
+    "approval_policy": "auto_approve",
+    "catch_up_policy": "run_when_next_active",
+    "result_policy": "summary_and_failures",
+    "result_ref": "refs/work-engine/independent-review-state/9a1646c857c09283aebaeec25073ea5fd0ac31ea98aa4844efe7884978cb6076@034b4df528510e5f65029aa029f3fd2f78ef39d1",
+    "intent_session_id": "f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+    "intent_active_slice_revision": "f19f4236c777288c4c90e7de1ddff509cbce8100",
+    "verification": "read-only SQLite integrity_check ok; exact result_ref revision is reachable in replacement review linked history; presented_at is null, so no presentation event is asserted",
+    "limit": "current retained row and store revision, without mutation history or owner-admitted historical reader"
+  },
+  "bounded_search": {
+    "scope": [
+      "three exact retained review keys and full linked predecessor pages",
+      "six named slice-6 checkpoint refs",
+      "frozen metrics row 21 at f64bc61d",
+      "August 28-29 Codex rollout files for bound S5 child and coordinator; 20 date-bounded rollouts screened for candidate-5 gate output",
+      "current role-scheduler SQLite store, eight rows total"
+    ],
+    "candidate_5_raw_gate_result": "recovered historical coordinator-constructed five-check receipt at rollout line 2072; canonical SHA-256 matches checkpoint. Aug 29 metrics producer rollout line 313 manually set stage_total=8 with same digest after copying prior slice row; historical assembler preserved input.",
+    "historical_authority_files": "three /tmp manifests absent; creation patches retained in bound child rollout and canonical hashes match state bindings"
+  },
+  "gate_count_investigation": {
+    "disposition": "producer_input_mismatch",
+    "candidate_5_gate_check_count": 5,
+    "frozen_metrics_stage_total": 8,
+    "receipt_digest": "f219580842993abb88b662bef94059239f34955fb84d1ce9afb32e6a6b0ec7c9",
+    "producer_rollout_id": "01a04e71-d93b-7ee1-8db7-ff05f8c3ef65",
+    "producer_line": 313,
+    "producer_action": "deep-copied slice-5 metrics row and explicitly assigned S5 gate_checks with same digest and stage_total 8",
+    "prior_slice_row": 20,
+    "prior_slice_stage_total": 8,
+    "frozen_s5_row": 21,
+    "historical_assembly": "assemble_receipt.py at 419d6da3 copies semantic receipt then adds telemetry/config; finalize_receipt.py appends validated record; neither derives gate count",
+    "interpretation_limit": "No separately evidenced eight-stage S5 gate or documented stage_total semantics in bounded producer path; do not rewrite frozen row or infer extra checks",
+    "correction_recommendation": "Metrics owner should establish intended stage_total semantics, then publish revision-bound correction or erratum linked to frozen row and five-check digest",
+    "finalizer_rollout_id": "01a04e71-d93b-7ee1-8db7-ff05f8c3ef65",
+    "finalizer_call_line": 904,
+    "finalizer_result_line": 905,
+    "post_append_verification_line": 911,
+    "retained_gate_receipt": {
+      "candidate_attempt": 5,
+      "checks": [
+        {
+          "identity": "exact-nine-path-boundary",
+          "result": "passed"
+        },
+        {
+          "identity": "focused-migration-lifecycle",
+          "result": "passed",
+          "tests": 49
+        },
+        {
+          "identity": "portfolio-inventory-refresh",
+          "result": "passed"
+        },
+        {
+          "identity": "diff-hygiene",
+          "result": "passed"
+        },
+        {
+          "identity": "full-app-server-suite",
+          "result": "passed",
+          "tests_passed": 218,
+          "tests_skipped": 8
+        }
+      ],
+      "kind": "deterministic_gate_receipt",
+      "run_id": "skills-migration-app-server-20260828",
+      "slice_number": 6
+    },
+    "mechanical_derivation": {
+      "measurement": "gate_check_count",
+      "unit": "top-level checks array entries",
+      "rule": "length(retained_gate_receipt.checks)",
+      "value": 5,
+      "passed_rule": "count(check.result == passed)",
+      "passed_value": 5,
+      "digest_rule": "SHA-256 of UTF-8 JSON with sorted keys, compact separators, no trailing newline",
+      "evidence_class": "mechanically_derived",
+      "scope": "candidate 5, campaign skills-migration-app-server-20260828, slice 6; not sum across candidates or nested tests",
+      "source_limit": "Historical coordinator-constructed receipt recovered from transcript; digest binding does not attest execution or confer current owner-reader admission."
+    },
+    "historical_metric_binding": {
+      "commit": "f64bc61dd5b618d9531e7937e3494fe459dc1ea0",
+      "path": "docs/ai-workflow-metrics.jsonl",
+      "line": 21,
+      "row_sha256_without_newline": "2bd65a15f9ae61bbd3a6a16b7be41f46b66ca1a7b35a22e1a316d60405b6096d",
+      "field": "gate_checks[0].stage_total",
+      "reported_value": 8,
+      "disposition": "preserved historical scalar; not a verified gate_check_count"
+    },
+    "consumer_label": "5 receipt checks passed; historical metrics reports 8 stages (meaning unestablished)."
+  }
 }

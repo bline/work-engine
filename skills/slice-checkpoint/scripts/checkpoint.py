@@ -36,9 +36,13 @@ def canonical(value: Any) -> bytes:
 
 def git(repository: Path, args: list[str], *, env: dict[str, str] | None = None,
         input_bytes: bytes | None = None) -> bytes:
+    # Checkpoint object reads must name the bytes at the ref's real object ID.
+    # Git replacement refs otherwise let cat-file substitute a different commit.
+    git_env = dict(os.environ if env is None else env)
+    git_env["GIT_NO_REPLACE_OBJECTS"] = "1"
     complete = subprocess.run(
         ["git", "-C", str(repository), *args], input=input_bytes,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, check=False,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=git_env, check=False,
     )
     if complete.returncode:
         fail(f"git {' '.join(args)}: {complete.stderr.decode(errors='replace').strip()}")
@@ -203,7 +207,16 @@ def commit(repository: Path, tree: str, parent: str, message: dict[str, Any], cr
 
 
 def commit_record(repository: Path, oid: str) -> tuple[str, list[str], dict[str, Any]]:
-    raw = git(repository, ["cat-file", "-p", oid]).decode()
+    if text_git(repository, ["cat-file", "-t", oid]) != "commit":
+        fail("checkpoint object is not a commit")
+    raw_bytes = git(repository, ["cat-file", "commit", oid])
+    object_bytes = b"commit " + str(len(raw_bytes)).encode() + b"\0" + raw_bytes
+    object_format = text_git(repository, ["rev-parse", "--show-object-format=storage"])
+    if object_format not in {"sha1", "sha256"}:
+        fail("repository object format is unsupported")
+    if hashlib.new(object_format, object_bytes).hexdigest() != oid:
+        fail("checkpoint commit bytes do not match object id")
+    raw = raw_bytes.decode()
     headers, separator, message = raw.partition("\n\n")
     if not separator:
         fail("checkpoint commit has no metadata message")
@@ -392,12 +405,68 @@ def transition(candidate: dict[str, Any], kind: str, *, expected_accepted: str |
     return result
 
 
+def inspect(repository: Path, ref: str, expected_oid: str) -> dict[str, Any]:
+    """Read one exact immutable checkpoint without using the worktree or index."""
+    repository = repository.resolve()
+    if text_git(repository, ["rev-parse", "--show-toplevel"]) != str(repository):
+        fail("repository must be a Git worktree root")
+    prefix = "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/"
+    suffix = ref.removeprefix(prefix)
+    if not ref.startswith(prefix) or suffix not in {
+        "candidate-1", "candidate-2", "candidate-3", "candidate-4", "candidate-5", "accepted"
+    }:
+        fail("historical checkpoint ref is outside the admitted S5 case")
+    validate_oid(repository, expected_oid, "expected_oid")
+    if current_ref(repository, ref) != expected_oid:
+        fail("checkpoint ref does not match the expected commit")
+    tree, parents, metadata = commit_record(repository, expected_oid)
+    expected_kind = "accepted" if suffix == "accepted" else "candidate"
+    expected_attempt = 5 if suffix == "accepted" else int(suffix.removeprefix("candidate-"))
+    if (metadata.get("work_engine_checkpoint") != 1
+            or metadata.get("kind") != expected_kind
+            or metadata.get("run_id") != "skills-migration-app-server-20260828"
+            or metadata.get("slice_number") != 6
+            or metadata.get("candidate_attempt") != expected_attempt
+            or metadata.get("tree") != tree
+            or len(parents) != 1):
+        fail("historical checkpoint metadata does not match ref and commit")
+    for field in ("gate_receipt_digest", "manifest_digest", "task_patch_digest"):
+        validate_digest(metadata.get(field), field)
+    for field in ("plan_version", "scope_revision"):
+        if not isinstance(metadata.get(field), str) or not metadata[field]:
+            fail(f"checkpoint {field} is invalid")
+    if expected_kind == "accepted":
+        candidate_ref = prefix + "candidate-5"
+        if current_ref(repository, candidate_ref) != parents[0]:
+            fail("accepted checkpoint does not descend from candidate 5")
+        candidate_tree, _, candidate_metadata = commit_record(repository, parents[0])
+        if (candidate_tree != tree or candidate_metadata.get("request_id") != metadata.get("candidate_checkpoint_id")
+                or candidate_metadata.get("gate_receipt_digest") != metadata["gate_receipt_digest"]):
+            fail("accepted checkpoint does not match candidate 5")
+    return {
+        "source_owner": "slice-checkpoint", "ref": ref, "commit_oid": expected_oid,
+        "tree_oid": tree, "parent_commit_oid": parents[0], "metadata": metadata,
+        "integrity": "validated_commit_ref_and_metadata", "source_limit": "checkpoint metadata is not gate execution attestation",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--request-json", required=True)
+    parser.add_argument("--request-json")
+    parser.add_argument("--inspect-ref")
+    parser.add_argument("--expected-oid")
+    parser.add_argument("--repository", type=Path)
     args = parser.parse_args()
     try:
-        print(json.dumps(create_candidate(json.loads(args.request_json)), separators=(",", ":")))
+        if args.inspect_ref is not None:
+            if args.request_json is not None or args.repository is None or args.expected_oid is None:
+                fail("inspect requires repository, exact ref and expected OID")
+            output = inspect(args.repository, args.inspect_ref, args.expected_oid)
+        else:
+            if args.request_json is None or args.repository is not None or args.expected_oid is not None:
+                fail("create requires request JSON only")
+            output = create_candidate(json.loads(args.request_json))
+        print(json.dumps(output, separators=(",", ":")))
     except (json.JSONDecodeError, OSError, ValueError) as error:
         print(f"checkpoint: {error}", file=sys.stderr)
         return 2

@@ -7,6 +7,7 @@ mod contract;
 mod draft;
 mod fixture;
 mod highlight;
+mod history_view;
 mod lifecycle;
 mod model;
 mod mouse;
@@ -91,9 +92,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|a| a == "--help" || a == "-h") {
         println!(
-            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--connect /path/to/socket --task TASK [--delivery ID] [--command ID] opens read-only task observation v2, refreshed every four seconds.\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
+            "Work Engine terminal UI — fixture and explicit passive observation\n\ncargo run --manifest-path rust/crates/terminal-ui/Cargo.toml --locked -- --connect /path/to/socket --subject SUBJECT\n\n--history-connect SOCKET opens the admitted, read-only S5 historical investigation. 1–5 select candidate, Enter follows that candidate's exact review subject, Left goes back, g shows gaps, q exits.\n--history-connect SOCKET --history-snapshot WIDTH HEIGHT [candidate|replacement|original|findings|gaps] prints the same owner-backed renderer for qualification.\n--connect /path/to/socket --task TASK [--delivery ID] [--command ID] opens read-only task observation v2, refreshed every four seconds.\n--task-fixture pending|result|stale|refused opens provisional task inspection.\n--snapshot [WIDTH HEIGHT] [task-pending|task-result|task-stale|task-refused|task-graph|task-conversation|graph|dashboard|history|conversation|commands|paste|compose|selection|colors|lifecycle|lifecycle-uncertain|chat|replay|replay-rejected|replay-validation|contract-failed|contract-historical|contract-unavailable|contract-unsupported] prints a fixture frame.\n--snapshot-ansi preserves colors for preview export.\nInteractive: F1 help; Ctrl-P commands (including connection refresh/reconnect/disconnect); F7 recipient in fixture; Enter simulates sending in fixture.\nA connection only issues bounded passive reads. Drafts exist only until exit."
         );
         return Ok(());
+    }
+    if args.first().is_some_and(|a| a == "--history-connect") {
+        if args.len() == 2 {
+            return history_view::run(PathBuf::from(&args[1]));
+        }
+        if (args.len() == 5 || args.len() == 6) && args[2] == "--history-snapshot" {
+            let width: u16 = args[3].parse()?;
+            let height: u16 = args[4].parse()?;
+            let stage = args.get(5).map(String::as_str).unwrap_or("candidate");
+            print!(
+                "{}",
+                history_view::snapshot(&PathBuf::from(&args[1]), width, height, stage)?
+            );
+            return Ok(());
+        }
+        return Err(
+            "use --history-connect SOCKET [--history-snapshot WIDTH HEIGHT [stage]]".into(),
+        );
     }
     if args
         .first()

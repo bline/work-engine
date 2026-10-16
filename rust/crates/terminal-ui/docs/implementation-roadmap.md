@@ -78,10 +78,21 @@ not proof that this repeatable test covers every view or failure mode.
 
 The [S5 source map](s5-source-map.md) identifies the broader design's actual
 case: `skills-migration-app-server-20260828`, slice 6. It binds five candidates,
-acceptance, three review revisions, the recorded metrics row and continuity
-repair. The replacement authority explicitly names the original reported
-episode. Raw gate/provider/scheduler evidence and public read-access policy
-remain unresolved, so UI-0 acceptance is still not established.
+acceptance, all 14 linked revisions across three review episodes, five
+hash-matched gate results, eight distinct provider result envelopes, the exact
+quota retry item, the recorded metrics row and continuity repair. The replacement
+authority explicitly names the original reported episode. Candidate 5's
+constructed receipt lists five passed checks while frozen metrics says eight
+stages for the same digest. The historical metrics producer copied the prior slice record and manually
+entered eight with the new S5 digest; no separate eight-stage source appears in
+that producer path. The published count still needs an owner-bound correction
+or explanation. A new uncommitted, locally qualified
+[historical read host](../../historical-evidence-read/README.md) admits the exact
+checkpoint, gate-capture and review records through their legacy owners and
+renders a first terminal investigation. Its current grant and captured proof
+are external to the repository and await implementation review. Provider,
+scheduler and metrics-owner reads, a broader public access policy and full
+UI-0 acceptance remain open.
 
 ## Mapping to the accepted delivery slices
 
@@ -91,7 +102,7 @@ backend capability is absent.
 
 | Accepted slice | Reusable work today | Remaining consequence and status |
 | --- | --- | --- |
-| UI-0 — Event and owner projection | Passive client patterns, component scope/revisions, safe failure states, exact-source inspector. | Versioned evidence classes, owner registry, integrity-bound event references, confidentiality, deterministic cross-owner joins and the exact S5 golden trace are **not established** by task snapshots. |
+| UI-0 — Event and owner projection | Passive client patterns, component scope/revisions, safe failure states, exact-source inspector, and an uncommitted locally qualified checkpoint/gate/review S5 vertical. | Provider/scheduler/metrics owner reads, full versioned evidence classes and owner registry, broader confidentiality policy and the complete golden trace remain **not established**. |
 | UI-1 — Operational control plane | Overview/Graph/Conversation shell and one-task read-only inspection. | Actual campaign/slice state, roles, candidates, gates, review obligations, limits and scheduler waits need public projections and joined UI proof. **Partially reusable presentation; slice acceptance not established.** |
 | UI-2 — Causal timeline and drill-down | Identifier-bound task graph, expandable source details and offline replay presentation. | Exact candidate/episode/finding/remediation lineage, justified causal edges, historical cutoffs and traversable owner references need a qualified source graph. **Not established.** |
 | UI-3 — Efficiency and anomaly explanation | Existing source/detail presentation can display qualified measurements. | Non-overlapping attempt attribution, comparable frozen baselines, missing-measurement handling and evidence-backed S5 explanation. **Not established.** |
@@ -157,9 +168,12 @@ First prepare a source map for one explicitly selected campaign/run and the
 accepted design's **S5 review-amplification** case. Bind exact candidate, gate,
 reviewer episode, finding/remediation, replacement, quota, schedule and repair
 references, their owners, revisions, accessible evidence and missing coverage.
-The [source map](s5-source-map.md) now binds the campaign identity and a partial
-immutable corpus; raw gate/provider/scheduler evidence remains unresolved. A similarly named lifecycle S5 handoff or metrics cohort is
-not the same case without an established identity join.
+The [source map](s5-source-map.md) now binds the campaign identity, linked review
+history, five hash-matched gate results, eight provider result envelopes, a quota
+event and an acknowledged scheduler item. Candidate 5's gate count discrepancy
+remains open. The first local read admits checkpoint/gate/review records only;
+provider, metrics and scheduler reader paths remain open. A similarly named lifecycle S5 handoff or
+metrics cohort is not the same case without an established identity join.
 
 Complete the remaining source-map coverage before broader projection implementation. Its useful deliverable
 is a reviewable producer-to-consumer path for each displayed fact and edge,
@@ -176,6 +190,23 @@ is disposable derived state, not another workflow authority. Deterministic
 checks cover incorrect joins, missing or corrupted references, owner revision
 changes, incompatible generations and omitted/private evidence. This is the
 UI-0 acceptance boundary, rather than merely defining an envelope schema.
+
+### Prevent copied gate counts at the metrics boundary
+
+The S5 evidence map now retains the exact receipt and deterministic
+`gate_check_count = length(checks)` derivation, separate from historical
+`stage_total`. Future gate/metrics owner work should expose an explicitly named,
+versioned measurement with units, candidate scope and source receipt digest.
+The count should be derived from the validated receipt; publication should
+reject a supplied count that disagrees. Missing or incompatible evidence should
+produce an unavailable measurement rather than a copied scalar. If stages are
+a separate concept, their owner needs an explicit stage list and counting rule.
+
+Acceptance includes a valid five-check receipt, a supplied eight-count mismatch,
+a wrong candidate/digest, missing evidence, and nested test counts that do not
+inflate the check count. Historical records retain their original values with
+revision-bound corrections where warranted. This is proposed gate/metrics owner
+work, not a validator implemented in the UI; production enforcement remains open.
 
 ### UI-1: make one actual campaign understandable
 
@@ -240,9 +271,10 @@ the read-only slices. Streaming agent text and qualified context usage likewise
 need their own source contracts. Studio's design/organization views and remote
 or multi-client hosting remain outside this first sequence.
 
-Before starting the broader UI-0 implementation, resolve the exact historical
-S5 source set, initial campaign scope, public projection placement and read-access
-policy. The operator/product owner retains scope and priority choices; each
+Before starting the broader UI-0 implementation, resolve candidate 5's gate count discrepancy,
+the owner-admitted historical read paths, initial campaign scope, public
+projection placement and access policy. The operator/product owner retains scope
+and priority choices; each
 semantic owner retains contract/access decisions. This roadmap does not alter
 concurrent lifecycle, migration, review-provider or campaign commitments.
 

@@ -1,0 +1,15 @@
+[package]
+name = "historical-evidence-read"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[dependencies]
+historical-evidence-wire = { path = "../historical-evidence-wire" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+sha2 = "=0.10.9"
+libc = "=0.2.175"
+
+[workspace]

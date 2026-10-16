@@ -59,6 +59,42 @@ impl Terminal {
             evidence: evidence.into(),
         }
     }
+    #[allow(dead_code)]
+    pub fn launch_history(socket: &Path, evidence: &Path, rows: u16, cols: u16) -> Self {
+        let pty = openpty(
+            Some(&Winsize {
+                ws_row: rows,
+                ws_col: cols,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            }),
+            None,
+        )
+        .unwrap();
+        let master = File::from(pty.master);
+        let slave = File::from(pty.slave);
+        let original = tcgetattr(&slave).unwrap();
+        let flags = OFlag::from_bits_truncate(fcntl(&master, FcntlArg::F_GETFL).unwrap());
+        fcntl(&master, FcntlArg::F_SETFL(flags | OFlag::O_NONBLOCK)).unwrap();
+        let child = Command::new(env!("CARGO_BIN_EXE_work-engine-terminal-ui"))
+            .arg("--history-connect")
+            .arg(socket)
+            .env("TERM", "xterm-256color")
+            .stdin(Stdio::from(slave.try_clone().unwrap()))
+            .stdout(Stdio::from(slave.try_clone().unwrap()))
+            .stderr(Stdio::from(slave.try_clone().unwrap()))
+            .spawn()
+            .unwrap();
+        Self {
+            child,
+            master,
+            slave,
+            original,
+            parser: vt100::Parser::new(rows, cols, 0),
+            raw: vec![],
+            evidence: evidence.into(),
+        }
+    }
     pub fn pid(&self) -> u32 {
         self.child.id()
     }
@@ -100,7 +136,14 @@ impl Terminal {
         }
     }
     pub fn close(&mut self) {
-        self.input(b"\x03");
+        self.close_with(b"\x03");
+    }
+    #[allow(dead_code)]
+    pub fn close_history(&mut self) {
+        self.close_with(b"q");
+    }
+    fn close_with(&mut self, key: &[u8]) {
+        self.input(key);
         let deadline = Instant::now() + Duration::from_secs(3);
         loop {
             if let Some(status) = self.child.try_wait().unwrap() {

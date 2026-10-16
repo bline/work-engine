@@ -1,0 +1,105 @@
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+
+
+SCRIPT = Path(__file__).parents[1] / "scripts/legacy_gate_inspect.py"
+SPEC = importlib.util.spec_from_file_location("legacy_gate_inspect", SCRIPT)
+assert SPEC and SPEC.loader
+READER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(READER)
+RUN_ID = "skills-migration-app-server-20260828"
+
+
+class LegacyGateInspectTest(unittest.TestCase):
+    def checkpoint(self, attempt: int, digest: str) -> dict:
+        return {"ref": f"refs/work-engine/checkpoints/{RUN_ID}/slice-6/candidate-{attempt}",
+                "commit_oid": str(attempt) * 40,
+                "metadata": {"kind": "candidate", "run_id": RUN_ID, "slice_number": 6,
+                             "candidate_attempt": attempt, "gate_receipt_digest": digest}}
+
+    def fixture(self, directory: str, attempt: int):
+        if attempt == 5:
+            receipt = {"kind": "deterministic_gate_receipt", "run_id": RUN_ID,
+                       "slice_number": 6, "candidate_attempt": 5,
+                       "checks": [{"identity": "focused", "result": "passed"}]}
+            row = {"type": "event_msg", "payload": {"type": "item_completed",
+                   "item": {"id": "event-5", "stdout": json.dumps(receipt) + "\n"}}}
+            output = {"type": "response_item", "payload": {"type": "custom_tool_call_output",
+                      "call_id": "call-5", "output": [{"text": json.dumps(receipt)}]}}
+            source_kind = "coordinator_constructed_receipt"
+            identity = {"event_id": "event-5", "call_id": "call-5", "output_line": 2,
+                        "output_sha256": hashlib.sha256((json.dumps(output) + "\n").encode()).hexdigest()}
+        else:
+            receipt = {"status": "passed", "checks": [{"identity": "focused", "state": "passed"}],
+                       "failed_check": None, "totals": {"configured": 1, "executed": 1, "passed": 1, "failed": 0},
+                       "duration_seconds": 0.1}
+            row = {"type": "response_item", "payload": {"type": "custom_tool_call_output",
+                   "call_id": "call-3", "output": [{"type": "input_text", "text": json.dumps({"result": receipt})}]}}
+            source_kind = "slice_builder_runner_output"
+            identity = {"call_id": "call-3"}
+        path = Path(directory) / "capture.jsonl"
+        raw = (json.dumps(row) + "\n").encode()
+        path.write_bytes(raw + ((json.dumps(output) + "\n").encode() if attempt == 5 else b""))
+        digest = hashlib.sha256(READER.canonical(receipt)).hexdigest()
+        checkpoint = self.checkpoint(attempt, digest)
+        descriptor = {"attempt": attempt, "checkpoint_ref": checkpoint["ref"],
+                      "checkpoint_oid": checkpoint["commit_oid"], "capture_path": str(path),
+                      "capture_line": 1, "capture_sha256": hashlib.sha256(raw).hexdigest(),
+                      "source_kind": source_kind, "receipt_sha256": digest, **identity}
+        return descriptor, checkpoint
+
+    def test_both_actual_schemas_preserve_receipt_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for attempt in (3, 5):
+                descriptor, checkpoint = self.fixture(directory, attempt)
+                result = READER.inspect(descriptor, attempt, checkpoint)
+                self.assertEqual(1, result["passed_count"])
+                self.assertEqual(descriptor["receipt_sha256"], result["receipt_sha256"])
+                self.assertEqual("passed", result["checks"][0]["outcome"])
+
+    def test_wrong_checkpoint_capture_and_native_identity_are_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor, checkpoint = self.fixture(directory, 3)
+            other = self.checkpoint(4, checkpoint["metadata"]["gate_receipt_digest"])
+            with self.assertRaisesRegex(ValueError, "paired"):
+                READER.inspect(descriptor, 3, other)
+            with self.assertRaisesRegex(ValueError, "capture bytes"):
+                READER.inspect({**descriptor, "capture_sha256": "0" * 64}, 3, checkpoint)
+            descriptor, checkpoint = self.fixture(directory, 5)
+            with self.assertRaisesRegex(ValueError, "coordinator output bytes"):
+                READER.inspect({**descriptor, "output_sha256": "0" * 64}, 5, checkpoint)
+            row = json.loads(Path(descriptor["capture_path"]).read_text().splitlines()[0])
+            receipt = json.loads(row["payload"]["item"]["stdout"])
+            receipt["candidate_attempt"] = 4
+            row["payload"]["item"]["stdout"] = json.dumps(receipt) + "\n"
+            raw = (json.dumps(row) + "\n").encode()
+            output = {"type": "response_item", "payload": {"type": "custom_tool_call_output",
+                      "call_id": "call-5", "output": [{"text": json.dumps(receipt)}]}}
+            output_raw = (json.dumps(output) + "\n").encode()
+            Path(descriptor["capture_path"]).write_bytes(raw + output_raw)
+            descriptor["capture_sha256"] = hashlib.sha256(raw).hexdigest()
+            descriptor["output_sha256"] = hashlib.sha256(output_raw).hexdigest()
+            with self.assertRaisesRegex(ValueError, "identity"):
+                READER.inspect(descriptor, 5, checkpoint)
+
+    def test_fifo_and_oversized_skipped_line_are_refused_before_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pipe = Path(directory) / "capture.pipe"
+            os.mkfifo(pipe)
+            with self.assertRaisesRegex(ValueError, "regular file"):
+                READER.selected_line(pipe, 1)
+            capture = Path(directory) / "long.jsonl"
+            capture.write_bytes(b"x" * (4 * 1024 * 1024) + b"\n{}\n")
+            with self.assertRaisesRegex(ValueError, "read limit"):
+                READER.selected_line(capture, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
