@@ -305,6 +305,10 @@ fn actual_native_capture_to_held_capsule() {
     let translation = translate_v28_capture(&f.attempt, &f.output).unwrap();
     verify_completed_translation(&f.attempt, &f.output, &translation).unwrap();
     assert_eq!(
+        translation.capsule_version.as_deref(),
+        Some("s9-v28-obligations-v2")
+    );
+    assert_eq!(
         translation.receipt_sha256,
         sha(&fs::read(f.output.join("receipt.json")).unwrap())
     );
@@ -320,6 +324,11 @@ fn actual_native_capture_to_held_capsule() {
     assert_eq!(source_before, source_after);
     let capsule: Value =
         serde_json::from_slice(&fs::read(f.output.join("capsule.json")).unwrap()).unwrap();
+    assert_eq!(capsule["schema_version"], "s9-v28-obligations-v2");
+    assert_eq!(capsule["relation_census"].as_array().unwrap().len(), 28);
+    let report: Value =
+        serde_json::from_slice(&fs::read(f.output.join("report-redacted.json")).unwrap()).unwrap();
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(capsule["q3"]["physical_delivery"], "not_applicable");
     assert_eq!(capsule["q4"]["physical_delivery"], "not_proved");
     assert_eq!(capsule["no_rust_custody"], true);

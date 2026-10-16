@@ -33,6 +33,9 @@ const SHM: &str = "semantic-context.sqlite3-shm";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TranslationReceipt {
     pub output_root: PathBuf,
+    /// None identifies a historical v1 result; v2 callers must bind this explicitly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capsule_version: Option<String>,
     pub capsule_sha256: String,
     pub manifest_sha256: String,
     /// Exact in-directory receipt bytes; receipt.json cannot hash itself via manifest.json.
@@ -98,6 +101,8 @@ struct InventoryRow {
     revision: Option<String>,
     status: Option<String>,
     source_projection_sha256: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source_revisions: Option<BTreeMap<String, Value>>,
     classification: String,
     reason: Option<String>,
 }
@@ -110,8 +115,8 @@ struct TableSpec {
     status: Option<&'static str>,
 }
 
-// Column order is pinned to the reached schema-12 migration DDL, not inferred
-// from a copied database. SQL below is built only from these static identifiers.
+// Column order and closed schema-object digests are pinned to the verified
+// historical copied schema-12 image. SQL uses only these static identifiers.
 const TABLES: &[TableSpec] = &[
     TableSpec {
         name: "legacy_context_input_custody_lineages",
@@ -450,6 +455,494 @@ const TABLES: &[TableSpec] = &[
         revision: None,
         status: Some("disposition"),
     },
+    TableSpec {
+        name: "checkpoint_fences",
+        columns: &[
+            "logical_role_instance_id",
+            "thread_id",
+            "binding_revision",
+            "source_revision",
+            "authority_revision",
+            "publication_revision",
+            "ledger_revision",
+            "updated_at",
+        ],
+        key: "logical_role_instance_id",
+        revision: Some("authority_revision"),
+        status: None,
+    },
+    TableSpec {
+        name: "checkpoint_publications",
+        columns: &[
+            "checkpoint_revision",
+            "logical_role_instance_id",
+            "candidate_revision",
+            "ledger_revision",
+            "published_at",
+            "publication_json",
+            "ledger_json",
+        ],
+        key: "checkpoint_revision",
+        revision: Some("checkpoint_revision"),
+        status: None,
+    },
+    TableSpec {
+        name: "context_input_admission_handoffs",
+        columns: &[
+            "logical_role_instance_id",
+            "predecessor_revision",
+            "successor_revision",
+            "thread_id",
+            "binding_revision",
+            "queue_id",
+            "input_revision",
+            "recorded_at",
+        ],
+        key: "logical_role_instance_id",
+        revision: Some("predecessor_revision"),
+        status: None,
+    },
+    TableSpec {
+        name: "lifecycle_episodes",
+        columns: &[
+            "episode_id",
+            "logical_role_instance_id",
+            "policy_revision",
+            "schedule_revision",
+            "completed_at",
+            "request_revision",
+            "episode_revision",
+            "payload_json",
+        ],
+        key: "episode_id",
+        revision: Some("episode_revision"),
+        status: None,
+    },
+    TableSpec {
+        name: "lifecycle_ledger_heads",
+        columns: &[
+            "logical_role_instance_id",
+            "entry_revision",
+            "sequence",
+            "entry_json",
+        ],
+        key: "logical_role_instance_id",
+        revision: Some("entry_revision"),
+        status: None,
+    },
+];
+
+const OBSERVED_SCHEMA_OBJECTS: &[(&str, &str, Option<&str>)] = &[
+    (
+        "index",
+        "aborted_context_input_release_recovery",
+        Some("f2bf1689e5667bfd1fec75f260091ad0539657e0922fb01120fa5ee9065eee1a"),
+    ),
+    (
+        "index",
+        "active_turn_lifecycle_observations_owner",
+        Some("359d7e3a7c3631a380e0f7970d1c0a81130e8671c298f9075589cb39a279ce8b"),
+    ),
+    (
+        "index",
+        "active_turn_lifecycle_observations_turn",
+        Some("a72ca152652c50cf95dc56c1c4cc4ec563664dfec25cb7d6b5b8d1cc3e8f3294"),
+    ),
+    (
+        "index",
+        "active_turn_lifecycle_recovery",
+        Some("1c41a3c46a181b450ecd2783fff7dbf79df8267d1deab10c1872cfa8f5dabe70"),
+    ),
+    (
+        "index",
+        "active_turn_lifecycle_turn",
+        Some("be906edc0fb4f403b88fe329e06d91b6b01e7f9509a54fa8f00e2891e894a31c"),
+    ),
+    (
+        "index",
+        "context_domain_input_custody_drain",
+        Some("ecc83a2600f0e17443444aa499791973faef30db39def6046b7bc10d0a4ccb06"),
+    ),
+    (
+        "index",
+        "context_domain_input_custody_ready",
+        Some("ebb44aa231057d38e78627fa0daedf8bddbcf3ad0fa9d4a01601eb9aeca1c0c0"),
+    ),
+    (
+        "index",
+        "context_input_queue_release_order",
+        Some("c124bbb153926ec4b4009acfff98e09dd7439de6db68a8a6bd31f79f8199d526"),
+    ),
+    (
+        "index",
+        "context_transition_applications_transition",
+        Some("544c798de7c87aa6bbf28474df913cb3330494d3b36a68e81a23956aacda21d5"),
+    ),
+    (
+        "index",
+        "context_transition_effects_transition",
+        Some("2addae4cf31f9234a9b2264def02a879fedcb25fb50b03e1d89b7bc1700ed718"),
+    ),
+    (
+        "index",
+        "context_transition_events_transition",
+        Some("65f68d4b9634f6b566c6836bc7a9a9661607f03fb6d1930da99aa7c17d658dcd"),
+    ),
+    (
+        "index",
+        "context_transition_one_active_recovery",
+        Some("7511a520f4c4eb5964f88f241082cfcfb1ac21897ef6ca138cf2d4b1fa161513"),
+    ),
+    (
+        "index",
+        "context_transition_one_provider_entry",
+        Some("e2c7e1a340590430f424065ecbfd48e1eb76383bdb573939ca1533526c8a3212"),
+    ),
+    (
+        "index",
+        "context_transitions_one_active_role",
+        Some("ce016496476ba290a48610c8460aebdebaf562e5e4498b98638584186e53fd05"),
+    ),
+    (
+        "index",
+        "context_transitions_predecessor",
+        Some("93d402e70a42519861670a3ea8dca301557af25c86669a4ab98c686849adf378"),
+    ),
+    (
+        "index",
+        "legacy_context_input_dispositions_release_fence",
+        Some("60d4691d73f055c75f620a1f62d819046cc778bbdba1d825f286eafa40e9cce6"),
+    ),
+    (
+        "index",
+        "legacy_context_input_dispositions_successor_delivery",
+        Some("0a2bcfd9b6767d54bbd97624be6f7b19aef184fd424ddeb1721c27b63c08043c"),
+    ),
+    (
+        "index",
+        "lifecycle_episodes_policy_schedule",
+        Some("7b721fe8db436539cd899710e37d6a655d03ff326d19cd2d6fcb555201bf1e87"),
+    ),
+    (
+        "index",
+        "lifecycle_episodes_role_completed",
+        Some("42f3727ea5442051d09bc8bc74f38b9c78c72132625f2317f7bb3f8a61448d5b"),
+    ),
+    (
+        "index",
+        "sqlite_autoindex_aborted_context_input_releases_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_aborted_context_input_releases_2",
+        None,
+    ),
+    ("index", "sqlite_autoindex_active_turn_lifecycle_1", None),
+    ("index", "sqlite_autoindex_active_turn_lifecycle_2", None),
+    (
+        "index",
+        "sqlite_autoindex_active_turn_lifecycle_observations_1",
+        None,
+    ),
+    ("index", "sqlite_autoindex_checkpoint_fences_1", None),
+    ("index", "sqlite_autoindex_checkpoint_publications_1", None),
+    ("index", "sqlite_autoindex_checkpoint_publications_2", None),
+    ("index", "sqlite_autoindex_checkpoint_publications_3", None),
+    (
+        "index",
+        "sqlite_autoindex_context_domain_input_custody_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_domain_input_custody_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_domain_input_custody_3",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_input_admission_handoffs_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_input_admission_handoffs_2",
+        None,
+    ),
+    ("index", "sqlite_autoindex_context_input_admissions_1", None),
+    ("index", "sqlite_autoindex_context_input_queue_1", None),
+    ("index", "sqlite_autoindex_context_input_queue_2", None),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_admission_owners_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effect_applications_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effect_evidence_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effect_evidence_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effects_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effects_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_effects_3",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_event_applications_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_events_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_events_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_host_facts_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_provider_observations_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_queue_drain_receipts_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_queue_drain_receipts_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_queue_drain_receipts_3",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_recovery_operations_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_context_transition_recovery_operations_2",
+        None,
+    ),
+    ("index", "sqlite_autoindex_context_transitions_1", None),
+    ("index", "sqlite_autoindex_context_transitions_2", None),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_custody_lineages_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_custody_owners_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_custody_owners_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_dispositions_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_dispositions_2",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_successor_deliveries_1",
+        None,
+    ),
+    (
+        "index",
+        "sqlite_autoindex_legacy_context_input_successor_deliveries_2",
+        None,
+    ),
+    ("index", "sqlite_autoindex_lifecycle_episodes_1", None),
+    ("index", "sqlite_autoindex_lifecycle_episodes_2", None),
+    ("index", "sqlite_autoindex_lifecycle_ledger_heads_1", None),
+    ("index", "sqlite_autoindex_lifecycle_ledger_heads_2", None),
+    (
+        "table",
+        "aborted_context_input_releases",
+        Some("cd0d0eb959443ff2b6dee9e3d3921a997970d3667571c55dc413b70d5ffe70ff"),
+    ),
+    (
+        "table",
+        "active_turn_lifecycle",
+        Some("8922690ea772706d3e0b1628eadc6d40c8545730756da9a9d16668689f6868d6"),
+    ),
+    (
+        "table",
+        "active_turn_lifecycle_observations",
+        Some("90e0e2e0d1b2cd0e05c68736312506a33ce686ca87901350ee47d6d127cb772e"),
+    ),
+    (
+        "table",
+        "checkpoint_fences",
+        Some("c4299c85ce5042d09d2b9a4213998d437f295f0853039aa5ee4613d253af5573"),
+    ),
+    (
+        "table",
+        "checkpoint_publications",
+        Some("d29e32208e2d3e3003ca1ee3310a46a34ff6392db42b49302d5ec5c8129e3e61"),
+    ),
+    (
+        "table",
+        "context_domain_input_custody",
+        Some("ad241d8a77e49270a24ec3f5ea30cbc8f05681ce5bc18cf755f6d0367bcfca9d"),
+    ),
+    (
+        "table",
+        "context_input_admission_handoffs",
+        Some("c7ff256af4e2c4de15f2146bb1d94d8d40c5ac5be4958e364b480c9a27da98a4"),
+    ),
+    (
+        "table",
+        "context_input_admissions",
+        Some("3e918dd66d7e43eb166525c26af5ebec610645a702c3e6d41183266d37c84d41"),
+    ),
+    (
+        "table",
+        "context_input_queue",
+        Some("74330a8fb618f6b4b46f589a1d69027ea879e7c927f3dd013af0e9da99228301"),
+    ),
+    (
+        "table",
+        "context_transition_admission_owners",
+        Some("c8678de7c4b6f5538825abfc0a2fed7cae1fa321644c5270dd1e9b65f5af9b53"),
+    ),
+    (
+        "table",
+        "context_transition_effect_applications",
+        Some("d30ec0d77def0b7349dace28ac5f3a9f44f0a663285b0f87e5f40fa0af7eca69"),
+    ),
+    (
+        "table",
+        "context_transition_effect_evidence",
+        Some("23e791496837b2134107db6aced827d220e8d9ea3926e4d6714d40c1f0ea1b33"),
+    ),
+    (
+        "table",
+        "context_transition_effects",
+        Some("2e1e355693172714b29f7969cf35b1c05f141834a5d072a87789b510ead63869"),
+    ),
+    (
+        "table",
+        "context_transition_event_applications",
+        Some("e1f209ca2c6736e565770a177a5b564f672e52ea552a7dba8ebe16a257c9005f"),
+    ),
+    (
+        "table",
+        "context_transition_events",
+        Some("395831603441ce36d58379578afafd57e1a29e34cc3a8266d97e31926ae35cbc"),
+    ),
+    (
+        "table",
+        "context_transition_host_facts",
+        Some("ceb9720016c1951162fc8913e3728ddfb6334732b1d43c5d0969c6c8c633c2f9"),
+    ),
+    (
+        "table",
+        "context_transition_provider_observations",
+        Some("9c9b0bc77691cb429d9ef7163cd5eea42a7a16733b4e266ed182fb5fea35e1c2"),
+    ),
+    (
+        "table",
+        "context_transition_queue_drain_receipts",
+        Some("2727e2b439f9cc9edd4e67000be8acbd2ce7ad74e691ebaea8ecba9dfc1e764f"),
+    ),
+    (
+        "table",
+        "context_transition_recovery_operations",
+        Some("b5e83eb69e49027a4f4a50b8813603315a8cc723c43f3ad773206e61e671f9b6"),
+    ),
+    (
+        "table",
+        "context_transitions",
+        Some("4600d4ea142a6f0c7e56f1747fcf09dd5c268e7d54ab46b67c63987f8fc125ce"),
+    ),
+    (
+        "table",
+        "legacy_context_input_custody_lineages",
+        Some("f2a07e8b38f3b24bb537b38a91efb515500df02ab197678770ed2819a671fbb7"),
+    ),
+    (
+        "table",
+        "legacy_context_input_custody_owners",
+        Some("36560f243d0fa71aef8a876f8dc963c091bc2c3a7409fbe82003a647c16c7768"),
+    ),
+    (
+        "table",
+        "legacy_context_input_dispositions",
+        Some("b29fc791f5db0841ee4c0bc2dc32a6b61ea41c524ba423069f2abca57c0efee1"),
+    ),
+    (
+        "table",
+        "legacy_context_input_successor_deliveries",
+        Some("b170da3ca253ae025144cf5b62d951de7d02386e2b0ab0384bcf641244745109"),
+    ),
+    (
+        "table",
+        "lifecycle_episodes",
+        Some("ff61e75724e16092e185a5f3aa50e082968e780f14e7506470958ed23913e4eb"),
+    ),
+    (
+        "table",
+        "lifecycle_ledger_heads",
+        Some("7206c65fdd73668b2a3b180c89038ff0e1416587aa51f50016d7c14a7064eb30"),
+    ),
+    (
+        "table",
+        "schema_migrations",
+        Some("d4759513e6b31d362c2516cffb664783e24e9132dffec265c27bcae05a04e3ac"),
+    ),
+    (
+        "table",
+        "sqlite_sequence",
+        Some("4cb1eaf14467f226196148cb5688569660cb290d414bae4c1c450b149b62befd"),
+    ),
 ];
 
 fn sha(bytes: &[u8]) -> String {
@@ -1173,6 +1666,7 @@ fn open_copy(path: &Path) -> T<Connection> {
         }
     }
     validate_material_schema(&conn)?;
+    validate_closed_schema(&conn)?;
     Ok(conn)
 }
 
@@ -1412,6 +1906,65 @@ fn validate_material_schema(conn: &Connection) -> T<()> {
     Ok(())
 }
 
+fn validate_closed_schema(conn: &Connection) -> T<()> {
+    let mut statement = conn
+        .prepare("SELECT type,name,sql FROM sqlite_schema ORDER BY type,name")
+        .map_err(|e| e.to_string())?;
+    let observed: Vec<(String, String, Option<String>)> = statement
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<_, _>>()
+        .map_err(|e| e.to_string())?;
+    if observed.len() != OBSERVED_SCHEMA_OBJECTS.len() {
+        return fail("copied schema-12 closed object count mismatch");
+    }
+    for ((kind, name, sql), (want_kind, want_name, want_hash)) in
+        observed.iter().zip(OBSERVED_SCHEMA_OBJECTS)
+    {
+        if kind != want_kind
+            || name != want_name
+            || sql.as_deref().map(|text| sha(text.as_bytes())).as_deref() != *want_hash
+        {
+            return fail(format!(
+                "copied schema-12 closed object mismatch: {kind}/{name}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn schema_census(conn: &Connection) -> T<(Vec<Value>, String)> {
+    let mut census = Vec::new();
+    for (kind, name, fingerprint) in OBSERVED_SCHEMA_OBJECTS {
+        if *kind != "table" {
+            continue;
+        }
+        let rows: i64 = conn
+            .query_row(&format!("SELECT COUNT(*) FROM {name}"), [], |row| {
+                row.get(0)
+            })
+            .map_err(|e| format!("schema census {name}: {e}"))?;
+        let treatment = if matches!(*name, "schema_migrations" | "sqlite_sequence") {
+            "excluded_system"
+        } else {
+            "included_inventory"
+        };
+        census.push(json!({
+            "relation": name,
+            "rows": rows,
+            "treatment": treatment,
+            "schema_fingerprint_sha256": fingerprint.ok_or("schema table fingerprint absent")?,
+        }));
+    }
+    if census.len() != 28 {
+        return fail("copied schema-12 census incomplete");
+    }
+    let digest = sha(serde_json::to_string(&census)
+        .map_err(|e| e.to_string())?
+        .as_bytes());
+    Ok((census, digest))
+}
+
 fn cell_string(cell: ValueRef<'_>) -> T<Option<String>> {
     match cell {
         ValueRef::Null => Ok(None),
@@ -1440,6 +1993,34 @@ fn source_row_hash(row: &rusqlite::Row<'_>, count: usize) -> T<String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
+fn added_domain(name: &str) -> bool {
+    matches!(
+        name,
+        "checkpoint_fences"
+            | "checkpoint_publications"
+            | "context_input_admission_handoffs"
+            | "lifecycle_episodes"
+            | "lifecycle_ledger_heads"
+    )
+}
+
+fn revision_cell(cell: ValueRef<'_>, name: &str) -> T<Value> {
+    match cell {
+        ValueRef::Null => Ok(Value::Null),
+        ValueRef::Integer(n) if matches!(name, "binding_revision" | "sequence") && n > 0 => {
+            Ok(json!(n))
+        }
+        ValueRef::Text(raw) if !matches!(name, "binding_revision" | "sequence") => {
+            let text = std::str::from_utf8(raw).map_err(|_| "non-UTF-8 source revision")?;
+            if !is_revision(text) {
+                return fail(format!("invalid source revision field {name}"));
+            }
+            Ok(json!(text))
+        }
+        _ => fail(format!("invalid source revision type {name}")),
+    }
+}
+
 fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
     let mut inventory = Vec::new();
     let mut seen = BTreeSet::new();
@@ -1466,8 +2047,25 @@ fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
             .and_then(|name| spec.columns.iter().position(|column| *column == name));
         let mut cursor = statement.query([]).map_err(|e| e.to_string())?;
         while let Some(row) = cursor.next().map_err(|e| e.to_string())? {
-            let key = cell_string(row.get_ref(key_index).map_err(|e| e.to_string())?)?
+            let mut key = cell_string(row.get_ref(key_index).map_err(|e| e.to_string())?)?
                 .ok_or("null row identity")?;
+            if added_domain(spec.name) && key.chars().all(js_whitespace) {
+                return fail(format!("empty added-domain identity: {}", spec.name));
+            }
+            if spec.name == "context_input_admission_handoffs" {
+                let predecessor_index = spec
+                    .columns
+                    .iter()
+                    .position(|name| *name == "predecessor_revision")
+                    .ok_or("handoff predecessor column absent")?;
+                let predecessor =
+                    cell_string(row.get_ref(predecessor_index).map_err(|e| e.to_string())?)?
+                        .ok_or("handoff predecessor absent")?;
+                if !is_revision(&predecessor) {
+                    return fail("handoff predecessor revision invalid");
+                }
+                key = canonical(&json!([key, predecessor]))?;
+            }
             if !seen.insert((spec.name, key.clone())) {
                 return fail(format!("duplicate identity in {}", spec.name));
             }
@@ -1478,6 +2076,20 @@ fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
             let status = match status_index {
                 Some(index) => cell_string(row.get_ref(index).map_err(|e| e.to_string())?)?,
                 None => None,
+            };
+            let source_revisions = if added_domain(spec.name) {
+                let mut fields = BTreeMap::new();
+                for (index, name) in spec.columns.iter().enumerate() {
+                    if name.ends_with("_revision") || *name == "sequence" {
+                        fields.insert(
+                            (*name).to_string(),
+                            revision_cell(row.get_ref(index).map_err(|e| e.to_string())?, name)?,
+                        );
+                    }
+                }
+                Some(fields)
+            } else {
+                None
             };
             let benign_snapshot = matches!(
                 spec.name,
@@ -1494,6 +2106,7 @@ fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
                 revision,
                 status,
                 source_projection_sha256: source_row_hash(row, spec.columns.len())?,
+                source_revisions,
                 classification: if benign_snapshot {
                     "historical_observation"
                 } else {
@@ -1502,6 +2115,15 @@ fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
                 .to_string(),
                 reason: if benign_snapshot {
                     None
+                } else if added_domain(spec.name) {
+                    Some(match spec.name {
+                        "context_input_admission_handoffs" => "handoff lineage observed; delivery and current custody remain unsettled",
+                        "checkpoint_fences" => "historical checkpoint fence authority context; Rust custody meaning unsettled",
+                        "checkpoint_publications" => "historical checkpoint publication observed; current effect and custody unsettled",
+                        "lifecycle_ledger_heads" => "historical ledger head observed; current effect and custody unsettled",
+                        "lifecycle_episodes" => "historical lifecycle episode observed; transfer meaning unsettled",
+                        _ => unreachable!(),
+                    }.to_string())
                 } else {
                     Some(
                         "lineage or effect not conclusively settled by copied evidence".to_string(),
@@ -1511,6 +2133,180 @@ fn scan_rows(conn: &Connection) -> T<Vec<InventoryRow>> {
         }
     }
     Ok(inventory)
+}
+
+fn validate_added_domain_rows(conn: &Connection) -> T<()> {
+    let mut handoffs = conn.prepare(
+        "SELECT h.logical_role_instance_id,h.predecessor_revision,h.successor_revision,\
+         h.thread_id,h.binding_revision,h.queue_id,h.input_revision,\
+         q.logical_role_instance_id,q.input_revision,q.status,a.thread_id,a.binding_revision \
+         FROM context_input_admission_handoffs h \
+         LEFT JOIN context_input_queue q ON q.queue_id=h.queue_id \
+         LEFT JOIN context_input_admissions a ON a.logical_role_instance_id=h.logical_role_instance_id"
+    ).map_err(|e| e.to_string())?;
+    let mut rows = handoffs.query([]).map_err(|e| e.to_string())?;
+    while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let role: String = row.get(0).map_err(|e| e.to_string())?;
+        let predecessor: String = row.get(1).map_err(|e| e.to_string())?;
+        let successor: String = row.get(2).map_err(|e| e.to_string())?;
+        let thread: String = row.get(3).map_err(|e| e.to_string())?;
+        let binding: i64 = row.get(4).map_err(|e| e.to_string())?;
+        let queue: String = row.get(5).map_err(|e| e.to_string())?;
+        let input: String = row.get(6).map_err(|e| e.to_string())?;
+        if !is_revision(&predecessor)
+            || !is_revision(&successor)
+            || predecessor == successor
+            || !is_revision(&input)
+            || role.chars().all(js_whitespace)
+            || thread.chars().all(js_whitespace)
+            || queue.chars().all(js_whitespace)
+            || binding <= 0
+            || row
+                .get::<_, Option<String>>(7)
+                .map_err(|e| e.to_string())?
+                .as_deref()
+                != Some(&role)
+            || row
+                .get::<_, Option<String>>(8)
+                .map_err(|e| e.to_string())?
+                .as_deref()
+                != Some(&input)
+            || row
+                .get::<_, Option<String>>(9)
+                .map_err(|e| e.to_string())?
+                .as_deref()
+                != Some("released")
+            || row
+                .get::<_, Option<String>>(10)
+                .map_err(|e| e.to_string())?
+                .as_deref()
+                != Some(&thread)
+            || row.get::<_, Option<i64>>(11).map_err(|e| e.to_string())? != Some(binding)
+        {
+            return fail("handoff queue/admission lineage invalid or unresolved codec");
+        }
+    }
+    drop(rows);
+    drop(handoffs);
+
+    let mut fences = conn.prepare(
+        "SELECT f.logical_role_instance_id,f.thread_id,f.binding_revision,\
+         a.thread_id,a.binding_revision FROM checkpoint_fences f \
+         LEFT JOIN context_input_admissions a ON a.logical_role_instance_id=f.logical_role_instance_id"
+    ).map_err(|e| e.to_string())?;
+    let mut rows = fences.query([]).map_err(|e| e.to_string())?;
+    while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let thread: String = row.get(1).map_err(|e| e.to_string())?;
+        let binding: i64 = row.get(2).map_err(|e| e.to_string())?;
+        if row
+            .get::<_, Option<String>>(3)
+            .map_err(|e| e.to_string())?
+            .as_deref()
+            != Some(&thread)
+            || row.get::<_, Option<i64>>(4).map_err(|e| e.to_string())? != Some(binding)
+        {
+            return fail("checkpoint fence admission lineage invalid");
+        }
+    }
+    drop(rows);
+    drop(fences);
+
+    let mut publications = conn.prepare(
+        "SELECT p.checkpoint_revision,p.logical_role_instance_id,p.candidate_revision,\
+         p.ledger_revision,p.published_at,p.publication_json,p.ledger_json,\
+         f.thread_id,f.binding_revision,f.source_revision,f.authority_revision,\
+         f.publication_revision,f.ledger_revision,l.entry_revision,l.sequence,l.entry_json \
+         FROM checkpoint_publications p \
+         LEFT JOIN checkpoint_fences f ON f.logical_role_instance_id=p.logical_role_instance_id \
+         LEFT JOIN lifecycle_ledger_heads l ON l.logical_role_instance_id=p.logical_role_instance_id"
+    ).map_err(|e| e.to_string())?;
+    let mut rows = publications.query([]).map_err(|e| e.to_string())?;
+    while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let checkpoint: String = row.get(0).map_err(|e| e.to_string())?;
+        let role: String = row.get(1).map_err(|e| e.to_string())?;
+        let candidate: String = row.get(2).map_err(|e| e.to_string())?;
+        let ledger: String = row.get(3).map_err(|e| e.to_string())?;
+        let published: String = row.get(4).map_err(|e| e.to_string())?;
+        let publication_raw: String = row.get(5).map_err(|e| e.to_string())?;
+        let ledger_raw: String = row.get(6).map_err(|e| e.to_string())?;
+        let thread: Option<String> = row.get(7).map_err(|e| e.to_string())?;
+        let binding: Option<i64> = row.get(8).map_err(|e| e.to_string())?;
+        let source: Option<String> = row.get(9).map_err(|e| e.to_string())?;
+        let authority: Option<String> = row.get(10).map_err(|e| e.to_string())?;
+        let fence_publication: Option<String> = row.get(11).map_err(|e| e.to_string())?;
+        let fence_ledger: Option<String> = row.get(12).map_err(|e| e.to_string())?;
+        let ledger_head: Option<String> = row.get(13).map_err(|e| e.to_string())?;
+        let sequence: Option<i64> = row.get(14).map_err(|e| e.to_string())?;
+        let head_raw: Option<String> = row.get(15).map_err(|e| e.to_string())?;
+        let publication = parsed_json(publication_raw.as_bytes(), "checkpoint publication")?;
+        let entry = parsed_json(ledger_raw.as_bytes(), "checkpoint ledger")?;
+        if !publication.is_object()
+            || !entry.is_object()
+            || thread.is_none()
+            || binding.is_none()
+            || source.is_none()
+            || authority.is_none()
+            || fence_publication.as_deref() != Some(&checkpoint)
+            || fence_ledger.as_deref() != Some(&ledger)
+            || ledger_head.as_deref() != Some(&ledger)
+            || head_raw.as_deref() != Some(&ledger_raw)
+            || sequence.is_none_or(|n| n <= 0)
+            || publication["checkpointRevision"] != checkpoint
+            || publication["publishedAt"] != published
+            || publication["subject"]["logicalRoleInstanceId"] != role
+            || publication["subject"]["candidateRevision"] != candidate
+            || publication["subject"]["threadId"].as_str() != thread.as_deref()
+            || publication["subject"]["bindingRevision"].as_i64() != binding
+            || publication["subject"]["sourceRevision"].as_str() != source.as_deref()
+            || publication["subject"]["authorityRevision"].as_str() != authority.as_deref()
+            || entry["entryRevision"] != ledger
+            || entry["sequence"].as_i64() != sequence
+            || entry["subject"]["logicalRoleInstanceId"] != role
+            || entry["details"]["checkpointRevision"] != checkpoint
+            || entry["details"]["candidateRevision"] != candidate
+        {
+            return fail("checkpoint publication/ledger/fence identity or codec mismatch");
+        }
+    }
+    drop(rows);
+    drop(publications);
+
+    let mut ledger_rows = conn.prepare(
+        "SELECT logical_role_instance_id,entry_revision,sequence,entry_json FROM lifecycle_ledger_heads"
+    ).map_err(|e| e.to_string())?;
+    let mut rows = ledger_rows.query([]).map_err(|e| e.to_string())?;
+    while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let role: String = row.get(0).map_err(|e| e.to_string())?;
+        let revision: String = row.get(1).map_err(|e| e.to_string())?;
+        let sequence: i64 = row.get(2).map_err(|e| e.to_string())?;
+        let raw: String = row.get(3).map_err(|e| e.to_string())?;
+        let entry = parsed_json(raw.as_bytes(), "lifecycle ledger head")?;
+        if !entry.is_object()
+            || entry["entryRevision"] != revision
+            || entry["sequence"] != sequence
+            || entry["subject"]["logicalRoleInstanceId"] != role
+        {
+            return fail("lifecycle ledger head identity or codec mismatch");
+        }
+    }
+    drop(rows);
+    drop(ledger_rows);
+    let mut episodes = conn
+        .prepare("SELECT episode_id,payload_json FROM lifecycle_episodes")
+        .map_err(|e| e.to_string())?;
+    let mut rows = episodes.query([]).map_err(|e| e.to_string())?;
+    while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let id: String = row.get(0).map_err(|e| e.to_string())?;
+        let raw: String = row.get(1).map_err(|e| e.to_string())?;
+        let body = parsed_json(raw.as_bytes(), "lifecycle episode")?;
+        if id.chars().all(js_whitespace)
+            || !body.is_object()
+            || body.get("episodeId").is_some_and(|v| v != &json!(id))
+        {
+            return fail("lifecycle episode identity or codec mismatch");
+        }
+    }
+    Ok(())
 }
 
 struct Queue {
@@ -1625,6 +2421,7 @@ fn registry_rows(capture: &Loaded, dispositions: &[Disposition]) -> T<Vec<Invent
             revision: Some(entry["bindingRevision"].to_string()),
             status: Some("bound".to_string()),
             source_projection_sha256: sha(canonical(entry)?.as_bytes()),
+            source_revisions: None,
             classification: "unclassified".to_string(),
             reason: Some(
                 if exact_link {
@@ -1700,7 +2497,7 @@ fn registry_rows(capture: &Loaded, dispositions: &[Disposition]) -> T<Vec<Invent
         });
         result.push(InventoryRow { table:"role-bindings.json/deliveries".to_string(), identity:key.clone(),
             revision:None, status:Some(status.to_string()),
-            source_projection_sha256:sha(canonical(entry)?.as_bytes()),
+            source_projection_sha256:sha(canonical(entry)?.as_bytes()), source_revisions:None,
             classification:"unclassified".to_string(),
             reason:Some(if exact_link {"copied registry delivery matches legacy target identity; physical effect still unproved"}
                 else {"copied registry delivery has no exact legacy target lineage; blocked"}.to_string()) });
@@ -2096,6 +2893,7 @@ fn local_owner(conn: &Connection, source_root: &str) -> T<LocalCustody> {
 }
 
 fn classify(conn: &Connection, capture: &Loaded) -> T<Classified> {
+    validate_added_domain_rows(conn)?;
     let mut inventory = scan_rows(conn)?;
     let queues = load_queues(conn)?;
     let dispositions = load_dispositions(conn)?;
@@ -2480,30 +3278,42 @@ fn verify_content(attempt_root: &Path, output: &Path, expected: &TranslationRece
     }
     let (capsule, capsule_hash) = json_file(&output.join("capsule.json"), 16_000_000)?;
     let (receipt, receipt_hash) = json_file(&output.join("receipt.json"), 4_000_000)?;
-    exact_keys(
-        &receipt,
-        &[
-            "schema_version",
-            "status",
-            "started_at",
-            "ended_at",
-            "attempt_root",
-            "output_root",
-            "source_attempt_sha256",
-            "source_child_receipt_sha256",
-            "source_manifest_sha256",
-            "manifest_sha256",
-            "capsule_sha256",
-            "code_identity",
-            "toolchain",
-            "argv",
-            "transfer_eligibility",
-            "primary_error",
-            "cleanup_error",
-            "authority_conferred",
-        ],
-        "translation receipt",
-    )?;
+    let capsule_version = string(&capsule, "schema_version")?;
+    if !matches!(
+        capsule_version,
+        "s9-v28-obligations-v1" | "s9-v28-obligations-v2"
+    ) {
+        return fail("unsupported output capsule version");
+    }
+    if expected.capsule_version.as_deref()
+        != (capsule_version == "s9-v28-obligations-v2").then_some(capsule_version)
+    {
+        return fail("successful invocation result capsule version mismatch");
+    }
+    let mut receipt_keys = vec![
+        "schema_version",
+        "status",
+        "started_at",
+        "ended_at",
+        "attempt_root",
+        "output_root",
+        "source_attempt_sha256",
+        "source_child_receipt_sha256",
+        "source_manifest_sha256",
+        "manifest_sha256",
+        "capsule_sha256",
+        "code_identity",
+        "toolchain",
+        "argv",
+        "transfer_eligibility",
+        "primary_error",
+        "cleanup_error",
+        "authority_conferred",
+    ];
+    if capsule_version == "s9-v28-obligations-v2" {
+        receipt_keys.push("capsule_version");
+    }
+    exact_keys(&receipt, &receipt_keys, "translation receipt")?;
     let identity = field(&receipt, "code_identity")?;
     exact_keys(
         identity,
@@ -2553,7 +3363,10 @@ fn verify_content(attempt_root: &Path, output: &Path, expected: &TranslationRece
         || capsule["source_child_receipt_sha256"] != capture.child_hash
         || capsule["source_manifest_sha256"] != capture.manifest_hash
         || capsule["selection_claim"] != "current_selection_unestablished"
-        || capsule["schema_version"] != "s9-v28-obligations-v1"
+        || !matches!(
+            capsule_version,
+            "s9-v28-obligations-v1" | "s9-v28-obligations-v2"
+        )
         || capsule["translation_status"] != expected.translation_status
         || capsule["copied_image_sha256"] != json!(capture.image_hashes)
         || capsule["no_rust_custody"] != true
@@ -2565,6 +3378,68 @@ fn verify_content(attempt_root: &Path, output: &Path, expected: &TranslationRece
         || receipt["authority_conferred"] != false
     {
         return fail("output receipt/capsule/capture readback mismatch");
+    }
+    if capsule_version == "s9-v28-obligations-v2" {
+        if receipt["capsule_version"] != capsule_version {
+            return fail("v2 output receipt version mismatch");
+        }
+        let conn = open_copy(&capture.db_path)?;
+        let (census, census_digest) = schema_census(&conn)?;
+        drop(conn);
+        if capsule["relation_census"] != json!(census)
+            || capsule["relation_census_sha256"] != census_digest
+        {
+            return fail("v2 output relation census mismatch");
+        }
+        let inventory_bytes = checked_file(&output.join("inventory-private.json"), 128_000_000)?;
+        let inventory = parsed_json(&inventory_bytes, "v2 inventory")?;
+        let rows = inventory.as_array().ok_or("v2 inventory is not an array")?;
+        let inventory_digest = sha(serde_json::to_string(&inventory)
+            .map_err(|e| e.to_string())?
+            .as_bytes());
+        let digests: Vec<_> = rows
+            .iter()
+            .map(|row| {
+                let identity = string(row, "identity")?;
+                Ok(json!({
+                    "table": string(row, "table")?,
+                    "identity_sha256": sha(identity.as_bytes()),
+                    "source_projection_sha256": string(row, "source_projection_sha256")?,
+                    "classification": string(row, "classification")?,
+                }))
+            })
+            .collect::<T<_>>()?;
+        let expected_sql_rows: i64 = census
+            .iter()
+            .filter(|entry| entry["treatment"] == "included_inventory")
+            .map(|entry| entry["rows"].as_i64().unwrap_or(-1))
+            .sum();
+        let expected_registry_rows = capture.registry["bindings"]
+            .as_object()
+            .ok_or("bindings invalid")?
+            .len()
+            + capture.registry["deliveries"]
+                .as_object()
+                .ok_or("deliveries invalid")?
+                .len();
+        let unclassified = rows
+            .iter()
+            .filter(|row| row["classification"] == "unclassified")
+            .count();
+        let (report, _) = json_file(&output.join("report-redacted.json"), 4_000_000)?;
+        if expected_sql_rows < 0
+            || rows.len() != expected_sql_rows as usize + expected_registry_rows
+            || capsule["inventory_digest_sha256"] != inventory_digest
+            || capsule["row_classification_digests"] != json!(digests)
+            || report["schema_version"] != 2
+            || report["row_count"] != rows.len()
+            || report["unclassified_count"] != unclassified
+            || report["transfer_eligibility"] != expected.transfer_eligibility
+            || (unclassified == 0)
+                != (expected.transfer_eligibility == "requires_separate_B_authority")
+        {
+            return fail("v2 inventory/capsule/report binding mismatch");
+        }
     }
     postflight_image(&capture)
 }
@@ -2608,6 +3483,7 @@ fn perform_translation(
 ) -> T<TranslationReceipt> {
     let capture = validate_capture(attempt_root)?;
     let conn = open_copy(&capture.db_path)?;
+    let (relation_census, relation_census_sha256) = schema_census(&conn)?;
     let classified = classify(&conn, &capture)?;
     drop(conn);
     synthetic_barrier("before_final_image_readback")?;
@@ -2634,8 +3510,12 @@ fn perform_translation(
             })
         })
         .collect();
+    let inventory_value = serde_json::to_value(&classified.inventory).map_err(|e| e.to_string())?;
+    let inventory_digest = sha(serde_json::to_string(&inventory_value)
+        .map_err(|e| e.to_string())?
+        .as_bytes());
     let capsule = json!({
-        "schema_version": "s9-v28-obligations-v1",
+        "schema_version": "s9-v28-obligations-v2",
         "source_attempt_sha256": capture.outer_hash,
         "source_child_receipt_sha256": capture.child_hash,
         "source_manifest_sha256": capture.manifest_hash,
@@ -2644,6 +3524,9 @@ fn perform_translation(
         "q3": classified.q3.reference,
         "q4": classified.q4.reference,
         "row_classification_digests": classification_digests,
+        "relation_census": relation_census,
+        "relation_census_sha256": relation_census_sha256,
+        "inventory_digest_sha256": inventory_digest,
         "translation_status": "qualified",
         "transfer_eligibility": transfer_eligibility,
         "selection_claim": capture.selection_claim,
@@ -2672,7 +3555,6 @@ fn perform_translation(
         write_bytes(&raw_dir.join(name), bytes)?;
         entries.insert(format!("raw/{name}"), (bytes.len(), sha(bytes)));
     }
-    let inventory_value = serde_json::to_value(&classified.inventory).map_err(|e| e.to_string())?;
     entries.insert(
         "inventory-private.json".to_string(),
         write_json(&stage.join("inventory-private.json"), &inventory_value)?,
@@ -2682,7 +3564,7 @@ fn perform_translation(
         *classes.entry(row.classification.clone()).or_default() += 1;
     }
     let report = json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "translation_status": "qualified",
         "transfer_eligibility": transfer_eligibility,
         "selection_claim": "current_selection_unestablished",
@@ -2714,6 +3596,7 @@ fn perform_translation(
         .clone();
     let receipt = json!({
         "schema_version": 1,
+        "capsule_version": "s9-v28-obligations-v2",
         "status": "qualified_translation_only",
         "started_at": started,
         "ended_at": timestamp(),
@@ -2740,6 +3623,7 @@ fn perform_translation(
     postflight_image(&capture)?;
     Ok(TranslationReceipt {
         output_root: output_root.to_path_buf(),
+        capsule_version: Some("s9-v28-obligations-v2".to_string()),
         capsule_sha256,
         manifest_sha256,
         receipt_sha256,

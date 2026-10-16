@@ -1,9 +1,12 @@
-use lifecycle_admin::legacy_v28::{translate_v28_capture, verify_completed_translation};
+use lifecycle_admin::legacy_v28::{
+    TranslationReceipt, translate_v28_capture, verify_completed_translation,
+};
 use rusqlite::{Connection, params};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs;
+use std::os::unix::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -38,93 +41,6 @@ const Q3Q4_UNICODE_LINEAGE_REVISION: &str =
 
 // Exact schema-12 table and column names from the archived migrations. The
 // fixture keeps unrelated tables empty and uses synthetic, non-sensitive rows.
-const TABLES: &[(&str, &str)] = &[
-    (
-        "legacy_context_input_custody_lineages",
-        "custody_lineage_id,lineage_json,created_at",
-    ),
-    (
-        "legacy_context_input_custody_owners",
-        "custody_lineage_id,owner_revision,owner_generation_id,owner_state_root,owner_epoch,state,owner_json,updated_at",
-    ),
-    (
-        "context_input_queue",
-        "sequence,queue_id,logical_role_instance_id,transition_revision,client_user_message_id,input_revision,input_json,status,queued_at,released_at,delivery_json",
-    ),
-    (
-        "legacy_context_input_dispositions",
-        "queue_id,logical_role_instance_id,thread_id,binding_revision,transition_revision,client_user_message_id,input_revision,input_json_sha256,disposition,canonical_inventory_revision,authority_revision,successor_acceptance_revision,successor_logical_role_instance_id,successor_delivery_identity,record_revision,record_json,committed_at",
-    ),
-    (
-        "legacy_context_input_successor_deliveries",
-        "queue_id,claim_revision,claim_json,status,claimed_at,completed_at,delivery_revision,delivery_json",
-    ),
-    (
-        "context_input_admissions",
-        "logical_role_instance_id,thread_id,binding_revision,transition_revision,status,reconciliation_revision,closed_at,reopened_at",
-    ),
-    (
-        "aborted_context_input_releases",
-        "authorization_revision,logical_role_instance_id,thread_id,binding_revision,transition_revision,authorization_json,authorized_at",
-    ),
-    (
-        "context_domain_input_custody",
-        "transfer_id,source_queue_id,logical_role_instance_id,client_message_id,transition_id,effect_id,input_revision,source_sequence,destination_scheduler_identity,custody_state,receipt_revision,accepted_at,payload_json",
-    ),
-    (
-        "context_transitions",
-        "transition_id,logical_role_instance_id,binding_revision,provider_thread_id,predecessor_turn_id,semantic_state,committed_transition_revision,terminal,created_at,payload_json",
-    ),
-    (
-        "context_transition_provider_observations",
-        "provider_observation_id,provider_event_kind,provider_thread_id,provider_turn_id,provider_event_identity,raw_evidence_revision,observed_at,payload_json",
-    ),
-    (
-        "context_transition_host_facts",
-        "host_fact_id,host_fact_kind,logical_role_instance_id,host_thread_id,host_turn_id,stable_host_source_identity,raw_evidence_revision,observed_at,payload_json",
-    ),
-    (
-        "context_transition_events",
-        "transition_event_id,transition_id,transition_event_kind,classification_basis_revision,source_kind,provider_observation_id,host_fact_id,created_at,payload_json",
-    ),
-    (
-        "context_transition_event_applications",
-        "application_id,transition_event_id,transition_id,expected_transition_revision,observed_transition_revision,semantic_disposition,storage_result,committed_transition_revision,application_json",
-    ),
-    (
-        "context_transition_admission_owners",
-        "logical_role_instance_id,owner_kind,transition_id,recovery_operation_id,owner_revision,projection_json",
-    ),
-    (
-        "context_transition_effects",
-        "effect_id,transition_id,effect_kind,predecessor_effect_id,expected_transition_revision,input_revision,status,effect_revision,payload_json",
-    ),
-    (
-        "context_transition_effect_applications",
-        "application_id,effect_id,expected_effect_revision,observed_effect_revision,storage_result,committed_effect_revision,application_json",
-    ),
-    (
-        "context_transition_effect_evidence",
-        "evidence_id,effect_id,evidence_revision,observed_at,payload_json",
-    ),
-    (
-        "context_transition_recovery_operations",
-        "recovery_operation_id,logical_role_instance_id,failed_transition_id,failed_transition_revision,authority_revision,custody_disposition_revision,recovery_state,recovery_revision,payload_json",
-    ),
-    (
-        "context_transition_queue_drain_receipts",
-        "queue_drain_receipt_id,transition_id,effect_id,receipt_revision,payload_json",
-    ),
-    (
-        "active_turn_lifecycle",
-        "identity_key,turn_key,revision,status,next_eligible_at,state_json",
-    ),
-    (
-        "active_turn_lifecycle_observations",
-        "identity_key,turn_key,owner_identity_key,disposition,triggering_observation_sequence,observed_at",
-    ),
-];
-
 fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
@@ -215,8 +131,403 @@ fn disposition(number: u8, input: &Value, input_bytes: &[u8]) -> Value {
 }
 
 fn create_schema(conn: &Connection) {
-    conn.execute_batch("CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL) STRICT;")
-        .unwrap();
+    // Exact observed copied-image CREATE TABLE and explicit-index definitions.
+    // sqlite_sequence is SQLite-generated by the queue AUTOINCREMENT DDL.
+    conn.execute_batch(r###"CREATE TABLE aborted_context_input_releases (
+    authorization_revision TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    transition_revision TEXT NOT NULL,
+    authorization_json TEXT NOT NULL,
+    authorized_at TEXT NOT NULL,
+    UNIQUE(logical_role_instance_id, transition_revision)
+  ) STRICT;
+CREATE TABLE active_turn_lifecycle (
+    identity_key TEXT PRIMARY KEY,
+    turn_key TEXT NOT NULL,
+    revision TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL CHECK(status IN (
+      'scheduled','preparing','reserved','consuming','aborted_retryable',
+      'reconciled','recovery_required'
+    )),
+    next_eligible_at TEXT,
+    state_json TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE active_turn_lifecycle_observations (
+    identity_key TEXT PRIMARY KEY,
+    turn_key TEXT NOT NULL,
+    owner_identity_key TEXT NOT NULL,
+    disposition TEXT CHECK(
+      disposition IS NULL OR disposition IN ('replacement_candidate','critical')
+    ),
+    triggering_observation_sequence INTEGER CHECK(
+      triggering_observation_sequence IS NULL OR triggering_observation_sequence > 0
+    ),
+    observed_at TEXT,
+    FOREIGN KEY(owner_identity_key) REFERENCES active_turn_lifecycle(identity_key)
+  ) STRICT;
+CREATE TABLE checkpoint_fences (
+    logical_role_instance_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    source_revision TEXT NOT NULL,
+    authority_revision TEXT NOT NULL,
+    publication_revision TEXT,
+    ledger_revision TEXT,
+    updated_at TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE checkpoint_publications (
+    checkpoint_revision TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    candidate_revision TEXT NOT NULL,
+    ledger_revision TEXT NOT NULL UNIQUE,
+    published_at TEXT NOT NULL,
+    publication_json TEXT NOT NULL,
+    ledger_json TEXT NOT NULL,
+    UNIQUE(logical_role_instance_id, candidate_revision),
+    FOREIGN KEY(logical_role_instance_id)
+      REFERENCES checkpoint_fences(logical_role_instance_id)
+  ) STRICT;
+CREATE TABLE context_domain_input_custody (
+    transfer_id TEXT PRIMARY KEY,
+    source_queue_id TEXT NOT NULL UNIQUE,
+    logical_role_instance_id TEXT NOT NULL,
+    client_message_id TEXT NOT NULL,
+    transition_id TEXT NOT NULL,
+    effect_id TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    source_sequence INTEGER NOT NULL CHECK(source_sequence > 0),
+    destination_scheduler_identity TEXT NOT NULL,
+    custody_state TEXT NOT NULL CHECK(custody_state IN ('held','ready')),
+    receipt_revision TEXT NOT NULL,
+    accepted_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    UNIQUE(logical_role_instance_id,client_message_id),
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id),
+    FOREIGN KEY(effect_id) REFERENCES context_transition_effects(effect_id)
+  ) STRICT;
+CREATE TABLE context_input_admission_handoffs (
+    logical_role_instance_id TEXT NOT NULL,
+    predecessor_revision TEXT NOT NULL,
+    successor_revision TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    queue_id TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY(logical_role_instance_id, predecessor_revision),
+    UNIQUE(logical_role_instance_id, successor_revision),
+    CHECK(predecessor_revision != successor_revision)
+  ) STRICT;
+CREATE TABLE context_input_admissions (
+    logical_role_instance_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    transition_revision TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('closed', 'releasing', 'open')),
+    reconciliation_revision TEXT,
+    closed_at TEXT NOT NULL,
+    reopened_at TEXT
+  ) STRICT;
+CREATE TABLE context_input_queue (
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    queue_id TEXT NOT NULL UNIQUE,
+    logical_role_instance_id TEXT NOT NULL,
+    transition_revision TEXT NOT NULL,
+    client_user_message_id TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    input_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('queued', 'releasing', 'released')),
+    queued_at TEXT NOT NULL,
+    released_at TEXT,
+    delivery_json TEXT,
+    UNIQUE(logical_role_instance_id, client_user_message_id)
+  ) STRICT;
+CREATE TABLE context_transition_admission_owners (
+    logical_role_instance_id TEXT PRIMARY KEY,
+    owner_kind TEXT NOT NULL CHECK(owner_kind IN ('open','transition','recovery')),
+    transition_id TEXT,
+    recovery_operation_id TEXT,
+    owner_revision TEXT,
+    projection_json TEXT NOT NULL,
+    CHECK(
+      (owner_kind = 'open' AND transition_id IS NULL AND recovery_operation_id IS NULL)
+      OR (owner_kind = 'transition' AND transition_id IS NOT NULL AND recovery_operation_id IS NULL)
+      OR (owner_kind = 'recovery' AND transition_id IS NULL AND recovery_operation_id IS NOT NULL)
+    ),
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id)
+  ) STRICT;
+CREATE TABLE context_transition_effect_applications (
+    application_id TEXT PRIMARY KEY,
+    effect_id TEXT NOT NULL,
+    expected_effect_revision TEXT NOT NULL,
+    observed_effect_revision TEXT NOT NULL,
+    storage_result TEXT NOT NULL CHECK(storage_result IN ('committed','revision_conflict')),
+    committed_effect_revision TEXT,
+    application_json TEXT NOT NULL,
+    FOREIGN KEY(effect_id) REFERENCES context_transition_effects(effect_id)
+  ) STRICT;
+CREATE TABLE context_transition_effect_evidence (
+    evidence_id TEXT PRIMARY KEY,
+    effect_id TEXT NOT NULL,
+    evidence_revision TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    UNIQUE(effect_id,evidence_revision),
+    FOREIGN KEY(effect_id) REFERENCES context_transition_effects(effect_id)
+  ) STRICT;
+CREATE TABLE context_transition_effects (
+    effect_id TEXT PRIMARY KEY,
+    transition_id TEXT NOT NULL,
+    effect_kind TEXT NOT NULL,
+    predecessor_effect_id TEXT,
+    expected_transition_revision TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN (
+      'intent_claimed','entry_pending','definitively_not_entered','completed',
+      'ambiguous','failed_definitive'
+    )),
+    effect_revision TEXT NOT NULL UNIQUE,
+    payload_json TEXT NOT NULL,
+    UNIQUE(transition_id,effect_kind),
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id),
+    FOREIGN KEY(predecessor_effect_id) REFERENCES context_transition_effects(effect_id)
+  ) STRICT;
+CREATE TABLE context_transition_event_applications (
+    application_id TEXT PRIMARY KEY,
+    transition_event_id TEXT NOT NULL,
+    transition_id TEXT NOT NULL,
+    expected_transition_revision TEXT NOT NULL,
+    observed_transition_revision TEXT NOT NULL,
+    semantic_disposition TEXT CHECK(semantic_disposition IS NULL OR semantic_disposition IN (
+      'applied','replayed','deferred','superseded','conflicting','recovery_required'
+    )),
+    storage_result TEXT NOT NULL CHECK(storage_result IN ('committed','revision_conflict')),
+    committed_transition_revision TEXT,
+    application_json TEXT NOT NULL,
+    CHECK(
+      (storage_result = 'revision_conflict'
+        AND semantic_disposition IS NULL AND committed_transition_revision IS NULL)
+      OR (storage_result = 'committed' AND semantic_disposition IS NOT NULL)
+    ),
+    FOREIGN KEY(transition_event_id, transition_id)
+      REFERENCES context_transition_events(transition_event_id, transition_id),
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id)
+  ) STRICT;
+CREATE TABLE context_transition_events (
+    transition_event_id TEXT PRIMARY KEY,
+    transition_id TEXT NOT NULL,
+    transition_event_kind TEXT NOT NULL,
+    classification_basis_revision TEXT NOT NULL,
+    source_kind TEXT NOT NULL CHECK(source_kind IN ('provider_observation','host_fact')),
+    provider_observation_id TEXT,
+    host_fact_id TEXT,
+    created_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    UNIQUE(transition_event_id, transition_id),
+    CHECK(
+      (source_kind = 'provider_observation' AND provider_observation_id IS NOT NULL AND host_fact_id IS NULL)
+      OR (source_kind = 'host_fact' AND host_fact_id IS NOT NULL AND provider_observation_id IS NULL)
+    ),
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id),
+    FOREIGN KEY(provider_observation_id)
+      REFERENCES context_transition_provider_observations(provider_observation_id),
+    FOREIGN KEY(host_fact_id) REFERENCES context_transition_host_facts(host_fact_id)
+  ) STRICT;
+CREATE TABLE context_transition_host_facts (
+    host_fact_id TEXT PRIMARY KEY,
+    host_fact_kind TEXT NOT NULL,
+    logical_role_instance_id TEXT NOT NULL,
+    host_thread_id TEXT NOT NULL,
+    host_turn_id TEXT,
+    stable_host_source_identity TEXT NOT NULL,
+    raw_evidence_revision TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE context_transition_provider_observations (
+    provider_observation_id TEXT PRIMARY KEY,
+    provider_event_kind TEXT NOT NULL,
+    provider_thread_id TEXT NOT NULL,
+    provider_turn_id TEXT,
+    provider_event_identity TEXT NOT NULL,
+    raw_evidence_revision TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE context_transition_queue_drain_receipts (
+    queue_drain_receipt_id TEXT PRIMARY KEY,
+    transition_id TEXT NOT NULL UNIQUE,
+    effect_id TEXT NOT NULL,
+    receipt_revision TEXT NOT NULL UNIQUE,
+    payload_json TEXT NOT NULL,
+    FOREIGN KEY(transition_id) REFERENCES context_transitions(transition_id),
+    FOREIGN KEY(effect_id) REFERENCES context_transition_effects(effect_id)
+  ) STRICT;
+CREATE TABLE context_transition_recovery_operations (
+    recovery_operation_id TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    failed_transition_id TEXT NOT NULL,
+    failed_transition_revision TEXT NOT NULL,
+    authority_revision TEXT NOT NULL,
+    custody_disposition_revision TEXT NOT NULL,
+    recovery_state TEXT NOT NULL CHECK(recovery_state IN ('active','complete','closed_fence')),
+    recovery_revision TEXT NOT NULL UNIQUE,
+    payload_json TEXT NOT NULL,
+    FOREIGN KEY(failed_transition_id) REFERENCES context_transitions(transition_id)
+  ) STRICT;
+CREATE TABLE context_transitions (
+    transition_id TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    provider_thread_id TEXT NOT NULL,
+    predecessor_turn_id TEXT NOT NULL,
+    semantic_state TEXT NOT NULL CHECK(semantic_state IN (
+      'reserved','yield_requested','predecessor_terminal','consuming','preparing',
+      'checkpointed','lease_promoted','retirement_active','reset_observed',
+      'rehydrating','reconciled','releasing_input','complete','aborted','recovery_required'
+    )),
+    committed_transition_revision TEXT NOT NULL UNIQUE,
+    terminal INTEGER NOT NULL CHECK(terminal IN (0, 1)),
+    created_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE legacy_context_input_custody_lineages (
+    custody_lineage_id TEXT PRIMARY KEY,
+    lineage_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE legacy_context_input_custody_owners (
+    custody_lineage_id TEXT PRIMARY KEY,
+    owner_revision TEXT NOT NULL UNIQUE,
+    owner_generation_id TEXT NOT NULL,
+    owner_state_root TEXT NOT NULL,
+    owner_epoch INTEGER NOT NULL CHECK(owner_epoch > 0),
+    state TEXT NOT NULL CHECK(state IN (
+      'owned','adopted_inactive','transferred','recovery_required'
+    )),
+    owner_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(custody_lineage_id)
+      REFERENCES legacy_context_input_custody_lineages(custody_lineage_id)
+  ) STRICT;
+CREATE TABLE legacy_context_input_dispositions (
+    queue_id TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
+    transition_revision TEXT NOT NULL,
+    client_user_message_id TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    input_json_sha256 TEXT NOT NULL,
+    disposition TEXT NOT NULL CHECK(disposition IN (
+      'terminally_retired','withdrawn','durable_restart'
+    )),
+    canonical_inventory_revision TEXT NOT NULL,
+    authority_revision TEXT NOT NULL,
+    successor_acceptance_revision TEXT,
+    successor_logical_role_instance_id TEXT,
+    successor_delivery_identity TEXT,
+    record_revision TEXT NOT NULL UNIQUE,
+    record_json TEXT NOT NULL,
+    committed_at TEXT NOT NULL,
+    FOREIGN KEY(queue_id) REFERENCES context_input_queue(queue_id),
+    CHECK(
+      (disposition = 'durable_restart'
+        AND successor_acceptance_revision IS NOT NULL
+        AND successor_logical_role_instance_id IS NOT NULL
+        AND successor_delivery_identity IS NOT NULL)
+      OR
+      (disposition != 'durable_restart'
+        AND successor_acceptance_revision IS NULL
+        AND successor_logical_role_instance_id IS NULL
+        AND successor_delivery_identity IS NULL)
+    )
+  ) STRICT;
+CREATE TABLE legacy_context_input_successor_deliveries (
+    queue_id TEXT PRIMARY KEY,
+    claim_revision TEXT NOT NULL UNIQUE,
+    claim_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('pending','completed')),
+    claimed_at TEXT NOT NULL,
+    completed_at TEXT,
+    delivery_revision TEXT,
+    delivery_json TEXT,
+    FOREIGN KEY(queue_id) REFERENCES legacy_context_input_dispositions(queue_id),
+    CHECK(
+      (status = 'pending' AND completed_at IS NULL
+        AND delivery_revision IS NULL AND delivery_json IS NULL)
+      OR
+      (status = 'completed' AND completed_at IS NOT NULL
+        AND delivery_revision IS NOT NULL AND delivery_json IS NOT NULL)
+    )
+  ) STRICT;
+CREATE TABLE lifecycle_episodes (
+    episode_id TEXT PRIMARY KEY,
+    logical_role_instance_id TEXT NOT NULL,
+    policy_revision TEXT NOT NULL,
+    schedule_revision TEXT NOT NULL,
+    completed_at TEXT NOT NULL,
+    request_revision TEXT NOT NULL,
+    episode_revision TEXT NOT NULL UNIQUE,
+    payload_json TEXT NOT NULL
+  ) STRICT;
+CREATE TABLE lifecycle_ledger_heads (
+    logical_role_instance_id TEXT PRIMARY KEY,
+    entry_revision TEXT NOT NULL UNIQUE,
+    sequence INTEGER NOT NULL CHECK(sequence > 0),
+    entry_json TEXT NOT NULL,
+    FOREIGN KEY(logical_role_instance_id)
+      REFERENCES checkpoint_fences(logical_role_instance_id)
+  ) STRICT;
+CREATE TABLE schema_migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at TEXT NOT NULL
+  ) STRICT;
+CREATE INDEX aborted_context_input_release_recovery
+    ON aborted_context_input_releases(logical_role_instance_id, transition_revision);
+CREATE INDEX active_turn_lifecycle_observations_owner
+    ON active_turn_lifecycle_observations(owner_identity_key, identity_key);
+CREATE INDEX active_turn_lifecycle_observations_turn
+    ON active_turn_lifecycle_observations(turn_key, triggering_observation_sequence, identity_key);
+CREATE INDEX active_turn_lifecycle_recovery
+    ON active_turn_lifecycle(status, next_eligible_at);
+CREATE INDEX active_turn_lifecycle_turn
+    ON active_turn_lifecycle(turn_key, status, identity_key);
+CREATE INDEX context_domain_input_custody_drain
+    ON context_domain_input_custody(transition_id,effect_id,custody_state,source_sequence);
+CREATE INDEX context_domain_input_custody_ready
+    ON context_domain_input_custody(logical_role_instance_id,custody_state,source_sequence);
+CREATE INDEX context_input_queue_release_order
+    ON context_input_queue(logical_role_instance_id, transition_revision, status, sequence);
+CREATE INDEX context_transition_applications_transition
+    ON context_transition_event_applications(transition_id, application_id);
+CREATE INDEX context_transition_effects_transition
+    ON context_transition_effects(transition_id,effect_kind);
+CREATE INDEX context_transition_events_transition
+    ON context_transition_events(transition_id, created_at, transition_event_id);
+CREATE UNIQUE INDEX context_transition_one_active_recovery
+    ON context_transition_recovery_operations(logical_role_instance_id)
+    WHERE recovery_state = 'active';
+CREATE UNIQUE INDEX context_transition_one_provider_entry
+    ON context_transition_effect_evidence(effect_id)
+    WHERE json_extract(payload_json, '$.evidence.kind') = 'provider_entry';
+CREATE UNIQUE INDEX context_transitions_one_active_role
+    ON context_transitions(logical_role_instance_id) WHERE terminal = 0;
+CREATE INDEX context_transitions_predecessor
+    ON context_transitions(provider_thread_id, predecessor_turn_id);
+CREATE INDEX legacy_context_input_dispositions_release_fence
+    ON legacy_context_input_dispositions(
+      logical_role_instance_id, transition_revision, queue_id
+    );
+CREATE UNIQUE INDEX legacy_context_input_dispositions_successor_delivery
+    ON legacy_context_input_dispositions(successor_delivery_identity)
+    WHERE successor_delivery_identity IS NOT NULL;
+CREATE INDEX lifecycle_episodes_policy_schedule
+    ON lifecycle_episodes(policy_revision, schedule_revision);
+CREATE INDEX lifecycle_episodes_role_completed
+    ON lifecycle_episodes(logical_role_instance_id, completed_at, episode_id);"###).unwrap();
     for version in 1..=12 {
         conn.execute(
             "INSERT INTO schema_migrations(version,applied_at) VALUES (?1,'2026-10-13T00:00:00Z')",
@@ -224,119 +535,569 @@ fn create_schema(conn: &Connection) {
         )
         .unwrap();
     }
-    // Material reached DDL from published v28 commit 2cfdf83, migrations
-    // 2/11/12. Unrelated empty transition tables retain their pinned columns.
-    conn.execute_batch(r#"
-      CREATE TABLE context_input_queue (
-        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-        queue_id TEXT NOT NULL UNIQUE,
-        logical_role_instance_id TEXT NOT NULL,
-        transition_revision TEXT NOT NULL,
-        client_user_message_id TEXT NOT NULL,
-        input_revision TEXT NOT NULL,
-        input_json TEXT NOT NULL,
-        status TEXT NOT NULL CHECK(status IN ('queued', 'releasing', 'released')),
-        queued_at TEXT NOT NULL,
-        released_at TEXT,
-        delivery_json TEXT,
-        UNIQUE(logical_role_instance_id, client_user_message_id)
-      ) STRICT;
-      CREATE TABLE legacy_context_input_dispositions (
-        queue_id TEXT PRIMARY KEY,
-        logical_role_instance_id TEXT NOT NULL,
-        thread_id TEXT NOT NULL,
-        binding_revision INTEGER NOT NULL CHECK(binding_revision > 0),
-        transition_revision TEXT NOT NULL,
-        client_user_message_id TEXT NOT NULL,
-        input_revision TEXT NOT NULL,
-        input_json_sha256 TEXT NOT NULL,
-        disposition TEXT NOT NULL CHECK(disposition IN ('terminally_retired','withdrawn','durable_restart')),
-        canonical_inventory_revision TEXT NOT NULL,
-        authority_revision TEXT NOT NULL,
-        successor_acceptance_revision TEXT,
-        successor_logical_role_instance_id TEXT,
-        successor_delivery_identity TEXT,
-        record_revision TEXT NOT NULL UNIQUE,
-        record_json TEXT NOT NULL,
-        committed_at TEXT NOT NULL,
-        FOREIGN KEY(queue_id) REFERENCES context_input_queue(queue_id),
-        CHECK((disposition = 'durable_restart' AND successor_acceptance_revision IS NOT NULL
-          AND successor_logical_role_instance_id IS NOT NULL AND successor_delivery_identity IS NOT NULL)
-          OR (disposition != 'durable_restart' AND successor_acceptance_revision IS NULL
-          AND successor_logical_role_instance_id IS NULL AND successor_delivery_identity IS NULL))
-      ) STRICT;
-      CREATE TABLE legacy_context_input_successor_deliveries (
-        queue_id TEXT PRIMARY KEY,
-        claim_revision TEXT NOT NULL UNIQUE,
-        claim_json TEXT NOT NULL,
-        status TEXT NOT NULL CHECK(status IN ('pending','completed')),
-        claimed_at TEXT NOT NULL,
-        completed_at TEXT,
-        delivery_revision TEXT,
-        delivery_json TEXT,
-        FOREIGN KEY(queue_id) REFERENCES legacy_context_input_dispositions(queue_id),
-        CHECK((status = 'pending' AND completed_at IS NULL AND delivery_revision IS NULL AND delivery_json IS NULL)
-          OR (status = 'completed' AND completed_at IS NOT NULL AND delivery_revision IS NOT NULL AND delivery_json IS NOT NULL))
-      ) STRICT;
-      CREATE TABLE legacy_context_input_custody_lineages (
-        custody_lineage_id TEXT PRIMARY KEY,
-        lineage_json TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      ) STRICT;
-      CREATE TABLE legacy_context_input_custody_owners (
-        custody_lineage_id TEXT PRIMARY KEY,
-        owner_revision TEXT NOT NULL UNIQUE,
-        owner_generation_id TEXT NOT NULL,
-        owner_state_root TEXT NOT NULL,
-        owner_epoch INTEGER NOT NULL CHECK(owner_epoch > 0),
-        state TEXT NOT NULL CHECK(state IN ('owned','adopted_inactive','transferred','recovery_required')),
-        owner_json TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY(custody_lineage_id) REFERENCES legacy_context_input_custody_lineages(custody_lineage_id)
-      ) STRICT;
-      CREATE INDEX context_input_queue_release_order
-        ON context_input_queue(logical_role_instance_id,transition_revision,status,sequence);
-      CREATE INDEX legacy_context_input_dispositions_release_fence
-        ON legacy_context_input_dispositions(logical_role_instance_id,transition_revision,queue_id);
-      CREATE UNIQUE INDEX legacy_context_input_dispositions_successor_delivery
-        ON legacy_context_input_dispositions(successor_delivery_identity)
-        WHERE successor_delivery_identity IS NOT NULL;
-    "#).unwrap();
-    for (table, names) in TABLES {
-        if matches!(
-            *table,
-            "context_input_queue"
-                | "legacy_context_input_dispositions"
-                | "legacy_context_input_successor_deliveries"
-                | "legacy_context_input_custody_lineages"
-                | "legacy_context_input_custody_owners"
-        ) {
-            continue;
-        }
-        let columns = names
-            .split(',')
-            .map(|name| {
-                let kind = if matches!(
-                    name,
-                    "sequence"
-                        | "binding_revision"
-                        | "owner_epoch"
-                        | "source_sequence"
-                        | "terminal"
-                        | "triggering_observation_sequence"
-                ) {
-                    "INTEGER"
-                } else {
-                    "TEXT"
-                };
-                format!("{name} {kind}")
-            })
-            .collect::<Vec<_>>()
-            .join(",");
-        conn.execute_batch(&format!("CREATE TABLE {table} ({columns}) STRICT;"))
-            .unwrap();
-    }
+    assert_observed_schema_correspondence(conn);
     conn.pragma_update(None, "user_version", 12).unwrap();
+}
+
+const OBSERVED_PRAGMA_PROFILE: &str = r####"[{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"aborted_context_input_release_recovery","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"transition_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"sqlite_autoindex_aborted_context_input_releases_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"authorization_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_aborted_context_input_releases_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"transition_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"aborted_context_input_releases","table_list":{"ncol":7,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"authorization_revision","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":4,"dflt_value":null,"hidden":0,"name":"transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"authorization_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"authorized_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"active_turn_lifecycle_recovery","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"status","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"next_eligible_at","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"active_turn_lifecycle_turn","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"turn_key","seqno":0},{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"status","seqno":1},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"identity_key","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"sqlite_autoindex_active_turn_lifecycle_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"identity_key","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_active_turn_lifecycle_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"active_turn_lifecycle","table_list":{"ncol":6,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"identity_key","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"turn_key","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"status","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"next_eligible_at","notnull":0,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"state_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"owner_identity_key","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"active_turn_lifecycle","to":"identity_key"}],"index_list_and_xinfo":[{"name":"active_turn_lifecycle_observations_owner","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"owner_identity_key","seqno":0},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"identity_key","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"active_turn_lifecycle_observations_turn","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"turn_key","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"triggering_observation_sequence","seqno":1},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"identity_key","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"sqlite_autoindex_active_turn_lifecycle_observations_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"identity_key","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"active_turn_lifecycle_observations","table_list":{"ncol":6,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"identity_key","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"turn_key","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"owner_identity_key","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"disposition","notnull":0,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"triggering_observation_sequence","notnull":0,"pk":0,"type":"INTEGER"},{"cid":5,"dflt_value":null,"hidden":0,"name":"observed_at","notnull":0,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_checkpoint_fences_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"checkpoint_fences","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":3,"dflt_value":null,"hidden":0,"name":"source_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"authority_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"publication_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"ledger_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"updated_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"logical_role_instance_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"checkpoint_fences","to":"logical_role_instance_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_checkpoint_publications_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"checkpoint_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_checkpoint_publications_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"ledger_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_checkpoint_publications_3","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"candidate_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"checkpoint_publications","table_list":{"ncol":7,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"checkpoint_revision","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"candidate_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"ledger_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"published_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"publication_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"ledger_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"effect_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_effects","to":"effect_id"},{"from":"transition_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"context_domain_input_custody_drain","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":5,"coll":"BINARY","desc":0,"key":1,"name":"effect_id","seqno":1},{"cid":9,"coll":"BINARY","desc":0,"key":1,"name":"custody_state","seqno":2},{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"source_sequence","seqno":3},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":4}]},{"name":"context_domain_input_custody_ready","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":9,"coll":"BINARY","desc":0,"key":1,"name":"custody_state","seqno":1},{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"source_sequence","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"sqlite_autoindex_context_domain_input_custody_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"transfer_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_domain_input_custody_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"source_queue_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_domain_input_custody_3","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"client_message_id","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_domain_input_custody","table_list":{"ncol":13,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"transfer_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"source_queue_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"client_message_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"effect_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"input_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"source_sequence","notnull":1,"pk":0,"type":"INTEGER"},{"cid":8,"dflt_value":null,"hidden":0,"name":"destination_scheduler_identity","notnull":1,"pk":0,"type":"TEXT"},{"cid":9,"dflt_value":null,"hidden":0,"name":"custody_state","notnull":1,"pk":0,"type":"TEXT"},{"cid":10,"dflt_value":null,"hidden":0,"name":"receipt_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":11,"dflt_value":null,"hidden":0,"name":"accepted_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":12,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_input_admission_handoffs_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"predecessor_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"sqlite_autoindex_context_input_admission_handoffs_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"successor_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_input_admission_handoffs","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"predecessor_revision","notnull":1,"pk":2,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"successor_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":5,"dflt_value":null,"hidden":0,"name":"queue_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"input_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"recorded_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_input_admissions_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_input_admissions","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":3,"dflt_value":null,"hidden":0,"name":"transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"status","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"reconciliation_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"closed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"reopened_at","notnull":0,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"context_input_queue_release_order","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"transition_revision","seqno":1},{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"status","seqno":2},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"sequence","seqno":3},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":4}]},{"name":"sqlite_autoindex_context_input_queue_1","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"queue_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_input_queue_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"client_user_message_id","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_input_queue","table_list":{"ncol":11,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"sequence","notnull":0,"pk":1,"type":"INTEGER"},{"cid":1,"dflt_value":null,"hidden":0,"name":"queue_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"client_user_message_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"input_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"input_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"status","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"queued_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":9,"dflt_value":null,"hidden":0,"name":"released_at","notnull":0,"pk":0,"type":"TEXT"},{"cid":10,"dflt_value":null,"hidden":0,"name":"delivery_json","notnull":0,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"transition_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_transition_admission_owners_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_admission_owners","table_list":{"ncol":6,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"owner_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"recovery_operation_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"owner_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"projection_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"effect_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_effects","to":"effect_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_transition_effect_applications_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"application_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_effect_applications","table_list":{"ncol":7,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"application_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"effect_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"expected_effect_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"observed_effect_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"storage_result","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"committed_effect_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"application_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"effect_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_effects","to":"effect_id"}],"index_list_and_xinfo":[{"name":"context_transition_one_provider_entry","origin":"c","partial":1,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"effect_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_effect_evidence_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"evidence_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_effect_evidence_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"effect_id","seqno":0},{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"evidence_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_transition_effect_evidence","table_list":{"ncol":5,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"evidence_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"effect_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"evidence_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"observed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"predecessor_effect_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_effects","to":"effect_id"},{"from":"transition_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"context_transition_effects_transition","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"effect_kind","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"sqlite_autoindex_context_transition_effects_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"effect_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_effects_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"effect_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_effects_3","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"effect_kind","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_transition_effects","table_list":{"ncol":9,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"effect_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"effect_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"predecessor_effect_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"expected_transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"input_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"status","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"effect_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"transition_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"},{"from":"transition_event_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_events","to":"transition_event_id"},{"from":"transition_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":1,"table":"context_transition_events","to":"transition_id"}],"index_list_and_xinfo":[{"name":"context_transition_applications_transition","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"application_id","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"sqlite_autoindex_context_transition_event_applications_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"application_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_event_applications","table_list":{"ncol":9,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"application_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"transition_event_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"expected_transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"observed_transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"semantic_disposition","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"storage_result","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"committed_transition_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"application_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"host_fact_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_host_facts","to":"host_fact_id"},{"from":"provider_observation_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_provider_observations","to":"provider_observation_id"},{"from":"transition_id","id":2,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"context_transition_events_transition","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"created_at","seqno":1},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"transition_event_id","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"sqlite_autoindex_context_transition_events_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"transition_event_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_events_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"transition_event_id","seqno":0},{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]}],"name":"context_transition_events","table_list":{"ncol":9,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"transition_event_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"transition_event_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"classification_basis_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"source_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"provider_observation_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"host_fact_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"created_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_transition_host_facts_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"host_fact_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_host_facts","table_list":{"ncol":9,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"host_fact_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"host_fact_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"host_thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"host_turn_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"stable_host_source_identity","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"raw_evidence_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"observed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_transition_provider_observations_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"provider_observation_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_provider_observations","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"provider_observation_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"provider_event_kind","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"provider_thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"provider_turn_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"provider_event_identity","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"raw_evidence_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"observed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"effect_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transition_effects","to":"effect_id"},{"from":"transition_id","id":1,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_context_transition_queue_drain_receipts_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"queue_drain_receipt_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_queue_drain_receipts_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_queue_drain_receipts_3","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"receipt_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_queue_drain_receipts","table_list":{"ncol":5,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"queue_drain_receipt_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"effect_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"receipt_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"failed_transition_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_transitions","to":"transition_id"}],"index_list_and_xinfo":[{"name":"context_transition_one_active_recovery","origin":"c","partial":1,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_recovery_operations_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"recovery_operation_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transition_recovery_operations_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":7,"coll":"BINARY","desc":0,"key":1,"name":"recovery_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transition_recovery_operations","table_list":{"ncol":9,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"recovery_operation_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"failed_transition_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"failed_transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"authority_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"custody_disposition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"recovery_state","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"recovery_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"context_transitions_one_active_role","origin":"c","partial":1,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"context_transitions_predecessor","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"provider_thread_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"predecessor_turn_id","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"sqlite_autoindex_context_transitions_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"transition_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_context_transitions_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":6,"coll":"BINARY","desc":0,"key":1,"name":"committed_transition_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"context_transitions","table_list":{"ncol":10,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"transition_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":3,"dflt_value":null,"hidden":0,"name":"provider_thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"predecessor_turn_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"semantic_state","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"committed_transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"terminal","notnull":1,"pk":0,"type":"INTEGER"},{"cid":8,"dflt_value":null,"hidden":0,"name":"created_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":9,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"sqlite_autoindex_legacy_context_input_custody_lineages_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"custody_lineage_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"legacy_context_input_custody_lineages","table_list":{"ncol":3,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"custody_lineage_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"lineage_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"created_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"custody_lineage_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"legacy_context_input_custody_lineages","to":"custody_lineage_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_legacy_context_input_custody_owners_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"custody_lineage_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_legacy_context_input_custody_owners_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"owner_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"legacy_context_input_custody_owners","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"custody_lineage_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"owner_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"owner_generation_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"owner_state_root","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"owner_epoch","notnull":1,"pk":0,"type":"INTEGER"},{"cid":5,"dflt_value":null,"hidden":0,"name":"state","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"owner_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"updated_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"queue_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"context_input_queue","to":"queue_id"}],"index_list_and_xinfo":[{"name":"legacy_context_input_dispositions_release_fence","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"transition_revision","seqno":1},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"queue_id","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"legacy_context_input_dispositions_successor_delivery","origin":"c","partial":1,"unique":1,"xinfo":[{"cid":13,"coll":"BINARY","desc":0,"key":1,"name":"successor_delivery_identity","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_legacy_context_input_dispositions_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"queue_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_legacy_context_input_dispositions_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":14,"coll":"BINARY","desc":0,"key":1,"name":"record_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"legacy_context_input_dispositions","table_list":{"ncol":17,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"queue_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"thread_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"binding_revision","notnull":1,"pk":0,"type":"INTEGER"},{"cid":4,"dflt_value":null,"hidden":0,"name":"transition_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"client_user_message_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"input_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"input_json_sha256","notnull":1,"pk":0,"type":"TEXT"},{"cid":8,"dflt_value":null,"hidden":0,"name":"disposition","notnull":1,"pk":0,"type":"TEXT"},{"cid":9,"dflt_value":null,"hidden":0,"name":"canonical_inventory_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":10,"dflt_value":null,"hidden":0,"name":"authority_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":11,"dflt_value":null,"hidden":0,"name":"successor_acceptance_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":12,"dflt_value":null,"hidden":0,"name":"successor_logical_role_instance_id","notnull":0,"pk":0,"type":"TEXT"},{"cid":13,"dflt_value":null,"hidden":0,"name":"successor_delivery_identity","notnull":0,"pk":0,"type":"TEXT"},{"cid":14,"dflt_value":null,"hidden":0,"name":"record_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":15,"dflt_value":null,"hidden":0,"name":"record_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":16,"dflt_value":null,"hidden":0,"name":"committed_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"queue_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"legacy_context_input_dispositions","to":"queue_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_legacy_context_input_successor_deliveries_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"queue_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_legacy_context_input_successor_deliveries_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"claim_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"legacy_context_input_successor_deliveries","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"queue_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"claim_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"claim_json","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"status","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"claimed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"completed_at","notnull":0,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"delivery_revision","notnull":0,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"delivery_json","notnull":0,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[{"name":"lifecycle_episodes_policy_schedule","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":2,"coll":"BINARY","desc":0,"key":1,"name":"policy_revision","seqno":0},{"cid":3,"coll":"BINARY","desc":0,"key":1,"name":"schedule_revision","seqno":1},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":2}]},{"name":"lifecycle_episodes_role_completed","origin":"c","partial":0,"unique":0,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":4,"coll":"BINARY","desc":0,"key":1,"name":"completed_at","seqno":1},{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"episode_id","seqno":2},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":3}]},{"name":"sqlite_autoindex_lifecycle_episodes_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"episode_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_lifecycle_episodes_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":6,"coll":"BINARY","desc":0,"key":1,"name":"episode_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"lifecycle_episodes","table_list":{"ncol":8,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"episode_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"policy_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":3,"dflt_value":null,"hidden":0,"name":"schedule_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":4,"dflt_value":null,"hidden":0,"name":"completed_at","notnull":1,"pk":0,"type":"TEXT"},{"cid":5,"dflt_value":null,"hidden":0,"name":"request_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":6,"dflt_value":null,"hidden":0,"name":"episode_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":7,"dflt_value":null,"hidden":0,"name":"payload_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[{"from":"logical_role_instance_id","id":0,"match":"NONE","on_delete":"NO ACTION","on_update":"NO ACTION","seq":0,"table":"checkpoint_fences","to":"logical_role_instance_id"}],"index_list_and_xinfo":[{"name":"sqlite_autoindex_lifecycle_ledger_heads_1","origin":"pk","partial":0,"unique":1,"xinfo":[{"cid":0,"coll":"BINARY","desc":0,"key":1,"name":"logical_role_instance_id","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]},{"name":"sqlite_autoindex_lifecycle_ledger_heads_2","origin":"u","partial":0,"unique":1,"xinfo":[{"cid":1,"coll":"BINARY","desc":0,"key":1,"name":"entry_revision","seqno":0},{"cid":-1,"coll":"BINARY","desc":0,"key":0,"name":null,"seqno":1}]}],"name":"lifecycle_ledger_heads","table_list":{"ncol":4,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"logical_role_instance_id","notnull":1,"pk":1,"type":"TEXT"},{"cid":1,"dflt_value":null,"hidden":0,"name":"entry_revision","notnull":1,"pk":0,"type":"TEXT"},{"cid":2,"dflt_value":null,"hidden":0,"name":"sequence","notnull":1,"pk":0,"type":"INTEGER"},{"cid":3,"dflt_value":null,"hidden":0,"name":"entry_json","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[],"name":"schema_migrations","table_list":{"ncol":2,"strict":1,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"version","notnull":0,"pk":1,"type":"INTEGER"},{"cid":1,"dflt_value":null,"hidden":0,"name":"applied_at","notnull":1,"pk":0,"type":"TEXT"}]},{"foreign_key_list":[],"index_list_and_xinfo":[],"name":"sqlite_sequence","table_list":{"ncol":2,"strict":0,"type":"table","wr":0},"table_xinfo":[{"cid":0,"dflt_value":null,"hidden":0,"name":"name","notnull":0,"pk":0,"type":""},{"cid":1,"dflt_value":null,"hidden":0,"name":"seq","notnull":0,"pk":0,"type":""}]}]"####;
+
+fn pragma_rows(conn: &Connection, sql: &str) -> Vec<Value> {
+    let mut statement = conn.prepare(sql).unwrap();
+    let names: Vec<String> = statement
+        .column_names()
+        .iter()
+        .map(|name| (*name).to_string())
+        .collect();
+    let mut cursor = statement.query([]).unwrap();
+    let mut result = Vec::new();
+    while let Some(row) = cursor.next().unwrap() {
+        let mut object = serde_json::Map::new();
+        for (index, name) in names.iter().enumerate() {
+            let value = match row.get_ref(index).unwrap() {
+                rusqlite::types::ValueRef::Null => Value::Null,
+                rusqlite::types::ValueRef::Integer(n) => json!(n),
+                rusqlite::types::ValueRef::Text(raw) => json!(std::str::from_utf8(raw).unwrap()),
+                other => panic!("unexpected schema PRAGMA cell: {other:?}"),
+            };
+            object.insert(name.clone(), value);
+        }
+        result.push(Value::Object(object));
+    }
+    result
+}
+
+fn assert_observed_schema_correspondence(conn: &Connection) {
+    const EXPECTED: &[(&str, &str, Option<&str>)] = &[
+        (
+            "index",
+            "aborted_context_input_release_recovery",
+            Some("f2bf1689e5667bfd1fec75f260091ad0539657e0922fb01120fa5ee9065eee1a"),
+        ),
+        (
+            "index",
+            "active_turn_lifecycle_observations_owner",
+            Some("359d7e3a7c3631a380e0f7970d1c0a81130e8671c298f9075589cb39a279ce8b"),
+        ),
+        (
+            "index",
+            "active_turn_lifecycle_observations_turn",
+            Some("a72ca152652c50cf95dc56c1c4cc4ec563664dfec25cb7d6b5b8d1cc3e8f3294"),
+        ),
+        (
+            "index",
+            "active_turn_lifecycle_recovery",
+            Some("1c41a3c46a181b450ecd2783fff7dbf79df8267d1deab10c1872cfa8f5dabe70"),
+        ),
+        (
+            "index",
+            "active_turn_lifecycle_turn",
+            Some("be906edc0fb4f403b88fe329e06d91b6b01e7f9509a54fa8f00e2891e894a31c"),
+        ),
+        (
+            "index",
+            "context_domain_input_custody_drain",
+            Some("ecc83a2600f0e17443444aa499791973faef30db39def6046b7bc10d0a4ccb06"),
+        ),
+        (
+            "index",
+            "context_domain_input_custody_ready",
+            Some("ebb44aa231057d38e78627fa0daedf8bddbcf3ad0fa9d4a01601eb9aeca1c0c0"),
+        ),
+        (
+            "index",
+            "context_input_queue_release_order",
+            Some("c124bbb153926ec4b4009acfff98e09dd7439de6db68a8a6bd31f79f8199d526"),
+        ),
+        (
+            "index",
+            "context_transition_applications_transition",
+            Some("544c798de7c87aa6bbf28474df913cb3330494d3b36a68e81a23956aacda21d5"),
+        ),
+        (
+            "index",
+            "context_transition_effects_transition",
+            Some("2addae4cf31f9234a9b2264def02a879fedcb25fb50b03e1d89b7bc1700ed718"),
+        ),
+        (
+            "index",
+            "context_transition_events_transition",
+            Some("65f68d4b9634f6b566c6836bc7a9a9661607f03fb6d1930da99aa7c17d658dcd"),
+        ),
+        (
+            "index",
+            "context_transition_one_active_recovery",
+            Some("7511a520f4c4eb5964f88f241082cfcfb1ac21897ef6ca138cf2d4b1fa161513"),
+        ),
+        (
+            "index",
+            "context_transition_one_provider_entry",
+            Some("e2c7e1a340590430f424065ecbfd48e1eb76383bdb573939ca1533526c8a3212"),
+        ),
+        (
+            "index",
+            "context_transitions_one_active_role",
+            Some("ce016496476ba290a48610c8460aebdebaf562e5e4498b98638584186e53fd05"),
+        ),
+        (
+            "index",
+            "context_transitions_predecessor",
+            Some("93d402e70a42519861670a3ea8dca301557af25c86669a4ab98c686849adf378"),
+        ),
+        (
+            "index",
+            "legacy_context_input_dispositions_release_fence",
+            Some("60d4691d73f055c75f620a1f62d819046cc778bbdba1d825f286eafa40e9cce6"),
+        ),
+        (
+            "index",
+            "legacy_context_input_dispositions_successor_delivery",
+            Some("0a2bcfd9b6767d54bbd97624be6f7b19aef184fd424ddeb1721c27b63c08043c"),
+        ),
+        (
+            "index",
+            "lifecycle_episodes_policy_schedule",
+            Some("7b721fe8db436539cd899710e37d6a655d03ff326d19cd2d6fcb555201bf1e87"),
+        ),
+        (
+            "index",
+            "lifecycle_episodes_role_completed",
+            Some("42f3727ea5442051d09bc8bc74f38b9c78c72132625f2317f7bb3f8a61448d5b"),
+        ),
+        (
+            "index",
+            "sqlite_autoindex_aborted_context_input_releases_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_aborted_context_input_releases_2",
+            None,
+        ),
+        ("index", "sqlite_autoindex_active_turn_lifecycle_1", None),
+        ("index", "sqlite_autoindex_active_turn_lifecycle_2", None),
+        (
+            "index",
+            "sqlite_autoindex_active_turn_lifecycle_observations_1",
+            None,
+        ),
+        ("index", "sqlite_autoindex_checkpoint_fences_1", None),
+        ("index", "sqlite_autoindex_checkpoint_publications_1", None),
+        ("index", "sqlite_autoindex_checkpoint_publications_2", None),
+        ("index", "sqlite_autoindex_checkpoint_publications_3", None),
+        (
+            "index",
+            "sqlite_autoindex_context_domain_input_custody_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_domain_input_custody_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_domain_input_custody_3",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_input_admission_handoffs_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_input_admission_handoffs_2",
+            None,
+        ),
+        ("index", "sqlite_autoindex_context_input_admissions_1", None),
+        ("index", "sqlite_autoindex_context_input_queue_1", None),
+        ("index", "sqlite_autoindex_context_input_queue_2", None),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_admission_owners_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effect_applications_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effect_evidence_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effect_evidence_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effects_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effects_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_effects_3",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_event_applications_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_events_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_events_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_host_facts_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_provider_observations_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_queue_drain_receipts_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_queue_drain_receipts_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_queue_drain_receipts_3",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_recovery_operations_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_context_transition_recovery_operations_2",
+            None,
+        ),
+        ("index", "sqlite_autoindex_context_transitions_1", None),
+        ("index", "sqlite_autoindex_context_transitions_2", None),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_custody_lineages_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_custody_owners_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_custody_owners_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_dispositions_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_dispositions_2",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_successor_deliveries_1",
+            None,
+        ),
+        (
+            "index",
+            "sqlite_autoindex_legacy_context_input_successor_deliveries_2",
+            None,
+        ),
+        ("index", "sqlite_autoindex_lifecycle_episodes_1", None),
+        ("index", "sqlite_autoindex_lifecycle_episodes_2", None),
+        ("index", "sqlite_autoindex_lifecycle_ledger_heads_1", None),
+        ("index", "sqlite_autoindex_lifecycle_ledger_heads_2", None),
+        (
+            "table",
+            "aborted_context_input_releases",
+            Some("cd0d0eb959443ff2b6dee9e3d3921a997970d3667571c55dc413b70d5ffe70ff"),
+        ),
+        (
+            "table",
+            "active_turn_lifecycle",
+            Some("8922690ea772706d3e0b1628eadc6d40c8545730756da9a9d16668689f6868d6"),
+        ),
+        (
+            "table",
+            "active_turn_lifecycle_observations",
+            Some("90e0e2e0d1b2cd0e05c68736312506a33ce686ca87901350ee47d6d127cb772e"),
+        ),
+        (
+            "table",
+            "checkpoint_fences",
+            Some("c4299c85ce5042d09d2b9a4213998d437f295f0853039aa5ee4613d253af5573"),
+        ),
+        (
+            "table",
+            "checkpoint_publications",
+            Some("d29e32208e2d3e3003ca1ee3310a46a34ff6392db42b49302d5ec5c8129e3e61"),
+        ),
+        (
+            "table",
+            "context_domain_input_custody",
+            Some("ad241d8a77e49270a24ec3f5ea30cbc8f05681ce5bc18cf755f6d0367bcfca9d"),
+        ),
+        (
+            "table",
+            "context_input_admission_handoffs",
+            Some("c7ff256af4e2c4de15f2146bb1d94d8d40c5ac5be4958e364b480c9a27da98a4"),
+        ),
+        (
+            "table",
+            "context_input_admissions",
+            Some("3e918dd66d7e43eb166525c26af5ebec610645a702c3e6d41183266d37c84d41"),
+        ),
+        (
+            "table",
+            "context_input_queue",
+            Some("74330a8fb618f6b4b46f589a1d69027ea879e7c927f3dd013af0e9da99228301"),
+        ),
+        (
+            "table",
+            "context_transition_admission_owners",
+            Some("c8678de7c4b6f5538825abfc0a2fed7cae1fa321644c5270dd1e9b65f5af9b53"),
+        ),
+        (
+            "table",
+            "context_transition_effect_applications",
+            Some("d30ec0d77def0b7349dace28ac5f3a9f44f0a663285b0f87e5f40fa0af7eca69"),
+        ),
+        (
+            "table",
+            "context_transition_effect_evidence",
+            Some("23e791496837b2134107db6aced827d220e8d9ea3926e4d6714d40c1f0ea1b33"),
+        ),
+        (
+            "table",
+            "context_transition_effects",
+            Some("2e1e355693172714b29f7969cf35b1c05f141834a5d072a87789b510ead63869"),
+        ),
+        (
+            "table",
+            "context_transition_event_applications",
+            Some("e1f209ca2c6736e565770a177a5b564f672e52ea552a7dba8ebe16a257c9005f"),
+        ),
+        (
+            "table",
+            "context_transition_events",
+            Some("395831603441ce36d58379578afafd57e1a29e34cc3a8266d97e31926ae35cbc"),
+        ),
+        (
+            "table",
+            "context_transition_host_facts",
+            Some("ceb9720016c1951162fc8913e3728ddfb6334732b1d43c5d0969c6c8c633c2f9"),
+        ),
+        (
+            "table",
+            "context_transition_provider_observations",
+            Some("9c9b0bc77691cb429d9ef7163cd5eea42a7a16733b4e266ed182fb5fea35e1c2"),
+        ),
+        (
+            "table",
+            "context_transition_queue_drain_receipts",
+            Some("2727e2b439f9cc9edd4e67000be8acbd2ce7ad74e691ebaea8ecba9dfc1e764f"),
+        ),
+        (
+            "table",
+            "context_transition_recovery_operations",
+            Some("b5e83eb69e49027a4f4a50b8813603315a8cc723c43f3ad773206e61e671f9b6"),
+        ),
+        (
+            "table",
+            "context_transitions",
+            Some("4600d4ea142a6f0c7e56f1747fcf09dd5c268e7d54ab46b67c63987f8fc125ce"),
+        ),
+        (
+            "table",
+            "legacy_context_input_custody_lineages",
+            Some("f2a07e8b38f3b24bb537b38a91efb515500df02ab197678770ed2819a671fbb7"),
+        ),
+        (
+            "table",
+            "legacy_context_input_custody_owners",
+            Some("36560f243d0fa71aef8a876f8dc963c091bc2c3a7409fbe82003a647c16c7768"),
+        ),
+        (
+            "table",
+            "legacy_context_input_dispositions",
+            Some("b29fc791f5db0841ee4c0bc2dc32a6b61ea41c524ba423069f2abca57c0efee1"),
+        ),
+        (
+            "table",
+            "legacy_context_input_successor_deliveries",
+            Some("b170da3ca253ae025144cf5b62d951de7d02386e2b0ab0384bcf641244745109"),
+        ),
+        (
+            "table",
+            "lifecycle_episodes",
+            Some("ff61e75724e16092e185a5f3aa50e082968e780f14e7506470958ed23913e4eb"),
+        ),
+        (
+            "table",
+            "lifecycle_ledger_heads",
+            Some("7206c65fdd73668b2a3b180c89038ff0e1416587aa51f50016d7c14a7064eb30"),
+        ),
+        (
+            "table",
+            "schema_migrations",
+            Some("d4759513e6b31d362c2516cffb664783e24e9132dffec265c27bcae05a04e3ac"),
+        ),
+        (
+            "table",
+            "sqlite_sequence",
+            Some("4cb1eaf14467f226196148cb5688569660cb290d414bae4c1c450b149b62befd"),
+        ),
+    ];
+    let mut observed = Vec::new();
+    let mut statement = conn
+        .prepare("SELECT type,name,sql FROM sqlite_schema ORDER BY type,name")
+        .unwrap();
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, Option<String>>(2)?,
+            ))
+        })
+        .unwrap();
+    for row in rows {
+        let (kind, name, sql) = row.unwrap();
+        observed.push((kind, name, sql.as_deref().map(|text| sha(text.as_bytes()))));
+    }
+    assert_eq!(
+        observed.len(),
+        EXPECTED.len(),
+        "observed schema object count"
+    );
+    for (actual, wanted) in observed.iter().zip(EXPECTED) {
+        assert_eq!(actual.0, wanted.0, "observed schema object kind");
+        assert_eq!(actual.1, wanted.1, "observed schema object name");
+        assert_eq!(actual.2.as_deref(), wanted.2, "observed schema object DDL");
+    }
+    let mut listed = conn.prepare("PRAGMA table_list").unwrap();
+    let rows = listed
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, i64>(5)?,
+            ))
+        })
+        .unwrap();
+    let shapes: BTreeMap<_, _> = rows
+        .filter_map(|r| {
+            let (schema, n, k, w, s) = r.unwrap();
+            (schema == "main").then_some((n, (k, w, s)))
+        })
+        .collect();
+    assert_eq!(shapes.len(), 29); // 28 actual tables plus SQLite's sqlite_schema view.
+    for (kind, name, _) in EXPECTED.iter().filter(|(kind, _, _)| *kind == "table") {
+        let _ = kind;
+        let (table_kind, without_rowid, strict) = &shapes[*name];
+        assert_eq!(table_kind, "table");
+        assert_eq!(*without_rowid, 0);
+        assert_eq!(*strict, if *name == "sqlite_sequence" { 0 } else { 1 });
+    }
+    // PRAGMA index_list sequence reflects index-creation order, not a uniqueness
+    // constraint. Canonicalize that ordinal and sort by index name; retain
+    // origin/unique/partial and every index_xinfo column and position.
+    let expected_metadata: Value = serde_json::from_str(OBSERVED_PRAGMA_PROFILE).unwrap();
+    let mut observed_metadata = Vec::new();
+    for target in expected_metadata.as_array().unwrap() {
+        let name = target["name"].as_str().unwrap();
+        let mut indexes = pragma_rows(conn, &format!("PRAGMA index_list(\"{name}\")"));
+        for index in &mut indexes {
+            let index_name = index["name"].as_str().unwrap().to_string();
+            index.as_object_mut().unwrap().remove("seq");
+            index["xinfo"] = json!(pragma_rows(
+                conn,
+                &format!("PRAGMA index_xinfo(\"{index_name}\")")
+            ));
+        }
+        indexes.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
+        let listed = pragma_rows(conn, "PRAGMA table_list")
+            .into_iter()
+            .find(|row| row["schema"] == "main" && row["name"] == name)
+            .unwrap();
+        observed_metadata.push(json!({
+            "name":name,
+            "table_xinfo":pragma_rows(conn,&format!("PRAGMA table_xinfo(\"{name}\")")),
+            "foreign_key_list":pragma_rows(conn,&format!("PRAGMA foreign_key_list(\"{name}\")")),
+            "index_list_and_xinfo":indexes,
+            "table_list":{"type":listed["type"],"ncol":listed["ncol"],"wr":listed["wr"],"strict":listed["strict"]},
+        }));
+    }
+    assert_eq!(
+        Value::Array(observed_metadata),
+        expected_metadata,
+        "synthetic fixture PRAGMA metadata must correspond to copied image"
+    );
+    for (name, checks, fks, unique) in [
+        ("checkpoint_fences", 1, 0, 1),
+        ("checkpoint_publications", 0, 1, 3),
+        ("context_input_admission_handoffs", 2, 0, 2),
+        ("lifecycle_episodes", 0, 0, 2),
+        ("lifecycle_ledger_heads", 1, 1, 2),
+    ] {
+        let ddl: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_schema WHERE type='table' AND name=?1",
+                [name],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(ddl.matches("CHECK(").count(), checks, "CHECK shape {name}");
+        let fk_count: i64 = conn
+            .query_row(
+                &format!("SELECT COUNT(*) FROM pragma_foreign_key_list('{name}')"),
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(fk_count, fks, "FK shape {name}");
+        let unique_count: i64 = conn
+            .query_row(
+                &format!(r#"SELECT COUNT(*) FROM pragma_index_list('{name}') WHERE "unique"=1"#),
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(unique_count, unique, "unique shape {name}");
+    }
 }
 
 fn create_data(conn: &Connection, source_root: &Path) -> (Vec<u8>, Vec<u8>) {
@@ -2371,4 +3132,380 @@ fn malformed_fractional_utc_timestamps_remain_refused() {
         );
         assert!(!f.output.exists());
     }
+}
+
+#[test]
+fn baseline_generated_synthetic_v1_remains_historically_verifiable_only() {
+    let manifest_path = PathBuf::from(
+        std::env::var("S9_A_BASELINE_V1_MANIFEST").expect("frozen baseline synthetic v1 manifest"),
+    );
+    let manifest: Value = serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+    assert_eq!(
+        manifest["source_commit"],
+        "f64bc61dd5b618d9531e7937e3494fe459dc1ea0"
+    );
+    assert_eq!(
+        manifest["baseline_translator_source_sha256"],
+        "0a1b68ba72bf9397a591658f0f42d3189ce1a4df509d04f0a6117e14759b43ce"
+    );
+    assert_eq!(manifest["native_binary_sha256"], BINARY);
+    assert_eq!(manifest["original_status"], "qualified");
+    assert_eq!(
+        manifest["original_eligibility"],
+        "requires_separate_B_authority"
+    );
+    let attempt = PathBuf::from(manifest["attempt_root"].as_str().unwrap());
+    let output = PathBuf::from(manifest["output_root"].as_str().unwrap());
+    let snapshot = || {
+        manifest["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| {
+                let path = PathBuf::from(entry["path"].as_str().unwrap());
+                let meta = fs::symlink_metadata(&path).unwrap();
+                assert!(meta.is_file() && !meta.file_type().is_symlink());
+                let bytes = fs::read(&path).unwrap();
+                let digest = sha(&bytes);
+                assert_eq!(digest, entry["sha256"]);
+                assert_eq!(bytes.len(), entry["bytes"].as_u64().unwrap() as usize);
+                (
+                    path,
+                    digest,
+                    meta.dev(),
+                    meta.ino(),
+                    meta.len(),
+                    meta.mtime_nsec(),
+                    meta.mtime(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    let before = snapshot();
+    for sidecar in [
+        "semantic-context.sqlite3-wal",
+        "semantic-context.sqlite3-shm",
+    ] {
+        assert!(!attempt.join("capture/image").join(sidecar).exists());
+    }
+    let original: TranslationReceipt = serde_json::from_value(
+        manifest["result_value_reconstructed_from_original_receipt_and_report"].clone(),
+    )
+    .unwrap();
+    assert_eq!(original.capsule_version, None);
+    assert_eq!(original.translation_status, manifest["original_status"]);
+    assert_eq!(
+        original.transfer_eligibility,
+        manifest["original_eligibility"]
+    );
+    verify_completed_translation(&attempt, &output, &original).unwrap();
+    let capsule: Value =
+        serde_json::from_slice(&fs::read(output.join("capsule.json")).unwrap()).unwrap();
+    assert_eq!(capsule["schema_version"], "s9-v28-obligations-v1");
+    assert_eq!(capsule["translation_status"], original.translation_status);
+    assert_eq!(
+        capsule["transfer_eligibility"],
+        original.transfer_eligibility
+    );
+    assert_eq!(
+        capsule["selection_claim"],
+        "current_selection_unestablished"
+    );
+    let mut falsely_upgraded = original.clone();
+    falsely_upgraded.capsule_version = Some("s9-v28-obligations-v2".to_string());
+    assert!(
+        verify_completed_translation(&attempt, &output, &falsely_upgraded).is_err(),
+        "a historical v1 result cannot claim v2 coverage"
+    );
+    assert_eq!(
+        before,
+        snapshot(),
+        "baseline bytes and filesystem identity changed"
+    );
+}
+
+fn populate_added_domain_rows(f: &Fixture) {
+    let db = f.attempt.join("capture/image/semantic-context.sqlite3");
+    let conn = Connection::open(&db).unwrap();
+    let role = "slice-supervisor:synthetic-added";
+    let thread = "synthetic-added-thread";
+    let prior = format!("sha256:{}", "1".repeat(64));
+    let successor = format!("sha256:{}", "2".repeat(64));
+    let checkpoint = format!("sha256:{}", "3".repeat(64));
+    let candidate = format!("sha256:{}", "4".repeat(64));
+    let ledger = format!("sha256:{}", "5".repeat(64));
+    let episode = format!("sha256:{}", "6".repeat(64));
+    conn.execute(
+        "INSERT INTO context_input_admissions VALUES (?1,?2,1,?3,'open',NULL,?4,NULL)",
+        params![role, thread, SYNTHETIC_REVISION, "2026-10-13T00:00:00Z"],
+    )
+    .unwrap();
+    conn.execute("INSERT INTO context_input_queue VALUES (5,'synthetic-added-queue',?1,?2,'synthetic-added-message',?3,'{}','released',?4,?4,'{}')",
+        params![role,SYNTHETIC_REVISION,prior,"2026-10-13T00:00:00Z"]).unwrap();
+    conn.execute("INSERT INTO context_input_admission_handoffs VALUES (?1,?2,?3,?4,1,'synthetic-added-queue',?2,?5)",
+        params![role,prior,successor,thread,"2026-10-13T00:00:00Z"]).unwrap();
+    conn.execute(
+        "INSERT INTO checkpoint_fences VALUES (?1,?2,1,?3,?4,?5,?6,?7)",
+        params![
+            role,
+            thread,
+            SYNTHETIC_REVISION,
+            successor,
+            checkpoint,
+            ledger,
+            "2026-10-13T00:00:00Z"
+        ],
+    )
+    .unwrap();
+    let publication_json = json!({
+        "checkpointRevision":checkpoint,"publishedAt":"2026-10-13T00:00:00Z",
+        "subject":{"logicalRoleInstanceId":role,"threadId":thread,"bindingRevision":1,
+            "candidateRevision":candidate,"sourceRevision":SYNTHETIC_REVISION,
+            "authorityRevision":successor}
+    });
+    let ledger_json = json!({"entryRevision":ledger,"sequence":1,
+        "subject":{"logicalRoleInstanceId":role},
+        "details":{"checkpointRevision":checkpoint,"candidateRevision":candidate}});
+    let ledger_raw = serde_json::to_string(&ledger_json).unwrap();
+    conn.execute(
+        "INSERT INTO checkpoint_publications VALUES (?1,?2,?3,?4,?5,?6,?7)",
+        params![
+            checkpoint,
+            role,
+            candidate,
+            ledger,
+            "2026-10-13T00:00:00Z",
+            serde_json::to_string(&publication_json).unwrap(),
+            ledger_raw
+        ],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO lifecycle_ledger_heads VALUES (?1,?2,1,?3)",
+        params![role, ledger, serde_json::to_string(&ledger_json).unwrap()],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO lifecycle_episodes VALUES ('synthetic-episode',?1,?2,?3,?4,?5,?6,?7)",
+        params![
+            role,
+            prior,
+            successor,
+            "2026-10-13T00:00:00Z",
+            candidate,
+            episode,
+            serde_json::to_string(&json!({"episodeId":"synthetic-episode"})).unwrap()
+        ],
+    )
+    .unwrap();
+    drop(conn);
+    rebind_image(&f.attempt, "semantic-context.sqlite3");
+}
+
+#[test]
+fn added_domain_rows_are_once_inventoried_and_conservatively_blocked() {
+    let f = fixture();
+    populate_added_domain_rows(&f);
+    let result = translate_v28_capture(&f.attempt, &f.output).unwrap();
+    verify_completed_translation(&f.attempt, &f.output, &result).unwrap();
+    assert_eq!(
+        result.capsule_version.as_deref(),
+        Some("s9-v28-obligations-v2")
+    );
+    assert_eq!(result.transfer_eligibility, "blocked_unclassified");
+    let capsule: Value =
+        serde_json::from_slice(&fs::read(f.output.join("capsule.json")).unwrap()).unwrap();
+    assert_eq!(capsule["schema_version"], "s9-v28-obligations-v2");
+    assert_eq!(capsule["relation_census"].as_array().unwrap().len(), 28);
+    assert_eq!(capsule["q3"]["physical_delivery"], "not_applicable");
+    assert_eq!(capsule["q4"]["physical_delivery"], "not_proved");
+    let inventory: Value =
+        serde_json::from_slice(&fs::read(f.output.join("inventory-private.json")).unwrap())
+            .unwrap();
+    for table in [
+        "checkpoint_fences",
+        "checkpoint_publications",
+        "context_input_admission_handoffs",
+        "lifecycle_episodes",
+        "lifecycle_ledger_heads",
+    ] {
+        let rows: Vec<_> = inventory
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|r| r["table"] == table)
+            .collect();
+        assert_eq!(rows.len(), 1, "{table} must appear exactly once");
+        assert_eq!(rows[0]["classification"], "unclassified");
+        assert_eq!(
+            rows[0]["source_projection_sha256"].as_str().unwrap().len(),
+            64
+        );
+        assert!(rows[0]["source_revisions"].is_object());
+    }
+    let handoff = inventory
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["table"] == "context_input_admission_handoffs")
+        .unwrap();
+    assert!(
+        handoff["identity"]
+            .as_str()
+            .unwrap()
+            .starts_with("[\"slice-supervisor:synthetic-added\",")
+    );
+    assert_eq!(handoff["source_revisions"]["binding_revision"], 1);
+    assert_eq!(
+        handoff["source_revisions"]["predecessor_revision"],
+        format!("sha256:{}", "1".repeat(64))
+    );
+}
+
+#[test]
+fn closed_relation_profile_rejects_absent_extra_and_changed_constraint() {
+    for mutation in [
+        "missing",
+        "extra_empty",
+        "extra_column",
+        "wrong_key",
+        "not_strict",
+        "changed_check",
+    ] {
+        let f = fixture();
+        let db = f.attempt.join("capture/image/semantic-context.sqlite3");
+        let conn = Connection::open(&db).unwrap();
+        match mutation {
+            "missing" => conn.execute_batch("DROP TABLE context_input_admission_handoffs").unwrap(),
+            "extra_empty" => conn.execute_batch("CREATE TABLE synthetic_extra(id TEXT) STRICT").unwrap(),
+            "extra_column" => conn.execute_batch("ALTER TABLE lifecycle_episodes ADD COLUMN unknown TEXT").unwrap(),
+            "wrong_key" => conn.execute_batch("DROP TABLE lifecycle_episodes; CREATE TABLE lifecycle_episodes(episode_id TEXT, logical_role_instance_id TEXT NOT NULL, policy_revision TEXT NOT NULL, schedule_revision TEXT NOT NULL, completed_at TEXT NOT NULL, request_revision TEXT NOT NULL, episode_revision TEXT NOT NULL UNIQUE, payload_json TEXT NOT NULL) STRICT").unwrap(),
+            "not_strict" => conn.execute_batch("DROP TABLE lifecycle_episodes; CREATE TABLE lifecycle_episodes(episode_id TEXT PRIMARY KEY, logical_role_instance_id TEXT NOT NULL, policy_revision TEXT NOT NULL, schedule_revision TEXT NOT NULL, completed_at TEXT NOT NULL, request_revision TEXT NOT NULL, episode_revision TEXT NOT NULL UNIQUE, payload_json TEXT NOT NULL)").unwrap(),
+            _ => conn.execute_batch("DROP TABLE checkpoint_fences; CREATE TABLE checkpoint_fences(logical_role_instance_id TEXT PRIMARY KEY,thread_id TEXT NOT NULL,binding_revision INTEGER NOT NULL,source_revision TEXT NOT NULL,authority_revision TEXT NOT NULL,publication_revision TEXT,ledger_revision TEXT,updated_at TEXT NOT NULL) STRICT").unwrap(),
+        }
+        drop(conn);
+        rebind_image(&f.attempt, "semantic-context.sqlite3");
+        assert!(
+            translate_v28_capture(&f.attempt, &f.output).is_err(),
+            "{mutation}"
+        );
+        assert!(!f.output.exists());
+    }
+}
+
+#[test]
+fn added_domain_lineage_and_json_mismatches_refuse_capsule() {
+    for mutation in [
+        "dangling_handoff",
+        "invalid_revision",
+        "mismatched_ledger",
+        "malformed_publication",
+        "malformed_episode",
+    ] {
+        let f = fixture();
+        populate_added_domain_rows(&f);
+        let db = f.attempt.join("capture/image/semantic-context.sqlite3");
+        let conn = Connection::open(&db).unwrap();
+        match mutation {
+            "dangling_handoff" => {
+                conn.execute(
+                    "UPDATE context_input_admission_handoffs SET queue_id='absent'",
+                    [],
+                )
+                .unwrap();
+            }
+            "invalid_revision" => {
+                conn.execute(
+                    "UPDATE context_input_admission_handoffs SET predecessor_revision='not-a-revision'",
+                    [],
+                )
+                .unwrap();
+            }
+            "mismatched_ledger" => {
+                conn.execute(
+                    "UPDATE checkpoint_fences SET ledger_revision=?1",
+                    [format!("sha256:{}", "9".repeat(64))],
+                )
+                .unwrap();
+            }
+            "malformed_publication" => {
+                conn.execute(
+                    "UPDATE checkpoint_publications SET publication_json='{invalid}'",
+                    [],
+                )
+                .unwrap();
+            }
+            _ => {
+                conn.execute("UPDATE lifecycle_episodes SET payload_json='{invalid}'", [])
+                    .unwrap();
+            }
+        }
+        drop(conn);
+        rebind_image(&f.attempt, "semantic-context.sqlite3");
+        assert!(
+            translate_v28_capture(&f.attempt, &f.output).is_err(),
+            "{mutation}"
+        );
+        assert!(!f.output.exists());
+    }
+}
+
+#[test]
+fn observed_handoff_primary_and_successor_uniqueness_reject_conflicts() {
+    let f = fixture();
+    populate_added_domain_rows(&f);
+    let conn = Connection::open(f.attempt.join("capture/image/semantic-context.sqlite3")).unwrap();
+    let original: (String, String, String, String, i64, String, String, String) = conn
+        .query_row(
+            "SELECT * FROM context_input_admission_handoffs",
+            [],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                ))
+            },
+        )
+        .unwrap();
+    assert!(
+        conn.execute(
+            "INSERT INTO context_input_admission_handoffs VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            params![
+                original.0, original.1, original.2, original.3, original.4, original.5, original.6,
+                original.7
+            ]
+        )
+        .is_err()
+    );
+    let different_predecessor = format!("sha256:{}", "8".repeat(64));
+    assert!(
+        conn.execute(
+            "INSERT INTO context_input_admission_handoffs VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            params![
+                original.0,
+                different_predecessor,
+                original.2,
+                original.3,
+                original.4,
+                original.5,
+                original.6,
+                original.7
+            ]
+        )
+        .is_err()
+    );
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM context_input_admission_handoffs",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 1);
 }
