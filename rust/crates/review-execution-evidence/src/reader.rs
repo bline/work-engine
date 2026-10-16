@@ -24,6 +24,9 @@ pub struct EvidenceReader {
 
 impl EvidenceReader {
     pub fn open(root: &Path, pin: ReaderPin) -> Result<Self, EvidenceReadError> {
+        if pin.profile != store::PROFILE {
+            return Err(EvidenceReadError::Unsupported("controlled reader profile"));
+        }
         let (root, _, _) = store::open_reader(root, &pin)?;
         let anchors = store::anchor_ids(&root)?;
         Ok(Self { root, pin, anchors })

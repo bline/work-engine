@@ -128,3 +128,178 @@ impl TrustedRp0Profile {
         self.cbm_client.verify()
     }
 }
+
+/// Exact installed command and catalog. This selection is descriptive until a
+/// workflow owner supplies an in-process entry permit. RP1 exposes only the
+/// offline fixture installer; production installation belongs to RP2.
+#[derive(Clone)]
+pub struct TrustedClaudeProfile {
+    program: PinnedProgram,
+    guard: Option<PinnedProgram>,
+    installed: bool,
+    model: String,
+    effort: String,
+    accepted_observed_models: Vec<String>,
+    catalog_sha256: String,
+    digest: String,
+}
+
+impl TrustedClaudeProfile {
+    #[cfg(feature = "test-support")]
+    pub fn load_offline_peer(
+        program: PinnedProgram,
+        model: &str,
+        effort: &str,
+        accepted_observed_models: Vec<String>,
+        catalog: &[u8],
+    ) -> Result<Self, Rp0Error> {
+        Self::load_checked(
+            program,
+            None,
+            false,
+            model,
+            effort,
+            accepted_observed_models,
+            catalog,
+        )
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn load_offline_guarded_peer(
+        program: PinnedProgram,
+        guard: PinnedProgram,
+        model: &str,
+        effort: &str,
+        accepted_observed_models: Vec<String>,
+        catalog: &[u8],
+    ) -> Result<Self, Rp0Error> {
+        Self::load_checked(
+            program,
+            Some(guard),
+            false,
+            model,
+            effort,
+            accepted_observed_models,
+            catalog,
+        )
+    }
+
+    /// A checked installed selection remains inert until an Applied owner
+    /// supplies a private entry permit. RP1 does not issue that permit.
+    pub fn load_installed(
+        program: PinnedProgram,
+        guard: PinnedProgram,
+        model: &str,
+        effort: &str,
+        accepted_observed_models: Vec<String>,
+        catalog: &[u8],
+    ) -> Result<Self, Rp0Error> {
+        Self::load_checked(
+            program,
+            Some(guard),
+            true,
+            model,
+            effort,
+            accepted_observed_models,
+            catalog,
+        )
+    }
+
+    #[cfg_attr(not(feature = "test-support"), allow(dead_code))]
+    fn load_checked(
+        program: PinnedProgram,
+        guard: Option<PinnedProgram>,
+        installed: bool,
+        model: &str,
+        effort: &str,
+        accepted_observed_models: Vec<String>,
+        catalog: &[u8],
+    ) -> Result<Self, Rp0Error> {
+        program.verify()?;
+        if let Some(guard) = &guard {
+            guard.verify()?;
+        }
+        if model.is_empty()
+            || model.len() > 128
+            || !model
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"-._".contains(&b))
+            || !matches!(effort, "low" | "medium" | "high")
+            || accepted_observed_models.is_empty()
+            || accepted_observed_models.len() > 8
+            || accepted_observed_models.iter().any(|observed| {
+                observed.is_empty()
+                    || observed.len() > 128
+                    || !observed
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"-._".contains(&b))
+            })
+            || catalog.is_empty()
+            || catalog.len() > 64 * 1024
+            || claim_evidence::codec::parse_json(
+                std::str::from_utf8(catalog).map_err(|_| Rp0Error::IsolationFailed)?,
+            )
+            .is_err()
+        {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        let catalog_sha256 = sha256(catalog);
+        let digest = crate::contract::record_digest(&[
+            if installed {
+                b"claude-installed-profile-v1"
+            } else {
+                b"claude-offline-profile-v1"
+            },
+            program.sha256().as_bytes(),
+            guard.as_ref().map_or("", PinnedProgram::sha256).as_bytes(),
+            model.as_bytes(),
+            effort.as_bytes(),
+            catalog_sha256.as_bytes(),
+            accepted_observed_models.join("\0").as_bytes(),
+        ]);
+        Ok(Self {
+            program,
+            guard,
+            installed,
+            model: model.into(),
+            effort: effort.into(),
+            accepted_observed_models,
+            catalog_sha256,
+            digest,
+        })
+    }
+
+    pub fn profile_digest(&self) -> &str {
+        &self.digest
+    }
+    pub fn requested_model(&self) -> &str {
+        &self.model
+    }
+    pub fn requested_effort(&self) -> &str {
+        &self.effort
+    }
+    pub fn catalog_sha256(&self) -> &str {
+        &self.catalog_sha256
+    }
+    pub(crate) fn program(&self) -> &PinnedProgram {
+        &self.program
+    }
+    pub(crate) fn guard(&self) -> Option<&PinnedProgram> {
+        self.guard.as_ref()
+    }
+    pub(crate) fn installed(&self) -> bool {
+        self.installed
+    }
+    pub(crate) fn accepts_observed_model(&self, value: &str) -> bool {
+        self.accepted_observed_models
+            .iter()
+            .any(|accepted| accepted == value)
+    }
+    pub(crate) fn verify(&self) -> Result<(), Rp0Error> {
+        self.program.verify()?;
+        if let Some(guard) = &self.guard {
+            guard.verify()?;
+        }
+        Ok(())
+    }
+}

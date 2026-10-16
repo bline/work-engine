@@ -708,7 +708,7 @@ fn artifact_value(reference: &str, digest: &str) -> JsValue {
     ])
 }
 
-fn canonical_now_utc() -> String {
+pub(crate) fn canonical_now_utc() -> String {
     let elapsed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();

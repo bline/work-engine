@@ -25,6 +25,8 @@ pub struct CredentialSource {
     path: PathBuf,
     parent_dev: u64,
     parent_ino: u64,
+    source_dev: u64,
+    source_ino: u64,
 }
 
 impl CredentialSource {
@@ -41,12 +43,15 @@ impl CredentialSource {
             &basename,
             O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK,
         )?;
-        validate_source_file(&file.metadata()?)?;
+        let source_meta = file.metadata()?;
+        validate_source_file(&source_meta)?;
         let metadata = parent.metadata()?;
         Ok(Self {
             path: path.into(),
             parent_dev: metadata.dev(),
             parent_ino: metadata.ino(),
+            source_dev: source_meta.dev(),
+            source_ino: source_meta.ino(),
         })
     }
 
@@ -54,6 +59,25 @@ impl CredentialSource {
         &self,
         now_millis: i64,
         required_horizon_millis: i64,
+    ) -> Result<AccessProjection, Rp0Error> {
+        self.read_access_only_with_identity(now_millis, required_horizon_millis, false)
+    }
+
+    /// RP1 binds the selected file identity for one initial attempt. RP0's
+    /// established access-only projection still permits safe file rotation.
+    pub(crate) fn read_access_only_exact(
+        &self,
+        now_millis: i64,
+        required_horizon_millis: i64,
+    ) -> Result<AccessProjection, Rp0Error> {
+        self.read_access_only_with_identity(now_millis, required_horizon_millis, true)
+    }
+
+    fn read_access_only_with_identity(
+        &self,
+        now_millis: i64,
+        required_horizon_millis: i64,
+        exact_file: bool,
     ) -> Result<AccessProjection, Rp0Error> {
         if required_horizon_millis <= 0 {
             return Err(Rp0Error::UnsafeCredential);
@@ -68,7 +92,13 @@ impl CredentialSource {
             &basename,
             O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK,
         )?;
-        validate_source_file(&file.metadata()?)?;
+        let source_meta = file.metadata()?;
+        validate_source_file(&source_meta)?;
+        if exact_file
+            && (source_meta.dev() != self.source_dev || source_meta.ino() != self.source_ino)
+        {
+            return Err(Rp0Error::UnsafeCredential);
+        }
         let mut raw = Vec::new();
         (&mut file)
             .take(MAX_CREDENTIAL_BYTES + 1)

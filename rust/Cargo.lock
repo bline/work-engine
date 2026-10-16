@@ -1133,6 +1133,8 @@ name = "review-execution-evidence"
 version = "0.1.0"
 dependencies = [
  "claim-evidence",
+ "libc",
+ "review-episode-core",
  "rusqlite",
  "serde",
  "serde_json",

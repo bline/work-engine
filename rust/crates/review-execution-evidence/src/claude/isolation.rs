@@ -1,3 +1,4 @@
+use std::ffi::CString;
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsRawFd;
@@ -16,7 +17,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use super::profile::sha256;
-use super::{Rp0Error, TrustedRp0Profile};
+use super::{Rp0Error, TrustedClaudeProfile, TrustedRp0Profile};
 
 const MAX_PROCESS_OUTPUT: usize = 1024 * 1024;
 const REVIEW_ROOT: &str = "/repo/candidate";
@@ -69,6 +70,160 @@ pub struct HostileProbeResult {
     pub cbm_observation: Value,
 }
 
+pub(crate) struct QualifiedLaunch {
+    pub command: tokio::process::Command,
+    pub ready_line: String,
+    pub relay: QualifiedRelay,
+}
+
+pub(crate) struct QualifiedRelay {
+    cancel: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<Result<Value, Rp0Error>>>,
+    socket_path: PathBuf,
+    cgroup: Option<PathBuf>,
+}
+
+impl QualifiedRelay {
+    pub fn finish(mut self) -> Result<Value, Rp0Error> {
+        self.cancel.store(true, Ordering::SeqCst);
+        let thread = self.thread.take().ok_or(Rp0Error::IsolationFailed)?;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !thread.is_finished() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(10));
+        }
+        if !thread.is_finished() {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        let result = thread.join().map_err(|_| Rp0Error::IsolationFailed)?;
+        let _ = fs::remove_file(&self.socket_path);
+        self.release_cgroup();
+        result
+    }
+}
+
+impl Drop for QualifiedRelay {
+    fn drop(&mut self) {
+        self.cancel.store(true, Ordering::SeqCst);
+        if let Some(thread) = self.thread.take() {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !thread.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(10));
+            }
+            if thread.is_finished() {
+                let _ = thread.join();
+            }
+        }
+        let _ = fs::remove_file(&self.socket_path);
+        self.release_cgroup();
+    }
+}
+
+impl QualifiedRelay {
+    fn release_cgroup(&mut self) {
+        if let Some(path) = self.cgroup.take() {
+            // Kill only this attempt's private child group. If the kernel has
+            // not reaped it yet, leave the hard quota in force.
+            let _ = fs::write(path.join("cgroup.kill"), b"1\n");
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while fs::remove_dir(&path).is_err() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+}
+
+fn active_cgroup(
+    nonce: &str,
+    budget: u64,
+    live_session: &Path,
+) -> Result<(PathBuf, String), Rp0Error> {
+    let membership = fs::read_to_string("/proc/self/cgroup")?;
+    let relative = membership
+        .lines()
+        .find_map(|line| line.strip_prefix("0::"))
+        .ok_or(Rp0Error::IsolationFailed)?;
+    let current = Path::new(relative);
+    let parent = current.parent().ok_or(Rp0Error::IsolationFailed)?;
+    if !current.is_absolute()
+        || current
+            .components()
+            .any(|part| matches!(part, std::path::Component::ParentDir))
+    {
+        return Err(Rp0Error::IsolationFailed);
+    }
+    // A nonce identifies one attempt within an evidence root; independent
+    // roots can use the same profile and attempt number. Bind the private
+    // group name to its canonical live root so a delayed cleanup cannot
+    // cause another root's launch to collide with this group's pathname.
+    let live_digest = sha256(live_session.as_os_str().as_encoded_bytes());
+    let group_name = format!("rp1-{}-{}", nonce, &live_digest[..16]);
+    let group_relative = parent.join(group_name);
+    let path = Path::new("/sys/fs/cgroup").join(
+        group_relative
+            .strip_prefix("/")
+            .map_err(|_| Rp0Error::IsolationFailed)?,
+    );
+    fs::create_dir(&path)?;
+    let setup = (|| -> Result<(), Rp0Error> {
+        // memory.max excludes swapped pages. This empty private group must
+        // prohibit swap before any child enters it so resident and swapped
+        // charges cannot exceed the remaining aggregate session budget.
+        fs::write(path.join("memory.swap.max"), b"0\n")?;
+        if fs::read_to_string(path.join("memory.swap.max"))?.trim() != "0"
+            || fs::read_to_string(path.join("memory.swap.current"))?.trim() != "0"
+        {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        fs::write(path.join("memory.max"), format!("{budget}\n"))?;
+        if fs::read_to_string(path.join("memory.max"))?.trim() != budget.to_string() {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        Ok(())
+    })();
+    if let Err(error) = setup {
+        let _ = fs::remove_dir(&path);
+        return Err(error);
+    }
+    Ok((path, group_relative.to_string_lossy().into_owned()))
+}
+
+fn enter_cgroup_before_exec(command: &mut Command, group: &Path) -> Result<(), Rp0Error> {
+    let procs = CString::new(group.join("cgroup.procs").as_os_str().as_encoded_bytes())
+        .map_err(|_| Rp0Error::IsolationFailed)?;
+    // SAFETY: this hook runs between fork and exec. It uses only async-signal-
+    // safe libc calls and writes this child PID into this attempt's cgroup.
+    unsafe {
+        use std::os::unix::process::CommandExt;
+        command.pre_exec(move || {
+            let fd = libc::open(procs.as_ptr(), libc::O_WRONLY | libc::O_CLOEXEC);
+            if fd < 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+            let mut pid = libc::getpid() as u32;
+            let mut digits = [0u8; 16];
+            let mut cursor = digits.len() - 1;
+            digits[cursor] = b'\n';
+            loop {
+                cursor -= 1;
+                digits[cursor] = b'0' + (pid % 10) as u8;
+                pid /= 10;
+                if pid == 0 {
+                    break;
+                }
+            }
+            let bytes = &digits[cursor..];
+            let written = libc::write(fd, bytes.as_ptr().cast(), bytes.len());
+            let error = std::io::Error::last_os_error();
+            libc::close(fd);
+            if written != bytes.len() as isize {
+                return Err(error);
+            }
+            Ok(())
+        });
+    }
+    Ok(())
+}
+
 /// RP0 owns this private build, sealed query copy, and realized reviewer mount.
 /// It neither constructs E1 qualified evidence nor launches a provider.
 pub struct CandidateBoundary {
@@ -79,6 +234,147 @@ pub struct CandidateBoundary {
 }
 
 impl CandidateBoundary {
+    pub(crate) fn guarded_launch(
+        &self,
+        claude: &TrustedClaudeProfile,
+        live_session: &Path,
+        nonce: &str,
+        args: &[String],
+    ) -> Result<QualifiedLaunch, Rp0Error> {
+        self.verify_frozen()?;
+        claude.verify()?;
+        if nonce.len() != 64 || !nonce.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        let guard = claude.guard().ok_or(Rp0Error::IsolationFailed)?;
+        let live = fs::canonicalize(live_session)?;
+        if live != live_session || !live.is_dir() {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        let socket_path = self.private_root.join("proxy/analysis.sock");
+        let listener = UnixListener::bind(&socket_path)?;
+        let cancel = Arc::new(AtomicBool::new(false));
+        let server_cancel = cancel.clone();
+        let profile = self.profile.clone();
+        let candidate = self.candidate.clone();
+        let private_root = self.private_root.clone();
+        let project = self.index.project.clone();
+        let server = thread::spawn(move || {
+            serve_one(
+                listener,
+                &profile,
+                &candidate,
+                &private_root,
+                &project,
+                Some(server_cancel),
+            )
+        });
+        let relay = QualifiedRelay {
+            cancel,
+            thread: Some(server),
+            socket_path,
+            cgroup: None,
+        };
+        let mut command =
+            reviewer_command(&self.profile, &self.candidate, &self.private_root, false)?;
+        // The reviewer sees only a size-limited private tmpfs. The pinned
+        // guard exports its completed session through a bounded frame after
+        // the reviewer exits; no writable host custody path is mounted.
+        let budget = super::session::active_cgroup_budget(
+            live_session.parent().ok_or(Rp0Error::IsolationFailed)?,
+        )
+        .map_err(|_| Rp0Error::IsolationFailed)?;
+        let (quota_path, quota_relative) = active_cgroup(nonce, budget, &live)?;
+        let mut relay = relay;
+        relay.cgroup = Some(quota_path.clone());
+        // The pre-exec hook places Bubblewrap and every descendant in the
+        // kernel hard limit before the first instruction of the sandbox.
+        enter_cgroup_before_exec(&mut command, &quota_path)?;
+        for (path, size) in [
+            ("/cache", 4 * 1024 * 1024),
+            ("/runtime", 4 * 1024 * 1024),
+            ("/scratch", 4 * 1024 * 1024),
+            ("/tmp", 4 * 1024 * 1024),
+            ("/session", super::session::ACTIVE_SESSION_LIMIT),
+        ] {
+            command
+                .arg("--size")
+                .arg(size.to_string())
+                .arg("--tmpfs")
+                .arg(path);
+        }
+        command.arg("--dir").arg("/cbm");
+        command.arg("--proc").arg("/proc");
+        command.arg("--ro-bind").arg(&quota_path).arg("/quota");
+        command
+            .arg("--ro-bind")
+            .arg(self.private_root.join("proxy"))
+            .arg("/cbm/socket");
+        command
+            .arg("--ro-bind")
+            .arg(self.profile.cbm_client.path())
+            .arg("/cbm/client");
+        command
+            .arg("--ro-bind")
+            .arg(self.private_root.join("session/mcp.json"))
+            .arg("/cbm/mcp.json");
+        command.arg("--dir").arg("/claude");
+        command
+            .arg("--ro-bind")
+            .arg(claude.program().path())
+            .arg("/claude/bin");
+        command
+            .arg("--ro-bind")
+            .arg(guard.path())
+            .arg("/claude/guard");
+        // Bubblewrap's implicit root and its fresh /dev otherwise admit
+        // unbounded regular files outside the charged /session tmpfs.
+        // Remount after every path has been installed; /session and the small
+        // scratch tmpfs mounts remain separate writable child mounts.
+        command.args([
+            "--remount-ro",
+            "/dev",
+            "--remount-ro",
+            "/proc",
+            "--remount-ro",
+            "/",
+        ]);
+        command.args([
+            "--setenv",
+            "WORK_ENGINE_QUOTA_REL",
+            &quota_relative,
+            "--setenv",
+            "WORK_ENGINE_QUOTA_BYTES",
+            &budget.to_string(),
+        ]);
+        command.args([
+            "--setenv",
+            "HOME",
+            "/session",
+            "--setenv",
+            "CLAUDE_CONFIG_DIR",
+            "/session",
+            "--setenv",
+            "PATH",
+            "/usr/bin:/bin",
+            "--",
+            "/claude/guard",
+            nonce,
+            "/claude/bin",
+            if claude.installed() {
+                "installed"
+            } else {
+                "offline"
+            },
+            self.index.project.as_str(),
+        ]);
+        command.args(args);
+        Ok(QualifiedLaunch {
+            command: tokio::process::Command::from(command),
+            ready_line: format!("READY:{nonce}:bwrap-candidate-ro-v2\n"),
+            relay,
+        })
+    }
     pub fn prepare(
         profile: TrustedRp0Profile,
         candidate: impl AsRef<Path>,
@@ -350,6 +646,10 @@ impl CandidateBoundary {
         &self.index
     }
 
+    pub(crate) fn candidate_path(&self) -> &Path {
+        &self.candidate
+    }
+
     pub fn mcp_config_path(&self) -> PathBuf {
         self.private_root.join("session/mcp.json")
     }
@@ -372,9 +672,17 @@ impl CandidateBoundary {
         let private_root = self.private_root.clone();
         let project = self.index.project.clone();
         let server = thread::spawn(move || {
-            serve_one(listener, &profile, &candidate, &private_root, &project)
+            serve_one(
+                listener,
+                &profile,
+                &candidate,
+                &private_root,
+                &project,
+                None,
+            )
         });
-        let mut command = reviewer_command(&self.profile, &self.candidate, &self.private_root)?;
+        let mut command =
+            reviewer_command(&self.profile, &self.candidate, &self.private_root, true)?;
         command
             .arg("--bind")
             .arg(self.private_root.join("session"))
@@ -607,6 +915,7 @@ fn reviewer_command(
     profile: &TrustedRp0Profile,
     candidate: &Path,
     private_root: &Path,
+    mount_proc: bool,
 ) -> Result<Command, Rp0Error> {
     profile.verify()?;
     let mut command = Command::new(profile.bwrap.path());
@@ -624,9 +933,10 @@ fn reviewer_command(
     }
     command.arg("--dir").arg("/repo");
     command.arg("--ro-bind").arg(candidate).arg(REVIEW_ROOT);
+    if mount_proc {
+        command.args(["--proc", "/proc"]);
+    }
     command.args([
-        "--proc",
-        "/proc",
         "--dev",
         "/dev",
         "--tmpfs",
@@ -664,6 +974,7 @@ fn serve_one(
     candidate: &Path,
     private_root: &Path,
     project: &str,
+    cancel: Option<Arc<AtomicBool>>,
 ) -> Result<Value, Rp0Error> {
     listener.set_nonblocking(true)?;
     let deadline = Instant::now() + Duration::from_secs(35);
@@ -671,6 +982,12 @@ fn serve_one(
         match listener.accept() {
             Ok((stream, _)) => break stream,
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                if cancel
+                    .as_ref()
+                    .is_some_and(|flag| flag.load(Ordering::SeqCst))
+                {
+                    return Err(Rp0Error::IsolationFailed);
+                }
                 if Instant::now() >= deadline {
                     return Err(Rp0Error::IsolationFailed);
                 }
@@ -679,7 +996,11 @@ fn serve_one(
             Err(error) => return Err(error.into()),
         }
     };
-    stream.set_read_timeout(Some(Duration::from_secs(25)))?;
+    stream.set_read_timeout(Some(if cancel.is_some() {
+        Duration::from_secs(1)
+    } else {
+        Duration::from_secs(25)
+    }))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut command = base_command(
@@ -730,10 +1051,28 @@ fn serve_one(
     let result = (|| -> Result<(), Rp0Error> {
         loop {
             let mut line = Vec::new();
-            let length = reader
+            let length = match reader
                 .by_ref()
                 .take((MAX_MCP_LINE + 1) as u64)
-                .read_until(b'\n', &mut line)?;
+                .read_until(b'\n', &mut line)
+            {
+                Ok(length) => length,
+                Err(error)
+                    if matches!(
+                        error.kind(),
+                        std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+                    ) && cancel.is_some() =>
+                {
+                    if cancel
+                        .as_ref()
+                        .is_some_and(|flag| flag.load(Ordering::SeqCst))
+                    {
+                        break Ok(());
+                    }
+                    continue;
+                }
+                Err(error) => break Err(error.into()),
+            };
             if length == 0 {
                 break Ok(());
             }
@@ -1053,7 +1392,7 @@ fn reject_sidecars(dir: &Path, store_name: &str) -> Result<(), Rp0Error> {
     Ok(())
 }
 
-fn tree_digest(root: &Path) -> Result<String, Rp0Error> {
+pub(crate) fn tree_digest(root: &Path) -> Result<String, Rp0Error> {
     let mut files = Vec::new();
     let mut stack = vec![root.to_owned()];
     while let Some(directory) = stack.pop() {

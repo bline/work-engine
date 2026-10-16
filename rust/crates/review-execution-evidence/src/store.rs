@@ -13,6 +13,19 @@ const SCHEMA_VERSION: &str = "1";
 pub(crate) const OWNER: &str = "review-execution-evidence";
 pub(crate) const PROFILE: &str = "controlled-process-v1";
 pub(crate) const VERIFIER: &str = "review-execution-evidence-process-v1";
+pub(crate) const CLAUDE_PROFILE: &str = "claude-qualified-v1";
+pub(crate) const CLAUDE_VERIFIER: &str = "review-execution-evidence-claude-v1";
+pub(crate) const CLAUDE_TEST_PROFILE: &str = "claude-offline-peer-v1";
+pub(crate) const CLAUDE_TEST_VERIFIER: &str = "review-execution-evidence-claude-offline-v1";
+
+fn verifier_for(profile: &str) -> Result<&'static str, EvidenceReadError> {
+    match profile {
+        PROFILE => Ok(VERIFIER),
+        CLAUDE_PROFILE => Ok(CLAUDE_VERIFIER),
+        CLAUDE_TEST_PROFILE => Ok(CLAUDE_TEST_VERIFIER),
+        _ => Err(EvidenceReadError::Unsupported("reader profile")),
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReaderPin {
@@ -33,9 +46,7 @@ impl ReaderPin {
         ] {
             require_sha(digest)?;
         }
-        if self.profile != PROFILE {
-            return Err(EvidenceReadError::Unsupported("reader profile"));
-        }
+        verifier_for(&self.profile)?;
         Ok(())
     }
 }
@@ -275,8 +286,8 @@ impl Store {
         for (key, value) in [
             ("schema_version", SCHEMA_VERSION),
             ("owner", OWNER),
-            ("verifier", VERIFIER),
-            ("profile", PROFILE),
+            ("verifier", verifier_for(&pin.profile)?),
+            ("profile", pin.profile.as_str()),
             ("root_id", pin.root_id.as_str()),
             ("configuration_sha256", pin.configuration_sha256.as_str()),
             ("executable_sha256", pin.executable_sha256.as_str()),
@@ -599,8 +610,8 @@ pub(crate) fn check_marker(
     for (key, expected) in [
         ("schema_version", SCHEMA_VERSION),
         ("owner", OWNER),
-        ("verifier", VERIFIER),
-        ("profile", PROFILE),
+        ("verifier", verifier_for(&pin.profile)?),
+        ("profile", pin.profile.as_str()),
         ("root_id", pin.root_id.as_str()),
         ("configuration_sha256", pin.configuration_sha256.as_str()),
         ("executable_sha256", pin.executable_sha256.as_str()),

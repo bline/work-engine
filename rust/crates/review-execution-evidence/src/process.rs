@@ -107,6 +107,15 @@ pub(crate) fn spawn(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
+    spawn_command(command)
+}
+
+pub(crate) fn spawn_command(mut command: Command) -> Result<RunningChild, EvidenceReadError> {
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
     let mut child = command
         .spawn()
         .map_err(|_| EvidenceReadError::Unresolved("spawn failed after launch intent"))?;
@@ -135,7 +144,82 @@ impl RunningChild {
         self.child.id()
     }
 
-    pub async fn capture(mut self, input: &[u8]) -> Result<CapturedChild, ObservedFailure> {
+    /// Read exactly one trusted guard handshake line before releasing prompt
+    /// bytes. No buffered read may consume later diagnostic bytes.
+    pub async fn await_ready(&mut self, expected: &str) -> Result<(), ObservedFailure> {
+        let pid = self.child.id();
+        let read = async {
+            let mut line = Vec::new();
+            loop {
+                let mut byte = [0u8; 1];
+                self.stderr.read_exact(&mut byte).await?;
+                line.push(byte[0]);
+                if line.len() > 4096 {
+                    return Err(std::io::Error::other("guard handshake oversized"));
+                }
+                if byte[0] == b'\n' {
+                    return Ok(line);
+                }
+            }
+        };
+        let actual = tokio::time::timeout(Duration::from_secs(5), read).await;
+        match actual {
+            Ok(Ok(line)) if line == expected.as_bytes() => Ok(()),
+            _ => {
+                let kill_ok = self.child.start_kill().is_ok();
+                let (status, cleanup) =
+                    match tokio::time::timeout(Duration::from_secs(5), self.child.wait()).await {
+                        Ok(Ok(status)) if kill_ok => (Some(status), CleanupObservation::Reaped),
+                        Ok(Ok(status)) => (Some(status), CleanupObservation::KillFailedButReaped),
+                        Ok(Err(_)) if kill_ok => (None, CleanupObservation::ReapFailed),
+                        Ok(Err(_)) => (None, CleanupObservation::KillFailedAndUnreaped),
+                        Err(_) => (None, CleanupObservation::ReapTimedOut),
+                    };
+                Err(ObservedFailure::local(
+                    FailureKind::StderrPipe,
+                    pid,
+                    0,
+                    0,
+                    status,
+                    cleanup,
+                ))
+            }
+        }
+    }
+
+    pub async fn capture(self, input: &[u8]) -> Result<CapturedChild, ObservedFailure> {
+        self.capture_with_horizon(input, Duration::from_secs(5), Duration::from_secs(2))
+            .await
+    }
+
+    pub async fn capture_with_horizon(
+        self,
+        input: &[u8],
+        horizon: Duration,
+        cleanup_horizon: Duration,
+    ) -> Result<CapturedChild, ObservedFailure> {
+        self.capture_with_output_limit(input, horizon, cleanup_horizon, STREAM_MAX_BYTES)
+            .await
+    }
+
+    pub async fn capture_guarded_with_horizon(
+        self,
+        input: &[u8],
+        horizon: Duration,
+        cleanup_horizon: Duration,
+    ) -> Result<CapturedChild, ObservedFailure> {
+        const GUARD_LIMIT: usize = 2 * 16 * 1024 * 1024 + STREAM_MAX_BYTES + 1024 * 1024;
+        self.capture_with_output_limit(input, horizon, cleanup_horizon, GUARD_LIMIT)
+            .await
+    }
+
+    async fn capture_with_output_limit(
+        mut self,
+        input: &[u8],
+        horizon: Duration,
+        cleanup_horizon: Duration,
+        stdout_limit: usize,
+    ) -> Result<CapturedChild, ObservedFailure> {
         let pid = self.child.id().ok_or_else(|| {
             ObservedFailure::local(
                 FailureKind::WaitFailure,
@@ -147,7 +231,7 @@ impl RunningChild {
             )
         })?;
         let mut stdin = self.stdin;
-        let mut stdout = self.stdout.take((STREAM_MAX_BYTES + 1) as u64);
+        let mut stdout = self.stdout.take((stdout_limit + 1) as u64);
         let mut stderr = self.stderr.take((STREAM_MAX_BYTES + 1) as u64);
         let mut out = Vec::new();
         let mut err = Vec::new();
@@ -164,50 +248,46 @@ impl RunningChild {
             );
             (write, read_out, read_err, waited)
         };
-        let (write, read_out, read_err, waited) =
-            match tokio::time::timeout(Duration::from_secs(5), work).await {
-                Ok(values) => values,
-                Err(_) => {
-                    let kind = if out.len() > STREAM_MAX_BYTES {
-                        FailureKind::StdoutOverflow
-                    } else if err.len() > STREAM_MAX_BYTES {
-                        FailureKind::StderrOverflow
-                    } else {
-                        FailureKind::Timeout
-                    };
-                    let kill_ok = self.child.start_kill().is_ok();
-                    #[cfg(feature = "test-faults")]
-                    if force_cleanup_unavailable() {
-                        return Err(ObservedFailure::local(
-                            kind,
-                            Some(pid),
-                            out.len(),
-                            err.len(),
-                            None,
-                            CleanupObservation::Unavailable,
-                        ));
-                    }
-                    let (status, cleanup) =
-                        match tokio::time::timeout(Duration::from_secs(2), self.child.wait()).await
-                        {
-                            Ok(Ok(status)) if kill_ok => (Some(status), CleanupObservation::Reaped),
-                            Ok(Ok(status)) => {
-                                (Some(status), CleanupObservation::KillFailedButReaped)
-                            }
-                            Ok(Err(_)) if kill_ok => (None, CleanupObservation::ReapFailed),
-                            Ok(Err(_)) => (None, CleanupObservation::KillFailedAndUnreaped),
-                            Err(_) => (None, CleanupObservation::ReapTimedOut),
-                        };
+        let (write, read_out, read_err, waited) = match tokio::time::timeout(horizon, work).await {
+            Ok(values) => values,
+            Err(_) => {
+                let kind = if out.len() > stdout_limit {
+                    FailureKind::StdoutOverflow
+                } else if err.len() > STREAM_MAX_BYTES {
+                    FailureKind::StderrOverflow
+                } else {
+                    FailureKind::Timeout
+                };
+                let kill_ok = self.child.start_kill().is_ok();
+                #[cfg(feature = "test-faults")]
+                if force_cleanup_unavailable() {
                     return Err(ObservedFailure::local(
                         kind,
                         Some(pid),
                         out.len(),
                         err.len(),
-                        status,
-                        cleanup,
+                        None,
+                        CleanupObservation::Unavailable,
                     ));
                 }
-            };
+                let (status, cleanup) =
+                    match tokio::time::timeout(cleanup_horizon, self.child.wait()).await {
+                        Ok(Ok(status)) if kill_ok => (Some(status), CleanupObservation::Reaped),
+                        Ok(Ok(status)) => (Some(status), CleanupObservation::KillFailedButReaped),
+                        Ok(Err(_)) if kill_ok => (None, CleanupObservation::ReapFailed),
+                        Ok(Err(_)) => (None, CleanupObservation::KillFailedAndUnreaped),
+                        Err(_) => (None, CleanupObservation::ReapTimedOut),
+                    };
+                return Err(ObservedFailure::local(
+                    kind,
+                    Some(pid),
+                    out.len(),
+                    err.len(),
+                    status,
+                    cleanup,
+                ));
+            }
+        };
         let wait_succeeded = waited.is_ok();
         let status = waited.ok();
         let failure_kind = if write.is_err() {
@@ -235,8 +315,8 @@ impl RunningChild {
                 },
             ));
         }
-        if out.len() > STREAM_MAX_BYTES || err.len() > STREAM_MAX_BYTES {
-            let kind = if out.len() > STREAM_MAX_BYTES {
+        if out.len() > stdout_limit || err.len() > STREAM_MAX_BYTES {
+            let kind = if out.len() > stdout_limit {
                 FailureKind::StdoutOverflow
             } else {
                 FailureKind::StderrOverflow
