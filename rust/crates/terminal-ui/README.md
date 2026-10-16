@@ -1,5 +1,9 @@
 # Work Engine terminal UI
 
+For the product direction, implementation status and next work, start with the
+[UI implementation roadmap](docs/implementation-roadmap.md). It maps this client
+to the accepted [control-plane causal observability design](../../../app-server/docs/control-plane-causal-observability-ui.md).
+
 A maintained standalone terminal application using **Ratatui + Crossterm +
 tui-realm**, **rataflow** for the work graph, and **ratatui-textarea** for editing.
 Work views use invented fixture data. The separate Lifecycle view is an authored
@@ -511,18 +515,19 @@ python3 rust/crates/terminal-ui/scripts/preview_png.py \
   commands 128 40 rust/crates/terminal-ui/previews/commands-128x40.png
 ```
 
-## Next design decision
+## Next planned work
 
-Walk through the app and decide whether this information hierarchy makes
-supervision understandable. In particular: is a dependency graph the useful
-landing view, which context deserves permanent space, and should the shared
-conversation filter by selected work or only highlight it? Then replace fixtures
-with a broader **read-only** OperatorProjection slice with explicit source revisions,
-time cutoffs, completeness, and stale/disconnected states. Live actions require
-owner-defined operation discovery, target/revision binding, admission, and
-attributable outcomes before the UI can show them as available.
+The [implementation roadmap](docs/implementation-roadmap.md) distinguishes the
+committed one-task observation path from the broader accepted UI-0–UI-4 slices.
+The next proposed work is to close installed-host-to-rendered-task-UI
+qualification and bind the exact owner sources for the UI-0 S5 review-amplification
+trace. These can proceed independently. Broader campaign visibility and causal
+drill-down follow qualified source joins; economics and counterfactuals come later.
 
-See the [design and migration assessment](../../../app-server/docs/opentui-ui-exploration.md).
+Overview is the task landing view; Graph and scoped Conversation are supporting
+views. Their interaction behavior is already implemented. The
+[design and migration exploration](../../../app-server/docs/opentui-ui-exploration.md)
+remains historical lineage, rather than the current implementation status.
 
 ## Lifecycle client boundary
 
@@ -544,3 +549,16 @@ handoff, including a verifier-failure recovery fence. It validates current
 snapshots; native operation outcomes and full event history still need public
 projections. The reusable `scripts/s5_populated_smoke.py` harness can retain
 socket snapshots and terminal frames for review.
+
+
+### Repeatable installed-host refresh check
+
+[Installed-host validation](docs/installed-host-validation.md) describes the
+opt-in Linux Rust test and required pinned host/template environment. It runs
+one actual UI process through pending question, authorized answer and published
+result using the local simulator, asserting the evolving terminal screen with
+no manual refresh. The default suite compiles but skips this environment-dependent
+test. Test-only provider/PTY dependencies do not enter the UI application.
+
+The [S5 source map](docs/s5-source-map.md) binds the historical review-amplification
+case and records remaining source/access gaps for the broader causal UI.

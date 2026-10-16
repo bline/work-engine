@@ -1,6 +1,8 @@
 > Promoted on 2026-10-07 to the maintained standalone app at
 > [`rust/crates/terminal-ui`](../../rust/crates/terminal-ui/README.md).
-> The exploration below records its design history; runtime integration remains pending.
+> The exploration below records design history, including superseded integration
+> status. The [implementation roadmap](../../rust/crates/terminal-ui/docs/implementation-roadmap.md)
+> maps current lifecycle/task reads and remaining work to the accepted product design.
 
 # Standalone terminal UI exploration and initial design
 

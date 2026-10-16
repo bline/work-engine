@@ -1,0 +1,307 @@
+{
+  "purpose": "Bounded UI-0 source discovery; not a complete golden corpus or owner acceptance",
+  "observed_utc_date": "2026-10-16",
+  "campaign": "skills-migration-app-server-20260828",
+  "slice_number": 6,
+  "slice_title": "S5 \u2014 Hidden context-lifecycle integration with compiled roles",
+  "candidates": [
+    {
+      "name": "candidate-1",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-1",
+      "commit": "2cfc945627f4f6d141385c46bd10f242601fef0b",
+      "tree": "6c74c4d86071b11c9847e032ab3a2e2418360c09",
+      "checkpoint_metadata": {
+        "candidate_attempt": 1,
+        "gate_receipt_digest": "55fd568e393c0c1d4bd31035f47eb22c2b7b5b6ec663580236f387f4b1f735a3",
+        "kind": "candidate",
+        "manifest_digest": "87dfe25421bd95bb61dd1d7771c09e58f46a42739efb939bfc13afc8298d58b0",
+        "plan_version": "s5-planning-v2",
+        "request_id": "8feca9303711699b5468e5f98b6b297a4de29a652f7bedb8e281f57851b46e1e",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "500daff9bd4822ffca3c6eabac616c3f4b0f3af425fcba18ff2cdeed5a86b32f",
+        "tree": "6c74c4d86071b11c9847e032ab3a2e2418360c09",
+        "work_engine_checkpoint": 1
+      }
+    },
+    {
+      "name": "candidate-2",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-2",
+      "commit": "fd66ba9dbb9892596755c496dee6a54e491fd193",
+      "tree": "3efc31045c26aba07bdd3c5339c71a19b4d51876",
+      "checkpoint_metadata": {
+        "candidate_attempt": 2,
+        "gate_receipt_digest": "0d33932c6e22641b04d0763aae6c2a54ac22080fcbced84a7c2ce1bd6cd3bd01",
+        "kind": "candidate",
+        "manifest_digest": "15dc5e143d64c73a7315e4e6c16e5f1e6e759b786f0b0fcecd82e8799d1c597e",
+        "plan_version": "s5-planning-v2",
+        "request_id": "aa92842794dcdd693961f052250d86b7de31aff0debb723ad542b066e72e2ef4",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "ea6b5ca33cf62a28d07b0e7dc6513949743ce769844eeda6915ec88a514f0192",
+        "tree": "3efc31045c26aba07bdd3c5339c71a19b4d51876",
+        "work_engine_checkpoint": 1
+      }
+    },
+    {
+      "name": "candidate-3",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-3",
+      "commit": "649349f57435b34d952b8ebd9e8f67a622d10dda",
+      "tree": "976d940e6d55ab6245a17634882a78aad3b46292",
+      "checkpoint_metadata": {
+        "candidate_attempt": 3,
+        "gate_receipt_digest": "ea297a3ec785315d43c98b5de5948c88a7b0faa9725e05adfcce2e416721a008",
+        "kind": "candidate",
+        "manifest_digest": "a1fed7088ef2dafbea09cd38237e99316c54013117f44228983bdc3b9670229b",
+        "plan_version": "s5-planning-v2",
+        "request_id": "8372358f829a3bbae036f25fb41f4dd82ad1ecadecd8d75e546d5a0f5bd154ab",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "d1dfdbd901c08727e9db13e3a4700b16c7fcf23f8cf6d0eae37b7f0cbcc48500",
+        "tree": "976d940e6d55ab6245a17634882a78aad3b46292",
+        "work_engine_checkpoint": 1
+      }
+    },
+    {
+      "name": "candidate-4",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-4",
+      "commit": "0195378488a65f3d1926ecb15f3613ab095971a2",
+      "tree": "3150a842155561c7b86025397a2cfb1ad6649d6a",
+      "checkpoint_metadata": {
+        "candidate_attempt": 4,
+        "gate_receipt_digest": "aee063649958388800b3e9b488552a5454db05f6ea3a2ec942c73508d9edea57",
+        "kind": "candidate",
+        "manifest_digest": "78aeac4b9012dc9873ae779b6c7f5a18a78b457ec1ded0e9636c282585e82691",
+        "plan_version": "s5-planning-v2",
+        "request_id": "0d25af4f48b75d9948e3a88fd6b8f1d07372de68a7bdc672a392910a92dd0e42",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "46d92ae214ff1097d996f380410794a2297db41c38d509ad650599f503be505e",
+        "tree": "3150a842155561c7b86025397a2cfb1ad6649d6a",
+        "work_engine_checkpoint": 1
+      }
+    },
+    {
+      "name": "candidate-5",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-5",
+      "commit": "c1a90a55ce326898996b5ab0b5925b91480b9f1c",
+      "tree": "033fccbc72bc7ca7e4e0e910fbb8675e4fce874e",
+      "checkpoint_metadata": {
+        "candidate_attempt": 5,
+        "gate_receipt_digest": "f219580842993abb88b662bef94059239f34955fb84d1ce9afb32e6a6b0ec7c9",
+        "kind": "candidate",
+        "manifest_digest": "91fa50579e6851426b27daa5c68de68ebcb128d1784d91dfd144165d28941a34",
+        "plan_version": "s5-planning-v2",
+        "request_id": "7095a6576b802dd35be4063fbc56d0c4fb9fd2b419f47f7e89591d508b809e93",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "04dce76995929c395793595513d25a4d05cfdd39ab2e8c761b7be71d97496107",
+        "tree": "033fccbc72bc7ca7e4e0e910fbb8675e4fce874e",
+        "work_engine_checkpoint": 1
+      }
+    },
+    {
+      "name": "accepted",
+      "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/accepted",
+      "commit": "8d9caea5322edfeebb50b7e612f9c850224fd080",
+      "tree": "033fccbc72bc7ca7e4e0e910fbb8675e4fce874e",
+      "checkpoint_metadata": {
+        "candidate_attempt": 5,
+        "candidate_checkpoint_id": "7095a6576b802dd35be4063fbc56d0c4fb9fd2b419f47f7e89591d508b809e93",
+        "gate_receipt_digest": "f219580842993abb88b662bef94059239f34955fb84d1ce9afb32e6a6b0ec7c9",
+        "kind": "accepted",
+        "manifest_digest": "91fa50579e6851426b27daa5c68de68ebcb128d1784d91dfd144165d28941a34",
+        "plan_version": "s5-planning-v2",
+        "run_id": "skills-migration-app-server-20260828",
+        "scope_revision": "sha256:0021e764e822cd0c4e31394a6de12db2e4b4a4f518961b56db40afbd0423b2cc",
+        "slice_number": 6,
+        "task_patch_digest": "04dce76995929c395793595513d25a4d05cfdd39ab2e8c761b7be71d97496107",
+        "tree": "033fccbc72bc7ca7e4e0e910fbb8675e4fce874e",
+        "work_engine_checkpoint": 1
+      }
+    }
+  ],
+  "review_records": [
+    {
+      "label": "original-generic",
+      "blob_revision": "f5773967f8f6a8470161ac4b1552738d49a23d8c",
+      "key": "independent-review-episode-v1/512fb086b3df879ed552fe59a9513d423b5dfa63905576db73466eea5dc7912c",
+      "payload_sha256": "1efdd905f18946004916b22e657f6fd0e56222a7fb187359b86ff1481b5a7b1b",
+      "predecessor_revision": "0c949faef44f6b2240c740e5b79fde9297509d55",
+      "identity": {
+        "attempt_id": "s5-candidate-1-generic-review",
+        "plan_version": "s5-planning-v2",
+        "review_episode_id": "s5-candidate-1-generic-claude-127e1404-e5a6-4597-968e-4a061567a953",
+        "review_obligation_id": "s5-candidate1-generic-review-1",
+        "run_id": "skills-migration-app-server-20260828",
+        "slice_number": 6
+      },
+      "status": "active",
+      "phase": "reported",
+      "reviewed_subject": [
+        {
+          "freshness_rule": "immutable_checkpoint_subject",
+          "integrity_sha256": "aa92842794dcdd693961f052250d86b7de31aff0debb723ad542b066e72e2ef4",
+          "owner": "slice-checkpoint",
+          "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-2",
+          "revision": "fd66ba9dbb9892596755c496dee6a54e491fd193"
+        }
+      ],
+      "authority_source": {
+        "freshness_rule": "exact_immutable_selection",
+        "integrity_sha256": "ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "owner": "slice-supervisor",
+        "reference": "review-selection:sha256:ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "revision": "candidate-1-selection"
+      },
+      "finding_dispositions": [
+        {
+          "id": "s5c1-manifest-lifecycle-001-uncompiled-role-untested",
+          "status": "verified_resolved"
+        },
+        {
+          "id": "s5c1-context-lease-002-unreachable-none-branch",
+          "status": "withdrawn"
+        },
+        {
+          "id": "s5c1-context-lease-003-dead-code",
+          "status": "withdrawn"
+        }
+      ]
+    },
+    {
+      "label": "instruction",
+      "blob_revision": "e70f2b5caecacfafca3257586c5e4a09587f6ed9",
+      "key": "independent-review-episode-v1/b40803c2de2d5698e7ce571505ca2dfa0407d77827cdd377857638da7cd0f539",
+      "payload_sha256": "e6538ad0da284e99b6feffd594e8cd5e1d4aa47913da08c8b917fc3f2c53f4e0",
+      "predecessor_revision": "787b4d3a19ef47af4768c1e22e929baf8925cbab",
+      "identity": {
+        "attempt_id": "s5-candidate-2-air-review-v2",
+        "plan_version": "s5-planning-v2",
+        "review_episode_id": "s5-candidate-2-air-4cfad03d-2912-4391-924c-58f0e08ded11",
+        "review_obligation_id": "s5-candidate2-air-1",
+        "run_id": "skills-migration-app-server-20260828",
+        "slice_number": 6
+      },
+      "status": "active",
+      "phase": "reported",
+      "reviewed_subject": [
+        {
+          "freshness_rule": "immutable_checkpoint_subject",
+          "integrity_sha256": "8372358f829a3bbae036f25fb41f4dd82ad1ecadecd8d75e546d5a0f5bd154ab",
+          "owner": "slice-checkpoint",
+          "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-3",
+          "revision": "649349f57435b34d952b8ebd9e8f67a622d10dda"
+        }
+      ],
+      "authority_source": {
+        "freshness_rule": "exact_immutable_selection",
+        "integrity_sha256": "ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "owner": "slice-supervisor",
+        "reference": "review-selection:sha256:ee5957b4c1c880a02c6a5ed66bf415dc64f66614ae34b48f59d158030ece8bfa",
+        "revision": "candidate-2-air-selection"
+      },
+      "finding_dispositions": [
+        {
+          "id": "AIR-CAND2-001",
+          "status": "verified_resolved"
+        },
+        {
+          "id": "AIR-CAND2-002",
+          "status": "verified_resolved"
+        }
+      ]
+    },
+    {
+      "label": "replacement-generic",
+      "blob_revision": "24f3f38e5351b48bcd3e069978b22a597f590e82",
+      "key": "independent-review-episode-v1/8c55f4e88ef8f28cff64f97cd2c8f49b37427a6b5fbab5a75afd9135814148b6",
+      "payload_sha256": "2baefd276e9f614a7d3010117a47ce558489106af72eb71ec3cabb6d01e5aeee",
+      "predecessor_revision": "4eb5b6e0b41b41fed9fee9ec567d4ddebbc24391",
+      "identity": {
+        "attempt_id": "s5-candidate-3-generic-review-replacement",
+        "plan_version": "s5-planning-v2",
+        "review_episode_id": "s5-candidate-3-generic-replacement-f8e47ea1-0985-4f5c-9f96-84ded6c038a9",
+        "review_obligation_id": "s5-candidate3-generic-review-replacement-1",
+        "run_id": "skills-migration-app-server-20260828",
+        "slice_number": 6
+      },
+      "status": "active",
+      "phase": "reported",
+      "reviewed_subject": [
+        {
+          "freshness_rule": "immutable_checkpoint_subject",
+          "integrity_sha256": "7095a6576b802dd35be4063fbc56d0c4fb9fd2b419f47f7e89591d508b809e93",
+          "owner": "slice-checkpoint",
+          "reference": "refs/work-engine/checkpoints/skills-migration-app-server-20260828/slice-6/candidate-5",
+          "revision": "c1a90a55ce326898996b5ab0b5925b91480b9f1c"
+        }
+      ],
+      "authority_source": {
+        "freshness_rule": "exact_replacement_authority",
+        "integrity_sha256": "465eb776fc5fb5030b8c4ad6da5325a2979b5947753f1d176edc7a6b92b4bd6c",
+        "owner": "slice-supervisor",
+        "reference": "replacement-authority:reported_episode_cannot_bind_later_candidate:refs/work-engine/independent-review-state/7e476a2c09555a7b29a112b17f3c3015997e02d12602832b496ed5019a190966@f5773967f8f6a8470161ac4b1552738d49a23d8c",
+        "revision": "candidate-3-replacement-selection"
+      },
+      "finding_dispositions": [
+        {
+          "id": "candidate3-runtime-env-none-satisfaction-dead-branch",
+          "status": "withdrawn"
+        },
+        {
+          "id": "candidate3-missing-role-identity-cross-check",
+          "status": "verified_resolved"
+        }
+      ]
+    }
+  ],
+  "metrics_source": {
+    "commit": "f64bc61dd5b618d9531e7937e3494fe459dc1ea0",
+    "path": "docs/ai-workflow-metrics.jsonl",
+    "blob": "a8e0eac325b48f7f693bb8843476276ffd669236",
+    "line_at_cutoff": 21,
+    "row_sha256_without_newline": "2bd65a15f9ae61bbd3a6a16b7be41f46b66ca1a7b35a22e1a316d60405b6096d",
+    "reported_aggregate": {
+      "provider_cost_usd": 15.7545495,
+      "provider_cache_creation_tokens": 1556726,
+      "provider_cache_read_tokens": 12578465,
+      "provider_output_tokens": 176004,
+      "provider_failure_reasons": {
+        "network": 0,
+        "timeout": 0,
+        "permission": 0,
+        "protocol": 0,
+        "quota": 1,
+        "other": 0
+      },
+      "additional_metrics": {
+        "terminal_gate_digest": "f219580842993abb88b662bef94059239f34955fb84d1ce9afb32e6a6b0ec7c9",
+        "configured_skips": 8,
+        "provider_quota_failures": 1,
+        "generic_reviewer_replacements": 1
+      }
+    },
+    "limitation": "Recorded aggregate only; raw provider entries and non-overlap/coverage not requalified"
+  },
+  "repair": {
+    "commit": "cc4b644ff102c3eb8fa46de01ff6a73fa171d575",
+    "path": "skills/independent-review-state/scripts/independent_review_state.py",
+    "before_blob": "55f1854fc1beea4c90550c9c31dde8333d7907b7",
+    "after_blob": "da91b16e8e20edc04f60d8d4d5cbfa8e8567d2e1",
+    "observed_change": "record_remediation_subject admits active reported as well as remediation; reported result does not retire episode"
+  },
+  "unresolved": [
+    "Exact per-attempt provider telemetry and quota event",
+    "Exact role-scheduler retry item and revisions",
+    "Raw gate receipts behind checkpoint gate digests",
+    "Full predecessor history/authority manifest validation and owner-admitted reader projection",
+    "Frozen comparison cohort and cost non-overlap proof",
+    "Read-access/confidentiality policy for UI projection"
+  ]
+}

@@ -1,5 +1,10 @@
 # Provisional task inspection
 
+This records the fixture-only increment at `007e849`. Real task-observation
+reads subsequently landed at `d2e5c53`; the fixtures remain deliberately offline.
+See the [implementation roadmap](implementation-roadmap.md) for current status
+and the distinct installed-host qualification, including its remaining gaps.
+
 This UI-only slice implements the proposed projection described in
 [task-observation.md](task-observation.md). These fixtures are **not an accepted
 `task.observe.v2` protocol**, backend integration, or evidence about a live task.
@@ -93,8 +98,9 @@ terminal font exporter and actual Ratatui buffer colors.
 - [Grouped Conversation, 128×40](previews/task/conversation-128x40.png)
 
 The static fixtures do not qualify an accepted backend or prove the current
-v1 `unavailable` means capacity. Actual host integration and additional response
-identity/refresh cases remain the later owner-reconciled slice.
+v1 `unavailable` means capacity. At this fixture increment, actual host integration and additional response
+identity/refresh cases remained later work; their current disposition is in the
+[roadmap](implementation-roadmap.md).
 
 Additional refinement previews:
 

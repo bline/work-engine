@@ -26,3 +26,10 @@ lifecycle-client = { path = "../lifecycle-client" }
 socket2 = "=0.6.5"
 
 [workspace]
+
+[dev-dependencies]
+# Installed-host validation only; the application retains read-only client dependencies.
+lifecycle-proof = { path = "../lifecycle-proof" }
+nix = { version = "=0.30.1", features = ["term", "fs"] }
+tempfile = "=3.27.0"
+vt100 = "=0.16.2"

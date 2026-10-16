@@ -1,10 +1,34 @@
 # One-task supervision: observation contract reconciliation
 
-Prepared 2026-10-13 from UI baseline `d4716fc`. This is the UI consumer's
-proposed contract and implementation scope, not an accepted S8 protocol change.
-The user authorized this reconciliation. S8 owner acknowledgement, exact source
-handoff and backend qualification remain pending; board message 1659 requests
-that handoff. No backend or UI runtime behavior changed in this step.
+## Current disposition — 2026-10-16
+
+This document preserves the original 2026-10-13 task-consumer proposal. The
+[current implementation roadmap](implementation-roadmap.md) connects this
+increment to the broader accepted UI design and owns the current work sequence.
+The original proposal below is historical; its pending handoff, v1 response and
+compatibility suggestions do not describe the accepted interface now.
+
+| Earlier proposal / dependency | Current disposition |
+| --- | --- |
+| S8 owner handoff and public read client | Scoped S8 integration published at `4d99ded7`. The [TO2 host contract](../../../../docs/rust-retained-task-host-contract.md#to2-independent-task-observation) owns current semantics. |
+| Version choice and legacy null ambiguity | `task.observe.v2` is the sole operation; v1 is explicitly refused. Five independently scoped components use present/absent/not_requested/not_applicable/unavailable/refused. No atomic cut or native revision is inferred. |
+| Capacity and command/task semantics | Native capacity refusal is explicit at limit 64. Command/task binding remains not established; the UI does not create that edge. |
+| Overview, Graph and scoped Conversation | Fixture increment `007e849`; real v2 read integration `d2e5c53`. Existing shell and draft/recipient behavior retained. |
+| Refresh/reconnect/disconnect | Bounded background task reads, four-second refresh after completion, explicit disconnect/reconnect and generation/identity fencing are implemented. This supersedes the manual-only first-slice proposal. |
+| Qualification | `d2e5c53` recorded 68 Rust tests plus formatting, Clippy, build and local PTY checks. The installed-host client test was not rerun, and does not itself render the UI. The later [installed-host refresh test](installed-host-validation.md) proves one running Conversation through pending/answered/result stages; the broader qualification matrix remains open. |
+| Remaining presentation acceptance | Compare original last-read-age and delivery/segment inspection expectations with actual installed-host frames; the read-only implementation is not blanket acceptance of every proposal detail. |
+
+This task increment does not establish the accepted design's campaign/review
+causal graph, full historical timeline, metrics attribution or controls. See the
+roadmap for their dependencies and acceptance outcomes.
+
+## Historical proposal — prepared 2026-10-13
+
+Prepared from UI baseline `d4716fc`, with operator authorization for
+reconciliation. At that time S8 acknowledgement, exact source handoff and backend
+qualification were pending, and board message 1659 requested the handoff. The
+following sections preserve that proposal and its evidence cutoff, not current
+protocol authority.
 
 ## Outcome and ownership
 
@@ -23,7 +47,7 @@ The first slice is explicit endpoint plus task ID, manual refresh/reconnect,
 and read-only inspection. Workspace discovery, task creation, question answers,
 command sending and campaign mutation are separate later slices.
 
-## Current interface and evidence
+## Historical interface and evidence
 
 [The S8 host contract](../../../../docs/rust-retained-task-host-contract.md)
 documents a mode-0600 Unix socket, configured-UID admission, one newline-delimited
@@ -64,7 +88,7 @@ The S8 sources below are working-tree evidence, not publication/acceptance:
 | `rust/crates/retained-task-workflow/src/lib.rs` | `04993b6c6b82c75d1e0802d7bfd462074c71a65a42725e9feee5fc0bad0ab8f7` |
 | `rust/crates/lifecycle-store/src/native.rs` | `f61ed252aa494005272870d2c5baef9b0e2e854687ce287e0e73b027bb6a9632` |
 
-## Gaps requiring owner reconciliation
+## Historical gaps requiring owner reconciliation
 
 1. **Partial reads lose their meaning.** The observe arm uses `.ok()` for
    lifecycle/native reads and `.ok().flatten()` for command reads. Thus a null
@@ -86,7 +110,7 @@ The S8 sources below are working-tree evidence, not publication/acceptance:
    scopes. No complete event history, graph of agents, transcript or qualified
    usage percentage follows from these fields.
 
-## Proposed read contract
+## Historical proposed read contract
 
 Prefer a separately versioned task observation response, for example
 `task.observe.v2`, with v1 behavior retained. Exact naming and shared Rust wire
@@ -131,7 +155,7 @@ identity; public client ownership; and a provider-disabled fixture/installed
 host route that qualifies this exact boundary. These are outstanding handoff
 items, not authority inferred from publication of this document.
 
-## First UI slice
+## Historical first UI slice
 
 The proposed landing view is **Overview**, with Graph a separate view rather
 than the former Dashboard label. A persistent header shows:
@@ -161,7 +185,7 @@ evidence and execution detail; on narrow terminals existing panel switching
 continues to work. The retained composer stays disabled in read-only observation
 and keeps drafts. Inspection never changes its recipient.
 
-## Implementation sequence and acceptance
+## Historical implementation sequence and acceptance
 
 1. Reconcile the owner handoff above; bind fixtures to the chosen version and
    exact source. UI work may proceed against clearly labeled draft fixtures,

@@ -7,6 +7,11 @@ live work, historical workflow causality, reviewer economics, anomalous cost,
 and evidence-backed workflow improvement. It is a product design and
 architecture boundary, not an implementation plan or authority grant.
 
+The maintained terminal client's [implementation roadmap](../../rust/crates/terminal-ui/docs/implementation-roadmap.md)
+maps its delivered increments, qualification gaps and proposed next work to
+UI-0–UI-4 below. That roadmap tracks implementation; this document continues to
+own the product outcomes and architectural boundaries.
+
 `ideas/work-engine-studio.md` proposes a broader human-facing product surface
 (Contract/design, Organization, Runtime, Control, and Forensics views) that
 this document sits inside. This design is the accepted owner for Studio's
