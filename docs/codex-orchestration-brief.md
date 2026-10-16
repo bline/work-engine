@@ -237,11 +237,13 @@ verified, retain the existing supervisor and schedule another safe boundary.
 sessions run with auto-compaction effectively disabled, so a window that reaches
 the limit is emptied rather than summarized. Every ~50–80 minutes a long-running
 supervisor reaches it: 76 observed replacements all fired at 208–244K, none at a
-chosen boundary. The next call opens at about 80K — system prompt, `AGENTS.md`,
-tool schemas, re-sent messages — costing four times a normal call because
-nothing is cached yet, and the session then spends about thirteen calls climbing
-to 116K re-reading doctrine. One cycle costs roughly 2 Plus-units and left a
-116K floor when measured; the floor is now 24.7K (see the 2026-10-16 addendum). What does not survive the emptying is whatever was not written down:
+chosen boundary. The next call opened at about 80K when this was measured — system prompt,
+`AGENTS.md`, tool schemas, re-sent messages — costing four times a normal call
+because nothing is cached yet, and the session then spent about thirteen calls
+climbing to 116K re-reading doctrine. That opening is now 25.1K and the climb to
+116K takes about eighty calls. One cycle costs roughly 2 Plus-units. The 116K is the level the window
+settles at, which still measures 115.6K; the level it *opens* at is now 25.1K,
+not the 80K below (see the 2026-10-16 addendum). What does not survive the emptying is whatever was not written down:
 retention across a replacement was 117 bytes for twenty consecutive windows of
 one root.
 
@@ -252,9 +254,10 @@ Second, a lower handoff trigger was worth nothing by itself *while the floor
 was 116K*: the 39K of headroom under a 155K trigger bought about 34 calls, so
 replacing three times as often cost as much as the lower context saved. Lower
 the floor first — a sized packet and a sized doctrine reload — and the trigger
-becomes worth taking. **That condition has since been met: the floor is now
-24.7K and the trigger is the largest measured lever. See the 2026-10-16
-addendum, which supersedes this paragraph's conclusion.** Measured values and
+becomes worth taking. **This arithmetic is wrong, and the
+2026-10-16 addendum supersedes it: 116K is the level a window settles at, not
+the level it opens at. The opening is 25.1K, so a cycle is about 145 calls
+rather than 34 and the extra replacements cost about 2 units, not 17.** Measured values and
 the projection are in the
 [efficiency ledger](../metrics/efficiency-ledger.md) under Per-call cost.
 
@@ -296,96 +299,158 @@ cost: quota per accepted result, candidate and remediation attempts, and defects
 that escape review. A cheaper run that misses important issues is not an
 efficiency improvement.
 
-## Addendum, 2026-10-16: the floor fell, so take the trigger
+## Addendum, 2026-10-16: the opening fell, so the trigger arithmetic changes
 
-Measured on three live supervision trees — 3 roots, 10 workers, 4,894 calls,
-576.9 Plus-units over the 20 hours from 2026-10-15T18:04Z. Every session ran
-the trimmed configuration, so these are post-trim numbers throughout.
+Measured on three live supervision trees — 3 roots, 10 workers, ~5,400 calls,
+~650 Plus-units over the 20 hours from 2026-10-15T18:04Z — compared against two
+earlier trees on identical definitions. The sessions were still running, so
+call counts drift slightly between readings.
 
-**The 116K floor above is obsolete.** Across 27 replacements in these sessions
-the post-replacement floor was **median 24.7K** (min 22.5K, max 32.4K), not
-116K, while replacements still fired at a median **208.6K** trigger. The
-prerequisite the previous section states — lower the floor, then the trigger
-becomes worth taking — has been met. Take the trigger.
+### What 116K actually was
 
-With the measured floor, growth of 1,354 tokens per call, 115 calls per cycle
-and a replacement call costing 0.188 units, moving the trigger down is the
-largest lever now measured:
+The section above reports a 116K floor. That number is the level a window
+**settles at**, and it is still correct: the mean context within a window
+measures 115.6K. What is not correct is using it as the level a window
+**opens at**. The first call after a replacement is **25.1K** (p25 23.6K, p75
+27.6K, max 34.2K), and the climb from there is concave — 6,214 tokens per call
+over the first step, 1,358 by call 13, 545 by call 120, reaching 116K at about
+call 80.
 
-| trigger | projected | against the 208.6K the sessions actually used |
+That distinction is the whole trigger argument. The arithmetic above took 39K of
+headroom under a 155K trigger and got about 34 calls per cycle. With a 25.1K
+opening the headroom is 130K and a cycle is **145 calls** (measured median),
+so replacing under a 155K trigger costs about **1.4x as many replacements, not
+3x**. At a measured 0.163 units per replacement call that overhead is **close to
+2 units** against a bill of 650 — it is not the obstacle the earlier paragraph
+assumed.
+
+### What the trigger is worth
+
+Calls above 150K were 28% of calls and 40% of spend. Two bounds, because the
+answer depends on an assumption the data does not settle:
+
+| trigger | saving, no growth model | saving, linear growth |
 |---|---|---|
-| 170K | 513.3 u | −13.1% |
-| **155K** | **483.7 u** | **−18.1%** |
-| 120K | 415.6 u | −29.6% |
+| 170K | −2.8% | −13.1% |
+| **155K** | **−4.7%** | **−18.1%** |
+| 120K | −13.0% | −29.6% |
 
-The projection reproduces the trigger as actually run to 0.6% (590.5 u
-projected, 586.9 u measured), and its **sign holds across every cache price
-consistent with the account's own quota counter** (−6.5% at a cached weight of
-0.005 through −18.1% at 0.1). Act on the direction; treat the magnitude as
-bounded, not pinned.
+The left column recharges every call that exceeded the trigger at exactly the
+trigger, which is the least favourable outcome that still respects it, and adds
+the extra replacement cost. It is a floor, not an estimate. The right column
+assumes context grows linearly between opening and trigger; that model
+reproduces the bill as actually run to 0.6%, but growth is concave, so it
+overstates the saving for any *lower* trigger. A pooled median trajectory would
+settle this and does not: beyond about call 50 only slow-growing windows
+survive, and the median turns down from survivorship rather than from
+behaviour.
 
-Two limits. The floor **creeps within a session** — one worker went 23.6K to
-26.4K over seven windows, another 27.5K to 32.4K over three, roughly +400 to
-+1,400 per window — so re-read the floor rather than assuming 24.7K, and do not
-push the trigger arbitrarily low against a rising floor. And a planned
-replacement still only pays if the continuation packet is current, which is why
-the packet is maintained continuously rather than at the boundary.
+**Take the trigger, and expect single digits rather than the optimistic
+figure.** The direction is certain — no call can cost more than the trigger
+allows — and the replacement overhead is small enough that trying it is cheap.
+Do not push it arbitrarily low: the opening itself creeps within a session, one
+worker going 23.6K to 26.4K over seven windows and another 27.5K to 32.4K over
+three, so re-read the opening rather than assuming 25K.
 
-**Coordination is no longer the main lever; context is.** Of the 576.9 units,
-**85% went to calls that did real tool work** and 15% to all coordination
-combined — 38.9 u wait-only, 21.1 u reasoning with no tool call, 20.4 u
-messaging, 7.9 u dispatch. Further batching will not move a bill shaped like
-this one; what every call carries will. The exception is still worth taking:
-268 self-paced polls (88 `sleep`, 180 `wait`) in two workers account for most of
-the wait-only spend, and a poll pays the full standing-context charge to learn
-nothing.
+### Progress across three eras
 
-**Spend follows the work, not the supervision.** The three roots took 19% of the
-bill and the ten workers 81%; two implementation workers alone took 56%. Roots
-in these trees were not the problem.
+Identical measurement over one pre-brief tree, one post-brief tree, and last
+night:
 
-### Work against cost
+| | 10-07/08 | 10-11/13 | 10-15/16 |
+|---|---|---|---|
+| spend | 1,654 u | 992 u | 650 u |
+| calls | 12,953 | 7,054 | 5,404 |
+| mean context | 129K | 135K | 118K |
+| real tool work | 69% | 81% | **84%** |
+| wait-only share of calls | 13.2% | **5.0%** | 9.6% |
+| messaging | 13% | 4% | 4% |
+| opening after replacement | 27.9K | 43.7K | **25.1K** |
+| trigger | 210K | 213K | 209K |
 
-The brief asks for quota per accepted result, so here is the window's: **10
-commits, 30,772 lines of Rust across 86 files** — 21,583 implementation, 9,189
-tests — for a measured **48 points of a weekly Pro quota**. That is a full
-weekly quota every 1.74 days at this pace. Per-tree attribution is not
-separable from the rollouts, because roots and workers discuss each other's
-commits, so treat the ratio as a tree-level aggregate only.
+Two things are working. Coordination overhead has been squeezed out steadily —
+real tool work rose from 69% to 84% of spend, and messaging fell from 13% to 4%.
+And the opening came down, after regressing badly in the 10-11/13 tree, where
+it reached a median 43.7K and a worst case of 81.5K.
+
+One thing regressed. **Polling nearly doubled last night against the post-brief
+tree**, from 5.0% to 9.6% of calls, concentrated in two workers that issued 88
+`sleep` and 232 `wait` calls. The brief's guidance was adopted and then partly
+lost. A poll pays the full standing-context charge to learn nothing; ask the
+scheduler once, with a real timeout.
+
+The trigger has not moved in any era: 210K, 213K, 209K. Nothing is replacing at
+a chosen boundary anywhere, which is why this addendum exists.
+
+### Did the provider change what it charges
+
+No, not detectably. Within the Pro plan, where comparing points per weighted
+token needs no assumption about plan multipliers, the three weekly windows that
+were neither clipped at 100% nor short of a denominator give **6.600, 8.064 and
+6.764** Plus-units per million weighted tokens. Last night sits between the two
+earlier windows. The spread between windows is wider than any change, so a
+charging change on the order of 10% would not be visible here, and none larger
+is present.
+
+A clipped window understates the price, because spend continues past 100% while
+the counter cannot, so only unclipped windows carry this comparison.
+
+### Calibration, corrected
+
+The ledger price of 7.826 Plus-units per million weighted tokens **overpredicts
+by about 16%**; the measured Pro windows give a median 6.764. Read absolute unit
+totals and percentages about a sixth lower until the ledger is refitted. Ratio
+results such as the trigger table are unaffected, because the error is
+multiplicative.
+
+An earlier reading of this put the overprediction at 25%. That came from a
+20-hour sub-window whose first sample already stood at 13%, so the tokens that
+produced those points sat outside the denominator. A weekly window measured from
+its own reset removes that error, and is the form to use.
+
+The cached price itself remains unidentified. Three attempts — hourly buckets
+within one window, 59 clean days, and the weekly series — were all degenerate,
+returning negative weights, because cache share sits at 0.97 to 0.99 nearly
+everywhere and leaves cached and uncached collinear. The product of price and
+cache weight is pinned; the split is not.
 
 ### Free instruments, and one that does not exist
 
 `token_count.rate_limits` carries **`used_percent` and
-`rate_limit_reached_type` on every call**. This is the account's own charge,
-costs nothing to read, and settles totals that no token arithmetic can. Report
-`used_percent` at session start and end alongside the per-dispatch numbers.
+`rate_limit_reached_type` on every call**, with a stable `resets_at` identifying
+the weekly window. This is the account's own charge and costs nothing to read.
+Report `used_percent` at session start and end alongside the per-dispatch
+numbers, and prefer a whole window measured from its reset over any shorter
+delta. Note that `resets_at` jitters by a second or two between requests, so
+group by the minute.
 
-Two findings from it. First, **the fitted cost model overpredicts by about 25%**
-at a cache share of 0.98: 59.9 Pro-points projected against 48.0 measured over
-a window with no weekly reset, with the daily series agreeing in direction
-(6.44 units per million weighted tokens against the ledger's 7.826). Ratio
-results such as the trigger table are unaffected, because the error is
-multiplicative; **absolute percentages and unit totals should be read about a
-quarter lower** until the ledger price is refitted. The cached price itself
-remains unidentified — two further attempts in this window, hourly buckets and
-59 clean days, were both degenerate, because cache share sits at 0.98 almost
-everywhere and leaves uncached and cached collinear.
-
-Second, `rate_limit_reached_type` was null in all 4,975 samples: no throttle was
+`rate_limit_reached_type` was null in all 4,975 samples: no throttle was
 reached. Do not read that as provider reliability. **Rollouts record no error
 payload type at all** — no `error`, no `stream_error`, in any of 257 sessions —
 and no terminal log is retained, so provider-side stream and capacity failures
-leave no durable trace here. A question about provider reliability needs an
+leave no durable trace. A question about provider reliability needs an
 instrument created in advance; it cannot be answered from rollouts after the
 fact.
 
+### Work against cost
+
+The brief asks for quota per accepted result. The 10-15/16 window produced **10
+commits and 30,772 lines of Rust across 86 files** — 21,583 implementation,
+9,189 tests — for a measured **48 points of a weekly Pro quota**, a full weekly
+quota every 1.74 days at that pace. Per-tree attribution is not separable from
+the rollouts, because roots and workers discuss each other's commits, so this is
+a tree-level aggregate.
+
+Spend follows the work, not the supervision: the three roots took 19% of the
+bill and the ten workers 81%, with two implementation workers alone taking 56%.
+
 ### What a child agent should carry from this
 
-- Replace context at a chosen boundary near 155K instead of riding to the
-  ceiling at 208–234K. Nine of these thirteen sessions crossed the trigger and
-  none replaced at a chosen boundary.
+- Replace context at a chosen boundary rather than riding to the ceiling. Every
+  era measured replaced at 209–213K and none at a chosen boundary.
 - Keep the continuation packet current, not boundary-triggered. A richer packet
-  is affordable: retention content does not inflate the floor.
-- Do not poll. Ask the scheduler once, with a real timeout.
-- Report `used_percent` at start and end. It is free and it is the only ground
-  truth for what the work actually cost.
+  is affordable: retention content does not inflate the opening.
+- Do not poll. This is the one place where last night was worse than a week
+  earlier.
+- Report `used_percent` at start and end, per weekly window. It is free and it
+  is the only ground truth for what the work actually cost.
