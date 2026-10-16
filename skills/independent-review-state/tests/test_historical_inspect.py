@@ -107,6 +107,21 @@ class HistoricalReviewInspectTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 READER.read_grant(alias)
 
+    def test_v2_grant_preserves_exact_review_read_without_extra_authority(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path, grant = self.fixture(directory)
+            legacy = READER.inspect(READER.read_grant(path))
+            grant.update(schema_version=2, profile=READER.PROFILE_V2,
+                         fields=sorted(READER.ALLOWED_FIELDS_V2),
+                         provider={}, scheduler={}, metrics={})
+            path.write_text(json.dumps(grant))
+            expanded = READER.inspect(READER.read_grant(path))
+            self.assertEqual(legacy["reviews"], expanded["reviews"])
+            grant.pop("scheduler")
+            path.write_text(json.dumps(grant))
+            with self.assertRaisesRegex(ValueError, "schema"):
+                READER.read_grant(path)
+
     def test_replace_ref_cannot_substitute_review_blob(self):
         with tempfile.TemporaryDirectory() as directory:
             _, grant = self.fixture(directory)

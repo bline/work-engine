@@ -1,0 +1,5 @@
+# Historical S5 provider capture read
+
+For `skills-migration-app-server-20260828` slice 6, the local historical-evidence host has one operator-admitted Rust reader for eight selected Claude CLI result envelopes in two bound Codex rollout files. This is a read of captured Slice Builder/coordinator output, not a Slice Builder gate receipt, an owner-normalized provider ledger, or proof of final billing. Its consumer is the local read-only terminal investigation.
+
+The trusted v2 inspection grant fixes file hashes, line hashes, command event IDs/hashes, stdout hashes, result UUIDs, session labels, and a finite field allowlist. The reader returns status, HTTP code, reported cost and usage, and exact source digests. It withholds command text, messages, thinking content, stderr and prompts because those fields are outside this UI read audience. A retry label or nearby timestamp cannot create a result-to-schedule causal edge; the Role Scheduler item and review revision have their own owners. The Rust helper is an adapter over these exact historical captures and does not replace the provider adapter's future event contract.

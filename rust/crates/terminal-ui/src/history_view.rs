@@ -5,8 +5,10 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use historical_evidence_client::inspect;
-use historical_evidence_wire::{Observation, Request, ReviewEpisode, ReviewRevision};
+use historical_evidence_client::{ReadError, inspect, inspect_v2};
+use historical_evidence_wire::{
+    Observation, ObservationV2, Request, RequestV2, ReviewEpisode, ReviewRevision,
+};
 use ratatui::{
     Frame, Terminal,
     backend::{CrosstermBackend, TestBackend},
@@ -25,6 +27,8 @@ enum Stage {
     Replacement,
     Original,
     Findings,
+    Provider,
+    Scheduler,
     Gaps,
 }
 impl Stage {
@@ -33,6 +37,8 @@ impl Stage {
             Self::Candidate => Self::Replacement,
             Self::Replacement => Self::Original,
             Self::Original => Self::Findings,
+            Self::Provider => Self::Scheduler,
+            Self::Scheduler => Self::Replacement,
             Self::Findings | Self::Gaps => Self::Gaps,
         }
     }
@@ -41,6 +47,8 @@ impl Stage {
             Self::Candidate | Self::Replacement => Self::Candidate,
             Self::Original => Self::Replacement,
             Self::Findings => Self::Original,
+            Self::Provider => Self::Candidate,
+            Self::Scheduler => Self::Provider,
             Self::Gaps => Self::Findings,
         }
     }
@@ -50,6 +58,8 @@ impl Stage {
             Self::Replacement => "Review lineage",
             Self::Original => "Original reported revision",
             Self::Findings => "Finding dispositions",
+            Self::Provider => "Provider attempts",
+            Self::Scheduler => "Scheduled retry",
             Self::Gaps => "Evidence gaps",
         }
     }
@@ -57,7 +67,9 @@ impl Stage {
 
 struct State {
     observation: Observation,
+    extended: Option<ObservationV2>,
     selected_attempt: usize,
+    selected_provider: usize,
     stage: Stage,
     detail_scroll: u16,
     notice: String,
@@ -66,13 +78,46 @@ impl State {
     fn new(observation: Observation) -> Self {
         Self {
             observation,
+            extended: None,
             selected_attempt: 5,
+            selected_provider: 5,
             stage: Stage::Candidate,
             detail_scroll: 0,
             notice: "ADMITTED LOCAL READ · source-limited producer capture · no actions".into(),
         }
     }
+    fn from_v2(extended: ObservationV2) -> Self {
+        let mut state = Self::new(extended.base.clone());
+        state.extended = Some(extended);
+        state.notice =
+            "ADMITTED LOCAL V2 READ · captured provider and scheduler sources · no actions".into();
+        state
+    }
     fn refresh(&mut self, socket: &Path) {
+        if self.extended.is_some() {
+            match inspect_v2(socket, RequestV2::all()) {
+                Ok(next) => {
+                    if next.source_identity_sha256
+                        != self.extended.as_ref().unwrap().source_identity_sha256
+                    {
+                        self.stage = Stage::Candidate;
+                        self.selected_attempt = 5;
+                        self.selected_provider = 5;
+                        self.detail_scroll = 0;
+                        self.notice = "Source identity changed; inspection anchor cleared".into();
+                    } else {
+                        self.notice = "Owner sources refreshed under the same v2 grant".into();
+                    }
+                    self.observation = next.base.clone();
+                    self.extended = Some(next);
+                }
+                Err(error) => {
+                    self.notice =
+                        format!("Historical v2 read unavailable: {error:?}; prior frame is stale")
+                }
+            }
+            return;
+        }
         match inspect(socket, Request::all()) {
             Ok(next) => {
                 if next.source_identity_sha256 != self.observation.source_identity_sha256 {
@@ -98,15 +143,41 @@ impl State {
                 if let KeyCode::Char(digit) = code {
                     self.selected_attempt = digit.to_digit(10).unwrap() as usize;
                 }
+                if self.selected_attempt == 4 {
+                    self.selected_provider = 5;
+                }
                 self.stage = Stage::Candidate;
                 self.detail_scroll = 0;
             }
             KeyCode::Right | KeyCode::Enter | KeyCode::Char('l') | KeyCode::Char('n') => {
-                self.stage = self.stage.next();
+                self.stage = if self.stage == Stage::Candidate
+                    && self.selected_attempt == 4
+                    && self.extended.is_some()
+                {
+                    Stage::Provider
+                } else {
+                    self.stage.next()
+                };
+                if self.stage == Stage::Scheduler
+                    || (self.stage == Stage::Replacement
+                        && self.extended.is_some()
+                        && self.selected_attempt == 4)
+                {
+                    // The retained scheduler result is bound to candidate 4, regardless of
+                    // the candidate selected before entering this journey.
+                    self.selected_attempt = 4;
+                }
                 self.detail_scroll = 0;
             }
             KeyCode::Left | KeyCode::Backspace | KeyCode::Char('h') | KeyCode::Char('p') => {
-                self.stage = self.stage.previous();
+                self.stage = if self.stage == Stage::Replacement
+                    && self.selected_attempt == 4
+                    && self.extended.is_some()
+                {
+                    Stage::Scheduler
+                } else {
+                    self.stage.previous()
+                };
                 self.detail_scroll = 0;
             }
             KeyCode::Down | KeyCode::Char('j') => {
@@ -117,6 +188,23 @@ impl State {
             }
             KeyCode::Char('g') => {
                 self.stage = Stage::Gaps;
+                self.detail_scroll = 0;
+            }
+            KeyCode::Char('a') if self.extended.is_some() => {
+                self.stage = Stage::Provider;
+                self.detail_scroll = 0;
+            }
+            KeyCode::Char('s') if self.extended.is_some() => {
+                self.stage = Stage::Scheduler;
+                self.selected_attempt = 4;
+                self.detail_scroll = 0;
+            }
+            KeyCode::Char(']') if self.stage == Stage::Provider => {
+                self.selected_provider = (self.selected_provider + 1) % 8;
+                self.detail_scroll = 0;
+            }
+            KeyCode::Char('[') if self.stage == Stage::Provider => {
+                self.selected_provider = (self.selected_provider + 7) % 8;
                 self.detail_scroll = 0;
             }
             _ => (),
@@ -227,12 +315,28 @@ fn lines(state: &State) -> Vec<Line<'static>> {
             }
             if state.selected_attempt == 5 {
                 out.push(Line::raw(""));
-                out.push(Line::raw(
-                    "UI evidence map reports 8 metric stages; meaning unestablished.",
-                ));
-                out.push(Line::raw(
-                    "That metrics row is unavailable through this admitted read.",
-                ));
+                if let Some(metrics) = state.extended.as_ref().and_then(|v| v.metrics.as_ref()) {
+                    out.push(Line::raw(format!(
+                        "Frozen metric stage_total {} · row {}",
+                        metrics.stage_total, metrics.row_sha256
+                    )));
+                    out.push(Line::raw(
+                        "Five receipt checks versus eight metric stages: meaning unresolved.",
+                    ));
+                } else {
+                    out.push(Line::raw(
+                        if state.extended.is_some() {
+                            "Frozen metrics unavailable through this admitted read; stage comparison unavailable."
+                        } else {
+                            "UI evidence map reports 8 metric stages; meaning unestablished."
+                        },
+                    ));
+                    if state.extended.is_none() {
+                        out.push(Line::raw(
+                            "That metrics row is unavailable through this admitted read.",
+                        ));
+                    }
+                }
             }
         }
         Stage::Replacement => {
@@ -338,13 +442,144 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                 "Finding text is withheld; status and lineage are owner summaries.",
             ));
         }
+        Stage::Provider => {
+            if let Some(v2) = &state.extended {
+                let attempt = &v2.provider.attempts[state.selected_provider];
+                out.extend([
+                    Line::raw(format!(
+                        "Captured result {} / {}",
+                        state.selected_provider + 1,
+                        v2.provider.attempts.len()
+                    )),
+                    Line::raw(format!(
+                        "Eight UUIDs: {} success / {} error · ${} total",
+                        v2.provider.successes, v2.provider.errors, v2.provider.cost_literal_sum_usd
+                    )),
+                    Line::raw(format!("UUID       {}", attempt.result_uuid)),
+                    Line::raw(format!(
+                        "Outcome    {} · HTTP {} · exit {}",
+                        if attempt.is_error { "error" } else { "success" },
+                        attempt
+                            .api_error_status
+                            .map_or("—".into(), |n| n.to_string()),
+                        attempt.exit_code
+                    )),
+                    Line::raw(format!(
+                        "Cost       ${} reported CLI literal",
+                        attempt.cost_usd
+                    )),
+                    Line::raw(format!(
+                        "Tokens     input {} · cache create {} · cache read {}",
+                        attempt.usage.input_tokens,
+                        attempt.usage.cache_creation_input_tokens,
+                        attempt.usage.cache_read_input_tokens
+                    )),
+                    Line::raw(format!(
+                        "           output {} · thinking {}",
+                        attempt.usage.output_tokens, attempt.usage.thinking_tokens
+                    )),
+                    Line::raw(format!(
+                        "Session    {} · {}",
+                        attempt.session_id, attempt.review_label
+                    )),
+                    Line::raw(format!(
+                        "Reason     {} · {}",
+                        attempt.terminal_reason, attempt.command_kind
+                    )),
+                    Line::raw(format!(
+                        "Capture    event {} · line {}",
+                        attempt.event_id, attempt.source_line
+                    )),
+                    Line::raw(format!("Line SHA   {}", attempt.source_line_sha256)),
+                    Line::raw(format!(
+                        "Binding    {} · source limited",
+                        attempt.attribution
+                    )),
+                    Line::raw(""),
+                ]);
+                if let Some(metrics) = &v2.metrics {
+                    out.push(Line::raw(format!(
+                        "Frozen metric ${} · equal at 7 decimal places, not exact",
+                        metrics.provider_cost_usd
+                    )));
+                    out.push(Line::raw(format!(
+                        "Thinking   {} captured vs {} metric; failed 429 contributes 27",
+                        v2.provider.usage_total.thinking_tokens, metrics.provider_thinking_tokens
+                    )));
+                    out.push(Line::raw(format!(
+                        "Calls      {} review successes; metric {} across roles",
+                        v2.provider.successes, metrics.provider_successful_calls
+                    )));
+                } else {
+                    out.push(Line::raw(format!(
+                        "Frozen metrics comparison unavailable through this read: {}",
+                        v2.metrics_unavailable
+                            .as_deref()
+                            .unwrap_or("unknown source error")
+                    )));
+                    out.push(Line::raw(
+                        "Failed 429 result separately reports 27 thinking tokens.",
+                    ));
+                }
+                out.push(Line::raw(
+                    "[ / ] selects captured result · n follows schedule",
+                ));
+            } else {
+                out.push(Line::raw("Provider capture is not admitted by this grant."));
+            }
+        }
+        Stage::Scheduler => {
+            if let Some(v2) = &state.extended {
+                let item = &v2.scheduler;
+                let revision = item
+                    .result_ref
+                    .split_once('@')
+                    .map_or("unavailable", |(_, r)| r);
+                out.extend([
+                    Line::raw("Current candidate-4 quota retry item"),
+                    Line::raw(format!(
+                        "Status      {} · store rev {}",
+                        item.status, item.store_revision
+                    )),
+                    Line::raw(format!("Result rev  {revision}")),
+                    Line::raw(format!("Due         {}", item.due_at)),
+                    Line::raw(format!(
+                        "Presented   {}",
+                        item.presented_at
+                            .as_deref()
+                            .unwrap_or("null — no presentation event established")
+                    )),
+                    Line::raw("No mutation history or result-UUID causal edge."),
+                    Line::raw(format!(
+                        "Intent      candidate {} · session {}",
+                        item.candidate_attempt, item.session_id
+                    )),
+                    Line::raw(format!("Item ID     {}", item.item_id)),
+                    Line::raw(format!("Row SHA     {}", item.row_sha256)),
+                    Line::raw(format!("Updated     {}", item.updated_at)),
+                    Line::raw(format!("Result      {}", item.result_ref)),
+                    Line::raw(
+                        "Exact result ref resolves to admitted candidate-4 replacement revision.",
+                    ),
+                    Line::raw("n follows candidate-4 review · a returns to captured attempts"),
+                ]);
+            } else {
+                out.push(Line::raw("Scheduler item is not admitted by this grant."));
+            }
+        }
         Stage::Gaps => {
-            for gap in &observation.gaps {
+            for gap in state
+                .extended
+                .as_ref()
+                .map_or(&observation.gaps, |v| &v.gaps)
+            {
                 out.push(Line::raw(format!("• {gap}")));
             }
-            out.push(Line::raw(
-                "No provider or scheduler inference is made from this view.",
-            ));
+            if state.extended.is_none() {
+                out.push(Line::raw(
+                    "No provider or scheduler inference is made from this view.",
+                ));
+            }
             out.push(Line::raw(""));
             out.push(Line::raw(format!(
                 "Current read grant: {}",
@@ -358,7 +593,11 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                 "Source anchor: {}",
                 observation.source_identity_sha256
             )));
-            for source in &observation.source_reads {
+            for source in state
+                .extended
+                .as_ref()
+                .map_or(&observation.source_reads, |v| &v.source_reads)
+            {
                 out.push(Line::raw(format!(
                     "{} · {} · {} · {}",
                     source.owner, source.integrity, source.confidentiality, source.completeness
@@ -404,10 +643,21 @@ fn draw(frame: &mut Frame, state: &State) {
         )),
         Line::raw(format!(
             " Source anchor {} · read {}",
-            shortened(&identity.source_identity_sha256, 24),
+            shortened(
+                state
+                    .extended
+                    .as_ref()
+                    .map_or(&identity.source_identity_sha256, |v| &v
+                        .source_identity_sha256),
+                24
+            ),
             identity.read_at
         )),
-        Line::raw(" 1–5 candidate   →/Enter follow   ← back   ↑↓ scroll   g gaps   q exit"),
+        Line::raw(if state.extended.is_some() {
+            " 1–5 candidate  → follow  a attempts  s schedule  [ ] result  ↑↓ scroll  g gaps  q"
+        } else {
+            " 1–5 candidate   →/Enter follow   ← back   ↑↓ scroll   g gaps   q exit"
+        }),
     ];
     frame.render_widget(
         Paragraph::new(head).style(Style::default().fg(Color::White).bg(Color::Rgb(20, 25, 32))),
@@ -440,6 +690,15 @@ fn draw(frame: &mut Frame, state: &State) {
             review.revisions.len()
         )));
     }
+    if let Some(v2) = &state.extended {
+        list_lines.push(Line::raw(""));
+        list_lines.push(Line::raw(format!(
+            "Provider {} results",
+            v2.provider.attempts.len()
+        )));
+        list_lines.push(Line::raw("429 · captured error"));
+        list_lines.push(Line::raw(format!("Retry · {}", v2.scheduler.status)));
+    }
     list_lines.push(Line::raw(""));
     list_lines.push(Line::raw("Accepted is a distinct"));
     list_lines.push(Line::raw("checkpoint subject."));
@@ -459,17 +718,36 @@ fn draw(frame: &mut Frame, state: &State) {
             .wrap(Wrap { trim: false }),
         details,
     );
-    let gap_text = vec![
-        Line::styled(
-            "VISIBLE LIMITS",
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Line::raw("Gate capture proves digest binding, not test execution."),
-        Line::raw("5 receipt checks; UI map says 8 metric stages (row unadmitted)."),
-        Line::raw("Metrics/provider/quota/schedule lack admission; full UI-0 remains open."),
-    ];
+    let gap_text = if let Some(v2) = &state.extended {
+        vec![
+            Line::styled(
+                "VISIBLE LIMITS",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Line::raw("CLI result capture is not billing authority; no UUID→schedule causal edge."),
+            Line::raw("Scheduler current row: presented_at null; no mutation history."),
+            Line::raw(format!(
+                "5 receipt checks / {} frozen metric stages unresolved · full UI-0 open",
+                v2.metrics
+                    .as_ref()
+                    .map_or("unavailable".into(), |m| m.stage_total.to_string())
+            )),
+        ]
+    } else {
+        vec![
+            Line::styled(
+                "VISIBLE LIMITS",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Line::raw("Gate capture proves digest binding, not test execution."),
+            Line::raw("5 receipt checks; UI map says 8 metric stages (row unadmitted)."),
+            Line::raw("Metrics/provider/quota/schedule lack admission; full UI-0 remains open."),
+        ]
+    };
     frame.render_widget(
         Paragraph::new(gap_text).block(Block::default().borders(Borders::ALL)),
         gaps,
@@ -478,6 +756,18 @@ fn draw(frame: &mut Frame, state: &State) {
         Paragraph::new(format!(" {}", state.notice)).style(Style::default().fg(Color::DarkGray)),
         footer,
     );
+}
+
+fn read_state(socket: &Path) -> Result<State, Box<dyn std::error::Error>> {
+    match inspect_v2(socket, RequestV2::all()) {
+        Ok(observation) => Ok(State::from_v2(observation)),
+        Err(ReadError::Refused) => {
+            let observation = inspect(socket, Request::all())
+                .map_err(|_| "admitted historical v1 read unavailable")?;
+            Ok(State::new(observation))
+        }
+        Err(_) => Err("admitted historical v2 read unavailable".into()),
+    }
 }
 
 pub fn snapshot(
@@ -489,17 +779,21 @@ pub fn snapshot(
     if !(60..=300).contains(&width) || !(18..=100).contains(&height) {
         return Err("history snapshot size is invalid".into());
     }
-    let observation =
-        inspect(socket, Request::all()).map_err(|_| "admitted historical read unavailable")?;
-    let mut state = State::new(observation);
+    let mut state = read_state(socket)?;
     state.stage = match stage {
         "candidate" => Stage::Candidate,
         "replacement" => Stage::Replacement,
         "original" => Stage::Original,
         "findings" => Stage::Findings,
+        "provider" if state.extended.is_some() => Stage::Provider,
+        "scheduler" if state.extended.is_some() => Stage::Scheduler,
         "gaps" => Stage::Gaps,
         _ => return Err("unknown historical stage".into()),
     };
+    if matches!(state.stage, Stage::Provider | Stage::Scheduler) {
+        state.selected_attempt = 4;
+        state.selected_provider = 5;
+    }
     let mut terminal = Terminal::new(TestBackend::new(width, height))?;
     terminal.draw(|frame| draw(frame, &state))?;
     let buffer = terminal.backend().buffer();
@@ -528,9 +822,7 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
         return Err("history mode needs a terminal".into());
     }
-    let observation =
-        inspect(&socket, Request::all()).map_err(|_| "admitted historical read unavailable")?;
-    let mut state = State::new(observation);
+    let mut state = read_state(&socket)?;
     enable_raw_mode()?;
     let _restore = Restore;
     execute!(io::stdout(), EnterAlternateScreen)?;

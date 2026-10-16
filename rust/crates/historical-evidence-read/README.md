@@ -48,3 +48,38 @@ The UI uses `--history-connect SOCKET`; its `--history-snapshot WIDTH HEIGHT
 The frozen metrics row, provider attempts, quota and scheduler item have no
 public reader in this increment. The UI labels the five receipt checks and
 leaves the eight-stage historical metric unverified through this read.
+
+The `historical_s5.inspect.v2` increment adds a private Rust
+`historical_s5_source_read` helper beside the host. The trusted launcher issues a
+new version-2 grant with two exact rollout captures, eight result locations, one
+Role Scheduler item descriptor, and one frozen supervisor metrics-row descriptor.
+The host supervises the helper with the same process-group, byte and deadline
+limits as its legacy owner calls; the host and helper are installed together in an owned mode-0700 directory;
+the helper must be an owned, non-group-writable regular executable, and its
+bytes join the read-source anchor. This prevents another group member from
+replacing the helper between source checks through a writable build directory.
+The host rechecks implementation bytes and the two captured files plus the
+scheduler database/WAL companions across the complete v2 operation. One
+30-second operation deadline covers legacy and new owner reads; the client
+allows 35 seconds for the response. The v2 grant's nested source descriptors
+have exact typed schemas and fixed case bindings, with unknown or duplicate
+fields refused before any owner read. Scheduler inspection enters a Linux
+Landlock no-filesystem-write domain before SQLite opens the DB; if this
+protection or a side-effect-free WAL read is unavailable, the scheduler read
+fails closed. Optional frozen-metrics failure is an explicit typed unavailable
+comparison throughout the terminal view, without stage or token comparisons.
+The v1 operation and its grant remain available for older clients. A v2 failure
+does not fall back to the local evidence map or a partial v1 story.
+
+The new source modules implement [captured provider-result read](../../../skills/slice-builder/references/historical-provider-capture-read.md),
+[exact scheduler-item inspection](../../../skills/role-scheduler/references/historical-inspection.md),
+and [frozen metrics comparison](../../../skills/slice-supervisor/references/historical-metrics-inspection.md).
+Provider cost stays as a literal decimal string. Eight captured literals sum to
+`15.7545494999999994`; the frozen row reports `15.7545495`, equal after rounding
+to seven decimals. The failed 429 result has 27 thinking tokens, accounting
+mechanically for the difference between captured `101224` and reported `101197`.
+The scheduler displays only its current acknowledged row and exact review result
+ref; `presented_at` is null and no mutation history or UUID-to-schedule causal
+edge is supplied. The five-check receipt versus eight metric stages remains
+unresolved. These limits remain visible in the terminal view; this local case
+read is not full UI-0 acceptance.

@@ -1,7 +1,9 @@
 //! Local read-only adapter over the legacy checkpoint, gate and review owners.
 use historical_evidence_wire::{
-    Candidate, Finding, Gate, GateCheck, MAX_FRAME, Observation, RUN_ID, ReplacementLink, Reply,
-    Request, ReviewEpisode, ReviewRevision, SourceRead, Subject,
+    Candidate, Finding, Gate, GateCheck, MAX_FRAME, MetricsRead, MetricsSource, Observation,
+    ObservationV2, ProviderRead, ProviderSources, RUN_ID, ReplacementLink, Reply, ReplyV2, Request,
+    RequestV2, ReviewEpisode, ReviewRevision, SchedulerRead, SchedulerSource, SourceRead, Subject,
+    validate_v2_sources,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -151,6 +153,9 @@ struct Grant {
     checkpoints: Vec<CheckpointDescriptor>,
     gates: Vec<GateDescriptor>,
     reviews: Vec<ReviewDescriptor>,
+    provider: Option<ProviderSources>,
+    scheduler: Option<SchedulerSource>,
+    metrics: Option<MetricsSource>,
 }
 
 fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
@@ -188,8 +193,36 @@ fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
         return Err("grant file grew beyond read limit".into());
     }
     let grant: Grant = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-    if grant.schema_version != 1
-        || grant.profile != "historical-s5-local-inspection-v1"
+    let legacy_fields = [
+        "checkpoint",
+        "gate",
+        "metric_discrepancy",
+        "review_summary",
+        "source_limit",
+    ];
+    let expanded_fields = [
+        "checkpoint",
+        "gate",
+        "metric_discrepancy",
+        "metrics_comparison",
+        "provider_attempts",
+        "review_summary",
+        "scheduler_item",
+        "source_limit",
+    ];
+    let v1 = grant.schema_version == 1
+        && grant.profile == "historical-s5-local-inspection-v1"
+        && grant.fields == legacy_fields
+        && grant.provider.is_none()
+        && grant.scheduler.is_none()
+        && grant.metrics.is_none();
+    let v2 = grant.schema_version == 2
+        && grant.profile == "historical-s5-local-inspection-v2"
+        && grant.fields == expanded_fields
+        && grant.provider.is_some()
+        && grant.scheduler.is_some()
+        && grant.metrics.is_some();
+    if !(v1 || v2)
         || grant.run_id != RUN_ID
         || grant.slice_number != 6
         || grant.peer_uid != uid
@@ -198,19 +231,35 @@ fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
         || grant.issuer_provenance.is_empty()
         || grant.issued_at.is_empty()
         || grant.expires_at.is_empty()
-        || grant.fields
-            != [
-                "checkpoint",
-                "gate",
-                "metric_discrepancy",
-                "review_summary",
-                "source_limit",
-            ]
         || grant.checkpoints.len() != 6
         || grant.gates.len() != 5
         || grant.reviews.len() != 3
     {
         return Err("grant does not admit the fixed S5 read contract".into());
+    }
+    if v2 {
+        validate_v2_sources(
+            grant
+                .provider
+                .as_ref()
+                .ok_or("provider descriptor absent")?,
+            grant
+                .scheduler
+                .as_ref()
+                .ok_or("scheduler descriptor absent")?,
+            grant.metrics.as_ref().ok_or("metrics descriptor absent")?,
+            &grant.repository,
+            &grant.gates[4].receipt_sha256,
+        )
+        .map_err(str::to_string)?;
+    }
+    let issued =
+        chrono::DateTime::parse_from_rfc3339(&grant.issued_at).map_err(|e| e.to_string())?;
+    let expires =
+        chrono::DateTime::parse_from_rfc3339(&grant.expires_at).map_err(|e| e.to_string())?;
+    let now = chrono::Utc::now();
+    if issued > now || expires <= now || expires <= issued {
+        return Err("inspection grant time window invalid".into());
     }
     let repository = Path::new(&grant.repository);
     if !repository.is_absolute()
@@ -291,6 +340,31 @@ fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
 
 const OWNER_DEADLINE: Duration = Duration::from_secs(20);
 const STDERR_LIMIT: usize = 64 * 1024;
+const SOURCE_HELPER: &str = "@historical-s5-source-read";
+
+fn source_helper_exe() -> Result<PathBuf> {
+    let current = std::env::current_exe().map_err(|e| e.to_string())?;
+    let parent = current.parent().ok_or("host executable has no directory")?;
+    let dir = fs::symlink_metadata(parent).map_err(|e| e.to_string())?;
+    if !dir.is_dir()
+        || dir.file_type().is_symlink()
+        || dir.uid() != unsafe { libc::geteuid() }
+        || dir.mode() & 0o777 != 0o700
+    {
+        return Err("Rust source reader install directory is not private".into());
+    }
+    let path = current.with_file_name("historical_s5_source_read");
+    let info = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
+    if !info.is_file()
+        || info.file_type().is_symlink()
+        || info.uid() != unsafe { libc::geteuid() }
+        || info.mode() & 0o022 != 0
+        || info.len() > 64 * 1024 * 1024
+    {
+        return Err("installed Rust source reader identity invalid".into());
+    }
+    Ok(path)
+}
 
 fn bounded_pipe(mut pipe: impl Read, limit: usize) -> Result<Vec<u8>> {
     let mut output = Vec::new();
@@ -319,10 +393,14 @@ fn owner_call(
     if Instant::now() >= deadline {
         return Err("owner read deadline exceeded".into());
     }
-    let path = repository.join(script);
-    let mut command = Command::new("python3");
+    let mut command = if script == SOURCE_HELPER {
+        Command::new(source_helper_exe()?)
+    } else {
+        let mut command = Command::new("python3");
+        command.arg(repository.join(script));
+        command
+    };
     command
-        .arg(path)
         .args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -483,6 +561,47 @@ fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
     ] {
         hash_regular_file(&mut identity, &repository.join(script), 1024 * 1024)?;
     }
+    let admitted: Value = serde_json::from_slice(grant_bytes).map_err(|e| e.to_string())?;
+    if admitted["schema_version"] == 2 {
+        hash_regular_file(&mut identity, &source_helper_exe()?, 64 * 1024 * 1024)?;
+        let captures = admitted["provider"]["captures"]
+            .as_array()
+            .ok_or("v2 capture inventory absent")?;
+        if captures.len() != 2 {
+            return Err("v2 capture inventory differs".into());
+        }
+        for (i, capture) in captures.iter().enumerate() {
+            let path = Path::new(capture["path"].as_str().ok_or("capture path absent")?);
+            hash_regular_file(
+                &mut identity,
+                path,
+                if i == 0 {
+                    8 * 1024 * 1024
+                } else {
+                    32 * 1024 * 1024
+                },
+            )?;
+        }
+        let db_path = admitted["scheduler"]["db_path"]
+            .as_str()
+            .ok_or("scheduler path absent")?;
+        for (suffix, cap) in [
+            ("", 4 * 1024 * 1024),
+            ("-wal", 8 * 1024 * 1024),
+            ("-shm", 1024 * 1024),
+        ] {
+            let path = PathBuf::from(format!("{db_path}{suffix}"));
+            identity.update(suffix.as_bytes());
+            match fs::symlink_metadata(&path) {
+                Ok(_) => {
+                    identity.update([1]);
+                    hash_regular_file(&mut identity, &path, cap)?;
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => identity.update([0]),
+                Err(e) => return Err(e.to_string()),
+            }
+        }
+    }
     hash_regular_file(
         &mut identity,
         &std::env::current_exe().map_err(|e| e.to_string())?,
@@ -491,10 +610,12 @@ fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
     Ok(format!("{:x}", identity.finalize()))
 }
 
-fn observe(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Observation> {
-    let deadline = Instant::now()
-        .checked_add(Duration::from_secs(30))
-        .ok_or("deadline overflow")?;
+fn observe(
+    grant: &Grant,
+    grant_path: &Path,
+    grant_bytes: &[u8],
+    deadline: Instant,
+) -> Result<Observation> {
     let (_, current_grant_bytes) = read_grant(grant_path)?;
     if current_grant_bytes != grant_bytes {
         return Err("inspection grant changed during host lifetime".into());
@@ -708,6 +829,9 @@ fn observe(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Obser
     if source_identity(repository, grant_bytes)? != source_identity_sha256 {
         return Err("owner or host source changed during read".into());
     }
+    if Instant::now() >= deadline {
+        return Err("historical read deadline exceeded".into());
+    }
     if read_grant(grant_path)?.1 != grant_bytes {
         return Err("inspection grant changed during owner read".into());
     }
@@ -726,6 +850,158 @@ fn observe(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Obser
             "Gate captures bind producer output to checkpoints; they do not independently attest execution.".into(),
             "This case is a bounded historical investigation, not full UI-0 causal coverage.".into(),
         ],
+    };
+    observation.validate().map_err(str::to_string)?;
+    Ok(observation)
+}
+
+fn observe_v2(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<ObservationV2> {
+    if grant.schema_version != 2 {
+        return Err("v2 source grant required".into());
+    }
+    let deadline = Instant::now()
+        .checked_add(Duration::from_secs(30))
+        .ok_or("deadline overflow")?;
+    let mut base = observe(grant, grant_path, grant_bytes, deadline)?;
+    base.gaps =
+        vec!["Gate captures bind producer output, not independent execution attestation".into()];
+    let repository = Path::new(&grant.repository);
+    let grant_sha = format!("{:x}", Sha256::digest(grant_bytes));
+    let read_section = |section: &str| {
+        if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
+            return Err("source implementation changed before v2 owner invocation".into());
+        }
+        let result = owner_call(
+            repository,
+            SOURCE_HELPER,
+            &[
+                "--grant".into(),
+                grant_path.to_string_lossy().to_string(),
+                "--grant-sha256".into(),
+                grant_sha.clone(),
+                "--section".into(),
+                section.into(),
+            ],
+            deadline,
+        );
+        if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
+            return Err("source implementation changed during v2 owner invocation".into());
+        }
+        result
+    };
+    let provider: ProviderRead = serde_json::from_value(read_section("provider")?)
+        .map_err(|e| format!("provider source projection invalid: {e}"))?;
+    let scheduler: SchedulerRead = serde_json::from_value(read_section("scheduler")?)
+        .map_err(|e| format!("scheduler source projection invalid: {e}"))?;
+    let metrics_result = read_section("metrics");
+    if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
+        return Err("source implementation changed during metrics read".into());
+    }
+    let (metrics, metrics_unavailable) = match metrics_result {
+        Ok(value) => (
+            Some(
+                serde_json::from_value::<MetricsRead>(value)
+                    .map_err(|e| format!("metrics source projection invalid: {e}"))?,
+            ),
+            None,
+        ),
+        Err(_) => (
+            None,
+            Some("Frozen metrics source unavailable under this read".into()),
+        ),
+    };
+    let mut source_reads = base.source_reads.clone();
+    source_reads.push(SourceRead {
+        owner: "slice-builder captured provider output".into(),
+        identity: format!("8 result UUIDs / {}", provider.cost_literal_sum_usd),
+        integrity: "full_file_line_command_and_stdout_digests_verified".into(),
+        completeness: "eight_trusted_capture_descriptors".into(),
+        confidentiality: "allowlisted_numeric_result_summary".into(),
+        limit: provider.source_limit.clone(),
+    });
+    source_reads.push(SourceRead {
+        owner: "role-scheduler".into(),
+        identity: format!(
+            "{}@{}:{}",
+            scheduler.item_id, scheduler.store_revision, scheduler.row_sha256
+        ),
+        integrity: "read_only_snapshot_and_selected_row_digest_verified".into(),
+        completeness: "one_current_row_no_mutation_history".into(),
+        confidentiality: "allowlisted_item_summary".into(),
+        limit: scheduler.source_limit.clone(),
+    });
+    if let Some(metrics) = &metrics {
+        source_reads.push(SourceRead {
+            owner: "slice-supervisor".into(),
+            identity: format!(
+                "{}:docs/ai-workflow-metrics.jsonl:21@{}",
+                metrics.commit_oid, metrics.row_sha256
+            ),
+            integrity: "raw_git_object_and_row_digest_verified".into(),
+            completeness: "one_frozen_metrics_row".into(),
+            confidentiality: "allowlisted_metric_summary".into(),
+            limit: metrics.source_limit.clone(),
+        });
+    } else {
+        source_reads.push(SourceRead {
+            owner: "slice-supervisor".into(),
+            identity: "frozen metrics row unavailable under this read".into(),
+            integrity: "unavailable".into(),
+            completeness: "no_frozen_metrics_comparison".into(),
+            confidentiality: "no_metric_values_projected".into(),
+            limit: metrics_unavailable.clone().unwrap_or_default(),
+        });
+    }
+    let mut anchor = Sha256::new();
+    anchor.update(base.source_identity_sha256.as_bytes());
+    anchor.update(provider.cost_literal_sum_usd.as_bytes());
+    for attempt in &provider.attempts {
+        anchor.update(attempt.stdout_sha256.as_bytes());
+    }
+    anchor.update(scheduler.row_sha256.as_bytes());
+    anchor.update(scheduler.store_revision.to_be_bytes());
+    if let Some(metrics) = &metrics {
+        anchor.update(metrics.row_sha256.as_bytes());
+    }
+    let mut gaps = vec![
+        "Scheduler row has no mutation history, presentation event or result-UUID causal edge"
+            .into(),
+        "Provider result envelopes are captured CLI output, not canonical provider billing".into(),
+        "Failed 429 result independently reports 27 captured thinking tokens".into(),
+        "No savings proof or complete UI-0 event graph is established".into(),
+    ];
+    if metrics.is_some() {
+        gaps.push("Candidate-5 receipt has five checks; frozen metrics stage_total eight remains unresolved".into());
+        gaps.push(
+            "Captured versus frozen thinking difference is 27; metrics policy is unestablished"
+                .into(),
+        );
+    } else {
+        gaps.push(
+            "Frozen metrics source unavailable; stage and token comparisons are unavailable".into(),
+        );
+    }
+    if read_grant(grant_path)?.1 != grant_bytes {
+        return Err("grant changed during v2 read".into());
+    }
+    if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
+        return Err("source implementation changed during v2 read".into());
+    }
+    if Instant::now() >= deadline {
+        return Err("v2 read deadline exceeded".into());
+    }
+    let observation = ObservationV2 {
+        protocol_version: 2,
+        projection_version: 2,
+        operation: historical_evidence_wire::OPERATION_V2.into(),
+        base,
+        provider,
+        scheduler,
+        metrics,
+        metrics_unavailable,
+        source_identity_sha256: format!("{:x}", anchor.finalize()),
+        source_reads,
+        gaps,
     };
     observation.validate().map_err(str::to_string)?;
     Ok(observation)
@@ -823,27 +1099,61 @@ fn serve_one(mut stream: UnixStream, grant: &Grant, path: &Path, bytes: &[u8]) -
     }
     let mut request_bytes = vec![0; len];
     read_before(&mut stream, &mut request_bytes, request_deadline)?;
-    let reply = match serde_json::from_slice::<Request>(&request_bytes) {
-        Ok(request)
-            if request.validate().is_ok()
-                && request
-                    .review_key
-                    .as_ref()
-                    .is_none_or(|key| grant.reviews.iter().any(|review| &review.key == key)) =>
-        {
-            match observe(grant, path, bytes) {
-                Ok(observation) => Reply::Observed { observation },
-                Err(_) => Reply::Unavailable {
-                    reason: "one or more admitted owner reads failed integrity or availability"
-                        .into(),
-                },
+    let is_v2 = serde_json::from_slice::<Value>(&request_bytes)
+        .is_ok_and(|value| value["operation"] == historical_evidence_wire::OPERATION_V2);
+    let response = if is_v2 {
+        let reply = match serde_json::from_slice::<RequestV2>(&request_bytes) {
+            Ok(request)
+                if grant.schema_version == 2
+                    && request.validate().is_ok()
+                    && request
+                        .review_key
+                        .as_ref()
+                        .is_none_or(|key| grant.reviews.iter().any(|r| &r.key == key)) =>
+            {
+                match observe_v2(grant, path, bytes) {
+                    Ok(observation) => ReplyV2::Observed { observation },
+                    Err(error) => {
+                        eprintln!("historical-evidence-read: v2 owner unavailable: {error}");
+                        ReplyV2::Unavailable { reason: "one or more admitted v2 source reads failed integrity or availability".into() }
+                    }
+                }
             }
-        }
-        _ => Reply::Refused {
-            reason: "unsupported or unbounded historical request".into(),
-        },
+            _ => ReplyV2::Refused {
+                reason: "unsupported or unbounded historical v2 request".into(),
+            },
+        };
+        serde_json::to_vec(&reply).map_err(|e| e.to_string())?
+    } else {
+        let reply = match serde_json::from_slice::<Request>(&request_bytes) {
+            Ok(request)
+                if request.validate().is_ok()
+                    && request
+                        .review_key
+                        .as_ref()
+                        .is_none_or(|key| grant.reviews.iter().any(|r| &r.key == key)) =>
+            {
+                let deadline = Instant::now()
+                    .checked_add(Duration::from_secs(30))
+                    .ok_or("deadline overflow")?;
+                match observe(grant, path, bytes, deadline) {
+                    Ok(observation) => Reply::Observed { observation },
+                    Err(error) => {
+                        eprintln!("historical-evidence-read: owner unavailable: {error}");
+                        Reply::Unavailable {
+                            reason:
+                                "one or more admitted owner reads failed integrity or availability"
+                                    .into(),
+                        }
+                    }
+                }
+            }
+            _ => Reply::Refused {
+                reason: "unsupported or unbounded historical request".into(),
+            },
+        };
+        serde_json::to_vec(&reply).map_err(|e| e.to_string())?
     };
-    let response = serde_json::to_vec(&reply).map_err(|e| e.to_string())?;
     if response.len() > MAX_FRAME {
         return Err("response frame limit exceeded".into());
     }

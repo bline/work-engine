@@ -73,7 +73,15 @@ def trusted_descriptor(path: Path, attempt: int) -> dict[str, Any]:
             os.close(fd)
     finally:
         os.close(parent_fd)
-    if (grant.get("schema_version") != 1 or grant.get("profile") != "historical-s5-local-inspection-v1"
+    version = grant.get("schema_version")
+    profile = grant.get("profile")
+    if ((version, profile) not in {
+            (1, "historical-s5-local-inspection-v1"),
+            (2, "historical-s5-local-inspection-v2"),
+        }
+            or (version == 2 and (not isinstance(grant.get("provider"), dict)
+                                  or not isinstance(grant.get("scheduler"), dict)
+                                  or not isinstance(grant.get("metrics"), dict)))
             or grant.get("run_id") != "skills-migration-app-server-20260828"
             or grant.get("slice_number") != 6 or grant.get("peer_uid") != os.geteuid()
             or not isinstance(grant.get("gates"), list) or len(grant["gates"]) != 5):

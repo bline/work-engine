@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -99,6 +100,25 @@ class LegacyGateInspectTest(unittest.TestCase):
             capture.write_bytes(b"x" * (4 * 1024 * 1024) + b"\n{}\n")
             with self.assertRaisesRegex(ValueError, "read limit"):
                 READER.selected_line(capture, 2)
+
+    def test_v2_grant_only_adds_source_inventory_to_existing_gate_selector(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor, _ = self.fixture(directory, 3)
+            private = Path(directory) / "private"
+            private.mkdir(mode=0o700)
+            path = private / "grant.json"
+            grant = {"schema_version": 2, "profile": "historical-s5-local-inspection-v2",
+                     "run_id": RUN_ID, "slice_number": 6, "peer_uid": os.geteuid(),
+                     "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+                     "gates": [{"attempt": i, **(descriptor if i == 3 else {})} for i in range(1, 6)],
+                     "provider": {}, "scheduler": {}, "metrics": {}}
+            path.write_text(json.dumps(grant))
+            path.chmod(0o600)
+            self.assertEqual(descriptor, READER.trusted_descriptor(path, 3))
+            grant.pop("scheduler")
+            path.write_text(json.dumps(grant))
+            with self.assertRaisesRegex(ValueError, "does not admit"):
+                READER.trusted_descriptor(path, 3)
 
 
 if __name__ == "__main__":

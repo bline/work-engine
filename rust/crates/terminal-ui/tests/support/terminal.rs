@@ -21,6 +21,7 @@ pub struct Terminal {
     parser: vt100::Parser,
     raw: Vec<u8>,
     evidence: std::path::PathBuf,
+    read_deadline: Duration,
 }
 impl Terminal {
     pub fn launch(socket: &Path, task: &str, delivery: &str, evidence: &Path) -> Self {
@@ -57,6 +58,7 @@ impl Terminal {
             parser: vt100::Parser::new(60, 180, 0),
             raw: vec![],
             evidence: evidence.into(),
+            read_deadline: Duration::from_secs(20),
         }
     }
     #[allow(dead_code)]
@@ -93,6 +95,9 @@ impl Terminal {
             parser: vt100::Parser::new(rows, cols, 0),
             raw: vec![],
             evidence: evidence.into(),
+            // Historical owner reads have a 30-second server deadline and a
+            // 35-second client deadline before the first frame can appear.
+            read_deadline: Duration::from_secs(40),
         }
     }
     pub fn pid(&self) -> u32 {
@@ -129,7 +134,7 @@ impl Terminal {
             );
             let _ = fs::write(self.evidence.join("latest-screen.txt"), &screen);
             assert!(
-                start.elapsed() < Duration::from_secs(20),
+                start.elapsed() < self.read_deadline,
                 "UI deadline at {stage}: expected {text:?}\n{screen}"
             );
             thread::sleep(Duration::from_millis(10));

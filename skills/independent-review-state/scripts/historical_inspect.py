@@ -16,8 +16,10 @@ from typing import Any
 import independent_review_state as owner
 
 PROFILE = "historical-s5-local-inspection-v1"
+PROFILE_V2 = "historical-s5-local-inspection-v2"
 RUN_ID = "skills-migration-app-server-20260828"
 ALLOWED_FIELDS = {"checkpoint", "gate", "review_summary", "source_limit", "metric_discrepancy"}
+ALLOWED_FIELDS_V2 = ALLOWED_FIELDS | {"provider_attempts", "scheduler_item", "metrics_comparison"}
 
 
 def fail(message: str) -> None:
@@ -51,15 +53,25 @@ def read_grant(path: Path) -> dict[str, Any]:
     required = {"schema_version", "profile", "grant_id", "repository", "run_id", "slice_number",
                 "issued_at", "expires_at", "issuer_provenance", "peer_uid", "audience", "fields",
                 "checkpoints", "gates", "reviews"}
-    if not isinstance(value, dict) or set(value) != required or value["schema_version"] != 1:
+    if not isinstance(value, dict):
         fail("inspection grant schema is invalid")
-    if (value["profile"] != PROFILE or value["run_id"] != RUN_ID or value["slice_number"] != 6
+    version = value.get("schema_version")
+    if version == 2:
+        required = required | {"provider", "scheduler", "metrics"}
+    if (set(value) != required or (version, value.get("profile")) not in
+            {(1, PROFILE), (2, PROFILE_V2)}):
+        fail("inspection grant schema is invalid")
+    if (value["run_id"] != RUN_ID or value["slice_number"] != 6
             or value["audience"] != "local_terminal_inspection"
             or not isinstance(value["grant_id"], str) or not value["grant_id"]
             or not isinstance(value["issuer_provenance"], str) or not value["issuer_provenance"]
             or value["peer_uid"] != os.geteuid()
-            or value["fields"] != sorted(ALLOWED_FIELDS)):
+            or value["fields"] != sorted(ALLOWED_FIELDS_V2 if version == 2 else ALLOWED_FIELDS)):
         fail("inspection grant case, audience or local identity is invalid")
+    if version == 2 and (not isinstance(value["provider"], dict)
+                         or not isinstance(value["scheduler"], dict)
+                         or not isinstance(value["metrics"], dict)):
+        fail("inspection grant source descriptors are invalid")
     issued = datetime.fromisoformat(value["issued_at"].replace("Z", "+00:00"))
     expires = datetime.fromisoformat(value["expires_at"].replace("Z", "+00:00"))
     if (issued.tzinfo is None or expires.tzinfo is None or issued > datetime.now(timezone.utc)

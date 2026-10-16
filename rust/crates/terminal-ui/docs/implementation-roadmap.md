@@ -86,13 +86,13 @@ constructed receipt lists five passed checks while frozen metrics says eight
 stages for the same digest. The historical metrics producer copied the prior slice record and manually
 entered eight with the new S5 digest; no separate eight-stage source appears in
 that producer path. The published count still needs an owner-bound correction
-or explanation. A new uncommitted, locally qualified
-[historical read host](../../historical-evidence-read/README.md) admits the exact
-checkpoint, gate-capture and review records through their legacy owners and
-renders a first terminal investigation. Its current grant and captured proof
-are external to the repository and await implementation review. Provider,
-scheduler and metrics-owner reads, a broader public access policy and full
-UI-0 acceptance remain open.
+or explanation. The published [historical read host](../../historical-evidence-read/README.md)
+admits exact checkpoint, gate-capture and review records. A further uncommitted
+v2 increment locally qualifies eight captured provider results, one current
+Role Scheduler item and the frozen metrics row through exact, private source
+reads and terminal rendering. Its new implementation still awaits fresh review
+and publication; broad public access, scheduler mutation history, billing
+authority and full UI-0 acceptance remain open.
 
 ## Mapping to the accepted delivery slices
 
@@ -102,7 +102,7 @@ backend capability is absent.
 
 | Accepted slice | Reusable work today | Remaining consequence and status |
 | --- | --- | --- |
-| UI-0 — Event and owner projection | Passive client patterns, component scope/revisions, safe failure states, exact-source inspector, and an uncommitted locally qualified checkpoint/gate/review S5 vertical. | Provider/scheduler/metrics owner reads, full versioned evidence classes and owner registry, broader confidentiality policy and the complete golden trace remain **not established**. |
+| UI-0 — Event and owner projection | Passive client patterns, component scope/revisions, safe failure states, exact-source inspector, and a published checkpoint/gate/review S5 vertical, plus an uncommitted locally qualified provider-capture/scheduler-current-row/frozen-metrics extension. | Fresh implementation review and publication for v2, full versioned evidence classes and owner registry, broader confidentiality policy and the complete golden trace remain **not established**. |
 | UI-1 — Operational control plane | Overview/Graph/Conversation shell and one-task read-only inspection. | Actual campaign/slice state, roles, candidates, gates, review obligations, limits and scheduler waits need public projections and joined UI proof. **Partially reusable presentation; slice acceptance not established.** |
 | UI-2 — Causal timeline and drill-down | Identifier-bound task graph, expandable source details and offline replay presentation. | Exact candidate/episode/finding/remediation lineage, justified causal edges, historical cutoffs and traversable owner references need a qualified source graph. **Not established.** |
 | UI-3 — Efficiency and anomaly explanation | Existing source/detail presentation can display qualified measurements. | Non-overlapping attempt attribution, comparable frozen baselines, missing-measurement handling and evidence-backed S5 explanation. **Not established.** |
@@ -171,8 +171,7 @@ references, their owners, revisions, accessible evidence and missing coverage.
 The [source map](s5-source-map.md) now binds the campaign identity, linked review
 history, five hash-matched gate results, eight provider result envelopes, a quota
 event and an acknowledged scheduler item. Candidate 5's gate count discrepancy
-remains open. The first local read admits checkpoint/gate/review records only;
-provider, metrics and scheduler reader paths remain open. A similarly named lifecycle S5 handoff or
+remains open. The published v1 local read admits checkpoint/gate/review records. The uncommitted v2 reader now admits the exact eight provider captures, one current scheduler row and one frozen metrics row under a new private grant; review and publication remain open. Scheduler mutation history, presentation proof and provider billing authority are still unavailable. A similarly named lifecycle S5 handoff or
 metrics cohort is not the same case without an established identity join.
 
 Complete the remaining source-map coverage before broader projection implementation. Its useful deliverable
