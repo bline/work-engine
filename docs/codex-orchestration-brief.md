@@ -240,19 +240,22 @@ supervisor reaches it: 76 observed replacements all fired at 208–244K, none at
 chosen boundary. The next call opens at about 80K — system prompt, `AGENTS.md`,
 tool schemas, re-sent messages — costing four times a normal call because
 nothing is cached yet, and the session then spends about thirteen calls climbing
-to 116K re-reading doctrine. One cycle costs roughly 2 Plus-units and leaves a
-116K floor. What does not survive the emptying is whatever was not written down:
+to 116K re-reading doctrine. One cycle costs roughly 2 Plus-units and left a
+116K floor when measured; the floor is now 24.7K (see the 2026-10-16 addendum). What does not survive the emptying is whatever was not written down:
 retention across a replacement was 117 bytes for twenty consecutive windows of
 one root.
 
 Two consequences. First, maintain the continuation packet **continuously**, not
 only when a handoff is planned, because compaction will take the window without
 asking and the packet is what the new window reads instead of re-deriving.
-Second, a lower handoff trigger is worth nothing by itself: with a 116K floor,
-the 39K of headroom under a 155K trigger buys about 34 calls, so replacing three
-times as often costs as much as the lower context saves. Lower the floor
-first — a sized packet and a sized doctrine reload — and the trigger becomes
-worth taking. Measured values and the projection are in the
+Second, a lower handoff trigger was worth nothing by itself *while the floor
+was 116K*: the 39K of headroom under a 155K trigger bought about 34 calls, so
+replacing three times as often cost as much as the lower context saved. Lower
+the floor first — a sized packet and a sized doctrine reload — and the trigger
+becomes worth taking. **That condition has since been met: the floor is now
+24.7K and the trigger is the largest measured lever. See the 2026-10-16
+addendum, which supersedes this paragraph's conclusion.** Measured values and
+the projection are in the
 [efficiency ledger](../metrics/efficiency-ledger.md) under Per-call cost.
 
 Use a durable, compact assignment record as the deterministic source for known
@@ -292,3 +295,97 @@ but it was not a controlled same-workload experiment. Track outcomes alongside
 cost: quota per accepted result, candidate and remediation attempts, and defects
 that escape review. A cheaper run that misses important issues is not an
 efficiency improvement.
+
+## Addendum, 2026-10-16: the floor fell, so take the trigger
+
+Measured on three live supervision trees — 3 roots, 10 workers, 4,894 calls,
+576.9 Plus-units over the 20 hours from 2026-10-15T18:04Z. Every session ran
+the trimmed configuration, so these are post-trim numbers throughout.
+
+**The 116K floor above is obsolete.** Across 27 replacements in these sessions
+the post-replacement floor was **median 24.7K** (min 22.5K, max 32.4K), not
+116K, while replacements still fired at a median **208.6K** trigger. The
+prerequisite the previous section states — lower the floor, then the trigger
+becomes worth taking — has been met. Take the trigger.
+
+With the measured floor, growth of 1,354 tokens per call, 115 calls per cycle
+and a replacement call costing 0.188 units, moving the trigger down is the
+largest lever now measured:
+
+| trigger | projected | against the 208.6K the sessions actually used |
+|---|---|---|
+| 170K | 513.3 u | −13.1% |
+| **155K** | **483.7 u** | **−18.1%** |
+| 120K | 415.6 u | −29.6% |
+
+The projection reproduces the trigger as actually run to 0.6% (590.5 u
+projected, 586.9 u measured), and its **sign holds across every cache price
+consistent with the account's own quota counter** (−6.5% at a cached weight of
+0.005 through −18.1% at 0.1). Act on the direction; treat the magnitude as
+bounded, not pinned.
+
+Two limits. The floor **creeps within a session** — one worker went 23.6K to
+26.4K over seven windows, another 27.5K to 32.4K over three, roughly +400 to
++1,400 per window — so re-read the floor rather than assuming 24.7K, and do not
+push the trigger arbitrarily low against a rising floor. And a planned
+replacement still only pays if the continuation packet is current, which is why
+the packet is maintained continuously rather than at the boundary.
+
+**Coordination is no longer the main lever; context is.** Of the 576.9 units,
+**85% went to calls that did real tool work** and 15% to all coordination
+combined — 38.9 u wait-only, 21.1 u reasoning with no tool call, 20.4 u
+messaging, 7.9 u dispatch. Further batching will not move a bill shaped like
+this one; what every call carries will. The exception is still worth taking:
+268 self-paced polls (88 `sleep`, 180 `wait`) in two workers account for most of
+the wait-only spend, and a poll pays the full standing-context charge to learn
+nothing.
+
+**Spend follows the work, not the supervision.** The three roots took 19% of the
+bill and the ten workers 81%; two implementation workers alone took 56%. Roots
+in these trees were not the problem.
+
+### Work against cost
+
+The brief asks for quota per accepted result, so here is the window's: **10
+commits, 30,772 lines of Rust across 86 files** — 21,583 implementation, 9,189
+tests — for a measured **48 points of a weekly Pro quota**. That is a full
+weekly quota every 1.74 days at this pace. Per-tree attribution is not
+separable from the rollouts, because roots and workers discuss each other's
+commits, so treat the ratio as a tree-level aggregate only.
+
+### Free instruments, and one that does not exist
+
+`token_count.rate_limits` carries **`used_percent` and
+`rate_limit_reached_type` on every call**. This is the account's own charge,
+costs nothing to read, and settles totals that no token arithmetic can. Report
+`used_percent` at session start and end alongside the per-dispatch numbers.
+
+Two findings from it. First, **the fitted cost model overpredicts by about 25%**
+at a cache share of 0.98: 59.9 Pro-points projected against 48.0 measured over
+a window with no weekly reset, with the daily series agreeing in direction
+(6.44 units per million weighted tokens against the ledger's 7.826). Ratio
+results such as the trigger table are unaffected, because the error is
+multiplicative; **absolute percentages and unit totals should be read about a
+quarter lower** until the ledger price is refitted. The cached price itself
+remains unidentified — two further attempts in this window, hourly buckets and
+59 clean days, were both degenerate, because cache share sits at 0.98 almost
+everywhere and leaves uncached and cached collinear.
+
+Second, `rate_limit_reached_type` was null in all 4,975 samples: no throttle was
+reached. Do not read that as provider reliability. **Rollouts record no error
+payload type at all** — no `error`, no `stream_error`, in any of 257 sessions —
+and no terminal log is retained, so provider-side stream and capacity failures
+leave no durable trace here. A question about provider reliability needs an
+instrument created in advance; it cannot be answered from rollouts after the
+fact.
+
+### What a child agent should carry from this
+
+- Replace context at a chosen boundary near 155K instead of riding to the
+  ceiling at 208–234K. Nine of these thirteen sessions crossed the trigger and
+  none replaced at a chosen boundary.
+- Keep the continuation packet current, not boundary-triggered. A richer packet
+  is affordable: retention content does not inflate the floor.
+- Do not poll. Ask the scheduler once, with a real timeout.
+- Report `used_percent` at start and end. It is free and it is the only ground
+  truth for what the work actually cost.
