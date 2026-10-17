@@ -1,5 +1,28 @@
 # Offline Rust lifecycle service (S4)
 
+For fresh disposable Rust development, `lifecycle-service --development-selected
+<selection.json>` uses a version-1 selection in a private `0700` directory. The
+selection pins the canonical packaged executable path and SHA-256, exact
+`0600` configuration path and SHA-256, build ID, store root and socket path.
+The selected route currently permits only `read_only`, with no native
+configuration, verifier, grants or proof barriers. It holds `startup.lock` for
+the process lifetime, writes a durable exact intent before creating a fresh
+store, checks ordinary active custody and coherent recovery, then seals a
+store-ID receipt before the listener opens. A same-selection restart checks
+those bytes and identity again; an interrupted empty-store bootstrap may resume
+only under the matching intent. Unknown/incompatible state refuses before
+listener exposure. The direct `<config.json>` CLI remains a separate proof
+entry and does not inherit this selected-startup contract.
+
+This is the first S9-D startup slice under a cooperative developer-controlled
+process premise. It does not complete the productive retained task-host/runtime
+join, pending/completed/uncertain effect recovery or compatible current Rust
+rollback. Those are the next development integration steps. Historical saved
+state import/T25 and its cross-store rollback remain deferred; this route
+never adopts legacy custody or authorizes provider entry, Q4 delivery, or Q3
+replay. No old-binary exclusion or production deployment claim follows from
+the private selection file.
+
 `lifecycle-service <config.json>` opens one SQLite lifecycle root, holds the S1 writer lock, then binds a local Unix socket. The socket's existing parent directory must be owned by the configured principal UID and mode `0700`; the socket is created at mode `0600`. Linux peer credentials are checked against the pinned principal before a request is read. The store actor serializes commands, grants, results, transitions and coherent target-aware snapshots. Lost socket replies do not cancel admitted commands. SIGTERM closes the entry gate, drains owned tasks for up to five seconds and stores their exact joined/unresolved/pending set with latched unsafe-close history. A new process receives a new runtime incarnation and never re-sends an entered attempt. The S3 `ReadClient<UnixSocketTransport>` can reconnect to the stable store ID and stream ID.
 
 The command envelope is one bounded JSON line: `{"op":"command","command":{...}}`. Published v1 `request_replacement` and `request_interruption` remain supported; v1 `enqueue_input` returns `unsupported_capability` before store mutation because that payload cannot bind text or producer. V2 `enqueue_input` requires `input_id`, `producer_ref`, exact UTF-8 `text`, and `text_digest` inside the v2 command digest basis. The service checks the UID/principal, configured producer, subject/build/proof/context, pinned grant/scope and current durable grant before applying it. The result is a v2 envelope with `accepted`, `outcome_kind`, optional outcome reference or rejection code, and resulting revision. Effectful commands are not retried by the read client; replay the exact command ID and digest to recover a lost result.

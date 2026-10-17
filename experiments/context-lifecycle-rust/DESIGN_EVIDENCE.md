@@ -201,9 +201,11 @@ The proposed changes retain the S0–S10 sequence and M1 integrated-service exit
 - **S1:** reusable SQLite mechanics do not own schemas, durability requirements,
   transition/CAS semantics or external-effect settlement. No generic persistence
   framework is required for the first service.
-- **S9:** prove the composed deployment/startup/handoff boundary while preserving
-  distinct context, executable, provider-session and process identities. A full
-  executable-generation-manager rewrite remains separate work.
+- **S9-D/S9-H:** prove selected fresh Rust startup and current-state recovery
+  before productive development; separately prove the historical
+  deployment/handoff boundary if saved-state transfer is later authorized.
+  Preserve distinct context, executable, provider-session and process identities.
+  A full executable-generation-manager rewrite remains separate work.
 
 T03/T24/T25/T28/T36 carry the strengthened checks below; no new runtime result or
 acceptance milestone is claimed. U0 at S3 and U1 at S4 remain available before the
@@ -333,9 +335,14 @@ boundary before fault injection; passive sleeps are not ordering proof.
 M0–M6 are defined in the design. A later milestone may strengthen an earlier test;
 the first-milestone label does not claim full production qualification there.
 T02 tests exclusive selection and refusal, not an obligation to run both engines
-online. T25's existing import and candidate-current rollback obligations remain
-unchanged pending the explicit saved-state decision; offline replacement is not
-a waiver. The S9 deployment composition targets a selected permanent Rust owner.
+online. The first S9-D selected `read_only` startup slice exercises packaged
+binary/config/root binding and same-store restart only. It leaves retained
+task-host/runtime composition and current Rust pending/completed/uncertain effect
+recovery and rollback open. T25 historical import and cross-store
+candidate-current rollback are deferred, not passed; the 108 historical
+unclassified rows remain unresolved. S10-D may report only its tested
+provider-disabled development composition, while full M5/M6 and replacement
+acceptance remain separate. The S9 deployment composition targets a selected permanent Rust owner.
 No numeric load, latency or memory guarantee is selected before measuring the
 actual composition. Performance is a separate acceptance dimension, not inferred
 from the language.

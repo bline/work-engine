@@ -9,7 +9,7 @@ use std::{
 };
 
 use lifecycle_runtime::{BoundedFrameReader, BoundedFrameWriter};
-use lifecycle_store::GrantControlHandle;
+use lifecycle_store::{GrantControlHandle, SqliteLifecycleStore};
 use lifecycle_wire::{CursorV1, WaitTargetV1, WireErrorCode, parse_strict_json};
 use serde_json::{Value, json};
 use tokio::{
@@ -45,6 +45,22 @@ pub async fn run(
     config: ServiceConfig,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+) -> Result<(), ServiceError> {
+    run_inner(config, material_port, task_operation_port, None).await
+}
+
+pub(crate) async fn run_with_preopened_store(
+    config: ServiceConfig,
+    store: SqliteLifecycleStore,
+) -> Result<(), ServiceError> {
+    run_inner(config, None, None, Some(store)).await
+}
+
+async fn run_inner(
+    config: ServiceConfig,
+    material_port: Option<Arc<dyn CanonicalMaterialPort>>,
+    task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+    preopened_store: Option<SqliteLifecycleStore>,
 ) -> Result<(), ServiceError> {
     if config.max_executions == 0
         || config.max_executions > 16
@@ -109,8 +125,12 @@ pub async fn run(
         return Err(ServiceError::Configuration);
     }
     let grant_material = material_port.clone();
-    let (sender, shutdown_gate, grant_control) =
-        actor::start(config.clone(), material_port, task_operation_port)?;
+    let (sender, shutdown_gate, grant_control) = actor::start(
+        config.clone(),
+        material_port,
+        task_operation_port,
+        preopened_store,
+    )?;
     let grant_lane = grant_control.map(|control| {
         Arc::new(GrantLane {
             control: Mutex::new(control),

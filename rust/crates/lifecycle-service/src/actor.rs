@@ -449,6 +449,7 @@ impl Actor {
         config: ServiceConfig,
         material_port: Option<Arc<dyn CanonicalMaterialPort>>,
         task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+        preopened_store: Option<SqliteLifecycleStore>,
     ) -> Result<Self, ServiceError> {
         if config.profile == "retained-repository-analysis-v1"
             && (material_port.is_none() || task_operation_port.is_none())
@@ -498,8 +499,10 @@ impl Actor {
                 "startup_before_store_open",
             )?;
         }
-        let mut store =
-            SqliteLifecycleStore::open(&config.store_root, config.trusted_issuer.clone())?;
+        let mut store = match preopened_store {
+            Some(store) => store,
+            None => SqliteLifecycleStore::open(&config.store_root, config.trusted_issuer.clone())?,
+        };
         if cfg!(feature = "native-sim-proof") {
             operations::optional_native_barrier(
                 config.proof_barrier_dir.as_deref(),
@@ -2164,8 +2167,9 @@ pub fn start(
     config: ServiceConfig,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+    preopened_store: Option<SqliteLifecycleStore>,
 ) -> Result<(ActorSender, ShutdownGate, Option<GrantControlHandle>), ServiceError> {
-    let actor = Actor::new(config, material_port, task_operation_port)?;
+    let actor = Actor::new(config, material_port, task_operation_port, preopened_store)?;
     let grant_control =
         if actor.config.profile == "retained-repository-analysis-v1" && !actor.recovery_only {
             Some(actor.store.grant_control_handle()?)

@@ -1017,6 +1017,18 @@ reconciles state before exposing domain admission. This removes cross-database
 custody transfer from the ordinary context path. It is an explicit departure from
 copying every legacy generation-root mechanism.
 
+For the cooperative single-developer development route, S9-D starts from an
+actually fresh disposable Rust store and qualifies selected executable,
+configuration and root binding before any listener or effect-capable entry. Its
+initial `read_only` lifecycle-service slice exercises stable restart selection
+and ordinary store coherence; it is not a complete productive task-host/runtime
+composition. S9-D still needs current Rust pending/completed/uncertain effect
+recovery, compatible upgrade and current-state rollback without replay. These
+remain development prerequisites rather than historical import requirements.
+The development premise does not claim enforcement against independently
+controlled copied legacy executables. Production old-route exclusion and
+replacement activation require their own later authority and evidence.
+
 The replacement proves its real startup, fencing, draining and handoff boundary
 with a selected permanent Rust startup/deployment owner. The exact owner,
 consumer and contract are an S9 handoff, not an assumption that the earlier Node
@@ -1030,11 +1042,12 @@ why direct replacement cannot provide the needed result, bounded scope/owner and
 removal condition; it cannot supply a second lifecycle controller. Separate
 deployment ownership cannot defer the required S9 cutover/rollback evidence.
 
-Saved-state disposition is unresolved: the human/state owner chooses import or
-explicit archive/clean start against the actual inventory and obligations. No
-choice, deletion or retirement follows from the offline development premise.
-The import/T25/current-custody and rollback requirements below remain in force
-until that owner explicitly accepts a revised compatibility/disposition contract.
+Saved-state disposition for replacement remains unresolved. The owner has
+deferred historical import to resume fresh Rust development; that decision does
+not designate a current legacy root, archive, delete, settle, import or retire
+historical state. Historical T25 and cross-store current-custody rollback remain
+open until an exact compatibility/disposition contract and operation are
+accepted. Ordinary current Rust recovery and rollback remain S9-D obligations.
 An archive decision must account for outstanding custody, unresolved effects and
 historical references; archival alone does not discharge them.
 

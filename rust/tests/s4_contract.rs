@@ -145,7 +145,7 @@ fn run_store_example(source: &Path, target: &Path, name: &str, args: &[&Path]) {
 }
 
 #[test]
-fn immutable_base_v1_refuses_genuine_s4_v2_image_and_s4_refuses_current_v5() {
+fn immutable_base_v1_refuses_genuine_s4_v2_image_and_s4_refuses_current_v6() {
     let temp = tempdir().unwrap();
     let root = temp.path();
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
@@ -229,7 +229,7 @@ fn main() {
     let store = SqliteLifecycleStore::open(&upgraded, "issuer-contract".into()).unwrap();
     assert_eq!(store.load_recovery().unwrap().subjects, 0);
     drop(store);
-    assert_eq!(schema_version(&upgraded), 5);
+    assert_eq!(schema_version(&upgraded), 6);
 
     let db = root.join("live-store");
     let socket = root.join("read.sock");
@@ -252,18 +252,18 @@ fn main() {
     service.0.kill().unwrap();
     service.0.wait().unwrap();
     let store = SqliteLifecycleStore::open(&db, "issuer-contract".into()).unwrap();
-    let current_v5 = root.join("current-service-v5");
-    fs::create_dir(&current_v5).unwrap();
+    let current_v6 = root.join("current-service-v6");
+    fs::create_dir(&current_v6).unwrap();
     store
-        .snapshot_to(&current_v5.join("lifecycle.sqlite"))
+        .snapshot_to(&current_v6.join("lifecycle.sqlite"))
         .unwrap();
     drop(store);
-    assert_eq!(schema_version(&current_v5), 5);
+    assert_eq!(schema_version(&current_v6), 6);
     let refuse_future = Path::new("refuse-future");
     run_store_example(
         &s4,
         &s4_target,
         "s4_store_contract",
-        &[refuse_future, &current_v5],
+        &[refuse_future, &current_v6],
     );
 }

@@ -80,7 +80,7 @@ M0 design decisions + implementation authority
           workflow        |
               +-----+-----+
                     |
-             S9 migration/rollback join
+        S9-D Rust join; S9-H historical transfer deferred
                     |
              S10 replacement qualification
                     |
@@ -350,14 +350,33 @@ All eight legacy proof responsibilities have an exercised supported path or an
 explicitly justified replacement. Tool and semantic claims remain scoped to
 the tested profiles; no real production work or live inference is implied.
 
-## S9 — Recovery/migration integration and rollback qualification
+## S9 — Fresh Rust development startup and deferred historical migration
+
+The accepted development route separates **S9-D**, fresh Rust startup and
+current Rust recovery, from **S9-H**, historical saved-state import and
+cross-store recovery. S9-D uses an actually fresh, disposable Rust store. Its
+first bounded slice selects the packaged `lifecycle-service` executable and
+exact read-only configuration/root/socket through a durable selection intent
+and receipt, refuses incompatible custody before listener exposure, and
+restarts on the same store ID. This first slice qualifies only provider-disabled
+read-only startup. It does not complete S9-D: retained task-host/runtime
+integration, pending/completed/uncertain effect recovery, compatible current
+Rust upgrade and rollback, and their joined tests remain prerequisites for a
+productive Rust development route. Current Rust rollback means reopening or
+recovering the candidate's current store without replay; it is distinct from
+S9-H cross-store rollback of imported historical custody.
+
+S9-H retains T25, historical source authority and unresolved effects. The
+owner has deferred actual historical import while development returns to fresh
+Rust state. Deferral does not pass T25, settle the 108 historical unresolved
+rows, activate Q4, replay Q3, or establish a replacement cutover. The
+historical design below remains the conditional S9-H contract.
 
 Depends on S7 and S8. The integration owner joins the admin and runtime paths.
-Before admitting this slice, the human/state owner chooses import or an explicitly
-authorized archive/clean start for the actual saved state. No such choice has
-been made. The following import, T25 and candidate-current rollback evidence
-remain required by the existing acceptance contract until that owner accepts an
-exact amendment; an archive choice cannot silently retire unresolved obligations.
+Before an actual saved-state cutover, the human/state owner must resolve its
+source/disposition and accept an exact operation. The following import, T25 and
+historical cross-store rollback evidence remain required for that operation;
+development deferral cannot silently retire unresolved obligations.
 
 Import a representative coherent legacy fixture into an actually absent target;
 exclude concurrent launches, fence the source, commit the handoff and admit the
@@ -386,12 +405,17 @@ bridge needs the concrete consumer, need, owner, bounded scope and removal
 condition described above. Preserve historical reference hashes through
 import/readback as part of T25/T28.
 
-Exit: M5; integrated T01/T02/T06/T11/T21/T22/T24–T26/T33/T35. Selection, startup,
-disposition and rollback contracts agree on one schema and custody lineage.
+Full S9/M5 exit remains open: integrated T01/T02/T06/T11/T21/T22/T24–T26/T33/T35,
+with selected startup, current Rust recovery/rollback and any historical
+disposition/transfer proven at their respective boundaries. The read-only S9-D
+first slice is evidence for startup selection only, not this exit.
 
 ## S10 — Replacement qualification and operational handoff
 
-Depends on S9. Freeze the integrated candidate, complete the provider-disabled
+S10-D may qualify only the provider-disabled development composition reached
+through S9-D; it must name open task-host/effect recovery obligations and cannot
+claim full replacement. Full S10 still depends on completed applicable S9 work.
+Freeze the integrated candidate, complete the provider-disabled
 production-composition gate and execute the selected review against that subject.
 All T01–T37 have explicit evidence or an honestly unresolved applicability/coverage
 decision; omission is not a pass and cannot weaken a required replacement claim.
@@ -420,7 +444,7 @@ does not claim that an early pass establishes every later operating profile.
 | S5 provider/operations | T08, T15, T16, T17, T30, T34, T35 |
 | S6 semantics | T13, T14 |
 | S8 retained workflow | T02, T10, T12, T20, T29, T31 |
-| S9 migration/rollback | T25, T26 |
+| S9-D current Rust recovery; S9-H historical transfer | T24, T25, T26; first `read_only` startup proves only its bounded selection/restart cases |
 
 Before launching a slice, bind its accepted objective/contract revision, exact
 base and allowed paths, owner, dependencies, model/effort, supported profiles,
@@ -478,10 +502,13 @@ saved-state disposition or operational cutover.
 
 Before S5: select the first owned-operation profile and native-session policy.
 Before S6: select semantic corpus and verifier quality/independence requirements.
-Before S7/S9: select compatibility and disposition/handoff contracts, including
-the human/state-owner import versus archive/clean-start decision and any explicit
-change to T25/rollback scope. Before S8: agree the actual permanent Rust host
-consumer. Before S9: agree its permanent startup/deployment boundary. Before M6:
+Before S7/S9-H historical transfer: select compatibility and disposition/handoff
+contracts, including the human/state-owner import versus archive/clean-start
+decision and any explicit change to T25/cross-store rollback scope. The initial
+S9-D `read_only` development startup is selected separately and does not satisfy
+those decisions. Before S8: agree the actual permanent Rust host consumer.
+Before productive S9-D: agree its selected startup/task-host/runtime composition.
+Before M6:
 settle retention/redaction, resource bounds and exact review/live-proof requirements.
 These later decisions do not block independent, authorized foundation work, but
 unsupported routes stay disabled until their owning requirements are established.

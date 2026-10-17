@@ -3,6 +3,7 @@
 mod actor;
 mod admission;
 mod controlled;
+pub mod development_startup;
 mod engine;
 mod material_port;
 mod operations;
@@ -166,6 +167,13 @@ pub enum ServiceError {
 
 pub async fn run(config: ServiceConfig) -> Result<(), ServiceError> {
     socket::run(config, None, None).await
+}
+
+pub(crate) async fn run_with_selected_store(
+    config: ServiceConfig,
+    store: lifecycle_store::SqliteLifecycleStore,
+) -> Result<(), ServiceError> {
+    socket::run_with_preopened_store(config, store).await
 }
 
 pub async fn run_with_material_port(
