@@ -17,6 +17,30 @@ that cannot get evidence for a claim records why it stopped instead of producing
 something that looks finished. Acceptance authority is never delegated to the
 agent.
 
+## What it is becoming
+
+The description above is the system that runs today. The planned architecture
+([`app-server/docs/work-engine-planned-architecture.md`](app-server/docs/work-engine-planned-architecture.md))
+generalizes it:
+
+**Work Engine** is a governed, deliberately model-driven execution system that
+transforms objectives into contract-bound work. Models drive the work through
+meaning, evidence, and bounded judgment; deterministic mechanisms derive settled
+consequences, while governed admission controls what becomes authoritative. The
+system composes task-specific organizations of perspectives and adapts them as
+execution reveals how the work must be realized. Revisioned evidence, claims,
+decisions, reliance, authority, and executable history support justified
+conclusions, selective reconsideration, and re-execution from recorded states.
+Its context lifecycle preserves meaning across execution boundaries, while its
+research mechanisms examine and improve its own behavior. By managing inference
+as an economic resource, Work Engine aims to deliver higher-quality, more
+reliable results with less inference and repeated reasoning. Software
+development is its first domain, with an architecture designed to extend beyond
+it.
+
+Most of this is design, not implementation; `ARCHITECTURE.md` and each design
+document's status block say which parts exist.
+
 ## The loop
 
 ```text
@@ -107,21 +131,30 @@ the contract the supervising agent follows.
 | `roadmap.md` | Product direction, remaining work, and completion evidence |
 | `skills/` | Role and capability packages: contracts, adapters, schemas, tests |
 | `app-server/` | App Server runtime: role hosting, services, protocol, isolated workspaces |
+| `rust/` | Rust workspace (`rust/crates/`): context lifecycle, claim/evidence, review episodes, task and review hosts, skill compiler, terminal UI |
+| `experiments/` | Design, plan, and saved evidence for experiments, including the Rust context-lifecycle replacement |
 | `campaigns/` | Declarative campaign objectives and configuration |
 | `metrics/`, `docs/ai-workflow-metrics.jsonl` | Slice receipts, one JSON object per slice |
 | `docs/workflow-invariants.md` | Verified invariant catalog for the primary slice workflow |
+| [`docs/model-selection.md`](docs/model-selection.md) | Revisable engineering model/effort defaults, selection provenance, and review limitations |
+| [`docs/rust-development.md`](docs/rust-development.md) | Rust-first implementation direction, proposed shared workspace, and migration boundaries |
 | `planning/`, `proposals/`, `reviews/`, `ideas/` | Plans, formed candidate changes, review evidence tied to exact revisions, and speculative sources |
 
 The repository is mid-migration. Today the canonical role contracts and
-model-facing instructions live in `skills/`, and `app-server/` holds the runtime
-those roles are being re-hosted in — where a role becomes a manifest-declared
-instance backed by server-owned services rather than an agent-local skill
-bundle. Both trees are live during the transition: `skills/` remains
-authoritative for anything the migration has not explicitly moved, and the
-migration plan
-([`app-server/docs/skills-migration-plan.md`](app-server/docs/skills-migration-plan.md))
-records per-slice ownership so no responsibility is retired before an accepted
-successor exists.
+model-facing instructions live in `skills/`, which represents the original
+implementation path, and `app-server/` holds the runtime those roles were being
+re-hosted in
+([`app-server/docs/skills-migration-plan.md`](app-server/docs/skills-migration-plan.md)).
+New first-party implementation is Rust, under `rust/`
+([`docs/rust-development.md`](docs/rust-development.md)). The first substantial
+Rust component is the context-lifecycle replacement
+([design](experiments/context-lifecycle-rust/DESIGN.md),
+[plan](experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md)): slices S0–S8
+are complete and S9 is in progress. Until that replacement is qualified, Rust
+development is driven outside the platform and measured by hand in
+[`metrics/efficiency-ledger.md`](metrics/efficiency-ledger.md). Existing
+components keep their authority until an accepted, qualified successor replaces
+them.
 
 ## Deeper reading
 
