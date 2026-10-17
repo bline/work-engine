@@ -2,12 +2,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use claim_evidence::codec::{JsValue, canonical_json, parse_json};
-use serde::{Deserialize, Serialize};
+use claim_evidence::codec::{JsValue, canonical_json};
+use slice_campaign::NativeReviewRequestRef;
 
-use crate::contract::{record_digest, require_sha, require_text, sha256};
-use crate::store::{CLAUDE_PROFILE, CLAUDE_TEST_PROFILE, ReaderPin};
-use crate::{EvidenceReadError, ExecutionProvenance, REQUEST_MAX_BYTES};
+use crate::contract::{require_sha, require_text, sha256};
+use crate::{EvidenceReadError, ExecutionProvenance};
+pub use review_execution_custody::claude::selection::{
+    Prepared, QualifiedReaderSelection, command_arguments, command_digest, parse_stored_subject,
+};
 
 use super::isolation::{CandidateBoundary, tree_digest};
 use super::session::RetainedReviewSession;
@@ -15,51 +17,6 @@ use super::{CredentialSource, TrustedClaudeProfile};
 
 const MAX_PROMPT_BYTES: usize = 1024 * 1024;
 const MAX_ATTEMPT_HORIZON: Duration = Duration::from_secs(600);
-const CLAUDE_TOOLS: &str = "Read,Glob,Grep,mcp__codebase-memory-mcp__search_graph,mcp__codebase-memory-mcp__trace_path,mcp__codebase-memory-mcp__get_code_snippet,mcp__codebase-memory-mcp__check_index_coverage,mcp__codebase-memory-mcp__index_status,mcp__codebase-memory-mcp__query_graph,mcp__codebase-memory-mcp__get_architecture";
-// The CLI schema guides generation; ReviewResult::parse remains the authority
-// for cross-field rules, unique finding IDs, and exact result admission.
-const REVIEW_SCHEMA: &str = r##"{
-  "type":"object",
-  "properties":{
-    "schemaVersion":{"type":"integer","const":1},
-    "subject":{"type":"object","properties":{
-      "commit":{"type":"string","minLength":1},
-      "tree":{"type":"string","minLength":1},
-      "patchIdentity":{"type":"string","minLength":1}},
-      "required":["commit","tree","patchIdentity"],"additionalProperties":false},
-    "verdict":{"type":"string","enum":["acceptable_as_is","remediation_required","incomplete"]},
-    "findings":{"type":"array","items":{"type":"object","properties":{
-      "id":{"type":"string","minLength":1},
-      "severity":{"type":"string","enum":["blocker","high","medium","low","info"]},
-      "title":{"type":"string","minLength":1},
-      "evidence":{"$ref":"#/$defs/evidence"},
-      "observed":{"type":"string","minLength":1},
-      "violatedExpectation":{"type":"string","minLength":1},
-      "consequence":{"type":"string","minLength":1},
-      "basis":{"type":"string","enum":["reproduced","inferred"]},
-      "confidence":{"type":"string","enum":["high","medium","low"]},
-      "recommendedRemediation":{"type":"string","minLength":1},
-      "status":{"type":"string","enum":["open","remediation_presented","verified_resolved","withdrawn","unresolved"]},
-      "remediationEvidence":{"type":"array","items":{"$ref":"#/$defs/evidenceItem"}}},
-      "required":["id","severity","title","evidence","observed","violatedExpectation",
-        "consequence","basis","confidence","recommendedRemediation","status","remediationEvidence"],
-      "additionalProperties":false}},
-    "decisiveEvidence":{"type":"array","items":{"$ref":"#/$defs/evidenceItem"}},
-    "limitations":{"type":"array","items":{"type":"string","minLength":1}}
-  },
-  "$defs":{
-    "evidence":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/evidenceItem"}},
-    "evidenceItem":{"type":"object","properties":{
-      "path":{"type":"string","minLength":1},
-      "startLine":{"type":"integer","minimum":1},
-      "endLine":{"type":"integer","minimum":1},
-      "sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}},
-      "required":["path","startLine","endLine","sha256"],"additionalProperties":false}
-  },
-  "required":["schemaVersion","subject","verdict","findings","decisiveEvidence","limitations"],
-  "additionalProperties":false
-}"##;
-
 /// Untrusted selection data. Binding it checks the installed peer, candidate,
 /// request, and selected identities; it never grants a launch.
 #[derive(Clone)]
@@ -91,107 +48,105 @@ pub struct QualifiedScope {
     pub(crate) selection: QualifiedSelection,
     pub(crate) prepared: Prepared,
     pub(crate) boundary: Option<Arc<CandidateBoundary>>,
+    pub(crate) applied_physical_profile_digest: Option<String>,
+    pub(crate) applied_request: Option<AppliedRequestBinding>,
 }
 
 #[derive(Clone)]
-pub struct QualifiedReaderSelection {
-    pub(crate) pin: ReaderPin,
-    pub(crate) profile: TrustedClaudeProfile,
-    pub(crate) session_id: String,
-    pub(crate) attempt_id: String,
+pub(crate) struct AppliedRequestBinding {
+    pub(crate) request: NativeReviewRequestRef,
+    pub(crate) prompt_template_sha256: String,
+    pub(crate) template: Vec<u8>,
 }
 
-impl QualifiedReaderSelection {
-    pub fn reader_pin(&self) -> &ReaderPin {
-        &self.pin
+/// Deterministic prompt construction from a pinned static template and the
+/// campaign's exact prepared request. This function carries no entry grant.
+pub fn compose_applied_initial_prompt(
+    template: &[u8],
+    request: &NativeReviewRequestRef,
+) -> Result<Vec<u8>, EvidenceReadError> {
+    let request_bytes = serde_json::to_vec(request)
+        .map_err(|_| EvidenceReadError::Conflicting("campaign request encoding invalid"))?;
+    let mut prompt = Vec::with_capacity(template.len() + request_bytes.len() + 31);
+    prompt.extend_from_slice(template);
+    prompt.extend_from_slice(b"\n\n-- Bound review request --\n");
+    prompt.extend_from_slice(&request_bytes);
+    if prompt.len() > MAX_PROMPT_BYTES {
+        return Err(EvidenceReadError::Capacity("Claude prompt oversized"));
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct Prepared {
-    pub schema_version: u32,
-    pub root_id: String,
-    pub campaign_root_id: String,
-    pub obligation_id: String,
-    pub candidate_digest: String,
-    pub selection_digest: String,
-    pub profile_digest: String,
-    pub prepared_request_sha256: String,
-    pub review_episode_id: String,
-    pub attempt_id: String,
-    pub dispatch_operation_id: String,
-    pub dispatch_revision: String,
-    pub selection_id: String,
-    pub candidate_commit: String,
-    pub candidate_tree: String,
-    pub candidate_patch_identity: String,
-    pub candidate_tree_sha256: String,
-    pub cbm_project: String,
-    pub cbm_store_sha256: String,
-    pub cbm_generation: String,
-    pub cbm_coverage_sha256: String,
-    pub command_sha256: String,
-    pub executable_sha256: String,
-    pub guard_sha256: Option<String>,
-    pub catalog_sha256: String,
-    pub prompt_sha256: String,
-    pub subject_sha256: String,
-    pub requested_model: String,
-    pub requested_effort: String,
-    pub requested_session_id: String,
-    pub attempt_horizon_millis: u64,
-    pub provenance_class: String,
-    pub boundary_kind: String,
-}
-
-impl Prepared {
-    pub(crate) fn provenance(&self) -> ExecutionProvenance {
-        use crate::ExecutionBinding;
-        ExecutionProvenance {
-            binding: ExecutionBinding {
-                campaign_root_id: self.campaign_root_id.clone(),
-                obligation_id: self.obligation_id.clone(),
-                candidate_digest: self.candidate_digest.clone(),
-                selection_digest: self.selection_digest.clone(),
-                profile_digest: self.profile_digest.clone(),
-                prepared_request_sha256: self.prepared_request_sha256.clone(),
-                review_episode_id: self.review_episode_id.clone(),
-                attempt_id: self.attempt_id.clone(),
-            },
-            dispatch_operation_id: self.dispatch_operation_id.clone(),
-            dispatch_revision: self.dispatch_revision.clone(),
-            execution_session_id: Some(self.requested_session_id.clone()),
-        }
-    }
-
-    pub(crate) fn pin(&self) -> Result<ReaderPin, EvidenceReadError> {
-        let bytes = serde_json::to_vec(self)
-            .map_err(|_| EvidenceReadError::Conflicting("Claude prepared record invalid"))?;
-        Ok(ReaderPin {
-            root_id: self.root_id.clone(),
-            configuration_sha256: record_digest(&[
-                if self.provenance_class == "qualified_provider" {
-                    b"claude-qualified-scope-v1"
-                } else {
-                    b"claude-offline-scope-v1"
-                },
-                &bytes,
-            ]),
-            executable_sha256: self.executable_sha256.clone(),
-            source_sha256: self.candidate_tree_sha256.clone(),
-            profile: if self.provenance_class == "qualified_provider" {
-                CLAUDE_PROFILE.into()
-            } else if self.provenance_class == "offline_peer" {
-                CLAUDE_TEST_PROFILE.into()
-            } else {
-                return Err(EvidenceReadError::Unsupported("Claude provenance class"));
-            },
-        })
-    }
+    Ok(prompt)
 }
 
 impl QualifiedScope {
+    /// Offline-only adversarial mutations exercise the exact Applied entry
+    /// validator after campaign dispatch. They cannot issue an entry token.
+    #[cfg(feature = "test-support")]
+    pub fn test_mutate_offline_applied_scope(
+        &mut self,
+        field: &str,
+    ) -> Result<(), EvidenceReadError> {
+        if self.profile.installed() || self.applied_request.is_none() {
+            return Err(EvidenceReadError::Unsupported(
+                "offline Applied test scope absent",
+            ));
+        }
+        match field {
+            "episode" => self.prepared.review_episode_id.push_str("-different"),
+            "candidate" => self.prepared.candidate_tree.push_str("different"),
+            "prompt" => {
+                self.selection.prompt.extend_from_slice(b"\nchanged prompt");
+                self.prepared.prompt_sha256 = sha256(&self.selection.prompt);
+            }
+            "horizon" => self.prepared.attempt_horizon_millis += 1,
+            _ => {
+                return Err(EvidenceReadError::Unsupported(
+                    "unknown Applied test mutation",
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn with_applied_request(
+        mut self,
+        template: &[u8],
+        request: NativeReviewRequestRef,
+    ) -> Result<Self, EvidenceReadError> {
+        let b = &self.selection.provenance.binding;
+        if self.selection.prompt != compose_applied_initial_prompt(template, &request)?
+            || b.campaign_root_id != request.root_id
+            || b.obligation_id != request.obligation_id
+            || b.candidate_digest != request.candidate.receipt_sha256
+            || b.selection_digest != request.selection.campaign_digest
+            || b.profile_digest != request.profile_digest
+            || b.prepared_request_sha256 != request.request_digest
+            || self.selection.candidate_commit != request.candidate.commit
+            || self.selection.candidate_tree != request.candidate.tree
+            || self.selection.candidate_patch_identity != request.candidate.patch_identity
+            || self.selection.selection_id != request.selection.selection_id
+        {
+            return Err(EvidenceReadError::Conflicting(
+                "campaign request differs from qualified prompt",
+            ));
+        }
+        self.applied_request = Some(AppliedRequestBinding {
+            request,
+            prompt_template_sha256: sha256(template),
+            template: template.to_vec(),
+        });
+        Ok(self)
+    }
+
+    /// Descriptive campaign physical-profile binding used only by RP2's
+    /// Applied entry check. Setting it cannot construct an entry permit.
+    pub fn with_applied_physical_profile(
+        mut self,
+        digest: &str,
+    ) -> Result<Self, EvidenceReadError> {
+        require_sha(digest)?;
+        self.applied_physical_profile_digest = Some(digest.into());
+        Ok(self)
+    }
     #[cfg(feature = "test-support")]
     pub fn bind_offline_peer(
         profile: TrustedClaudeProfile,
@@ -221,7 +176,11 @@ impl QualifiedScope {
         boundary: Arc<CandidateBoundary>,
     ) -> Result<Self, EvidenceReadError> {
         let mut selection = self.selection;
-        selection.provenance.binding.profile_digest = profile.profile_digest().into();
+        selection.provenance.binding.execution_profile_digest =
+            Some(profile.profile_digest().into());
+        if self.applied_physical_profile_digest.is_none() {
+            selection.provenance.binding.profile_digest = profile.profile_digest().into();
+        }
         selection.cbm_project = boundary.index().project().into();
         selection.cbm_store_sha256 = boundary.index().store_sha256().into();
         selection.cbm_generation = boundary.index().indexed_at().into();
@@ -270,7 +229,14 @@ impl QualifiedScope {
         ] {
             require_sha(digest)?;
         }
-        if selection.provenance.binding.profile_digest != profile.profile_digest() {
+        if selection
+            .provenance
+            .binding
+            .execution_profile_digest
+            .as_deref()
+            .unwrap_or(&selection.provenance.binding.profile_digest)
+            != profile.profile_digest()
+        {
             return Err(EvidenceReadError::Conflicting(
                 "Claude profile binding mismatch",
             ));
@@ -371,6 +337,7 @@ impl QualifiedScope {
             candidate_digest: b.candidate_digest.clone(),
             selection_digest: b.selection_digest.clone(),
             profile_digest: b.profile_digest.clone(),
+            execution_profile_digest: b.execution_profile_digest.clone(),
             prepared_request_sha256: b.prepared_request_sha256.clone(),
             review_episode_id: b.review_episode_id.clone(),
             attempt_id: b.attempt_id.clone(),
@@ -411,7 +378,13 @@ impl QualifiedScope {
             selection,
             prepared,
             boundary,
+            applied_physical_profile_digest: None,
+            applied_request: None,
         })
+    }
+
+    pub fn provenance(&self) -> &ExecutionProvenance {
+        &self.selection.provenance
     }
 
     pub fn reader_selection(&self) -> Result<QualifiedReaderSelection, EvidenceReadError> {
@@ -427,6 +400,13 @@ impl QualifiedScope {
         self.profile
             .verify()
             .map_err(|_| EvidenceReadError::Conflicting("Claude executable drift"))?;
+        if self.applied_request.is_some() {
+            slice_campaign::verify_candidate_snapshot(
+                &self.selection.candidate_path,
+                &self.selection.candidate_tree,
+            )
+            .map_err(|_| EvidenceReadError::Conflicting("selected Git snapshot drift"))?;
+        }
         if tree_digest(&self.selection.candidate_path)
             .map_err(|_| EvidenceReadError::Unresolved("candidate unreadable"))?
             != self.prepared.candidate_tree_sha256
@@ -451,57 +431,6 @@ impl QualifiedScope {
             self.boundary.is_some(),
         )
     }
-}
-
-pub(crate) fn command_digest(
-    profile: &TrustedClaudeProfile,
-    session_id: &str,
-    guarded: bool,
-) -> String {
-    let arguments = command_arguments(profile, session_id, guarded);
-    record_digest(&[
-        b"claude-command-v1",
-        profile.program().sha256().as_bytes(),
-        profile
-            .guard()
-            .map_or("", |guard| guard.sha256())
-            .as_bytes(),
-        arguments.join("\0").as_bytes(),
-    ])
-}
-
-fn command_arguments(
-    profile: &TrustedClaudeProfile,
-    session_id: &str,
-    guarded: bool,
-) -> Vec<String> {
-    let mut args = vec![
-        "-p".into(),
-        "--effort".into(),
-        profile.requested_effort().into(),
-        "--model".into(),
-        profile.requested_model().into(),
-        "--session-id".into(),
-        session_id.into(),
-    ];
-    if guarded {
-        args.extend(
-            [
-                "--strict-mcp-config",
-                "--mcp-config",
-                "/cbm/mcp.json",
-                "--tools",
-                CLAUDE_TOOLS,
-                "--json-schema",
-                REVIEW_SCHEMA,
-                "--dangerously-skip-permissions",
-            ]
-            .into_iter()
-            .map(str::to_owned),
-        );
-    }
-    args.extend(["--output-format".into(), "json".into()]);
-    args
 }
 
 /// A non-replayable local entry token. Only the feature-gated offline owner can
@@ -529,14 +458,22 @@ impl InitialEntryPermit {
         );
         Self {
             attempt_id: scope.prepared.attempt_id.clone(),
-            profile_digest: scope.prepared.profile_digest.clone(),
+            profile_digest: scope.prepared.execution_profile_digest().to_owned(),
             offline_only: true,
+        }
+    }
+
+    pub(crate) fn applied(scope: &QualifiedScope, offline_only: bool) -> Self {
+        Self {
+            attempt_id: scope.prepared.attempt_id.clone(),
+            profile_digest: scope.prepared.execution_profile_digest().to_owned(),
+            offline_only,
         }
     }
 
     pub(crate) fn consume(self, scope: &QualifiedScope) -> Result<(), EvidenceReadError> {
         if self.attempt_id != scope.prepared.attempt_id
-            || self.profile_digest != scope.prepared.profile_digest
+            || self.profile_digest != scope.prepared.execution_profile_digest()
             || (self.offline_only && scope.profile.installed())
         {
             return Err(EvidenceReadError::Conflicting(
@@ -579,7 +516,7 @@ impl SessionEvolutionPermit {
         Ok(Self {
             next_attempt_id: next_attempt_id.into(),
             predecessor_manifest_sha256: locator.manifest_sha256,
-            profile_digest: scope.prepared.profile_digest.clone(),
+            profile_digest: scope.prepared.execution_profile_digest().to_owned(),
             offline_only: true,
         })
     }
@@ -589,7 +526,7 @@ impl SessionEvolutionPermit {
         scope: &QualifiedScope,
         prior: &RetainedReviewSession,
     ) -> Result<String, EvidenceReadError> {
-        if self.profile_digest != scope.prepared.profile_digest
+        if self.profile_digest != scope.prepared.execution_profile_digest()
             || self.predecessor_manifest_sha256 != prior.locator().manifest_sha256
             || (self.offline_only && scope.profile.installed())
         {
@@ -601,27 +538,9 @@ impl SessionEvolutionPermit {
     }
 }
 
-pub(crate) fn parse_stored_subject(raw: &[u8]) -> Result<JsValue, EvidenceReadError> {
-    let text = std::str::from_utf8(raw)
-        .map_err(|_| EvidenceReadError::Conflicting("stored subject text invalid"))?;
-    parse_json(text).map_err(|_| EvidenceReadError::Conflicting("stored subject JSON invalid"))
-}
-
-pub(crate) fn validate_stored_prompt(
-    raw: &[u8],
-    prepared: &Prepared,
-) -> Result<(), EvidenceReadError> {
-    if raw.len() > REQUEST_MAX_BYTES || sha256(raw) != prepared.prompt_sha256 {
-        return Err(EvidenceReadError::Conflicting(
-            "stored prompt binding mismatch",
-        ));
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::REVIEW_SCHEMA;
+    use review_execution_custody::claude::selection::REVIEW_SCHEMA;
 
     #[test]
     fn review_schema_has_declared_required_fields() {

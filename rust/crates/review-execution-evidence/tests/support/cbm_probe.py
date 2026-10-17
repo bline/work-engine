@@ -80,6 +80,8 @@ def main():
         write_refused = True
     assert candidate.read_bytes() == original
     assert write_refused
+    assert not pathlib.Path("/repo/candidate/.git/private-admin-canary").exists()
+    assert bool(os.statvfs("/repo/candidate/.git").f_flag & os.ST_RDONLY)
     assert not pathlib.Path("/owner-canary").exists()
     assert not pathlib.Path("/home/bline/code/work-engine").exists()
     assert not pathlib.Path("/host-credential").exists()

@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use claude_common::{fixture, sha};
 use review_execution_evidence::claude::{
@@ -113,7 +113,11 @@ async fn guarded_offline_peer_uses_real_rp0_candidate_and_cbm_boundary() {
     let candidate = temp.path().join("candidate");
     fs::create_dir(&candidate).unwrap();
     fs::write(candidate.join("lib.rs"), b"pub fn exact() -> usize { 1 }\n").unwrap();
-    let f = fixture(temp.path(), "success", Duration::from_secs(10));
+    // The guarded peer performs a real CBM RPC. Keep its deadline above
+    // observed cold MCP startup (56.7 seconds in the RP2 diagnostic) so the
+    // test measures isolation and custody rather than host scheduling delay.
+    // This is a fixture horizon, not a hard cleanup deadline claim.
+    let f = fixture(temp.path(), "success", Duration::from_secs(120));
     let boundary = boundary(temp.path(), &f.candidate);
     let peer = PinnedProgram::load(
         temp.path().join("installed-offline-peer"),
@@ -143,9 +147,18 @@ async fn guarded_offline_peer_uses_real_rp0_candidate_and_cbm_boundary() {
     let selection = scope.reader_selection().unwrap();
     let permit = InitialEntryPermit::offline_peer(&scope);
     let mut writer = QualifiedWriter::create(&f.root, scope).unwrap();
-    let reference = match writer.execute_initial(permit).await.unwrap() {
+    let peer_started = Instant::now();
+    let publication = writer.execute_initial(permit).await.unwrap();
+    eprintln!(
+        "GUARDED_CBM_SUCCESS_MILLIS={}",
+        peer_started.elapsed().as_millis()
+    );
+    let reference = match publication {
         ExecutionPublication::Committed(reference) => reference,
-        other => panic!("guarded peer unresolved: {other:?}"),
+        other => {
+            let diagnostic_root = temp.keep();
+            panic!("guarded peer unresolved: {other:?}; diagnostic root={diagnostic_root:?}")
+        }
     };
     drop(writer);
     let reader = QualifiedReader::open(&f.root, selection).unwrap();
@@ -162,7 +175,7 @@ async fn guarded_offline_peer_uses_real_rp0_candidate_and_cbm_boundary() {
         Some(&claim_evidence::codec::JsValue::Bool(false))
     );
     reader.retained_session(&reference).unwrap();
-    let mut oversized = fixture(temp.path(), "oversized_session", Duration::from_secs(10));
+    let mut oversized = fixture(temp.path(), "oversized_session", Duration::from_secs(120));
     oversized.root = temp.path().join("oversized-evidence-root");
     let oversized_scope = oversized
         .scope
@@ -214,7 +227,7 @@ async fn guarded_offline_peer_uses_real_rp0_candidate_and_cbm_boundary() {
         ("fifo_session", Some(71)),
         ("inode_growth", None),
     ] {
-        let mut case = fixture(temp.path(), mode, Duration::from_secs(25));
+        let mut case = fixture(temp.path(), mode, Duration::from_secs(120));
         case.root = temp.path().join(format!("{mode}-evidence-root"));
         let case_scope = case
             .scope
@@ -295,7 +308,7 @@ async fn guarded_offline_peer_uses_real_rp0_candidate_and_cbm_boundary() {
             );
         }
     }
-    let mut hostile = fixture(temp.path(), "hostile_write", Duration::from_secs(10));
+    let mut hostile = fixture(temp.path(), "hostile_write", Duration::from_secs(120));
     hostile.root = temp.path().join("hostile-evidence-root");
     let hostile_scope = hostile
         .scope

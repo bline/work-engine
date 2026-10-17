@@ -25,7 +25,7 @@ use review_episode_core::codec::{
 use review_episode_core::identity::{Authority, Revision as EpisodeRevision};
 use review_episode_core::implementation_review_v1::ReviewResult;
 use review_episode_store::NativeRootSelection;
-use review_execution_evidence::{
+use review_execution_custody::{
     CheckedExecutionResult, CheckedObservation, EvidenceReaderProfile, ExecutionEvidenceOwner,
     ExecutionEvidenceRef,
 };

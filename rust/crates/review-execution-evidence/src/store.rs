@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use rusqlite::{Connection, OpenFlags, params};
 
-use crate::contract::{record_digest, require_sha, require_text, sha256};
+use crate::contract::{record_digest, require_text, sha256};
 use crate::{EvidenceReadError, ROOT_PAYLOAD_MAX_BYTES};
 
 const SCHEMA_VERSION: &str = "1";
@@ -27,29 +27,7 @@ fn verifier_for(profile: &str) -> Result<&'static str, EvidenceReadError> {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ReaderPin {
-    pub root_id: String,
-    pub configuration_sha256: String,
-    pub executable_sha256: String,
-    pub source_sha256: String,
-    pub profile: String,
-}
-
-impl ReaderPin {
-    pub fn validate(&self) -> Result<(), EvidenceReadError> {
-        require_text(&self.root_id)?;
-        for digest in [
-            &self.configuration_sha256,
-            &self.executable_sha256,
-            &self.source_sha256,
-        ] {
-            require_sha(digest)?;
-        }
-        verifier_for(&self.profile)?;
-        Ok(())
-    }
-}
+pub use review_execution_custody::ReaderPin;
 
 pub(crate) struct Store {
     pub root: PathBuf,

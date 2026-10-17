@@ -370,6 +370,14 @@ fn main() {
     if mode == "offline" {
         command.env("WORK_ENGINE_OFFLINE_PEER", "1");
         command.env("WORK_ENGINE_CBM_PROJECT", &project);
+        #[cfg(feature = "test-support")]
+        if std::env::var("WORK_ENGINE_RP2_HOLD_FIXTURE")
+            .ok()
+            .as_deref()
+            == Some("1")
+        {
+            command.env("WORK_ENGINE_RP2_HOLD_FIXTURE", "1");
+        }
     }
     let mut child = command.spawn().unwrap_or_else(|_| std::process::exit(66));
     let mut input = child.stdin.take().unwrap();

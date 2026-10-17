@@ -59,6 +59,16 @@ pub fn fixture_with_credential(
     horizon: Duration,
     credential: Option<CredentialSource>,
 ) -> Fixture {
+    fixture_with_profile_binding(parent, mode, horizon, credential, None)
+}
+
+pub fn fixture_with_profile_binding(
+    parent: &Path,
+    mode: &str,
+    horizon: Duration,
+    credential: Option<CredentialSource>,
+    physical_profile_digest: Option<&str>,
+) -> Fixture {
     let candidate = parent.join("candidate");
     fs::create_dir_all(&candidate).unwrap();
     if !candidate.join("source.rs").exists() {
@@ -100,7 +110,11 @@ pub fn fixture_with_credential(
                 obligation_id: "obligation-1".into(),
                 candidate_digest: "b".repeat(64),
                 selection_digest: "c".repeat(64),
-                profile_digest: profile.profile_digest().into(),
+                profile_digest: physical_profile_digest
+                    .unwrap_or(profile.profile_digest())
+                    .into(),
+                execution_profile_digest: physical_profile_digest
+                    .map(|_| profile.profile_digest().into()),
                 prepared_request_sha256: sha(&prompt),
                 review_episode_id: "episode-1".into(),
                 attempt_id: "attempt-1".into(),

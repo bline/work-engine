@@ -224,7 +224,16 @@ pub(crate) fn selected_campaign_with_profile(
 pub(crate) fn fixture(hash: &str) -> Vec<u8> {
     fs::read(
         Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/vectors")
+            .join(
+                if Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("tests/fixtures")
+                    .exists()
+                {
+                    "tests/fixtures/vectors"
+                } else {
+                    "../slice-campaign/tests/fixtures/vectors"
+                },
+            )
             .join(format!("{hash}.json")),
     )
     .unwrap()
@@ -254,7 +263,7 @@ pub(crate) fn setup_paths(
     let repo = root.join("repo");
     let workspace = root.join("workspace");
     fs::create_dir_all(&workspace).unwrap();
-    let bundle=Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle");
+    let bundle=Path::new(env!("CARGO_MANIFEST_DIR")).join(if Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").exists() { "tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle" } else { "../slice-campaign/tests/fixtures/vectors/4a4b1ad328857904b2aa50ecc7a3206d3d0e5962f88b69f3d12b703c33b99d45.bundle" });
     assert!(
         Command::new("/usr/bin/git")
             .args(["init", "--bare", "-q"])

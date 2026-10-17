@@ -1,4 +1,5 @@
 #![cfg(unix)]
+#[path = "../../slice-campaign/tests/support/mod.rs"]
 mod support;
 
 #[cfg(feature = "test-faults")]
@@ -546,6 +547,7 @@ fn reopen_process_pair(root: &Path) -> Pair {
                 candidate_digest: request.candidate.receipt_sha256.clone(),
                 selection_digest: request.selection.campaign_digest.clone(),
                 profile_digest: request.profile_digest.clone(),
+                execution_profile_digest: None,
                 prepared_request_sha256: request.request_digest.clone(),
                 review_episode_id: dispatch.command.episode_id.clone(),
                 attempt_id: request.identity.attempt_id.clone(),
@@ -798,6 +800,7 @@ fn setup_pair_claims(
             candidate_digest: request.candidate.receipt_sha256.clone(),
             selection_digest: request.selection.campaign_digest.clone(),
             profile_digest: request.profile_digest.clone(),
+            execution_profile_digest: None,
             prepared_request_sha256: request.request_digest.clone(),
             review_episode_id: episode_id.clone(),
             attempt_id: attempt.clone(),
@@ -1604,7 +1607,10 @@ fn run_schema_four_remediation_flow_case(
     let repo = pair.0.path().join("repo");
     let artifacts_dir = pair.0.path().join("remediation-artifacts");
     let output = Command::new("/usr/bin/python3")
-        .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/support/remediation_artifacts.py"))
+        .arg(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../slice-campaign/tests/support/remediation_artifacts.py"),
+        )
         .arg(&repo)
         .arg(&artifacts_dir)
         .output()
@@ -2088,6 +2094,7 @@ fn run_schema_four_remediation_flow_case(
                     candidate_digest: prepared.request.candidate.receipt_sha256.clone(),
                     selection_digest: prepared.request.selection.campaign_digest.clone(),
                     profile_digest: prepared.request.profile_digest.clone(),
+                    execution_profile_digest: None,
                     prepared_request_sha256: prepared.request.request_digest.clone(),
                     review_episode_id: issued.command.episode_id.clone(),
                     attempt_id: prepared.request.execution_attempt_id.clone(),
@@ -2816,7 +2823,7 @@ fn run_schema_four_remediation_flow_case(
                 let second_output = Command::new("/usr/bin/python3")
                     .arg(
                         Path::new(env!("CARGO_MANIFEST_DIR"))
-                            .join("tests/support/remediation_artifacts.py"),
+                            .join("../slice-campaign/tests/support/remediation_artifacts.py"),
                     )
                     .arg(&repo)
                     .arg(artifacts_dir.join("generation-2"))
@@ -3860,6 +3867,7 @@ fn reopen_j2_fixture(root: &Path) -> Pair {
                 candidate_digest: request.candidate.receipt_sha256.clone(),
                 selection_digest: request.selection.campaign_digest.clone(),
                 profile_digest: request.profile_digest.clone(),
+                execution_profile_digest: None,
                 prepared_request_sha256: request.request_digest.clone(),
                 review_episode_id: dispatch.command.episode_id.clone(),
                 attempt_id: locator.attempt_id.clone(),

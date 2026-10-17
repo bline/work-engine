@@ -66,8 +66,16 @@ pub struct DispatchRecord {
 /// use slice_campaign::DispatchPermit;
 /// fn duplicate(permit: &DispatchPermit) -> DispatchPermit { permit.clone() }
 /// ```
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub(crate) enum DispatchOrigin {
+    FreshInitial,
+    RecoveredInitial,
+}
+
 #[derive(Debug)]
 pub struct DispatchPermit {
+    pub(crate) origin: DispatchOrigin,
+    pub(crate) operation_request_digest: String,
     pub(crate) owner_epoch: String,
     pub(crate) root_id: String,
     pub(crate) identity: CampaignIdentity,
@@ -161,8 +169,8 @@ pub struct ExecutionRefRecord {
     pub sha256: String,
 }
 
-impl From<&review_execution_evidence::ExecutionEvidenceRef> for ExecutionRefRecord {
-    fn from(value: &review_execution_evidence::ExecutionEvidenceRef) -> Self {
+impl From<&review_execution_custody::ExecutionEvidenceRef> for ExecutionRefRecord {
+    fn from(value: &review_execution_custody::ExecutionEvidenceRef) -> Self {
         Self {
             schema_version: value.schema_version,
             owner: value.owner.clone(),
@@ -177,8 +185,8 @@ impl From<&review_execution_evidence::ExecutionEvidenceRef> for ExecutionRefReco
 }
 
 impl ExecutionRefRecord {
-    pub(crate) fn checked(&self) -> Result<review_execution_evidence::ExecutionEvidenceRef> {
-        let reference = review_execution_evidence::ExecutionEvidenceRef {
+    pub(crate) fn checked(&self) -> Result<review_execution_custody::ExecutionEvidenceRef> {
+        let reference = review_execution_custody::ExecutionEvidenceRef {
             schema_version: self.schema_version,
             owner: self.owner.clone(),
             root_id: self.root_id.clone(),

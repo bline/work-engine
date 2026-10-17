@@ -13,6 +13,22 @@ pub enum Event {
     Finished(Value),
     Failed(Value),
 }
+
+// A completed attempt can contain joined readbacks larger than the bounded
+// status envelope. Keep only its identity and outcome on the control plane.
+macro_rules! selected_attempt_status {
+    ($snapshot:expr) => {
+        $snapshot.progress.attempts.last().map(|attempt| {
+            json!({
+                "attemptId": attempt.attempt_id,
+                "preparationOperationId": attempt.preparation_operation_id,
+                "dispatchOperationId": attempt.dispatch.as_ref().map(|d| &d.operation_id),
+                "completionPending": attempt.completion_intent.is_some() && attempt.outcome.is_none(),
+                "outcome": attempt.outcome,
+            })
+        })
+    };
+}
 pub fn spawn(
     path: PathBuf,
     mut commands: mpsc::Receiver<Work>,
@@ -39,7 +55,8 @@ pub fn spawn(
                 }
             };
             let snapshot = match workflow.snapshot() {
-                Ok(s) => json!({"revision":s.revision,"phase":s.phase}),
+                Ok(s) => json!({"revision":s.revision,"phase":s.phase,
+                    "selectedAttempt":selected_attempt_status!(s)}),
                 Err(e) => {
                     let _ = events.send(Event::Failed(json!(e))).await;
                     return;
@@ -60,7 +77,8 @@ pub fn spawn(
                 };
                 work.reply.send(response);
                 let observation = match workflow.snapshot() {
-                    Ok(s) => json!({"revision":s.revision,"phase":s.phase}),
+                    Ok(s) => json!({"revision":s.revision,"phase":s.phase,
+                        "selectedAttempt":selected_attempt_status!(s)}),
                     Err(e) => json!({"unavailable":e}),
                 };
                 if events.send(Event::Finished(observation)).await.is_err() {

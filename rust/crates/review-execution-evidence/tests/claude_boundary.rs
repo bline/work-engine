@@ -64,6 +64,12 @@ fn candidate_private_cbm_hostile_process() {
         "pub fn example() -> usize { 1 }\n",
     )
     .unwrap();
+    fs::create_dir(candidate.join(".git")).unwrap();
+    fs::write(
+        candidate.join(".git/private-admin-canary"),
+        b"not selected source",
+    )
+    .unwrap();
     let boundary = CandidateBoundary::prepare(
         profile(temporary.path()),
         &candidate,
@@ -71,6 +77,39 @@ fn candidate_private_cbm_hostile_process() {
         "rp0_fixture",
     )
     .unwrap();
+    // The permanent host must reopen the exact durable, candidate-private
+    // boundary; neither an index sidecar nor a guessed manifest is sufficient.
+    let private = temporary.path().join("private");
+    assert!(
+        CandidateBoundary::open_frozen(
+            profile(temporary.path()),
+            &candidate,
+            &private,
+            &"0".repeat(64)
+        )
+        .is_err()
+    );
+    let (boundary, manifest_digest) = boundary.publish_manifest().unwrap();
+    let reopened = CandidateBoundary::open_frozen(
+        profile(temporary.path()),
+        &candidate,
+        &private,
+        &manifest_digest,
+    )
+    .unwrap();
+    assert_eq!(
+        reopened.index().store_sha256(),
+        boundary.index().store_sha256()
+    );
+    assert!(
+        CandidateBoundary::open_frozen(
+            profile(temporary.path()),
+            &candidate,
+            &private,
+            &"1".repeat(64)
+        )
+        .is_err()
+    );
     assert!(!boundary.index().candidate_tree_sha256().is_empty());
     assert!(boundary.index().nodes() > 0);
     assert!(boundary.index().coverage_complete());

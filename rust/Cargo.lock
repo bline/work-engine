@@ -1129,7 +1129,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "review-execution-evidence"
+name = "review-execution-custody"
 version = "0.1.0"
 dependencies = [
  "claim-evidence",
@@ -1139,6 +1139,23 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "review-execution-evidence"
+version = "0.1.0"
+dependencies = [
+ "claim-evidence",
+ "libc",
+ "review-episode-core",
+ "review-execution-custody",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "slice-campaign",
  "tempfile",
  "thiserror",
  "tokio",
@@ -1153,6 +1170,7 @@ dependencies = [
  "review-episode-core",
  "review-episode-store",
  "review-execution-evidence",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",
@@ -1388,7 +1406,7 @@ dependencies = [
  "review-episode",
  "review-episode-core",
  "review-episode-store",
- "review-execution-evidence",
+ "review-execution-custody",
  "rusqlite",
  "rustix",
  "ryu-js",
@@ -1791,6 +1809,7 @@ version = "0.1.0"
 dependencies = [
  "claim-evidence",
  "review-episode-core",
+ "review-execution-evidence",
  "review-workflow",
  "rusqlite",
  "rustix",

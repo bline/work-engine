@@ -3,8 +3,9 @@
 //! producer observation, manifest and exact tested tree/path bytes.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
+use std::fs::{self, File};
 use std::io::Read;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
@@ -36,6 +37,120 @@ pub struct VerifiedGate {
     pub receipt_digest: String,
     pub tested_tree: String,
     pub paths: BTreeMap<String, String>,
+}
+
+#[cfg(test)]
+mod selected_snapshot_tests {
+    use super::verify_candidate_snapshot;
+    use std::fs;
+    use std::os::unix::fs::{PermissionsExt, symlink};
+    use std::path::Path;
+    use std::process::Command;
+
+    fn git(root: &Path, args: &[&str]) -> String {
+        let output = Command::new("/usr/bin/git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout).unwrap().trim().into()
+    }
+
+    #[test]
+    fn selected_tree_refuses_wrong_checkout_dirty_extra_link_and_mode() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        git(root, &["init", "-q"]);
+        fs::create_dir(root.join("nested")).unwrap();
+        fs::write(root.join("nested/source.rs"), "first\n").unwrap();
+        git(root, &["add", "nested/source.rs"]);
+        git(
+            root,
+            &[
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@example.invalid",
+                "commit",
+                "-qm",
+                "first",
+            ],
+        );
+        let first_commit = git(root, &["rev-parse", "HEAD"]);
+        let first_tree = git(root, &["rev-parse", "HEAD^{tree}"]);
+        verify_candidate_snapshot(root, &first_tree).unwrap();
+
+        fs::write(root.join("nested/source.rs"), "second\n").unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "dirty tracked bytes"
+        );
+        git(root, &["add", "nested/source.rs"]);
+        git(
+            root,
+            &[
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@example.invalid",
+                "commit",
+                "-qm",
+                "second",
+            ],
+        );
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "wrong checkout"
+        );
+        git(root, &["checkout", "-q", &first_commit]);
+        verify_candidate_snapshot(root, &first_tree).unwrap();
+
+        fs::write(root.join("untracked.bin"), b"not indexed").unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "extra exposed file"
+        );
+        fs::remove_file(root.join("untracked.bin")).unwrap();
+        fs::create_dir(root.join("empty-extra")).unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "extra exposed directory"
+        );
+        fs::remove_dir(root.join("empty-extra")).unwrap();
+        symlink("nested/source.rs", root.join("source-link")).unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "symlink"
+        );
+        fs::remove_file(root.join("source-link")).unwrap();
+        fs::set_permissions(
+            root.join("nested/source.rs"),
+            fs::Permissions::from_mode(0o755),
+        )
+        .unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "executable mode drift"
+        );
+        fs::set_permissions(
+            root.join("nested/source.rs"),
+            fs::Permissions::from_mode(0o644),
+        )
+        .unwrap();
+        let admin = tempfile::tempdir().unwrap();
+        fs::rename(root.join(".git"), admin.path().join("git-data")).unwrap();
+        symlink(admin.path().join("git-data"), root.join(".git")).unwrap();
+        assert!(
+            verify_candidate_snapshot(root, &first_tree).is_err(),
+            "Git admin link"
+        );
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -145,6 +260,191 @@ fn anchored_repository(repository: &Path) -> Result<()> {
         return Err(CampaignError::Subject(
             "repository is not a real directory".into(),
         ));
+    }
+    Ok(())
+}
+
+/// Bind every file exposed by the candidate mount to the selected immutable
+/// Git tree. Git administrative data alone is outside the exposed source.
+/// This read-only check is repeated on cold open and immediately before E1
+/// records launch intent; a clean `git status` is not used as a substitute for
+/// checking ignored and untracked files.
+pub fn verify_candidate_snapshot(repository: &Path, tree: &str) -> Result<()> {
+    anchored_repository(repository)?;
+    full_oid(tree)?;
+    const MAX_INVENTORY_BYTES: usize = 16 * 1024 * 1024;
+    const MAX_FILES: usize = 65_536;
+    const MAX_FILE_BYTES: u64 = 512 * 1024 * 1024;
+    const MAX_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+    let raw = git(
+        repository,
+        &["ls-tree", "-r", "-z", "--full-tree", tree],
+        MAX_INVENTORY_BYTES,
+    )?;
+    let mut expected = BTreeMap::new();
+    let mut expected_dirs = BTreeSet::new();
+    if !raw.is_empty() && raw.last() != Some(&0) {
+        return Err(CampaignError::Subject(
+            "Git tree inventory is truncated".into(),
+        ));
+    }
+    for item in raw.split(|byte| *byte == 0).filter(|item| !item.is_empty()) {
+        let mut fields = item.splitn(2, |byte| *byte == b'\t');
+        let header = fields.next().unwrap_or_default();
+        let path = fields
+            .next()
+            .ok_or_else(|| CampaignError::Subject("Git tree entry malformed".into()))?;
+        let header = std::str::from_utf8(header)
+            .map_err(|_| CampaignError::Subject("Git tree entry header invalid".into()))?;
+        let mut parts = header.split(' ');
+        let mode = parts.next().unwrap_or("");
+        let kind = parts.next().unwrap_or("");
+        let oid = parts.next().unwrap_or("");
+        if parts.next().is_some() || kind != "blob" || !matches!(mode, "100644" | "100755") {
+            return Err(CampaignError::Subject(
+                "candidate Git tree contains unsupported file kind".into(),
+            ));
+        }
+        full_oid(oid)?;
+        let path = std::str::from_utf8(path)
+            .map_err(|_| CampaignError::Subject("candidate path is not UTF-8".into()))?;
+        let relative = Path::new(path);
+        if path.is_empty()
+            || relative.is_absolute()
+            || relative
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+            || path
+                .split('/')
+                .any(|part| part.is_empty() || part == ".git")
+            || expected
+                .insert(path.to_owned(), (oid.to_owned(), mode == "100755"))
+                .is_some()
+            || expected.len() > MAX_FILES
+        {
+            return Err(CampaignError::Subject(
+                "candidate Git path inventory invalid".into(),
+            ));
+        }
+        let mut parent = relative.parent();
+        while let Some(directory) = parent {
+            if directory.as_os_str().is_empty() {
+                break;
+            }
+            expected_dirs.insert(directory.to_string_lossy().into_owned());
+            parent = directory.parent();
+        }
+    }
+    let mut observed = BTreeMap::new();
+    let mut observed_dirs = BTreeSet::new();
+    let mut stack = vec![repository.to_owned()];
+    let mut total_bytes = 0_u64;
+    while let Some(directory) = stack.pop() {
+        for entry in fs::read_dir(&directory).map_err(|e| CampaignError::Subject(e.to_string()))? {
+            let entry = entry.map_err(|e| CampaignError::Subject(e.to_string()))?;
+            if directory == repository && entry.file_name() == ".git" {
+                let admin = fs::symlink_metadata(entry.path())
+                    .map_err(|e| CampaignError::Subject(e.to_string()))?;
+                if admin.file_type().is_symlink()
+                    || (!admin.file_type().is_dir() && !admin.file_type().is_file())
+                {
+                    return Err(CampaignError::Subject(
+                        "Git administrative path is not a regular file or directory".into(),
+                    ));
+                }
+                continue;
+            }
+            let path = entry.path();
+            let relative = path
+                .strip_prefix(repository)
+                .map_err(|_| CampaignError::Subject("candidate path escaped root".into()))?;
+            let name = relative
+                .to_str()
+                .ok_or_else(|| CampaignError::Subject("candidate path is not UTF-8".into()))?
+                .to_owned();
+            let meta =
+                fs::symlink_metadata(&path).map_err(|e| CampaignError::Subject(e.to_string()))?;
+            if meta.file_type().is_dir() {
+                observed_dirs.insert(name);
+                stack.push(path);
+            } else if meta.file_type().is_file() {
+                total_bytes = total_bytes.saturating_add(meta.len());
+                if meta.len() > MAX_FILE_BYTES || total_bytes > MAX_TOTAL_BYTES {
+                    return Err(CampaignError::Subject(
+                        "candidate snapshot exceeds bound".into(),
+                    ));
+                }
+                if observed.insert(name, path).is_some() || observed.len() > MAX_FILES {
+                    return Err(CampaignError::Subject(
+                        "candidate snapshot inventory invalid".into(),
+                    ));
+                }
+            } else {
+                return Err(CampaignError::Subject(
+                    "candidate snapshot has link or special file".into(),
+                ));
+            }
+        }
+    }
+    if observed_dirs != expected_dirs || observed.keys().ne(expected.keys()) {
+        return Err(CampaignError::Subject(
+            "candidate snapshot inventory differs from selected Git tree".into(),
+        ));
+    }
+    for (name, (oid, executable)) in expected {
+        let path = &observed[&name];
+        let before =
+            fs::symlink_metadata(path).map_err(|e| CampaignError::Subject(e.to_string()))?;
+        if !before.is_file()
+            || before.file_type().is_symlink()
+            || (before.permissions().mode() & 0o111 != 0) != executable
+        {
+            return Err(CampaignError::Subject(
+                "candidate file mode differs from Git".into(),
+            ));
+        }
+        let mut file = File::open(path).map_err(|e| CampaignError::Subject(e.to_string()))?;
+        let opened = file
+            .metadata()
+            .map_err(|e| CampaignError::Subject(e.to_string()))?;
+        if (opened.dev(), opened.ino()) != (before.dev(), before.ino()) {
+            return Err(CampaignError::Subject(
+                "candidate file changed while opening".into(),
+            ));
+        }
+        let mut child = Command::new("/usr/bin/timeout")
+            .args(["--kill-after=1s", "10s", "/usr/bin/git"])
+            .arg("-C")
+            .arg(repository)
+            .args(["hash-object", "--no-filters", "--stdin"])
+            .env_clear()
+            .env("GIT_NO_REPLACE_OBJECTS", "1")
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_OPTIONAL_LOCKS", "0")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| CampaignError::Subject(format!("Git file hash failed: {e}")))?;
+        let copied = std::io::copy(&mut file, child.stdin.as_mut().unwrap())
+            .map_err(|e| CampaignError::Subject(e.to_string()))?;
+        child.stdin.take();
+        let output = child
+            .wait_with_output()
+            .map_err(|e| CampaignError::Subject(e.to_string()))?;
+        let after =
+            fs::symlink_metadata(path).map_err(|e| CampaignError::Subject(e.to_string()))?;
+        if !output.status.success()
+            || output.stdout.len() > 128
+            || output.stdout != format!("{oid}\n").as_bytes()
+            || copied != before.len()
+            || (after.dev(), after.ino(), after.len(), after.mode())
+                != (before.dev(), before.ino(), before.len(), before.mode())
+        {
+            return Err(CampaignError::Subject(
+                "candidate file bytes differ from Git".into(),
+            ));
+        }
     }
     Ok(())
 }
@@ -269,7 +569,7 @@ pub fn verify_existing_subject(
 }
 
 #[allow(clippy::too_many_arguments)] // Exact successor receipt, profile and gate evidence are separate raw inputs.
-pub(crate) fn verify_existing_subject_dynamic(
+pub fn verify_existing_subject_dynamic(
     repository: &Path,
     identity: &CampaignIdentity,
     baseline: &Baseline,

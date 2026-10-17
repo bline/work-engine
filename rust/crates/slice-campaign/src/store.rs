@@ -16,20 +16,32 @@ use crate::{CampaignError, Result};
 
 const MARKER_V3: &str = ".campaign-native-initial-v3";
 const MARKER_V4: &str = ".campaign-native-remediation-v4";
+const MARKER_QUALIFIED: &str = ".campaign-qualified-initial-v4";
+const MARKER_OFFLINE: &str = ".campaign-offline-initial-v4";
 const DATABASE: &str = "slice-campaign.sqlite";
 const LOCK: &str = ".writer.lock";
 const SCHEMA_V3: &str = include_str!("../migrations/0003_new_root.sql");
 const SCHEMA_V4: &str = include_str!("../migrations/0004_remediation.sql");
 
-fn marker_name(version: u32) -> &'static str {
-    if version == 4 { MARKER_V4 } else { MARKER_V3 }
+fn marker_name(profile: &str) -> &'static str {
+    match profile {
+        crate::contract::QUALIFIED_INITIAL_PROFILE => MARKER_QUALIFIED,
+        crate::contract::OFFLINE_INITIAL_PROFILE => MARKER_OFFLINE,
+        crate::contract::REMEDIATION_PROFILE => MARKER_V4,
+        _ => MARKER_V3,
+    }
 }
 
-fn profile(version: u32) -> &'static str {
-    if version == 4 {
-        crate::contract::REMEDIATION_PROFILE
-    } else {
-        crate::contract::PROFILE
+fn valid_profile(version: u32, selected: &str) -> bool {
+    match version {
+        3 => selected == crate::contract::PROFILE,
+        4 => matches!(
+            selected,
+            crate::contract::REMEDIATION_PROFILE
+                | crate::contract::QUALIFIED_INITIAL_PROFILE
+                | crate::contract::OFFLINE_INITIAL_PROFILE
+        ),
+        _ => false,
     }
 }
 
@@ -163,8 +175,9 @@ impl Store {
         config_digest: &str,
         writer_identity: &str,
         schema_version: u32,
+        selected_profile: &str,
     ) -> Result<Self> {
-        if !matches!(schema_version, 3 | 4) {
+        if !valid_profile(schema_version, selected_profile) {
             return Err(CampaignError::Unsupported(
                 "campaign schema unsupported".into(),
             ));
@@ -175,7 +188,7 @@ impl Store {
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         let marker = Marker {
             schema_version,
-            profile: profile(schema_version).into(),
+            profile: selected_profile.into(),
             root_id: random_id()?,
             anchored_root_sha256: root_path_digest(root),
             trusted_config_digest: config_digest.into(),
@@ -186,7 +199,7 @@ impl Store {
             .write(true)
             .create_new(true)
             .mode(0o600)
-            .open(root.join(marker_name(schema_version)))
+            .open(root.join(marker_name(selected_profile)))
             .map_err(|e| CampaignError::Root(e.to_string()))?;
         use std::io::Write;
         file.write_all(&bytes)
@@ -213,7 +226,13 @@ impl Store {
         File::open(root)
             .and_then(|directory| directory.sync_all())
             .map_err(|e| CampaignError::Io(e.to_string()))?;
-        Self::open(root, config_digest, writer_identity, schema_version)
+        Self::open(
+            root,
+            config_digest,
+            writer_identity,
+            schema_version,
+            selected_profile,
+        )
     }
 
     pub(crate) fn open(
@@ -221,8 +240,9 @@ impl Store {
         config_digest: &str,
         writer_identity: &str,
         schema_version: u32,
+        selected_profile: &str,
     ) -> Result<Self> {
-        if !matches!(schema_version, 3 | 4) {
+        if !valid_profile(schema_version, selected_profile) {
             return Err(CampaignError::Unsupported(
                 "campaign schema unsupported".into(),
             ));
@@ -238,11 +258,11 @@ impl Store {
                 "root is not an anchored private directory".into(),
             ));
         }
-        let marker_file = regular_nofollow(&root.join(marker_name(schema_version)))?;
+        let marker_file = regular_nofollow(&root.join(marker_name(selected_profile)))?;
         let marker: Marker =
             serde_json::from_reader(marker_file).map_err(|e| CampaignError::Root(e.to_string()))?;
         if marker.schema_version != schema_version
-            || marker.profile != profile(schema_version)
+            || marker.profile != selected_profile
             || marker.trusted_config_digest != config_digest
             || marker.writer_identity != writer_identity
             || marker.anchored_root_sha256 != root_path_digest(root)
@@ -357,9 +377,8 @@ impl Store {
                 "database path or inode differs".into(),
             ));
         }
-        let marker_file =
-            regular_nofollow(&self.root.join(marker_name(self.marker.schema_version)))
-                .map_err(|e| CampaignError::Integrity(e.to_string()))?;
+        let marker_file = regular_nofollow(&self.root.join(marker_name(&self.marker.profile)))
+            .map_err(|e| CampaignError::Integrity(e.to_string()))?;
         let marker: Marker = serde_json::from_reader(marker_file)
             .map_err(|e| CampaignError::Integrity(e.to_string()))?;
         if marker.schema_version != self.marker.schema_version

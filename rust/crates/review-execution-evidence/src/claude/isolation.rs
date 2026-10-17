@@ -1,5 +1,5 @@
 use std::ffi::CString;
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsRawFd;
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
@@ -13,6 +13,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use rusqlite::{Connection, OpenFlags};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -22,7 +23,8 @@ use super::{Rp0Error, TrustedClaudeProfile, TrustedRp0Profile};
 const MAX_PROCESS_OUTPUT: usize = 1024 * 1024;
 const REVIEW_ROOT: &str = "/repo/candidate";
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CandidateIndex {
     project: String,
     candidate_tree_sha256: String,
@@ -30,6 +32,7 @@ pub struct CandidateIndex {
     coverage_sha256: String,
     coverage_complete: bool,
     config_db_sha256: String,
+    config_json_sha256: String,
     mcp_config_sha256: String,
     indexed_at: String,
     nodes: u64,
@@ -61,6 +64,21 @@ impl CandidateIndex {
     pub fn edges(&self) -> u64 {
         self.edges
     }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct FrozenBoundaryManifest {
+    schema_version: u32,
+    candidate: PathBuf,
+    private_root: PathBuf,
+    index: CandidateIndex,
+    build_complete: bool,
+    watcher_disabled: bool,
+    bwrap_sha256: String,
+    cbm_sha256: String,
+    launcher_sha256: String,
+    client_sha256: String,
 }
 
 pub struct HostileProbeResult {
@@ -231,6 +249,7 @@ pub struct CandidateBoundary {
     candidate: PathBuf,
     private_root: PathBuf,
     index: CandidateIndex,
+    manifest_sha256: Option<String>,
 }
 
 impl CandidateBoundary {
@@ -347,6 +366,10 @@ impl CandidateBoundary {
             "WORK_ENGINE_QUOTA_BYTES",
             &budget.to_string(),
         ]);
+        #[cfg(feature = "test-support")]
+        if !claude.installed() && std::env::var_os("RP2_RELAY_HOLD_ROOT").is_some() {
+            command.args(["--setenv", "WORK_ENGINE_RP2_HOLD_FIXTURE", "1"]);
+        }
         command.args([
             "--setenv",
             "HOME",
@@ -375,6 +398,21 @@ impl CandidateBoundary {
             relay,
         })
     }
+    /// RP2 installer path: refuse a dirty, wrong or expanded working snapshot
+    /// before CBM indexing and publication. The host repeats this read-only
+    /// selected-tree check when it opens the sealed boundary.
+    pub fn prepare_selected(
+        profile: TrustedRp0Profile,
+        candidate: impl AsRef<Path>,
+        private_root: impl AsRef<Path>,
+        project: &str,
+        selected_tree: &str,
+    ) -> Result<Self, Rp0Error> {
+        slice_campaign::verify_candidate_snapshot(candidate.as_ref(), selected_tree)
+            .map_err(|_| Rp0Error::CandidateDrift)?;
+        Self::prepare(profile, candidate, private_root, project)
+    }
+
     pub fn prepare(
         profile: TrustedRp0Profile,
         candidate: impl AsRef<Path>,
@@ -622,11 +660,13 @@ impl CandidateBoundary {
                 .as_bytes(),
         )?;
         let config_db_sha256 = sha256(&fs::read(private_root.join("review-cache/_config.db"))?);
+        let config_json_sha256 = sha256(&fs::read(private_root.join("review-cache/config.json"))?);
         let mcp_config_sha256 = sha256(&fs::read(private_root.join("session/mcp.json"))?);
         Ok(Self {
             profile,
             candidate,
             private_root,
+            manifest_sha256: None,
             index: CandidateIndex {
                 project: project.to_owned(),
                 candidate_tree_sha256,
@@ -634,12 +674,124 @@ impl CandidateBoundary {
                 coverage_sha256,
                 coverage_complete,
                 config_db_sha256,
+                config_json_sha256,
                 mcp_config_sha256,
                 indexed_at,
                 nodes,
                 edges,
             },
         })
+    }
+
+    /// A completed candidate-only build can be sealed once for installed
+    /// startup. The published hash is selected independently by the host.
+    pub fn publish_manifest(mut self) -> Result<(Self, String), Rp0Error> {
+        self.verify_frozen()?;
+        verify_store(
+            &self
+                .private_root
+                .join("review-cache")
+                .join(format!("{}.db", self.index.project)),
+        )?;
+        if !self.index.coverage_complete {
+            return Err(Rp0Error::IncompleteStore);
+        }
+        let manifest = FrozenBoundaryManifest {
+            schema_version: 1,
+            candidate: self.candidate.clone(),
+            private_root: self.private_root.clone(),
+            index: self.index.clone(),
+            build_complete: true,
+            watcher_disabled: true,
+            bwrap_sha256: self.profile.bwrap.sha256().into(),
+            cbm_sha256: self.profile.cbm.sha256().into(),
+            launcher_sha256: self.profile.cbm_launcher.sha256().into(),
+            client_sha256: self.profile.cbm_client.sha256().into(),
+        };
+        let bytes = serde_json::to_vec(&manifest).map_err(|_| Rp0Error::IndexUnavailable)?;
+        let path = self.private_root.join("boundary-manifest.json");
+        write_private(&path, &bytes)?;
+        File::open(&self.private_root)?.sync_all()?;
+        let digest = sha256(&bytes);
+        self.manifest_sha256 = Some(digest.clone());
+        Ok((self, digest))
+    }
+
+    /// Reconstruct only the exact sealed index. This path never invokes CBM
+    /// indexing or a provider and rejects a partial or changed private root.
+    pub fn open_frozen(
+        profile: TrustedRp0Profile,
+        candidate: impl AsRef<Path>,
+        private_root: impl AsRef<Path>,
+        expected_manifest_sha256: &str,
+    ) -> Result<Self, Rp0Error> {
+        profile.verify()?;
+        if expected_manifest_sha256.len() != 64
+            || !expected_manifest_sha256
+                .bytes()
+                .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+        {
+            return Err(Rp0Error::IndexUnavailable);
+        }
+        let candidate = candidate.as_ref();
+        let private_root = private_root.as_ref();
+        if !candidate.is_absolute()
+            || fs::canonicalize(candidate)? != candidate
+            || !private_root.is_absolute()
+            || fs::canonicalize(private_root)? != private_root
+            || private_root.starts_with(candidate)
+        {
+            return Err(Rp0Error::UnsafePrivateRoot);
+        }
+        let root_meta = fs::symlink_metadata(private_root)?;
+        if !root_meta.is_dir()
+            || root_meta.file_type().is_symlink()
+            || root_meta.permissions().mode() & 0o077 != 0
+        {
+            return Err(Rp0Error::UnsafePrivateRoot);
+        }
+        let path = private_root.join("boundary-manifest.json");
+        let meta = fs::symlink_metadata(&path)?;
+        if !meta.file_type().is_file()
+            || meta.permissions().mode() & 0o077 != 0
+            || meta.len() > 64 * 1024
+        {
+            return Err(Rp0Error::IndexUnavailable);
+        }
+        let raw = fs::read(&path)?;
+        if sha256(&raw) != expected_manifest_sha256 {
+            return Err(Rp0Error::IndexUnavailable);
+        }
+        let manifest: FrozenBoundaryManifest =
+            serde_json::from_slice(&raw).map_err(|_| Rp0Error::IndexUnavailable)?;
+        if manifest.schema_version != 1
+            || !manifest.build_complete
+            || !manifest.watcher_disabled
+            || manifest.candidate != candidate
+            || manifest.private_root != private_root
+            || manifest.bwrap_sha256 != profile.bwrap.sha256()
+            || manifest.cbm_sha256 != profile.cbm.sha256()
+            || manifest.launcher_sha256 != profile.cbm_launcher.sha256()
+            || manifest.client_sha256 != profile.cbm_client.sha256()
+            || !manifest.index.coverage_complete
+        {
+            return Err(Rp0Error::IndexUnavailable);
+        }
+        let boundary = Self {
+            profile,
+            candidate: candidate.into(),
+            private_root: private_root.into(),
+            index: manifest.index,
+            manifest_sha256: Some(expected_manifest_sha256.into()),
+        };
+        boundary.verify_frozen()?;
+        verify_store(
+            &boundary
+                .private_root
+                .join("review-cache")
+                .join(format!("{}.db", boundary.index.project)),
+        )?;
+        Ok(boundary)
     }
 
     pub fn index(&self) -> &CandidateIndex {
@@ -729,6 +881,11 @@ impl CandidateBoundary {
 
     pub fn verify_frozen(&self) -> Result<(), Rp0Error> {
         self.profile.verify()?;
+        if let Some(expected) = &self.manifest_sha256
+            && sha256(&fs::read(self.private_root.join("boundary-manifest.json"))?) != *expected
+        {
+            return Err(Rp0Error::IndexUnavailable);
+        }
         if tree_digest(&self.candidate)? != self.index.candidate_tree_sha256 {
             return Err(Rp0Error::CandidateDrift);
         }
@@ -751,6 +908,12 @@ impl CandidateBoundary {
         if sha256(&fs::read(
             self.private_root.join("review-cache/_config.db"),
         )?) != self.index.config_db_sha256
+        {
+            return Err(Rp0Error::IncompleteStore);
+        }
+        if sha256(&fs::read(
+            self.private_root.join("review-cache/config.json"),
+        )?) != self.index.config_json_sha256
         {
             return Err(Rp0Error::IncompleteStore);
         }
@@ -933,6 +1096,22 @@ fn reviewer_command(
     }
     command.arg("--dir").arg("/repo");
     command.arg("--ro-bind").arg(candidate).arg(REVIEW_ROOT);
+    // The selected Git tree excludes administrative data. Hide it from the
+    // reviewer mount so the snapshot verifier covers every exposed source
+    // file, including when a checkout uses a .git pointer file.
+    let git_admin = candidate.join(".git");
+    match fs::symlink_metadata(&git_admin) {
+        Ok(metadata) if metadata.file_type().is_dir() => {
+            command.args(["--tmpfs", "/repo/candidate/.git"]);
+            command.args(["--remount-ro", "/repo/candidate/.git"]);
+        }
+        Ok(metadata) if metadata.file_type().is_file() => {
+            command.args(["--ro-bind", "/dev/null", "/repo/candidate/.git"]);
+        }
+        Ok(_) => return Err(Rp0Error::CandidateDrift),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => return Err(Rp0Error::CandidateDrift),
+    }
     if mount_proc {
         command.args(["--proc", "/proc"]);
     }
@@ -1094,6 +1273,53 @@ fn serve_one(
                 }
                 break Err(Rp0Error::OutputLimit);
             }
+            #[cfg(feature = "test-support")]
+            if request.get("method").and_then(Value::as_str) == Some("rp2/hold") {
+                // A fixture-only RPC on the already accepted peer socket.
+                // No guest path is made writable and ordinary graph requests
+                // retain the production allowlist below.
+                let hold_root = std::env::var_os("RP2_RELAY_HOLD_ROOT");
+                if cancel.is_none()
+                    || hold_root.is_none()
+                    || request.as_object().is_none_or(|fields| fields.len() != 3)
+                    || id != Some(json!(2))
+                {
+                    break Err(Rp0Error::IsolationFailed);
+                }
+                let hold_root = PathBuf::from(hold_root.unwrap());
+                if !hold_root.is_dir() {
+                    break Err(Rp0Error::IsolationFailed);
+                }
+                fixture_hold_marker(&hold_root, "entered")?;
+                let released = hold_root.join("released");
+                let hold_deadline = Instant::now() + Duration::from_secs(30);
+                loop {
+                    if cancel
+                        .as_ref()
+                        .is_some_and(|flag| flag.load(Ordering::SeqCst))
+                        || Instant::now() >= hold_deadline
+                    {
+                        break Err(Rp0Error::IsolationFailed);
+                    }
+                    match fs::read(&released) {
+                        Ok(bytes) if bytes == b"release\n" => break Ok(()),
+                        Ok(_) => break Err(Rp0Error::IsolationFailed),
+                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                            thread::sleep(Duration::from_millis(5));
+                        }
+                        Err(error) => break Err(error.into()),
+                    }
+                }?;
+                fixture_hold_marker(&hold_root, "exited")?;
+                stream.write_all(
+                    json!({"jsonrpc":"2.0","id":2,
+                    "result":{"released":true}})
+                    .to_string()
+                    .as_bytes(),
+                )?;
+                stream.write_all(b"\n")?;
+                continue;
+            }
             if !allowed_mcp_request(&request, project) {
                 if let Some(id) = id {
                     let response = json!({"jsonrpc":"2.0","id":id,"error":{"code":-32601,
@@ -1102,6 +1328,13 @@ fn serve_one(
                     stream.write_all(b"\n")?;
                 }
                 continue;
+            }
+            #[cfg(feature = "test-support")]
+            if let Some(path) = std::env::var_os("RP2_RELAY_WITNESS") {
+                use std::io::Write;
+                let mut witness = OpenOptions::new().create(true).append(true).open(path)?;
+                witness.write_all(b"peer_request\n")?;
+                witness.sync_all()?;
             }
             if let Some(name) = request.pointer("/params/name").and_then(Value::as_str) {
                 forwarded.push(json!({"id":id,"tool":name}));
@@ -1170,6 +1403,19 @@ fn serve_one(
         "backend_forwarded":forwarded,"mcp_request_count":request_count,
         "mcp_request_budget":MAX_MCP_REQUESTS}),
     )
+}
+
+#[cfg(feature = "test-support")]
+fn fixture_hold_marker(root: &Path, name: &str) -> Result<(), Rp0Error> {
+    let mut marker = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(root.join(name))?;
+    marker.write_all(name.as_bytes())?;
+    marker.write_all(b"\n")?;
+    marker.sync_all()?;
+    File::open(root)?.sync_all()?;
+    Ok(())
 }
 
 unsafe extern "C" {
@@ -1396,9 +1642,15 @@ pub(crate) fn tree_digest(root: &Path) -> Result<String, Rp0Error> {
     let mut files = Vec::new();
     let mut stack = vec![root.to_owned()];
     while let Some(directory) = stack.pop() {
-        for entry in fs::read_dir(directory)? {
+        for entry in fs::read_dir(&directory)? {
             let entry = entry?;
             let path = entry.path();
+            // Git administrative metadata is outside the reviewed source tree.
+            // The campaign checks the exact Git subject independently; CBM
+            // coverage and the frozen source digest bind only candidate bytes.
+            if directory == root && entry.file_name() == ".git" {
+                continue;
+            }
             let kind = entry.file_type()?;
             if kind.is_dir() {
                 stack.push(path);
@@ -1429,13 +1681,21 @@ fn candidate_relative_paths(root: &Path) -> Result<Vec<String>, Rp0Error> {
     let mut paths = Vec::new();
     let mut stack = vec![root.to_owned()];
     while let Some(directory) = stack.pop() {
-        for entry in fs::read_dir(directory)? {
+        for entry in fs::read_dir(&directory)? {
             let entry = entry?;
             let path = entry.path();
+            if directory == root && entry.file_name() == ".git" {
+                continue;
+            }
             let kind = entry.file_type()?;
             if kind.is_dir() {
                 stack.push(path);
             } else if kind.is_file() {
+                // CBM explicitly excludes opaque binary assets. Their bytes
+                // remain in tree_digest; coverage asserts only indexed input.
+                if path.extension().is_some_and(|extension| extension == "bin") {
+                    continue;
+                }
                 let relative = path
                     .strip_prefix(root)
                     .map_err(|_| Rp0Error::CandidateDrift)?;

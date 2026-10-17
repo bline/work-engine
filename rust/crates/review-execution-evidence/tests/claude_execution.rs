@@ -4,7 +4,7 @@ mod claude_common;
 use std::fs;
 use std::time::Duration;
 
-use claude_common::{counts, fixture};
+use claude_common::{counts, fixture, fixture_with_profile_binding};
 use review_execution_evidence::claude::{InitialEntryPermit, QualifiedReader, QualifiedWriter};
 use review_execution_evidence::{
     EvidenceClass, EvidenceReadError, EvidenceReader, ExecutionEvidenceOwner, ExecutionPublication,
@@ -50,6 +50,48 @@ async fn offline_peer_capture_reopens_with_exact_result_and_session() {
         ExecutionPublication::Replayed(reference.clone())
     );
     assert_eq!(counts(&f.witness), (1, 1));
+}
+
+#[tokio::test]
+async fn checked_reader_preserves_distinct_physical_and_execution_profile_identities() {
+    let temp = tempfile::tempdir().unwrap();
+    let physical = "f".repeat(64);
+    let fixture = fixture_with_profile_binding(
+        temp.path(),
+        "success",
+        Duration::from_secs(2),
+        None,
+        Some(&physical),
+    );
+    let pin = fixture.scope.reader_selection().unwrap();
+    let execution = fixture
+        .scope
+        .provenance()
+        .binding
+        .execution_profile_digest
+        .clone()
+        .unwrap();
+    assert_ne!(physical, execution);
+    let permit = InitialEntryPermit::offline_peer(&fixture.scope);
+    let mut writer = QualifiedWriter::create(&fixture.root, fixture.scope).unwrap();
+    let reference = match writer.execute_initial(permit).await.unwrap() {
+        ExecutionPublication::Committed(reference) => reference,
+        other => panic!("unexpected publication: {other:?}"),
+    };
+    drop(writer);
+    let checked = QualifiedReader::open(&fixture.root, pin)
+        .unwrap()
+        .read_result(&reference)
+        .unwrap();
+    assert_eq!(checked.provenance().binding.profile_digest, physical);
+    assert_eq!(
+        checked
+            .provenance()
+            .binding
+            .execution_profile_digest
+            .as_deref(),
+        Some(execution.as_str())
+    );
 }
 
 fn claude_common_binding(sha: &str) -> claim_evidence::ProductionPathAdmissionBinding {

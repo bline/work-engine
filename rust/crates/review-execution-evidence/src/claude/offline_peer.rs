@@ -4,7 +4,7 @@ use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
@@ -47,24 +47,80 @@ fn main() {
     if !input.is_empty() {
         witness("prompt");
     }
-    let prompt: Value = serde_json::from_slice(&input).unwrap();
+    // RP2's permanent host adds the exact prepared request after the pinned
+    // prompt. The fixture peer parses both without treating the suffix as an
+    // instruction or allowing it to select a different result template.
+    let prompt = if let Some(split) = input
+        .windows(b"\n\n-- Bound review request --\n".len())
+        .position(|window| window == b"\n\n-- Bound review request --\n")
+    {
+        let suffix = split + b"\n\n-- Bound review request --\n".len();
+        let _: Value = serde_json::from_slice(&input[suffix..]).unwrap();
+        serde_json::from_slice::<Value>(&input[..split]).unwrap()
+    } else {
+        serde_json::from_slice(&input).unwrap()
+    };
+    let mut fixture_hold_millis = None;
     if let Ok(project) = std::env::var("WORK_ENGINE_CBM_PROJECT") {
         let mut stream = UnixStream::connect("/cbm/socket/analysis.sock").unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
         let request = json!({"jsonrpc":"2.0","id":1,"method":"tools/call",
             "params":{"name":"index_status","arguments":{"project":project,
                 "format":"json","diagnostics":"none"}}});
         writeln!(stream, "{request}").unwrap();
         let mut response = String::new();
-        BufReader::new(stream).read_line(&mut response).unwrap();
+        reader.read_line(&mut response).unwrap();
         if response.is_empty() {
             std::process::exit(46);
         }
+        let cbm_response: Value = serde_json::from_str(&response).unwrap();
+        if cbm_response["id"] != 1 || cbm_response.get("result").is_none() {
+            std::process::exit(46);
+        }
+        if prompt
+            .get("input")
+            .unwrap_or(&prompt)
+            .get("mode")
+            .and_then(Value::as_str)
+            == Some("held_success")
+            && std::env::var("WORK_ENGINE_RP2_HOLD_FIXTURE")
+                .ok()
+                .as_deref()
+                == Some("1")
+        {
+            let entered = Instant::now();
+            writeln!(
+                stream,
+                "{}",
+                json!({"jsonrpc":"2.0","id":2,"method":"rp2/hold"})
+            )
+            .unwrap();
+            response.clear();
+            reader.read_line(&mut response).unwrap();
+            let reply: Value = serde_json::from_str(&response).unwrap();
+            if reply["id"] != 2 || reply["result"]["released"] != true {
+                std::process::exit(47);
+            }
+            let hold_millis = entered.elapsed().as_millis() as u64;
+            // The relay acknowledges only after the host has released its
+            // fixture hold. This is the actual blocked peer interval.
+            fixture_hold_millis = Some(hold_millis);
+        }
     }
-    let mode = prompt
+    let control = prompt.get("input").unwrap_or(&prompt);
+    let mode = control
         .get("mode")
         .and_then(Value::as_str)
         .unwrap_or("success");
+    let mut offline_hold_millis = None;
     match mode {
+        "held_success" => {
+            offline_hold_millis = fixture_hold_millis.or_else(|| {
+                let hold_started = Instant::now();
+                std::thread::sleep(Duration::from_secs(6));
+                Some(hold_started.elapsed().as_millis() as u64)
+            });
+        }
         "timeout" => std::thread::sleep(Duration::from_secs(10)),
         "exit" => std::process::exit(7),
         "malformed" => {
@@ -171,7 +227,7 @@ fn main() {
     if mode == "mixed_model" {
         usage.insert("other-model".into(), json!({"inputTokens":1}));
     }
-    let mut result = prompt.get("result").cloned().unwrap_or(Value::Null);
+    let mut result = control.get("result").cloned().unwrap_or(Value::Null);
     if mode == "wrong_subject" {
         result["subject"]["commit"] = json!("different");
     }
@@ -179,7 +235,8 @@ fn main() {
         result["verdict"] = json!("invalid-verdict");
     }
     let output = json!({"type":"result","subtype":if mode == "error_route" {"error"} else {"success"},"session_id":returned_session,
-        "model":returned_model,"modelUsage":usage,"structured_output":result});
+        "model":returned_model,"modelUsage":usage,"structured_output":result,
+        "offlineHoldMillis":offline_hold_millis});
     println!("{output}");
 }
 

@@ -15,7 +15,7 @@ pub use isolation::{CandidateBoundary, CandidateIndex, HostileProbeResult};
 pub use profile::{PinnedProgram, Rp0Error, TrustedClaudeProfile, TrustedRp0Profile};
 pub use qualified::{
     InitialEntryPermit, QualifiedReaderSelection, QualifiedScope, QualifiedSelection,
-    SessionEvolutionPermit,
+    SessionEvolutionPermit, compose_applied_initial_prompt,
 };
 pub use reader::QualifiedReader;
 pub use session::{RetainedReviewSession, SessionLocator};

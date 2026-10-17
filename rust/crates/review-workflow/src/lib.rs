@@ -10,6 +10,7 @@
 //! ```
 mod initial;
 pub mod protocol;
+mod provider;
 mod recovery;
 pub mod startup;
 
@@ -89,8 +90,11 @@ impl Workflow {
     pub fn initialize(startup: TrustedStartup) -> Result<Snapshot> {
         initial::initialize(startup)
     }
-    pub fn open(startup: TrustedStartup) -> Result<Self> {
-        let campaign = Campaign::open(startup.campaign_config()?)?;
+    pub fn open(mut startup: TrustedStartup) -> Result<Self> {
+        let mut campaign = Campaign::open(startup.campaign_config()?)?;
+        if let Some(qualified) = startup.qualified.as_mut() {
+            qualified.install(&mut campaign)?;
+        }
         review_episode_store::EpisodeStore::open_native(
             &startup.document.roots.episode,
             review_episode_store::StoreOptions::default(),

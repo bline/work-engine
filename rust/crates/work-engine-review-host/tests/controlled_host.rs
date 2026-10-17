@@ -3,6 +3,202 @@ mod support;
 use serde_json::json;
 use support::*;
 
+#[cfg(feature = "test-support")]
+fn synthetic_join_fixture(findings: bool) -> Fixture {
+    use review_execution_evidence::test_support::{FIXTURE_PROFILE, FIXTURE_VERIFIER};
+    let mut fixture = Fixture::new(0, "result");
+    let root = fixture.temp.path();
+    let custody = json!({"owner":"review-execution-evidence","verifier":FIXTURE_VERIFIER,
+        "profile":FIXTURE_PROFILE,"artifact_schemes":["execution-artifact:"],
+        "reference_schemes":["execution-evidence:"]});
+    let mut source: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&fixture.document.claims.source.path).unwrap())
+            .unwrap();
+    source["custody_config_sha256"] = json!(claim_digest(&custody));
+    source["grant_ids"] = json!(["h1-production", "h1-completion"]);
+    let source_pin = data(root, "synthetic-claims-source.json", &source);
+    let authority = json!({"owner":source["owner"],"reference":source["reference"],
+        "revision":source["revision"],"integrity_sha256":source_pin.sha256,
+        "freshness":source["freshness"],"status":"verified"});
+    let mut config: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(&fixture.document.claims.configuration.path).unwrap(),
+    )
+    .unwrap();
+    config["trusted_custody"] = custody;
+    config["grants"][0]["authority_reference"] = authority;
+    let completion_authority = config["grants"][0]["authority_reference"].clone();
+    config["grants"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"schema_version":1,
+        "grant_id":"h1-completion","actor":"campaign",
+        "profile":"revision-bound-review-finding-v1",
+        "permissions":["create_claim","publish_revision","record_reliance"],
+        "decision_scope":"h1-initial","authority_reference":completion_authority}));
+    fixture.document.claims.production_grant_sha256 = claim_digest(&config["grants"][0]);
+    fixture.document.claims.source = source_pin;
+    fixture.document.claims.configuration = data(root, "synthetic-claims-config.json", &config);
+    if findings {
+        let mut input: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&fixture.document.request_input.path).unwrap())
+                .unwrap();
+        input["resultTemplate"] = serde_json::from_str(include_str!(
+            "../../../../app-server/tests/fixtures/implementation-review/remediation-required.json"
+        ))
+        .unwrap();
+        fixture.document.request_input = data(root, "synthetic-findings-input.json", &input);
+    }
+    fixture.save();
+    fixture
+}
+
+#[cfg(feature = "test-support")]
+fn initialize_synthetic(fixture: &Fixture) -> serde_json::Value {
+    let output = std::process::Command::new(&fixture.host)
+        .args(["initialize", "--startup"])
+        .arg(&fixture.startup)
+        .env("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+#[cfg(feature = "test-support")]
+#[test]
+fn synthetic_fixture_runs_the_shared_workflow_join_with_distinct_profile_identities() {
+    let fixture = synthetic_join_fixture(false);
+    let initialized = initialize_synthetic(&fixture);
+    let revision = initialized["campaign"]["revision"].as_str().unwrap();
+    let mut host = fixture.start(&[("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1")]);
+    host.ready();
+    host.domain("execute_initial", revision);
+    let joined = host.receive();
+    assert_eq!(
+        joined["result"]["outcome"]["status"], "committed",
+        "{joined}"
+    );
+    assert_eq!(
+        joined["result"]["outcome"]["view"]["kind"],
+        "evidence_unestablished"
+    );
+    assert_eq!(
+        joined["result"]["executionEvidence"]["profile"],
+        "controlled-fixture-v1"
+    );
+    assert_eq!(fixture.entries(), 1);
+    let joined_receipt = joined["result"]["outcome"]["receipt"].clone();
+    let last = joined["result"]["lastCheckedRevision"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    host.finish();
+    let mut cold = fixture.start(&[("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1")]);
+    cold.ready();
+    cold.domain("recover_initial", &last);
+    let replay = cold.receive();
+    assert_eq!(
+        replay["result"]["outcome"]["receipt"], joined_receipt,
+        "{replay}"
+    );
+    assert_eq!(fixture.entries(), 1, "cold recovery entered the peer again");
+    cold.finish();
+}
+
+#[cfg(feature = "test-support")]
+#[test]
+fn synthetic_fixture_shared_join_commits_finding_without_production_custody() {
+    let fixture = synthetic_join_fixture(true);
+    let initialized = initialize_synthetic(&fixture);
+    let revision = initialized["campaign"]["revision"].as_str().unwrap();
+    let mut host = fixture.start(&[
+        ("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1"),
+        ("RP2_TEST_SYNTHETIC_ESTABLISHED", "1"),
+    ]);
+    host.ready();
+    host.domain("execute_initial", revision);
+    let joined = host.receive();
+    assert_eq!(
+        joined["result"]["outcome"]["status"], "committed",
+        "{joined}"
+    );
+    let view = &joined["result"]["outcome"]["view"];
+    assert_eq!(view["kind"], "awaiting_builder", "{view}");
+    assert_eq!(view["findings"].as_array().unwrap().len(), 1, "{view}");
+    assert_eq!(fixture.entries(), 1);
+    host.finish();
+}
+
+#[cfg(all(feature = "test-support", feature = "test-faults"))]
+#[test]
+fn synthetic_fixture_join_recovers_owner_stage_cuts_without_reentry() {
+    use std::time::{Duration, Instant};
+    for (environment, cut) in [
+        ("REVIEW_HOST_FAULT_CUT", "after_e1_terminal"),
+        (
+            "SLICE_CAMPAIGN_FAULT_CUT",
+            "j1_after_establishment_builder_commit",
+        ),
+        ("REVIEW_HOST_FAULT_CUT", "after_episode_result"),
+        ("REVIEW_HOST_FAULT_CUT", "after_j2_outcome"),
+    ] {
+        let fixture = synthetic_join_fixture(false);
+        let initialized = initialize_synthetic(&fixture);
+        let revision = initialized["campaign"]["revision"].as_str().unwrap();
+        let directory = fixture.temp.path().to_str().unwrap();
+        let mut host = fixture.start(&[
+            ("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1"),
+            (environment, cut),
+            ("REVIEW_HOST_FAULT_DIR", directory),
+            ("SLICE_CAMPAIGN_FAULT_DIR", directory),
+        ]);
+        host.ready();
+        host.domain("execute_initial", revision);
+        let signal = fixture.temp.path().join(format!("{cut}.ready"));
+        let deadline = Instant::now() + Duration::from_secs(180);
+        while !signal.exists() {
+            assert!(
+                host.child.try_wait().unwrap().is_none(),
+                "host exited before {cut}"
+            );
+            assert!(
+                Instant::now() < deadline,
+                "synthetic cut not reached: {cut}"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        host.child.kill().unwrap();
+        host.child.wait().unwrap();
+        drop(host);
+        assert_eq!(fixture.entries(), 1, "{cut}");
+        let mut recovered = fixture.start(&[("RP2_TEST_SYNTHETIC_FIXTURE_JOIN", "1")]);
+        let ready = recovered.ready();
+        let latest = ready["result"]["lastObservation"]["revision"]
+            .as_str()
+            .unwrap();
+        recovered.domain("recover_initial", latest);
+        let reply = recovered.receive();
+        assert_eq!(
+            reply["result"]["outcome"]["status"], "committed",
+            "{cut}: {reply}"
+        );
+        assert_eq!(
+            reply["result"]["outcome"]["view"]["kind"],
+            "evidence_unestablished"
+        );
+        assert_eq!(
+            fixture.entries(),
+            1,
+            "recovery launched a second peer at {cut}"
+        );
+        recovered.finish();
+    }
+}
+
 #[test]
 fn permanent_cli_runs_real_owners_once_and_recovers_original_outcome() {
     let f = Fixture::new(50, "result");
@@ -181,7 +377,18 @@ fn longest_native_operation_id_executes_and_recovers_original_outcome() {
     assert_eq!(f.entries(), 1);
     client.finish();
     let mut reopened = f.start(&[]);
-    reopened.ready();
+    let ready = reopened.ready();
+    assert_eq!(ready["result"]["admissionOpen"], true, "{ready}");
+    assert_eq!(ready["result"]["busy"], false, "{ready}");
+    assert_eq!(
+        ready["result"]["lastObservation"]["selectedAttempt"]["preparationOperationId"],
+        format!("{}:prepare", f.document.operation_id),
+        "{ready}"
+    );
+    assert_eq!(
+        ready["result"]["lastObservation"]["selectedAttempt"]["outcome"], "failed_with_result",
+        "{ready}"
+    );
     reopened.send(json!({"version":1,"requestId":"recover","operation":"recover_initial","obligationId":f.document.obligation_id,"operationId":f.document.operation_id,"expectedRevision":completed["result"]["lastCheckedRevision"]}));
     let recovered = reopened.receive();
     assert_eq!(

@@ -25,6 +25,7 @@ fn fixture(
             candidate_digest: "a".repeat(64),
             selection_digest: "b".repeat(64),
             profile_digest: "c".repeat(64),
+            execution_profile_digest: None,
             prepared_request_sha256: "d".repeat(64),
             review_episode_id: "episode-1".into(),
             attempt_id: "attempt-1".into(),

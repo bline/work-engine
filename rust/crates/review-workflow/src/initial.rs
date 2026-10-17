@@ -1,3 +1,4 @@
+use crate::provider::QualifiedInitialLaunch;
 use crate::{Error, Result, Workflow, effect, fault_cut, refuse, startup::TrustedStartup};
 use claim_evidence::{BootstrapFiles, RootIdentity};
 use review_episode::{
@@ -13,16 +14,22 @@ use review_episode_core::{
 use review_episode_store::{
     EpisodeStore, NativeRootSelection, StoreOptions, init_native_root, read_native_selection,
 };
+#[cfg(feature = "test-support")]
+use review_execution_evidence::CheckedObservation;
+#[cfg(feature = "test-support")]
+use review_execution_evidence::test_support::{
+    ControlledFixtureOwner, FIXTURE_PROFILE, FixtureRecord,
+};
 use review_execution_evidence::{
     ControlledScope, EvidenceReader, EvidenceReaderProfile, EvidenceWriter, ExecutionBinding,
     ExecutionEvidenceOwner, ExecutionEvidenceRef, ExecutionProvenance, ExecutionPublication,
 };
 use serde_json::{Value, json};
 use slice_campaign::{
-    AdmitRequest, AdvancePhase, Campaign, CampaignRevision, Consequence, DispatchCommand,
-    DispatchEffect, InitialCompletionOwners, InitialCompletionProgress, InitialJoinSelection,
-    InitialOutcomeState, InitialProgressState, NativeReviewRequestRef, Preparation, Snapshot,
-    StageKind, StageProgress,
+    AdmitRequest, AdvancePhase, Campaign, CampaignRevision, CompletionSelection, Consequence,
+    DispatchCommand, DispatchEffect, DispatchedRequest, InitialCompletionOwners,
+    InitialCompletionProgress, InitialJoinSelection, InitialOutcomeState, InitialProgressState,
+    NativeReviewRequestRef, Preparation, Snapshot, StageKind, StageProgress,
 };
 use std::{path::Path, sync::Arc};
 
@@ -140,7 +147,11 @@ impl Workflow {
                 .ok_or_else(|| refuse("scope", "physical profile absent"))?
                 .into(),
         };
-        self.scope(&sizing, &"0".repeat(64))?.validate()?;
+        if self.startup.qualified.is_some() {
+            self.qualified_scope(&sizing, &"0".repeat(64))?;
+        } else {
+            self.scope(&sizing, &"0".repeat(64))?.validate()?;
+        }
         fault_cut("before_dispatch");
         let d = &self.startup.document;
         let prepared = match self.campaign.prepare_initial(
@@ -166,6 +177,7 @@ impl Workflow {
             }
         };
         fault_cut("after_preparation");
+        let prepared_request = prepared.request.clone();
         let command = self.command();
         let (permit, receipt) = match self.campaign.authorize_dispatch(
             prepared.handle,
@@ -186,7 +198,29 @@ impl Workflow {
             }
         };
         fault_cut("after_dispatch");
-        let dispatched = self.campaign.consume_dispatch_permit(permit)?;
+        let (dispatched, qualified_launch) = if let Some(runtime) = &self.startup.qualified {
+            let launch = if runtime.installed() {
+                QualifiedInitialLaunch::Installed(self.campaign.consume_qualified_initial(permit)?)
+            } else {
+                #[cfg(feature = "test-support")]
+                {
+                    QualifiedInitialLaunch::Offline(self.campaign.consume_offline_initial(permit)?)
+                }
+                #[cfg(not(feature = "test-support"))]
+                {
+                    return Err(refuse("unsupported", "offline initial route unavailable"));
+                }
+            };
+            (
+                DispatchedRequest {
+                    request: prepared_request,
+                    command: command.clone(),
+                },
+                Some(launch),
+            )
+        } else {
+            (self.campaign.consume_dispatch_permit(permit)?, None)
+        };
         if dispatched.command != command {
             return Err(refuse("conflict", "consumed dispatch differs"));
         }
@@ -224,8 +258,22 @@ impl Workflow {
         }
         drop(reader);
         fault_cut("after_episode_begin");
-        let scope = self.scope(&dispatched.request, receipt.result_revision.as_str())?;
-        let reference = self.launch(launch, scope).await?;
+        let reference = if let Some(entry) = qualified_launch {
+            let scope =
+                self.qualified_scope(&dispatched.request, receipt.result_revision.as_str())?;
+            #[cfg(feature = "test-support")]
+            let scope = {
+                let mut scope = scope;
+                if let Some(field) = std::env::var_os("RP2_TEST_APPLIED_SCOPE_MUTATION") {
+                    scope.test_mutate_offline_applied_scope(&field.to_string_lossy())?;
+                }
+                scope
+            };
+            self.launch_qualified(entry, scope).await?
+        } else {
+            let scope = self.scope(&dispatched.request, receipt.result_revision.as_str())?;
+            self.launch(launch, scope).await?
+        };
         self.join(reference)
     }
     async fn launch(
@@ -261,6 +309,11 @@ impl Workflow {
         let d = &self.startup.document;
         let command = self.command();
         let bytes = self.startup.request_bytes(request)?;
+        #[cfg(feature = "test-support")]
+        let execution_profile_digest =
+            std::env::var_os("RP2_TEST_SYNTHETIC_FIXTURE_JOIN").map(|_| "e".repeat(64));
+        #[cfg(not(feature = "test-support"))]
+        let execution_profile_digest = None;
         Ok(ControlledScope {
             root_id: d.peer.evidence_root_id.clone(),
             provenance: ExecutionProvenance {
@@ -270,6 +323,7 @@ impl Workflow {
                     candidate_digest: request.candidate.receipt_sha256.clone(),
                     selection_digest: request.selection.campaign_digest.clone(),
                     profile_digest: request.profile_digest.clone(),
+                    execution_profile_digest,
                     prepared_request_sha256: request.request_digest.clone(),
                     review_episode_id: command.episode_id,
                     attempt_id: d.identity.attempt_id.clone(),
@@ -300,15 +354,134 @@ impl Workflow {
             .and_then(|o| o.request)
             .ok_or_else(|| refuse("unresolved", "original prepared request absent"))?;
         let dispatch = self.dispatch_receipt(&prepared)?;
-        let scope = self.scope(&prepared, dispatch.result_revision.as_str())?;
-        let reader: Arc<dyn ExecutionEvidenceOwner> = Arc::new(EvidenceReader::open(
-            &d.roots.evidence,
-            scope.reader_pin()?,
-        )?);
+        #[allow(unused_mut)] // Test-support injects a separately classified synthetic owner.
+        let (mut reader, expected_provenance, mut evidence_profile, mut evidence_record_profile): (
+            Arc<dyn ExecutionEvidenceOwner>,
+            ExecutionProvenance,
+            EvidenceReaderProfile,
+            &str,
+        ) = if let Some(runtime) = &self.startup.qualified {
+            let scope = self.qualified_scope(&prepared, dispatch.result_revision.as_str())?;
+            let expected = scope.reader_selection()?;
+            let reader = review_execution_evidence::claude::QualifiedReader::open(
+                &d.roots.evidence,
+                expected,
+            )?;
+            (
+                Arc::new(reader),
+                scope.provenance().clone(),
+                EvidenceReaderProfile::QualifiedProvider,
+                if runtime.installed() {
+                    "claude-qualified-v1"
+                } else {
+                    "claude-offline-peer-v1"
+                },
+            )
+        } else {
+            let scope = self.scope(&prepared, dispatch.result_revision.as_str())?;
+            let reader = EvidenceReader::open(&d.roots.evidence, scope.reader_pin()?)?;
+            (
+                Arc::new(reader),
+                scope.provenance,
+                EvidenceReaderProfile::ControlledProcess,
+                "controlled-process-v1",
+            )
+        };
+        #[allow(unused_mut)] // Test-support substitutes a separately classified fixture reference.
+        let mut reference = reference;
+        // This adapter exists only in test-support builds. It replaces a
+        // checked controlled-process result with a separately classified
+        // synthetic fixture record before entering the same J1/J2 join below.
+        // The ordinary qualified/offline path still refuses fixture custody.
+        #[cfg(feature = "test-support")]
+        if std::env::var_os("RP2_TEST_SYNTHETIC_FIXTURE_JOIN").is_some() {
+            if self.startup.qualified.is_some() {
+                return Err(refuse("unsupported", "synthetic join is controlled-only"));
+            }
+            let original = reader.read_result(&reference)?;
+            if expected_provenance
+                .binding
+                .execution_profile_digest
+                .as_deref()
+                == Some(expected_provenance.binding.profile_digest.as_str())
+                || expected_provenance
+                    .binding
+                    .execution_profile_digest
+                    .is_none()
+            {
+                return Err(refuse(
+                    "scope",
+                    "synthetic distinct profile identities absent",
+                ));
+            }
+            let mut observation = original.observation().clone();
+            if std::env::var_os("RP2_TEST_SYNTHETIC_ESTABLISHED").is_some() {
+                let CheckedObservation::Present(value) = &observation else {
+                    return Err(refuse("scope", "synthetic established observation absent"));
+                };
+                let mut json: Value =
+                    serde_json::from_str(&claim_evidence::codec::canonical_json(value)?)?;
+                json["coveredState"] = json!("initial review");
+                json["realization"] = json!({"requested":"claude-sonnet-5",
+                    "observed":"claude-sonnet-5"});
+                json["capabilityEnvelope"]["mutationAuthorized"] = json!(false);
+                json["transport"]["mechanism"] = json!("direct");
+                json["observer"] = json!({"identity":"host","kind":"trusted"});
+                json["adapterVersion"] = json!("v1");
+                json.as_object_mut().unwrap().remove("id");
+                let unsigned = claim_evidence::codec::parse_json(&json.to_string())?;
+                json["id"] = json!(format!(
+                    "production-path-observation-v1@{}",
+                    claim_evidence::codec::digest(&unsigned)?
+                ));
+                observation = CheckedObservation::Present(claim_evidence::codec::parse_json(
+                    &json.to_string(),
+                )?);
+            }
+            let artifacts = match &observation {
+                CheckedObservation::Present(value) => {
+                    let json: Value =
+                        serde_json::from_str(&claim_evidence::codec::canonical_json(value)?)?;
+                    json["artifacts"]
+                        .as_array()
+                        .ok_or_else(|| refuse("conflict", "synthetic artifact list absent"))?
+                        .iter()
+                        .map(|artifact| {
+                            artifact["reference"]
+                                .as_str()
+                                .map(str::to_owned)
+                                .ok_or_else(|| {
+                                    refuse("conflict", "synthetic artifact reference absent")
+                                })
+                        })
+                        .collect::<Result<Vec<_>>>()?
+                }
+                CheckedObservation::Absent { .. } => Vec::new(),
+            };
+            let mut synthetic_provenance = original.provenance().clone();
+            synthetic_provenance.binding.execution_profile_digest =
+                expected_provenance.binding.execution_profile_digest.clone();
+            let record = FixtureRecord::controlled(
+                &d.peer.evidence_root_id,
+                &format!("rp2-synthetic-{}", reference.record_id),
+                &reference.revision,
+                original.claim_canonical_bytes().to_vec(),
+                synthetic_provenance,
+                observation,
+                artifacts,
+            )?;
+            reference = record.reference.clone();
+            // The production comparison below must still match the selected
+            // campaign physical identity and the distinct execution identity.
+            reader = Arc::new(ControlledFixtureOwner::new(vec![record])?);
+            evidence_profile = EvidenceReaderProfile::ControlledFixture;
+            evidence_record_profile = FIXTURE_PROFILE;
+        }
         let checked = reader.read_result(&reference)?;
-        if checked.provenance().binding != scope.provenance.binding
-            || checked.provenance().dispatch_revision != scope.provenance.dispatch_revision
-            || checked.provenance().execution_session_id != scope.provenance.execution_session_id
+        evidence_profile.require_class(checked.evidence_class())?;
+        if checked.provenance().binding != expected_provenance.binding
+            || checked.provenance().dispatch_revision != expected_provenance.dispatch_revision
+            || checked.provenance().execution_session_id != expected_provenance.execution_session_id
         {
             return Err(refuse("conflict", "execution provenance differs"));
         }
@@ -323,10 +496,10 @@ impl Workflow {
             production_grant_sha256: d.claims.production_grant_sha256.clone(),
             episode_selection: native.clone(),
             episode_authority: self.startup.authority.clone(),
-            evidence_profile: EvidenceReaderProfile::ControlledProcess,
+            evidence_profile,
             evidence_owner: "review-execution-evidence".into(),
             evidence_root_id: d.peer.evidence_root_id.clone(),
-            evidence_record_profile: "controlled-process-v1".into(),
+            evidence_record_profile: evidence_record_profile.into(),
         };
         let files = BootstrapFiles {
             root: d.roots.claims.clone(),
@@ -342,6 +515,53 @@ impl Workflow {
             self.campaign
                 .initialize_initial_claims(files, selection, reader)?
         };
+        if let Some(runtime) = &self.startup.qualified
+            && runtime.installed()
+        {
+            let completion = CompletionSelection::new(
+                claims.claims().root().clone(),
+                runtime.completion_grant_id.clone(),
+                runtime.completion_grant_sha256.clone(),
+                runtime.completion_grant_id.clone(),
+                runtime.completion_grant_sha256.clone(),
+                runtime.completion_consumer.clone(),
+                prepared.candidate.tree.clone(),
+                runtime.completion_decision_scope.clone(),
+                vec![runtime.completion_authority_source.clone()],
+            )?;
+            self.campaign.install_completion_selection(completion)?;
+        }
+        #[cfg(feature = "test-support")]
+        if std::env::var_os("RP2_TEST_SYNTHETIC_FIXTURE_JOIN").is_some() {
+            let configuration: Value =
+                serde_json::from_slice(&std::fs::read(&d.claims.configuration.path)?)?;
+            let grant = configuration["grants"]
+                .as_array()
+                .and_then(|grants| {
+                    grants
+                        .iter()
+                        .find(|grant| grant["grant_id"] == "h1-completion")
+                })
+                .ok_or_else(|| refuse("scope", "synthetic completion grant absent"))?;
+            let grant_sha = claim_evidence::codec::digest(&claim_evidence::codec::parse_json(
+                &grant.to_string(),
+            )?)?;
+            let completion = CompletionSelection::new(
+                claims.claims().root().clone(),
+                "h1-completion".into(),
+                grant_sha.clone(),
+                "h1-completion".into(),
+                grant_sha,
+                "campaign".into(),
+                prepared.candidate.tree.clone(),
+                grant["decision_scope"]
+                    .as_str()
+                    .ok_or_else(|| refuse("scope", "synthetic decision scope absent"))?
+                    .into(),
+                vec![grant["authority_reference"].clone()],
+            )?;
+            self.campaign.install_completion_selection(completion)?;
+        }
         let completion_id = self.startup.id("completion");
         let locator = if let Some(locator) = self.campaign.locate_initial_completion(
             &d.identity,

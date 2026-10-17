@@ -97,6 +97,9 @@ pub async fn serve(path: PathBuf) -> Result<(), String> {
     let mut chunk = [0u8; 4096];
     let mut observation = json!({"status":"starting","revision":null});
     let mut missed_output = 0u64;
+    let mut status_probes = 0u64;
+    let mut busy_refusals = 0u64;
+    let mut command_errors = 0u64;
     loop {
         if eof && !busy {
             break;
@@ -125,15 +128,16 @@ pub async fn serve(path: PathBuf) -> Result<(), String> {
                     let command = match parsed {
                         Ok(command) => command,
                         Err(error) => {
+                            command_errors += 1;
                             if replies.try_send(json!({"version":1,"requestId":"","error":error})).is_err() { open=false; missed_output+=1; }
                             continue;
                         }
                     };
                     let response = match command.operation {
-                        Operation::Status => Some(json!({"version":1,"requestId":command.request_id,"result":{"status":"host_status","admissionOpen":open,"busy":busy,"snapshotStale":busy,"lastObservation":observation,"missedOutput":missed_output,"outputSlots":OUTPUT_SLOTS}})),
+                        Operation::Status => { status_probes += 1; Some(json!({"version":1,"requestId":command.request_id,"result":{"status":"host_status","admissionOpen":open,"busy":busy,"snapshotStale":busy,"lastObservation":observation,"missedOutput":missed_output,"statusProbes":status_probes,"busyRefusals":busy_refusals,"commandErrors":command_errors,"outputSlots":OUTPUT_SLOTS}})) },
                         Operation::StopAdmission => { open=false; Some(json!({"version":1,"requestId":command.request_id,"result":{"status":"admission_stopped","inFlight":busy,"cancelled":false}})) },
                         _ if !open => Some(refusal(&command.request_id,"stopped","admission is closed")),
-                        _ if busy || !ready => Some(refusal(&command.request_id,"busy","one workflow operation is already in flight")),
+                        _ if busy || !ready => { busy_refusals += 1; Some(refusal(&command.request_id,"busy","one workflow operation is already in flight")) },
                         _ => {
                             match replies.clone().try_reserve_owned() {
                                 Ok(slot) => {

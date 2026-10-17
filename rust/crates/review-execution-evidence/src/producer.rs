@@ -3,15 +3,14 @@ use std::path::{Path, PathBuf};
 
 use claim_evidence::codec::{JsValue, canonical_json, digest, parse_json};
 use claim_evidence::validate_production_path_observation;
-use serde::{Deserialize, Serialize};
+use review_execution_custody::{CapturedRecord, StoredRequest, TerminalRecord};
 
 use crate::contract::{record_digest, require_sha, require_text, sha256};
 use crate::process;
 use crate::store::{PROFILE, ReaderPin, Store};
 use crate::{
-    CheckedExecutionResult, CheckedObservation, EvidenceClass, EvidenceReadError, ExecutionBinding,
-    ExecutionEvidenceRef, ExecutionProvenance, REQUEST_MAX_BYTES, RESULT_MAX_BYTES,
-    TERMINAL_MAX_BYTES,
+    EvidenceReadError, ExecutionEvidenceRef, ExecutionProvenance, REQUEST_MAX_BYTES,
+    RESULT_MAX_BYTES, TERMINAL_MAX_BYTES,
 };
 
 #[derive(Clone, Debug)]
@@ -111,7 +110,7 @@ impl ControlledScope {
 
     pub fn configuration_sha256(&self) -> Result<String, EvidenceReadError> {
         self.validate()?;
-        let stored = StoredRequest::from_scope(self)?;
+        let stored = stored_request_from_scope(self)?;
         let bytes = serde_json::to_vec(&stored)
             .map_err(|_| EvidenceReadError::Conflicting("scope serialization failed"))?;
         Ok(record_digest(&[b"controlled-scope-v1", &bytes]))
@@ -129,126 +128,52 @@ impl ControlledScope {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct StoredRequest {
-    pub schema_version: u32,
-    pub root_id: String,
-    pub campaign_root_id: String,
-    pub obligation_id: String,
-    pub candidate_digest: String,
-    pub selection_digest: String,
-    pub profile_digest: String,
-    pub prepared_request_sha256: String,
-    pub review_episode_id: String,
-    pub attempt_id: String,
-    pub dispatch_operation_id: String,
-    pub dispatch_revision: String,
-    pub execution_session_id: String,
-    pub selection_id: String,
-    pub candidate_commit: String,
-    pub candidate_tree: String,
-    pub candidate_patch_identity: String,
-    pub request_raw_sha256: String,
-    pub request_claim_sha256: String,
-    pub executable_sha256: String,
-    pub executable: String,
-    pub arguments: Vec<String>,
-    pub workspace: String,
-    pub source_sha256: String,
-}
-
-impl StoredRequest {
-    fn from_scope(scope: &ControlledScope) -> Result<Self, EvidenceReadError> {
-        let b = &scope.provenance.binding;
-        let request = parse_json(
-            std::str::from_utf8(&scope.request_bytes)
-                .map_err(|_| EvidenceReadError::Conflicting("request text invalid"))?,
-        )
-        .map_err(|_| EvidenceReadError::Conflicting("request JSON invalid"))?;
-        Ok(Self {
-            schema_version: 1,
-            root_id: scope.root_id.clone(),
-            campaign_root_id: b.campaign_root_id.clone(),
-            obligation_id: b.obligation_id.clone(),
-            candidate_digest: b.candidate_digest.clone(),
-            selection_digest: b.selection_digest.clone(),
-            profile_digest: b.profile_digest.clone(),
-            prepared_request_sha256: b.prepared_request_sha256.clone(),
-            review_episode_id: b.review_episode_id.clone(),
-            attempt_id: b.attempt_id.clone(),
-            dispatch_operation_id: scope.provenance.dispatch_operation_id.clone(),
-            dispatch_revision: scope.provenance.dispatch_revision.clone(),
-            execution_session_id: scope
-                .provenance
-                .execution_session_id
-                .clone()
-                .unwrap_or_default(),
-            selection_id: scope.selection_id.clone(),
-            candidate_commit: scope.candidate_commit.clone(),
-            candidate_tree: scope.candidate_tree.clone(),
-            candidate_patch_identity: scope.candidate_patch_identity.clone(),
-            request_raw_sha256: sha256(&scope.request_bytes),
-            request_claim_sha256: digest(&request)
-                .map_err(|_| EvidenceReadError::Conflicting("request digest invalid"))?,
-            executable_sha256: scope.executable_sha256.clone(),
-            executable: scope
-                .executable
-                .to_str()
-                .ok_or(EvidenceReadError::Unsupported("executable path not UTF-8"))?
-                .into(),
-            arguments: scope.arguments.clone(),
-            workspace: scope
-                .workspace
-                .to_str()
-                .ok_or(EvidenceReadError::Unsupported("workspace path not UTF-8"))?
-                .into(),
-            source_sha256: scope.source_sha256.clone(),
-        })
-    }
-
-    pub fn provenance(&self) -> ExecutionProvenance {
-        ExecutionProvenance {
-            binding: ExecutionBinding {
-                campaign_root_id: self.campaign_root_id.clone(),
-                obligation_id: self.obligation_id.clone(),
-                candidate_digest: self.candidate_digest.clone(),
-                selection_digest: self.selection_digest.clone(),
-                profile_digest: self.profile_digest.clone(),
-                prepared_request_sha256: self.prepared_request_sha256.clone(),
-                review_episode_id: self.review_episode_id.clone(),
-                attempt_id: self.attempt_id.clone(),
-            },
-            dispatch_operation_id: self.dispatch_operation_id.clone(),
-            dispatch_revision: self.dispatch_revision.clone(),
-            execution_session_id: Some(self.execution_session_id.clone()),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct CapturedRecord {
-    pub pid: u32,
-    pub exit_code: i32,
-    pub stdout_sha256: String,
-    pub stderr_sha256: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct TerminalRecord {
-    pub schema_version: u32,
-    pub raw_result_sha256: String,
-    pub claim_result_sha256: String,
-    pub observation_sha256: String,
-    pub stdout_sha256: String,
-    pub stderr_sha256: String,
-    pub transport_sha256: String,
-    pub session_id: String,
-    pub pid: u32,
-    pub exit_code: i32,
-    pub artifact_references: Vec<String>,
+fn stored_request_from_scope(scope: &ControlledScope) -> Result<StoredRequest, EvidenceReadError> {
+    let b = &scope.provenance.binding;
+    let request = parse_json(
+        std::str::from_utf8(&scope.request_bytes)
+            .map_err(|_| EvidenceReadError::Conflicting("request text invalid"))?,
+    )
+    .map_err(|_| EvidenceReadError::Conflicting("request JSON invalid"))?;
+    Ok(StoredRequest {
+        schema_version: 1,
+        root_id: scope.root_id.clone(),
+        campaign_root_id: b.campaign_root_id.clone(),
+        obligation_id: b.obligation_id.clone(),
+        candidate_digest: b.candidate_digest.clone(),
+        selection_digest: b.selection_digest.clone(),
+        profile_digest: b.profile_digest.clone(),
+        prepared_request_sha256: b.prepared_request_sha256.clone(),
+        review_episode_id: b.review_episode_id.clone(),
+        attempt_id: b.attempt_id.clone(),
+        dispatch_operation_id: scope.provenance.dispatch_operation_id.clone(),
+        dispatch_revision: scope.provenance.dispatch_revision.clone(),
+        execution_session_id: scope
+            .provenance
+            .execution_session_id
+            .clone()
+            .unwrap_or_default(),
+        selection_id: scope.selection_id.clone(),
+        candidate_commit: scope.candidate_commit.clone(),
+        candidate_tree: scope.candidate_tree.clone(),
+        candidate_patch_identity: scope.candidate_patch_identity.clone(),
+        request_raw_sha256: sha256(&scope.request_bytes),
+        request_claim_sha256: digest(&request)
+            .map_err(|_| EvidenceReadError::Conflicting("request digest invalid"))?,
+        executable_sha256: scope.executable_sha256.clone(),
+        executable: scope
+            .executable
+            .to_str()
+            .ok_or(EvidenceReadError::Unsupported("executable path not UTF-8"))?
+            .into(),
+        arguments: scope.arguments.clone(),
+        workspace: scope
+            .workspace
+            .to_str()
+            .ok_or(EvidenceReadError::Unsupported("workspace path not UTF-8"))?
+            .into(),
+        source_sha256: scope.source_sha256.clone(),
+    })
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -361,7 +286,7 @@ impl EvidenceWriter {
         if !self.store.events(&attempt)?.is_empty() {
             return self.reconcile();
         }
-        let request = StoredRequest::from_scope(&self.scope)?;
+        let request = stored_request_from_scope(&self.scope)?;
         let request_payload = serde_json::to_vec(&request)
             .map_err(|_| EvidenceReadError::Conflicting("request serialization failed"))?;
         self.store.append(
@@ -434,31 +359,24 @@ impl EvidenceWriter {
             )?;
             return Ok(ExecutionPublication::Unresolved);
         }
-        let checked = match CheckedExecutionResult::from_verified_parts(
-            self.reference(&"0".repeat(64)),
-            &capture.stdout,
-            self.scope.provenance.clone(),
-            CheckedObservation::Absent {
-                reason: "observation pending".into(),
-            },
-            EvidenceClass::ControlledProcess,
-        ) {
-            Ok(checked) => checked,
-            Err(EvidenceReadError::Capacity(_)) => {
-                self.append_capture_failure(
-                    &attempt,
-                    &captured_failure(process::FailureKind::ResultCapacity, &capture),
-                )?;
-                return Ok(ExecutionPublication::Unresolved);
-            }
-            Err(_) => {
-                self.append_capture_failure(
-                    &attempt,
-                    &captured_failure(process::FailureKind::MalformedResult, &capture),
-                )?;
-                return Ok(ExecutionPublication::Unresolved);
-            }
-        };
+        let claim_sha256 =
+            match review_execution_custody::codec::validate_raw_result(&capture.stdout) {
+                Ok(value) => value,
+                Err(EvidenceReadError::Capacity(_)) => {
+                    self.append_capture_failure(
+                        &attempt,
+                        &captured_failure(process::FailureKind::ResultCapacity, &capture),
+                    )?;
+                    return Ok(ExecutionPublication::Unresolved);
+                }
+                Err(_) => {
+                    self.append_capture_failure(
+                        &attempt,
+                        &captured_failure(process::FailureKind::MalformedResult, &capture),
+                    )?;
+                    return Ok(ExecutionPublication::Unresolved);
+                }
+            };
         let captured = CapturedRecord {
             pid: capture.pid,
             exit_code: capture.exit_code,
@@ -470,7 +388,7 @@ impl EvidenceWriter {
         self.store
             .append(&attempt, "result_captured", &captured_payload, &[])?;
         fault_cut("result_captured");
-        let observation = build_observation(&self.scope, &captured, checked.claim_sha256())?;
+        let observation = build_observation(&self.scope, &captured, &claim_sha256)?;
         validate_production_path_observation(&observation)
             .map_err(|_| EvidenceReadError::Conflicting("built observation invalid"))?;
         let observation_bytes = canonical_json(&observation)
@@ -482,7 +400,7 @@ impl EvidenceWriter {
         let terminal = TerminalRecord {
             schema_version: 1,
             raw_result_sha256: sha256(&capture.stdout),
-            claim_result_sha256: checked.claim_sha256().into(),
+            claim_result_sha256: claim_sha256.clone(),
             observation_sha256: digest(&observation)
                 .map_err(|_| EvidenceReadError::Conflicting("observation digest invalid"))?,
             stdout_sha256: captured.stdout_sha256.clone(),

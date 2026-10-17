@@ -1,4 +1,5 @@
 use crate::{Result, Workflow, refuse};
+use review_execution_evidence::claude::{QualifiedReader, QualifiedWriter};
 use review_execution_evidence::{EvidenceReader, EvidenceWriter, ExecutionPublication};
 use serde_json::{Value, json};
 use slice_campaign::{
@@ -86,22 +87,46 @@ impl Workflow {
                 json!({"status":"unresolved","reason":"dispatch committed but execution root absent; entry not disproven","dispatch":receipt,"launchAuthorized":false}),
             );
         }
-        let scope = self.scope(request, receipt.result_revision.as_str())?;
-        let writer = EvidenceWriter::resume(&d.roots.evidence, scope.clone())?;
-        let publication = writer.reconcile()?;
-        drop(writer);
-        match publication {
-            ExecutionPublication::Committed(reference)
-            | ExecutionPublication::Replayed(reference) => self.join(reference),
-            other => {
-                let reader = EvidenceReader::open(&d.roots.evidence, scope.reader_pin()?)?;
-                let failure = match reader.read_local_failure(&d.identity.attempt_id) {
-                    Ok(value) => json!({"status":"observed","failure":value}),
-                    Err(error) => json!({"status":"unavailable","reason":error.to_string()}),
-                };
-                Ok(
-                    json!({"status":"unresolved","reason":format!("execution custody {other:?}"),"failure":failure,"dispatch":receipt,"launchAuthorized":false}),
-                )
+        if self.startup.qualified.is_some() {
+            let scope = self.qualified_scope(request, receipt.result_revision.as_str())?;
+            let mut writer = QualifiedWriter::resume(&d.roots.evidence, scope.clone())?;
+            let publication = writer.reconcile()?;
+            drop(writer);
+            match publication {
+                ExecutionPublication::Committed(reference)
+                | ExecutionPublication::Replayed(reference) => self.join(reference),
+                other => {
+                    let reader =
+                        QualifiedReader::open(&d.roots.evidence, scope.reader_selection()?)?;
+                    let failure = match reader.read_local_failure(&d.identity.attempt_id) {
+                        Ok(value) => json!({"status":"observed","failure":value}),
+                        Err(error) => json!({"status":"unavailable","reason":error.to_string()}),
+                    };
+                    Ok(
+                        json!({"status":"unresolved","reason":format!("qualified custody {other:?}"),
+                        "failure":failure,"dispatch":receipt,"launchAuthorized":false}),
+                    )
+                }
+            }
+        } else {
+            let scope = self.scope(request, receipt.result_revision.as_str())?;
+            let writer = EvidenceWriter::resume(&d.roots.evidence, scope.clone())?;
+            let publication = writer.reconcile()?;
+            drop(writer);
+            match publication {
+                ExecutionPublication::Committed(reference)
+                | ExecutionPublication::Replayed(reference) => self.join(reference),
+                other => {
+                    let reader = EvidenceReader::open(&d.roots.evidence, scope.reader_pin()?)?;
+                    let failure = match reader.read_local_failure(&d.identity.attempt_id) {
+                        Ok(value) => json!({"status":"observed","failure":value}),
+                        Err(error) => json!({"status":"unavailable","reason":error.to_string()}),
+                    };
+                    Ok(
+                        json!({"status":"unresolved","reason":format!("execution custody {other:?}"),
+                        "failure":failure,"dispatch":receipt,"launchAuthorized":false}),
+                    )
+                }
             }
         }
     }

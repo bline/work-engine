@@ -99,7 +99,7 @@ pub(crate) fn anchored_artifacts(repo: &Path) -> (Vec<u8>, Vec<u8>) {
         serde_json::to_vec(&profile).unwrap(),
     )
 }
-fn claim_digest(value: &Value) -> String {
+pub(crate) fn claim_digest(value: &Value) -> String {
     let encoded = serde_json::to_string(value).unwrap();
     let value = claim_evidence::codec::parse_json(&encoded).unwrap();
     claim_evidence::codec::digest(&value).unwrap()
@@ -139,20 +139,21 @@ pub struct Fixture {
     pub host: PathBuf,
     pub count: PathBuf,
 }
-fn pin(path: &Path) -> FilePin {
+pub(crate) fn pin(path: &Path) -> FilePin {
     FilePin {
         path: path.canonicalize().unwrap(),
         sha256: sha256_bytes(&fs::read(path).unwrap()),
         mode: fs::metadata(path).unwrap().permissions().mode() & 0o7777,
+        owner_uid: None,
     }
 }
-fn captured(base: &Path, name: &str, bytes: &[u8]) -> FilePin {
+pub(crate) fn captured(base: &Path, name: &str, bytes: &[u8]) -> FilePin {
     let path = base.join(name);
     fs::write(&path, bytes).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o400)).unwrap();
     pin(&path)
 }
-fn data(base: &Path, name: &str, value: &Value) -> FilePin {
+pub(crate) fn data(base: &Path, name: &str, value: &Value) -> FilePin {
     captured(base, name, &serde_json::to_vec(value).unwrap())
 }
 fn runtime_pins() -> Vec<FilePin> {
@@ -441,6 +442,7 @@ impl Client {
         loop {
             self.send(json!({"version":1,"requestId":"status","operation":"status"}));
             let v = self.receive();
+            assert_eq!(v["result"]["status"], "host_status", "{v}");
             assert!(
                 v["result"]["lastObservation"]["startupError"].is_null(),
                 "{v}"
@@ -448,7 +450,7 @@ impl Client {
             if v["result"]["busy"] == false {
                 return v;
             }
-            assert!(Instant::now() < deadline, "host startup timed out");
+            assert!(Instant::now() < deadline, "host startup timed out: {v}");
             std::thread::sleep(Duration::from_millis(20));
         }
     }

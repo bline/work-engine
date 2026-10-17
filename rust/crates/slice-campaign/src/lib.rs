@@ -8,6 +8,7 @@ mod application;
 pub mod codec;
 mod completion;
 pub mod contract;
+mod installed_authority;
 mod recovery;
 mod store;
 pub mod subject_binding;
@@ -42,8 +43,17 @@ pub use contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRef, CampaignRevision,
     CandidateRef, Consequence, NativeReviewRequestRef, SelectionRef, Snapshot,
 };
+pub use installed_authority::{
+    AcceptedExecutionSelection, FreshInitialEntry, HostDeploymentPin, InitialEntryBinding,
+    InstalledAcceptancePin, InstalledProfileAuthority,
+};
+#[cfg(feature = "test-support")]
+pub use installed_authority::{OfflineAcceptancePin, OfflineInitialEntry, OfflineProfileAuthority};
 pub use recovery::{Effect, OperationReceipt, Reconcile, RecoveryLocator};
-pub use subject_binding::{VerifiedCandidate, VerifiedGate, verify_existing_subject};
+pub use subject_binding::{
+    VerifiedCandidate, VerifiedGate, verify_candidate_snapshot, verify_existing_subject,
+    verify_existing_subject_dynamic,
+};
 
 use thiserror::Error;
 

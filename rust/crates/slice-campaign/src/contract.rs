@@ -9,6 +9,8 @@ use crate::{CampaignError, Result, require_sha, require_text};
 
 pub const PROFILE: &str = "campaign-native-initial-v3";
 pub const REMEDIATION_PROFILE: &str = "campaign-native-remediation-v4";
+pub const QUALIFIED_INITIAL_PROFILE: &str = "campaign-qualified-initial-v4";
+pub const OFFLINE_INITIAL_PROFILE: &str = "campaign-offline-initial-v4";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

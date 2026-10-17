@@ -3169,7 +3169,7 @@ impl Campaign {
         prepared: &RemediationPrepared,
         expected: &CampaignRevision,
         operation_id: &str,
-        evidence_ref: &review_execution_evidence::ExecutionEvidenceRef,
+        evidence_ref: &review_execution_custody::ExecutionEvidenceRef,
     ) -> Result<Effect<RemediationCompletionPrepared>> {
         require_text(operation_id, "remediation completion operation")?;
         evidence_ref

@@ -24,6 +24,7 @@ members = [
   "crates/review-episode-store",
   "crates/review-episode",
   "crates/claim-evidence",
+  "crates/review-execution-custody",
   "crates/review-execution-evidence",
   "crates/slice-campaign",
 ]

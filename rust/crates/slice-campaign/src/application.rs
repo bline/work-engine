@@ -11,12 +11,19 @@ use crate::admission::{AdmissionHandle, Preparation, PreparedInitial};
 use crate::codec::{campaign_digest, raw_sha256};
 use crate::completion::{
     AttemptOutcome, AttemptRecord, CheckedPreEntryFailure, DispatchCommand, DispatchEffect,
-    DispatchPermit, DispatchRecord, DispatchedRequest, FailureCustodyRef, RecoveredRequest,
-    RecoveryHandle,
+    DispatchOrigin, DispatchPermit, DispatchRecord, DispatchedRequest, FailureCustodyRef,
+    RecoveredRequest, RecoveryHandle,
 };
 use crate::contract::{
     AcceptedBoundary, AdvancePhase, Baseline, CampaignIdentity, CampaignRevision, Consequence,
     NativeReviewRequestRef, Obligation, Snapshot, validate_selection,
+};
+use crate::installed_authority::{
+    self, FreshInitialEntry, InstalledAcceptancePin, InstalledProfileAuthority,
+};
+#[cfg(feature = "test-support")]
+use crate::installed_authority::{
+    OfflineAcceptancePin, OfflineInitialEntry, OfflineProfileAuthority,
 };
 use crate::recovery::{Effect, OperationReceipt, Reconcile, RecoveryLocator};
 use crate::store::{Store, state_revision, trusted_digest};
@@ -32,6 +39,8 @@ const SC3_ACCEPTED_CONTRACT_SHA256: &str =
 /// The current profile pins the exact SC0 gate capture and historical producer.
 pub struct TrustedConfig {
     schema_version: u32,
+    profile: String,
+    acceptance_digest: Option<String>,
     root: PathBuf,
     repository: PathBuf,
     workspace: PathBuf,
@@ -565,7 +574,16 @@ mod core_tests {
         ];
         let inventory = |name: &str| fs::read(root.join(name)).ok();
         let before_sidecars: Vec<_> = sidecars.iter().map(|name| inventory(name)).collect();
-        assert!(Store::open(&root, &config_digest, &writer_identity, 3).is_err());
+        assert!(
+            Store::open(
+                &root,
+                &config_digest,
+                &writer_identity,
+                3,
+                crate::contract::PROFILE
+            )
+            .is_err()
+        );
         assert_eq!(
             raw_sha256(&fs::read(&database).unwrap()),
             raw_sha256(&before)
@@ -767,6 +785,8 @@ impl TrustedConfig {
         })?;
         Ok(Self {
             schema_version: 3,
+            profile: crate::contract::PROFILE.into(),
+            acceptance_digest: None,
             root,
             repository,
             workspace,
@@ -779,6 +799,103 @@ impl TrustedConfig {
             gate_receipt,
             digest,
         })
+    }
+
+    /// A production qualified-initial root is bound to a separately checked,
+    /// protected installed acceptance. The descriptive config cannot issue entry.
+    #[allow(clippy::too_many_arguments)]
+    pub fn qualified_initial_v4(
+        root: PathBuf,
+        repository: PathBuf,
+        workspace: PathBuf,
+        identity: CampaignIdentity,
+        accepted_boundary: AcceptedBoundary,
+        baseline: Baseline,
+        writer_identity: String,
+        gate_capture: Vec<u8>,
+        gate_manifest: Vec<u8>,
+        gate_receipt: Vec<u8>,
+        pin: &InstalledAcceptancePin,
+    ) -> Result<Self> {
+        if pin.record.identity != identity
+            || pin.record.accepted_boundary_sha256 != accepted_boundary.sha256
+        {
+            return Err(CampaignError::Contract(
+                "installed acceptance identity/boundary differs".into(),
+            ));
+        }
+        let mut config = Self::remediation_v4(
+            root,
+            repository,
+            workspace,
+            identity,
+            accepted_boundary,
+            baseline,
+            writer_identity,
+            gate_capture,
+            gate_manifest,
+            gate_receipt,
+        )?;
+        config.profile = crate::contract::QUALIFIED_INITIAL_PROFILE.into();
+        config.acceptance_digest = Some(pin.digest().into());
+        config.digest = trusted_digest(&json!({
+            "schemaVersion":4,"profile":config.profile,"acceptanceDigest":pin.digest(),
+            "acceptanceReference":pin.reference(),"repository":config.repository,
+            "workspace":config.workspace,"identity":config.identity,"boundary":config.accepted_boundary,
+            "baseline":config.baseline,"writerIdentity":config.writer_identity,
+            "gateCaptureSha256":raw_sha256(&config.gate_capture),
+            "gateManifestSha256":raw_sha256(&config.gate_manifest),
+            "gateReceiptSha256":raw_sha256(&config.gate_receipt)
+        }))?;
+        Ok(config)
+    }
+
+    #[cfg(feature = "test-support")]
+    #[allow(clippy::too_many_arguments)]
+    pub fn qualified_initial_offline_v4(
+        root: PathBuf,
+        repository: PathBuf,
+        workspace: PathBuf,
+        identity: CampaignIdentity,
+        accepted_boundary: AcceptedBoundary,
+        baseline: Baseline,
+        writer_identity: String,
+        gate_capture: Vec<u8>,
+        gate_manifest: Vec<u8>,
+        gate_receipt: Vec<u8>,
+        pin: &OfflineAcceptancePin,
+    ) -> Result<Self> {
+        if pin.record.identity != identity
+            || pin.record.accepted_boundary_sha256 != accepted_boundary.sha256
+        {
+            return Err(CampaignError::Contract(
+                "offline acceptance identity/boundary differs".into(),
+            ));
+        }
+        let mut config = Self::remediation_v4(
+            root,
+            repository,
+            workspace,
+            identity,
+            accepted_boundary,
+            baseline,
+            writer_identity,
+            gate_capture,
+            gate_manifest,
+            gate_receipt,
+        )?;
+        config.profile = crate::contract::OFFLINE_INITIAL_PROFILE.into();
+        config.acceptance_digest = Some(pin.digest().into());
+        config.digest = trusted_digest(&json!({
+            "schemaVersion":4,"profile":config.profile,"acceptanceDigest":pin.digest(),
+            "acceptanceReference":pin.record.reference,"repository":config.repository,
+            "workspace":config.workspace,"identity":config.identity,"boundary":config.accepted_boundary,
+            "baseline":config.baseline,"writerIdentity":config.writer_identity,
+            "gateCaptureSha256":raw_sha256(&config.gate_capture),
+            "gateManifestSha256":raw_sha256(&config.gate_manifest),
+            "gateReceiptSha256":raw_sha256(&config.gate_receipt)
+        }))?;
+        Ok(config)
     }
 
     /// A trusted composition installs this fresh-root profile after accepting
@@ -840,6 +957,8 @@ impl TrustedConfig {
         }))?;
         Ok(Self {
             schema_version: 4,
+            profile: crate::contract::REMEDIATION_PROFILE.into(),
+            acceptance_digest: None,
             root,
             repository,
             workspace,
@@ -870,6 +989,9 @@ struct CampaignInner {
     config: TrustedConfig,
     initial_join: Option<InitialJoinInstallation>,
     completion_selection: Option<CompletionSelection>,
+    installed_authority: Option<InstalledProfileAuthority>,
+    #[cfg(feature = "test-support")]
+    offline_authority: Option<OfflineProfileAuthority>,
 }
 
 /// The store and all admission checks share one process-local gate. A future
@@ -914,6 +1036,7 @@ impl Campaign {
             &config.digest,
             &config.writer_identity,
             config.schema_version,
+            &config.profile,
         )?;
         Ok(Self::with_store(store, config))
     }
@@ -923,6 +1046,7 @@ impl Campaign {
             &config.digest,
             &config.writer_identity,
             config.schema_version,
+            &config.profile,
         )?;
         Ok(Self::with_store(store, config))
     }
@@ -935,6 +1059,9 @@ impl Campaign {
                 config,
                 initial_join: None,
                 completion_selection: None,
+                installed_authority: None,
+                #[cfg(feature = "test-support")]
+                offline_authority: None,
             })),
         }
     }
@@ -1046,6 +1173,23 @@ impl Campaign {
     }
     pub fn consume_dispatch_permit(&self, permit: DispatchPermit) -> Result<DispatchedRequest> {
         self.owner()?.consume_dispatch_permit(permit)
+    }
+    pub fn install_qualified_initial_authority(
+        &mut self,
+        pin: InstalledAcceptancePin,
+    ) -> Result<()> {
+        self.owner()?.install_qualified_initial_authority(pin)
+    }
+    #[cfg(feature = "test-support")]
+    pub fn install_offline_initial_authority(&mut self, pin: OfflineAcceptancePin) -> Result<()> {
+        self.owner()?.install_offline_initial_authority(pin)
+    }
+    pub fn consume_qualified_initial(&self, permit: DispatchPermit) -> Result<FreshInitialEntry> {
+        self.owner()?.consume_qualified_initial(permit)
+    }
+    #[cfg(feature = "test-support")]
+    pub fn consume_offline_initial(&self, permit: DispatchPermit) -> Result<OfflineInitialEntry> {
+        self.owner()?.consume_offline_initial(permit)
     }
     pub fn recover_request(
         &self,
@@ -1706,6 +1850,15 @@ impl CampaignInner {
         operation_id: &str,
         command: DispatchCommand,
     ) -> Result<DispatchEffect> {
+        self.authorize_dispatch_origin(handle, operation_id, command, DispatchOrigin::FreshInitial)
+    }
+    fn authorize_dispatch_origin(
+        &mut self,
+        handle: AdmissionHandle,
+        operation_id: &str,
+        command: DispatchCommand,
+        origin: DispatchOrigin,
+    ) -> Result<DispatchEffect> {
         require_text(operation_id, "dispatch operation ID")?;
         for (name, value) in [
             ("episode ID", &command.episode_id),
@@ -1784,6 +1937,8 @@ impl CampaignInner {
         Ok(match result {
             Effect::Applied { value, receipt } => DispatchEffect::Applied {
                 permit: DispatchPermit {
+                    origin,
+                    operation_request_digest: receipt.request_digest.clone(),
                     owner_epoch: handle.owner_epoch,
                     root_id: handle.root_id,
                     identity: handle.identity,
@@ -1822,7 +1977,7 @@ impl CampaignInner {
         {
             return Err(CampaignError::Conflict("recovery slot differs".into()));
         }
-        self.authorize_dispatch(
+        self.authorize_dispatch_origin(
             AdmissionHandle {
                 owner_epoch: handle.owner_epoch,
                 root_id: handle.root_id,
@@ -1835,6 +1990,7 @@ impl CampaignInner {
             },
             operation_id,
             command,
+            DispatchOrigin::RecoveredInitial,
         )
     }
 
@@ -1937,6 +2093,161 @@ impl CampaignInner {
         })
     }
 
+    fn checked_acceptance_state(
+        &self,
+        record: &installed_authority::AcceptanceRecord,
+    ) -> Result<()> {
+        let state = self
+            .store
+            .read(&self.config.identity)?
+            .ok_or_else(|| CampaignError::Conflict("accepted campaign absent".into()))?;
+        let candidate = state
+            .candidate
+            .as_ref()
+            .ok_or_else(|| CampaignError::Conflict("candidate absent".into()))?;
+        let selection = state
+            .selection_ref
+            .as_ref()
+            .ok_or_else(|| CampaignError::Conflict("selection absent".into()))?;
+        let profile_digest = state
+            .physical_profile
+            .as_ref()
+            .and_then(|value| value["profile_digest"].as_str())
+            .ok_or_else(|| CampaignError::Conflict("physical profile digest absent".into()))?;
+        if !installed_authority::acceptance_matches(
+            record,
+            &state.identity,
+            &record.obligation_id,
+            &candidate.tree,
+            &selection.campaign_digest,
+            profile_digest,
+            &state.accepted_boundary.sha256,
+        ) {
+            return Err(CampaignError::Conflict(
+                "installed acceptance differs from selected campaign".into(),
+            ));
+        }
+        let claims = state
+            .review_selection
+            .as_ref()
+            .and_then(|value| value["specialists"].as_array())
+            .and_then(|items| {
+                items
+                    .iter()
+                    .find(|item| item["obligationId"] == record.obligation_id)
+            })
+            .and_then(|item| item["requiredClaims"].as_array())
+            .ok_or_else(|| CampaignError::Conflict("accepted claim pair absent".into()))?;
+        let has_builder = claims.iter().any(|item| {
+            item["claimId"] == record.builder_claim_id
+                && item["consumptionBoundary"] == "builder_projection"
+        });
+        let has_campaign = claims.iter().any(|item| {
+            item["claimId"] == record.campaign_claim_id
+                && item["consumptionBoundary"] == "campaign_terminalization"
+        });
+        if !has_builder || !has_campaign || claims.len() != 2 {
+            return Err(CampaignError::Conflict(
+                "accepted claim pair differs".into(),
+            ));
+        }
+        Ok(())
+    }
+    fn install_qualified_initial_authority(&mut self, pin: InstalledAcceptancePin) -> Result<()> {
+        if self.config.profile != crate::contract::QUALIFIED_INITIAL_PROFILE
+            || self.config.acceptance_digest.as_deref() != Some(pin.digest())
+            || self.installed_authority.is_some()
+        {
+            return Err(CampaignError::Unsupported(
+                "qualified installation unavailable".into(),
+            ));
+        }
+        self.checked_acceptance_state(&pin.record)?;
+        self.installed_authority = Some(InstalledProfileAuthority::from_pin(pin));
+        Ok(())
+    }
+    #[cfg(feature = "test-support")]
+    fn install_offline_initial_authority(&mut self, pin: OfflineAcceptancePin) -> Result<()> {
+        if self.config.profile != crate::contract::OFFLINE_INITIAL_PROFILE
+            || self.config.acceptance_digest.as_deref() != Some(pin.digest())
+            || self.offline_authority.is_some()
+        {
+            return Err(CampaignError::Unsupported(
+                "offline installation unavailable".into(),
+            ));
+        }
+        self.checked_acceptance_state(&pin.record)?;
+        self.offline_authority = Some(OfflineProfileAuthority::from_pin(pin));
+        Ok(())
+    }
+    fn checked_initial_entry_binding(
+        &self,
+        permit: DispatchPermit,
+        record: &installed_authority::AcceptanceRecord,
+        acceptance_digest: &str,
+    ) -> Result<installed_authority::InitialEntryBinding> {
+        if permit.origin != DispatchOrigin::FreshInitial
+            || self.config.acceptance_digest.as_deref() != Some(acceptance_digest)
+        {
+            return Err(CampaignError::Unsupported(
+                "dispatch is not fresh accepted initial".into(),
+            ));
+        }
+        self.checked_acceptance_state(record)?;
+        let receipt = self
+            .store
+            .receipt(&permit.dispatch_operation_id)?
+            .ok_or_else(|| CampaignError::Integrity("dispatch receipt absent".into()))?;
+        let revision = permit.dispatched_revision.as_str().to_owned();
+        let operation = permit.dispatch_operation_id.clone();
+        let session = permit.command.runtime_session.clone();
+        let review_episode_id = permit.command.episode_id.clone();
+        let dispatch = self.consume_dispatch_permit(permit)?;
+        if dispatch.request.kind != "initial"
+            || dispatch.request.obligation_id != record.obligation_id
+            || dispatch.request.candidate.tree != record.candidate_tree
+            || dispatch.request.selection.campaign_digest != record.selection_digest
+            || dispatch.request.profile_digest != record.physical_profile_digest
+            || session != record.session_id
+        {
+            return Err(CampaignError::Conflict(
+                "fresh initial entry differs from accepted dispatch".into(),
+            ));
+        }
+        let receipt_digest = raw_sha256(
+            &serde_json::to_vec(&receipt).map_err(|e| CampaignError::Integrity(e.to_string()))?,
+        );
+        Ok(installed_authority::entry_binding(
+            record,
+            acceptance_digest,
+            &self.store.root_id,
+            &dispatch.request,
+            &review_episode_id,
+            &operation,
+            &revision,
+            &receipt_digest,
+        ))
+    }
+    fn consume_qualified_initial(&mut self, permit: DispatchPermit) -> Result<FreshInitialEntry> {
+        let authority = self
+            .installed_authority
+            .as_ref()
+            .ok_or_else(|| CampaignError::Unsupported("installed entry authority absent".into()))?;
+        let binding =
+            self.checked_initial_entry_binding(permit, authority.record(), authority.digest())?;
+        Ok(self.installed_authority.take().unwrap().issue(binding))
+    }
+    #[cfg(feature = "test-support")]
+    fn consume_offline_initial(&mut self, permit: DispatchPermit) -> Result<OfflineInitialEntry> {
+        let authority = self
+            .offline_authority
+            .as_ref()
+            .ok_or_else(|| CampaignError::Unsupported("offline entry authority absent".into()))?;
+        let binding =
+            self.checked_initial_entry_binding(permit, authority.record(), authority.digest())?;
+        Ok(self.offline_authority.take().unwrap().issue(binding))
+    }
+
     fn consume_dispatch_permit(&self, permit: DispatchPermit) -> Result<DispatchedRequest> {
         if permit.owner_epoch != self.store.epoch
             || permit.root_id != self.store.root_id
@@ -1958,7 +2269,16 @@ impl CampaignInner {
             .find(|item| item.preparation_operation_id == request.operation_id)
             .and_then(|item| item.dispatch.as_ref())
             .ok_or_else(|| CampaignError::Integrity("dispatch history absent".into()))?;
-        if request.request_digest != permit.request_digest
+        let receipt = self
+            .store
+            .receipt(&permit.dispatch_operation_id)?
+            .ok_or_else(|| CampaignError::Integrity("dispatch receipt absent".into()))?;
+        if receipt.kind != "authorize_dispatch"
+            || receipt.result_revision != permit.dispatched_revision
+            || receipt.root_id != permit.root_id
+            || receipt.identity != permit.identity
+            || receipt.request_digest != permit.operation_request_digest
+            || request.request_digest != permit.request_digest
             || dispatch.request_digest != permit.request_digest
             || dispatch.operation_id != permit.dispatch_operation_id
             || dispatch.command != permit.command

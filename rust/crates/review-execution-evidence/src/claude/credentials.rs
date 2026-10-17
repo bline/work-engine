@@ -55,6 +55,18 @@ impl CredentialSource {
         })
     }
 
+    /// Metadata-only identity for owner acceptance; this does not read a token.
+    pub fn metadata_digest(&self) -> String {
+        crate::contract::record_digest(&[
+            b"credential-source-metadata-v1",
+            self.path.as_os_str().as_bytes(),
+            &self.parent_dev.to_be_bytes(),
+            &self.parent_ino.to_be_bytes(),
+            &self.source_dev.to_be_bytes(),
+            &self.source_ino.to_be_bytes(),
+        ])
+    }
+
     pub fn read_access_only(
         &self,
         now_millis: i64,

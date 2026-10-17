@@ -3,13 +3,10 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
-use std::path::{Component, Path, PathBuf};
-
-use serde::{Deserialize, Serialize};
+use std::path::{Component, Path};
 
 use crate::EvidenceReadError;
-use crate::contract::{require_sha, require_text, sha256};
-use crate::store::{self, AnchorIds};
+use crate::contract::{require_text, sha256};
 
 pub(crate) const SESSION_LIMIT: u64 = 64 * 1024 * 1024;
 pub(crate) const ACTIVE_SESSION_LIMIT: u64 = 16 * 1024 * 1024;
@@ -165,6 +162,8 @@ pub(crate) fn import_guard_export(
 }
 
 fn sync_directory(path: &Path, stage: &'static str) -> Result<(), EvidenceReadError> {
+    #[cfg(not(feature = "test-faults"))]
+    let _ = stage;
     #[cfg(feature = "test-faults")]
     if std::env::var("WORK_ENGINE_CLAUDE_SYNC_FAIL")
         .ok()
@@ -315,147 +314,10 @@ pub(crate) fn reserve_snapshot(root: &Path) -> Result<(), EvidenceReadError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SessionLocator {
-    pub schema_version: u32,
-    pub root_id: String,
-    pub profile: String,
-    pub attempt_id: String,
-    pub session_id: String,
-    pub manifest_sha256: String,
-}
-
-impl SessionLocator {
-    pub fn validate(&self) -> Result<(), EvidenceReadError> {
-        if self.schema_version != 1 {
-            return Err(EvidenceReadError::Unsupported("session locator schema"));
-        }
-        for text in [
-            &self.root_id,
-            &self.profile,
-            &self.attempt_id,
-            &self.session_id,
-        ] {
-            require_text(text)?;
-        }
-        require_sha(&self.manifest_sha256)
-    }
-}
-
-/// Issued only by a checked reader after validating the current live session
-/// and the immutable attempt snapshot. No Clone or serialization authority.
-///
-/// ```compile_fail
-/// use review_execution_evidence::claude::RetainedReviewSession;
-/// fn requires_clone<T: Clone>() {}
-/// requires_clone::<RetainedReviewSession>();
-/// ```
-pub struct RetainedReviewSession {
-    locator: SessionLocator,
-    root: PathBuf,
-    anchors: AnchorIds,
-    live_dev: u64,
-    live_ino: u64,
-    chain: Vec<SessionManifest>,
-}
-
-impl RetainedReviewSession {
-    pub fn locator(&self) -> SessionLocator {
-        self.locator.clone()
-    }
-    pub fn root(&self) -> &Path {
-        &self.root
-    }
-    pub(crate) fn checked(
-        locator: SessionLocator,
-        root: PathBuf,
-        ready: &SessionReady,
-        chain: Vec<SessionManifest>,
-        anchors: AnchorIds,
-    ) -> Result<Self, EvidenceReadError> {
-        locator.validate()?;
-        if store::anchor_ids(&root)? != anchors {
-            return Err(EvidenceReadError::Conflicting(
-                "retained session root anchors changed",
-            ));
-        }
-        verify_live(&root, ready)?;
-        verify_chain(&root, &chain)?;
-        let latest = chain
-            .last()
-            .ok_or(EvidenceReadError::Conflicting("session chain empty"))?;
-        if locator.attempt_id != latest.attempt_id
-            || locator.session_id != latest.session_id
-            || locator.manifest_sha256 != manifest_digest(latest)?
-        {
-            return Err(EvidenceReadError::Conflicting(
-                "session locator/chain mismatch",
-            ));
-        }
-        verify_live_manifest(&root, latest)?;
-        Ok(Self {
-            locator,
-            root,
-            anchors,
-            live_dev: ready.dev,
-            live_ino: ready.ino,
-            chain,
-        })
-    }
-
-    pub fn verify_current(&self) -> Result<(), EvidenceReadError> {
-        self.verify_predecessor()?;
-        verify_live_manifest(&self.root, self.chain.last().unwrap())
-    }
-
-    pub(crate) fn verify_predecessor(&self) -> Result<(), EvidenceReadError> {
-        if store::anchor_ids(&self.root)? != self.anchors {
-            return Err(EvidenceReadError::Conflicting(
-                "retained session root anchors changed",
-            ));
-        }
-        verify_live(&self.root, &self.ready())?;
-        verify_chain(&self.root, &self.chain)
-    }
-
-    pub(crate) fn chain(&self) -> &[SessionManifest] {
-        &self.chain
-    }
-    pub(crate) fn ready(&self) -> SessionReady {
-        SessionReady {
-            dev: self.live_dev,
-            ino: self.live_ino,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct SessionReady {
-    pub dev: u64,
-    pub ino: u64,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct SessionFile {
-    pub path: String,
-    pub len: u64,
-    pub sha256: String,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct SessionManifest {
-    pub schema_version: u32,
-    pub attempt_id: String,
-    pub session_id: String,
-    pub predecessor_sha256: Option<String>,
-    pub predecessor_attempt_id: Option<String>,
-    pub snapshot_dir: String,
-    pub files: Vec<SessionFile>,
-}
+pub use review_execution_custody::claude::session_read::{
+    RetainedReviewSession, SessionFile, SessionLocator, SessionManifest, SessionReady,
+    manifest_digest, verify_live, verify_snapshot,
+};
 
 pub(crate) fn create_live(root: &Path) -> Result<SessionReady, EvidenceReadError> {
     let path = root.join("session-live");
@@ -471,23 +333,6 @@ pub(crate) fn create_live(root: &Path) -> Result<SessionReady, EvidenceReadError
         dev: metadata.dev(),
         ino: metadata.ino(),
     })
-}
-
-pub(crate) fn verify_live(root: &Path, ready: &SessionReady) -> Result<(), EvidenceReadError> {
-    let path = root.join("session-live");
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|_| EvidenceReadError::Unresolved("retained session lost"))?;
-    if !metadata.is_dir()
-        || metadata.file_type().is_symlink()
-        || metadata.dev() != ready.dev
-        || metadata.ino() != ready.ino
-        || metadata.mode() & 0o077 != 0
-    {
-        return Err(EvidenceReadError::Conflicting(
-            "retained session identity changed",
-        ));
-    }
-    Ok(())
 }
 
 fn valid_relative(path: &str) -> bool {
@@ -726,210 +571,6 @@ pub(crate) fn capture_snapshot(
         snapshot_dir,
         files,
     })
-}
-
-pub(crate) fn verify_snapshot(
-    root: &Path,
-    manifest: &SessionManifest,
-) -> Result<(), EvidenceReadError> {
-    if manifest.schema_version != 1
-        || manifest.predecessor_sha256.is_some() != manifest.predecessor_attempt_id.is_some()
-        || manifest.snapshot_dir != sha256(manifest.attempt_id.as_bytes())
-    {
-        return Err(EvidenceReadError::Conflicting(
-            "session manifest identity invalid",
-        ));
-    }
-    let archive = root.join("session-snapshots").join(&manifest.snapshot_dir);
-    let meta = fs::symlink_metadata(&archive)
-        .map_err(|_| EvidenceReadError::Unresolved("session snapshot missing"))?;
-    if !meta.is_dir() || meta.file_type().is_symlink() || meta.mode() & 0o077 != 0 {
-        return Err(EvidenceReadError::Conflicting("unsafe session snapshot"));
-    }
-    let mut total = 0u64;
-    let mut expected = std::collections::BTreeSet::new();
-    for item in &manifest.files {
-        if !valid_relative(&item.path) || !expected.insert(item.path.clone()) {
-            return Err(EvidenceReadError::Conflicting(
-                "session manifest path invalid",
-            ));
-        }
-        require_sha(&item.sha256)?;
-        total = total
-            .checked_add(item.len)
-            .ok_or(EvidenceReadError::Capacity(
-                "session manifest length overflow",
-            ))?;
-        if total > SESSION_LIMIT {
-            return Err(EvidenceReadError::Capacity(
-                "session manifest exceeds limit",
-            ));
-        }
-        let path = archive.join(&item.path);
-        let meta = regular(&path)?;
-        if meta.len() != item.len || meta.mode() & 0o077 != 0 {
-            return Err(EvidenceReadError::Conflicting(
-                "session snapshot length changed",
-            ));
-        }
-        let mut bytes = Vec::new();
-        let opened = open_beneath(&archive, Path::new(&item.path))?;
-        let opened_meta = opened
-            .metadata()
-            .map_err(|_| EvidenceReadError::Unresolved("session snapshot identity unavailable"))?;
-        if opened_meta.dev() != meta.dev() || opened_meta.ino() != meta.ino() {
-            return Err(EvidenceReadError::Conflicting(
-                "session snapshot path changed",
-            ));
-        }
-        opened
-            .take(item.len + 1)
-            .read_to_end(&mut bytes)
-            .map_err(|_| EvidenceReadError::Unresolved("session snapshot unreadable"))?;
-        if sha256(&bytes) != item.sha256 {
-            return Err(EvidenceReadError::Conflicting(
-                "session snapshot digest changed",
-            ));
-        }
-    }
-    let mut actual = std::collections::BTreeSet::new();
-    let mut stack = vec![archive.clone()];
-    while let Some(dir) = stack.pop() {
-        for entry in fs::read_dir(dir)
-            .map_err(|_| EvidenceReadError::Unresolved("session snapshot enumeration failed"))?
-        {
-            let entry = entry.map_err(|_| {
-                EvidenceReadError::Unresolved("session snapshot enumeration failed")
-            })?;
-            let path = entry.path();
-            let meta = fs::symlink_metadata(&path)
-                .map_err(|_| EvidenceReadError::Unresolved("session snapshot entry failed"))?;
-            if meta.file_type().is_symlink() {
-                return Err(EvidenceReadError::Conflicting("session snapshot symlink"));
-            }
-            if meta.is_dir() {
-                stack.push(path);
-            } else if meta.is_file() {
-                let relative = path
-                    .strip_prefix(&archive)
-                    .map_err(|_| EvidenceReadError::Conflicting("session snapshot path escaped"))?;
-                actual.insert(relative.to_string_lossy().into_owned());
-            } else {
-                return Err(EvidenceReadError::Conflicting(
-                    "session snapshot special file",
-                ));
-            }
-        }
-    }
-    if actual != expected {
-        return Err(EvidenceReadError::Conflicting(
-            "session snapshot inventory changed",
-        ));
-    }
-    Ok(())
-}
-
-pub(crate) fn manifest_digest(manifest: &SessionManifest) -> Result<String, EvidenceReadError> {
-    Ok(sha256(&serde_json::to_vec(manifest).map_err(|_| {
-        EvidenceReadError::Conflicting("session manifest serialization failed")
-    })?))
-}
-
-pub(crate) fn verify_chain(
-    root: &Path,
-    chain: &[SessionManifest],
-) -> Result<(), EvidenceReadError> {
-    storage_charge(root)?;
-    if chain.is_empty() || chain.len() > 64 {
-        return Err(EvidenceReadError::Capacity("session chain length invalid"));
-    }
-    let mut attempts = std::collections::BTreeSet::new();
-    for (position, manifest) in chain.iter().enumerate() {
-        if !attempts.insert(&manifest.attempt_id) || manifest.session_id != chain[0].session_id {
-            return Err(EvidenceReadError::Conflicting(
-                "session chain identity invalid",
-            ));
-        }
-        let predecessor = position.checked_sub(1).map(|index| &chain[index]);
-        if manifest.predecessor_attempt_id.as_deref()
-            != predecessor.map(|prior| prior.attempt_id.as_str())
-            || manifest.predecessor_sha256 != predecessor.map(manifest_digest).transpose()?
-        {
-            return Err(EvidenceReadError::Conflicting(
-                "session predecessor link invalid",
-            ));
-        }
-        verify_snapshot(root, manifest)?;
-    }
-    Ok(())
-}
-
-pub(crate) fn verify_live_manifest(
-    root: &Path,
-    manifest: &SessionManifest,
-) -> Result<(), EvidenceReadError> {
-    storage_charge(root)?;
-    let live = root.join("session-live");
-    let mut actual = std::collections::BTreeSet::new();
-    let mut stack = vec![live.clone()];
-    while let Some(dir) = stack.pop() {
-        for entry in fs::read_dir(dir)
-            .map_err(|_| EvidenceReadError::Unresolved("live session enumeration failed"))?
-        {
-            let entry = entry
-                .map_err(|_| EvidenceReadError::Unresolved("live session enumeration failed"))?;
-            let path = entry.path();
-            let meta = fs::symlink_metadata(&path)
-                .map_err(|_| EvidenceReadError::Unresolved("live session entry unavailable"))?;
-            if meta.file_type().is_symlink() {
-                return Err(EvidenceReadError::Conflicting("live session symlink"));
-            }
-            if meta.is_dir() {
-                stack.push(path);
-            } else if meta.is_file() {
-                let name = path
-                    .strip_prefix(&live)
-                    .map_err(|_| EvidenceReadError::Conflicting("live session path escaped"))?
-                    .to_str()
-                    .ok_or(EvidenceReadError::Conflicting("live session path invalid"))?
-                    .to_owned();
-                actual.insert(name);
-            } else {
-                return Err(EvidenceReadError::Conflicting("live session special file"));
-            }
-        }
-    }
-    let expected: std::collections::BTreeSet<_> = manifest
-        .files
-        .iter()
-        .map(|file| file.path.clone())
-        .collect();
-    if actual != expected {
-        return Err(EvidenceReadError::Conflicting(
-            "live session inventory changed",
-        ));
-    }
-    for item in &manifest.files {
-        let path = live.join(&item.path);
-        let meta = regular(&path)?;
-        let mut bytes = Vec::new();
-        let opened = open_beneath(&live, Path::new(&item.path))?;
-        let opened_meta = opened
-            .metadata()
-            .map_err(|_| EvidenceReadError::Unresolved("live session identity unavailable"))?;
-        opened
-            .take(item.len + 1)
-            .read_to_end(&mut bytes)
-            .map_err(|_| EvidenceReadError::Unresolved("live session file unreadable"))?;
-        if meta.len() != item.len
-            || opened_meta.dev() != meta.dev()
-            || opened_meta.ino() != meta.ino()
-            || sha256(&bytes) != item.sha256
-        {
-            return Err(EvidenceReadError::Conflicting("live session file changed"));
-        }
-    }
-    Ok(())
 }
 
 #[cfg(test)]

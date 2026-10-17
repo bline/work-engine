@@ -4,9 +4,7 @@ use std::path::Path;
 use std::process::Stdio;
 use std::time::Duration;
 
-use claim_evidence::codec::{JsValue, canonical_json, digest, parse_json};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
+use claim_evidence::codec::canonical_json;
 use tokio::process::Command;
 
 use crate::contract::sha256;
@@ -19,40 +17,15 @@ use crate::{
 
 use super::qualified::{InitialEntryPermit, Prepared, QualifiedScope, SessionEvolutionPermit};
 use super::session::{
-    RetainedReviewSession, SessionManifest, SessionReady, capture_snapshot, create_live,
-    decode_guard_export, import_guard_export, reserve_snapshot, verify_live, verify_snapshot,
+    RetainedReviewSession, SessionReady, capture_snapshot, create_live, decode_guard_export,
+    import_guard_export, reserve_snapshot, verify_live, verify_snapshot,
 };
 use super::transport::validate_response;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct CompleteCapture {
-    pub schema_version: u32,
-    pub pid: u32,
-    pub exit_code: i32,
-    pub response_sha256: String,
-    pub stderr_sha256: String,
-    pub result_sha256: String,
-    pub observed_model: String,
-    pub observed_session_id: String,
-    pub provider_reported_entry: bool,
-    pub prompt_submitted: bool,
-    pub local_reaped: bool,
-    pub guard_ready: bool,
-    pub cbm_observation_sha256: Option<String>,
-    pub session: SessionManifest,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct QualifiedTerminal {
-    pub schema_version: u32,
-    pub capture_event_sha256: String,
-    pub result_sha256: String,
-    pub observation_sha256: String,
-    pub session_manifest_sha256: String,
-    pub artifact_references: Vec<String>,
-}
+use review_execution_custody::claude::record::{CompleteCapture, QualifiedTerminal, observation};
+use slice_campaign::FreshInitialEntry;
+#[cfg(feature = "test-support")]
+use slice_campaign::OfflineInitialEntry;
 
 pub struct QualifiedWriter {
     store: Store,
@@ -215,6 +188,106 @@ impl QualifiedWriter {
         Ok(ExecutionPublication::Unresolved)
     }
 
+    fn validate_and_consume_entry(
+        &self,
+        binding: &slice_campaign::InitialEntryBinding,
+        installed: bool,
+    ) -> Result<InitialEntryPermit, EvidenceReadError> {
+        let prepared = &self.scope.prepared;
+        let profile = &self.scope.profile;
+        let selection = &self.scope.selection;
+        let applied = self
+            .scope
+            .applied_request
+            .as_ref()
+            .ok_or(EvidenceReadError::Conflicting(
+                "Applied campaign request absent",
+            ))?;
+        if profile.installed() != installed
+            || prepared.provenance_class
+                != if installed {
+                    "qualified_provider"
+                } else {
+                    "offline_peer"
+                }
+            || binding.resource_policy() != "strict_aggregate_session_64mib_v1"
+            || binding.campaign_root_id() != prepared.campaign_root_id
+            || binding.obligation_id() != prepared.obligation_id
+            || binding.request_digest() != prepared.prepared_request_sha256
+            || binding.dispatched_request() != &applied.request
+            || binding.prompt_template_sha256() != applied.prompt_template_sha256
+            || super::qualified::compose_applied_initial_prompt(
+                &applied.template,
+                &applied.request,
+            )? != selection.prompt
+            || crate::contract::sha256(&applied.template) != applied.prompt_template_sha256
+            || binding.attempt_horizon_millis() != prepared.attempt_horizon_millis
+            || binding.review_episode_id() != prepared.review_episode_id
+            || binding.dispatch_operation_id() != prepared.dispatch_operation_id
+            || binding.dispatch_revision() != prepared.dispatch_revision
+            || binding.attempt_id() != prepared.attempt_id
+            || binding.session_id() != prepared.requested_session_id
+            || binding.candidate_tree() != prepared.candidate_tree
+            || self.scope.applied_physical_profile_digest.as_deref()
+                != Some(binding.physical_profile_digest())
+            || binding.selection_digest() != prepared.selection_digest
+            || binding.claude_profile_digest()
+                != prepared
+                    .execution_profile_digest
+                    .as_deref()
+                    .unwrap_or(&prepared.profile_digest)
+            || binding.claude_profile_digest() != profile.profile_digest()
+            || binding.program_sha256() != prepared.executable_sha256
+            || binding.guard_sha256() != prepared.guard_sha256.as_deref().unwrap_or("")
+            || binding.cbm_store_sha256() != prepared.cbm_store_sha256
+            || binding.catalog_sha256() != prepared.catalog_sha256
+            || binding.requested_model() != prepared.requested_model
+            || binding.credential_source_metadata_sha256()
+                != selection
+                    .credential
+                    .as_ref()
+                    .map(|source| source.metadata_digest())
+                    .unwrap_or_default()
+            || binding.acceptance_reference().is_empty()
+            || !binding
+                .acceptance_digest()
+                .bytes()
+                .all(|b| b.is_ascii_hexdigit())
+            || binding.acceptance_digest().len() != 64
+            || binding.dispatch_receipt_digest().len() != 64
+            || !binding
+                .dispatch_receipt_digest()
+                .bytes()
+                .all(|b| b.is_ascii_hexdigit())
+            || (installed && selection.offline_witness.is_some())
+        {
+            return Err(EvidenceReadError::Conflicting(
+                "Applied initial entry/scope mismatch",
+            ));
+        }
+        self.scope.preflight()?;
+        Ok(InitialEntryPermit::applied(&self.scope, !installed))
+    }
+
+    /// The campaign-owned fresh Applied capability is consumed before E1
+    /// creates its private one-time launch permit.
+    pub async fn execute_applied_initial(
+        &mut self,
+        entry: FreshInitialEntry,
+    ) -> Result<ExecutionPublication, EvidenceReadError> {
+        let permit = self.validate_and_consume_entry(entry.binding(), true)?;
+        self.execute_initial(permit).await
+    }
+
+    #[cfg(feature = "test-support")]
+    pub async fn execute_offline_applied(
+        &mut self,
+        entry: OfflineInitialEntry,
+    ) -> Result<ExecutionPublication, EvidenceReadError> {
+        let permit = self.validate_and_consume_entry(entry.binding(), false)?;
+        self.execute_initial(permit).await
+    }
+
     pub async fn execute_initial(
         &mut self,
         permit: InitialEntryPermit,
@@ -288,8 +361,14 @@ impl QualifiedWriter {
             fault_cut("pre_entry_refusal");
             return Ok(ExecutionPublication::DefinitePreEntryFailure);
         }
-        let nonce =
-            sha256(format!("{}:{}", attempt, self.scope.prepared.profile_digest).as_bytes());
+        let nonce = sha256(
+            format!(
+                "{}:{}",
+                attempt,
+                self.scope.prepared.execution_profile_digest()
+            )
+            .as_bytes(),
+        );
         let (command, ready_line, relay) = if let Some(boundary) = &self.scope.boundary {
             let launch = boundary
                 .guarded_launch(
@@ -720,74 +799,6 @@ fn now_millis() -> i64 {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as i64
-}
-
-pub(crate) fn observation(
-    prepared: &Prepared,
-    capture: &CompleteCapture,
-    result: &[u8],
-    observed_at: Option<&str>,
-) -> Result<JsValue, EvidenceReadError> {
-    let result_value = parse_json(
-        std::str::from_utf8(result)
-            .map_err(|_| EvidenceReadError::Conflicting("Claude result text invalid"))?,
-    )
-    .map_err(|_| EvidenceReadError::Conflicting("Claude result JSON invalid"))?;
-    let result_digest = digest(&result_value)
-        .map_err(|_| EvidenceReadError::Conflicting("Claude result digest invalid"))?;
-    let artifact = |kind: &str, sha: &str| {
-        json!({"owner":store::OWNER,
-        "reference":format!("execution-artifact:{}:{}:{kind}", prepared.root_id, prepared.attempt_id),
-        "digest":sha,"status":"verified"})
-    };
-    let session_manifest = serde_json::to_vec(&capture.session)
-        .map_err(|_| EvidenceReadError::Conflicting("session manifest serialization failed"))?;
-    let mut value = json!({
-        "schema_version":2,"id":"pending",
-        "event_identity":format!("{}:{}:{}",if prepared.provenance_class == "qualified_provider" {
-            "claude-qualified" } else { "claude-offline" },prepared.root_id,prepared.attempt_id),
-        "kind":"production_path",
-        "selection":{"id":prepared.selection_id,"revision":prepared.selection_digest},
-        "obligationId":prepared.obligation_id,
-        "subject":{"candidate":{"commit":prepared.candidate_commit,"tree":prepared.candidate_tree,
-            "patchIdentity":prepared.candidate_patch_identity},"reviewEpisodeId":prepared.review_episode_id},
-        "coveredState":"review-result",
-        "execution":{"attemptId":prepared.attempt_id,"resultDigest":result_digest},
-        "realization":{"requested":if capture.guard_ready {"rp0-guarded-claude-v1"} else {"offline-peer-v1"},
-            "observed":if capture.guard_ready {"rp0-guarded-claude-v1"} else {"offline-peer-v1"}},
-        "capabilityEnvelope":{"capabilities":[],"mutationAuthorized":!capture.guard_ready},
-        "continuity":{"mode":"fresh_initial","sessionId":capture.observed_session_id},
-        "transport":{"mechanism":if prepared.provenance_class == "qualified_provider" {
-            "claude-cli-json-v1" } else { "offline-claude-json-v1" },"digest":capture.response_sha256},
-        "observer":{"identity":"review-execution-evidence","kind":if capture.guard_ready {
-            "guarded-launch-owner"} else {"offline-peer-owner"}},
-        "observedAt":observed_at.map(str::to_owned).unwrap_or_else(crate::producer::canonical_now_utc),
-        "adapterVersion":if capture.guard_ready {"claude-qualified-v1"} else {"claude-offline-v1"},
-        "artifacts":[artifact("response",&capture.response_sha256),
-            artifact("stderr",&capture.stderr_sha256),artifact("session",&sha256(&session_manifest))]
-    });
-    if let Some(cbm) = &capture.cbm_observation_sha256 {
-        value["artifacts"]
-            .as_array_mut()
-            .unwrap()
-            .push(artifact("cbm", cbm));
-    }
-    let mut claim = parse_json(&value.to_string())
-        .map_err(|_| EvidenceReadError::Conflicting("Claude observation malformed"))?;
-    if let JsValue::Object(fields) = &mut claim {
-        fields.remove(&"id".into());
-    }
-    let id = format!(
-        "production-path-observation-v1@{}",
-        digest(&claim)
-            .map_err(|_| EvidenceReadError::Conflicting("Claude observation digest invalid"))?
-    );
-    value["id"] = json!(id);
-    let observation = parse_json(&value.to_string())
-        .map_err(|_| EvidenceReadError::Conflicting("Claude observation malformed"))?;
-    claim_evidence::validate_production_path_observation(&observation)
-        .map_err(|_| EvidenceReadError::Conflicting("Claude observation schema invalid"))?;
-    Ok(observation)
 }
 
 #[cfg(feature = "test-faults")]
