@@ -2,13 +2,82 @@ use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 use thiserror::Error;
 
-pub const PROFILE_ID: &str = "codex-0.162.1-workspace-snapshot-read-v1";
+/// Observed against the installed 0.163.0 binary with an auth-free loopback
+/// Responses fixture. The protocol schema hashes below were regenerated from
+/// that exact binary and happen to match the previous 0.162.1 schemas.
+pub const PROFILE_ID: &str = "codex-0.163.0-workspace-snapshot-read-v1";
 pub const NATIVE_BINARY_SHA256: &str =
-    "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1";
+    "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215";
+pub const NATIVE_USER_AGENT_VERSION: &str = "0.163.0";
 pub const SCHEMA_THREAD_START_SHA256: &str =
     "80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de";
 pub const SCHEMA_TOOL_CALL_SHA256: &str =
     "401bba20cfbd95762bef0467d840430c46be53369093ad9f26425ba757e34efc";
+
+/// The app-server prefixes its user agent with the initialize client name and
+/// the native version. Require both; a substring match admits a different
+/// version such as 0.163.01.
+pub fn user_agent_matches(value: &str, client_name: &str) -> bool {
+    value.starts_with(&format!("{client_name}/{NATIVE_USER_AGENT_VERSION} "))
+}
+
+/// 0.163.0 emits this durable-thread presentation notification immediately
+/// before turn completion. It has no turn coordinate or effect authority.
+/// Admit only the observed schema, then let the store bind its thread ID to
+/// the owned native session. Unknown notifications still fail closed.
+pub fn read_state_changed_matches(value: &Value) -> bool {
+    let Some(frame) = value.as_object() else {
+        return false;
+    };
+    // The installed binary also emits a numeric timestamp on the envelope.
+    // It is presentation metadata, not an effect or turn coordinate.
+    if frame.get("method").and_then(Value::as_str) != Some("thread/readState/changed")
+        || frame
+            .keys()
+            .any(|key| !matches!(key.as_str(), "method" | "params" | "emittedAtMs"))
+        || frame
+            .get("emittedAtMs")
+            .is_some_and(|timestamp| timestamp.as_u64().is_none())
+    {
+        return false;
+    }
+    let Some(params) = frame.get("params").and_then(Value::as_object) else {
+        return false;
+    };
+    if params.len() != 2 {
+        return false;
+    }
+    let bounded = |field: Option<&Value>| {
+        field
+            .and_then(Value::as_str)
+            .is_some_and(|s| !s.is_empty() && s.len() <= 256)
+    };
+    if !bounded(params.get("threadId")) {
+        return false;
+    }
+    let Some(state) = params.get("readState").and_then(Value::as_object) else {
+        return false;
+    };
+    if state.len() > 2
+        || state
+            .keys()
+            .any(|key| !matches!(key.as_str(), "revision" | "firstUnread"))
+        || !bounded(state.get("revision"))
+    {
+        return false;
+    }
+    match state.get("firstUnread") {
+        None | Some(Value::Null) => true,
+        Some(Value::Object(position)) if position.len() == 1 => {
+            position.get("type").and_then(Value::as_str) == Some("threadStart")
+        }
+        Some(Value::Object(position)) if position.len() == 2 => {
+            position.get("type").and_then(Value::as_str) == Some("turn")
+                && bounded(position.get("turnId"))
+        }
+        _ => false,
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum NativeProtocolError {
@@ -179,6 +248,84 @@ impl NativeEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bound_user_agent_refuses_old_or_ambiguous_versions() {
+        assert!(user_agent_matches(
+            "work_engine_s5/0.163.0 (Linux; x86_64) unknown (work_engine_s5; 0.1.0)",
+            "work_engine_s5"
+        ));
+        for value in [
+            "work_engine_s5/0.162.1 (Linux; x86_64)",
+            "work_engine_s5/0.163.01 (Linux; x86_64)",
+            "other_client/0.163.0 (Linux; x86_64)",
+            "work_engine_s5/0.163.0-extra (Linux; x86_64)",
+        ] {
+            assert!(!user_agent_matches(value, "work_engine_s5"));
+        }
+    }
+
+    #[test]
+    fn read_state_notification_is_structural_metadata_only() {
+        // Captured 0.163.0 envelope shape, including its timestamp.
+        let valid = serde_json::json!({"method":"thread/readState/changed", "params":{
+            "threadId":"01a14807-2044-7001-9d30-536791ac22cc", "readState":{
+                "firstUnread":{"type":"turn", "turnId":"01a14807-204b-7680-b976-855e77cdcb1b"},
+                "revision":"ac9e6905-b36d-4edf-8286-fdb3c1f9bda0"}},
+            "emittedAtMs":1792209789026u64});
+        assert!(read_state_changed_matches(&valid));
+        let mut without_timestamp = valid.clone();
+        without_timestamp
+            .as_object_mut()
+            .unwrap()
+            .remove("emittedAtMs");
+        assert!(read_state_changed_matches(&without_timestamp));
+        for first_unread in [
+            None,
+            Some(serde_json::Value::Null),
+            Some(serde_json::json!({"type":"threadStart"})),
+        ] {
+            let mut optional = valid.clone();
+            if let Some(first_unread) = first_unread {
+                optional["params"]["readState"]["firstUnread"] = first_unread;
+            } else {
+                optional["params"]["readState"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("firstUnread");
+            }
+            assert!(read_state_changed_matches(&optional));
+        }
+        for invalid in [
+            serde_json::json!({"params":{"threadId":"thread:1","readState":{"revision":""}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"turn"},"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","turnId":"turn:1","readState":{"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"effect","turnId":"turn:1"},"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"threadStart","unexpected":true},"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"firstUnread":{"type":"turn","turnId":"turn:1","unexpected":true},"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1","unexpected":true}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1","firstUnread":null,"unexpected":true}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"unexpected":true}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"emittedAtMs":"1792209789026"}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}},"emittedAtMs":-1}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":7,"readState":{"revision":"revision:1"}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":7}}}),
+            serde_json::json!({"method":"thread/readState/changed","params":{"threadId":"thread:1","readState":{"revision":"revision:1","firstUnread":true}}}),
+            serde_json::json!({"method":"turn/completed","params":{"threadId":"thread:1","readState":{"revision":"revision:1"}}}),
+        ] {
+            assert!(!read_state_changed_matches(&invalid));
+        }
+        for field in ["threadId", "revision", "turnId"] {
+            let mut oversized = valid.clone();
+            let target = match field {
+                "threadId" => &mut oversized["params"]["threadId"],
+                "revision" => &mut oversized["params"]["readState"]["revision"],
+                _ => &mut oversized["params"]["readState"]["firstUnread"]["turnId"],
+            };
+            *target = serde_json::json!("x".repeat(257));
+            assert!(!read_state_changed_matches(&oversized));
+        }
+    }
 
     #[test]
     fn coordinates_distinguish_identical_bytes_and_reject_ambiguous_keys() {

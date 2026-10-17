@@ -366,8 +366,9 @@ material and operation port. Its offline gate observed pending, owner-committed
 and settled current state through that selected host, including no duplicate
 task commit and recovery-only refusal after deterministic process cuts. The
 native session/turn/ingress/operation inputs were SQL-seeded fixtures; the task
-commit used the real owner API and lifecycle grant fence. This is current-state
-reconciliation evidence, not actual native entry or result execution.
+commit used the real owner API and lifecycle grant fence. That earlier gate is
+current-state reconciliation evidence alone, not actual native entry or result
+execution.
 
 A selected version-2 receipt handoff then kept those same two stores and facts
 through restart, a byte-distinct same-code alternate, and rollback to the base
@@ -375,12 +376,26 @@ binary. Exact predecessor, store stamps and state-bearing configuration were
 checked; unsupported features, build, schemas, stale predecessor and older
 binary refused before admission. The alternate has no different executable
 logic, and the older binary does not understand version 2, so semantic version
-downgrade remains unqualified. The required native simulator digest
-`628e3548…8670d92e1` is absent. S9-D therefore remains open for actual
-native entry/result and productive admission qualification, exact compatible
-binary range, and final joined review. Current Rust rollback means reopening
-or recovering the candidate's **current** stores without replay; it remains
-distinct from S9-H cross-store rollback of imported historical custody.
+downgrade remains unqualified. The prior 0.162.1 simulator digest
+`628e3548…8670d92e1` remains absent; its historical evidence did not transfer
+to a new binary. A separate offline qualification binds installed Codex 0.163.0
+as `codex-0.163.0-workspace-snapshot-read-v1` to exact SHA-256
+`399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215`.
+Its app-server/profile gates passed S5 (6/6), S6 (17/17) and
+`lifecycle-codex` (5/5), including explicit handling of the new
+`thread/readState/changed` notification. Under `env -i`, private HOME/CODEX_HOME
+and a finite scripted `127.0.0.1` Responses server, the selected packaged host
+made real native `question_open` and `result_publish` calls. Each settled one
+owner operation, native turn and delivery; clean and version-2 same-contract
+restarts retained both stores and made no provider replay. SIGKILL cuts before
+and after owner commit preserved uncertainty without an owner effect versus
+reconciled one committed effect, respectively, under recovery-only startup.
+This is exact installed-binary offline qualification, not a live-provider or OS
+egress-isolation result. S9-D remains open for final exact gates and retained
+review, supported semantic binary range and later productive acceptance.
+Current Rust rollback means reopening or recovering the candidate's
+**current** stores without replay; it remains distinct from S9-H cross-store
+rollback of imported historical custody.
 
 S9-H retains T25, historical source authority and unresolved effects. The
 owner has deferred actual historical import while development returns to fresh
@@ -430,8 +445,9 @@ their stated development cases, not this exit.
 ## S10 — Replacement qualification and operational handoff
 
 S10-D may qualify only the provider-disabled development composition reached
-through S9-D; it must name open native entry/result and current-state recovery
-limits and cannot claim full replacement. Full S10 still depends on completed
+through S9-D; it must name the exact offline native entry/result and current
+recovery scope, plus live-provider, egress-isolation and semantic downgrade
+limits, and cannot claim full replacement. Full S10 still depends on completed
 applicable S9 work.
 Freeze the integrated candidate, complete the provider-disabled
 production-composition gate and execute the selected review against that subject.
@@ -462,7 +478,7 @@ does not claim that an early pass establishes every later operating profile.
 | S5 provider/operations | T08, T15, T16, T17, T30, T34, T35 |
 | S6 semantics | T13, T14 |
 | S8 retained workflow | T02, T10, T12, T20, T29, T31 |
-| S9-D current Rust recovery; S9-H historical transfer | T24, T25, T26; selected `read_only` startup and productive-host fixture recovery/compatible same-code reselection prove only their bounded development cases |
+| S9-D current Rust recovery; S9-H historical transfer | T24, T25, T26; selected `read_only` startup, fixture recovery/same-code reselection and exact 0.163.0 scripted-loopback native entry/result prove only their bounded development cases |
 
 Before launching a slice, bind its accepted objective/contract revision, exact
 base and allowed paths, owner, dependencies, model/effort, supported profiles,
@@ -525,9 +541,10 @@ contracts, including the human/state-owner import versus archive/clean-start
 decision and any explicit change to T25/cross-store rollback scope. The initial
 S9-D `read_only` development startup is selected separately and does not satisfy
 those decisions. Before S8: agree the actual permanent Rust host consumer.
-Before productive S9-D acceptance: qualify actual native entry/result and the
-supported compatible binary range through that selected composition; the
-current recovery-only fixture gate does not supply productive admission.
+Before productive S9-D acceptance: review the exact selected offline native
+entry/result candidate and qualify the supported compatible binary range and
+any required live-provider proof through that composition; the earlier
+recovery-only SQL fixture alone did not supply productive admission.
 Before M6:
 settle retention/redaction, resource bounds and exact review/live-proof requirements.
 These later decisions do not block independent, authorized foundation work, but

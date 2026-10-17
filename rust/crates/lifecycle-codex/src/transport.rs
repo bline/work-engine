@@ -10,7 +10,7 @@ use crate::{NATIVE_BINARY_SHA256, NativeEvent, NativeEventKind, NativeProtocolEr
 
 #[derive(Debug, Error)]
 pub enum NativeHarnessError {
-    #[error("installed native binary does not match the S5 pin")]
+    #[error("installed native binary does not match the bound profile pin")]
     BinaryMismatch,
     #[error("native transport failed: {0}")]
     Transport(#[from] NativeStdioError),
@@ -132,5 +132,29 @@ impl NativeHarness {
 
     pub async fn terminate_and_reap(&mut self) -> Result<NativeChildExit, NativeHarnessError> {
         Ok(self.pipe.terminate_and_reap(Duration::from_secs(5)).await?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wrong_binary_is_refused_before_environment_or_spawn() {
+        let path = std::env::temp_dir().join(format!(
+            "work-engine-native-pin-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        std::fs::write(&path, b"not the bound native executable").unwrap();
+        let result = NativeHarness::spawn(
+            &path,
+            Path::new("/"),
+            Path::new("/"),
+            Path::new("/"),
+            "test-session".into(),
+        );
+        std::fs::remove_file(&path).unwrap();
+        assert!(matches!(result, Err(NativeHarnessError::BinaryMismatch)));
     }
 }

@@ -1028,12 +1028,12 @@ preopened lifecycle store through actor creation, and seals both store identitie
 before opening either socket. Its bounded offline recovery gate used the
 selected packaged host and real task-owner commit under the lifecycle grant
 fence. The native session, turn, ingress and pending operation were seeded as
-disposable SQLite fixtures because the required native simulator binary digest
+disposable SQLite fixtures because the then-required native simulator digest
 `628e3548…8670d92e1` was unavailable. Pending, owner-committed and settled
 readbacks survived process crashes without a duplicate task commit; the entered
 native turn remained uncertain and recovery-only startup refused new mutation.
-This qualifies reconciliation of those current saved facts, not actual native
-entry, result delivery or productive admission.
+That earlier fixture qualifies reconciliation of saved facts alone; it does
+not establish actual native entry, result delivery or productive admission.
 
 A version-2 selected handoff now checks the exact predecessor receipt, unchanged
 state-bearing configuration and both current store stamps before replacing the
@@ -1041,11 +1041,31 @@ selection receipt. The same disposable two stores survived a selected host
 restart and a byte-distinct, same-code alternate-to-base rollback; unsupported
 features, build/configuration, schemas, predecessor and older binary refused.
 The alternate differed by a nonloaded ELF note, so this is not evidence for a
-semantic version downgrade. Current Rust recovery and compatible rollback remain
-S9-D development prerequisites until actual native entry/result behavior and
-the supported binary range are qualified. They do not satisfy historical import
-or cross-store rollback requirements. The development premise does not claim
-enforcement against independently controlled copied legacy executables.
+semantic version downgrade.
+
+A separate offline qualification now binds installed Codex 0.163.0 as
+`codex-0.163.0-workspace-snapshot-read-v1` to exact native SHA-256
+`399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215`.
+The earlier 0.162.1 profile and `628e3548…8670d92e1` binary have separate
+historical evidence; their results do not transfer to the new binding. The
+0.163.0 app-server profile passed bounded S5 (6/6), S6 (17/17) and
+`lifecycle-codex` (5/5) gates, including exact-shape admission of its new
+`thread/readState/changed` notification. With an `env -i` parent, private
+HOME/CODEX_HOME and a finite scripted `127.0.0.1` Responses server, the
+selected packaged task host then made actual native `question_open` and
+`result_publish` calls. Each committed one owner operation, settled the native
+turn and delivery, and survived a clean restart without provider replay.
+Cuts before and after owner commit retained the entered uncertain turn; the
+former left no owner effect, while the latter reconciled exactly one committed
+effect on restart. A version-2 same-contract reselection retained both current
+store stamps and did not replay the provider. This qualifies those selected
+offline development paths, not live provider output or OS egress isolation.
+
+The supported semantic binary compatibility range and version downgrade remain
+open; final exact gates and retained review still precede S9-D acceptance.
+These development results do not satisfy historical import or cross-store
+rollback requirements. The development premise does not claim enforcement
+against independently controlled copied legacy executables.
 Production old-route exclusion and replacement activation require their own
 later authority and evidence.
 

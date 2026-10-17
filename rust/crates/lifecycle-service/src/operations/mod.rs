@@ -261,7 +261,7 @@ impl Runner {
         if !init
             .get("userAgent")
             .and_then(Value::as_str)
-            .is_some_and(|s| s.contains("0.162.1"))
+            .is_some_and(|s| lifecycle_codex::user_agent_matches(s, "work_engine_s5"))
             || init.get("codexHome").and_then(Value::as_str) != launch.codex_home.to_str()
         {
             return Err(StoreError::Rejected);

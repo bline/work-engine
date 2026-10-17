@@ -146,6 +146,12 @@ impl DirectRunner<'_> {
                 }
             }
             NativeEventKind::Notification { method }
+                if method == "thread/readState/changed"
+                    && lifecycle_codex::read_state_changed_matches(&event.value) =>
+            {
+                "qualified"
+            }
+            NativeEventKind::Notification { method }
                 if matches!(
                     method.as_str(),
                     "configWarning"
@@ -299,7 +305,7 @@ pub async fn run_control_turn(
     };
     let execution=async {
         let (init,_)=runner.rpc("initialize",json!({"clientInfo":{"name":"work_engine_s6","version":"0.1.0"},"capabilities":{"experimentalApi":true}})).await?;
-        if !init.get("userAgent").and_then(Value::as_str).is_some_and(|s|s.contains("0.162.1"))
+        if !init.get("userAgent").and_then(Value::as_str).is_some_and(|s|lifecycle_codex::user_agent_matches(s,"work_engine_s6"))
             || init.get("codexHome").and_then(Value::as_str)!=launch.codex_home.to_str() {return Err(StoreError::Rejected);}
         runner.harness.send_notification("initialized",json!({})).await.map_err(|_|StoreError::Unavailable)?;
         let (effective,_)=runner.rpc("config/read",json!({"includeLayers":false})).await?;

@@ -1337,6 +1337,12 @@ impl Actor {
                 }
             }
             NativeEventKind::Notification { method }
+                if method == "thread/readState/changed"
+                    && lifecycle_codex::read_state_changed_matches(&event.value) =>
+            {
+                "qualified"
+            }
+            NativeEventKind::Notification { method }
                 if matches!(
                     method.as_str(),
                     "configWarning"
