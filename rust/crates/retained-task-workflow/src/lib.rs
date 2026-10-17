@@ -1,7 +1,13 @@
 //! Canonical, durable meaning for a retained repository-analysis task.
 //! Lifecycle owns delivery, native execution, tool effects, and custody.
 
-use std::{path::Path, sync::Mutex, time::Duration};
+use std::{
+    fs::{self, File, OpenOptions},
+    os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
+    path::Path,
+    sync::Mutex,
+    time::Duration,
+};
 #[cfg(feature = "controlled-proof")]
 use std::{path::PathBuf, time::Instant};
 
@@ -23,6 +29,75 @@ const MAX_TEXT: usize = 8 * 1024;
 type TaskGrantFence<'a> =
     dyn FnMut(&mut dyn FnMut() -> Result<(), TaskError>) -> Result<(), TaskError> + 'a;
 type CommandRow = (String, String, String, Vec<u8>);
+
+// Keep the legacy six-table layout unchanged. Existing stores are checked
+// against SQLite's own representation of these declarations before any write.
+const OWNER_SCHEMA_SQL: &str = "CREATE TABLE IF NOT EXISTS tasks (
+                 task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL UNIQUE,
+                 record_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS commands (
+                 command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 payload_digest TEXT NOT NULL, task_id TEXT NOT NULL,
+                 commit_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS operations (
+                 operation_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 payload_digest TEXT NOT NULL, entry_digest TEXT NOT NULL,
+                 commit_json BLOB NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS completed_effects (
+                 effect_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+                 delivery_id TEXT NOT NULL, receipt_digest TEXT NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS admission_commands (
+                 command_id TEXT PRIMARY KEY, request_digest TEXT NOT NULL,
+                 command_json TEXT NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS control_commands (
+                 command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                 request_sha256 TEXT NOT NULL, service_command_json TEXT NOT NULL
+               );
+               CREATE TABLE IF NOT EXISTS store_identity (
+                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                 store_id TEXT NOT NULL UNIQUE,
+                 schema_version INTEGER NOT NULL CHECK(schema_version = 1)
+               );";
+
+type SchemaObject = (String, String, String, Option<String>);
+
+fn schema_objects(connection: &Connection) -> Result<Vec<SchemaObject>, TaskError> {
+    let mut statement = connection.prepare(
+        "SELECT type, name, tbl_name, sql FROM sqlite_master ORDER BY type, name, tbl_name",
+    )?;
+    let rows = statement.query_map([], |row| {
+        let sql: Option<String> = row.get(3)?;
+        Ok((
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            sql.map(|definition| {
+                // SQLite preserves formatting from the creating binary. The
+                // old owner used the same DDL with different indentation.
+                definition.split_whitespace().collect::<Vec<_>>().join(" ")
+            }),
+        ))
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(TaskError::from)
+}
+
+fn validate_owner_schema(connection: &Connection, legacy: bool) -> Result<(), TaskError> {
+    let expected = Connection::open_in_memory()?;
+    expected.execute_batch(OWNER_SCHEMA_SQL)?;
+    let mut expected_objects = schema_objects(&expected)?;
+    if legacy {
+        expected_objects.retain(|(_, _, table, _)| table != "store_identity");
+    }
+    if schema_objects(connection)? != expected_objects {
+        return Err(TaskError::Invalid);
+    }
+    Ok(())
+}
 
 #[derive(Debug, Error)]
 pub enum TaskError {
@@ -247,6 +322,7 @@ pub struct OperationCommit {
 
 pub struct TaskStore {
     connection: Mutex<Connection>,
+    _writer_lock: File,
     answer_authority_ref: String,
     #[cfg(feature = "controlled-proof")]
     proof_barrier_dir: Option<PathBuf>,
@@ -257,43 +333,105 @@ impl TaskStore {
         if answer_authority_ref.is_empty() || !path.is_absolute() {
             return Err(TaskError::Invalid);
         }
+        let lock_path = path.with_extension("owner.lock");
+        let writer_lock = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .mode(0o600)
+            .open(&lock_path)
+            .map_err(|_| TaskError::Unavailable)?;
+        let lock_meta = writer_lock.metadata().map_err(|_| TaskError::Unavailable)?;
+        if !lock_meta.is_file()
+            || lock_meta.nlink() != 1
+            || lock_meta.permissions().mode() & 0o777 != 0o600
+        {
+            return Err(TaskError::Invalid);
+        }
+        writer_lock.try_lock().map_err(|_| TaskError::Busy)?;
+        let fresh = match fs::symlink_metadata(path) {
+            Ok(_) => false,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
+            Err(_) => return Err(TaskError::Unavailable),
+        };
         let connection = Connection::open(path)?;
         connection.busy_timeout(Duration::from_secs(2))?;
-        connection.execute_batch(
-            "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
-             CREATE TABLE IF NOT EXISTS tasks (
-               task_id TEXT PRIMARY KEY, subject_id TEXT NOT NULL UNIQUE,
-               record_json BLOB NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS commands (
-               command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
-               payload_digest TEXT NOT NULL, task_id TEXT NOT NULL,
-               commit_json BLOB NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS operations (
-               operation_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
-               payload_digest TEXT NOT NULL, entry_digest TEXT NOT NULL,
-               commit_json BLOB NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS completed_effects (
-               effect_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
-               delivery_id TEXT NOT NULL, receipt_digest TEXT NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS admission_commands (
-               command_id TEXT PRIMARY KEY, request_digest TEXT NOT NULL,
-               command_json TEXT NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS control_commands (
-               command_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
-               request_sha256 TEXT NOT NULL, service_command_json TEXT NOT NULL
-             );",
+        let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+        if !(0..=1).contains(&version) || (fresh && version != 0) {
+            return Err(TaskError::Invalid);
+        }
+        if !fresh {
+            validate_owner_schema(&connection, version == 0)?;
+        }
+        if version == 0 {
+            connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
+            connection.execute_batch("BEGIN IMMEDIATE;")?;
+            let migration = connection.execute_batch(OWNER_SCHEMA_SQL).and_then(|()| {
+                connection.execute_batch(
+                    "INSERT INTO store_identity(singleton, store_id, schema_version)
+                       VALUES(1, lower(hex(randomblob(16))), 1);
+                     PRAGMA user_version=1;",
+                )
+            });
+            if let Err(error) = migration {
+                let _ = connection.execute_batch("ROLLBACK;");
+                return Err(error.into());
+            }
+            connection.execute_batch("COMMIT;")?;
+        }
+        let (store_id, schema_version): (String, i64) = connection.query_row(
+            "SELECT store_id, schema_version FROM store_identity WHERE singleton=1",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
+        if schema_version != 1
+            || store_id.len() != 32
+            || !store_id
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        {
+            return Err(TaskError::Invalid);
+        }
+        if version == 1 {
+            // Synchronous is per connection; set it only after read-only
+            // schema and identity validation above.
+            connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
+        }
         Ok(Self {
             connection: Mutex::new(connection),
+            _writer_lock: writer_lock,
             answer_authority_ref,
             #[cfg(feature = "controlled-proof")]
             proof_barrier_dir: None,
         })
+    }
+
+    /// Durable identity of this task owner, minted in its own SQLite store.
+    pub fn store_id(&self) -> Result<String, TaskError> {
+        let connection = self.lock()?;
+        let id = connection.query_row(
+            "SELECT store_id FROM store_identity WHERE singleton=1 AND schema_version=1",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(id)
+    }
+
+    /// Only a newly selected store may be sealed without a prior receipt.
+    pub fn is_pristine(&self) -> Result<bool, TaskError> {
+        let connection = self.lock()?;
+        let count: i64 = connection.query_row(
+            "SELECT (SELECT count(*) FROM tasks)
+                  + (SELECT count(*) FROM commands)
+                  + (SELECT count(*) FROM operations)
+                  + (SELECT count(*) FROM completed_effects)
+                  + (SELECT count(*) FROM admission_commands)
+                  + (SELECT count(*) FROM control_commands)",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count == 0)
     }
 
     /// Controlled timing only. The installed host supplies this trusted path;

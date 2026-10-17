@@ -8,6 +8,7 @@ use retained_task_workflow::{
     AnswerQuestion, CompletedEffect, FactInput, FactKind, OperationEntry, QuestionOpenPayload,
     ResultPublishPayload, SubjectKind, SubmitTask, TaskError, TaskStore, json_digest, sha256,
 };
+use rusqlite::Connection;
 
 fn task() -> SubmitTask {
     SubmitTask {
@@ -20,6 +21,129 @@ fn task() -> SubmitTask {
         snapshot_ref: "snapshot-0".into(),
         facts: Vec::new(),
     }
+}
+
+#[test]
+fn existing_owner_schema_is_checked_before_repair_or_wal_change() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("tasks.sqlite");
+    let store = TaskStore::open(&path, "human-operator".into()).unwrap();
+    let store_id = store.store_id().unwrap();
+    let submit = store.submit(&task()).unwrap();
+    drop(store);
+
+    let reopened = TaskStore::open(&path, "human-operator".into()).unwrap();
+    assert_eq!(reopened.store_id().unwrap(), store_id);
+    assert_eq!(
+        reopened.observe("task-0").unwrap().unwrap().revision,
+        submit.owner_revision
+    );
+    drop(reopened);
+
+    let connection = Connection::open(&path).unwrap();
+    connection
+        .execute_batch("ALTER TABLE operations RENAME TO operations_missing;")
+        .unwrap();
+    let before: Vec<(String, String)> = connection
+        .prepare("SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name")
+        .unwrap()
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let before_task: Vec<u8> = connection
+        .query_row(
+            "SELECT record_json FROM tasks WHERE task_id='task-0'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    drop(connection);
+    assert!(matches!(
+        TaskStore::open(&path, "human-operator".into()),
+        Err(TaskError::Invalid)
+    ));
+    let connection = Connection::open(&path).unwrap();
+    let after: Vec<(String, String)> = connection
+        .prepare("SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name")
+        .unwrap()
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let after_task: Vec<u8> = connection
+        .query_row(
+            "SELECT record_json FROM tasks WHERE task_id='task-0'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(after, before);
+    assert_eq!(after_task, before_task);
+    assert!(!after.iter().any(|(name, _)| name == "operations"));
+}
+
+#[test]
+fn altered_owner_table_is_not_accepted_as_current_schema() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("tasks.sqlite");
+    drop(TaskStore::open(&path, "human-operator".into()).unwrap());
+    let connection = Connection::open(&path).unwrap();
+    connection
+        .execute_batch(
+            "DROP TABLE operations;
+         CREATE TABLE operations (
+           operation_id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+           payload_digest TEXT NOT NULL, entry_digest TEXT,
+           commit_json BLOB NOT NULL
+         );",
+        )
+        .unwrap();
+    let before: String = connection
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE name='operations'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    drop(connection);
+    assert!(matches!(
+        TaskStore::open(&path, "human-operator".into()),
+        Err(TaskError::Invalid)
+    ));
+    let connection = Connection::open(&path).unwrap();
+    let after: String = connection
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE name='operations'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(after, before);
+}
+
+#[test]
+fn only_recognized_legacy_owner_layout_is_migrated() {
+    let root = tempfile::tempdir().unwrap();
+    let unknown = root.path().join("unknown.sqlite");
+    Connection::open(&unknown).unwrap();
+    assert!(matches!(
+        TaskStore::open(&unknown, "human-operator".into()),
+        Err(TaskError::Invalid)
+    ));
+
+    let path = root.path().join("legacy.sqlite");
+    let store = TaskStore::open(&path, "human-operator".into()).unwrap();
+    store.submit(&task()).unwrap();
+    drop(store);
+    let connection = Connection::open(&path).unwrap();
+    connection
+        .execute_batch("DROP TABLE store_identity; PRAGMA user_version=0;")
+        .unwrap();
+    drop(connection);
+    let migrated = TaskStore::open(&path, "human-operator".into()).unwrap();
+    assert_eq!(migrated.observe("task-0").unwrap().unwrap().revision, 1);
+    assert_eq!(migrated.store_id().unwrap().len(), 32);
 }
 
 #[test]

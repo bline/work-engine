@@ -1,6 +1,7 @@
 //! Permanent ordinary entry for retained repository-analysis tasks.
 
 mod observation;
+mod selected_startup;
 
 use lifecycle_service::{GrantConfig, ServiceConfig};
 use lifecycle_wire::{
@@ -108,17 +109,25 @@ struct Host {
 
 pub fn run() -> Result<(), HostError> {
     let mut args = std::env::args().skip(1);
-    if args.next().as_deref() != Some("serve") || args.next().as_deref() != Some("--startup") {
+    if args.next().as_deref() != Some("serve") {
+        return Err(HostError::Configuration);
+    }
+    let route = args.next().ok_or(HostError::Configuration)?;
+    if route != "--startup" && route != "--selected" {
         return Err(HostError::Configuration);
     }
     let path = PathBuf::from(args.next().ok_or(HostError::Configuration)?);
     if args.next().is_some() {
         return Err(HostError::Configuration);
     }
-    tokio::runtime::Builder::new_multi_thread()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .build()?
-        .block_on(serve(&path))
+        .build()?;
+    if route == "--selected" {
+        runtime.block_on(serve_selected(&path))
+    } else {
+        runtime.block_on(serve(&path))
+    }
 }
 
 pub async fn serve(path: &Path) -> Result<(), HostError> {
@@ -131,6 +140,28 @@ pub async fn serve(path: &Path) -> Result<(), HostError> {
     )?;
     #[cfg(feature = "controlled-proof")]
     let store = store.with_controlled_proof_barrier(startup.lifecycle.proof_barrier_dir.clone())?;
+    serve_composed(startup, store, None).await
+}
+
+/// One sealed host selection binds the executable and both stores before
+/// either admission socket opens. The lock survives until the service closes.
+pub async fn serve_selected(path: &Path) -> Result<(), HostError> {
+    let selected_startup::Prepared {
+        startup,
+        task_store,
+        lifecycle_store,
+        selection_lock,
+    } = selected_startup::prepare(path)?;
+    let result = serve_composed(startup, task_store, Some(lifecycle_store)).await;
+    drop(selection_lock);
+    result
+}
+
+async fn serve_composed(
+    startup: HostStartup,
+    store: TaskStore,
+    selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
+) -> Result<(), HostError> {
     let store = Arc::new(store);
     let identity = host_identity(&startup)?;
     let host = Arc::new(Host {
@@ -144,7 +175,17 @@ pub async fn serve(path: &Path) -> Result<(), HostError> {
     let material = host.store.clone();
     let operations = host.store.clone();
     let mut service = tokio::spawn(async move {
-        lifecycle_service::run_with_task_ports(config, material, operations).await
+        if let Some(selected_store) = selected_store {
+            lifecycle_service::run_with_selected_task_ports(
+                config,
+                selected_store,
+                material,
+                operations,
+            )
+            .await
+        } else {
+            lifecycle_service::run_with_task_ports(config, material, operations).await
+        }
     });
     wait_for_socket(&host.startup.lifecycle.socket_path, &mut service).await?;
     let recovery_only = read_recovery_only(

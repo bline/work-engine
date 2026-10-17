@@ -1022,12 +1022,32 @@ actually fresh disposable Rust store and qualifies selected executable,
 configuration and root binding before any listener or effect-capable entry. Its
 initial `read_only` lifecycle-service slice exercises stable restart selection
 and ordinary store coherence; it is not a complete productive task-host/runtime
-composition. S9-D still needs current Rust pending/completed/uncertain effect
-recovery, compatible upgrade and current-state rollback without replay. These
-remain development prerequisites rather than historical import requirements.
-The development premise does not claim enforcement against independently
-controlled copied legacy executables. Production old-route exclusion and
-replacement activation require their own later authority and evidence.
+composition. A later `work-engine-task-host` candidate joins the real task
+owner as both lifecycle material and operation port, carries the selected
+preopened lifecycle store through actor creation, and seals both store identities
+before opening either socket. Its bounded offline recovery gate used the
+selected packaged host and real task-owner commit under the lifecycle grant
+fence. The native session, turn, ingress and pending operation were seeded as
+disposable SQLite fixtures because the required native simulator binary digest
+`628e3548…8670d92e1` was unavailable. Pending, owner-committed and settled
+readbacks survived process crashes without a duplicate task commit; the entered
+native turn remained uncertain and recovery-only startup refused new mutation.
+This qualifies reconciliation of those current saved facts, not actual native
+entry, result delivery or productive admission.
+
+A version-2 selected handoff now checks the exact predecessor receipt, unchanged
+state-bearing configuration and both current store stamps before replacing the
+selection receipt. The same disposable two stores survived a selected host
+restart and a byte-distinct, same-code alternate-to-base rollback; unsupported
+features, build/configuration, schemas, predecessor and older binary refused.
+The alternate differed by a nonloaded ELF note, so this is not evidence for a
+semantic version downgrade. Current Rust recovery and compatible rollback remain
+S9-D development prerequisites until actual native entry/result behavior and
+the supported binary range are qualified. They do not satisfy historical import
+or cross-store rollback requirements. The development premise does not claim
+enforcement against independently controlled copied legacy executables.
+Production old-route exclusion and replacement activation require their own
+later authority and evidence.
 
 The replacement proves its real startup, fencing, draining and handoff boundary
 with a selected permanent Rust startup/deployment owner. The exact owner,

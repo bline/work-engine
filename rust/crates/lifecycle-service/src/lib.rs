@@ -192,3 +192,71 @@ pub async fn run_with_task_ports(
 ) -> Result<(), ServiceError> {
     socket::run(config, Some(material_port), Some(task_operation_port)).await
 }
+
+/// An already opened lifecycle store whose writer lock remains owned by the
+/// selected host until the composed service exits.
+pub struct SelectedLifecycleStore {
+    store: lifecycle_store::SqliteLifecycleStore,
+    store_id: String,
+    pristine: bool,
+}
+
+impl SelectedLifecycleStore {
+    pub fn open(config: &ServiceConfig) -> Result<Self, ServiceError> {
+        let store = lifecycle_store::SqliteLifecycleStore::open(
+            &config.store_root,
+            config.trusted_issuer.clone(),
+        )?;
+        if store.root() != config.store_root {
+            return Err(ServiceError::Configuration);
+        }
+        let owner = store.admin_ownership()?;
+        if owner.status != "active"
+            || owner.handoff_id.is_some()
+            || owner.capsule_sha256.is_some()
+            || owner.peer_store_id.is_some()
+            || owner.selection_revision.is_some()
+        {
+            return Err(ServiceError::Configuration);
+        }
+        let recovery = store.load_recovery()?;
+        Ok(Self {
+            store,
+            store_id: owner.store_id,
+            pristine: recovery.subjects == 0
+                && recovery.commands == 0
+                && recovery.unresolved_attempts == 0
+                && recovery.journal_cursor == 0,
+        })
+    }
+
+    pub fn store_id(&self) -> &str {
+        &self.store_id
+    }
+
+    pub fn pristine(&self) -> bool {
+        self.pristine
+    }
+}
+
+/// The selected task host owns both domain ports and transfers its validated
+/// lifecycle store directly to the actor without releasing the writer lock.
+pub async fn run_with_selected_task_ports(
+    config: ServiceConfig,
+    selected: SelectedLifecycleStore,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+) -> Result<(), ServiceError> {
+    if config.profile != "retained-repository-analysis-v1"
+        || selected.store.root() != config.store_root
+    {
+        return Err(ServiceError::Configuration);
+    }
+    socket::run_with_preopened_task_ports(
+        config,
+        selected.store,
+        material_port,
+        task_operation_port,
+    )
+    .await
+}

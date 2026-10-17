@@ -56,6 +56,21 @@ pub(crate) async fn run_with_preopened_store(
     run_inner(config, None, None, Some(store)).await
 }
 
+pub(crate) async fn run_with_preopened_task_ports(
+    config: ServiceConfig,
+    store: SqliteLifecycleStore,
+    material_port: Arc<dyn CanonicalMaterialPort>,
+    task_operation_port: Arc<dyn TaskOperationPort>,
+) -> Result<(), ServiceError> {
+    run_inner(
+        config,
+        Some(material_port),
+        Some(task_operation_port),
+        Some(store),
+    )
+    .await
+}
+
 async fn run_inner(
     config: ServiceConfig,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
