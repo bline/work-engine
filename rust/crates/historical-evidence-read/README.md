@@ -92,3 +92,33 @@ ref; `presented_at` is null and no mutation history or UUID-to-schedule causal
 edge is supplied. The five-check receipt versus eight metric stages remains
 unresolved. These limits remain visible in the terminal view; this local case
 read is not full UI-0 acceptance.
+
+`historical_s5.graph.v1` is an additive private operation on the same socket
+and version-2 grant. After one admitted v2 read, the host derives a disposable,
+case-scoped owner graph. The response includes the full validated v2 summary,
+a finite registry of owner/source classes and legal outgoing relations, sorted
+nodes and edges, source limits, and explicit gaps. Its deterministic historical
+IDs use checkpoint OIDs, gate digests, review revisions, captured result UUIDs
+and capture hashes, scheduler row digest, or frozen metrics row digest. They do
+not use the grant ID, executable-byte anchor or read time. The client
+reconstructs the graph from the validated base and refuses a changed owner,
+class, endpoint, identity or edge. All three operations keep the 131,072-byte
+frame limit; graph and legacy owner work share the 30-second host deadline and
+one graph→v2→v1 attempt shares the client's 35-second absolute deadline. A
+refused newer operation may fall back to an older admitted operation, while an
+unavailable or corrupt graph cannot be silently downgraded.
+
+The graph registers selected checkpoints, five gate captures, 14 linked review
+revisions and their finding states, eight captured CLI results, one current
+acknowledged scheduler row and an optional frozen metrics row. The replacement
+authority edge originates only at the candidate-5 review head; candidate 3
+reaches its own exact review revision and the recorded revision chain. The
+terminal labels jumps to the head, captured result or current scheduler row
+as **case navigation** because no causal edge is admitted for those jumps.
+The scheduler's outgoing edge binds its exact candidate-4 review result;
+the captured 429 does not point causally to the scheduler. The derived cost sum
+uses eight distinct captured UUIDs, not billing authority. The five-check and
+eight-stage facts keep separate units and unresolved semantics. The graph
+does not add repair-contract, selected-review/acceptance, full scheduler
+mutation, presentation or provider-billing evidence; full UI-0 acceptance
+remains open.

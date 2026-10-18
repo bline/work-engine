@@ -153,14 +153,14 @@ fn missing_socket_never_installs_case_facts() {
 }
 
 #[test]
-fn refused_v2_and_v1_keep_initial_frame_unadmitted() {
+fn refused_graph_v2_and_v1_keep_initial_frame_unadmitted() {
     let dir = local_test_dir("refused");
     let socket = dir.join("s");
     let evidence = dir.join("evidence");
     fs::create_dir(&evidence).unwrap();
     let listener = UnixListener::bind(&socket).unwrap();
     let server = std::thread::spawn(move || {
-        for attempt in 0..2 {
+        for attempt in 0..3 {
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -244,6 +244,16 @@ fn refresh_keeps_last_observed_frame_and_marks_failure_stale() {
     let listener = UnixListener::bind(&socket).unwrap();
     let server = std::thread::spawn(move || {
         for index in 0..2 {
+            let (mut graph_stream, _) = listener.accept().unwrap();
+            let mut length = [0; 4];
+            graph_stream.read_exact(&mut length).unwrap();
+            let mut request = vec![0; u32::from_be_bytes(length) as usize];
+            graph_stream.read_exact(&mut request).unwrap();
+            let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
+            graph_stream
+                .write_all(&(refusal.len() as u32).to_be_bytes())
+                .unwrap();
+            graph_stream.write_all(refusal).unwrap();
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -307,6 +317,16 @@ fn public_metrics_absence_renders_unavailable_but_corruption_is_rejected() {
         fs::create_dir(&evidence).unwrap();
         let listener = UnixListener::bind(&socket).unwrap();
         let server = std::thread::spawn(move || {
+            let (mut graph_stream, _) = listener.accept().unwrap();
+            let mut length = [0; 4];
+            graph_stream.read_exact(&mut length).unwrap();
+            let mut request = vec![0; u32::from_be_bytes(length) as usize];
+            graph_stream.read_exact(&mut request).unwrap();
+            let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
+            graph_stream
+                .write_all(&(refusal.len() as u32).to_be_bytes())
+                .unwrap();
+            graph_stream.write_all(refusal).unwrap();
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -340,6 +360,26 @@ fn wait_for_pane(terminal: &mut Terminal, heading: &str, detail: &str, stage: &s
     terminal.wait_for(heading, &format!("{stage}-pane"));
     terminal.wait_for(detail, stage);
     assert!(terminal.screen().contains(heading), "wrong pane at {stage}");
+}
+
+fn reach_graph_details(terminal: &mut Terminal, required: &[&str], stage: &str) {
+    let mut missing = required.to_vec();
+    for page in 0..=12 {
+        let screen = terminal.screen();
+        missing.retain(|text| !screen.contains(text));
+        if missing.is_empty() {
+            return;
+        }
+        if page == 12 {
+            break;
+        }
+        terminal.input(b"\x1b[6~");
+        terminal.wait_for(
+            &format!("PgDn/PgUp detail +{}", (page + 1) * 8),
+            &format!("{stage}-page-{}", page + 1),
+        );
+    }
+    panic!("graph detail unreachable at {stage}: {missing:?}");
 }
 
 #[test]
@@ -515,6 +555,120 @@ fn real_owner_read_is_navigable_in_one_terminal_session() {
         terminal.wait_for(
             "5 receipt checks / 8 frozen metric stages unresolved",
             "frozen-metrics-discrepancy",
+        );
+        terminal.input(b"3");
+        terminal.wait_for(
+            "Candidate and gate · selected candidate 3",
+            "graph-candidate3-start",
+        );
+        terminal.input(b"v");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Node        checkpoint",
+            "graph-candidate3",
+        );
+        for _ in 0..4 {
+            terminal.input(b"]");
+        }
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Revision    c02c6bf02836f1c0ee095d8d57335820fe60bf67",
+            "graph-candidate3-revision",
+        );
+        assert!(!terminal.screen().contains("replaces_reported_episode"));
+        terminal.input(b"c");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Revision    24f3f38e5351b48bcd3e069978b22a597f590e82",
+            "graph-case-nav-head",
+        );
+        assert!(terminal.screen().contains("CASE NAVIGATION"));
+        terminal.input(b"]");
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Revision    f5773967f8f6a8470161ac4b1552738d49a23d8c",
+            "graph-head-authority-original",
+        );
+        terminal.input(b"v");
+        terminal.input(b"4");
+        terminal.wait_for(
+            "Candidate and gate · selected candidate 4",
+            "graph-candidate4-start",
+        );
+        terminal.input(b"v");
+        terminal.input(b"a");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 4",
+            "Node        provider_result",
+            "graph-429-result",
+        );
+        reach_graph_details(
+            &mut terminal,
+            &[
+                "Owner       slice-builder captured provider output",
+                "Source      captured_cli_result",
+                "Measurement cli_reported_cost",
+                "1.107375 USD_literal",
+            ],
+            "graph-429-provenance",
+        );
+        terminal.input(b"s");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 4",
+            "Node        scheduler_current_row",
+            "graph-current-scheduler",
+        );
+        assert!(terminal.screen().contains("no provider-UUID causal edge"));
+        reach_graph_details(
+            &mut terminal,
+            &[
+                "Edge source",
+                "a74079c406818655640bd60c5cc36a6ee9cac1ce52810b3560540",
+                "Edge limit",
+                "Current acknowledged row only",
+                "Owner       role-scheduler",
+                "Source      current_retained_row",
+                "Coverage    one_current_row_no_mutation_history",
+                "Observed    current_row_updated_at:",
+                "Effective   current_row_due_at:",
+            ],
+            "graph-scheduler-provenance",
+        );
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 4",
+            "Revision    034b4df528510e5f65029aa029f3fd2f78ef39d1",
+            "graph-scheduler-result",
+        );
+        terminal.input(b"v");
+        terminal.input(b"5");
+        terminal.wait_for(
+            "Candidate and gate · selected candidate 5",
+            "graph-candidate5-start",
+        );
+        terminal.input(b"v");
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 5",
+            "Node        gate_capture",
+            "graph-candidate5-gate",
+        );
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 5",
+            "Node        measurement_discrepancy",
+            "graph-five-eight-comparison",
         );
         terminal.close_history();
     }

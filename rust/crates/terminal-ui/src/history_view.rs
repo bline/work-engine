@@ -5,10 +5,8 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use historical_evidence_client::{InspectAttempt, Inspected, ReadError, inspect, inspect_v2};
-use historical_evidence_wire::{
-    Observation, ObservationV2, Request, RequestV2, ReviewEpisode, ReviewRevision,
-};
+use historical_evidence_client::{InspectAttempt, Inspected, inspect_best};
+use historical_evidence_wire::{Observation, ObservationV2, ReviewEpisode, ReviewRevision, graph};
 use ratatui::{
     Frame, Terminal,
     backend::{CrosstermBackend, TestBackend},
@@ -29,6 +27,7 @@ enum Stage {
     Findings,
     Provider,
     Scheduler,
+    Graph,
     Gaps,
 }
 impl Stage {
@@ -39,6 +38,7 @@ impl Stage {
             Self::Original => Self::Findings,
             Self::Provider => Self::Scheduler,
             Self::Scheduler => Self::Replacement,
+            Self::Graph => Self::Graph,
             Self::Findings | Self::Gaps => Self::Gaps,
         }
     }
@@ -49,6 +49,7 @@ impl Stage {
             Self::Findings => Self::Original,
             Self::Provider => Self::Candidate,
             Self::Scheduler => Self::Provider,
+            Self::Graph => Self::Candidate,
             Self::Gaps => Self::Findings,
         }
     }
@@ -60,6 +61,7 @@ impl Stage {
             Self::Findings => "Finding dispositions",
             Self::Provider => "Provider attempts",
             Self::Scheduler => "Scheduled retry",
+            Self::Graph => "Owner evidence graph",
             Self::Gaps => "Evidence gaps",
         }
     }
@@ -68,6 +70,10 @@ impl Stage {
 struct State {
     observation: Observation,
     extended: Option<ObservationV2>,
+    graph: Option<graph::Observation>,
+    graph_index: usize,
+    graph_edge: usize,
+    graph_back: Vec<usize>,
     selected_attempt: usize,
     selected_provider: usize,
     stage: Stage,
@@ -79,6 +85,10 @@ impl State {
         Self {
             observation,
             extended: None,
+            graph: None,
+            graph_index: 0,
+            graph_edge: 0,
+            graph_back: Vec::new(),
             selected_attempt: 5,
             selected_provider: 5,
             stage: Stage::Candidate,
@@ -93,9 +103,87 @@ impl State {
             "ADMITTED LOCAL V2 READ · captured provider and scheduler sources · no actions".into();
         state
     }
+    fn from_graph(graph: graph::Observation) -> Self {
+        let mut state = Self::from_v2(graph.base.clone());
+        state.graph = Some(graph);
+        state.notice = "ADMITTED LOCAL GRAPH READ · exact owner edges · no actions".into();
+        state
+    }
+    fn open_graph(&mut self) {
+        if let Some(graph) = &self.graph {
+            self.graph_index = if self.stage == Stage::Provider {
+                self.extended
+                    .as_ref()
+                    .and_then(|v2| v2.provider.attempts.get(self.selected_provider))
+                    .and_then(|attempt| {
+                        graph.nodes.iter().position(|n| {
+                            n.kind == "provider_result"
+                                && n.local_id == attempt.result_uuid
+                                && n.source_revision == attempt.source_line_sha256
+                        })
+                    })
+            } else {
+                let candidate = &self.observation.candidates[self.selected_attempt - 1];
+                graph.nodes.iter().position(|n| {
+                    n.kind == "checkpoint"
+                        && n.source_ref == candidate.checkpoint_ref
+                        && n.source_revision == candidate.commit_oid
+                })
+            }
+            .unwrap_or(0);
+            self.graph_edge = 0;
+            self.graph_back.clear();
+            self.stage = Stage::Graph;
+            self.detail_scroll = 0;
+        }
+    }
+    fn graph_edges(&self) -> Vec<usize> {
+        let Some(graph) = &self.graph else {
+            return Vec::new();
+        };
+        let Some(node) = graph.nodes.get(self.graph_index) else {
+            return Vec::new();
+        };
+        graph
+            .edges
+            .iter()
+            .enumerate()
+            .filter_map(|(i, edge)| (edge.from == node.id || edge.to == node.id).then_some(i))
+            .collect()
+    }
     fn refresh_with(&mut self, next: Inspected) {
         match next {
+            Inspected::Graph(next) => {
+                let old_id = self
+                    .graph
+                    .as_ref()
+                    .and_then(|g| g.nodes.get(self.graph_index))
+                    .map(|n| n.id.clone());
+                let changed = self.extended.as_ref().is_some_and(|old| {
+                    old.source_identity_sha256 != next.base.source_identity_sha256
+                });
+                self.observation = next.base.base.clone();
+                self.extended = Some(next.base.clone());
+                self.graph = Some(*next);
+                if changed {
+                    self.stage = Stage::Candidate;
+                    self.selected_attempt = 5;
+                    self.graph_edge = 0;
+                    self.graph_back.clear();
+                    self.detail_scroll = 0;
+                    self.notice = "Source identity changed; inspection anchor cleared".into();
+                } else {
+                    if let (Some(id), Some(graph)) = (old_id, &self.graph) {
+                        self.graph_index = graph.nodes.iter().position(|n| n.id == id).unwrap_or(0);
+                    }
+                    self.notice = "Owner graph refreshed under admitted read".into();
+                }
+            }
             Inspected::V2(next) if self.extended.is_some() => {
+                self.graph = None;
+                if self.stage == Stage::Graph {
+                    self.stage = Stage::Candidate;
+                }
                 if next.source_identity_sha256
                     != self.extended.as_ref().unwrap().source_identity_sha256
                 {
@@ -111,6 +199,10 @@ impl State {
                 self.extended = Some(*next);
             }
             Inspected::V1(next) if self.extended.is_none() => {
+                self.graph = None;
+                if self.stage == Stage::Graph {
+                    self.stage = Stage::Candidate;
+                }
                 if next.source_identity_sha256 != self.observation.source_identity_sha256 {
                     self.stage = Stage::Candidate;
                     self.selected_attempt = 5;
@@ -126,6 +218,131 @@ impl State {
         }
     }
     fn key(&mut self, code: KeyCode) -> bool {
+        if self.stage == Stage::Graph {
+            match code {
+                KeyCode::Char('q') | KeyCode::Esc => return true,
+                KeyCode::Char('v') => {
+                    self.stage = Stage::Candidate;
+                    self.detail_scroll = 0;
+                    return false;
+                }
+                KeyCode::Char(']') | KeyCode::Down | KeyCode::Char('j') => {
+                    let count = self.graph_edges().len();
+                    if count > 0 {
+                        self.graph_edge = (self.graph_edge + 1) % count;
+                        self.detail_scroll = 0;
+                    }
+                    return false;
+                }
+                KeyCode::Char('[') | KeyCode::Up | KeyCode::Char('k') => {
+                    let count = self.graph_edges().len();
+                    if count > 0 {
+                        self.graph_edge = (self.graph_edge + count - 1) % count;
+                        self.detail_scroll = 0;
+                    }
+                    return false;
+                }
+                KeyCode::PageDown => {
+                    self.detail_scroll = self.detail_scroll.saturating_add(8);
+                    return false;
+                }
+                KeyCode::PageUp => {
+                    self.detail_scroll = self.detail_scroll.saturating_sub(8);
+                    return false;
+                }
+                KeyCode::Char('J') => {
+                    self.detail_scroll = self.detail_scroll.saturating_add(1);
+                    return false;
+                }
+                KeyCode::Char('K') => {
+                    self.detail_scroll = self.detail_scroll.saturating_sub(1);
+                    return false;
+                }
+                KeyCode::Right | KeyCode::Enter | KeyCode::Char('l') | KeyCode::Char('n') => {
+                    let target = self.graph.as_ref().and_then(|g| {
+                        let edge = *self.graph_edges().get(self.graph_edge)?;
+                        let id = if g.edges[edge].from == g.nodes[self.graph_index].id {
+                            &g.edges[edge].to
+                        } else {
+                            &g.edges[edge].from
+                        };
+                        g.nodes.iter().position(|n| &n.id == id)
+                    });
+                    if let Some(target) = target {
+                        self.graph_back.push(self.graph_index);
+                        self.graph_index = target;
+                        self.graph_edge = 0;
+                        self.detail_scroll = 0;
+                    }
+                    return false;
+                }
+                KeyCode::Left | KeyCode::Backspace | KeyCode::Char('h') | KeyCode::Char('p') => {
+                    if let Some(index) = self.graph_back.pop() {
+                        self.graph_index = index;
+                        self.graph_edge = 0;
+                        self.detail_scroll = 0;
+                    }
+                    return false;
+                }
+                KeyCode::Char('c') => {
+                    let head = self
+                        .observation
+                        .reviews
+                        .iter()
+                        .find(|r| r.label == "replacement-generic");
+                    if let (Some(graph), Some(head)) = (&self.graph, head)
+                        && let Some(index) = graph.nodes.iter().position(|n| {
+                            n.kind == "review_revision"
+                                && n.source_ref == head.key
+                                && n.source_revision == head.head
+                        })
+                    {
+                        self.graph_back.push(self.graph_index);
+                        self.graph_index = index;
+                        self.graph_edge = 0;
+                        self.detail_scroll = 0;
+                        self.notice = "CASE NAVIGATION to candidate-5 review head; no causal edge from prior node".into();
+                    }
+                    return false;
+                }
+                KeyCode::Char('a') => {
+                    if let (Some(graph), Some(extended)) = (&self.graph, &self.extended)
+                        && let Some(attempt) =
+                            extended.provider.attempts.get(self.selected_provider)
+                        && let Some(index) = graph.nodes.iter().position(|n| {
+                            n.kind == "provider_result" && n.local_id == attempt.result_uuid
+                        })
+                    {
+                        self.graph_back.push(self.graph_index);
+                        self.graph_index = index;
+                        self.graph_edge = 0;
+                        self.detail_scroll = 0;
+                        self.notice = "CASE NAVIGATION to selected captured CLI result; no scheduler-cause edge".into();
+                    }
+                    return false;
+                }
+                KeyCode::Char('s') => {
+                    if let Some(graph) = &self.graph
+                        && let Some(index) = graph
+                            .nodes
+                            .iter()
+                            .position(|n| n.kind == "scheduler_current_row")
+                    {
+                        self.graph_back.push(self.graph_index);
+                        self.graph_index = index;
+                        self.graph_edge = 0;
+                        self.detail_scroll = 0;
+                        self.notice = "CASE NAVIGATION to current scheduler row; no provider-UUID causal edge".into();
+                    }
+                    return false;
+                }
+                KeyCode::Char('g') => {
+                    self.stage = Stage::Gaps;
+                    return false;
+                }
+                _ => (),
+            }
+        }
         match code {
             KeyCode::Char('q') | KeyCode::Esc => return true,
             KeyCode::Char('1'..='5') => {
@@ -179,6 +396,7 @@ impl State {
                 self.stage = Stage::Gaps;
                 self.detail_scroll = 0;
             }
+            KeyCode::Char('v') if self.graph.is_some() => self.open_graph(),
             KeyCode::Char('a') if self.extended.is_some() => {
                 self.stage = Stage::Provider;
                 self.detail_scroll = 0;
@@ -556,6 +774,90 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                 out.push(Line::raw("Scheduler item is not admitted by this grant."));
             }
         }
+        Stage::Graph => {
+            if let Some(graph) = &state.graph
+                && let Some(node) = graph.nodes.get(state.graph_index)
+            {
+                let source = &graph.base.source_reads[node.source_index];
+                out.extend([
+                    Line::raw(format!("Node        {}", node.kind)),
+                    Line::raw(format!("Identity    {}", shortened(&node.id, 38))),
+                    Line::raw(format!("Class       {:?}", node.evidence_class)),
+                    Line::raw(format!("Revision    {}", node.source_revision)),
+                    Line::raw(format!("Meaning     {}", shortened(&node.label, 44))),
+                ]);
+                let outgoing = state.graph_edges();
+                if outgoing.is_empty() {
+                    out.push(Line::raw("No admitted edge at this node."));
+                }
+                for (position, edge_index) in outgoing.iter().enumerate() {
+                    let edge = &graph.edges[*edge_index];
+                    let forward = edge.from == node.id;
+                    let peer = if forward { &edge.to } else { &edge.from };
+                    let arrow = if forward { "→" } else { "←" };
+                    out.push(Line::raw(format!(
+                        "{} {} {} {}",
+                        if position == state.graph_edge {
+                            "▶"
+                        } else {
+                            " "
+                        },
+                        shortened(&edge.kind, 23),
+                        arrow,
+                        shortened(peer, 17)
+                    )));
+                }
+                out.push(Line::raw(""));
+                if let Some(edge_index) = outgoing.get(state.graph_edge) {
+                    let edge = &graph.edges[*edge_index];
+                    out.push(Line::raw(format!(
+                        "Selected edge  {} · {:?}",
+                        edge.owner, edge.evidence_class
+                    )));
+                    out.push(Line::raw(format!(
+                        "Edge source    {} @ {}",
+                        edge.source_ref, edge.source_revision
+                    )));
+                    out.push(Line::raw(format!("Edge limit     {}", edge.limit)));
+                }
+                out.push(Line::raw(format!("Owner       {}", node.owner)));
+                out.push(Line::raw(format!(
+                    "Source      {} · {}",
+                    node.source_class, node.source_ref
+                )));
+                out.push(Line::raw(format!(
+                    "Coverage    {} · {}",
+                    source.completeness, source.confidentiality
+                )));
+                out.push(Line::raw(format!("Limit       {}", source.limit)));
+                if let Some(time) = &node.observed_time {
+                    out.push(Line::raw(format!(
+                        "Observed    {}: {}",
+                        time.meaning, time.value
+                    )));
+                }
+                if let Some(time) = &node.effective_time {
+                    out.push(Line::raw(format!(
+                        "Effective   {}: {}",
+                        time.meaning, time.value
+                    )));
+                }
+                if let Some(measurement) = &node.measurement {
+                    out.push(Line::raw(format!(
+                        "Measurement {} = {} {}",
+                        measurement.name, measurement.value, measurement.unit
+                    )));
+                }
+                out.push(Line::raw(
+                    "[ / ] edge · Enter follow · ← back · c head · a CLI · s current row · v close",
+                ));
+                out.push(Line::raw(
+                    "Case navigation is not a causal edge; unsupported relationships remain gaps.",
+                ));
+            } else {
+                out.push(Line::raw("No admitted owner graph available."));
+            }
+        }
         Stage::Gaps => {
             for gap in state
                 .extended
@@ -563,6 +865,11 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                 .map_or(&observation.gaps, |v| &v.gaps)
             {
                 out.push(Line::raw(format!("• {gap}")));
+            }
+            if let Some(graph) = &state.graph {
+                for gap in &graph.gaps {
+                    out.push(Line::raw(format!("• {gap}")));
+                }
             }
             if state.extended.is_none() {
                 out.push(Line::raw(
@@ -642,10 +949,18 @@ fn draw(frame: &mut Frame, state: &State) {
             ),
             identity.read_at
         )),
-        Line::raw(if state.extended.is_some() {
+        Line::raw(if state.stage == Stage::Graph {
+            format!(
+                " [ ] edge  Enter follow  ← back  PgDn/PgUp detail +{}  J/K line  v close",
+                state.detail_scroll
+            )
+        } else if state.graph.is_some() {
+            " 1–5 candidate  → follow  a attempts  s schedule  v owner graph  g gaps  q".into()
+        } else if state.extended.is_some() {
             " 1–5 candidate  → follow  a attempts  s schedule  [ ] result  ↑↓ scroll  g gaps  q"
+                .into()
         } else {
-            " 1–5 candidate   →/Enter follow   ← back   ↑↓ scroll   g gaps   q exit"
+            " 1–5 candidate   →/Enter follow   ← back   ↑↓ scroll   g gaps   q exit".into()
         }),
     ];
     frame.render_widget(
@@ -687,6 +1002,15 @@ fn draw(frame: &mut Frame, state: &State) {
         )));
         list_lines.push(Line::raw("429 · captured error"));
         list_lines.push(Line::raw(format!("Retry · {}", v2.scheduler.status)));
+    }
+    if let Some(graph) = &state.graph {
+        list_lines.push(Line::raw(""));
+        list_lines.push(Line::raw(format!(
+            "Owner graph {} nodes",
+            graph.nodes.len()
+        )));
+        list_lines.push(Line::raw(format!("{} justified edges", graph.edges.len())));
+        list_lines.push(Line::raw("v opens exact graph"));
     }
     list_lines.push(Line::raw(""));
     list_lines.push(Line::raw("Accepted is a distinct"));
@@ -748,14 +1072,11 @@ fn draw(frame: &mut Frame, state: &State) {
 }
 
 fn read_state(socket: &Path) -> Result<State, Box<dyn std::error::Error>> {
-    match inspect_v2(socket, RequestV2::all()) {
-        Ok(observation) => Ok(State::from_v2(observation)),
-        Err(ReadError::Refused) => {
-            let observation = inspect(socket, Request::all())
-                .map_err(|_| "admitted historical v1 read unavailable")?;
-            Ok(State::new(observation))
-        }
-        Err(_) => Err("admitted historical v2 read unavailable".into()),
+    match inspect_best(socket) {
+        Ok(Inspected::Graph(observation)) => Ok(State::from_graph(*observation)),
+        Ok(Inspected::V2(observation)) => Ok(State::from_v2(*observation)),
+        Ok(Inspected::V1(observation)) => Ok(State::new(*observation)),
+        Err(_) => Err("admitted historical read unavailable".into()),
     }
 }
 
@@ -776,6 +1097,10 @@ pub fn snapshot(
         "findings" => Stage::Findings,
         "provider" if state.extended.is_some() => Stage::Provider,
         "scheduler" if state.extended.is_some() => Stage::Scheduler,
+        "graph" if state.graph.is_some() => {
+            state.open_graph();
+            Stage::Graph
+        }
         "gaps" => Stage::Gaps,
         _ => return Err("unknown historical stage".into()),
     };
@@ -843,7 +1168,7 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     // Draw before even beginning connection/admission. The first frame asserts no
     // historical fact and remains interactive while the owner reads.
     terminal.draw(|frame| draw_pending(frame, &message, started.elapsed()))?;
-    let mut active = match InspectAttempt::start(&socket, started + Duration::from_secs(35)) {
+    let mut active = match InspectAttempt::start_graph(&socket, started + Duration::from_secs(35)) {
         Ok(attempt) => {
             generation += 1;
             Some((generation, attempt))
@@ -873,8 +1198,10 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                             "LAST OBSERVED · local refresh requested; admission pending".into();
                     }
                     generation += 1;
-                    active = match InspectAttempt::start(&socket, started + Duration::from_secs(35))
-                    {
+                    active = match InspectAttempt::start_graph(
+                        &socket,
+                        started + Duration::from_secs(35),
+                    ) {
                         Ok(attempt) => Some((generation, attempt)),
                         Err(error) => {
                             message = format!(
@@ -910,6 +1237,7 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                             state = Some(match observation {
                                 Inspected::V1(observation) => State::new(*observation),
                                 Inspected::V2(observation) => State::from_v2(*observation),
+                                Inspected::Graph(observation) => State::from_graph(*observation),
                             });
                         }
                     }
@@ -931,7 +1259,7 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                 state.notice = "LAST OBSERVED · refreshing; admission pending".into();
             }
             generation += 1;
-            active = match InspectAttempt::start(&socket, started + Duration::from_secs(35)) {
+            active = match InspectAttempt::start_graph(&socket, started + Duration::from_secs(35)) {
                 Ok(attempt) => Some((generation, attempt)),
                 Err(error) => {
                     if let Some(state) = state.as_mut() {

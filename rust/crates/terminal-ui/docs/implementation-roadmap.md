@@ -89,10 +89,11 @@ that producer path. The published count still needs an owner-bound correction
 or explanation. The [historical read host](../../historical-evidence-read/README.md)
 admits exact checkpoint, gate-capture and review records plus eight captured
 provider results, one current Role Scheduler item and the frozen metrics row
-through private source reads. The current uncommitted performance increment
+through private source reads. The published performance increment at `28af35e5`
 reduces repeated byte-hashing cost and gives the terminal a neutral loading and
-cancellable local read; fresh implementation review and publication remain
-pending. Broad public access, scheduler mutation history, billing authority
+cancellable local read. A subsequent locally qualified implementation candidate
+adds a finite S5 owner graph and read-only traversal; fresh implementation
+review and publication remain pending for that graph. Broad public access, scheduler mutation history, billing authority
 and full UI-0 acceptance remain open.
 
 ## Mapping to the accepted delivery slices
@@ -103,9 +104,9 @@ backend capability is absent.
 
 | Accepted slice | Reusable work today | Remaining consequence and status |
 | --- | --- | --- |
-| UI-0 — Event and owner projection | Passive client patterns, component scope/revisions, safe failure states, and a bounded S5 checkpoint/gate/review/provider/scheduler/frozen-metrics read. The loading/performance change is a locally qualified uncommitted candidate. | Fresh implementation review and publication for the performance change, full versioned evidence classes and owner registry, broader confidentiality policy and the complete golden trace remain **not established**. |
+| UI-0 — Event and owner projection | Published local S5 owner read and responsive loading; an unreviewed graph candidate supplies a finite owner registry, evidence classes, exact revision identities and traversable justified edges for that case. | The graph needs fresh review and publication. Repair-contract, selected-review/acceptance and sufficient quota/schedule lineage for the complete golden trace remain **not established**. Full UI-0 acceptance remains open. |
 | UI-1 — Operational control plane | Overview/Graph/Conversation shell and one-task read-only inspection. | Actual campaign/slice state, roles, candidates, gates, review obligations, limits and scheduler waits need public projections and joined UI proof. **Partially reusable presentation; slice acceptance not established.** |
-| UI-2 — Causal timeline and drill-down | Identifier-bound task graph, expandable source details and offline replay presentation. | Exact candidate/episode/finding/remediation lineage, justified causal edges, historical cutoffs and traversable owner references need a qualified source graph. **Not established.** |
+| UI-2 — Causal timeline and drill-down | Identifier-bound task graph and an unreviewed, case-scoped historical owner-graph traversal candidate. | A broader timeline and complete candidate/episode/finding/remediation lineage still need admitted sources and qualification. **Not established.** |
 | UI-3 — Efficiency and anomaly explanation | Existing source/detail presentation can display qualified measurements. | Non-overlapping attempt attribution, comparable frozen baselines, missing-measurement handling and evidence-backed S5 explanation. **Not established.** |
 | UI-4 — Counterfactuals and recommendations | Accepted design specifies the outcome and authority limits. | Versioned alternatives over a frozen trace, uncertainty, recommendation decisions and post-adoption evidence. **Not established; later work.** |
 
@@ -174,8 +175,9 @@ history, five hash-matched gate results, eight provider result envelopes, a quot
 event and an acknowledged scheduler item. Candidate 5's gate count discrepancy
 remains open. The bounded local read admits checkpoint/gate/review records plus
 the exact eight provider captures, one current scheduler row and one frozen
-metrics row under a private v2 grant. The current loading/performance change
-awaits fresh review and publication. Scheduler mutation history, presentation
+metrics row under a private v2 grant. The loading/performance change is
+published; the case-scoped graph candidate awaits fresh review and publication.
+Scheduler mutation history, presentation
 proof and provider billing authority are still unavailable. A similarly named lifecycle S5 handoff or
 metrics cohort is not the same case without an established identity join.
 
@@ -275,8 +277,8 @@ the read-only slices. Streaming agent text and qualified context usage likewise
 need their own source contracts. Studio's design/organization views and remote
 or multi-client hosting remain outside this first sequence.
 
-Before starting the broader UI-0 implementation, resolve candidate 5's gate count discrepancy,
-the owner-admitted historical read paths, initial campaign scope, public
+Before extending the bounded case graph into a broader UI-0 projection, resolve candidate 5's gate count discrepancy,
+the missing owner-admitted golden relationships, initial campaign scope, public
 projection placement and access policy. The operator/product owner retains scope
 and priority choices; each
 semantic owner retains contract/access decisions. This roadmap does not alter

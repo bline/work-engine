@@ -1,4 +1,5 @@
 //! Public, bounded read projection for one admitted historical S5 investigation.
+pub mod graph;
 use serde::{Deserialize, Serialize};
 
 pub const MAX_FRAME: usize = 131_072;

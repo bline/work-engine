@@ -1,4 +1,5 @@
 //! Local read-only adapter over the legacy checkpoint, gate and review owners.
+use historical_evidence_wire::graph::{self, Observation as GraphObservation};
 use historical_evidence_wire::{
     Candidate, Finding, Gate, GateCheck, MAX_FRAME, MetricsRead, MetricsSource, Observation,
     ObservationV2, ProviderRead, ProviderSources, RUN_ID, ReplacementLink, Reply, ReplyV2, Request,
@@ -922,6 +923,15 @@ fn observe_v2(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Ob
     let deadline = Instant::now()
         .checked_add(Duration::from_secs(30))
         .ok_or("deadline overflow")?;
+    observe_v2_until(grant, grant_path, grant_bytes, deadline)
+}
+
+fn observe_v2_until(
+    grant: &Grant,
+    grant_path: &Path,
+    grant_bytes: &[u8],
+    deadline: Instant,
+) -> Result<ObservationV2> {
     let mut base = observe(grant, grant_path, grant_bytes, deadline)?;
     base.gaps =
         vec!["Gate captures bind producer output, not independent execution attestation".into()];
@@ -1050,6 +1060,25 @@ fn observe_v2(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Ob
     Ok(observation)
 }
 
+fn observe_graph(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<GraphObservation> {
+    if grant.schema_version != 2 {
+        return Err("graph requires a v2 source grant".into());
+    }
+    let deadline = Instant::now()
+        .checked_add(Duration::from_secs(30))
+        .ok_or("deadline overflow")?;
+    let base = observe_v2_until(grant, grant_path, grant_bytes, deadline)?;
+    let graph = GraphObservation::from_base(base).map_err(str::to_string)?;
+    if Instant::now() >= deadline {
+        return Err("graph operation deadline exceeded".into());
+    }
+    graph.validate().map_err(str::to_string)?;
+    if Instant::now() >= deadline {
+        return Err("graph operation deadline exceeded".into());
+    }
+    Ok(graph)
+}
+
 fn peer_uid(stream: &UnixStream) -> Result<u32> {
     use std::os::fd::AsRawFd;
     let mut credentials = libc::ucred {
@@ -1142,9 +1171,26 @@ fn serve_one(mut stream: UnixStream, grant: &Grant, path: &Path, bytes: &[u8]) -
     }
     let mut request_bytes = vec![0; len];
     read_before(&mut stream, &mut request_bytes, request_deadline)?;
-    let is_v2 = serde_json::from_slice::<Value>(&request_bytes)
-        .is_ok_and(|value| value["operation"] == historical_evidence_wire::OPERATION_V2);
-    let response = if is_v2 {
+    let operation = serde_json::from_slice::<Value>(&request_bytes)
+        .ok()
+        .and_then(|value| value["operation"].as_str().map(str::to_string));
+    let response = if operation.as_deref() == Some(graph::OPERATION) {
+        let reply = match serde_json::from_slice::<graph::Request>(&request_bytes) {
+            Ok(request) if grant.schema_version == 2 && request.validate().is_ok() => {
+                match observe_graph(grant, path, bytes) {
+                    Ok(observation) => graph::Reply::Observed { observation },
+                    Err(error) => {
+                        eprintln!("historical-evidence-read: graph owner unavailable: {error}");
+                        graph::Reply::Unavailable { reason: "one or more admitted graph source reads failed integrity or availability".into() }
+                    }
+                }
+            }
+            _ => graph::Reply::Refused {
+                reason: "unsupported or unbounded historical graph request".into(),
+            },
+        };
+        serde_json::to_vec(&reply).map_err(|e| e.to_string())?
+    } else if operation.as_deref() == Some(historical_evidence_wire::OPERATION_V2) {
         let reply = match serde_json::from_slice::<RequestV2>(&request_bytes) {
             Ok(request)
                 if grant.schema_version == 2

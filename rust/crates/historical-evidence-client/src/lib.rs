@@ -1,4 +1,5 @@
 //! Passive local client for the bounded historical S5 read operation.
+use historical_evidence_wire::graph;
 use historical_evidence_wire::{
     MAX_FRAME, Observation, ObservationV2, Reply, ReplyV2, Request, RequestV2,
 };
@@ -21,6 +22,14 @@ pub enum ReadError {
 pub enum Inspected {
     V1(Box<Observation>),
     V2(Box<ObservationV2>),
+    Graph(Box<graph::Observation>),
+}
+
+#[derive(Clone, Copy)]
+enum Mode {
+    Graph,
+    V2,
+    V1,
 }
 
 enum Phase {
@@ -34,12 +43,20 @@ pub struct InspectAttempt {
     socket: std::path::PathBuf,
     stream: UnixStream,
     phase: Phase,
-    v1: bool,
+    mode: Mode,
     deadline: Instant,
 }
 
 impl InspectAttempt {
     pub fn start(socket: &Path, deadline: Instant) -> Result<Self, ReadError> {
+        Self::start_mode(socket, deadline, Mode::V2)
+    }
+
+    pub fn start_graph(socket: &Path, deadline: Instant) -> Result<Self, ReadError> {
+        Self::start_mode(socket, deadline, Mode::Graph)
+    }
+
+    fn start_mode(socket: &Path, deadline: Instant, mode: Mode) -> Result<Self, ReadError> {
         let now = Instant::now();
         if !socket.is_absolute() || now >= deadline {
             return Err(ReadError::InvalidRequest);
@@ -50,7 +67,7 @@ impl InspectAttempt {
             socket: socket.to_path_buf(),
             stream,
             phase: Phase::Connecting,
-            v1: false,
+            mode,
             deadline,
         };
         if !connecting {
@@ -60,14 +77,22 @@ impl InspectAttempt {
     }
 
     fn begin_send(&mut self) -> Result<(), ReadError> {
-        let bytes = if self.v1 {
-            let request = Request::all();
-            request.validate().map_err(|_| ReadError::InvalidRequest)?;
-            serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
-        } else {
-            let request = RequestV2::all();
-            request.validate().map_err(|_| ReadError::InvalidRequest)?;
-            serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+        let bytes = match self.mode {
+            Mode::Graph => {
+                let request = graph::Request::all();
+                request.validate().map_err(|_| ReadError::InvalidRequest)?;
+                serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+            }
+            Mode::V2 => {
+                let request = RequestV2::all();
+                request.validate().map_err(|_| ReadError::InvalidRequest)?;
+                serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+            }
+            Mode::V1 => {
+                let request = Request::all();
+                request.validate().map_err(|_| ReadError::InvalidRequest)?;
+                serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+            }
         };
         if bytes.len() > MAX_FRAME {
             return Err(ReadError::InvalidRequest);
@@ -85,7 +110,11 @@ impl InspectAttempt {
         }
         let (stream, connecting) = nonblocking_connect(&self.socket)?;
         self.stream = stream;
-        self.v1 = true;
+        self.mode = match self.mode {
+            Mode::Graph => Mode::V2,
+            Mode::V2 => Mode::V1,
+            Mode::V1 => return Err(ReadError::Refused),
+        };
         self.phase = Phase::Connecting;
         if !connecting {
             self.begin_send()?;
@@ -167,7 +196,33 @@ impl InspectAttempt {
                         if Instant::now() >= self.deadline {
                             return Some(Err(ReadError::Unavailable));
                         }
-                        if self.v1 {
+                        if matches!(self.mode, Mode::Graph) {
+                            let result: graph::Reply = match serde_json::from_slice(bytes) {
+                                Ok(reply) => reply,
+                                Err(_) => return Some(Err(ReadError::InvalidResponse)),
+                            };
+                            if Instant::now() >= self.deadline {
+                                return Some(Err(ReadError::Unavailable));
+                            }
+                            match result {
+                                graph::Reply::Observed { observation } => {
+                                    if observation.validate().is_err() {
+                                        Some(Err(ReadError::InvalidResponse))
+                                    } else if Instant::now() >= self.deadline {
+                                        Some(Err(ReadError::Unavailable))
+                                    } else {
+                                        Some(Ok(Inspected::Graph(Box::new(observation))))
+                                    }
+                                }
+                                graph::Reply::Refused { .. } => match self.fallback() {
+                                    Ok(()) => None,
+                                    Err(error) => Some(Err(error)),
+                                },
+                                graph::Reply::Unavailable { .. } => {
+                                    Some(Err(ReadError::Unavailable))
+                                }
+                            }
+                        } else if matches!(self.mode, Mode::V1) {
                             let result: Reply = match serde_json::from_slice(bytes) {
                                 Ok(reply) => reply,
                                 Err(_) => return Some(Err(ReadError::InvalidResponse)),
@@ -447,6 +502,99 @@ mod bounded_attempt_tests {
         std::fs::remove_file(&path).unwrap();
         std::fs::remove_dir(path.parent().unwrap()).unwrap();
     }
+
+    #[test]
+    #[ignore = "requires S5_GRAPH_REPLY from a private admitted owner read"]
+    fn graph_frame_is_validated_before_render_and_corruption_is_refused() {
+        let raw = std::fs::read(std::env::var("S5_GRAPH_REPLY").unwrap()).unwrap();
+        let mut changed_edge: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        changed_edge["observation"]["edges"][0]["owner"] = "role-scheduler".into();
+        let mut missing_authority: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        missing_authority["observation"]["base"]["base"]["replacement_links"] =
+            serde_json::json!([]);
+        missing_authority["observation"]["edges"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|edge| edge["kind"] != "replaces_reported_episode");
+        let mut public_source: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        public_source["observation"]["base"]["source_reads"][0]["confidentiality"] =
+            "public".into();
+        public_source["observation"]["base"]["base"]["source_reads"][0]["confidentiality"] =
+            "public".into();
+        let mut invalid_tree: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        invalid_tree["observation"]["base"]["base"]["candidates"][0]["tree_oid"] =
+            "file:///private/not-an-oid".into();
+        let mut cases: Vec<(String, Vec<u8>, bool)> = vec![
+            ("graph-good".into(), raw, true),
+            (
+                "graph-edge".into(),
+                serde_json::to_vec(&changed_edge).unwrap(),
+                false,
+            ),
+            (
+                "graph-link".into(),
+                serde_json::to_vec(&missing_authority).unwrap(),
+                false,
+            ),
+            (
+                "graph-public".into(),
+                serde_json::to_vec(&public_source).unwrap(),
+                false,
+            ),
+            (
+                "graph-tree".into(),
+                serde_json::to_vec(&invalid_tree).unwrap(),
+                false,
+            ),
+        ];
+        for episode in 0..3 {
+            for variant in ["empty", "short", "long"] {
+                let mut changed: serde_json::Value = serde_json::from_slice(&cases[0].1).unwrap();
+                let revisions =
+                    changed["observation"]["base"]["base"]["reviews"][episode]["revisions"]
+                        .as_array_mut()
+                        .unwrap();
+                match variant {
+                    "empty" => revisions.clear(),
+                    "short" => {
+                        revisions.pop();
+                    }
+                    "long" => revisions.push(revisions.last().unwrap().clone()),
+                    _ => unreachable!(),
+                }
+                let frame = serde_json::to_vec(&changed).unwrap();
+                assert!(
+                    frame.len() <= MAX_FRAME,
+                    "cardinality fixture exceeds frame bound"
+                );
+                let label = format!("graph-r{episode}-{variant}");
+                cases.push((label, frame, false));
+            }
+        }
+        for (case, frame, valid) in cases {
+            let (path, listener) = socket(&case);
+            let server = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                request(&mut stream);
+                stream
+                    .write_all(&(frame.len() as u32).to_be_bytes())
+                    .unwrap();
+                stream.write_all(&frame).unwrap();
+            });
+            let mut attempt =
+                InspectAttempt::start_graph(&path, Instant::now() + Duration::from_secs(3))
+                    .unwrap();
+            let observed = until_done(&mut attempt);
+            assert_eq!(matches!(observed, Ok(Inspected::Graph(_))), valid);
+            if !valid {
+                assert!(matches!(observed, Err(ReadError::InvalidResponse)));
+            }
+            drop(attempt);
+            server.join().unwrap();
+            std::fs::remove_file(&path).unwrap();
+            std::fs::remove_dir(path.parent().unwrap()).unwrap();
+        }
+    }
 }
 
 pub fn inspect(socket: &Path, request: Request) -> Result<Observation, ReadError> {
@@ -542,6 +690,19 @@ pub fn inspect_v2(
         }
         ReplyV2::Refused { .. } => Err(ReadError::Refused),
         ReplyV2::Unavailable { .. } => Err(ReadError::Unavailable),
+    }
+}
+
+/// Synchronous snapshot qualification through the same absolute-deadline,
+/// nonblocking Graph → v2 → v1 attempt used by the interactive terminal.
+pub fn inspect_best(socket: &Path) -> Result<Inspected, ReadError> {
+    let mut attempt =
+        InspectAttempt::start_graph(socket, Instant::now() + Duration::from_secs(35))?;
+    loop {
+        if let Some(result) = attempt.poll() {
+            return result;
+        }
+        std::thread::sleep(Duration::from_millis(5));
     }
 }
 
