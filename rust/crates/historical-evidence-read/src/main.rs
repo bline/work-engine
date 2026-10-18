@@ -1,10 +1,11 @@
 //! Local read-only adapter over the legacy checkpoint, gate and review owners.
 use historical_evidence_wire::graph::{self, Observation as GraphObservation};
+use historical_evidence_wire::graph_v2::{self, Observation as GraphObservationV2};
 use historical_evidence_wire::{
-    Candidate, Finding, Gate, GateCheck, MAX_FRAME, MetricsRead, MetricsSource, Observation,
-    ObservationV2, ProviderRead, ProviderSources, RUN_ID, ReplacementLink, Reply, ReplyV2, Request,
-    RequestV2, ReviewEpisode, ReviewRevision, SchedulerRead, SchedulerSource, SourceRead, Subject,
-    validate_v2_sources,
+    Candidate, ContractRepairRead, Finding, Gate, GateCheck, MAX_FRAME, MetricsRead, MetricsSource,
+    Observation, ObservationV2, ProviderRead, ProviderSources, RUN_ID, RepairContractSource,
+    ReplacementLink, Reply, ReplyV2, Request, RequestV2, ReviewEpisode, ReviewRevision,
+    SchedulerRead, SchedulerSource, SourceRead, Subject, validate_v2_sources,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -157,6 +158,7 @@ struct Grant {
     provider: Option<ProviderSources>,
     scheduler: Option<SchedulerSource>,
     metrics: Option<MetricsSource>,
+    repair_contract: Option<RepairContractSource>,
 }
 
 fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
@@ -216,14 +218,37 @@ fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
         && grant.fields == legacy_fields
         && grant.provider.is_none()
         && grant.scheduler.is_none()
-        && grant.metrics.is_none();
+        && grant.metrics.is_none()
+        && grant.repair_contract.is_none();
     let v2 = grant.schema_version == 2
         && grant.profile == "historical-s5-local-inspection-v2"
         && grant.fields == expanded_fields
         && grant.provider.is_some()
         && grant.scheduler.is_some()
-        && grant.metrics.is_some();
-    if !(v1 || v2)
+        && grant.metrics.is_some()
+        && grant.repair_contract.is_none();
+    let v3_fields = [
+        "checkpoint",
+        "contract_repair",
+        "gate",
+        "metric_discrepancy",
+        "metrics_comparison",
+        "provider_attempts",
+        "review_summary",
+        "scheduler_item",
+        "source_limit",
+    ];
+    let v3 = grant.schema_version == 3
+        && grant.profile == "historical-s5-local-inspection-v3"
+        && grant.fields == v3_fields
+        && grant.provider.is_some()
+        && grant.scheduler.is_some()
+        && grant.metrics.is_some()
+        && grant
+            .repair_contract
+            .as_ref()
+            .is_some_and(|source| source.validate().is_ok());
+    if !(v1 || v2 || v3)
         || grant.run_id != RUN_ID
         || grant.slice_number != 6
         || grant.peer_uid != uid
@@ -238,7 +263,7 @@ fn read_grant(path: &Path) -> Result<(Grant, Vec<u8>)> {
     {
         return Err("grant does not admit the fixed S5 read contract".into());
     }
-    if v2 {
+    if v2 || v3 {
         validate_v2_sources(
             grant
                 .provider
@@ -548,7 +573,7 @@ fn hash_regular_file(identity: &mut Sha256, path: &Path, limit: u64) -> Result<(
 fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
     let host_exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let admitted: Value = serde_json::from_slice(grant_bytes).map_err(|e| e.to_string())?;
-    let helper_exe = if admitted["schema_version"] == 2 {
+    let helper_exe = if matches!(admitted["schema_version"].as_u64(), Some(2 | 3)) {
         Some(source_helper_exe()?)
     } else {
         None
@@ -579,7 +604,7 @@ fn source_identity_with_executables(
         hash_regular_file(&mut identity, &repository.join(script), 1024 * 1024)?;
     }
     let admitted: Value = serde_json::from_slice(grant_bytes).map_err(|e| e.to_string())?;
-    if admitted["schema_version"] == 2 {
+    if matches!(admitted["schema_version"].as_u64(), Some(2 | 3)) {
         hash_regular_file(
             &mut identity,
             helper_exe.ok_or("v2 source helper executable absent")?,
@@ -1079,6 +1104,62 @@ fn observe_graph(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result
     Ok(graph)
 }
 
+fn observe_graph_v2(
+    grant: &Grant,
+    grant_path: &Path,
+    grant_bytes: &[u8],
+) -> Result<GraphObservationV2> {
+    if grant.schema_version != 3
+        || grant
+            .repair_contract
+            .as_ref()
+            .is_none_or(|source| source.validate().is_err())
+    {
+        return Err("graph v2 requires exact v3 repair-source admission".into());
+    }
+    let deadline = Instant::now()
+        .checked_add(Duration::from_secs(30))
+        .ok_or("deadline overflow")?;
+    let base = observe_v2_until(grant, grant_path, grant_bytes, deadline)?;
+    let repository = Path::new(&grant.repository);
+    let grant_sha = format!("{:x}", Sha256::digest(grant_bytes));
+    let repair: ContractRepairRead = serde_json::from_value(checked_section(
+        || source_identity(repository, grant_bytes),
+        &base.base.source_identity_sha256,
+        || {
+            owner_call(
+                repository,
+                SOURCE_HELPER,
+                &[
+                    "--grant".into(),
+                    grant_path.to_string_lossy().to_string(),
+                    "--grant-sha256".into(),
+                    grant_sha,
+                    "--section".into(),
+                    "repair_contract".into(),
+                ],
+                deadline,
+            )
+        },
+    )?)
+    .map_err(|e| format!("repair source projection invalid: {e}"))?;
+    repair.validate().map_err(str::to_string)?;
+    if read_grant(grant_path)?.1 != grant_bytes
+        || source_identity(repository, grant_bytes)? != base.base.source_identity_sha256
+    {
+        return Err("grant or source implementation changed during graph v2 read".into());
+    }
+    if Instant::now() >= deadline {
+        return Err("graph v2 deadline exceeded".into());
+    }
+    let graph = GraphObservationV2::from_base(base, repair).map_err(str::to_string)?;
+    graph.validate().map_err(str::to_string)?;
+    if Instant::now() >= deadline {
+        return Err("graph v2 deadline exceeded".into());
+    }
+    Ok(graph)
+}
+
 fn peer_uid(stream: &UnixStream) -> Result<u32> {
     use std::os::fd::AsRawFd;
     let mut credentials = libc::ucred {
@@ -1174,7 +1255,23 @@ fn serve_one(mut stream: UnixStream, grant: &Grant, path: &Path, bytes: &[u8]) -
     let operation = serde_json::from_slice::<Value>(&request_bytes)
         .ok()
         .and_then(|value| value["operation"].as_str().map(str::to_string));
-    let response = if operation.as_deref() == Some(graph::OPERATION) {
+    let response = if operation.as_deref() == Some(graph_v2::OPERATION) {
+        let reply = match serde_json::from_slice::<graph_v2::Request>(&request_bytes) {
+            Ok(request) if grant.schema_version == 3 && request.validate().is_ok() => {
+                match observe_graph_v2(grant, path, bytes) {
+                    Ok(observation) => graph_v2::Reply::Observed { observation },
+                    Err(error) => {
+                        eprintln!("historical-evidence-read: graph v2 owner unavailable: {error}");
+                        graph_v2::Reply::Unavailable { reason: "one or more admitted graph v2 source reads failed integrity or availability".into() }
+                    }
+                }
+            }
+            _ => graph_v2::Reply::Refused {
+                reason: "unsupported or unadmitted historical graph v2 request".into(),
+            },
+        };
+        serde_json::to_vec(&reply).map_err(|e| e.to_string())?
+    } else if operation.as_deref() == Some(graph::OPERATION) {
         let reply = match serde_json::from_slice::<graph::Request>(&request_bytes) {
             Ok(request) if grant.schema_version == 2 && request.validate().is_ok() => {
                 match observe_graph(grant, path, bytes) {
@@ -1307,6 +1404,98 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::os::unix::fs::symlink;
+
+    #[test]
+    #[ignore = "requires S5_REPAIR_GRANT from a current private local admission"]
+    fn v3_grant_is_exact_and_older_grants_remain_admitted() {
+        use std::os::unix::fs::DirBuilderExt;
+        let source = std::env::var("S5_REPAIR_GRANT").unwrap();
+        let original: Value = serde_json::from_slice(&fs::read(source).unwrap()).unwrap();
+        let base = std::env::var_os("S5_TEST_SOCKET_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir);
+        let dir = base.join(format!("s5-v3-grant-{}", std::process::id()));
+        fs::DirBuilder::new().mode(0o700).create(&dir).unwrap();
+        let path = dir.join("grant.json");
+        let write = |value: &Value| {
+            fs::write(&path, serde_json::to_vec(value).unwrap()).unwrap();
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        };
+        write(&original);
+        assert!(read_grant(&path).is_ok());
+        let mut v2 = original.clone();
+        v2["schema_version"] = 2.into();
+        v2["profile"] = "historical-s5-local-inspection-v2".into();
+        v2["fields"] = serde_json::to_value([
+            "checkpoint",
+            "gate",
+            "metric_discrepancy",
+            "metrics_comparison",
+            "provider_attempts",
+            "review_summary",
+            "scheduler_item",
+            "source_limit",
+        ])
+        .unwrap();
+        v2.as_object_mut().unwrap().remove("repair_contract");
+        write(&v2);
+        assert!(read_grant(&path).is_ok());
+        let mut v1 = v2.clone();
+        v1["schema_version"] = 1.into();
+        v1["profile"] = "historical-s5-local-inspection-v1".into();
+        v1["fields"] = serde_json::to_value([
+            "checkpoint",
+            "gate",
+            "metric_discrepancy",
+            "review_summary",
+            "source_limit",
+        ])
+        .unwrap();
+        for field in ["provider", "scheduler", "metrics"] {
+            v1.as_object_mut().unwrap().remove(field);
+        }
+        write(&v1);
+        assert!(read_grant(&path).is_ok());
+        for changed in [
+            {
+                let mut x = original.clone();
+                x.as_object_mut().unwrap().remove("repair_contract");
+                x
+            },
+            {
+                let mut x = original.clone();
+                x["repair_contract"]["commit_oid"] = "0".repeat(40).into();
+                x
+            },
+            {
+                let mut x = original.clone();
+                x["repair_contract"]["extra"] = true.into();
+                x
+            },
+            {
+                let mut x = original.clone();
+                x["unexpected"] = true.into();
+                x
+            },
+            {
+                let mut x = original.clone();
+                x["expires_at"] = "2000-01-01T00:00:00Z".into();
+                x
+            },
+            {
+                let mut x = original.clone();
+                x["peer_uid"] = u32::MAX.into();
+                x
+            },
+        ] {
+            write(&changed);
+            assert!(read_grant(&path).is_err());
+        }
+        write(&original);
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_grant(&path).is_err());
+        fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn ordered_v2_identity_fences_each_admitted_file_class() {

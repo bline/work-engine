@@ -19,6 +19,37 @@ RUN_ID = "skills-migration-app-server-20260828"
 
 
 class LegacyGateInspectTest(unittest.TestCase):
+    @unittest.skipUnless(os.getenv("S5_REPAIR_GRANT"), "needs current private S5 repair grant")
+    def test_v3_repair_grant_preserves_gate_selector_and_refuses_changed_descriptor(self):
+        grant = json.loads(Path(os.environ["S5_REPAIR_GRANT"]).read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            private = Path(directory) / "private"
+            private.mkdir(mode=0o700)
+            path = private / "grant.json"
+            def write(value):
+                path.write_text(json.dumps(value))
+                path.chmod(0o600)
+            write(grant)
+            self.assertEqual(grant["gates"][2], READER.trusted_descriptor(path, 3))
+            for mutate in [
+                lambda x: x["repair_contract"].update(commit_oid="0" * 40),
+                lambda x: x["repair_contract"].update(extra=True),
+                lambda x: x.update(fields=["checkpoint"]),
+            ]:
+                changed = json.loads(json.dumps(grant))
+                mutate(changed)
+                write(changed)
+                with self.assertRaisesRegex(ValueError, "does not admit"):
+                    READER.trusted_descriptor(path, 3)
+            write(grant)
+            with path.open("a") as stream:
+                stream.write('\\n')
+            # A duplicate nested field must be refused at the grant parse boundary.
+            raw = path.read_text().replace('"commit_oid":', '"commit_oid":"0","commit_oid":', 1)
+            path.write_text(raw)
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                READER.trusted_descriptor(path, 3)
+
     def checkpoint(self, attempt: int, digest: str) -> dict:
         return {"ref": f"refs/work-engine/checkpoints/{RUN_ID}/slice-6/candidate-{attempt}",
                 "commit_oid": str(attempt) * 40,

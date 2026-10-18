@@ -12,7 +12,7 @@ fn run() -> Result<()> {
         || args[4] != "--section"
     {
         return Err(
-            "use --grant PATH --grant-sha256 SHA256 --section provider|scheduler|metrics".into(),
+            "use --grant PATH --grant-sha256 SHA256 --section provider|scheduler|metrics|repair_contract".into(),
         );
     }
     let admitted = grant(Path::new(&args[1]), &args[3])?;
@@ -20,6 +20,9 @@ fn run() -> Result<()> {
         "provider" => source_read::provider_capture::inspect(&admitted)?,
         "scheduler" => source_read::scheduler_item::inspect(&admitted)?,
         "metrics" => source_read::frozen_metrics::inspect_optional(&admitted)?,
+        "repair_contract" if admitted["schema_version"] == 3 => {
+            source_read::repair_contract::inspect(&admitted)?
+        }
         _ => return Err("unsupported source section".into()),
     };
     let encoded = serde_json::to_string(&observed).map_err(|e| e.to_string())?;

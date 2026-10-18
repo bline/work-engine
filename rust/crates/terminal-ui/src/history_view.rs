@@ -6,7 +6,10 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use historical_evidence_client::{InspectAttempt, Inspected, inspect_best};
-use historical_evidence_wire::{Observation, ObservationV2, ReviewEpisode, ReviewRevision, graph};
+use historical_evidence_wire::{
+    ContractRepairRead, Observation, ObservationV2, ReviewEpisode, ReviewRevision, SourceRead,
+    graph, graph_v2,
+};
 use ratatui::{
     Frame, Terminal,
     backend::{CrosstermBackend, TestBackend},
@@ -67,10 +70,62 @@ impl Stage {
     }
 }
 
+struct GraphView {
+    base: ObservationV2,
+    nodes: Vec<graph::Node>,
+    edges: Vec<graph::Edge>,
+    gaps: Vec<String>,
+    repair_source: Option<SourceRead>,
+    repair_read: Option<ContractRepairRead>,
+    interpretation_support: Option<graph_v2::InterpretationSupport>,
+}
+impl GraphView {
+    fn old(observation: graph::Observation) -> Self {
+        Self {
+            base: observation.base,
+            nodes: observation.nodes,
+            edges: observation.edges,
+            gaps: observation.gaps,
+            repair_source: None,
+            repair_read: None,
+            interpretation_support: None,
+        }
+    }
+    fn repaired(observation: graph_v2::Observation) -> Option<Self> {
+        let edges = observation.expanded_edges().ok()?;
+        let interpretation_support = Some(
+            observation
+                .edges
+                .iter()
+                .find(|edge| edge.kind == "clarifies_reported_continuation_for")?
+                .support
+                .clone()?,
+        );
+        Some(Self {
+            base: observation.base,
+            nodes: observation.nodes,
+            edges,
+            gaps: observation.gaps,
+            repair_source: Some(observation.repair_source),
+            repair_read: Some(observation.repair),
+            interpretation_support,
+        })
+    }
+    fn source(&self, index: usize) -> Option<&SourceRead> {
+        self.base.source_reads.get(index).or_else(|| {
+            if index == self.base.source_reads.len() {
+                self.repair_source.as_ref()
+            } else {
+                None
+            }
+        })
+    }
+}
+
 struct State {
     observation: Observation,
     extended: Option<ObservationV2>,
-    graph: Option<graph::Observation>,
+    graph: Option<GraphView>,
     graph_index: usize,
     graph_edge: usize,
     graph_back: Vec<usize>,
@@ -105,9 +160,16 @@ impl State {
     }
     fn from_graph(graph: graph::Observation) -> Self {
         let mut state = Self::from_v2(graph.base.clone());
-        state.graph = Some(graph);
+        state.graph = Some(GraphView::old(graph));
         state.notice = "ADMITTED LOCAL GRAPH READ · exact owner edges · no actions".into();
         state
+    }
+    fn from_graph_v2(graph: graph_v2::Observation) -> Option<Self> {
+        let mut state = Self::from_v2(graph.base.clone());
+        state.graph = Some(GraphView::repaired(graph)?);
+        state.notice =
+            "ADMITTED LOCAL GRAPH V2 READ · source-backed contract revision · no actions".into();
+        Some(state)
     }
     fn open_graph(&mut self) {
         if let Some(graph) = &self.graph {
@@ -153,31 +215,15 @@ impl State {
     }
     fn refresh_with(&mut self, next: Inspected) {
         match next {
+            Inspected::GraphV2(next) => {
+                let Some(next) = GraphView::repaired(*next) else {
+                    self.notice = "LAST OBSERVED · invalid graph v2 view; prior frame stale".into();
+                    return;
+                };
+                self.refresh_graph(next);
+            }
             Inspected::Graph(next) => {
-                let old_id = self
-                    .graph
-                    .as_ref()
-                    .and_then(|g| g.nodes.get(self.graph_index))
-                    .map(|n| n.id.clone());
-                let changed = self.extended.as_ref().is_some_and(|old| {
-                    old.source_identity_sha256 != next.base.source_identity_sha256
-                });
-                self.observation = next.base.base.clone();
-                self.extended = Some(next.base.clone());
-                self.graph = Some(*next);
-                if changed {
-                    self.stage = Stage::Candidate;
-                    self.selected_attempt = 5;
-                    self.graph_edge = 0;
-                    self.graph_back.clear();
-                    self.detail_scroll = 0;
-                    self.notice = "Source identity changed; inspection anchor cleared".into();
-                } else {
-                    if let (Some(id), Some(graph)) = (old_id, &self.graph) {
-                        self.graph_index = graph.nodes.iter().position(|n| n.id == id).unwrap_or(0);
-                    }
-                    self.notice = "Owner graph refreshed under admitted read".into();
-                }
+                self.refresh_graph(GraphView::old(*next));
             }
             Inspected::V2(next) if self.extended.is_some() => {
                 self.graph = None;
@@ -215,6 +261,33 @@ impl State {
             }
             Inspected::V2(next) => *self = Self::from_v2(*next),
             Inspected::V1(next) => *self = Self::new(*next),
+        }
+    }
+    fn refresh_graph(&mut self, next: GraphView) {
+        let old_id = self
+            .graph
+            .as_ref()
+            .and_then(|g| g.nodes.get(self.graph_index))
+            .map(|n| n.id.clone());
+        let changed = self
+            .extended
+            .as_ref()
+            .is_some_and(|old| old.source_identity_sha256 != next.base.source_identity_sha256);
+        self.observation = next.base.base.clone();
+        self.extended = Some(next.base.clone());
+        self.graph = Some(next);
+        if changed {
+            self.stage = Stage::Candidate;
+            self.selected_attempt = 5;
+            self.graph_edge = 0;
+            self.graph_back.clear();
+            self.detail_scroll = 0;
+            self.notice = "Source identity changed; inspection anchor cleared".into();
+        } else {
+            if let (Some(id), Some(graph)) = (old_id, &self.graph) {
+                self.graph_index = graph.nodes.iter().position(|n| n.id == id).unwrap_or(0);
+            }
+            self.notice = "Owner graph refreshed under admitted read".into();
         }
     }
     fn key(&mut self, code: KeyCode) -> bool {
@@ -778,7 +851,10 @@ fn lines(state: &State) -> Vec<Line<'static>> {
             if let Some(graph) = &state.graph
                 && let Some(node) = graph.nodes.get(state.graph_index)
             {
-                let source = &graph.base.source_reads[node.source_index];
+                let Some(source) = graph.source(node.source_index) else {
+                    out.push(Line::raw("Graph source index unavailable; frame refused."));
+                    return out;
+                };
                 out.extend([
                     Line::raw(format!("Node        {}", node.kind)),
                     Line::raw(format!("Identity    {}", shortened(&node.id, 38))),
@@ -819,6 +895,35 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                         edge.source_ref, edge.source_revision
                     )));
                     out.push(Line::raw(format!("Edge limit     {}", edge.limit)));
+                    if edge.kind == "clarifies_reported_continuation_for" {
+                        if let Some(support) = &graph.interpretation_support {
+                            out.push(Line::raw(format!("Interpreter     {}", edge.owner)));
+                            out.push(Line::raw(format!(
+                                "Rule/version    {} @ {}",
+                                edge.source_ref, edge.source_revision
+                            )));
+                            out.push(Line::raw(format!(
+                                "Git support     {}",
+                                support.repair_commit_oid
+                            )));
+                            out.push(Line::raw(format!(
+                                "Script blob     {}",
+                                support.repair_script_blob_oid
+                            )));
+                            out.push(Line::raw(format!(
+                                "SKILL blob      {}",
+                                support.repair_skill_blob_oid
+                            )));
+                            out.push(Line::raw(format!(
+                                "Review support  {}",
+                                support.review_episode_key
+                            )));
+                            out.push(Line::raw(format!(
+                                "Review revision {}",
+                                support.review_revision
+                            )));
+                        }
+                    }
                 }
                 out.push(Line::raw(format!("Owner       {}", node.owner)));
                 out.push(Line::raw(format!(
@@ -830,6 +935,18 @@ fn lines(state: &State) -> Vec<Line<'static>> {
                     source.completeness, source.confidentiality
                 )));
                 out.push(Line::raw(format!("Limit       {}", source.limit)));
+                if node.kind == "contract_revision" {
+                    if let Some(repair) = &graph.repair_read {
+                        out.push(Line::raw(format!("Commit      {}", repair.commit_oid)));
+                        out.push(Line::raw(format!("Parent      {}", repair.parent_oid)));
+                        out.push(Line::raw(format!("Script path {}", repair.script_path)));
+                        out.push(Line::raw(format!("Before rule {}", repair.before_rule)));
+                        out.push(Line::raw(format!("After rule  {}", repair.after_rule)));
+                        out.push(Line::raw(
+                            "Source revision is not S5 deployment or effect evidence.",
+                        ));
+                    }
+                }
                 if let Some(time) = &node.observed_time {
                     out.push(Line::raw(format!(
                         "Observed    {}: {}",
@@ -1073,6 +1190,8 @@ fn draw(frame: &mut Frame, state: &State) {
 
 fn read_state(socket: &Path) -> Result<State, Box<dyn std::error::Error>> {
     match inspect_best(socket) {
+        Ok(Inspected::GraphV2(observation)) => State::from_graph_v2(*observation)
+            .ok_or_else(|| "invalid graph v2 display projection".into()),
         Ok(Inspected::Graph(observation)) => Ok(State::from_graph(*observation)),
         Ok(Inspected::V2(observation)) => Ok(State::from_v2(*observation)),
         Ok(Inspected::V1(observation)) => Ok(State::new(*observation)),
@@ -1168,16 +1287,17 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     // Draw before even beginning connection/admission. The first frame asserts no
     // historical fact and remains interactive while the owner reads.
     terminal.draw(|frame| draw_pending(frame, &message, started.elapsed()))?;
-    let mut active = match InspectAttempt::start_graph(&socket, started + Duration::from_secs(35)) {
-        Ok(attempt) => {
-            generation += 1;
-            Some((generation, attempt))
-        }
-        Err(error) => {
-            message = format!("Local evidence read unavailable: {error:?}; press r to retry");
-            None
-        }
-    };
+    let mut active =
+        match InspectAttempt::start_graph_v2(&socket, started + Duration::from_secs(35)) {
+            Ok(attempt) => {
+                generation += 1;
+                Some((generation, attempt))
+            }
+            Err(error) => {
+                message = format!("Local evidence read unavailable: {error:?}; press r to retry");
+                None
+            }
+        };
     loop {
         if let Some(state) = state.as_ref() {
             terminal.draw(|frame| draw(frame, state))?;
@@ -1198,7 +1318,7 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                             "LAST OBSERVED · local refresh requested; admission pending".into();
                     }
                     generation += 1;
-                    active = match InspectAttempt::start_graph(
+                    active = match InspectAttempt::start_graph_v2(
                         &socket,
                         started + Duration::from_secs(35),
                     ) {
@@ -1235,6 +1355,13 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                             state.refresh_with(observation);
                         } else {
                             state = Some(match observation {
+                                Inspected::GraphV2(observation) => {
+                                    let Some(next) = State::from_graph_v2(*observation) else {
+                                        message = "Local graph v2 display projection invalid; press r to retry".into();
+                                        continue;
+                                    };
+                                    next
+                                }
                                 Inspected::V1(observation) => State::new(*observation),
                                 Inspected::V2(observation) => State::from_v2(*observation),
                                 Inspected::Graph(observation) => State::from_graph(*observation),
@@ -1259,17 +1386,18 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                 state.notice = "LAST OBSERVED · refreshing; admission pending".into();
             }
             generation += 1;
-            active = match InspectAttempt::start_graph(&socket, started + Duration::from_secs(35)) {
-                Ok(attempt) => Some((generation, attempt)),
-                Err(error) => {
-                    if let Some(state) = state.as_mut() {
-                        state.notice =
-                            format!("LAST OBSERVED · refresh {error:?}; prior frame stale");
+            active =
+                match InspectAttempt::start_graph_v2(&socket, started + Duration::from_secs(35)) {
+                    Ok(attempt) => Some((generation, attempt)),
+                    Err(error) => {
+                        if let Some(state) = state.as_mut() {
+                            state.notice =
+                                format!("LAST OBSERVED · refresh {error:?}; prior frame stale");
+                        }
+                        last_read = Instant::now();
+                        None
                     }
-                    last_read = Instant::now();
-                    None
-                }
-            };
+                };
         }
     }
     Ok(())

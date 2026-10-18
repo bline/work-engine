@@ -22,6 +22,21 @@ def canonical(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
+REPAIR_DESCRIPTOR_SHA256 = "d9ea143a84b57f84dd884d81983376a5f0d8589d8ae95f08da4c1dd924576858"
+V3_FIELDS = ["checkpoint", "contract_repair", "gate", "metric_discrepancy",
+             "metrics_comparison", "provider_attempts", "review_summary",
+             "scheduler_item", "source_limit"]
+
+
+def unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            fail("duplicate inspection grant field")
+        result[key] = value
+    return result
+
+
 def selected_line(path: Path, number: int) -> bytes:
     if number < 1 or number > 10000:
         fail("capture line is outside the bounded range")
@@ -68,7 +83,7 @@ def trusted_descriptor(path: Path, attempt: int) -> dict[str, Any]:
                 raw = stream.read(64 * 1024 + 1)
                 if len(raw) > 64 * 1024:
                     fail("inspection grant grew beyond read limit")
-                grant = json.loads(raw)
+                grant = json.loads(raw, object_pairs_hook=unique_pairs)
         finally:
             os.close(fd)
     finally:
@@ -78,10 +93,21 @@ def trusted_descriptor(path: Path, attempt: int) -> dict[str, Any]:
     if ((version, profile) not in {
             (1, "historical-s5-local-inspection-v1"),
             (2, "historical-s5-local-inspection-v2"),
+            (3, "historical-s5-local-inspection-v3"),
         }
-            or (version == 2 and (not isinstance(grant.get("provider"), dict)
+            or (version in (2, 3) and (not isinstance(grant.get("provider"), dict)
                                   or not isinstance(grant.get("scheduler"), dict)
                                   or not isinstance(grant.get("metrics"), dict)))
+            or (version == 3 and (
+                set(grant) != {"schema_version", "profile", "grant_id", "repository",
+                               "run_id", "slice_number", "issued_at", "expires_at",
+                               "issuer_provenance", "peer_uid", "audience", "fields",
+                               "checkpoints", "gates", "reviews", "provider", "scheduler",
+                               "metrics", "repair_contract"}
+                or grant.get("fields") != V3_FIELDS
+                or not isinstance(grant.get("repair_contract"), dict)
+                or hashlib.sha256(canonical(grant["repair_contract"])).hexdigest()
+                   != REPAIR_DESCRIPTOR_SHA256))
             or grant.get("run_id") != "skills-migration-app-server-20260828"
             or grant.get("slice_number") != 6 or grant.get("peer_uid") != os.geteuid()
             or not isinstance(grant.get("gates"), list) or len(grant["gates"]) != 5):

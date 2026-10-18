@@ -160,7 +160,7 @@ fn refused_graph_v2_and_v1_keep_initial_frame_unadmitted() {
     fs::create_dir(&evidence).unwrap();
     let listener = UnixListener::bind(&socket).unwrap();
     let server = std::thread::spawn(move || {
-        for attempt in 0..3 {
+        for attempt in 0..4 {
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -244,16 +244,18 @@ fn refresh_keeps_last_observed_frame_and_marks_failure_stale() {
     let listener = UnixListener::bind(&socket).unwrap();
     let server = std::thread::spawn(move || {
         for index in 0..2 {
-            let (mut graph_stream, _) = listener.accept().unwrap();
-            let mut length = [0; 4];
-            graph_stream.read_exact(&mut length).unwrap();
-            let mut request = vec![0; u32::from_be_bytes(length) as usize];
-            graph_stream.read_exact(&mut request).unwrap();
-            let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
-            graph_stream
-                .write_all(&(refusal.len() as u32).to_be_bytes())
-                .unwrap();
-            graph_stream.write_all(refusal).unwrap();
+            for _ in 0..2 {
+                let (mut graph_stream, _) = listener.accept().unwrap();
+                let mut length = [0; 4];
+                graph_stream.read_exact(&mut length).unwrap();
+                let mut request = vec![0; u32::from_be_bytes(length) as usize];
+                graph_stream.read_exact(&mut request).unwrap();
+                let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
+                graph_stream
+                    .write_all(&(refusal.len() as u32).to_be_bytes())
+                    .unwrap();
+                graph_stream.write_all(refusal).unwrap();
+            }
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -317,16 +319,18 @@ fn public_metrics_absence_renders_unavailable_but_corruption_is_rejected() {
         fs::create_dir(&evidence).unwrap();
         let listener = UnixListener::bind(&socket).unwrap();
         let server = std::thread::spawn(move || {
-            let (mut graph_stream, _) = listener.accept().unwrap();
-            let mut length = [0; 4];
-            graph_stream.read_exact(&mut length).unwrap();
-            let mut request = vec![0; u32::from_be_bytes(length) as usize];
-            graph_stream.read_exact(&mut request).unwrap();
-            let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
-            graph_stream
-                .write_all(&(refusal.len() as u32).to_be_bytes())
-                .unwrap();
-            graph_stream.write_all(refusal).unwrap();
+            for _ in 0..2 {
+                let (mut graph_stream, _) = listener.accept().unwrap();
+                let mut length = [0; 4];
+                graph_stream.read_exact(&mut length).unwrap();
+                let mut request = vec![0; u32::from_be_bytes(length) as usize];
+                graph_stream.read_exact(&mut request).unwrap();
+                let refusal = br#"{"status":"refused","reason":"graph not served by fixture"}"#;
+                graph_stream
+                    .write_all(&(refusal.len() as u32).to_be_bytes())
+                    .unwrap();
+                graph_stream.write_all(refusal).unwrap();
+            }
             let (mut stream, _) = listener.accept().unwrap();
             let mut length = [0; 4];
             stream.read_exact(&mut length).unwrap();
@@ -594,6 +598,48 @@ fn real_owner_read_is_navigable_in_one_terminal_session() {
             "Owner evidence graph · selected candidate 3",
             "Revision    f5773967f8f6a8470161ac4b1552738d49a23d8c",
             "graph-head-authority-original",
+        );
+        reach_graph_details(
+            &mut terminal,
+            &[
+                "clarifies_report",
+                "Interpreter     s5-contract-applicability-interpreter",
+                "Rule/version",
+                "v1@historical_s5.graph.v2",
+                "Git support",
+                "cc4b644ff102c3eb8fa46de01ff6a73fa171d575",
+                "Review revision",
+                "f5773967f8f6a8470161ac4b1552738d49a23d8c",
+            ],
+            "graph-contract-interpretation-provenance",
+        );
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Revision    da91b16e8e20edc04f60d8d4d5cbfa8e8567d2e1",
+            "graph-contract-after",
+        );
+        reach_graph_details(
+            &mut terminal,
+            &[
+                "Node        contract_revision",
+                "Commit      cc4b644ff102c3eb8fa46de01ff6a73fa171d575",
+                "Before rule",
+                "remediation_subject_requires_remediation_phase",
+                "After rule",
+                "reported_is_not_retirement",
+                "Source revision is not S5 deployment or effect",
+            ],
+            "graph-contract-source-provenance",
+        );
+        terminal.input(b"]");
+        terminal.input(b"\r");
+        wait_for_pane(
+            &mut terminal,
+            "Owner evidence graph · selected candidate 3",
+            "Revision    55f1854fc1beea4c90550c9c31dde8333d7907b7",
+            "graph-contract-before",
         );
         terminal.input(b"v");
         terminal.input(b"4");

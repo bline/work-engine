@@ -24,6 +24,36 @@ def reference(owner: str, name: str, revision: str) -> dict:
 
 
 class HistoricalReviewInspectTest(unittest.TestCase):
+    @unittest.skipUnless(os.getenv("S5_REPAIR_GRANT"), "needs current private S5 repair grant")
+    def test_v3_fixed_repair_descriptor_preserves_review_read_and_rejects_widening(self):
+        grant = json.loads(Path(os.environ["S5_REPAIR_GRANT"]).read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            private = Path(directory) / "private"
+            private.mkdir(mode=0o700)
+            path = private / "grant.json"
+            def write(value):
+                path.write_text(json.dumps(value))
+                path.chmod(0o600)
+            write(grant)
+            admitted = READER.read_grant(path)
+            result = READER.inspect(admitted)
+            self.assertEqual(3, len(result["reviews"]))
+            self.assertEqual(grant["reviews"][0]["head"], result["reviews"][0]["head"])
+            for change in [
+                lambda x: x["repair_contract"].update(commit_oid="0" * 40),
+                lambda x: x["repair_contract"].update(extra=True),
+                lambda x: x.update(fields=["checkpoint"]),
+            ]:
+                changed = json.loads(json.dumps(grant))
+                change(changed)
+                write(changed)
+                with self.assertRaisesRegex(ValueError, "invalid|differs"):
+                    READER.read_grant(path)
+            raw = json.dumps(grant).replace('"commit_oid":', '"commit_oid":"0","commit_oid":', 1)
+            path.write_text(raw)
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                READER.read_grant(path)
+
     def authority(self, episode: str, subject: dict, source: dict) -> dict:
         return {"schema_version": 1, "profile": OWNER.PROFILE, "grant_id": f"writer-{episode}",
                 "identity": {"run_id": RUN, "slice_number": 6, "attempt_id": episode,
@@ -43,7 +73,7 @@ class HistoricalReviewInspectTest(unittest.TestCase):
         return OWNER.stable_key(authority["identity"]), result["durable_revision"]
 
     def fixture(self, directory: str):
-        repo = Path(directory) / "repository"
+        repo = Path(directory).resolve() / "repository"
         repo.mkdir()
         subprocess.run(["git", "init", "-q", str(repo)], check=True)
         store = OWNER.DURABLE.GitRefDurableStateStore(repo, namespace="independent-review-state")

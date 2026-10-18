@@ -119,6 +119,32 @@ The scheduler's outgoing edge binds its exact candidate-4 review result;
 the captured 429 does not point causally to the scheduler. The derived cost sum
 uses eight distinct captured UUIDs, not billing authority. The five-check and
 eight-stage facts keep separate units and unresolved semantics. The graph
-does not add repair-contract, selected-review/acceptance, full scheduler
-mutation, presentation or provider-billing evidence; full UI-0 acceptance
-remains open.
+v1 does not add repair-contract, selected-review/acceptance, full scheduler
+mutation, presentation or provider-billing evidence.
+
+`historical_s5.graph.v2` adds one mandatory, case-fixed repair-contract source
+under a private version-3 grant. The Rust helper verifies the exact parent and
+repair Git commits, trees, script and SKILL blobs as raw objects, with Git
+replacement disabled and SHA-256 checks on selected file bytes. The grant adds
+no arbitrary commit or path selector. The existing gate and review owner
+readers accept only this exact v3 descriptor; they keep their v1/v2 selectors
+and validation. The host rechecks the grant, helper and other source bytes
+across the whole 30-second read. The v3 graph response uses a checked table of
+edge provenance to retain the 131,072-byte frame bound; the client reconstructs
+and validates every edge from the admitted base and repair facts.
+
+The graph has two immutable contract-revision nodes and an observed Git
+revision edge. A separate semantic-interpretation edge relates the new rule to
+the original generic episode's exact active/reported revision. That edge names
+`s5-contract-applicability-interpreter` and authored rule
+`v1@historical_s5.graph.v2`, with distinct Git and review support bindings.
+Its edge ID includes that authored rule revision, so a later interpretation
+cannot silently reuse the v1 identity over the same historical subjects.
+It is an attributed case-scoped interpretation, not an Independent Review
+State assertion that the repair was deployed in S5. The terminal shows both
+supports, confidentiality, completeness, cutoff and the limit: there is no
+proved S5 adoption, remediation event, cause of replacement or savings.
+Graph.v2 refusal can fall back to graph.v1 and then inspect.v2/v1 under one
+35-second client deadline; graph.v2 corruption or unavailability cannot.
+Selected-review/acceptance consequences, complete scheduler history and
+provider billing remain open; full UI-0 acceptance is not claimed.

@@ -1,8 +1,8 @@
 //! Passive local client for the bounded historical S5 read operation.
-use historical_evidence_wire::graph;
 use historical_evidence_wire::{
     MAX_FRAME, Observation, ObservationV2, Reply, ReplyV2, Request, RequestV2,
 };
+use historical_evidence_wire::{graph, graph_v2};
 use std::io::{Read, Write};
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::ffi::OsStrExt;
@@ -23,10 +23,12 @@ pub enum Inspected {
     V1(Box<Observation>),
     V2(Box<ObservationV2>),
     Graph(Box<graph::Observation>),
+    GraphV2(Box<graph_v2::Observation>),
 }
 
 #[derive(Clone, Copy)]
 enum Mode {
+    GraphV2,
     Graph,
     V2,
     V1,
@@ -56,6 +58,10 @@ impl InspectAttempt {
         Self::start_mode(socket, deadline, Mode::Graph)
     }
 
+    pub fn start_graph_v2(socket: &Path, deadline: Instant) -> Result<Self, ReadError> {
+        Self::start_mode(socket, deadline, Mode::GraphV2)
+    }
+
     fn start_mode(socket: &Path, deadline: Instant, mode: Mode) -> Result<Self, ReadError> {
         let now = Instant::now();
         if !socket.is_absolute() || now >= deadline {
@@ -78,6 +84,11 @@ impl InspectAttempt {
 
     fn begin_send(&mut self) -> Result<(), ReadError> {
         let bytes = match self.mode {
+            Mode::GraphV2 => {
+                let request = graph_v2::Request::all();
+                request.validate().map_err(|_| ReadError::InvalidRequest)?;
+                serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+            }
             Mode::Graph => {
                 let request = graph::Request::all();
                 request.validate().map_err(|_| ReadError::InvalidRequest)?;
@@ -111,6 +122,7 @@ impl InspectAttempt {
         let (stream, connecting) = nonblocking_connect(&self.socket)?;
         self.stream = stream;
         self.mode = match self.mode {
+            Mode::GraphV2 => Mode::Graph,
             Mode::Graph => Mode::V2,
             Mode::V2 => Mode::V1,
             Mode::V1 => return Err(ReadError::Refused),
@@ -196,7 +208,33 @@ impl InspectAttempt {
                         if Instant::now() >= self.deadline {
                             return Some(Err(ReadError::Unavailable));
                         }
-                        if matches!(self.mode, Mode::Graph) {
+                        if matches!(self.mode, Mode::GraphV2) {
+                            let result: graph_v2::Reply = match serde_json::from_slice(bytes) {
+                                Ok(reply) => reply,
+                                Err(_) => return Some(Err(ReadError::InvalidResponse)),
+                            };
+                            if Instant::now() >= self.deadline {
+                                return Some(Err(ReadError::Unavailable));
+                            }
+                            match result {
+                                graph_v2::Reply::Observed { observation } => {
+                                    if observation.validate().is_err() {
+                                        Some(Err(ReadError::InvalidResponse))
+                                    } else if Instant::now() >= self.deadline {
+                                        Some(Err(ReadError::Unavailable))
+                                    } else {
+                                        Some(Ok(Inspected::GraphV2(Box::new(observation))))
+                                    }
+                                }
+                                graph_v2::Reply::Refused { .. } => match self.fallback() {
+                                    Ok(()) => None,
+                                    Err(error) => Some(Err(error)),
+                                },
+                                graph_v2::Reply::Unavailable { .. } => {
+                                    Some(Err(ReadError::Unavailable))
+                                }
+                            }
+                        } else if matches!(self.mode, Mode::Graph) {
                             let result: graph::Reply = match serde_json::from_slice(bytes) {
                                 Ok(reply) => reply,
                                 Err(_) => return Some(Err(ReadError::InvalidResponse)),
@@ -595,6 +633,81 @@ mod bounded_attempt_tests {
             std::fs::remove_dir(path.parent().unwrap()).unwrap();
         }
     }
+
+    #[test]
+    #[ignore = "requires S5_GRAPH_V2_REPLY and S5_GRAPH_REPLY from private owner-qualified reads"]
+    fn graph_v2_accepts_exact_frame_refuses_corruption_and_only_refusal_falls_back() {
+        let good = std::fs::read(std::env::var("S5_GRAPH_V2_REPLY").unwrap()).unwrap();
+        let old = std::fs::read(std::env::var("S5_GRAPH_REPLY").unwrap()).unwrap();
+        let mut corrupted: serde_json::Value = serde_json::from_slice(&good).unwrap();
+        corrupted["observation"]["interpreter_rule"]["owner"] = "independent-review-state".into();
+        let corrupt = serde_json::to_vec(&corrupted).unwrap();
+        assert!(good.len() <= MAX_FRAME && corrupt.len() <= MAX_FRAME);
+        for (case, reply, expect_valid) in [("g2-good", good, true), ("g2-corrupt", corrupt, false)]
+        {
+            let (path, listener) = socket(case);
+            let server = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                request(&mut stream);
+                stream
+                    .write_all(&(reply.len() as u32).to_be_bytes())
+                    .unwrap();
+                stream.write_all(&reply).unwrap();
+            });
+            let mut attempt =
+                InspectAttempt::start_graph_v2(&path, Instant::now() + Duration::from_secs(3))
+                    .unwrap();
+            let result = until_done(&mut attempt);
+            assert_eq!(matches!(result, Ok(Inspected::GraphV2(_))), expect_valid);
+            if !expect_valid {
+                assert!(matches!(result, Err(ReadError::InvalidResponse)));
+            }
+            drop(attempt);
+            server.join().unwrap();
+            std::fs::remove_file(&path).unwrap();
+            std::fs::remove_dir(path.parent().unwrap()).unwrap();
+        }
+        let (path, listener) = socket("g2-refused");
+        let server = std::thread::spawn(move || {
+            let (mut first, _) = listener.accept().unwrap();
+            request(&mut first);
+            let refusal = br#"{"status":"refused","reason":"v3 grant not admitted"}"#;
+            first
+                .write_all(&(refusal.len() as u32).to_be_bytes())
+                .unwrap();
+            first.write_all(refusal).unwrap();
+            let (mut second, _) = listener.accept().unwrap();
+            request(&mut second);
+            second.write_all(&(old.len() as u32).to_be_bytes()).unwrap();
+            second.write_all(&old).unwrap();
+        });
+        let mut attempt =
+            InspectAttempt::start_graph_v2(&path, Instant::now() + Duration::from_secs(3)).unwrap();
+        assert!(matches!(until_done(&mut attempt), Ok(Inspected::Graph(_))));
+        drop(attempt);
+        server.join().unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+
+        let (path, listener) = socket("g2-overbound");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            request(&mut stream);
+            stream
+                .write_all(&((MAX_FRAME as u32) + 1).to_be_bytes())
+                .unwrap();
+        });
+        let mut attempt =
+            InspectAttempt::start_graph_v2(&path, Instant::now() + Duration::from_secs(3)).unwrap();
+        assert!(matches!(
+            until_done(&mut attempt),
+            Err(ReadError::InvalidResponse)
+        ));
+        drop(attempt);
+        server.join().unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
 }
 
 pub fn inspect(socket: &Path, request: Request) -> Result<Observation, ReadError> {
@@ -694,15 +807,53 @@ pub fn inspect_v2(
 }
 
 /// Synchronous snapshot qualification through the same absolute-deadline,
-/// nonblocking Graph → v2 → v1 attempt used by the interactive terminal.
+/// nonblocking Graph v2 → Graph v1 → inspect v2 → inspect v1 attempt used by the interactive terminal.
 pub fn inspect_best(socket: &Path) -> Result<Inspected, ReadError> {
     let mut attempt =
-        InspectAttempt::start_graph(socket, Instant::now() + Duration::from_secs(35))?;
+        InspectAttempt::start_graph_v2(socket, Instant::now() + Duration::from_secs(35))?;
     loop {
         if let Some(result) = attempt.poll() {
             return result;
         }
         std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+#[cfg(test)]
+mod actual_host_metrics_unavailable_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires S5_METRICS_UNAVAILABLE_SOCKET from a controlled object-store fixture"]
+    fn actual_host_graph_v2_keeps_optional_metrics_absent_and_contract_present() {
+        let socket = std::env::var("S5_METRICS_UNAVAILABLE_SOCKET").unwrap();
+        let Inspected::GraphV2(observed) = inspect_best(Path::new(&socket)).unwrap() else {
+            panic!("actual controlled host must return admitted graph v2");
+        };
+        observed.validate().unwrap();
+        assert!(observed.base.metrics.is_none());
+        assert_eq!(
+            observed.base.metrics_unavailable.as_deref(),
+            Some("Frozen metrics source unavailable under this read")
+        );
+        assert!(
+            observed
+                .nodes
+                .iter()
+                .any(|node| node.kind == "contract_revision")
+        );
+        assert!(!observed.nodes.iter().any(|node| {
+            matches!(
+                node.kind.as_str(),
+                "frozen_metrics_row" | "measurement_discrepancy"
+            )
+        }));
+        assert!(observed.edges.iter().any(|edge| {
+            edge.kind == "clarifies_reported_continuation_for"
+                && edge
+                    .id
+                    .ends_with(&format!("|rule@{}", graph_v2::RULE_REVISION))
+        }));
     }
 }
 

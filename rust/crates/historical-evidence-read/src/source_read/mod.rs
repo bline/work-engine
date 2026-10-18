@@ -1,10 +1,11 @@
 //! Private source adapters. They inspect admitted historical bytes; none owns or mutates workflow state.
 pub mod frozen_metrics;
 pub mod provider_capture;
+pub mod repair_contract;
 pub mod scheduler_item;
 
 use historical_evidence_wire::{
-    MetricsSource, ProviderSources, SchedulerSource, validate_v2_sources,
+    MetricsSource, ProviderSources, RepairContractSource, SchedulerSource, validate_v2_sources,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -37,6 +38,7 @@ struct StrictV2Grant {
     provider: ProviderSources,
     scheduler: SchedulerSource,
     metrics: MetricsSource,
+    repair_contract: Option<RepairContractSource>,
 }
 
 pub fn string<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
@@ -115,30 +117,50 @@ pub fn grant(path: &Path, expected_sha: &str) -> Result<Value> {
         return Err("grant bytes changed".into());
     }
     let strict: StrictV2Grant = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-    if strict.schema_version != 2
-        || strict.profile != "historical-s5-local-inspection-v2"
+    let v2_fields = [
+        "checkpoint",
+        "gate",
+        "metric_discrepancy",
+        "metrics_comparison",
+        "provider_attempts",
+        "review_summary",
+        "scheduler_item",
+        "source_limit",
+    ];
+    let v3_fields = [
+        "checkpoint",
+        "contract_repair",
+        "gate",
+        "metric_discrepancy",
+        "metrics_comparison",
+        "provider_attempts",
+        "review_summary",
+        "scheduler_item",
+        "source_limit",
+    ];
+    let v2 = strict.schema_version == 2
+        && strict.profile == "historical-s5-local-inspection-v2"
+        && strict.fields == v2_fields
+        && strict.repair_contract.is_none();
+    let v3 = strict.schema_version == 3
+        && strict.profile == "historical-s5-local-inspection-v3"
+        && strict.fields == v3_fields
+        && strict
+            .repair_contract
+            .as_ref()
+            .is_some_and(|source| source.validate().is_ok());
+    if !(v2 || v3)
         || strict.run_id != "skills-migration-app-server-20260828"
         || strict.slice_number != 6
         || strict.grant_id.is_empty()
         || strict.issuer_provenance.is_empty()
         || strict.peer_uid != uid
         || strict.audience != "local_terminal_inspection"
-        || strict.fields
-            != [
-                "checkpoint",
-                "gate",
-                "metric_discrepancy",
-                "metrics_comparison",
-                "provider_attempts",
-                "review_summary",
-                "scheduler_item",
-                "source_limit",
-            ]
         || strict.checkpoints.len() != 6
         || strict.gates.len() != 5
         || strict.reviews.len() != 3
     {
-        return Err("grant is not fixed S5 v2".into());
+        return Err("grant is not fixed S5 v2/v3".into());
     }
     let gate_digest = string(&strict.gates[4], "receipt_sha256")?;
     validate_v2_sources(

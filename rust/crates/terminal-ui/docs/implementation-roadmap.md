@@ -91,9 +91,9 @@ admits exact checkpoint, gate-capture and review records plus eight captured
 provider results, one current Role Scheduler item and the frozen metrics row
 through private source reads. The published performance increment at `28af35e5`
 reduces repeated byte-hashing cost and gives the terminal a neutral loading and
-cancellable local read. A subsequent locally qualified implementation candidate
-adds a finite S5 owner graph and read-only traversal; fresh implementation
-review and publication remain pending for that graph. Broad public access, scheduler mutation history, billing authority
+cancellable local read. The finite S5 owner graph and read-only traversal were
+published at `cde9f888`. A subsequent repair-contract relationship increment is
+locally qualified and awaits fresh implementation review and publication. Broad public access, scheduler mutation history, billing authority
 and full UI-0 acceptance remain open.
 
 ## Mapping to the accepted delivery slices
@@ -104,9 +104,9 @@ backend capability is absent.
 
 | Accepted slice | Reusable work today | Remaining consequence and status |
 | --- | --- | --- |
-| UI-0 — Event and owner projection | Published local S5 owner read and responsive loading; an unreviewed graph candidate supplies a finite owner registry, evidence classes, exact revision identities and traversable justified edges for that case. | The graph needs fresh review and publication. Repair-contract, selected-review/acceptance and sufficient quota/schedule lineage for the complete golden trace remain **not established**. Full UI-0 acceptance remains open. |
+| UI-0 — Event and owner projection | Published local S5 owner read, responsive loading and a finite owner graph with evidence classes, exact revision identities and justified edges. A locally qualified repair-contract extension awaits review. | Selected-review/acceptance and sufficient quota/schedule lineage for the complete golden trace remain **not established**. Full UI-0 acceptance remains open. |
 | UI-1 — Operational control plane | Overview/Graph/Conversation shell and one-task read-only inspection. | Actual campaign/slice state, roles, candidates, gates, review obligations, limits and scheduler waits need public projections and joined UI proof. **Partially reusable presentation; slice acceptance not established.** |
-| UI-2 — Causal timeline and drill-down | Identifier-bound task graph and an unreviewed, case-scoped historical owner-graph traversal candidate. | A broader timeline and complete candidate/episode/finding/remediation lineage still need admitted sources and qualification. **Not established.** |
+| UI-2 — Causal timeline and drill-down | Identifier-bound task graph and a published case-scoped historical owner graph. | A broader timeline and complete candidate/episode/finding/remediation lineage still need admitted sources and qualification. **Not established.** |
 | UI-3 — Efficiency and anomaly explanation | Existing source/detail presentation can display qualified measurements. | Non-overlapping attempt attribution, comparable frozen baselines, missing-measurement handling and evidence-backed S5 explanation. **Not established.** |
 | UI-4 — Counterfactuals and recommendations | Accepted design specifies the outcome and authority limits. | Versioned alternatives over a frozen trace, uncertainty, recommendation decisions and post-adoption evidence. **Not established; later work.** |
 
@@ -176,7 +176,8 @@ event and an acknowledged scheduler item. Candidate 5's gate count discrepancy
 remains open. The bounded local read admits checkpoint/gate/review records plus
 the exact eight provider captures, one current scheduler row and one frozen
 metrics row under a private v2 grant. The loading/performance change is
-published; the case-scoped graph candidate awaits fresh review and publication.
+published; the case-scoped graph was published at `cde9f888` and its
+repair-contract extension awaits fresh review and publication.
 Scheduler mutation history, presentation
 proof and provider billing authority are still unavailable. A similarly named lifecycle S5 handoff or
 metrics cohort is not the same case without an established identity join.

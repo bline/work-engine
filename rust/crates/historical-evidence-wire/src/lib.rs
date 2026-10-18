@@ -1,5 +1,6 @@
 //! Public, bounded read projection for one admitted historical S5 investigation.
 pub mod graph;
+pub mod graph_v2;
 use serde::{Deserialize, Serialize};
 
 pub const MAX_FRAME: usize = 131_072;
@@ -187,6 +188,116 @@ pub const METRICS_COMMIT_OID: &str = "f64bc61dd5b618d9531e7937e3494fe459dc1ea0";
 pub const METRICS_BLOB_OID: &str = "a8e0eac325b48f7f693bb8843476276ffd669236";
 pub const METRICS_ROW_SHA256: &str =
     "2bd65a15f9ae61bbd3a6a16b7be41f46b66ca1a7b35a22e1a316d60405b6096d";
+
+pub const REPAIR_COMMIT_OID: &str = "cc4b644ff102c3eb8fa46de01ff6a73fa171d575";
+pub const REPAIR_PARENT_OID: &str = "2d99c5b63e983d9e6e0c9e5e2fc4a436eb21e6aa";
+pub const REPAIR_TREE_OID: &str = "f532363bab18f65d6b0381fb4dc1ebeb61ccc591";
+pub const ORIGINAL_REPORTED_REVISION: &str = "f5773967f8f6a8470161ac4b1552738d49a23d8c";
+pub const ORIGINAL_REVIEW_KEY: &str = "independent-review-episode-v1/512fb086b3df879ed552fe59a9513d423b5dfa63905576db73466eea5dc7912c";
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RepairContractSource {
+    pub commit_oid: String,
+    pub parent_oid: String,
+    pub tree_oid: String,
+    pub script_path: String,
+    pub script_before_blob_oid: String,
+    pub script_after_blob_oid: String,
+    pub script_before_sha256: String,
+    pub script_after_sha256: String,
+    pub skill_path: String,
+    pub skill_before_blob_oid: String,
+    pub skill_after_blob_oid: String,
+    pub skill_before_sha256: String,
+    pub skill_after_sha256: String,
+}
+impl RepairContractSource {
+    pub fn fixed() -> Self {
+        Self {
+            commit_oid: REPAIR_COMMIT_OID.into(),
+            parent_oid: REPAIR_PARENT_OID.into(),
+            tree_oid: REPAIR_TREE_OID.into(),
+            script_path: "skills/independent-review-state/scripts/independent_review_state.py"
+                .into(),
+            script_before_blob_oid: "55f1854fc1beea4c90550c9c31dde8333d7907b7".into(),
+            script_after_blob_oid: "da91b16e8e20edc04f60d8d4d5cbfa8e8567d2e1".into(),
+            script_before_sha256:
+                "42892a365846770a3eb604091460fd2112217f33d54f91b99b250e42fcbf96cc".into(),
+            script_after_sha256: "44968e3ac7b4be38758a654c646969c804865deb107409c7abdb1bfb6496bdf4"
+                .into(),
+            skill_path: "skills/independent-review-state/SKILL.md".into(),
+            skill_before_blob_oid: "f765e7e6b71e529e2266db2eee12d055412c3f3c".into(),
+            skill_after_blob_oid: "79ffec8899892dee1906ff27bf7f5b3b83d1b6b4".into(),
+            skill_before_sha256: "661fa7a945d84a78c020c1da4ef2f14d336effc1ad9406a02f05630ead9de652"
+                .into(),
+            skill_after_sha256: "f786fefdec815522958dfdec2105e36e30bdea27e2e9910d0e7ea5fb8c7aca5f"
+                .into(),
+        }
+    }
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if self != &Self::fixed() {
+            return Err("repair source is outside the fixed historical case");
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContractRepairRead {
+    pub source_owner: String,
+    pub source_class: String,
+    pub confidentiality: String,
+    pub completeness: String,
+    pub commit_oid: String,
+    pub parent_oid: String,
+    pub tree_oid: String,
+    pub script_path: String,
+    pub script_before_blob_oid: String,
+    pub script_after_blob_oid: String,
+    pub script_before_sha256: String,
+    pub script_after_sha256: String,
+    pub skill_path: String,
+    pub skill_before_blob_oid: String,
+    pub skill_after_blob_oid: String,
+    pub skill_before_sha256: String,
+    pub skill_after_sha256: String,
+    pub before_rule: String,
+    pub after_rule: String,
+    pub source_limit: String,
+}
+impl ContractRepairRead {
+    pub fn validate(&self) -> Result<(), &'static str> {
+        let fixed = RepairContractSource::fixed();
+        if self.source_owner != "independent-review-state"
+            || self.source_class != "immutable_contract_source_revision"
+            || self.confidentiality != "private_local"
+            || self.completeness != "selected_commit_and_parent_only"
+            || self.commit_oid != fixed.commit_oid
+            || self.parent_oid != fixed.parent_oid
+            || self.tree_oid != fixed.tree_oid
+            || self.script_path != fixed.script_path
+            || self.script_before_blob_oid != fixed.script_before_blob_oid
+            || self.script_after_blob_oid != fixed.script_after_blob_oid
+            || self.script_before_sha256 != fixed.script_before_sha256
+            || self.script_after_sha256 != fixed.script_after_sha256
+            || self.skill_path != fixed.skill_path
+            || self.skill_before_blob_oid != fixed.skill_before_blob_oid
+            || self.skill_after_blob_oid != fixed.skill_after_blob_oid
+            || self.skill_before_sha256 != fixed.skill_before_sha256
+            || self.skill_after_sha256 != fixed.skill_after_sha256
+            || self.before_rule != "remediation_subject_requires_remediation_phase"
+            || self.after_rule
+                != "active_reported_or_remediation_can_record_exact_later_remediation_subject;reported_is_not_retirement"
+            || self.source_limit
+                != "Immutable source-contract change; no S5 deployment, use, replacement cause or savings proof"
+        {
+            return Err("repair read differs from exact verified contract revision");
+        }
+        Ok(())
+    }
+}
 
 fn present_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where

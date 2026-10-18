@@ -17,13 +17,25 @@ import independent_review_state as owner
 
 PROFILE = "historical-s5-local-inspection-v1"
 PROFILE_V2 = "historical-s5-local-inspection-v2"
+PROFILE_V3 = "historical-s5-local-inspection-v3"
 RUN_ID = "skills-migration-app-server-20260828"
 ALLOWED_FIELDS = {"checkpoint", "gate", "review_summary", "source_limit", "metric_discrepancy"}
 ALLOWED_FIELDS_V2 = ALLOWED_FIELDS | {"provider_attempts", "scheduler_item", "metrics_comparison"}
+ALLOWED_FIELDS_V3 = ALLOWED_FIELDS_V2 | {"contract_repair"}
+REPAIR_DESCRIPTOR_SHA256 = "d9ea143a84b57f84dd884d81983376a5f0d8589d8ae95f08da4c1dd924576858"
 
 
 def fail(message: str) -> None:
     raise ValueError(message)
+
+
+def unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            fail("duplicate inspection grant field")
+        result[key] = value
+    return result
 
 
 def read_grant(path: Path) -> dict[str, Any]:
@@ -45,7 +57,7 @@ def read_grant(path: Path) -> dict[str, Any]:
                 raw = stream.read(64 * 1024 + 1)
                 if len(raw) > 64 * 1024:
                     fail("inspection grant grew beyond read limit")
-                value = json.loads(raw)
+                value = json.loads(raw, object_pairs_hook=unique_pairs)
         finally:
             os.close(fd)
     finally:
@@ -56,22 +68,32 @@ def read_grant(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         fail("inspection grant schema is invalid")
     version = value.get("schema_version")
-    if version == 2:
+    if version in (2, 3):
         required = required | {"provider", "scheduler", "metrics"}
+    if version == 3:
+        required = required | {"repair_contract"}
     if (set(value) != required or (version, value.get("profile")) not in
-            {(1, PROFILE), (2, PROFILE_V2)}):
+            {(1, PROFILE), (2, PROFILE_V2), (3, PROFILE_V3)}):
         fail("inspection grant schema is invalid")
     if (value["run_id"] != RUN_ID or value["slice_number"] != 6
             or value["audience"] != "local_terminal_inspection"
             or not isinstance(value["grant_id"], str) or not value["grant_id"]
             or not isinstance(value["issuer_provenance"], str) or not value["issuer_provenance"]
             or value["peer_uid"] != os.geteuid()
-            or value["fields"] != sorted(ALLOWED_FIELDS_V2 if version == 2 else ALLOWED_FIELDS)):
+            or value["fields"] != sorted(ALLOWED_FIELDS_V3 if version == 3 else
+                                         ALLOWED_FIELDS_V2 if version == 2 else ALLOWED_FIELDS)):
         fail("inspection grant case, audience or local identity is invalid")
-    if version == 2 and (not isinstance(value["provider"], dict)
+    if version in (2, 3) and (not isinstance(value["provider"], dict)
                          or not isinstance(value["scheduler"], dict)
                          or not isinstance(value["metrics"], dict)):
         fail("inspection grant source descriptors are invalid")
+    if version == 3 and (
+        not isinstance(value["repair_contract"], dict)
+        or hashlib.sha256(json.dumps(value["repair_contract"], sort_keys=True,
+                                     separators=(",", ":")).encode()).hexdigest()
+           != REPAIR_DESCRIPTOR_SHA256
+    ):
+        fail("inspection repair source descriptor differs from the fixed case")
     issued = datetime.fromisoformat(value["issued_at"].replace("Z", "+00:00"))
     expires = datetime.fromisoformat(value["expires_at"].replace("Z", "+00:00"))
     if (issued.tzinfo is None or expires.tzinfo is None or issued > datetime.now(timezone.utc)
