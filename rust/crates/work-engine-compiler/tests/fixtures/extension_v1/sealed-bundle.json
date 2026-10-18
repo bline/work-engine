@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "bundle_id": "fixture-research",
+  "source_revision": "2af529971c1b5660de4caad7092cd270dcd162eb",
+  "skills": [
+    {
+      "structure": "app-server/migrations/skills/repo-search/structure.yaml",
+      "structure_sha256": "05fc9c134c0957d6bdf6d8b0dfb94c01fd33da2b4ae28aeb10c604b8a8bd31ff",
+      "interface": "app-server/migrations/skills/repo-search/interface.yaml",
+      "interface_sha256": "69c795407d84cafeb30c4e4254be106f5df39e73031a417189de5e8835f9d82e"
+    }
+  ],
+  "precedence": "below_core",
+  "capabilities": [
+    "product-development.intake.read-source"
+  ],
+  "effects": [],
+  "adapters": [
+    "product-development.intake.read-source"
+  ],
+  "providers": [
+    "local"
+  ],
+  "dependencies": [
+    {
+      "name": "fixture-data",
+      "mode": "sealed_cache",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "registry": [
+    {
+      "capability": "product-development.intake.read-source",
+      "adapter": "product-development.intake.read-source",
+      "name": "read_fixture",
+      "description": "Read one exact sealed fixture source.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  ],
+  "run": {
+    "repository_subject": "work-engine@2af529971c1b5660de4caad7092cd270dcd162eb",
+    "checkout": "detached:2af529971c1b5660de4caad7092cd270dcd162eb",
+    "artifact_root": "s12e-fixture/artifacts",
+    "scratch_root": "s12e-fixture/scratch",
+    "retention": "retain",
+    "credentials": "none",
+    "network": "sealed",
+    "namespace": "s12e-fixture"
+  }
+}

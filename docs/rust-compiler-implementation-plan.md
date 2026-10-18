@@ -220,6 +220,22 @@ the same result using the pinned executable after restart. No live activation.
 
 ### C4 — Extension compilation and attachment interoperability
 
+> **Superseding C4 scope, 2026-10-18.** The operator clarified that the
+> JavaScript extension consumer was never released and need not run again, so
+> it has no backward attachment or Buffer digest contract. The accepted C4
+> deliverable is a fresh Rust-owned, versioned attachment profile, with no
+> previous-work import obligation: pure compilation,
+> bounded CLI source capture, serialized readback with integrity and host
+> admission recheck, and negative tests. The profile stores compiled output as
+> JSON byte arrays and checks raw authored source hashes. The Rust attachment
+> digest uses lossless integer serialization in its own codec; C2/C3 retain
+> their separately owned JavaScript-compatible codec. The historical
+> interoperability text below records the original plan but does not require
+> a Node facade, bootstrap staging, registry correction, legacy digest parity,
+> or worker restart proof
+> for this C4 result. Runtime consumer activation and predecessor disposition
+> remain separate C5 decisions.
+
 Depends on C2 plus the C3 sealed executable handoff. Own core `extension.rs`,
 `tests/extension_v1.rs`; executable protocol/source-loading support; bounded edits
 to `run-extension-bundle-compiler.mjs` and existing extension tests. Coordinate the

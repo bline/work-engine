@@ -85,6 +85,8 @@ impl ProtocolError {
                 | "invalid_manifest"
                 | "invalid_requirements"
                 | "requirements_unsatisfied"
+                | "invalid_extension"
+                | "attachment_mismatch"
         ) {
             2
         } else {
@@ -195,7 +197,7 @@ fn exact(map: &Map<String, Value>, allowed: &[&str]) -> Result<(), ProtocolError
     }
     Ok(())
 }
-fn encoded(value: Value) -> Result<Vec<u8>, ProtocolError> {
+pub(crate) fn encoded(value: Value) -> Result<Vec<u8>, ProtocolError> {
     let mut bytes = serde_json::to_vec(&value)
         .map_err(|_| ProtocolError::source("internal_error", "response encoding failed"))?;
     if bytes.len() + 1 > MAX_ENVELOPE_BYTES {
@@ -221,7 +223,7 @@ fn compiled_error(issue: work_engine_compiler::CompilerError) -> ProtocolError {
         issue.message,
     )
 }
-fn absolute_env(key: &str) -> Result<PathBuf, ProtocolError> {
+pub(crate) fn absolute_env(key: &str) -> Result<PathBuf, ProtocolError> {
     let value = std::env::var_os(key).ok_or_else(|| {
         ProtocolError::source(
             "invalid_request",
@@ -256,7 +258,7 @@ fn sha_env(key: &str) -> Result<String, ProtocolError> {
     }
     Ok(value)
 }
-fn req_id(map: &Map<String, Value>) -> Result<String, ProtocolError> {
+pub(crate) fn req_id(map: &Map<String, Value>) -> Result<String, ProtocolError> {
     let id = map
         .get("request_id")
         .and_then(Value::as_str)
@@ -329,6 +331,14 @@ pub fn process(
     if version == Some(&json!(3)) {
         let id = req_id(map).ok();
         return (3, id, crate::manifest_protocol::process(map, request.len()));
+    }
+    if version == Some(&json!(4)) {
+        let id = req_id(map).ok();
+        return (
+            4,
+            id,
+            crate::extension_protocol::process(map, request.len()),
+        );
     }
     if version == Some(&json!(2)) {
         if map.len() == 2 && map.contains_key("operation") {

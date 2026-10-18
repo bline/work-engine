@@ -1,4 +1,5 @@
 mod aeg;
+mod extension_protocol;
 mod manifest_protocol;
 mod protocol;
 mod source_snapshot;
@@ -27,7 +28,7 @@ fn main() {
         std::process::exit(1);
     }
     let (version, id, result) = protocol::process(&request, &cancelled);
-    let operation = if version == 3 {
+    let operation = if version == 3 || version == 4 {
         protocol::strict_json(&request).ok().and_then(|v| {
             v.get("operation")
                 .and_then(|s| s.as_str())
@@ -44,7 +45,9 @@ fn main() {
             }
         }
         Err(issue) => {
-            let envelope = if version == 3 {
+            let envelope = if version == 4 {
+                extension_protocol::error_envelope(id.as_deref(), operation.as_deref(), &issue)
+            } else if version == 3 {
                 manifest_protocol::error_envelope(id.as_deref(), operation.as_deref(), &issue)
             } else {
                 protocol::error_envelope(version, id.as_deref(), &issue)
