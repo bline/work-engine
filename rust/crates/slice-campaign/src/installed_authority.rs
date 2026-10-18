@@ -11,7 +11,8 @@ use std::path::{Path, PathBuf};
 
 const DEPLOYMENT_REGISTRY: &str = "/etc/work-engine/review-host/deployment-pin.json";
 const PIN_LIMIT: usize = 64 * 1024;
-const RESOURCE_POLICY: &str = "strict_aggregate_session_64mib_v1";
+const RESOURCE_POLICY_V1: &str = "strict_aggregate_session_64mib_v1";
+const RESOURCE_POLICY_V2: &str = "session64mib_combined1g_zero_swap_v2";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -146,7 +147,10 @@ impl AcceptanceRecord {
             .map_err(|e| CampaignError::Contract(format!("acceptance record invalid: {e}")))?;
         if record.schema_version != 1
             || record.decision != "accepted"
-            || record.resource_policy != RESOURCE_POLICY
+            || !matches!(
+                record.resource_policy.as_str(),
+                RESOURCE_POLICY_V1 | RESOURCE_POLICY_V2
+            )
         {
             return Err(CampaignError::Unsupported(
                 "acceptance decision or resource policy differs".into(),

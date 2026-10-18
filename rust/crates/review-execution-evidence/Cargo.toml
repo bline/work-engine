@@ -42,3 +42,8 @@ required-features = ["test-support"]
 [[bin]]
 name = "claude_launch_guard"
 path = "src/claude/launch_guard.rs"
+
+[[bin]]
+name = "claude_local_probe_peer"
+path = "src/claude/local_probe_peer.rs"
+required-features = ["test-support"]

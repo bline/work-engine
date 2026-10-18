@@ -268,7 +268,24 @@ fn bounded_active_cgroup() -> bool {
     let Ok(expected) = expected.parse::<u64>() else {
         return false;
     };
-    if expected == 0 || expected > 64 * 1024 * 1024 || !relative.starts_with('/') {
+    let Ok(policy) = std::env::var("WORK_ENGINE_QUOTA_POLICY") else {
+        return false;
+    };
+    let Ok(host_charge) = std::env::var("WORK_ENGINE_HOST_CUSTODY_CHARGE") else {
+        return false;
+    };
+    let Ok(host_charge) = host_charge.parse::<u64>() else {
+        return false;
+    };
+    let Ok(page_size) = std::env::var("WORK_ENGINE_QUOTA_PAGE_SIZE") else {
+        return false;
+    };
+    let Ok(page_size) = page_size.parse::<u64>() else {
+        return false;
+    };
+    if !bounded_policy_equation(&policy, host_charge, page_size, expected)
+        || !relative.starts_with('/')
+    {
         return false;
     }
     let Ok(membership) = fs::read_to_string("/proc/self/cgroup") else {
@@ -293,6 +310,52 @@ fn bounded_active_cgroup() -> bool {
     unsafe { info.assume_init() }.f_type == libc::CGROUP2_SUPER_MAGIC as _
 }
 
+fn bounded_policy_equation(policy: &str, host_charge: u64, page_size: u64, expected: u64) -> bool {
+    let combined = match policy {
+        "strict_aggregate_session_64mib_v1" => 64 * 1024 * 1024,
+        "session64mib_combined1g_zero_swap_v2" => 1024 * 1024 * 1024,
+        _ => return false,
+    };
+    let actual_page = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    if actual_page <= 0
+        || page_size != actual_page as u64
+        || host_charge > 64 * 1024 * 1024
+        || host_charge >= combined
+    {
+        return false;
+    }
+    let calculated = (combined - host_charge) / page_size * page_size;
+    expected != 0 && expected == calculated
+}
+
+#[cfg(feature = "test-support")]
+fn local_probe_network_denied() -> bool {
+    std::env::var("WORK_ENGINE_PROBE_HOST_NET_INO")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .is_some_and(local_probe_network_denied_from)
+}
+
+#[cfg(feature = "test-support")]
+fn local_probe_network_denied_from(host: u64) -> bool {
+    let inside = fs::metadata("/proc/self/ns/net")
+        .ok()
+        .map(|meta| meta.ino());
+    if inside.is_none() || inside == Some(host) {
+        return false;
+    }
+    // Bubblewrap creates a fresh network namespace without an external
+    // interface. Reject any realized IPv4/IPv6 route before accepting frames.
+    let ipv4 = fs::read_to_string("/proc/net/route").ok();
+    let ipv6 = fs::read_to_string("/proc/net/ipv6_route").ok();
+    ipv4.is_some_and(|routes| routes.lines().count() == 1)
+        && ipv6.is_some_and(|routes| {
+            routes
+                .lines()
+                .all(|line| line.split_whitespace().last() == Some("lo"))
+        })
+}
+
 fn main() {
     let mut args = std::env::args().skip(1);
     let Some(nonce) = args.next() else {
@@ -310,7 +373,8 @@ fn main() {
     if !nonce.bytes().all(|b| b.is_ascii_hexdigit())
         || nonce.len() != 64
         || program != "/claude/bin"
-        || !matches!(mode.as_str(), "offline" | "installed")
+        || !(matches!(mode.as_str(), "offline" | "installed")
+            || cfg!(feature = "test-support") && mode == "local-probe")
         || project.is_empty()
         || project.len() > 64
         || !project
@@ -331,6 +395,10 @@ fn main() {
         || !mounted("/cbm/client", "ro")
         || !mounted("/claude/bin", "ro")
     {
+        std::process::exit(62);
+    }
+    #[cfg(feature = "test-support")]
+    if mode == "local-probe" && !local_probe_network_denied() {
         std::process::exit(62);
     }
     let Ok(socket) = std::fs::symlink_metadata("/cbm/socket/analysis.sock") else {
@@ -354,7 +422,7 @@ fn main() {
     if token.chars().any(char::is_whitespace) {
         std::process::exit(65);
     }
-    let mut command = Command::new(program);
+    let mut command = Command::new(&program);
     command
         .args(args)
         .env_clear()
@@ -363,7 +431,11 @@ fn main() {
         .env("PATH", "/usr/bin:/bin")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::inherit());
+        .stderr(if mode == "local-probe" {
+            Stdio::piped()
+        } else {
+            Stdio::inherit()
+        });
     if !token.is_empty() {
         command.env("CLAUDE_CODE_OAUTH_TOKEN", &token);
     }
@@ -380,6 +452,28 @@ fn main() {
         }
     }
     let mut child = command.spawn().unwrap_or_else(|_| std::process::exit(66));
+    #[cfg(feature = "test-support")]
+    let probe_stderr = if mode == "local-probe" {
+        let executable = fs::metadata(program).unwrap_or_else(|_| std::process::exit(66));
+        eprintln!(
+            "SPAWNED:{nonce}:{}:{}:{}",
+            child.id(),
+            executable.dev(),
+            executable.ino()
+        );
+        child.stderr.take().map(|mut stderr| {
+            std::thread::spawn(move || {
+                let mut bounded = Vec::new();
+                stderr
+                    .by_ref()
+                    .take(RESULT_LIMIT + 1)
+                    .read_to_end(&mut bounded)
+                    .map(|_| bounded)
+            })
+        })
+    } else {
+        None
+    };
     let mut input = child.stdin.take().unwrap();
     let writer = std::thread::spawn(move || input.write_all(&prompt));
     let mut output = child.stdout.take().unwrap();
@@ -392,6 +486,17 @@ fn main() {
             .map(|_| bytes)
     });
     let status = child.wait().unwrap_or_else(|_| std::process::exit(67));
+    #[cfg(feature = "test-support")]
+    if let Some(stderr) = probe_stderr {
+        let bytes = stderr
+            .join()
+            .unwrap_or_else(|_| std::process::exit(68))
+            .unwrap_or_else(|_| std::process::exit(68));
+        if bytes.len() as u64 > RESULT_LIMIT {
+            std::process::exit(70);
+        }
+        let _ = std::io::stderr().write_all(&bytes);
+    }
     if !matches!(writer.join(), Ok(Ok(()))) {
         std::process::exit(68);
     }
@@ -449,5 +554,58 @@ mod tests {
         assert!(!accepted(), "missing current charge");
         fs::write(&current, b"0\n").unwrap();
         assert!(accepted(), "realized zero swap");
+    }
+
+    #[cfg(feature = "test-support")]
+    #[test]
+    fn local_probe_refuses_host_network_namespace() {
+        use std::os::unix::fs::MetadataExt;
+
+        let host = fs::metadata("/proc/self/ns/net").unwrap().ino();
+        assert!(!super::local_probe_network_denied_from(host));
+        // A forged different inode is insufficient while the host retains an
+        // external route. The actual Bubblewrap test proves the positive case.
+        assert!(!super::local_probe_network_denied_from(u64::MAX));
+    }
+
+    #[test]
+    fn policy_equation_is_versioned_and_refuses_wrong_charge_or_limit() {
+        let page = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
+        assert!(super::bounded_policy_equation(
+            "strict_aggregate_session_64mib_v1",
+            8192,
+            page,
+            64 * 1024 * 1024 - 8192
+        ));
+        assert!(super::bounded_policy_equation(
+            "session64mib_combined1g_zero_swap_v2",
+            8192,
+            page,
+            1024 * 1024 * 1024 - 8192
+        ));
+        assert!(!super::bounded_policy_equation(
+            "session64mib_combined1g_zero_swap_v2",
+            8192,
+            page,
+            64 * 1024 * 1024 - 8192
+        ));
+        assert!(!super::bounded_policy_equation(
+            "session64mib_combined1g_zero_swap_v2",
+            64 * 1024 * 1024 + 1,
+            page,
+            1024 * 1024 * 1024
+        ));
+        assert!(!super::bounded_policy_equation(
+            "session64mib_combined1g_zero_swap_v2",
+            0,
+            page * 2,
+            1024 * 1024 * 1024
+        ));
+        assert!(!super::bounded_policy_equation(
+            "unknown",
+            0,
+            page,
+            1024 * 1024 * 1024
+        ));
     }
 }

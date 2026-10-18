@@ -2,7 +2,7 @@ use std::ffi::CString;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsRawFd;
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -92,6 +92,7 @@ pub(crate) struct QualifiedLaunch {
     pub command: tokio::process::Command,
     pub ready_line: String,
     pub relay: QualifiedRelay,
+    pub quota: super::session::ActiveBudget,
 }
 
 pub(crate) struct QualifiedRelay {
@@ -99,6 +100,42 @@ pub(crate) struct QualifiedRelay {
     thread: Option<thread::JoinHandle<Result<Value, Rp0Error>>>,
     socket_path: PathBuf,
     cgroup: Option<PathBuf>,
+}
+
+#[cfg(feature = "test-support")]
+pub(crate) struct LocalQuotaSnapshot {
+    pub(crate) memory_max: u64,
+    pub(crate) memory_peak: u64,
+    pub(crate) swap_max_zero: bool,
+    pub(crate) swap_current_zero: bool,
+    pub(crate) oom_kill: u64,
+}
+
+#[cfg(feature = "test-support")]
+impl QualifiedRelay {
+    pub(crate) fn local_quota_snapshot(&self) -> Result<LocalQuotaSnapshot, Rp0Error> {
+        let path = self.cgroup.as_ref().ok_or(Rp0Error::IsolationFailed)?;
+        let number = |name: &str| -> Result<u64, Rp0Error> {
+            fs::read_to_string(path.join(name))?
+                .trim()
+                .parse()
+                .map_err(|_| Rp0Error::IsolationFailed)
+        };
+        let events = fs::read_to_string(path.join("memory.events"))?;
+        let oom_kill = events
+            .lines()
+            .find_map(|line| line.strip_prefix("oom_kill "))
+            .ok_or(Rp0Error::IsolationFailed)?
+            .parse()
+            .map_err(|_| Rp0Error::IsolationFailed)?;
+        Ok(LocalQuotaSnapshot {
+            memory_max: number("memory.max")?,
+            memory_peak: number("memory.peak")?,
+            swap_max_zero: fs::read_to_string(path.join("memory.swap.max"))?.trim() == "0",
+            swap_current_zero: number("memory.swap.current")? == 0,
+            oom_kill,
+        })
+    }
 }
 
 impl QualifiedRelay {
@@ -185,7 +222,7 @@ fn active_cgroup(
     let setup = (|| -> Result<(), Rp0Error> {
         // memory.max excludes swapped pages. This empty private group must
         // prohibit swap before any child enters it so resident and swapped
-        // charges cannot exceed the remaining aggregate session budget.
+        // charges remain subject to the selected versioned combined budget.
         fs::write(path.join("memory.swap.max"), b"0\n")?;
         if fs::read_to_string(path.join("memory.swap.max"))?.trim() != "0"
             || fs::read_to_string(path.join("memory.swap.current"))?.trim() != "0"
@@ -250,9 +287,22 @@ pub struct CandidateBoundary {
     private_root: PathBuf,
     index: CandidateIndex,
     manifest_sha256: Option<String>,
+    resource_policy: super::session::ResourcePolicy,
 }
 
 impl CandidateBoundary {
+    /// A descriptive boundary selection. Installed authority is still issued
+    /// only by the protected campaign pin and checked again by E1.
+    pub fn with_resource_policy(mut self, policy: &str) -> Result<Self, Rp0Error> {
+        self.resource_policy =
+            super::session::ResourcePolicy::parse(policy).ok_or(Rp0Error::IsolationFailed)?;
+        Ok(self)
+    }
+
+    pub fn resource_policy(&self) -> &'static str {
+        self.resource_policy.as_str()
+    }
+
     pub(crate) fn guarded_launch(
         &self,
         claude: &TrustedClaudeProfile,
@@ -260,6 +310,34 @@ impl CandidateBoundary {
         nonce: &str,
         args: &[String],
     ) -> Result<QualifiedLaunch, Rp0Error> {
+        self.guarded_launch_inner(claude, live_session, nonce, args, false)
+    }
+
+    #[cfg(feature = "test-support")]
+    pub(crate) fn guarded_local_probe_launch(
+        &self,
+        claude: &TrustedClaudeProfile,
+        live_session: &Path,
+        nonce: &str,
+        args: &[String],
+    ) -> Result<QualifiedLaunch, Rp0Error> {
+        if !claude.installed() {
+            return Err(Rp0Error::IsolationFailed);
+        }
+        self.guarded_launch_inner(claude, live_session, nonce, args, true)
+    }
+
+    fn guarded_launch_inner(
+        &self,
+        claude: &TrustedClaudeProfile,
+        live_session: &Path,
+        nonce: &str,
+        args: &[String],
+        local_probe: bool,
+    ) -> Result<QualifiedLaunch, Rp0Error> {
+        if local_probe && !cfg!(feature = "test-support") {
+            return Err(Rp0Error::IsolationFailed);
+        }
         self.verify_frozen()?;
         claude.verify()?;
         if nonce.len() != 64 || !nonce.bytes().all(|byte| byte.is_ascii_hexdigit()) {
@@ -296,14 +374,21 @@ impl CandidateBoundary {
         };
         let mut command =
             reviewer_command(&self.profile, &self.candidate, &self.private_root, false)?;
+        if local_probe {
+            // The fixture process has no campaign entry and cannot reach a
+            // provider. The namespace is created by Bubblewrap before the
+            // installed child can execute; the guard checks its realization.
+            command.arg("--unshare-net");
+        }
         // The reviewer sees only a size-limited private tmpfs. The pinned
         // guard exports its completed session through a bounded frame after
         // the reviewer exits; no writable host custody path is mounted.
-        let budget = super::session::active_cgroup_budget(
+        let quota = super::session::active_cgroup_budget(
             live_session.parent().ok_or(Rp0Error::IsolationFailed)?,
+            self.resource_policy,
         )
         .map_err(|_| Rp0Error::IsolationFailed)?;
-        let (quota_path, quota_relative) = active_cgroup(nonce, budget, &live)?;
+        let (quota_path, quota_relative) = active_cgroup(nonce, quota.memory_max, &live)?;
         let mut relay = relay;
         relay.cgroup = Some(quota_path.clone());
         // The pre-exec hook places Bubblewrap and every descendant in the
@@ -364,8 +449,25 @@ impl CandidateBoundary {
             &quota_relative,
             "--setenv",
             "WORK_ENGINE_QUOTA_BYTES",
-            &budget.to_string(),
+            &quota.memory_max.to_string(),
+            "--setenv",
+            "WORK_ENGINE_QUOTA_POLICY",
+            self.resource_policy.as_str(),
+            "--setenv",
+            "WORK_ENGINE_HOST_CUSTODY_CHARGE",
+            &quota.host_charge.to_string(),
+            "--setenv",
+            "WORK_ENGINE_QUOTA_PAGE_SIZE",
+            &quota.page_size.to_string(),
         ]);
+        if local_probe {
+            let host_net = fs::metadata("/proc/self/ns/net")?;
+            command.args([
+                "--setenv",
+                "WORK_ENGINE_PROBE_HOST_NET_INO",
+                &host_net.ino().to_string(),
+            ]);
+        }
         #[cfg(feature = "test-support")]
         if !claude.installed() && std::env::var_os("RP2_RELAY_HOLD_ROOT").is_some() {
             command.args(["--setenv", "WORK_ENGINE_RP2_HOLD_FIXTURE", "1"]);
@@ -384,7 +486,9 @@ impl CandidateBoundary {
             "/claude/guard",
             nonce,
             "/claude/bin",
-            if claude.installed() {
+            if local_probe {
+                "local-probe"
+            } else if claude.installed() {
                 "installed"
             } else {
                 "offline"
@@ -396,6 +500,7 @@ impl CandidateBoundary {
             command: tokio::process::Command::from(command),
             ready_line: format!("READY:{nonce}:bwrap-candidate-ro-v2\n"),
             relay,
+            quota,
         })
     }
     /// RP2 installer path: refuse a dirty, wrong or expanded working snapshot
@@ -667,6 +772,7 @@ impl CandidateBoundary {
             candidate,
             private_root,
             manifest_sha256: None,
+            resource_policy: super::session::ResourcePolicy::Strict64MiB,
             index: CandidateIndex {
                 project: project.to_owned(),
                 candidate_tree_sha256,
@@ -783,6 +889,7 @@ impl CandidateBoundary {
             private_root: private_root.into(),
             index: manifest.index,
             manifest_sha256: Some(expected_manifest_sha256.into()),
+            resource_policy: super::session::ResourcePolicy::Strict64MiB,
         };
         boundary.verify_frozen()?;
         verify_store(

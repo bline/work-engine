@@ -6,5 +6,5 @@ pub mod session_read;
 pub mod transport_validation;
 pub use profile::{PinnedProgram, Rp0Error, TrustedClaudeProfile};
 pub use reader::QualifiedReader;
-pub use selection::{Prepared, QualifiedReaderSelection};
+pub use selection::{Prepared, QualifiedReaderSelection, ResourceSpawn};
 pub use session_read::{RetainedReviewSession, SessionLocator};

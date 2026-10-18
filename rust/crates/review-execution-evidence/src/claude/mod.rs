@@ -3,6 +3,8 @@
 
 mod credentials;
 mod isolation;
+#[cfg(feature = "test-support")]
+mod local_probe;
 mod profile;
 mod qualified;
 mod reader;
@@ -12,6 +14,8 @@ mod writer;
 
 pub use credentials::{AccessProjection, CredentialSource};
 pub use isolation::{CandidateBoundary, CandidateIndex, HostileProbeResult};
+#[cfg(feature = "test-support")]
+pub use local_probe::LocalProbeResult;
 pub use profile::{PinnedProgram, Rp0Error, TrustedClaudeProfile, TrustedRp0Profile};
 pub use qualified::{
     InitialEntryPermit, QualifiedReaderSelection, QualifiedScope, QualifiedSelection,

@@ -67,6 +67,27 @@ fn offline_acceptance_uses_the_fresh_applied_owner_slot_once() {
         attempt_horizon_millis: 60_000,
     };
     pin.validate_execution(&selected_execution).unwrap();
+    let mut accepted_v2 = accepted.clone();
+    accepted_v2["resourcePolicy"] = json!("session64mib_combined1g_zero_swap_v2");
+    let v2_pin =
+        OfflineAcceptancePin::test_owned(&serde_json::to_vec(&accepted_v2).unwrap()).unwrap();
+    let v2_selection = AcceptedExecutionSelection {
+        claude_profile_digest: selected_execution.claude_profile_digest,
+        program_sha256: selected_execution.program_sha256,
+        guard_sha256: selected_execution.guard_sha256,
+        cbm_store_sha256: selected_execution.cbm_store_sha256,
+        catalog_sha256: selected_execution.catalog_sha256,
+        requested_model: selected_execution.requested_model,
+        credential_source_metadata_sha256: selected_execution.credential_source_metadata_sha256,
+        session_id: selected_execution.session_id,
+        attempt_id: selected_execution.attempt_id,
+        resource_policy: accepted_v2["resourcePolicy"].as_str().unwrap(),
+        prompt_template_sha256: selected_execution.prompt_template_sha256,
+        attempt_horizon_millis: selected_execution.attempt_horizon_millis,
+    };
+    v2_pin.validate_execution(&v2_selection).unwrap();
+    assert!(v2_pin.validate_execution(&selected_execution).is_err());
+    assert!(pin.validate_execution(&v2_selection).is_err());
     assert!(
         pin.validate_execution(&AcceptedExecutionSelection {
             requested_model: "changed-model",

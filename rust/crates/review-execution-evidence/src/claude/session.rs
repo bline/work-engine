@@ -10,6 +10,46 @@ use crate::contract::{require_text, sha256};
 
 pub(crate) const SESSION_LIMIT: u64 = 64 * 1024 * 1024;
 pub(crate) const ACTIVE_SESSION_LIMIT: u64 = 16 * 1024 * 1024;
+pub(crate) const STRICT_POLICY: &str = "strict_aggregate_session_64mib_v1";
+pub(crate) const COMBINED_1G_POLICY: &str = "session64mib_combined1g_zero_swap_v2";
+pub(crate) const COMBINED_1G_LIMIT: u64 = 1024 * 1024 * 1024;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ResourcePolicy {
+    Strict64MiB,
+    Combined1GiB,
+}
+
+impl ResourcePolicy {
+    pub(crate) fn parse(value: &str) -> Option<Self> {
+        match value {
+            STRICT_POLICY => Some(Self::Strict64MiB),
+            COMBINED_1G_POLICY => Some(Self::Combined1GiB),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Strict64MiB => STRICT_POLICY,
+            Self::Combined1GiB => COMBINED_1G_POLICY,
+        }
+    }
+
+    pub(crate) fn combined_limit(self) -> u64 {
+        match self {
+            Self::Strict64MiB => SESSION_LIMIT,
+            Self::Combined1GiB => COMBINED_1G_LIMIT,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ActiveBudget {
+    pub(crate) host_charge: u64,
+    pub(crate) memory_max: u64,
+    pub(crate) page_size: u64,
+}
 const MAX_FILES: usize = 4096;
 const ENTRY_CHARGE: u64 = 4096;
 const GUARD_MAGIC: &[u8] = b"WE-RP1-SESSION-V2\0";
@@ -270,16 +310,21 @@ fn storage_charge(root: &Path) -> Result<(u64, u64), EvidenceReadError> {
     Ok((total, live_total))
 }
 
-/// The active sandbox's cgroup charges its processes, tmpfs data, and kernel
-/// inode/dentry metadata against the room left by all retained host custody.
-/// Process memory makes this deliberately conservative.
-pub(crate) fn active_cgroup_budget(root: &Path) -> Result<u64, EvidenceReadError> {
+/// The v1 combined cap is 64 MiB. The authorized v2 combined cap is 1 GiB;
+/// both subtract the separately checked host session charge. V2 keeps the
+/// 64 MiB logical host/session limit but does not promise v1's physical cap.
+pub(crate) fn active_cgroup_budget(
+    root: &Path,
+    policy: ResourcePolicy,
+) -> Result<ActiveBudget, EvidenceReadError> {
     let current = storage_charge(root)?.0;
-    let remaining = SESSION_LIMIT
-        .checked_sub(current)
-        .ok_or(EvidenceReadError::Capacity(
-            "session active budget exhausted",
-        ))?;
+    let remaining =
+        policy
+            .combined_limit()
+            .checked_sub(current)
+            .ok_or(EvidenceReadError::Capacity(
+                "session active budget exhausted",
+            ))?;
     // cgroup memory.max is page-granular; round down before writing and
     // verifying the realized kernel value.
     let page = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
@@ -294,7 +339,11 @@ pub(crate) fn active_cgroup_budget(root: &Path) -> Result<u64, EvidenceReadError
             "session active budget exhausted",
         ));
     }
-    Ok(budget)
+    Ok(ActiveBudget {
+        host_charge: current,
+        memory_max: budget,
+        page_size: page as u64,
+    })
 }
 
 pub(crate) fn reserve_snapshot(root: &Path) -> Result<(), EvidenceReadError> {

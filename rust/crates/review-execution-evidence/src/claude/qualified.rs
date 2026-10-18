@@ -329,8 +329,13 @@ impl QualifiedScope {
         .map_err(|_| EvidenceReadError::Conflicting("episode subject invalid"))?;
         let command_sha256 = command_digest(&profile, session_id, boundary.is_some());
         let b = &selection.provenance.binding;
+        let resource_policy = boundary
+            .as_ref()
+            .map(|value| value.resource_policy())
+            .filter(|value| *value == super::session::COMBINED_1G_POLICY);
         let prepared = Prepared {
-            schema_version: 1,
+            schema_version: if resource_policy.is_some() { 2 } else { 1 },
+            resource_policy: resource_policy.map(str::to_owned),
             root_id: selection.root_id.clone(),
             campaign_root_id: b.campaign_root_id.clone(),
             obligation_id: b.obligation_id.clone(),
@@ -367,7 +372,9 @@ impl QualifiedScope {
             } else {
                 "offline_peer".into()
             },
-            boundary_kind: if boundary.is_some() {
+            boundary_kind: if resource_policy.is_some() {
+                "rp3-guarded-v2".into()
+            } else if boundary.is_some() {
                 "rp0-guarded-v1".into()
             } else {
                 "offline-direct-v1".into()

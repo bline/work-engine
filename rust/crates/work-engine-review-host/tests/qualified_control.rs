@@ -335,6 +335,96 @@ fn replace_qualified_gate_capture(
     fs::set_permissions(&fixture.startup, fs::Permissions::from_mode(0o400)).unwrap();
 }
 
+fn write_qualified_startup(fixture: &Fixture, envelope: &QualifiedStartupDocument) {
+    fs::set_permissions(&fixture.startup, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::write(&fixture.startup, serde_json::to_vec(envelope).unwrap()).unwrap();
+    fs::set_permissions(&fixture.startup, fs::Permissions::from_mode(0o400)).unwrap();
+}
+
+fn qualified_startup_result(fixture: &Fixture) -> std::process::Output {
+    Command::new(&fixture.host)
+        .arg("initialize")
+        .arg("--startup")
+        .arg(&fixture.startup)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn v2_protected_startup_refuses_mixed_resource_policies_before_entry() {
+    const V1: &str = "strict_aggregate_session_64mib_v1";
+    const V2: &str = "session64mib_combined1g_zero_swap_v2";
+    let (fixture, witness) = offline_fixture();
+    let mut envelope: QualifiedStartupDocument =
+        serde_json::from_slice(&fs::read(&fixture.startup).unwrap()).unwrap();
+    let original_acceptance = envelope.qualified.offline_acceptance.as_ref().unwrap();
+    let mut accepted: Value =
+        serde_json::from_slice(&fs::read(&original_acceptance.path).unwrap()).unwrap();
+    assert_eq!(accepted["resourcePolicy"], V1);
+
+    // A descriptive startup field cannot switch the protected Applied policy.
+    envelope.qualified.resource_policy = V2.into();
+    write_qualified_startup(&fixture, &envelope);
+    let refused = qualified_startup_result(&fixture);
+    assert!(!refused.status.success());
+    assert!(
+        String::from_utf8_lossy(&refused.stderr).contains("accepted execution selection differs")
+    );
+    assert!(!witness.exists());
+    assert!(
+        !fixture
+            .document
+            .roots
+            .evidence
+            .join("evidence.sqlite")
+            .exists()
+    );
+
+    // Nor can a v2 accepted record be paired with a v1 E1 boundary.
+    accepted["resourcePolicy"] = V2.into();
+    let bytes = serde_json::to_vec(&accepted).unwrap();
+    OfflineAcceptancePin::test_owned(&bytes).unwrap();
+    let mut pin = captured(fixture.temp.path(), "accepted-offline-v2.json", &bytes);
+    own(&mut pin);
+    envelope.qualified.offline_acceptance = Some(pin);
+    envelope.qualified.resource_policy = V1.into();
+    write_qualified_startup(&fixture, &envelope);
+    let refused = qualified_startup_result(&fixture);
+    assert!(!refused.status.success());
+    assert!(
+        String::from_utf8_lossy(&refused.stderr).contains("accepted execution selection differs")
+    );
+    assert!(!witness.exists());
+    assert!(
+        !fixture
+            .document
+            .roots
+            .evidence
+            .join("evidence.sqlite")
+            .exists()
+    );
+
+    // The same production validation core admits the coherent v2 pair, while
+    // this read-only load still issues no campaign entry or provider launch.
+    envelope.qualified.resource_policy = V2.into();
+    write_qualified_startup(&fixture, &envelope);
+    let admitted = qualified_startup_result(&fixture);
+    assert!(
+        admitted.status.success(),
+        "{}",
+        String::from_utf8_lossy(&admitted.stderr)
+    );
+    assert!(!witness.exists());
+    assert!(
+        !fixture
+            .document
+            .roots
+            .evidence
+            .join("evidence.sqlite")
+            .exists()
+    );
+}
+
 fn qualified_ready(client: &mut Client) -> Value {
     let deadline = Instant::now() + Duration::from_secs(240);
     loop {

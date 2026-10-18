@@ -22,6 +22,7 @@ use super::session::{
 };
 use super::transport::validate_response;
 
+use review_execution_custody::claude::ResourceSpawn;
 use review_execution_custody::claude::record::{CompleteCapture, QualifiedTerminal, observation};
 use slice_campaign::FreshInitialEntry;
 #[cfg(feature = "test-support")]
@@ -210,7 +211,17 @@ impl QualifiedWriter {
                 } else {
                     "offline_peer"
                 }
-            || binding.resource_policy() != "strict_aggregate_session_64mib_v1"
+            || binding.resource_policy()
+                != self
+                    .scope
+                    .boundary
+                    .as_ref()
+                    .map_or(super::session::STRICT_POLICY, |boundary| {
+                        boundary.resource_policy()
+                    })
+            || self.scope.prepared.resource_policy.as_deref()
+                != (binding.resource_policy() == super::session::COMBINED_1G_POLICY)
+                    .then_some(super::session::COMBINED_1G_POLICY)
             || binding.campaign_root_id() != prepared.campaign_root_id
             || binding.obligation_id() != prepared.obligation_id
             || binding.request_digest() != prepared.prepared_request_sha256
@@ -346,8 +357,16 @@ impl QualifiedWriter {
             None
         };
         self.store.reserve_terminal_capacity()?;
-        self.store
-            .append(&attempt, "launch_intent", b"Claude initial entry v1", &[])?;
+        self.store.append(
+            &attempt,
+            "launch_intent",
+            if self.scope.prepared.schema_version == 2 {
+                b"Claude initial entry v2"
+            } else {
+                b"Claude initial entry v1"
+            },
+            &[],
+        )?;
         fault_cut("launch_intent");
         // A second preflight runs after intent and immediately before the launch
         // syscall. Failure here is unresolved unless local non-entry is proven.
@@ -369,7 +388,7 @@ impl QualifiedWriter {
             )
             .as_bytes(),
         );
-        let (command, ready_line, relay) = if let Some(boundary) = &self.scope.boundary {
+        let (command, ready_line, relay, quota) = if let Some(boundary) = &self.scope.boundary {
             let launch = boundary
                 .guarded_launch(
                     &self.scope.profile,
@@ -378,7 +397,12 @@ impl QualifiedWriter {
                     &self.scope.arguments(),
                 )
                 .map_err(|_| EvidenceReadError::Unresolved("guarded Claude launch unavailable"))?;
-            (launch.command, Some(launch.ready_line), Some(launch.relay))
+            (
+                launch.command,
+                Some(launch.ready_line),
+                Some(launch.relay),
+                Some(launch.quota),
+            )
         } else {
             let mut command = Command::new(self.scope.profile.program().path());
             command
@@ -400,7 +424,7 @@ impl QualifiedWriter {
                     command.env("CLAUDE_CODE_OAUTH_TOKEN", token);
                 });
             }
-            (command, None, None)
+            (command, None, None, None)
         };
         let mut running = match process::spawn_command(command) {
             Ok(running) => running,
@@ -414,8 +438,28 @@ impl QualifiedWriter {
         let pid = running
             .pid()
             .ok_or(EvidenceReadError::Unresolved("Claude PID unavailable"))?;
+        let spawn_payload = if self.scope.prepared.schema_version == 2 {
+            let realized = quota.ok_or(EvidenceReadError::Conflicting(
+                "Claude v2 quota realization absent",
+            ))?;
+            let event = ResourceSpawn {
+                schema_version: 2,
+                pid,
+                resource_policy: super::session::COMBINED_1G_POLICY.into(),
+                host_custody_charge: realized.host_charge,
+                memory_max: realized.memory_max,
+                page_size: realized.page_size,
+                swap_max_zero: true,
+                swap_current_zero: true,
+            };
+            event.validate(&self.scope.prepared)?;
+            serde_json::to_vec(&event)
+                .map_err(|_| EvidenceReadError::Conflicting("Claude v2 resource record invalid"))?
+        } else {
+            pid.to_be_bytes().to_vec()
+        };
         self.store
-            .append(&attempt, "spawn_outcome", &pid.to_be_bytes(), &[])?;
+            .append(&attempt, "spawn_outcome", &spawn_payload, &[])?;
         fault_cut("spawn_outcome");
         if let Some(expected) = &ready_line
             && let Err(failure) = running.await_ready(expected).await
@@ -707,12 +751,19 @@ impl QualifiedWriter {
             "subject",
             crate::REQUEST_MAX_BYTES,
         )?;
+        let spawn_valid = if prepared.schema_version == 2 {
+            serde_json::from_slice::<ResourceSpawn>(&events[3].payload)
+                .ok()
+                .is_some_and(|spawn| spawn.pid == capture.pid && spawn.validate(&prepared).is_ok())
+        } else {
+            events[3].payload == capture.pid.to_be_bytes()
+        };
         if sha256(&response) != capture.response_sha256
             || sha256(&stderr) != capture.stderr_sha256
             || sha256(&result) != capture.result_sha256
             || sha256(&prompt) != prepared.prompt_sha256
             || sha256(&subject) != prepared.subject_sha256
-            || events[3].payload != capture.pid.to_be_bytes()
+            || !spawn_valid
             || capture.exit_code != 0
             || !capture.prompt_submitted
             || !capture.local_reaped

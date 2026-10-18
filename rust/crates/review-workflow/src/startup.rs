@@ -253,8 +253,10 @@ impl QualifiedRuntime {
         offline: bool,
         prompt_template: Vec<u8>,
     ) -> Result<Self> {
-        if inputs.resource_policy != "strict_aggregate_session_64mib_v1"
-            || inputs.attempt_horizon_millis == 0
+        if !matches!(
+            inputs.resource_policy.as_str(),
+            "strict_aggregate_session_64mib_v1" | "session64mib_combined1g_zero_swap_v2"
+        ) || inputs.attempt_horizon_millis == 0
             || inputs.attempt_horizon_millis > 600_000
             || inputs.accepted_observed_models.is_empty()
         {
@@ -316,6 +318,7 @@ impl QualifiedRuntime {
             &inputs.boundary_root,
             &inputs.boundary_manifest_sha256,
         )
+        .and_then(|boundary| boundary.with_resource_policy(&inputs.resource_policy))
         .map_err(|e| refuse("startup", e.to_string()))?;
         let catalog = inputs.catalog.read(64 * 1024)?;
         let claude = program(&d.peer.executable)?;

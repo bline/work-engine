@@ -70,6 +70,8 @@ impl QualifiedReaderSelection {
 #[serde(deny_unknown_fields)]
 pub struct Prepared {
     pub schema_version: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_policy: Option<String>,
     pub root_id: String,
     pub campaign_root_id: String,
     pub obligation_id: String,
@@ -106,6 +108,46 @@ pub struct Prepared {
     pub boundary_kind: String,
 }
 
+/// V2's sealed spawn event records the realized pre-entry memory equation.
+/// V1 retains its original four-byte PID event without reinterpretation.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ResourceSpawn {
+    pub schema_version: u32,
+    pub pid: u32,
+    pub resource_policy: String,
+    pub host_custody_charge: u64,
+    pub memory_max: u64,
+    pub page_size: u64,
+    pub swap_max_zero: bool,
+    pub swap_current_zero: bool,
+}
+
+impl ResourceSpawn {
+    pub fn validate(&self, prepared: &Prepared) -> Result<(), EvidenceReadError> {
+        const STORAGE_LIMIT: u64 = 64 * 1024 * 1024;
+        const COMBINED_LIMIT: u64 = 1024 * 1024 * 1024;
+        if self.schema_version != 2
+            || prepared.schema_version != 2
+            || prepared.resource_policy.as_deref() != Some(self.resource_policy.as_str())
+            || self.resource_policy != "session64mib_combined1g_zero_swap_v2"
+            || self.host_custody_charge > STORAGE_LIMIT
+            || self.page_size == 0
+            || !self.page_size.is_power_of_two()
+            || self.memory_max == 0
+            || self.memory_max
+                != (COMBINED_LIMIT - self.host_custody_charge) / self.page_size * self.page_size
+            || !self.swap_max_zero
+            || !self.swap_current_zero
+        {
+            return Err(EvidenceReadError::Conflicting(
+                "Claude v2 resource realization mismatch",
+            ));
+        }
+        Ok(())
+    }
+}
+
 impl Prepared {
     pub fn execution_profile_digest(&self) -> &str {
         self.execution_profile_digest
@@ -134,12 +176,24 @@ impl Prepared {
     }
 
     pub fn pin(&self) -> Result<ReaderPin, EvidenceReadError> {
+        if !matches!(
+            (self.schema_version, self.resource_policy.as_deref()),
+            (1, None) | (2, Some("session64mib_combined1g_zero_swap_v2"))
+        ) {
+            return Err(EvidenceReadError::Unsupported(
+                "Claude resource policy version",
+            ));
+        }
         let bytes = serde_json::to_vec(self)
             .map_err(|_| EvidenceReadError::Conflicting("Claude prepared record invalid"))?;
         Ok(ReaderPin {
             root_id: self.root_id.clone(),
             configuration_sha256: record_digest(&[
-                if self.provenance_class == "qualified_provider" {
+                if self.schema_version == 2 && self.provenance_class == "qualified_provider" {
+                    b"claude-qualified-scope-v2"
+                } else if self.schema_version == 2 {
+                    b"claude-offline-scope-v2"
+                } else if self.provenance_class == "qualified_provider" {
                     b"claude-qualified-scope-v1"
                 } else {
                     b"claude-offline-scope-v1"

@@ -13,7 +13,7 @@ use crate::{
 
 use super::record::{CompleteCapture, QualifiedTerminal};
 use super::selection::{
-    Prepared, QualifiedReaderSelection, command_digest, parse_stored_subject,
+    Prepared, QualifiedReaderSelection, ResourceSpawn, command_digest, parse_stored_subject,
     validate_stored_prompt,
 };
 use super::session_read::{
@@ -287,7 +287,14 @@ impl QualifiedReader {
             .map_err(|_| EvidenceReadError::Conflicting("Claude capture record invalid"))?;
         let terminal: QualifiedTerminal = serde_json::from_slice(&events[5].payload)
             .map_err(|_| EvidenceReadError::Conflicting("Claude terminal record invalid"))?;
-        if prepared.schema_version != 1
+        let spawn_valid = if prepared.schema_version == 2 {
+            serde_json::from_slice::<ResourceSpawn>(&events[3].payload)
+                .ok()
+                .is_some_and(|spawn| spawn.pid == capture.pid && spawn.validate(&prepared).is_ok())
+        } else {
+            events[3].payload == capture.pid.to_be_bytes()
+        };
+        if !matches!(prepared.schema_version, 1 | 2)
             || capture.schema_version != 1
             || terminal.schema_version != 1
             || prepared.pin()? != self.selection.pin
@@ -315,12 +322,14 @@ impl QualifiedReader {
                 && prepared.provenance_class != "qualified_provider")
             || (!self.selection.profile.installed() && prepared.provenance_class != "offline_peer")
             || prepared.boundary_kind
-                != if guarded {
+                != if prepared.schema_version == 2 && guarded {
+                    "rp3-guarded-v2"
+                } else if guarded {
                     "rp0-guarded-v1"
                 } else {
                     "offline-direct-v1"
                 }
-            || events[3].payload != capture.pid.to_be_bytes()
+            || !spawn_valid
             || capture.exit_code != 0
             || !capture.local_reaped
             || !capture.prompt_submitted
