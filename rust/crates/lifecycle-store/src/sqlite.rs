@@ -195,20 +195,35 @@ impl SqliteLifecycleStore {
     }
     /// Open one local lifecycle store. The lock remains held for this value's lifetime.
     pub fn open(root: &Path, trusted_issuer: String) -> Result<Self, StoreError> {
-        Self::open_inner(root, trusted_issuer, false)
+        Self::open_inner(root, trusted_issuer, false, None)
+    }
+
+    /// Selected-existing restart open. The writer lock remains held across a
+    /// read-only, WAL-aware preflight and the later RW open. No legacy upgrade,
+    /// WAL-mode change, or database write is attempted on a rejected image.
+    pub fn open_selected_restart(
+        root: &Path,
+        trusted_issuer: String,
+        expected_store_id: &str,
+    ) -> Result<Self, StoreError> {
+        if expected_store_id.is_empty() {
+            return Err(StoreError::Rejected);
+        }
+        Self::open_inner(root, trusted_issuer, false, Some(expected_store_id))
     }
 
     pub(crate) fn open_adoption_pending(
         root: &Path,
         trusted_issuer: String,
     ) -> Result<Self, StoreError> {
-        Self::open_inner(root, trusted_issuer, true)
+        Self::open_inner(root, trusted_issuer, true, None)
     }
 
     fn open_inner(
         root: &Path,
         trusted_issuer: String,
         adoption_pending: bool,
+        selected_restart_store_id: Option<&str>,
     ) -> Result<Self, StoreError> {
         if trusted_issuer.is_empty() {
             return Err(StoreError::Rejected);
@@ -216,22 +231,76 @@ impl SqliteLifecycleStore {
         if !adoption_pending && adoption_intent_path(root)?.exists() {
             return Err(StoreError::Rejected);
         }
-        fs::create_dir_all(root).map_err(|_| StoreError::Unavailable)?;
+        if selected_restart_store_id.is_some() {
+            let metadata = fs::symlink_metadata(root).map_err(|_| StoreError::Unavailable)?;
+            if !metadata.file_type().is_dir() {
+                return Err(StoreError::Rejected);
+            }
+        } else {
+            fs::create_dir_all(root).map_err(|_| StoreError::Unavailable)?;
+        }
         let root = fs::canonicalize(root).map_err(|_| StoreError::Unavailable)?;
         if !adoption_pending && adoption_intent_path(&root)?.exists() {
             return Err(StoreError::Rejected);
         }
         let lock_path = root.join("writer.lock");
+        if selected_restart_store_id.is_some() {
+            let metadata = fs::symlink_metadata(&lock_path).map_err(|_| StoreError::Unavailable)?;
+            if !metadata.file_type().is_file() {
+                return Err(StoreError::Rejected);
+            }
+        }
         let lock_file = OpenOptions::new()
             .read(true)
             .write(true)
-            .create(true)
+            .create(selected_restart_store_id.is_none())
             .truncate(false)
             .open(&lock_path)
             .map_err(|_| StoreError::Unavailable)?;
         lock_file.try_lock().map_err(|_| StoreError::Unavailable)?;
         let database = root.join("lifecycle.sqlite");
         reject_hard_link(&database)?;
+        let selected_database_identity = if let Some(expected_store_id) = selected_restart_store_id
+        {
+            let metadata = fs::symlink_metadata(&database).map_err(|_| StoreError::Unavailable)?;
+            if !metadata.file_type().is_file() {
+                return Err(StoreError::Rejected);
+            }
+            let inspection = Connection::open_with_flags(
+                &database,
+                OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NOFOLLOW,
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+            let version: i64 = inspection
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            if !matches!(version, 6 | 7) {
+                return Err(StoreError::Rejected);
+            }
+            let integrity: String = inspection
+                .query_row("PRAGMA quick_check", [], |r| r.get(0))
+                .map_err(|_| StoreError::Unavailable)?;
+            if integrity != "ok" {
+                return Err(StoreError::Unavailable);
+            }
+            crate::recovery::check_coherence(&inspection)?;
+            if !crate::admin::admission_open(&inspection)? {
+                return Err(StoreError::Rejected);
+            }
+            let store_id: String = inspection
+                .query_row(
+                    "SELECT store_id FROM store_identity WHERE singleton=1",
+                    [],
+                    |r| r.get(0),
+                )
+                .map_err(|_| StoreError::Unavailable)?;
+            if store_id != expected_store_id {
+                return Err(StoreError::ClaimConflict);
+            }
+            Some(file_identity(&database)?)
+        } else {
+            None
+        };
         let mut defer_wal_until_validated_upgrade = false;
         if database.exists() {
             // Incompatible readers refuse before WAL/pragma or schema mutation.
@@ -247,7 +316,7 @@ impl SqliteLifecycleStore {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
                 [], |row| row.get(0),
             ).map_err(|_| StoreError::Unavailable)?;
-            if !(0..=6).contains(&version) || (version == 0 && has_tables != 0) {
+            if !(0..=7).contains(&version) || (version == 0 && has_tables != 0) {
                 return Err(StoreError::Unavailable);
             }
             if matches!(version, 4 | 5) {
@@ -268,6 +337,11 @@ impl SqliteLifecycleStore {
                 | OpenFlags::SQLITE_OPEN_NOFOLLOW,
         )
         .map_err(|_| StoreError::Unavailable)?;
+        if selected_database_identity
+            .is_some_and(|identity| file_identity(&database).ok() != Some(identity))
+        {
+            return Err(StoreError::Unavailable);
+        }
         connection
             .execute_batch(
                 "PRAGMA foreign_keys=ON; PRAGMA synchronous=FULL; PRAGMA busy_timeout=250;",
@@ -298,6 +372,7 @@ impl SqliteLifecycleStore {
             4 => {}
             5 => {}
             6 => {}
+            7 => {}
             _ => return Err(StoreError::Unavailable),
         }
         if version < 2 {

@@ -1229,6 +1229,7 @@ mod tests {
             verifier_proof_ms: None,
             verifier_cleanup_ms: None,
             native: None,
+            selected_restart: None,
         };
         let startup = HostStartup {
             profile: PROFILE.into(),
@@ -1618,6 +1619,7 @@ mod tests {
             verifier_proof_ms: None,
             verifier_cleanup_ms: None,
             native: None,
+            selected_restart: None,
         };
         let startup = HostStartup {
             profile: PROFILE.into(),

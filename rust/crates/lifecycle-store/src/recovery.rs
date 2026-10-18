@@ -1,7 +1,7 @@
 use std::fs::{self, File};
 use std::path::Path;
 
-use rusqlite::{Connection, OpenFlags};
+use rusqlite::{Connection, OpenFlags, OptionalExtension};
 
 use crate::{SqliteLifecycleStore, StoreError};
 
@@ -190,7 +190,7 @@ impl SqliteLifecycleStore {
         let version: i64 = inspection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(|_| StoreError::Unavailable)?;
-        if !matches!(version, 2..=6) {
+        if !matches!(version, 2..=7) {
             return Err(StoreError::Unavailable);
         }
         Ok(RecoverySnapshot {
@@ -247,7 +247,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
     let version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|_| StoreError::Unavailable)?;
-    if !matches!(version, 2..=6) {
+    if !matches!(version, 2..=7) {
         return Err(StoreError::Unavailable);
     }
     let foreign_key_error: bool = connection
@@ -273,6 +273,7 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
             "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name GLOB 'custody_revision_*'",
         )?;
         let expected = match version {
+            7 => 126,
             6 => 123,
             5 => 111,
             _ => 102,
@@ -280,8 +281,26 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         if revision < 0 || trigger_count != expected {
             return Err(StoreError::Unavailable);
         }
-        if version == 6 {
+        if version >= 6 {
             crate::admin::check_held_coherence(connection)?;
+        }
+        if version == 6 {
+            let index: Option<String>=connection.query_row(
+                "SELECT sql FROM sqlite_master WHERE type='index' AND name='one_native_generation_session'",
+                [],|r|r.get(0)).optional().map_err(|_| StoreError::Unavailable)?;
+            if index.as_ref().is_none_or(|sql| {
+                let compact = sql
+                    .to_ascii_lowercase()
+                    .split_whitespace()
+                    .collect::<String>();
+                !compact.contains("onnative_sessions(subject_id,context_id)")
+                    || !compact.contains("whererolein('domain','successor')")
+            }) {
+                return Err(StoreError::Unavailable);
+            }
+        }
+        if version == 7 {
+            check_restart_epoch_coherence(connection)?;
         }
     }
     let effect_mismatch = count(
@@ -360,6 +379,112 @@ pub(super) fn check_coherence(connection: &Connection) -> Result<(), StoreError>
         || missing_verifier_journal != 0
         || native_mismatch != 0
     {
+        return Err(StoreError::Unavailable);
+    }
+    Ok(())
+}
+
+fn check_restart_epoch_coherence(connection: &Connection) -> Result<(), StoreError> {
+    // The two partial indexes are part of the single-current-session contract.
+    // Count and exact names alone cannot detect a replaced no-op index/trigger.
+    for (name, state) in [
+        ("one_active_native_execution_epoch", "active"),
+        ("one_authorized_native_execution_epoch", "authorized"),
+    ] {
+        let definition: Option<(String, String)> = connection
+            .query_row(
+                "SELECT tbl_name,sql FROM sqlite_master WHERE type='index' AND name=?1",
+                [name],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        if definition.as_ref().is_none_or(|(table, sql)| {
+            let compact = sql
+                .to_ascii_lowercase()
+                .split_whitespace()
+                .collect::<String>();
+            table != "native_execution_epochs"
+                || compact
+                    != format!("createuniqueindex{name}onnative_execution_epochs(subject_id,context_id)wherestate='{state}'")
+        }) {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    for (name, event) in [
+        (
+            "custody_revision_native_execution_epochs_insert",
+            "afterinsert",
+        ),
+        (
+            "custody_revision_native_execution_epochs_update",
+            "afterupdate",
+        ),
+        (
+            "custody_revision_native_execution_epochs_delete",
+            "afterdelete",
+        ),
+    ] {
+        let definition: Option<(String, String)> = connection
+            .query_row(
+                "SELECT tbl_name,sql FROM sqlite_master WHERE type='trigger' AND name=?1",
+                [name],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        if definition.as_ref().is_none_or(|(table, sql)| {
+            let compact = sql
+                .to_ascii_lowercase()
+                .split_whitespace()
+                .collect::<String>();
+            table != "native_execution_epochs"
+                || compact
+                    != format!("createtrigger{name}{event}onnative_execution_epochsbeginupdateadmin_custody_revisionsetrevision=revision+1wheresingleton=1;end")
+        }) {
+            return Err(StoreError::Unavailable);
+        }
+    }
+    let mismatch = count(
+        connection,
+        "SELECT COUNT(*) FROM native_sessions s WHERE s.role IN ('domain','successor') AND \
+         (SELECT COUNT(*) FROM native_execution_epochs e WHERE e.target_session_id=s.session_id \
+          AND e.subject_id=s.subject_id AND e.context_id=s.context_id AND e.state IN ('active','historical'))!=1",
+    )? + count(
+        connection,
+        "SELECT COUNT(*) FROM native_execution_epochs e WHERE \
+         ((e.state IN ('active','historical') AND NOT EXISTS(SELECT 1 FROM native_sessions s \
+             WHERE s.session_id=e.target_session_id AND s.subject_id=e.subject_id \
+               AND s.context_id=e.context_id AND s.role IN ('domain','successor'))) \
+          OR (e.state='authorized' AND EXISTS(SELECT 1 FROM native_sessions s WHERE s.session_id=e.target_session_id)) \
+          OR (e.epoch>0 AND NOT EXISTS(SELECT 1 FROM native_execution_epochs p \
+             WHERE p.subject_id=e.subject_id AND p.context_id=e.context_id AND p.epoch=e.epoch-1 \
+               AND p.target_session_id=e.predecessor_session_id \
+               AND ((e.state='authorized' AND p.state='active') \
+                 OR (e.state='active' AND p.state='historical') \
+                 OR (e.state='historical' AND p.state='historical')))) \
+          OR (e.epoch=0 AND e.state='historical' AND NOT EXISTS(SELECT 1 FROM native_execution_epochs n \
+             WHERE n.subject_id=e.subject_id AND n.context_id=e.context_id AND n.epoch=1)))",
+    )? + count(
+        connection,
+        "SELECT COUNT(*) FROM (SELECT subject_id,context_id, \
+           SUM(state='active') active_count, SUM(state='authorized') authorized_count, \
+           SUM(state='historical') historical_count FROM native_execution_epochs \
+           GROUP BY subject_id,context_id) x WHERE active_count!=1 OR authorized_count>1",
+    )? + count(
+        connection,
+        "SELECT COUNT(*) FROM native_execution_epochs e WHERE e.epoch>0 AND \
+         (length(e.intent_sha256)!=64 OR length(e.selection_sha256)!=64 \
+          OR length(e.profile_digest)!=64 OR length(e.binary_sha256)!=64 \
+          OR length(e.protocol_digest)!=64 OR length(e.snapshot_manifest_sha256)!=64 \
+          OR e.intent_sha256 GLOB '*[^0-9A-Fa-f]*' \
+          OR e.selection_sha256 GLOB '*[^0-9A-Fa-f]*' \
+          OR e.profile_digest GLOB '*[^0-9A-Fa-f]*' \
+          OR e.binary_sha256 GLOB '*[^0-9A-Fa-f]*' \
+          OR e.protocol_digest GLOB '*[^0-9A-Fa-f]*' \
+          OR e.snapshot_manifest_sha256 GLOB '*[^0-9A-Fa-f]*')",
+    )?;
+    if mismatch != 0 {
         return Err(StoreError::Unavailable);
     }
     Ok(())

@@ -337,6 +337,10 @@ impl Runner {
         if started["thread"]["ephemeral"] != false {
             return Err(StoreError::Rejected);
         }
+        optional_native_barrier(
+            launch.proof_barrier_dir.as_deref(),
+            "native_after_thread_start_before_bind",
+        )?;
         let (reply, answer) = oneshot::channel();
         self.messages
             .send(NativeMessage::BindThread {
@@ -741,7 +745,13 @@ pub fn optional_native_barrier(root: Option<&Path>, point: &str) -> Result<(), S
 /// Materialize a route-bound native profile. Network confinement for the
 /// simulator is a separate proof condition; config alone is not one.
 pub fn prepare_native_launch(config: &NativeConfig, uid: u32) -> Result<NativeLaunch, StoreError> {
-    prepare_native_launch_with_code_mode(config, uid, false)
+    prepare_native_launch_with_code_mode(config, uid, false, true)
+}
+
+/// Compute the exact launch digest while leaving the selected native root
+/// empty. Reservation must commit before materializing its process files.
+pub fn preview_native_launch(config: &NativeConfig, uid: u32) -> Result<NativeLaunch, StoreError> {
+    prepare_native_launch_with_code_mode(config, uid, false, false)
 }
 
 /// The retained task profile needs the native code-mode bridge to reach its
@@ -750,13 +760,21 @@ pub fn prepare_native_task_launch(
     config: &NativeConfig,
     uid: u32,
 ) -> Result<NativeLaunch, StoreError> {
-    prepare_native_launch_with_code_mode(config, uid, true)
+    prepare_native_launch_with_code_mode(config, uid, true, true)
+}
+
+pub fn preview_native_task_launch(
+    config: &NativeConfig,
+    uid: u32,
+) -> Result<NativeLaunch, StoreError> {
+    prepare_native_launch_with_code_mode(config, uid, true, false)
 }
 
 fn prepare_native_launch_with_code_mode(
     config: &NativeConfig,
     uid: u32,
     code_mode_host: bool,
+    materialize: bool,
 ) -> Result<NativeLaunch, StoreError> {
     let url = config
         .provider_route
@@ -765,7 +783,9 @@ fn prepare_native_launch_with_code_mode(
     if !config.root.is_absolute() {
         return Err(StoreError::Rejected);
     }
-    fs::create_dir_all(&config.root).map_err(|_| StoreError::Unavailable)?;
+    if materialize {
+        fs::create_dir_all(&config.root).map_err(|_| StoreError::Unavailable)?;
+    }
     let root = fs::canonicalize(&config.root).map_err(|_| StoreError::Unavailable)?;
     let metadata = fs::symlink_metadata(&root).map_err(|_| StoreError::Unavailable)?;
     if !metadata.is_dir() || metadata.uid() != uid || metadata.permissions().mode() & 0o077 != 0 {
@@ -778,15 +798,19 @@ fn prepare_native_launch_with_code_mode(
         if p.exists() {
             return Err(StoreError::Rejected);
         }
-        fs::create_dir(p).map_err(|_| StoreError::Unavailable)?;
-        fs::set_permissions(p, fs::Permissions::from_mode(0o700))
-            .map_err(|_| StoreError::Unavailable)?;
+        if materialize {
+            fs::create_dir(p).map_err(|_| StoreError::Unavailable)?;
+            fs::set_permissions(p, fs::Permissions::from_mode(0o700))
+                .map_err(|_| StoreError::Unavailable)?;
+        }
     }
-    fs::write(
-        work.join(".context-lifecycle-project"),
-        b"isolated project root\n",
-    )
-    .map_err(|_| StoreError::Unavailable)?;
+    if materialize {
+        fs::write(
+            work.join(".context-lifecycle-project"),
+            b"isolated project root\n",
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    }
     let provider_name = config.provider_route.provider_name();
     let requires_runtime_key = config.provider_route.requires_runtime_key();
     let env_key = if requires_runtime_key {
@@ -836,18 +860,20 @@ request_max_retries = 0
 stream_max_retries = 0
 "#
     );
-    let path = codex_home.join("config.toml");
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .map_err(|_| StoreError::Unavailable)?;
-    use std::io::Write;
-    file.write_all(toml.as_bytes())
-        .and_then(|_| file.sync_all())
-        .map_err(|_| StoreError::Unavailable)?;
-    if codex_home.join("auth.json").exists() {
-        return Err(StoreError::Rejected);
+    if materialize {
+        let path = codex_home.join("config.toml");
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .map_err(|_| StoreError::Unavailable)?;
+        use std::io::Write;
+        file.write_all(toml.as_bytes())
+            .and_then(|_| file.sync_all())
+            .map_err(|_| StoreError::Unavailable)?;
+        if codex_home.join("auth.json").exists() {
+            return Err(StoreError::Rejected);
+        }
     }
     let profile_digest = CodecContract::BinaryArtifactV1
         .digest_binary(toml.as_bytes())

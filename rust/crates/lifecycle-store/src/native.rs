@@ -35,6 +35,27 @@ type PriorNativeSessionRow = (
     Option<String>,
     String,
 );
+type RestartEpochRow = (
+    String,
+    String,
+    i64,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    String,
+);
+type RestartPredecessorRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+);
+type RestartBasisSessionRow = (i64, String, String, String, String, String, String);
 type NativeIngressRow = (String, Option<String>, Option<String>, Vec<u8>);
 type NativeDeliveryRow = (
     String,
@@ -119,6 +140,65 @@ pub struct NativeSessionEntry {
     profile_digest: String,
     snapshot: SnapshotId,
     thread: Option<ProviderThreadId>,
+}
+
+/// Exact selected-host declaration. The caller must already have validated the
+/// predecessor selected receipt and cooperative process-absence evidence while
+/// retaining the task, lifecycle, and startup locks. This is never a socket
+/// command or an operator authority inferred from configuration alone.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRestartIntent {
+    pub subject: SubjectId,
+    pub context: ContextGeneration,
+    pub predecessor_session: NativeSessionId,
+    pub predecessor_epoch: u64,
+    pub target_session: NativeSessionId,
+    pub expected_store_id: String,
+    pub expected_subject_revision: u64,
+    pub expected_semantic_revision: u64,
+    pub expected_queue_revision: u64,
+    pub expected_journal_cursor: u64,
+    pub intent_sha256: String,
+    pub selection_sha256: String,
+    pub profile_digest: String,
+    pub binary_sha256: String,
+    pub protocol_digest: String,
+    pub snapshot: SnapshotId,
+    pub snapshot_manifest_sha256: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRestartEpoch {
+    pub subject: String,
+    pub context: String,
+    pub epoch: u64,
+    pub session_id: String,
+    pub predecessor_session_id: Option<String>,
+    pub intent_sha256: Option<String>,
+    pub selection_sha256: Option<String>,
+    pub state: String,
+}
+
+/// One coherent, locked current-store view for forming an exact selected
+/// restart declaration. Historical sessions and held custody are never
+/// inferred as current from a caller's configuration.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRestartBasis {
+    pub store_id: String,
+    pub subject_id: String,
+    pub context_id: String,
+    pub owner_kind: String,
+    pub subject_revision: u64,
+    pub semantic_revision: u64,
+    pub queue_revision: u64,
+    pub journal_cursor: u64,
+    pub predecessor_session_id: String,
+    pub predecessor_epoch: u64,
+    pub profile_digest: String,
+    pub binary_sha256: String,
+    pub protocol_digest: String,
+    pub snapshot_id: String,
+    pub snapshot_manifest_sha256: String,
 }
 
 impl NativeSessionEntry {
@@ -483,6 +563,188 @@ pub struct NativeSessionRecovery {
     pub allocation_state: String,
     pub thread_id: Option<String>,
     pub process_outcome: Option<String>,
+}
+
+fn to_i64_restart(value: u64) -> Result<i64, StoreError> {
+    i64::try_from(value).map_err(|_| StoreError::Rejected)
+}
+
+fn restart_digest(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn validate_restart_intent(intent: &NativeRestartIntent) -> Result<(), StoreError> {
+    if intent.predecessor_session == intent.target_session
+        || intent.expected_store_id.is_empty()
+        || intent.predecessor_epoch.checked_add(1).is_none()
+        || [
+            &intent.intent_sha256,
+            &intent.selection_sha256,
+            &intent.profile_digest,
+            &intent.binary_sha256,
+            &intent.protocol_digest,
+            &intent.snapshot_manifest_sha256,
+        ]
+        .iter()
+        .any(|v| !restart_digest(v))
+    {
+        return Err(StoreError::Rejected);
+    }
+    Ok(())
+}
+
+fn read_restart_epoch<P: rusqlite::Params>(
+    connection: &rusqlite::Connection,
+    sql: &str,
+    params: P,
+) -> Result<Option<NativeRestartEpoch>, StoreError> {
+    let row: Option<RestartEpochRow> = connection
+        .query_row(sql, params, |r| {
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get(5)?,
+                r.get(6)?,
+                r.get(7)?,
+            ))
+        })
+        .optional()
+        .map_err(|_| StoreError::Unavailable)?;
+    row.map(
+        |(
+            subject,
+            context,
+            epoch,
+            session_id,
+            predecessor_session_id,
+            intent_sha256,
+            selection_sha256,
+            state,
+        )| {
+            Ok(NativeRestartEpoch {
+                subject,
+                context,
+                epoch: u64::try_from(epoch).map_err(|_| StoreError::Unavailable)?,
+                session_id,
+                predecessor_session_id,
+                intent_sha256,
+                selection_sha256,
+                state,
+            })
+        },
+    )
+    .transpose()
+}
+
+fn verify_restart_owner(
+    connection: &rusqlite::Connection,
+    intent: &NativeRestartIntent,
+) -> Result<(), StoreError> {
+    let store: String = connection
+        .query_row(
+            "SELECT store_id FROM store_identity WHERE singleton=1",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(|_| StoreError::Unavailable)?;
+    let owner: Option<(String,i64,i64,i64,String,Option<String>)> = connection.query_row(
+        "SELECT context_id,revision,semantic_revision,queue_revision,owner_kind,owner_ref FROM subjects WHERE subject_id=?1",
+        [intent.subject.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)))
+        .optional().map_err(|_| StoreError::Unavailable)?;
+    let cursor: i64 = connection
+        .query_row("SELECT COALESCE(MAX(sequence),0) FROM journal", [], |r| {
+            r.get(0)
+        })
+        .map_err(|_| StoreError::Unavailable)?;
+    if store != intent.expected_store_id
+        || owner
+            .as_ref()
+            .is_none_or(|(context, revision, semantic, queue, kind, reference)| {
+                context != intent.context.as_str()
+                    || *revision != to_i64_restart(intent.expected_subject_revision).unwrap_or(-1)
+                    || *semantic != to_i64_restart(intent.expected_semantic_revision).unwrap_or(-1)
+                    || *queue != to_i64_restart(intent.expected_queue_revision).unwrap_or(-1)
+                    || kind != "domain"
+                    || reference.is_some()
+            })
+        || cursor != to_i64_restart(intent.expected_journal_cursor)?
+    {
+        return Err(StoreError::ClaimConflict);
+    }
+    Ok(())
+}
+
+fn verify_restart_predecessor(
+    connection: &rusqlite::Connection,
+    intent: &NativeRestartIntent,
+) -> Result<(), StoreError> {
+    let prior: Option<RestartPredecessorRow> = connection.query_row(
+        "SELECT subject_id,context_id,role,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256 FROM native_sessions WHERE session_id=?1",
+        [intent.predecessor_session.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?)))
+        .optional().map_err(|_| StoreError::Unavailable)?;
+    if prior.as_ref().is_none_or(
+        |(subject, context, role, profile, binary, protocol, snapshot, manifest)| {
+            subject != intent.subject.as_str()
+                || context != intent.context.as_str()
+                || !matches!(role.as_str(), "domain" | "successor")
+                || profile != &intent.profile_digest
+                || binary != &intent.binary_sha256
+                || protocol != &intent.protocol_digest
+                || snapshot != intent.snapshot.as_str()
+                || manifest != &intent.snapshot_manifest_sha256
+        },
+    ) {
+        return Err(StoreError::ClaimConflict);
+    }
+    Ok(())
+}
+
+fn restart_intent_matches(
+    connection: &rusqlite::Connection,
+    intent: &NativeRestartIntent,
+    prior: &NativeRestartEpoch,
+) -> Result<bool, StoreError> {
+    let next = intent
+        .predecessor_epoch
+        .checked_add(1)
+        .ok_or(StoreError::Rejected)?;
+    if prior.subject != intent.subject.as_str()
+        || prior.context != intent.context.as_str()
+        || prior.epoch != next
+        || prior.session_id != intent.target_session.as_str()
+        || prior.predecessor_session_id.as_deref() != Some(intent.predecessor_session.as_str())
+        || prior.intent_sha256.as_deref() != Some(&intent.intent_sha256)
+        || prior.selection_sha256.as_deref() != Some(&intent.selection_sha256)
+        || !matches!(prior.state.as_str(), "authorized" | "active")
+    {
+        return Ok(false);
+    }
+    let count: i64 = connection.query_row(
+        "SELECT COUNT(*) FROM native_execution_epochs WHERE target_session_id=?1 AND owner_revision=?2 AND semantic_revision=?3 AND queue_revision=?4 AND journal_cursor=?5 AND profile_digest=?6 AND binary_sha256=?7 AND protocol_digest=?8 AND snapshot_id=?9 AND snapshot_manifest_sha256=?10",
+        params![intent.target_session.as_str(),to_i64_restart(intent.expected_subject_revision)?,to_i64_restart(intent.expected_semantic_revision)?,to_i64_restart(intent.expected_queue_revision)?,to_i64_restart(intent.expected_journal_cursor)?,&intent.profile_digest,&intent.binary_sha256,&intent.protocol_digest,intent.snapshot.as_str(),&intent.snapshot_manifest_sha256],|r|r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    Ok(count == 1)
+}
+
+fn native_session_current(
+    connection: &rusqlite::Connection,
+    session: &NativeSessionId,
+) -> Result<bool, StoreError> {
+    let version: i64 = connection
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    if version < 7 {
+        return Ok(true);
+    }
+    if version != 7 {
+        return Err(StoreError::Unavailable);
+    }
+    connection.query_row(
+        "SELECT CASE WHEN role IN ('domain','successor') THEN EXISTS(SELECT 1 FROM native_execution_epochs e WHERE e.target_session_id=native_sessions.session_id AND e.state='active') ELSE 1 END FROM native_sessions WHERE session_id=?1",
+        [session.as_str()],|r|r.get(0)).map_err(|_| StoreError::ClaimConflict)
 }
 
 impl SqliteLifecycleStore {
@@ -1269,10 +1531,22 @@ impl SqliteLifecycleStore {
         context: &ContextGeneration,
     ) -> Result<Option<ProviderThreadId>, StoreError> {
         self.verify_identity()?;
-        let row: Option<String> = self.connection.query_row(
-            "SELECT thread_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role='successor' AND allocation_state='bound' AND thread_id IS NOT NULL",
-            params![subject.as_str(),context.as_str()], |r| r.get(0),
-        ).optional().map_err(|_|StoreError::Unavailable)?;
+        let version: i64 = self
+            .connection
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        let sql = if version == 7 {
+            "SELECT s.thread_id FROM native_sessions s JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE s.subject_id=?1 AND s.context_id=?2 AND s.role='successor' AND s.allocation_state='bound' AND s.thread_id IS NOT NULL"
+        } else {
+            "SELECT thread_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role='successor' AND allocation_state='bound' AND thread_id IS NOT NULL"
+        };
+        let row: Option<String> = self
+            .connection
+            .query_row(sql, params![subject.as_str(), context.as_str()], |r| {
+                r.get(0)
+            })
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
         row.map(|value| ProviderThreadId::parse(value).map_err(|_| StoreError::Unavailable))
             .transpose()
     }
@@ -1305,6 +1579,356 @@ impl SqliteLifecycleStore {
             [transition.as_str()], |r| r.get(0),
         ).optional().map_err(|_|StoreError::Unavailable)
     }
+    /// A single read transaction observes current domain ownership and the
+    /// active predecessor under the retained writer lock. It never upgrades a
+    /// held/legacy store or treats a historical session as the predecessor.
+    pub fn native_restart_basis(
+        &mut self,
+        subject: &SubjectId,
+        context: &ContextGeneration,
+    ) -> Result<NativeRestartBasis, StoreError> {
+        self.verify_identity()?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Deferred)
+            .map_err(|_| StoreError::Unavailable)?;
+        let version: i64 = tx
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if !matches!(version, 6 | 7) {
+            return Err(StoreError::Rejected);
+        }
+        crate::recovery::check_coherence(&tx)?;
+        let store_id: String = tx
+            .query_row(
+                "SELECT store_id FROM store_identity WHERE singleton=1",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        let owner:Option<(String,i64,i64,i64,String,Option<String>)>=tx.query_row(
+            "SELECT context_id,revision,semantic_revision,queue_revision,owner_kind,owner_ref FROM subjects WHERE subject_id=?1",
+            [subject.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?)))
+            .optional().map_err(|_| StoreError::Unavailable)?;
+        let Some((
+            current_context,
+            revision,
+            semantic_revision,
+            queue_revision,
+            owner_kind,
+            owner_ref,
+        )) = owner
+        else {
+            return Err(StoreError::Rejected);
+        };
+        if current_context != context.as_str() || owner_kind != "domain" || owner_ref.is_some() {
+            return Err(StoreError::Rejected);
+        }
+        let journal_cursor: i64 = tx
+            .query_row("SELECT COALESCE(MAX(sequence),0) FROM journal", [], |r| {
+                r.get(0)
+            })
+            .map_err(|_| StoreError::Unavailable)?;
+        let sql = if version == 7 {
+            "SELECT e.epoch,s.session_id,s.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256 FROM native_execution_epochs e JOIN native_sessions s ON s.session_id=e.target_session_id WHERE e.subject_id=?1 AND e.context_id=?2 AND e.state='active' AND s.role IN ('domain','successor')"
+        } else {
+            "SELECT 0,s.session_id,s.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256 FROM native_sessions s WHERE s.subject_id=?1 AND s.context_id=?2 AND s.role IN ('domain','successor')"
+        };
+        let session: Option<RestartBasisSessionRow> = tx
+            .query_row(sql, params![subject.as_str(), context.as_str()], |r| {
+                Ok((
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                    r.get(6)?,
+                ))
+            })
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some((
+            epoch,
+            predecessor_session_id,
+            profile_digest,
+            binary_sha256,
+            protocol_digest,
+            snapshot_id,
+            snapshot_manifest_sha256,
+        )) = session
+        else {
+            return Err(StoreError::Rejected);
+        };
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeRestartBasis {
+            store_id,
+            subject_id: subject.as_str().into(),
+            context_id: context.as_str().into(),
+            owner_kind,
+            subject_revision: u64::try_from(revision).map_err(|_| StoreError::Unavailable)?,
+            semantic_revision: u64::try_from(semantic_revision)
+                .map_err(|_| StoreError::Unavailable)?,
+            queue_revision: u64::try_from(queue_revision).map_err(|_| StoreError::Unavailable)?,
+            journal_cursor: u64::try_from(journal_cursor).map_err(|_| StoreError::Unavailable)?,
+            predecessor_session_id,
+            predecessor_epoch: u64::try_from(epoch).map_err(|_| StoreError::Unavailable)?,
+            profile_digest,
+            binary_sha256,
+            protocol_digest,
+            snapshot_id,
+            snapshot_manifest_sha256,
+        })
+    }
+
+    /// Read the active execution selection. Historical sessions remain visible
+    /// through session-ID keyed recovery and delivery views.
+    pub fn native_restart_epoch(
+        &self,
+        subject: &SubjectId,
+        context: &ContextGeneration,
+    ) -> Result<Option<NativeRestartEpoch>, StoreError> {
+        self.verify_identity()?;
+        let version: i64 = self
+            .connection
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if version == 6 {
+            return self.connection.query_row(
+                "SELECT subject_id,context_id,session_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')",
+                params![subject.as_str(),context.as_str()],
+                |r| Ok(NativeRestartEpoch { subject:r.get(0)?,context:r.get(1)?,epoch:0,
+                    session_id:r.get(2)?,predecessor_session_id:None,intent_sha256:None,
+                    selection_sha256:None,state:"active".into() }),
+            ).optional().map_err(|_| StoreError::Unavailable);
+        }
+        if version != 7 {
+            return Err(StoreError::Unavailable);
+        }
+        read_restart_epoch(
+            &self.connection,
+            "SELECT subject_id,context_id,epoch,target_session_id,predecessor_session_id,intent_sha256,selection_sha256,state FROM native_execution_epochs WHERE subject_id=?1 AND context_id=?2 AND state='active'",
+            params![subject.as_str(), context.as_str()],
+        )
+    }
+
+    /// Exact authorization readback; this does not itself permit launch.
+    pub fn native_restart_authorization(
+        &self,
+        target: &NativeSessionId,
+    ) -> Result<Option<NativeRestartEpoch>, StoreError> {
+        self.verify_identity()?;
+        let version: i64 = self
+            .connection
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if version == 6 {
+            return Ok(None);
+        }
+        if version != 7 {
+            return Err(StoreError::Unavailable);
+        }
+        read_restart_epoch(
+            &self.connection,
+            "SELECT subject_id,context_id,epoch,target_session_id,predecessor_session_id,intent_sha256,selection_sha256,state FROM native_execution_epochs WHERE target_session_id=?1",
+            [target.as_str()],
+        )
+    }
+
+    /// Trusted selected-host preflight records one exact restart declaration.
+    /// Schema 6 stays untouched on ordinary open; this is its only active-store
+    /// upgrade route. A duplicate exact declaration is a readback, never a new
+    /// execution permission.
+    pub fn authorize_native_restart(
+        &mut self,
+        intent: &NativeRestartIntent,
+    ) -> Result<NativeRestartEpoch, StoreError> {
+        self.verify_identity()?;
+        validate_restart_intent(intent)?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
+        let version: i64 = self
+            .connection
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if !matches!(version, 6 | 7) {
+            return Err(StoreError::Rejected);
+        }
+        // Check the predecessor image before a write transaction or schema
+        // statement. Invalid v6 content must not be altered by an upgrade try.
+        let integrity: String = self
+            .connection
+            .query_row("PRAGMA quick_check", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if integrity != "ok" {
+            return Err(StoreError::Unavailable);
+        }
+        crate::recovery::check_coherence(&self.connection)?;
+        if version == 7
+            && let Some(prior) = self.native_restart_authorization(&intent.target_session)?
+        {
+            if restart_intent_matches(&self.connection, intent, &prior)? {
+                return Ok(prior);
+            }
+            return Err(StoreError::ClaimConflict);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        verify_restart_owner(&tx, intent)?;
+        let active = if version == 6 {
+            tx.query_row("SELECT session_id FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')",
+                params![intent.subject.as_str(),intent.context.as_str()], |r|r.get::<_,String>(0))
+                .optional().map_err(|_| StoreError::Unavailable)?
+                .map(|session_id| (0_i64,session_id))
+        } else {
+            tx.query_row("SELECT epoch,target_session_id FROM native_execution_epochs WHERE subject_id=?1 AND context_id=?2 AND state='active'",
+                params![intent.subject.as_str(),intent.context.as_str()], |r|Ok((r.get::<_,i64>(0)?,r.get::<_,String>(1)?)))
+                .optional().map_err(|_| StoreError::Unavailable)?
+        };
+        if active.as_ref().is_none_or(|(epoch, session)| {
+            u64::try_from(*epoch).ok() != Some(intent.predecessor_epoch)
+                || session != intent.predecessor_session.as_str()
+        }) {
+            return Err(StoreError::ClaimConflict);
+        }
+        let target_exists: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM native_sessions WHERE session_id=?1)",
+                [intent.target_session.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if target_exists {
+            return Err(StoreError::ClaimConflict);
+        }
+        verify_restart_predecessor(&tx, intent)?;
+        if version == 6 {
+            tx.execute_batch(include_str!("../migrations/0007_native_restart_epoch.sql"))
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.pragma_update(None, "user_version", 7)
+                .map_err(|_| StoreError::Unavailable)?;
+        }
+        let next = intent
+            .predecessor_epoch
+            .checked_add(1)
+            .ok_or(StoreError::Rejected)?;
+        tx.execute("INSERT INTO native_execution_epochs(subject_id,context_id,epoch,target_session_id,predecessor_session_id,intent_sha256,selection_sha256,owner_revision,semantic_revision,queue_revision,journal_cursor,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,state) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,'authorized')",
+            params![intent.subject.as_str(),intent.context.as_str(),to_i64_restart(next)?,intent.target_session.as_str(),intent.predecessor_session.as_str(),&intent.intent_sha256,&intent.selection_sha256,to_i64_restart(intent.expected_subject_revision)?,to_i64_restart(intent.expected_semantic_revision)?,to_i64_restart(intent.expected_queue_revision)?,to_i64_restart(intent.expected_journal_cursor)?,&intent.profile_digest,&intent.binary_sha256,&intent.protocol_digest,intent.snapshot.as_str(),&intent.snapshot_manifest_sha256])
+            .map_err(|_| StoreError::ClaimConflict)?;
+        crate::recovery::check_coherence(&tx)?;
+        let integrity: String = tx
+            .query_row("PRAGMA quick_check", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if integrity != "ok" {
+            return Err(StoreError::Unavailable);
+        }
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeRestartEpoch {
+            subject: intent.subject.as_str().into(),
+            context: intent.context.as_str().into(),
+            epoch: next,
+            session_id: intent.target_session.as_str().into(),
+            predecessor_session_id: Some(intent.predecessor_session.as_str().into()),
+            intent_sha256: Some(intent.intent_sha256.clone()),
+            selection_sha256: Some(intent.selection_sha256.clone()),
+            state: "authorized".into(),
+        })
+    }
+
+    /// The first actor incarnation consumes the exact selected authorization.
+    /// An already inserted unbound allocation is uncertainty: a later process
+    /// receives a conflict and may only observe it until another operator act.
+    pub fn reserve_authorized_native_session(
+        &mut self,
+        intent: &NativeRestartIntent,
+        incarnation: RuntimeIncarnation,
+        clock: ClockSample,
+    ) -> Result<NativeSessionEntry, StoreError> {
+        self.verify_identity()?;
+        validate_restart_intent(intent)?;
+        if !crate::admin::admission_open(&self.connection)? {
+            return Err(StoreError::Rejected);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let version: i64 = tx
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if version != 7 {
+            return Err(StoreError::Rejected);
+        }
+        verify_restart_owner(&tx, intent)?;
+        verify_restart_predecessor(&tx, intent)?;
+        let active: Option<(i64,String)> = tx.query_row(
+            "SELECT epoch,target_session_id FROM native_execution_epochs WHERE subject_id=?1 AND context_id=?2 AND state='active'",
+            params![intent.subject.as_str(),intent.context.as_str()],|r|Ok((r.get(0)?,r.get(1)?)))
+            .optional().map_err(|_| StoreError::Unavailable)?;
+        if active
+            != Some((
+                to_i64_restart(intent.predecessor_epoch)?,
+                intent.predecessor_session.as_str().into(),
+            ))
+            || tx
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM native_sessions WHERE session_id=?1)",
+                    [intent.target_session.as_str()],
+                    |r| r.get::<_, bool>(0),
+                )
+                .map_err(|_| StoreError::Unavailable)?
+        {
+            return Err(StoreError::ClaimConflict);
+        }
+        let next = intent
+            .predecessor_epoch
+            .checked_add(1)
+            .ok_or(StoreError::Rejected)?;
+        let authorized: Option<String> = tx.query_row(
+            "SELECT state FROM native_execution_epochs WHERE subject_id=?1 AND context_id=?2 AND epoch=?3 AND target_session_id=?4 AND predecessor_session_id=?5 AND intent_sha256=?6 AND selection_sha256=?7 AND owner_revision=?8 AND semantic_revision=?9 AND queue_revision=?10 AND journal_cursor=?11 AND profile_digest=?12 AND binary_sha256=?13 AND protocol_digest=?14 AND snapshot_id=?15 AND snapshot_manifest_sha256=?16",
+            params![intent.subject.as_str(),intent.context.as_str(),to_i64_restart(next)?,intent.target_session.as_str(),intent.predecessor_session.as_str(),&intent.intent_sha256,&intent.selection_sha256,to_i64_restart(intent.expected_subject_revision)?,to_i64_restart(intent.expected_semantic_revision)?,to_i64_restart(intent.expected_queue_revision)?,to_i64_restart(intent.expected_journal_cursor)?,&intent.profile_digest,&intent.binary_sha256,&intent.protocol_digest,intent.snapshot.as_str(),&intent.snapshot_manifest_sha256],
+            |r|r.get(0)).optional().map_err(|_| StoreError::Unavailable)?;
+        if authorized.as_deref() != Some("authorized") {
+            return Err(StoreError::ClaimConflict);
+        }
+        let last_wall: i64 = tx
+            .query_row(
+                "SELECT last_wall_ms FROM subjects WHERE subject_id=?1",
+                [intent.subject.as_str()],
+                |r| r.get(0),
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        if clock.wall.get() < last_wall {
+            return Err(StoreError::Rejected);
+        }
+        tx.execute("INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,created_wall_ms,role) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'intent',?10,'domain')",
+            params![intent.target_session.as_str(),intent.subject.as_str(),intent.context.as_str(),incarnation.as_str(),&intent.profile_digest,&intent.binary_sha256,&intent.protocol_digest,intent.snapshot.as_str(),&intent.snapshot_manifest_sha256,clock.wall.get()])
+            .map_err(|_| StoreError::ClaimConflict)?;
+        tx.execute("UPDATE native_execution_epochs SET state='historical' WHERE subject_id=?1 AND context_id=?2 AND epoch=?3 AND state='active'",
+            params![intent.subject.as_str(),intent.context.as_str(),to_i64_restart(intent.predecessor_epoch)?])
+            .map_err(|_| StoreError::Unavailable)?;
+        tx.execute("UPDATE native_execution_epochs SET state='active' WHERE subject_id=?1 AND context_id=?2 AND epoch=?3 AND state='authorized'",
+            params![intent.subject.as_str(),intent.context.as_str(),to_i64_restart(next)?])
+            .map_err(|_| StoreError::Unavailable)?;
+        observe_native_subject_clock(&tx, intent.subject.as_str(), clock.wall.get())?;
+        crate::recovery::check_coherence(&tx)?;
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(NativeSessionEntry {
+            id: intent.target_session.clone(),
+            subject: intent.subject.clone(),
+            context: intent.context.clone(),
+            profile_digest: intent.profile_digest.clone(),
+            snapshot: intent.snapshot.clone(),
+            thread: None,
+        })
+    }
+
     /// A unique generation allocation intent is durable before thread/start.
     /// An existing unbound intent is uncertainty, never permission to allocate again.
     #[allow(clippy::too_many_arguments)]
@@ -1407,10 +2031,36 @@ impl SqliteLifecycleStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
-        let prior: Option<PriorNativeSessionRow> = tx.query_row(
-            "SELECT session_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,thread_id,allocation_state FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')",
-            params![subject.as_str(),context.as_str()], |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?)))
-            .optional().map_err(|_| StoreError::Unavailable)?;
+        let version: i64 = tx
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        let prior_sql = if version == 7 {
+            "SELECT s.session_id,s.incarnation_id,s.profile_digest,s.binary_sha256,s.protocol_digest,s.snapshot_id,s.snapshot_manifest_sha256,s.thread_id,s.allocation_state FROM native_sessions s JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE s.subject_id=?1 AND s.context_id=?2 AND s.role IN ('domain','successor')"
+        } else if version == 6 {
+            "SELECT session_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,thread_id,allocation_state FROM native_sessions WHERE subject_id=?1 AND context_id=?2 AND role IN ('domain','successor')"
+        } else {
+            return Err(StoreError::Unavailable);
+        };
+        let prior: Option<PriorNativeSessionRow> = tx
+            .query_row(
+                prior_sql,
+                params![subject.as_str(), context.as_str()],
+                |r| {
+                    Ok((
+                        r.get(0)?,
+                        r.get(1)?,
+                        r.get(2)?,
+                        r.get(3)?,
+                        r.get(4)?,
+                        r.get(5)?,
+                        r.get(6)?,
+                        r.get(7)?,
+                        r.get(8)?,
+                    ))
+                },
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
         if let Some((old_id, old_inc, p, b, proto, snap, manifest, thread, state)) = prior {
             if old_id != id.as_str()
                 || old_inc != incarnation.as_str()
@@ -1450,6 +2100,19 @@ impl SqliteLifecycleStore {
         tx.execute("INSERT INTO native_sessions(session_id,subject_id,context_id,incarnation_id,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,allocation_state,created_wall_ms,role) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'intent',?10,?11)",
             params![id.as_str(),subject.as_str(),context.as_str(),incarnation.as_str(),profile_digest,binary_sha256,protocol_digest,snapshot.as_str(),manifest_sha256,clock.wall.get(),if admitted_domain {"domain"} else {"successor"}])
             .map_err(|_| StoreError::Unavailable)?;
+        if version == 7 {
+            let owner: (i64,i64,i64)=tx.query_row("SELECT revision,semantic_revision,queue_revision FROM subjects WHERE subject_id=?1",
+                [subject.as_str()],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?)))
+                .map_err(|_| StoreError::Unavailable)?;
+            let cursor: i64 = tx
+                .query_row("SELECT COALESCE(MAX(sequence),0) FROM journal", [], |r| {
+                    r.get(0)
+                })
+                .map_err(|_| StoreError::Unavailable)?;
+            tx.execute("INSERT INTO native_execution_epochs(subject_id,context_id,epoch,target_session_id,owner_revision,semantic_revision,queue_revision,journal_cursor,profile_digest,binary_sha256,protocol_digest,snapshot_id,snapshot_manifest_sha256,state) VALUES (?1,?2,0,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,'active')",
+                params![subject.as_str(),context.as_str(),id.as_str(),owner.0,owner.1,owner.2,cursor,profile_digest,binary_sha256,protocol_digest,snapshot.as_str(),manifest_sha256])
+                .map_err(|_| StoreError::ClaimConflict)?;
+        }
         observe_native_subject_clock(&tx, subject.as_str(), clock.wall.get())?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(NativeSessionEntry {
@@ -1697,6 +2360,9 @@ impl SqliteLifecycleStore {
         thread: ProviderThreadId,
     ) -> Result<(), StoreError> {
         self.verify_identity()?;
+        if !native_session_current(&self.connection, &entry.id)? {
+            return Err(StoreError::ClaimConflict);
+        }
         let changed=self.connection.execute("UPDATE native_sessions SET thread_id=?2,allocation_state='bound' WHERE session_id=?1 AND allocation_state='intent' AND thread_id IS NULL",
             params![entry.id.as_str(),thread.as_str()]).map_err(|_| StoreError::Unavailable)?;
         if changed != 1 {
@@ -1714,6 +2380,9 @@ impl SqliteLifecycleStore {
         clock: ClockSample,
     ) -> Result<NativeTurnEntry, StoreError> {
         self.verify_identity()?;
+        if !native_session_current(&self.connection, &session.id)? {
+            return Err(StoreError::ClaimConflict);
+        }
         if !crate::admin::admission_open(&self.connection)? {
             return Err(StoreError::Rejected);
         }
@@ -1829,6 +2498,18 @@ impl SqliteLifecycleStore {
     /// Persist send intent before turn/start bytes; a lost response remains no-resend.
     pub fn mark_native_send_intent(&mut self, entry: &NativeTurnEntry) -> Result<(), StoreError> {
         self.verify_identity()?;
+        let version: i64 = self
+            .connection
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .map_err(|_| StoreError::Unavailable)?;
+        if version == 7 {
+            let current: bool=self.connection.query_row(
+                "SELECT EXISTS(SELECT 1 FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id LEFT JOIN native_execution_epochs e ON e.target_session_id=s.session_id AND e.state='active' WHERE t.invocation_id=?1 AND (s.role NOT IN ('domain','successor') OR e.target_session_id IS NOT NULL))",
+                [entry.invocation_id.as_str()],|r|r.get(0)).map_err(|_| StoreError::Unavailable)?;
+            if !current {
+                return Err(StoreError::ClaimConflict);
+            }
+        }
         let n=self.connection.execute("UPDATE native_turns SET send_intent=1 WHERE invocation_id=?1 AND send_intent=0 AND state='entered_uncertain' AND EXISTS(SELECT 1 FROM admin_ownership WHERE singleton=1 AND status='active')",
             [entry.invocation_id.as_str()]).map_err(|_| StoreError::Unavailable)?;
         if n != 1 {

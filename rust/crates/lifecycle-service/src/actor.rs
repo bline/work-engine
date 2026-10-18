@@ -25,8 +25,9 @@ use lifecycle_store::{
     GrantControlHandle, RecoveryDisposition, SqliteLifecycleStore, StoreError, SubjectProjection,
 };
 use lifecycle_store::{
-    NativeIngressApply, NativeOperationClaim, NativeSessionEntry, NativeTaskOperationClaim,
-    NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest, SnapshotReadRequest,
+    NativeIngressApply, NativeOperationClaim, NativeRestartIntent, NativeSessionEntry,
+    NativeTaskOperationClaim, NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest,
+    SnapshotReadRequest,
 };
 use lifecycle_wire::{CommandResultV2, WireErrorCode};
 use serde::{Deserialize, Serialize};
@@ -383,6 +384,32 @@ fn reconcile_pending_task_commits(
     Ok(())
 }
 
+/// Walk the exact restart lineage, not only the immediately previous native
+/// session. An older owner operation may have committed before its lifecycle
+/// acknowledgement even when later execution generations were selected.
+fn reconcile_predecessor_task_commits(
+    store: &mut SqliteLifecycleStore,
+    port: &dyn TaskOperationPort,
+    subject: &SubjectId,
+    intent: &NativeRestartIntent,
+) -> Result<(), StoreError> {
+    let mut predecessor = intent.predecessor_session.clone();
+    for _ in 0..64 {
+        reconcile_pending_task_commits(store, port, subject, &predecessor)?;
+        let Some(epoch) = store.native_restart_authorization(&predecessor)? else {
+            return Ok(());
+        };
+        let Some(prior) = epoch.predecessor_session_id else {
+            return Ok(());
+        };
+        if prior == predecessor.as_str() {
+            return Err(StoreError::ClaimConflict);
+        }
+        predecessor = NativeSessionId::parse(prior).map_err(|_| StoreError::ClaimConflict)?;
+    }
+    Err(StoreError::Unavailable)
+}
+
 impl Actor {
     fn ensure_semantic_owner_current(
         &mut self,
@@ -604,10 +631,39 @@ impl Actor {
         let subject =
             SubjectId::parse(config.subject_id.clone()).map_err(|_| ServiceError::Configuration)?;
         let projection = store.subject_projection(&subject, None, None)?;
+        let mut bytes = [0u8; 16];
+        getrandom::fill(&mut bytes).map_err(|_| ServiceError::Configuration)?;
+        let incarnation = RuntimeIncarnation::parse(format!(
+            "incarnation:{}",
+            bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        ))
+        .map_err(|_| ServiceError::Configuration)?;
+        let selected_restart = config.selected_restart.as_ref().map(|grant| &grant.intent);
         let recovery_only = if config.profile == "retained-repository-analysis-v1" {
             let native = config.native.as_ref().ok_or(ServiceError::Configuration)?;
             let session = NativeSessionId::parse(native.session_id.clone())
                 .map_err(|_| ServiceError::Configuration)?;
+            if let Some(intent) = selected_restart {
+                if intent.subject != subject
+                    || intent.context.as_str() != config.context_generation
+                    || intent.target_session != session
+                {
+                    return Err(ServiceError::Configuration);
+                }
+                let epoch = store
+                    .native_restart_authorization(&session)?
+                    .ok_or(ServiceError::Configuration)?;
+                if epoch.intent_sha256.as_deref() != Some(&intent.intent_sha256)
+                    || epoch.selection_sha256.as_deref() != Some(&intent.selection_sha256)
+                    || epoch.predecessor_session_id.as_deref()
+                        != Some(intent.predecessor_session.as_str())
+                {
+                    return Err(ServiceError::Configuration);
+                }
+            }
             if let Some(prior) = store.native_session_recovery(&session)? {
                 if prior.subject_id != config.subject_id
                     || prior.context_id != config.context_generation
@@ -616,6 +672,13 @@ impl Actor {
                 }
                 true
             } else {
+                if let Some(intent) = selected_restart
+                    && store
+                        .native_restart_authorization(&intent.target_session)?
+                        .is_none_or(|epoch| epoch.state != "authorized")
+                {
+                    return Err(ServiceError::Configuration);
+                }
                 false
             }
         } else {
@@ -639,6 +702,16 @@ impl Actor {
                 &subject,
                 &session,
             )?;
+            if let Some(intent) = selected_restart {
+                reconcile_predecessor_task_commits(
+                    &mut store,
+                    task_operation_port
+                        .as_deref()
+                        .ok_or(ServiceError::Configuration)?,
+                    &subject,
+                    intent,
+                )?;
+            }
         }
         if !recovery_only
             && config
@@ -678,16 +751,6 @@ impl Actor {
                 }
             }
         }
-        let mut bytes = [0u8; 16];
-        getrandom::fill(&mut bytes).map_err(|_| ServiceError::Configuration)?;
-        let incarnation = RuntimeIncarnation::parse(format!(
-            "incarnation:{}",
-            bytes
-                .iter()
-                .map(|byte| format!("{byte:02x}"))
-                .collect::<String>()
-        ))
-        .map_err(|_| ServiceError::Configuration)?;
         let (executor, results) = OwnedExecutor::new(
             ControlledPort {
                 socket: config.peer_socket_path.clone(),
@@ -705,33 +768,85 @@ impl Actor {
             if native.followup_turns.len() > 3 {
                 return Err(ServiceError::Configuration);
             }
+            let selected = selected_restart.is_some();
             let mut launch = if config.profile == "retained-repository-analysis-v1" {
-                operations::prepare_native_task_launch(native, config.principal.uid)?
+                if selected {
+                    operations::preview_native_task_launch(native, config.principal.uid)?
+                } else {
+                    operations::prepare_native_task_launch(native, config.principal.uid)?
+                }
+            } else if selected {
+                operations::preview_native_launch(native, config.principal.uid)?
             } else {
                 operations::prepare_native_launch(native, config.principal.uid)?
             };
-            launch.proof_barrier_dir = config.proof_barrier_dir.clone();
             let snapshot = workspace_snapshot_read::publish(
                 &mut store,
                 &subject,
                 &native.snapshot,
                 clock_sample(),
             )?;
-            let session = store.reserve_native_session(
-                NativeSessionId::parse(native.session_id.clone())
-                    .map_err(|_| ServiceError::Configuration)?,
-                subject.clone(),
-                ContextGeneration::parse(config.context_generation.clone())
-                    .map_err(|_| ServiceError::Configuration)?,
-                incarnation.clone(),
-                &launch.profile_digest,
-                NATIVE_BINARY_SHA256,
-                SCHEMA_THREAD_START_SHA256,
-                snapshot.id.clone(),
-                &snapshot.manifest_sha256,
-                native.same_native_session_required,
-                clock_sample(),
-            )?;
+            let session = if let Some(intent) = selected_restart {
+                if intent.profile_digest != launch.profile_digest
+                    || intent.binary_sha256 != NATIVE_BINARY_SHA256
+                    || intent.protocol_digest != SCHEMA_THREAD_START_SHA256
+                    || intent.snapshot != snapshot.id
+                    || intent.snapshot_manifest_sha256 != snapshot.manifest_sha256
+                    || native.same_native_session_required
+                {
+                    return Err(ServiceError::Configuration);
+                }
+                operations::optional_native_barrier(
+                    config.proof_barrier_dir.as_deref(),
+                    "selected_before_session_reservation",
+                )?;
+                let session = store.reserve_authorized_native_session(
+                    intent,
+                    incarnation.clone(),
+                    clock_sample(),
+                )?;
+                operations::optional_native_barrier(
+                    config.proof_barrier_dir.as_deref(),
+                    "selected_after_session_reservation",
+                )?;
+                reconcile_predecessor_task_commits(
+                    &mut store,
+                    task_operation_port
+                        .as_deref()
+                        .ok_or(ServiceError::Configuration)?,
+                    &subject,
+                    intent,
+                )?;
+                session
+            } else {
+                store.reserve_native_session(
+                    NativeSessionId::parse(native.session_id.clone())
+                        .map_err(|_| ServiceError::Configuration)?,
+                    subject.clone(),
+                    ContextGeneration::parse(config.context_generation.clone())
+                        .map_err(|_| ServiceError::Configuration)?,
+                    incarnation.clone(),
+                    &launch.profile_digest,
+                    NATIVE_BINARY_SHA256,
+                    SCHEMA_THREAD_START_SHA256,
+                    snapshot.id.clone(),
+                    &snapshot.manifest_sha256,
+                    native.same_native_session_required,
+                    clock_sample(),
+                )?
+            };
+            if selected {
+                let prepared = if config.profile == "retained-repository-analysis-v1" {
+                    operations::prepare_native_task_launch(native, config.principal.uid)?
+                } else {
+                    operations::prepare_native_launch(native, config.principal.uid)?
+                };
+                if prepared.profile_digest != launch.profile_digest {
+                    return Err(ServiceError::Configuration);
+                }
+                launch = prepared;
+            }
+            launch.proof_barrier_dir = config.proof_barrier_dir.clone();
             (Some(session), Some(snapshot), Some(launch))
         } else {
             (None, None, None)
@@ -2436,5 +2551,311 @@ mod native_agent_delta_tests {
                 &started
             ));
         }
+    }
+}
+
+#[cfg(test)]
+mod restart_epoch_tests {
+    use super::*;
+    use crate::{
+        GrantFence, MaterialPortError, NativeConfig, NativeProviderRoute, PrincipalConfig,
+        QuestionOpenPayload, ResultPublishPayload, SelectedLifecycleStore, SelectedRestartGrant,
+        SelectedRestartRequest, SemanticNativeConfig, TaskCursorBinding, TaskInputBinding,
+        TaskOperationCommit, TaskOperationError, ValidatedTaskOperationEntry,
+    };
+    use lifecycle_semantic::{DependencyObservation, DependencyRevision, MaterialInput};
+    use std::{
+        os::unix::fs::{MetadataExt, PermissionsExt},
+        path::Path,
+    };
+
+    struct EmptyMaterial;
+    impl CanonicalMaterialPort for EmptyMaterial {
+        fn project(
+            &self,
+            _: &SubjectId,
+            _: &TransitionId,
+            _: &str,
+        ) -> Result<MaterialInput, MaterialPortError> {
+            Err(MaterialPortError::Unavailable)
+        }
+        fn observe_dependencies(
+            &self,
+            _: &[DependencyRevision],
+        ) -> Result<Vec<DependencyObservation>, MaterialPortError> {
+            Ok(Vec::new())
+        }
+        fn with_current_fence(
+            &self,
+            _: &[DependencyRevision],
+            commit: &mut dyn FnMut() -> Result<(), ServiceError>,
+        ) -> Result<(), ServiceError> {
+            commit()
+        }
+    }
+    struct EmptyTask;
+    impl TaskOperationPort for EmptyTask {
+        fn validate_input(&self, _: &str, _: &str) -> Result<TaskInputBinding, TaskOperationError> {
+            Err(TaskOperationError::Invalid)
+        }
+        fn current_cursor(&self, _: &str) -> Result<TaskCursorBinding, TaskOperationError> {
+            Err(TaskOperationError::Invalid)
+        }
+        fn open_question(
+            &self,
+            _: &ValidatedTaskOperationEntry,
+            _: QuestionOpenPayload,
+            _: &mut GrantFence<'_>,
+        ) -> Result<TaskOperationCommit, TaskOperationError> {
+            Err(TaskOperationError::Invalid)
+        }
+        fn publish_result(
+            &self,
+            _: &ValidatedTaskOperationEntry,
+            _: ResultPublishPayload,
+            _: &mut GrantFence<'_>,
+        ) -> Result<TaskOperationCommit, TaskOperationError> {
+            Err(TaskOperationError::Invalid)
+        }
+        fn lookup_operation(
+            &self,
+            _: &str,
+        ) -> Result<Option<TaskOperationCommit>, TaskOperationError> {
+            Ok(None)
+        }
+        fn record_completed_effect(
+            &self,
+            _: &crate::CompletedTaskEffect,
+        ) -> Result<(), TaskOperationError> {
+            Ok(())
+        }
+    }
+
+    fn private_dir(path: &Path) {
+        fs::create_dir(path).unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+
+    #[test]
+    fn selected_authorization_launches_one_actor_incarnation_then_observes_only() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("store");
+        private_dir(&root);
+        let prior_root = temp.path().join("native-prior");
+        private_dir(&prior_root);
+        let next_root = temp.path().join("native-next");
+        private_dir(&next_root);
+        let subject = SubjectId::parse("subject:restart").unwrap();
+        let context = ContextGeneration::parse("context:restart").unwrap();
+        let member_bytes = b"selected source\n".to_vec();
+        let member_sha = CodecContract::BinaryArtifactV1
+            .digest_binary(&member_bytes)
+            .unwrap()
+            .hex();
+        let snapshot = crate::operations::workspace_snapshot_read::TrustedSnapshot {
+            id: "snapshot:restart".into(),
+            source_revision: "source:restart".into(),
+            members: vec![crate::operations::workspace_snapshot_read::TrustedMember {
+                id: "source".into(),
+                sha256: member_sha,
+                bytes: member_bytes,
+            }],
+        };
+        let semantic = SemanticNativeConfig {
+            capture_id: "capture:restart".into(),
+            compile_session_id: "session:compile".into(),
+            verify_session_id: "session:verify".into(),
+            successor_verify_session_id: "session:successor".into(),
+            compile_invocation_id: "invocation:compile".into(),
+            compile_attempt_id: "attempt:compile".into(),
+            candidate_verify_invocation_id: "invocation:verify".into(),
+            candidate_verify_attempt_id: "attempt:verify".into(),
+            successor_verify_invocation_id: "invocation:successor".into(),
+            successor_verify_attempt_id: "attempt:successor".into(),
+            challenge_id: "challenge:restart".into(),
+            challenge_text: "offline".into(),
+            control_grant_ref: "grant:semantic".into(),
+            control_grant_revision: 1,
+            successor_control_grant_ref: Some("grant:semantic:next".into()),
+            successor_control_grant_revision: Some(1),
+        };
+        let mut native = NativeConfig {
+            executable: temp.path().join("never-executed"),
+            root: prior_root,
+            provider_route: NativeProviderRoute::NativeSimProofV1,
+            simulator_base_url: "http://127.0.0.1:12345/v1".into(),
+            session_id: "session:prior".into(),
+            invocation_id: "invocation:prior".into(),
+            attempt_id: "attempt:prior".into(),
+            prompt: "unused".into(),
+            turn_grant_ref: "grant:turn".into(),
+            turn_grant_revision: 1,
+            snapshot_grant_ref: "grant:snapshot".into(),
+            snapshot_grant_revision: 1,
+            same_native_session_required: false,
+            followup_turns: Vec::new(),
+            snapshot,
+            semantic: Some(semantic),
+            semantic_contexts: Vec::new(),
+        };
+        let profile = operations::prepare_native_task_launch(
+            &native,
+            fs::metadata("/proc/self").unwrap().uid(),
+        )
+        .unwrap()
+        .profile_digest;
+        let mut store = SqliteLifecycleStore::open(&root, "issuer:restart".into()).unwrap();
+        store
+            .register_subject(
+                subject.clone(),
+                context.clone(),
+                BuildId::parse("build:restart").unwrap(),
+                ProofRunId::parse("proof:restart").unwrap(),
+                clock_sample(),
+            )
+            .unwrap();
+        let published = workspace_snapshot_read::publish(
+            &mut store,
+            &subject,
+            &native.snapshot,
+            clock_sample(),
+        )
+        .unwrap();
+        let _prior_allocation = store
+            .reserve_native_session(
+                NativeSessionId::parse(native.session_id.clone()).unwrap(),
+                subject.clone(),
+                context.clone(),
+                RuntimeIncarnation::parse("incarnation:prior").unwrap(),
+                &profile,
+                NATIVE_BINARY_SHA256,
+                SCHEMA_THREAD_START_SHA256,
+                published.id,
+                &published.manifest_sha256,
+                false,
+                clock_sample(),
+            )
+            .unwrap();
+        let store_id = store.admin_ownership().unwrap().store_id;
+        drop(store);
+        native.root = next_root;
+        native.session_id = "session:next".into();
+        native.invocation_id = "invocation:next".into();
+        native.attempt_id = "attempt:next".into();
+        let mut config = ServiceConfig {
+            profile: "retained-repository-analysis-v1".into(),
+            store_root: root.clone(),
+            socket_path: temp.path().join("service.sock"),
+            peer_socket_path: temp.path().join("peer.sock"),
+            verifier_executable: None,
+            verifier_ledger_path: None,
+            proof_barrier_dir: None,
+            trusted_issuer: "issuer:restart".into(),
+            principal: PrincipalConfig {
+                uid: fs::metadata("/proc/self").unwrap().uid(),
+                principal_ref: "principal:restart".into(),
+                producer_ref: "producer:restart".into(),
+            },
+            subject_id: subject.as_str().into(),
+            context_generation: context.as_str().into(),
+            build_id: "build:restart".into(),
+            proof_run_id: "proof:restart".into(),
+            grants: Vec::new(),
+            max_executions: 1,
+            max_wait_ms: 1000,
+            verifier_proof_ms: None,
+            verifier_cleanup_ms: None,
+            native: Some(native),
+            selected_restart: None,
+        };
+        let mut selected = SelectedLifecycleStore::open_for_restart(&config, &store_id).unwrap();
+        let basis = selected
+            .store
+            .native_restart_basis(&subject, &context)
+            .unwrap();
+        let request = SelectedRestartRequest {
+            subject_id: subject.as_str().into(),
+            context_generation: context.as_str().into(),
+            predecessor_session_id: basis.predecessor_session_id,
+            predecessor_epoch: basis.predecessor_epoch,
+            target_session_id: "session:next".into(),
+            expected_store_id: store_id.clone(),
+            expected_subject_revision: basis.subject_revision,
+            expected_semantic_revision: basis.semantic_revision,
+            expected_queue_revision: basis.queue_revision,
+            expected_journal_cursor: basis.journal_cursor,
+            intent_sha256: "a".repeat(64),
+            selection_sha256: "b".repeat(64),
+            profile_digest: basis.profile_digest,
+            binary_sha256: basis.binary_sha256,
+            protocol_digest: basis.protocol_digest,
+            snapshot_id: basis.snapshot_id,
+            snapshot_manifest_sha256: basis.snapshot_manifest_sha256,
+        };
+        let epoch = selected.authorize_restart(request.clone()).unwrap();
+        assert_eq!(epoch.state, "authorized");
+        config.selected_restart = Some(SelectedRestartGrant {
+            intent: selected.restart_intent.clone().unwrap(),
+        });
+        let first = Actor::new(
+            config.clone(),
+            Some(Arc::new(EmptyMaterial)),
+            Some(Arc::new(EmptyTask)),
+            Some(selected.store),
+        )
+        .unwrap();
+        assert!(!first.recovery_only);
+        assert_eq!(
+            first.native_session.as_ref().unwrap().id().as_str(),
+            "session:next"
+        );
+        let active = first
+            .store
+            .native_restart_epoch(&subject, &context)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            (
+                active.epoch,
+                active.session_id.as_str(),
+                active.state.as_str()
+            ),
+            (1, "session:next", "active")
+        );
+        drop(first);
+        let mut selected = SelectedLifecycleStore::open_for_restart(&config, &store_id).unwrap();
+        assert_eq!(selected.authorize_restart(request).unwrap().state, "active");
+        config.selected_restart = Some(SelectedRestartGrant {
+            intent: selected.restart_intent.clone().unwrap(),
+        });
+        let second = Actor::new(
+            config,
+            Some(Arc::new(EmptyMaterial)),
+            Some(Arc::new(EmptyTask)),
+            Some(selected.store),
+        )
+        .unwrap();
+        assert!(second.recovery_only);
+        assert!(second.native_session.is_none());
+        assert_eq!(
+            second
+                .store
+                .native_session_recovery(&NativeSessionId::parse("session:next").unwrap())
+                .unwrap()
+                .unwrap()
+                .allocation_state,
+            "intent"
+        );
+        assert!(matches!(
+            second.store.native_restart_epoch(&subject, &context),
+            Ok(Some(_))
+        ));
+        assert!(
+            second
+                .store
+                .native_session_recovery(&NativeSessionId::parse("session:third").unwrap())
+                .unwrap()
+                .is_none()
+        );
     }
 }

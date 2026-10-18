@@ -17,7 +17,7 @@ use crate::{SqliteLifecycleStore, StoreError};
 // Offline custody capsules retain their actual schema across read-only inspection.
 // Writable migration remains owned by SqliteLifecycleStore::open_inner.
 fn supported_admin_schema(version: i64) -> bool {
-    matches!(version, 4..=6)
+    matches!(version, 4..=7)
 }
 
 type EffectRecoveryRow = (
@@ -1093,7 +1093,7 @@ impl SqliteLifecycleStore {
         if !supported_admin_schema(version) || version != i64::from(receipt.source_schema) {
             return Err(StoreError::Rejected);
         }
-        if version == 6 && held_quarantine(&inspection)? {
+        if version >= 6 && held_quarantine(&inspection)? {
             return Err(StoreError::Rejected);
         }
         let store_id: String = inspection
@@ -4236,7 +4236,15 @@ mod held_tests {
         drop(store);
         let reopened = SqliteLifecycleStore::open(&target, "issuer".into()).unwrap();
         assert_eq!(reopened.held_projection().unwrap(), first);
+        let held_store_id = reopened.admin_store_identity().unwrap();
         drop(reopened);
+        let held_database = target.join("lifecycle.sqlite");
+        let before = fs::read(&held_database).unwrap();
+        assert!(
+            SqliteLifecycleStore::open_selected_restart(&target, "issuer".into(), &held_store_id)
+                .is_err()
+        );
+        assert_eq!(fs::read(&held_database).unwrap(), before);
         let retry =
             SqliteLifecycleStore::bootstrap_held(&witness, &evidence, &target, "issuer".into())
                 .unwrap();

@@ -19,10 +19,10 @@ pub use artifact::{PublishedArtifact, StagedArtifact};
 pub use native::{
     ControlSessionRequest, NativeDeliveryBinding, NativeDeliveryObservation, NativeFinalMaterial,
     NativeIngressApply, NativeOperationClaim, NativeOperationEntry, NativeOperationRecovery,
-    NativeOperationResult, NativeRecovery, NativeResumeCandidate, NativeSessionEntry,
-    NativeTaskOperationClaim, NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest,
-    NativeUsageAccounting, NativeUsageUnits, PendingNativeTaskOperation, SemanticControlRole,
-    SnapshotReadRequest,
+    NativeOperationResult, NativeRecovery, NativeRestartBasis, NativeRestartEpoch,
+    NativeRestartIntent, NativeResumeCandidate, NativeSessionEntry, NativeTaskOperationClaim,
+    NativeTaskOperationRequest, NativeTurnEntry, NativeTurnRequest, NativeUsageAccounting,
+    NativeUsageUnits, PendingNativeTaskOperation, SemanticControlRole, SnapshotReadRequest,
 };
 pub use recovery::{RecoveryDisposition, RecoveryEntry, RecoverySnapshot};
 pub use semantic::{

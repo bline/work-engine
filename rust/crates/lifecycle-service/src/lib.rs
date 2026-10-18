@@ -15,6 +15,8 @@ mod task_port;
 
 use std::path::PathBuf;
 
+use lifecycle_core::{ContextGeneration, NativeSessionId, SnapshotId, SubjectId};
+use lifecycle_store::{NativeRestartEpoch, NativeRestartIntent};
 use operations::workspace_snapshot_read::TrustedSnapshot;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -26,6 +28,65 @@ pub use task_port::{
     TaskInputBinding, TaskOperationCommit, TaskOperationError, TaskOperationPort,
     ValidatedTaskOperationEntry,
 };
+
+/// Rust callers may leave this absent, but only the selected-store preflight
+/// can construct a productive restart grant. Deserialization always skips it.
+#[derive(Clone, Debug)]
+pub struct SelectedRestartGrant {
+    intent: NativeRestartIntent,
+}
+
+/// Exact selected-host declaration after the host has verified its receipt,
+/// current task owner and predecessor process exclusion. Public Rust callers
+/// may supply a request, but only SelectedLifecycleStore can seal the grant.
+#[derive(Clone, Debug)]
+pub struct SelectedRestartRequest {
+    pub subject_id: String,
+    pub context_generation: String,
+    pub predecessor_session_id: String,
+    pub predecessor_epoch: u64,
+    pub target_session_id: String,
+    pub expected_store_id: String,
+    pub expected_subject_revision: u64,
+    pub expected_semantic_revision: u64,
+    pub expected_queue_revision: u64,
+    pub expected_journal_cursor: u64,
+    pub intent_sha256: String,
+    pub selection_sha256: String,
+    pub profile_digest: String,
+    pub binary_sha256: String,
+    pub protocol_digest: String,
+    pub snapshot_id: String,
+    pub snapshot_manifest_sha256: String,
+}
+
+impl SelectedRestartRequest {
+    fn into_intent(self) -> Result<NativeRestartIntent, ServiceError> {
+        Ok(NativeRestartIntent {
+            subject: SubjectId::parse(self.subject_id).map_err(|_| ServiceError::Configuration)?,
+            context: ContextGeneration::parse(self.context_generation)
+                .map_err(|_| ServiceError::Configuration)?,
+            predecessor_session: NativeSessionId::parse(self.predecessor_session_id)
+                .map_err(|_| ServiceError::Configuration)?,
+            predecessor_epoch: self.predecessor_epoch,
+            target_session: NativeSessionId::parse(self.target_session_id)
+                .map_err(|_| ServiceError::Configuration)?,
+            expected_store_id: self.expected_store_id,
+            expected_subject_revision: self.expected_subject_revision,
+            expected_semantic_revision: self.expected_semantic_revision,
+            expected_queue_revision: self.expected_queue_revision,
+            expected_journal_cursor: self.expected_journal_cursor,
+            intent_sha256: self.intent_sha256,
+            selection_sha256: self.selection_sha256,
+            profile_digest: self.profile_digest,
+            binary_sha256: self.binary_sha256,
+            protocol_digest: self.protocol_digest,
+            snapshot: SnapshotId::parse(self.snapshot_id)
+                .map_err(|_| ServiceError::Configuration)?,
+            snapshot_manifest_sha256: self.snapshot_manifest_sha256,
+        })
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -52,6 +113,10 @@ pub struct ServiceConfig {
     pub verifier_cleanup_ms: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native: Option<NativeConfig>,
+    /// Set only by the selected-store handoff after receipt and restart
+    /// preflight. JSON input cannot grant a productive execution epoch.
+    #[serde(skip)]
+    pub selected_restart: Option<SelectedRestartGrant>,
 }
 
 /// Opt-in installed-native simulated profile. The named snapshot is supplied
@@ -293,6 +358,7 @@ pub struct SelectedLifecycleStore {
     store: lifecycle_store::SqliteLifecycleStore,
     store_id: String,
     pristine: bool,
+    restart_intent: Option<NativeRestartIntent>,
 }
 
 impl SelectedLifecycleStore {
@@ -301,6 +367,27 @@ impl SelectedLifecycleStore {
             &config.store_root,
             config.trusted_issuer.clone(),
         )?;
+        Self::from_store(config, store)
+    }
+
+    /// The selected restart path refuses invalid existing bytes before any
+    /// mutating open and keeps the same writer lock for authorization.
+    pub fn open_for_restart(
+        config: &ServiceConfig,
+        expected_store_id: &str,
+    ) -> Result<Self, ServiceError> {
+        let store = lifecycle_store::SqliteLifecycleStore::open_selected_restart(
+            &config.store_root,
+            config.trusted_issuer.clone(),
+            expected_store_id,
+        )?;
+        Self::from_store(config, store)
+    }
+
+    fn from_store(
+        config: &ServiceConfig,
+        store: lifecycle_store::SqliteLifecycleStore,
+    ) -> Result<Self, ServiceError> {
         if store.root() != config.store_root {
             return Err(ServiceError::Configuration);
         }
@@ -321,6 +408,7 @@ impl SelectedLifecycleStore {
                 && recovery.commands == 0
                 && recovery.unresolved_attempts == 0
                 && recovery.journal_cursor == 0,
+            restart_intent: None,
         })
     }
 
@@ -331,12 +419,64 @@ impl SelectedLifecycleStore {
     pub fn pristine(&self) -> bool {
         self.pristine
     }
+
+    /// Form and record the exact authorized epoch while the selected host
+    /// retains both store locks. A duplicate exact intent is read back; it
+    /// never grants a second allocation after the target session exists.
+    pub fn authorize_restart(
+        &mut self,
+        request: SelectedRestartRequest,
+    ) -> Result<NativeRestartEpoch, ServiceError> {
+        let intent = request.into_intent()?;
+        if intent.expected_store_id != self.store_id {
+            return Err(ServiceError::Configuration);
+        }
+        let duplicate = self
+            .store
+            .native_restart_authorization(&intent.target_session)?;
+        let basis = self
+            .store
+            .native_restart_basis(&intent.subject, &intent.context)?;
+        if basis.store_id != intent.expected_store_id
+            || basis.subject_id != intent.subject.as_str()
+            || basis.context_id != intent.context.as_str()
+            || basis.owner_kind != "domain"
+        {
+            return Err(ServiceError::Configuration);
+        }
+        if duplicate
+            .as_ref()
+            .is_some_and(|epoch| epoch.state == "active")
+        {
+            if basis.predecessor_session_id != intent.target_session.as_str()
+                || Some(basis.predecessor_epoch) != intent.predecessor_epoch.checked_add(1)
+            {
+                return Err(ServiceError::Configuration);
+            }
+        } else if basis.predecessor_session_id != intent.predecessor_session.as_str()
+            || basis.predecessor_epoch != intent.predecessor_epoch
+            || basis.subject_revision != intent.expected_subject_revision
+            || basis.semantic_revision != intent.expected_semantic_revision
+            || basis.queue_revision != intent.expected_queue_revision
+            || basis.journal_cursor != intent.expected_journal_cursor
+            || basis.profile_digest != intent.profile_digest
+            || basis.binary_sha256 != intent.binary_sha256
+            || basis.protocol_digest != intent.protocol_digest
+            || basis.snapshot_id != intent.snapshot.as_str()
+            || basis.snapshot_manifest_sha256 != intent.snapshot_manifest_sha256
+        {
+            return Err(ServiceError::Configuration);
+        }
+        let epoch = self.store.authorize_native_restart(&intent)?;
+        self.restart_intent = Some(intent);
+        Ok(epoch)
+    }
 }
 
 /// The selected task host owns both domain ports and transfers its validated
 /// lifecycle store directly to the actor without releasing the writer lock.
 pub async fn run_with_selected_task_ports(
-    config: ServiceConfig,
+    mut config: ServiceConfig,
     selected: SelectedLifecycleStore,
     material_port: Arc<dyn CanonicalMaterialPort>,
     task_operation_port: Arc<dyn TaskOperationPort>,
@@ -346,6 +486,9 @@ pub async fn run_with_selected_task_ports(
     {
         return Err(ServiceError::Configuration);
     }
+    config.selected_restart = selected
+        .restart_intent
+        .map(|intent| SelectedRestartGrant { intent });
     socket::run_with_preopened_task_ports(
         config,
         selected.store,

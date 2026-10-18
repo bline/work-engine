@@ -48,6 +48,19 @@ fn ordinary_schema_six_keeps_normal_admission_and_cannot_masquerade_as_held() {
     assert_eq!(accepted.status, "accepted_inactive");
     assert_eq!(adopted.admin_ownership().unwrap().status, "inactive");
     assert!(adopted.held_projection().is_err());
+    let adopted_store_id = adopted.admin_store_identity().unwrap();
+    drop(adopted);
+    let adopted_database = destination.join("lifecycle.sqlite");
+    let before = fs::read(&adopted_database).unwrap();
+    assert!(
+        SqliteLifecycleStore::open_selected_restart(
+            &destination,
+            "trusted".into(),
+            &adopted_store_id
+        )
+        .is_err()
+    );
+    assert_eq!(fs::read(&adopted_database).unwrap(), before);
 }
 
 #[test]
