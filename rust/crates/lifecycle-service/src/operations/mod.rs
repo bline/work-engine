@@ -15,12 +15,13 @@ use std::{
 use lifecycle_store::StoreError;
 use work_engine_types::CodecContract;
 
-use crate::{NativeConfig, NativeFollowupTurn};
+use crate::{NativeConfig, NativeFollowupTurn, NativeProviderRoute};
 use lifecycle_codex::{
     NativeEvent, NativeEventKind, NativeHarness, NativeToolCall, NativeTurnTerminal,
 };
 use lifecycle_runtime::NativeChildExit;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{Duration, Instant};
 
@@ -71,7 +72,26 @@ pub enum NativeTaskWork {
     StartSuccessor,
 }
 
-fn domain_thread_start(work: &Path, task_profile: bool) -> Value {
+fn task_owner_id_schema(description: &str) -> Value {
+    json!({"type":"string","minLength":1,"maxLength":128,
+        "pattern":"^[A-Za-z0-9._:-]+$","description":description})
+}
+
+fn task_owner_source_ref_string_schema(description: &str) -> Value {
+    // These are copied from an exact current owner reference, not new IDs
+    // submitted for valid_id validation. The owner can prefix a valid 128-byte
+    // question ID with `question-`, yielding a 137-byte source identifier.
+    json!({"type":"string","minLength":1,"description":description})
+}
+
+fn task_owner_text_schema(description: &str) -> Value {
+    // JSON Schema lengths count characters. The owner also checks the
+    // authoritative 8 KiB UTF-8 byte limit and rejects NUL.
+    json!({"type":"string","minLength":1,"maxLength":8192,
+        "description":description})
+}
+
+fn domain_thread_start(work: &Path, task_profile: bool, provider: &str) -> Value {
     let mut tools = vec![json!({"type":"namespace","name":"workspace",
     "description":"Read exact approved immutable workspace snapshot bytes.","tools":[{
         "type":"function","name":"snapshot_read",
@@ -86,15 +106,32 @@ fn domain_thread_start(work: &Path, task_profile: bool) -> Value {
             "description":"Commit bounded task-owner questions or attributed results through lifecycle custody.",
             "tools":[
                 {"type":"function","name":"question_open","description":"Open a pending question for an authorized human recipient; this does not answer it.",
-                 "inputSchema":{"type":"object","properties":{"question_id":{"type":"string"},"recipient_ref":{"type":"string"},"scope_ref":{"type":"string"},"text":{"type":"string"}},
+                 "inputSchema":{"type":"object","properties":{
+                     "question_id":task_owner_id_schema("Stable question identifier."),
+                     "recipient_ref":task_owner_id_schema("Authorized recipient identifier."),
+                     "scope_ref":task_owner_id_schema("Task scope identifier."),
+                     "text":task_owner_text_schema("Nonempty question, at most 8192 UTF-8 bytes, without NUL.")},
                  "required":["question_id","recipient_ref","scope_ref","text"],"additionalProperties":false}},
-                {"type":"function","name":"result_publish","description":"Publish an attributed result under current owner and grant authority.",
-                 "inputSchema":{"type":"object","properties":{"result_id":{"type":"string"},"body":{"type":"string"},"source_refs":{"type":"array","items":{"type":"object"}},"attribution":{"type":"string"}},
+                {"type":"function","name":"result_publish","description":"Publish an attributed result under current owner and grant authority. source_refs must be exact current task-owner source references; cite snapshot member evidence in the body, not as a source_refs object.",
+                 "inputSchema":{"type":"object","properties":{
+                     "result_id":task_owner_id_schema("Stable result identifier."),
+                     "body":task_owner_text_schema("Nonempty result, at most 8192 UTF-8 bytes, without NUL."),
+                     "source_refs":{"type":"array","minItems":1,"items":{"type":"object",
+                         "properties":{
+                             "id":task_owner_source_ref_string_schema("Copy the exact current source identifier from the task owner; this may be longer than an input identifier."),
+                             "owner_namespace":task_owner_source_ref_string_schema("Copy the exact current source owner namespace."),
+                             "owner_ref":task_owner_source_ref_string_schema("Copy the exact current source owner reference."),
+                             "revision":{"type":"integer","minimum":0},
+                             "sha256":{"type":"string","minLength":64,"maxLength":64,
+                                 "pattern":"^[0-9a-f]{64}$"}},
+                         "required":["id","owner_namespace","owner_ref","revision","sha256"],
+                         "additionalProperties":false}},
+                     "attribution":task_owner_id_schema("Attribution identifier such as native:model; no spaces or prose.")},
                  "required":["result_id","body","source_refs","attribution"],"additionalProperties":false}}
             ]}));
     }
-    json!({"cwd":work,"model":"gpt-6-sol",
-        "modelProvider":"local_probe","approvalPolicy":"never","sandbox":"read-only",
+    json!({"cwd":work,"model":NativeProviderRoute::MODEL,
+        "modelProvider":provider,"approvalPolicy":"never","sandbox":"read-only",
         "environments":[],"dynamicTools":tools,"ephemeral":false,"historyMode":"legacy"})
 }
 
@@ -274,13 +311,13 @@ impl Runner {
             .rpc("config/read", json!({"includeLayers":false}))
             .await?;
         let c = &effective["config"];
-        if c["model_provider"] != "local_probe"
-            || c["sandbox_mode"] != "read-only"
+        validate_effective_provider(c, launch)?;
+        if c["sandbox_mode"] != "read-only"
             || c["approval_policy"] != "never"
             || c["web_search"] != "disabled"
             || c["features"]["shell_tool"] != false
             || c["features"]["multi_agent"] != false
-            || c["features"]["code_mode_host"] != false
+            || c["features"]["code_mode_host"] != launch.code_mode_host
             || c["agents"]["enabled"] != false
             || c["apps"]["_default"]["enabled"] != false
         {
@@ -290,7 +327,7 @@ impl Runner {
         let (started, _) = self
             .rpc(
                 "thread/start",
-                domain_thread_start(&launch.work, task_profile),
+                domain_thread_start(&launch.work, task_profile, &launch.provider_name),
             )
             .await?;
         let mut thread = started["thread"]["id"]
@@ -346,7 +383,10 @@ impl Runner {
                     }
                     NativeTaskWork::StartSuccessor => {
                         let (started, _) = self
-                            .rpc("thread/start", domain_thread_start(&launch.work, true))
+                            .rpc(
+                                "thread/start",
+                                domain_thread_start(&launch.work, true, &launch.provider_name),
+                            )
                             .await?;
                         let successor = started["thread"]["id"]
                             .as_str()
@@ -497,6 +537,13 @@ pub async fn run_native(
         Ok(())
     } else {
         optional_native_barrier(launch.proof_barrier_dir.as_deref(), "native_before_spawn")
+            .and_then(|()| {
+                if launch.code_mode_host {
+                    verify_code_mode_host(&config.executable, CODE_MODE_HOST_SHA256)
+                } else {
+                    Ok(())
+                }
+            })
     };
     if before_spawn.is_err() || gate.load(Ordering::SeqCst) {
         let (reply, acknowledged) = oneshot::channel();
@@ -517,12 +564,13 @@ pub async fn run_native(
         }
         return;
     }
-    match NativeHarness::spawn(
+    match NativeHarness::spawn_with_runtime_key(
         &config.executable,
         &launch.work,
         &launch.home,
         &launch.codex_home,
         transport_session,
+        launch.requires_runtime_key,
     ) {
         Ok(harness) => {
             let before_registration = (|| {
@@ -604,6 +652,57 @@ pub struct NativeLaunch {
     pub work: PathBuf,
     pub profile_digest: String,
     pub proof_barrier_dir: Option<PathBuf>,
+    pub provider_name: String,
+    pub provider_base_url: String,
+    pub requires_runtime_key: bool,
+    pub code_mode_host: bool,
+}
+
+// Companion executable shipped with the pinned native 0.163 package. The
+// code-mode bridge is a separate process and must match its qualified bytes.
+const CODE_MODE_HOST_SHA256: &str =
+    "8724d73ec190536233ab4628d24a071bfbcf27e5124f08fe35129f26fe48b916";
+
+fn verify_code_mode_host(executable: &Path, expected_sha256: &str) -> Result<(), StoreError> {
+    let companion = executable.with_file_name("codex-code-mode-host");
+    let bytes = fs::read(companion).map_err(|_| StoreError::Rejected)?;
+    if format!("{:x}", Sha256::digest(bytes)) != expected_sha256 {
+        return Err(StoreError::Rejected);
+    }
+    Ok(())
+}
+
+/// Config/read is the child's effective profile, not merely the file the
+/// service wrote. Refuse another provider, endpoint, auth source or retry
+/// policy before a native turn receives an entry permit.
+pub(crate) fn validate_effective_provider(
+    c: &Value,
+    launch: &NativeLaunch,
+) -> Result<(), StoreError> {
+    let provider = &c["model_providers"][&launch.provider_name];
+    let expected_key = if launch.requires_runtime_key {
+        Value::String("OPENAI_API_KEY".into())
+    } else {
+        Value::Null
+    };
+    if c["model_provider"] != launch.provider_name
+        || c["model"] != NativeProviderRoute::MODEL
+        || provider["base_url"] != launch.provider_base_url
+        || provider["wire_api"] != "responses"
+        || provider["env_key"] != expected_key
+        || provider["requires_openai_auth"] != false
+        || provider["request_max_retries"] != 0
+        || provider["stream_max_retries"] != 0
+        || provider["supports_websockets"] != false
+        || !provider["experimental_bearer_token"].is_null()
+        || !provider["auth"].is_null()
+        || !provider["aws"].is_null()
+        || !provider["http_headers"].is_null()
+        || !provider["env_http_headers"].is_null()
+    {
+        return Err(StoreError::Rejected);
+    }
+    Ok(())
 }
 
 pub fn native_proof_barrier(root: Option<&Path>, point: &str) -> Result<(), StoreError> {
@@ -639,18 +738,31 @@ pub fn optional_native_barrier(root: Option<&Path>, point: &str) -> Result<(), S
     Ok(())
 }
 
-/// Materialize an auth-free, finite local simulator profile. The caller's
-/// network namespace is a separate proof condition; config alone is not one.
+/// Materialize a route-bound native profile. Network confinement for the
+/// simulator is a separate proof condition; config alone is not one.
 pub fn prepare_native_launch(config: &NativeConfig, uid: u32) -> Result<NativeLaunch, StoreError> {
-    let url = config.simulator_base_url.as_str();
-    let Some(port) = url
-        .strip_prefix("http://127.0.0.1:")
-        .and_then(|tail| tail.strip_suffix("/v1"))
-        .and_then(|p| p.parse::<u16>().ok())
-    else {
-        return Err(StoreError::Rejected);
-    };
-    if port == 0 || !config.root.is_absolute() {
+    prepare_native_launch_with_code_mode(config, uid, false)
+}
+
+/// The retained task profile needs the native code-mode bridge to reach its
+/// three dynamic tools. Control and simulator-only profiles keep it disabled.
+pub fn prepare_native_task_launch(
+    config: &NativeConfig,
+    uid: u32,
+) -> Result<NativeLaunch, StoreError> {
+    prepare_native_launch_with_code_mode(config, uid, true)
+}
+
+fn prepare_native_launch_with_code_mode(
+    config: &NativeConfig,
+    uid: u32,
+    code_mode_host: bool,
+) -> Result<NativeLaunch, StoreError> {
+    let url = config
+        .provider_route
+        .configured_base_url(&config.simulator_base_url)
+        .ok_or(StoreError::Rejected)?;
+    if !config.root.is_absolute() {
         return Err(StoreError::Rejected);
     }
     fs::create_dir_all(&config.root).map_err(|_| StoreError::Unavailable)?;
@@ -675,9 +787,26 @@ pub fn prepare_native_launch(config: &NativeConfig, uid: u32) -> Result<NativeLa
         b"isolated project root\n",
     )
     .map_err(|_| StoreError::Unavailable)?;
+    let provider_name = config.provider_route.provider_name();
+    let requires_runtime_key = config.provider_route.requires_runtime_key();
+    let env_key = if requires_runtime_key {
+        "env_key = \"OPENAI_API_KEY\"\n"
+    } else {
+        ""
+    };
+    let provider_label = if requires_runtime_key {
+        "Selected OpenAI Responses"
+    } else {
+        "Isolated loopback S5"
+    };
+    let code_mode_binding = if code_mode_host {
+        format!("# code_mode_host_sha256 = {CODE_MODE_HOST_SHA256}\n")
+    } else {
+        String::new()
+    };
     let toml = format!(
         r#"model = "gpt-6-sol"
-model_provider = "local_probe"
+model_provider = "{provider_name}"
 approval_policy = "never"
 sandbox_mode = "read-only"
 web_search = "disabled"
@@ -690,18 +819,18 @@ shell_tool = false
 multi_agent = false
 hooks = false
 goals = false
-code_mode_host = false
-remote_plugin = false
+code_mode_host = {code_mode_host}
+{code_mode_binding}remote_plugin = false
 tool_suggest = false
 [agents]
 enabled = false
 [apps._default]
 enabled = false
-[model_providers.local_probe]
-name = "Isolated loopback S5"
+[model_providers.{provider_name}]
+name = "{provider_label}"
 base_url = "{url}"
 wire_api = "responses"
-requires_openai_auth = false
+{env_key}requires_openai_auth = false
 supports_websockets = false
 request_max_retries = 0
 stream_max_retries = 0
@@ -730,5 +859,280 @@ stream_max_retries = 0
         work,
         profile_digest,
         proof_barrier_dir: None,
+        provider_name: provider_name.to_owned(),
+        provider_base_url: url,
+        requires_runtime_key,
+        code_mode_host,
     })
+}
+
+#[cfg(test)]
+mod provider_launch_tests {
+    use super::*;
+
+    #[test]
+    fn result_tool_exposes_exact_owner_source_reference_shape() {
+        let thread = domain_thread_start(Path::new("/disposable"), true, "local_probe");
+        let task = thread["dynamicTools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "task")
+            .unwrap();
+        let result = task["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "result_publish")
+            .unwrap();
+        let refs = &result["inputSchema"]["properties"]["source_refs"];
+        assert_eq!(refs["minItems"], 1);
+        assert_eq!(refs["items"]["additionalProperties"], false);
+        assert_eq!(
+            refs["items"]["required"],
+            json!(["id", "owner_namespace", "owner_ref", "revision", "sha256"])
+        );
+        assert_eq!(refs["items"]["properties"]["revision"]["minimum"], 0);
+        // A valid 128-byte question ID becomes a 137-byte owner source ID.
+        // Source references are exact owner output, not new valid_id inputs.
+        let maximal_question_id = "q".repeat(128);
+        let answered_source_id = format!("question-{maximal_question_id}");
+        assert_eq!(answered_source_id.len(), 137);
+        for field in ["id", "owner_namespace", "owner_ref"] {
+            let schema = &refs["items"]["properties"][field];
+            assert_eq!(schema["minLength"], 1);
+            assert!(schema.get("maxLength").is_none());
+            assert!(schema.get("pattern").is_none());
+        }
+        assert_eq!(
+            refs["items"]["properties"]["sha256"]["pattern"],
+            "^[0-9a-f]{64}$"
+        );
+        assert!(
+            result["description"]
+                .as_str()
+                .unwrap()
+                .contains("cite snapshot member evidence in the body")
+        );
+        let valid = json!({"result_id":"result:test","body":"bounded evidence",
+            "attribution":"author:test","source_refs":[
+                {"id":answered_source_id,"owner_namespace":"retained-task-workflow",
+                "owner_ref":"task:test","revision":1,"sha256":"a".repeat(64)}]});
+        assert!(serde_json::from_value::<crate::ResultPublishPayload>(valid.clone()).is_ok());
+        let mut invalid = valid;
+        invalid["source_refs"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"snapshot_id":"snapshot:test",
+                "member_id":"member:test","sha256":"b".repeat(64)}));
+        assert!(serde_json::from_value::<crate::ResultPublishPayload>(invalid).is_err());
+    }
+
+    #[test]
+    fn task_tool_schemas_expose_owner_id_and_text_limits() {
+        let thread = domain_thread_start(Path::new("/disposable"), true, "local_probe");
+        let task = thread["dynamicTools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|tool| tool["name"] == "task")
+            .unwrap();
+        let tools = task["tools"].as_array().unwrap();
+        let question = tools
+            .iter()
+            .find(|tool| tool["name"] == "question_open")
+            .unwrap();
+        let result = tools
+            .iter()
+            .find(|tool| tool["name"] == "result_publish")
+            .unwrap();
+        for (tool, fields) in [
+            (
+                question,
+                ["question_id", "recipient_ref", "scope_ref"].as_slice(),
+            ),
+            (result, ["result_id", "attribution"].as_slice()),
+        ] {
+            for field in fields {
+                let schema = &tool["inputSchema"]["properties"][field];
+                assert_eq!(schema["pattern"], "^[A-Za-z0-9._:-]+$");
+                assert_eq!(schema["minLength"], 1);
+                assert_eq!(schema["maxLength"], 128);
+            }
+        }
+        for (tool, field) in [(question, "text"), (result, "body")] {
+            let schema = &tool["inputSchema"]["properties"][field];
+            assert_eq!(schema["minLength"], 1);
+            assert_eq!(schema["maxLength"], 8192);
+            assert!(
+                schema["description"]
+                    .as_str()
+                    .unwrap()
+                    .contains("UTF-8 bytes")
+            );
+        }
+        assert!(
+            result["inputSchema"]["properties"]["attribution"]["description"]
+                .as_str()
+                .unwrap()
+                .contains("no spaces or prose")
+        );
+    }
+
+    fn config(root: &Path, route: NativeProviderRoute, base: &str) -> NativeConfig {
+        serde_json::from_value(json!({
+            "executable":"/not-executed/native",
+            "root":root,
+            "provider_route":route,
+            "simulator_base_url":base,
+            "session_id":"session:test",
+            "invocation_id":"invocation:test",
+            "attempt_id":"attempt:test",
+            "prompt":"offline",
+            "turn_grant_ref":"grant:turn",
+            "turn_grant_revision":1,
+            "snapshot_grant_ref":"grant:snapshot",
+            "snapshot_grant_revision":1,
+            "snapshot":{"id":"snapshot:test","source_revision":"source:test","members":[]}
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn live_profile_pins_upstream_and_key_name_without_persisting_key() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("native");
+        fs::create_dir(&root).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        let uid = fs::metadata(&root).unwrap().uid();
+        let launch = prepare_native_launch(
+            &config(&root, NativeProviderRoute::OpenaiResponsesLiveV1, ""),
+            uid,
+        )
+        .unwrap();
+        assert_eq!(launch.provider_name, "openai_responses_live");
+        assert_eq!(launch.provider_base_url, NativeProviderRoute::LIVE_BASE_URL);
+        assert!(launch.requires_runtime_key);
+        let generated = fs::read_to_string(launch.codex_home.join("config.toml")).unwrap();
+        assert!(generated.contains("base_url = \"https://api.openai.com/v1\""));
+        assert!(generated.contains("env_key = \"OPENAI_API_KEY\""));
+        assert!(generated.contains("request_max_retries = 0"));
+        assert!(generated.contains("stream_max_retries = 0"));
+        assert!(!launch.codex_home.join("auth.json").exists());
+        assert!(generated.contains("requires_openai_auth = false"));
+        assert!(!launch.code_mode_host);
+        assert!(generated.contains("code_mode_host = false"));
+    }
+
+    #[test]
+    fn retained_task_profile_enables_only_the_code_mode_bridge() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("native");
+        fs::create_dir(&root).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        let uid = fs::metadata(&root).unwrap().uid();
+        let launch = prepare_native_task_launch(
+            &config(&root, NativeProviderRoute::OpenaiResponsesLiveV1, ""),
+            uid,
+        )
+        .unwrap();
+        assert!(launch.code_mode_host);
+        let generated = fs::read_to_string(launch.codex_home.join("config.toml")).unwrap();
+        assert!(generated.contains("code_mode_host = true"));
+        assert!(generated.contains(&format!(
+            "# code_mode_host_sha256 = {CODE_MODE_HOST_SHA256}"
+        )));
+        for disabled in [
+            "shell_tool",
+            "multi_agent",
+            "hooks",
+            "goals",
+            "remote_plugin",
+            "tool_suggest",
+        ] {
+            assert!(generated.contains(&format!("{disabled} = false")));
+        }
+        assert!(!launch.codex_home.join("auth.json").exists());
+    }
+
+    #[test]
+    fn code_mode_companion_refuses_absent_or_changed_bytes() {
+        let temp = tempfile::tempdir().unwrap();
+        let executable = temp.path().join("codex");
+        assert!(verify_code_mode_host(&executable, CODE_MODE_HOST_SHA256).is_err());
+        fs::write(
+            temp.path().join("codex-code-mode-host"),
+            b"synthetic companion",
+        )
+        .unwrap();
+        assert!(verify_code_mode_host(&executable, CODE_MODE_HOST_SHA256).is_err());
+        let synthetic_sha256 = format!("{:x}", Sha256::digest(b"synthetic companion"));
+        assert!(verify_code_mode_host(&executable, &synthetic_sha256).is_ok());
+    }
+
+    #[test]
+    fn simulator_profile_keeps_auth_free_loopback() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("native");
+        fs::create_dir(&root).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        let uid = fs::metadata(&root).unwrap().uid();
+        let launch = prepare_native_launch(
+            &config(
+                &root,
+                NativeProviderRoute::NativeSimProofV1,
+                "http://127.0.0.1:1234/v1",
+            ),
+            uid,
+        )
+        .unwrap();
+        assert_eq!(launch.provider_name, "local_probe");
+        assert!(!launch.requires_runtime_key);
+        let generated = fs::read_to_string(launch.codex_home.join("config.toml")).unwrap();
+        assert!(!generated.contains("env_key"));
+    }
+
+    #[test]
+    fn effective_readback_rejects_provider_endpoint_auth_and_retry_drift() {
+        let launch = NativeLaunch {
+            home: PathBuf::new(),
+            codex_home: PathBuf::new(),
+            work: PathBuf::new(),
+            profile_digest: String::new(),
+            proof_barrier_dir: None,
+            provider_name: "openai_responses_live".into(),
+            provider_base_url: NativeProviderRoute::LIVE_BASE_URL.into(),
+            requires_runtime_key: true,
+            code_mode_host: false,
+        };
+        let valid = json!({"model":"gpt-6-sol","model_provider":"openai_responses_live",
+            "model_providers":{"openai_responses_live":{
+                "base_url":"https://api.openai.com/v1","wire_api":"responses",
+                "env_key":"OPENAI_API_KEY","requires_openai_auth":false,
+                "request_max_retries":0,"stream_max_retries":0,
+                "supports_websockets":false,
+                "experimental_bearer_token":null,"auth":null,"aws":null,
+                "http_headers":null,"env_http_headers":null}}});
+        assert!(validate_effective_provider(&valid, &launch).is_ok());
+        for (path, wrong) in [
+            ("model", json!("other-model")),
+            ("model_provider", json!("local_probe")),
+        ] {
+            let mut changed = valid.clone();
+            changed[path] = wrong;
+            assert!(validate_effective_provider(&changed, &launch).is_err());
+        }
+        for (field, wrong) in [
+            ("base_url", json!("http://127.0.0.1:1234/v1")),
+            ("env_key", json!(null)),
+            ("requires_openai_auth", json!(true)),
+            ("request_max_retries", json!(1)),
+            ("stream_max_retries", json!(1)),
+            ("experimental_bearer_token", json!("hidden-override")),
+        ] {
+            let mut changed = valid.clone();
+            changed["model_providers"]["openai_responses_live"][field] = wrong;
+            assert!(validate_effective_provider(&changed, &launch).is_err());
+        }
+    }
 }

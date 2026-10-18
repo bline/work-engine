@@ -1,4 +1,4 @@
-//! Offline Rust lifecycle service. Only the controlled-proof feature permits external text execution.
+//! Rust lifecycle service with explicit, route-bound native provider execution.
 
 mod actor;
 mod admission;
@@ -61,6 +61,10 @@ pub struct ServiceConfig {
 pub struct NativeConfig {
     pub executable: PathBuf,
     pub root: PathBuf,
+    #[serde(default)]
+    pub provider_route: NativeProviderRoute,
+    /// Only used by the simulator and controlled-proof fake routes. Live
+    /// OpenAI always uses the compiled upstream and requires this to be empty.
     pub simulator_base_url: String,
     pub session_id: String,
     pub invocation_id: String,
@@ -79,6 +83,96 @@ pub struct NativeConfig {
     pub semantic: Option<SemanticNativeConfig>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub semantic_contexts: Vec<SemanticContextConfig>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum NativeProviderRoute {
+    #[default]
+    NativeSimProofV1,
+    OpenaiResponsesLiveV1,
+    OpenaiResponsesFakeV1,
+}
+
+impl NativeProviderRoute {
+    pub const MODEL: &'static str = "gpt-6-sol";
+    pub const LIVE_BASE_URL: &'static str = "https://api.openai.com/v1";
+
+    pub fn identity(self) -> &'static str {
+        match self {
+            Self::NativeSimProofV1 => "native-sim-proof-v1",
+            Self::OpenaiResponsesLiveV1 => "openai-responses-live-v1",
+            Self::OpenaiResponsesFakeV1 => "openai-responses-fake-v1",
+        }
+    }
+
+    pub fn provider_name(self) -> &'static str {
+        match self {
+            Self::NativeSimProofV1 => "local_probe",
+            Self::OpenaiResponsesLiveV1 => "openai_responses_live",
+            Self::OpenaiResponsesFakeV1 => "openai_responses_fake",
+        }
+    }
+
+    pub fn requires_runtime_key(self) -> bool {
+        self != Self::NativeSimProofV1
+    }
+
+    pub fn configured_base_url(self, simulator_base_url: &str) -> Option<String> {
+        fn loopback(url: &str) -> Option<String> {
+            let port = url
+                .strip_prefix("http://127.0.0.1:")?
+                .strip_suffix("/v1")?
+                .parse::<u16>()
+                .ok()?;
+            (port != 0).then(|| url.to_owned())
+        }
+        match self {
+            Self::NativeSimProofV1 => loopback(simulator_base_url),
+            Self::OpenaiResponsesLiveV1 if simulator_base_url.is_empty() => {
+                Some(Self::LIVE_BASE_URL.to_owned())
+            }
+            Self::OpenaiResponsesFakeV1 if cfg!(feature = "controlled-proof") => {
+                loopback(simulator_base_url)
+            }
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod provider_route_tests {
+    use super::*;
+
+    #[test]
+    fn provider_routes_bind_identity_and_endpoint_without_proxy_relabeling() {
+        assert_eq!(
+            NativeProviderRoute::default().identity(),
+            "native-sim-proof-v1"
+        );
+        assert_eq!(
+            NativeProviderRoute::OpenaiResponsesLiveV1.configured_base_url(""),
+            Some("https://api.openai.com/v1".into())
+        );
+        for proxy in ["http://127.0.0.1:1234/v1", "https://proxy.example/v1"] {
+            assert!(
+                NativeProviderRoute::OpenaiResponsesLiveV1
+                    .configured_base_url(proxy)
+                    .is_none()
+            );
+        }
+        assert!(
+            NativeProviderRoute::NativeSimProofV1
+                .configured_base_url("https://api.openai.com/v1")
+                .is_none()
+        );
+        assert_eq!(
+            NativeProviderRoute::OpenaiResponsesFakeV1
+                .configured_base_url("http://127.0.0.1:1234/v1")
+                .is_some(),
+            cfg!(feature = "controlled-proof")
+        );
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

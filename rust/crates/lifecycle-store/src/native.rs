@@ -2338,6 +2338,7 @@ impl SqliteLifecycleStore {
                 .map_err(|_| StoreError::Unavailable)?
         };
         let mut final_seen = 0u64;
+        let mut completed_messages = Vec::<serde_json::Value>::new();
         let mut tool_completions = std::collections::BTreeMap::<String, serde_json::Value>::new();
         for raw in completed_items {
             let value: serde_json::Value =
@@ -2345,11 +2346,17 @@ impl SqliteLifecycleStore {
             let item = &value["params"]["item"];
             match item["type"].as_str() {
                 Some("agentMessage")
-                    if item["text"] == final_text
+                    if item["text"].as_str().is_some_and(|text| !text.is_empty())
                         && item["questions"].is_null()
                         && item["delivery"].is_null() =>
                 {
-                    final_seen += 1
+                    if item["text"] == final_text {
+                        final_seen += 1;
+                    }
+                    // Native 0.163 can emit a progress message before its final
+                    // message. Retain every completed message for the full-history
+                    // correspondence check below; only the final is settlement.
+                    completed_messages.push(item.clone());
                 }
                 Some("dynamicToolCall") => {
                     let call = item["id"].as_str().ok_or(StoreError::ClaimConflict)?;
@@ -2600,6 +2607,7 @@ impl SqliteLifecycleStore {
             }
         }
         let mut history_tools = std::collections::BTreeSet::<String>::new();
+        let mut history_messages = Vec::<serde_json::Value>::new();
         for item in items {
             match item["type"].as_str() {
                 Some("dynamicToolCall") => {
@@ -2620,7 +2628,12 @@ impl SqliteLifecycleStore {
                     }
                 }
                 Some("agentMessage")
-                    if item["questions"].is_null() && item["delivery"].is_null() => {}
+                    if item["text"].as_str().is_some_and(|text| !text.is_empty())
+                        && item["questions"].is_null()
+                        && item["delivery"].is_null() =>
+                {
+                    history_messages.push(item.clone());
+                }
                 Some("userMessage" | "reasoning") => {}
                 _ => return Err(StoreError::ClaimConflict),
             }
@@ -2630,8 +2643,27 @@ impl SqliteLifecycleStore {
             .rev()
             .find(|v| v["type"] == "agentMessage")
             .and_then(|v| v["text"].as_str());
+        // The persisted full-history read can assign new item IDs. Compare the
+        // complete ordered messages, including their content and other fields,
+        // while excluding only that transport-local ID.
+        let same_message_except_id = |left: &serde_json::Value, right: &serde_json::Value| {
+            let (Some(left), Some(right)) = (left.as_object(), right.as_object()) else {
+                return false;
+            };
+            let mut left = left.clone();
+            let mut right = right.clone();
+            left.remove("id");
+            right.remove("id");
+            left == right
+        };
+        let messages_match = completed_messages.len() == history_messages.len()
+            && completed_messages
+                .iter()
+                .zip(&history_messages)
+                .all(|(completed, history)| same_message_except_id(completed, history));
         let visible_tools = history_tools.len();
-        if history_final != Some(final_text)
+        if !messages_match
+            || history_final != Some(final_text)
             || (history_status == "observed_complete"
                 && visible_tools != (children + task_children) as usize)
             || (history_status == "observed_tool_omitted"
@@ -3652,6 +3684,9 @@ mod tests {
             .unwrap();
         let final_item =
             serde_json::json!({"type":"agentMessage","id":"final:sequential","text":"done"});
+        let progress_item = serde_json::json!({
+            "type":"agentMessage","id":"progress:sequential","text":"Checking source"
+        });
         for (sequence, method, value) in [
             (
                 1,
@@ -3660,6 +3695,11 @@ mod tests {
             ),
             (
                 2,
+                "item/completed",
+                serde_json::json!({"method":"item/completed","params":{"threadId":"thread:sequential","turnId":"turn:sequential","item":progress_item.clone()}}),
+            ),
+            (
+                3,
                 "item/completed",
                 serde_json::json!({"method":"item/completed","params":{"threadId":"thread:sequential","turnId":"turn:sequential","item":final_item.clone()}}),
             ),
@@ -3688,12 +3728,16 @@ mod tests {
             )
             .unwrap();
         assert_eq!(last_wall, 200);
-        let history = serde_json::json!({"id":3,"result":{"thread":{"id":"thread:sequential","historyMode":"legacy","turns":[{"id":"turn:sequential","status":"completed","itemsView":"full","items":[final_item]}]}}});
+        let mut history_progress = progress_item.clone();
+        history_progress["id"] = serde_json::json!("persisted:progress");
+        let mut history_final = final_item.clone();
+        history_final["id"] = serde_json::json!("persisted:final");
+        let history = serde_json::json!({"id":4,"result":{"thread":{"id":"thread:sequential","historyMode":"legacy","turns":[{"id":"turn:sequential","status":"completed","itemsView":"full","items":[history_progress,history_final]}]}}});
         store
             .record_native_ingress(
                 &session_id,
                 "transport:sequential",
-                3,
+                4,
                 &serde_json::to_vec(&history).unwrap(),
                 "qualified",
                 None,
@@ -3746,7 +3790,7 @@ mod tests {
                 "done",
                 "observed_complete",
                 "transport:sequential",
-                3,
+                4,
                 at(300),
             )
             .unwrap();
@@ -3808,6 +3852,12 @@ mod tests {
         for (item, ingress_method, history_only, ingress_status) in [
             (
                 serde_json::json!({"type":"agentMessage","text":"Need answer","questions":[{"id":"q1"}]}),
+                "item/completed",
+                false,
+                "qualified",
+            ),
+            (
+                serde_json::json!({"type":"agentMessage","id":"progress:one","text":"Missing from history"}),
                 "item/completed",
                 false,
                 "qualified",

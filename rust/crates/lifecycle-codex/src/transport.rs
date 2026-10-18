@@ -20,6 +20,8 @@ pub enum NativeHarnessError {
     Serialization,
     #[error("native transport reached EOF")]
     Eof,
+    #[error("required runtime provider credential is unavailable")]
+    CredentialUnavailable,
 }
 
 /// One native child and one protocol loop. Only trusted service composition
@@ -38,6 +40,20 @@ impl NativeHarness {
         codex_home: &Path,
         transport_session: String,
     ) -> Result<Self, NativeHarnessError> {
+        Self::spawn_with_runtime_key(executable, work, home, codex_home, transport_session, false)
+    }
+
+    /// The selected host retains the credential in its own environment and
+    /// forwards it only to this owned child. It is never placed in argv or a
+    /// generated config file; the child still starts from env_clear.
+    pub fn spawn_with_runtime_key(
+        executable: &Path,
+        work: &Path,
+        home: &Path,
+        codex_home: &Path,
+        transport_session: String,
+        requires_runtime_key: bool,
+    ) -> Result<Self, NativeHarnessError> {
         let bytes = std::fs::read(executable).map_err(|_| NativeHarnessError::BinaryMismatch)?;
         if format!("{:x}", Sha256::digest(bytes)) != NATIVE_BINARY_SHA256
             || transport_session.is_empty()
@@ -45,6 +61,17 @@ impl NativeHarness {
             return Err(NativeHarnessError::BinaryMismatch);
         }
         let mut command = Command::new(executable);
+        let runtime_key = if requires_runtime_key {
+            let key = std::env::var("OPENAI_API_KEY")
+                .map_err(|_| NativeHarnessError::CredentialUnavailable)?;
+            if key.len() > 512 || key.is_empty() || !key.bytes().all(|b| (0x21..=0x7e).contains(&b))
+            {
+                return Err(NativeHarnessError::CredentialUnavailable);
+            }
+            Some(key)
+        } else {
+            None
+        };
         let tmpdir = std::env::var_os("TMPDIR").ok_or(NativeHarnessError::BinaryMismatch)?;
         let target =
             std::env::var_os("CARGO_TARGET_DIR").ok_or(NativeHarnessError::BinaryMismatch)?;
@@ -58,6 +85,9 @@ impl NativeHarness {
             .env("TMPDIR", tmpdir)
             .env("CARGO_TARGET_DIR", target)
             .current_dir(work);
+        if let Some(key) = runtime_key {
+            command.env("OPENAI_API_KEY", key);
+        }
         let pipe = NativeStdio::spawn(&mut command, 1_048_576, 4096)?;
         Ok(Self {
             pipe,

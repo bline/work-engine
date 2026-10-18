@@ -5,8 +5,9 @@ use lifecycle_service::{
     TaskOperationError, TaskOperationPort, ValidatedTaskOperationEntry,
 };
 use retained_task_workflow::{
-    AnswerQuestion, CompletedEffect, FactInput, FactKind, OperationEntry, QuestionOpenPayload,
-    ResultPublishPayload, SubjectKind, SubmitTask, TaskError, TaskStore, json_digest, sha256,
+    AdmissionCommand, AnswerQuestion, CompletedEffect, FactInput, FactKind, OperationEntry,
+    QuestionOpenPayload, ResultPublishPayload, SubjectKind, SubmitTask, TaskError, TaskStore,
+    json_digest, sha256,
 };
 use rusqlite::Connection;
 
@@ -21,6 +22,79 @@ fn task() -> SubmitTask {
         snapshot_ref: "snapshot-0".into(),
         facts: Vec::new(),
     }
+}
+
+#[test]
+fn submit_and_admission_are_one_owner_commit_with_exact_duplicate_readback() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("tasks.sqlite");
+    let store = TaskStore::open(&path, "human-operator".into()).unwrap();
+    let input = task();
+    let mut interrupted = |_text: &str| Err(TaskError::Unavailable);
+    assert!(
+        store
+            .submit_with_admission(&input, &mut interrupted)
+            .is_err()
+    );
+    assert!(store.observe("task-0").unwrap().is_none());
+    assert!(store.lookup_admission_command("cmd-0").unwrap().is_none());
+    assert!(
+        store
+            .lookup_command_receipt("submit", "task-0", "cmd-0", &json_digest(&input).unwrap())
+            .unwrap()
+            .is_none()
+    );
+
+    let digest = "a".repeat(64);
+    let mut build = |text: &str| {
+        Ok(AdmissionCommand {
+            command_id: "cmd-0".into(),
+            request_digest: digest.clone(),
+            command_json: serde_json::json!({
+                "protocol_version":2,"principal_ref":"principal-0","command_id":"cmd-0",
+                "subject_id":"subject-0","context_generation":"context-0","build_id":"build-0",
+                "proof_run_id":"proof-0","grant_ref":"grant-0","expected_revision":"1",
+                "request_digest":digest,"kind":"enqueue_input",
+                "payload":{"input_id":"input:cmd-0","producer_ref":"producer-0","text":text,"text_digest":"b".repeat(64)}
+            }).to_string(),
+        })
+    };
+    let (first, published) = store.submit_with_admission(&input, &mut build).unwrap();
+    assert!(published);
+    assert_eq!(first.owner_revision, 1);
+    assert_eq!(store.admission_commands().unwrap().len(), 1);
+    let saved = store.lookup_admission_command("cmd-0").unwrap().unwrap();
+    assert_eq!(saved.request_digest, "a".repeat(64));
+    assert_eq!(
+        store.input_text("cmd-0").unwrap().unwrap(),
+        serde_json::from_str::<serde_json::Value>(&saved.command_json).unwrap()["payload"]["text"]
+            .as_str()
+            .unwrap()
+    );
+    drop(store);
+
+    let reopened = TaskStore::open(&path, "human-operator".into()).unwrap();
+    let mut never_rebuild = |_text: &str| -> Result<AdmissionCommand, TaskError> {
+        panic!("duplicate must preserve recorded command and owner receipt")
+    };
+    let (same, published) = reopened
+        .submit_with_admission(&input, &mut never_rebuild)
+        .unwrap();
+    assert!(!published);
+    assert_eq!(same, first);
+    assert_eq!(
+        reopened.lookup_admission_command("cmd-0").unwrap().unwrap(),
+        saved
+    );
+    let changed = SubmitTask {
+        objective: "different".into(),
+        ..input
+    };
+    assert!(matches!(
+        reopened.submit_with_admission(&changed, &mut never_rebuild),
+        Err(TaskError::Conflict)
+    ));
+    assert_eq!(reopened.observe("task-0").unwrap().unwrap().revision, 1);
 }
 
 #[test]

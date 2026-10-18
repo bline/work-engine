@@ -3,14 +3,14 @@
 mod observation;
 mod selected_startup;
 
-use lifecycle_service::{GrantConfig, ServiceConfig};
+use lifecycle_service::{GrantConfig, NativeProviderRoute, ServiceConfig};
 use lifecycle_wire::{
     CommandDtoV2, CommandOperationV2, EnqueueInputPayloadV2, RequestReplacementPayloadV1,
-    parse_snapshot,
+    parse_command_v2, parse_snapshot,
 };
 use retained_task_workflow::{
-    AdmissionCommand, AnswerQuestion, ControlCommand, PROFILE, SubmitTask, TaskCommit, TaskError,
-    TaskStore, json_digest,
+    AdmissionCommand, AnswerQuestion, ControlCommand, PROFILE, SubmitTask, TaskError, TaskStore,
+    json_digest,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -105,6 +105,7 @@ struct Host {
     identity: HostIdentity,
     admission_gate: Mutex<()>,
     recovery_only: OnceLock<bool>,
+    selected: bool,
 }
 
 pub fn run() -> Result<(), HostError> {
@@ -162,6 +163,7 @@ async fn serve_composed(
     store: TaskStore,
     selected_store: Option<lifecycle_service::SelectedLifecycleStore>,
 ) -> Result<(), HostError> {
+    let selected = selected_store.is_some();
     let store = Arc::new(store);
     let identity = host_identity(&startup)?;
     let host = Arc::new(Host {
@@ -170,6 +172,7 @@ async fn serve_composed(
         identity,
         admission_gate: Mutex::new(()),
         recovery_only: OnceLock::new(),
+        selected,
     });
     let config = host.startup.lifecycle.clone();
     let material = host.store.clone();
@@ -195,6 +198,11 @@ async fn serve_composed(
     host.recovery_only
         .set(recovery_only)
         .map_err(|_| HostError::LifecycleUnavailable)?;
+    if selected {
+        for command in host.store.admission_commands()? {
+            reconcile_admission(&host, &command, !recovery_only)?;
+        }
+    }
     if let Ok(meta) = fs::symlink_metadata(&host.startup.socket_path) {
         if !meta.file_type().is_socket() || meta.uid() != host.startup.lifecycle.principal.uid {
             return Err(HostError::Configuration);
@@ -301,20 +309,65 @@ fn dispatch(host: &Host, request: Value) -> Value {
                         .ok_or(HostError::RecoveryOnly)?;
                     let lifecycle = read_command_result(host, &input.command_id).ok().flatten();
                     return Ok(
-                        json!({"status":qualified_status(lifecycle.as_ref(),"admitted","rejected_admission","pending_admission"),"owner":owner,"lifecycle":lifecycle,"host_identity":host.identity}),
+                        json!({"status":admission_status(lifecycle.as_ref()),"owner":owner,"lifecycle":lifecycle,"admission_reason":admission_reason(host,&input.command_id,lifecycle.as_ref()),"host_identity":host.identity}),
                     );
                 }
-                if host.store.input_text(&input.command_id)?.is_none() {
-                    preflight_grant(host, &input.subject_id, "enqueue_input")?;
-                }
-                let (owner, first_publication) = host.store.submit_with_status(&input)?;
-                let lifecycle = if first_publication {
-                    admit(host, &input, &owner).ok()
+                let prior = host.store.lookup_command_receipt(
+                    "submit",
+                    &input.task_id,
+                    &input.command_id,
+                    &json_digest(&input)?,
+                )?;
+                let (owner, first_publication) = if let Some(owner) = prior {
+                    (owner, false)
                 } else {
-                    read_command_result(host, &input.command_id).ok().flatten()
+                    let basis = admission_basis(host, &input.subject_id)?;
+                    host.store.submit_with_admission(&input, &mut |text| {
+                        build_admission(host, &input, &basis, text)
+                    })?
+                };
+                #[cfg(feature = "controlled-proof")]
+                if first_publication
+                    && let Some(root) = host.startup.lifecycle.proof_barrier_dir.as_ref()
+                    && root.join("admission_after_owner_commit.panic").exists()
+                {
+                    fs::write(
+                        root.join("admission_after_owner_commit.reached"),
+                        b"reached\n",
+                    )?;
+                    panic!(
+                        "controlled admission cut after owner commit, before lifecycle exchange"
+                    );
+                }
+                #[cfg(feature = "controlled-proof")]
+                if first_publication
+                    && let Some(root) = host.startup.lifecycle.proof_barrier_dir.as_ref()
+                    && root.join("admission_after_owner_commit.return").exists()
+                {
+                    fs::write(
+                        root.join("admission_after_owner_commit.reached"),
+                        b"reached\n",
+                    )?;
+                    return Err(HostError::LifecycleUnavailable);
+                }
+                let recorded = host.store.lookup_admission_command(&input.command_id)?;
+                let (lifecycle, reason) = if let Some(command) = recorded {
+                    if first_publication || host.selected {
+                        match reconcile_admission(host, &command, true) {
+                            Ok(lifecycle) => (lifecycle, None),
+                            Err(_) => (None, Some("admission_readback_or_record_unavailable")),
+                        }
+                    } else {
+                        (
+                            read_command_result(host, &input.command_id).ok().flatten(),
+                            None,
+                        )
+                    }
+                } else {
+                    (None, Some("unbound_owner_receipt"))
                 };
                 Ok(
-                    json!({"status":qualified_status(lifecycle.as_ref(),"admitted","rejected_admission","pending_admission"),"owner":owner,"lifecycle":lifecycle,"host_identity":host.identity}),
+                    json!({"status":admission_status(lifecycle.as_ref()),"owner":owner,"lifecycle":lifecycle,"admission_reason":reason.or_else(||admission_reason(host,&input.command_id,lifecycle.as_ref())),"host_identity":host.identity}),
                 )
             }
             Some("task.answer.v1") if object.len() == 2 => {
@@ -469,6 +522,37 @@ fn qualified_status<'a>(
     }
 }
 
+fn admission_status(value: Option<&Value>) -> &'static str {
+    match value
+        .and_then(|reply| reply.get("accepted"))
+        .and_then(Value::as_bool)
+    {
+        Some(true) => "admitted",
+        Some(false) => "rejected_admission",
+        None => "pending_admission",
+    }
+}
+
+fn admission_reason(host: &Host, command_id: &str, value: Option<&Value>) -> Option<&'static str> {
+    if admission_status(value) != "pending_admission" {
+        return None;
+    }
+    if value.and_then(|reply| reply.get("code")).is_some() {
+        return Some("lifecycle_readback_conflict_or_unavailable");
+    }
+    if value
+        .and_then(|reply| reply.get("status"))
+        .and_then(Value::as_str)
+        == Some("unknown")
+    {
+        return Some("lifecycle_command_unknown");
+    }
+    match host.store.lookup_admission_command(command_id) {
+        Ok(None) => Some("unbound_owner_receipt"),
+        _ => Some("admission_readback_unavailable"),
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReplacementRequest {
@@ -488,28 +572,159 @@ struct GrantContractRequest {
     expected_revision: u64,
 }
 
-fn admit(host: &Host, input: &SubmitTask, _owner: &TaskCommit) -> Result<Value, HostError> {
-    let text = host
-        .store
-        .input_text(&input.command_id)?
+struct AdmissionBasis {
+    revision: String,
+    context: String,
+    grant_ref: String,
+}
+
+fn admission_basis(host: &Host, subject: &str) -> Result<AdmissionBasis, HostError> {
+    let current = read_subject_revision(&host.startup.lifecycle.socket_path, subject)?;
+    let revision = current
+        .get("revision")
+        .and_then(Value::as_str)
         .ok_or(HostError::LifecycleUnavailable)?;
+    let context = current
+        .get("context_generation")
+        .and_then(Value::as_str)
+        .ok_or(HostError::LifecycleUnavailable)?;
+    let grant_ref = grant_for_context(&host.startup.lifecycle.grants, context, "enqueue_input")?
+        .grant_ref
+        .clone();
+    Ok(AdmissionBasis {
+        revision: revision.into(),
+        context: context.into(),
+        grant_ref,
+    })
+}
+
+fn build_admission(
+    host: &Host,
+    input: &SubmitTask,
+    basis: &AdmissionBasis,
+    text: &str,
+) -> Result<AdmissionCommand, TaskError> {
     let text_digest = CodecContract::LifecycleTextInputV1
         .digest_binary(text.as_bytes())
-        .map_err(|_| HostError::Configuration)?
+        .map_err(|_| TaskError::Invalid)?
         .hex();
-    command(
-        host,
-        &input.subject_id,
-        &input.command_id,
-        "enqueue_input",
-        CommandOperationV2::EnqueueInput(EnqueueInputPayloadV2 {
+    let mut command = CommandDtoV2 {
+        protocol_version: 2,
+        principal_ref: host.startup.lifecycle.principal.principal_ref.clone(),
+        command_id: input.command_id.clone(),
+        subject_id: input.subject_id.clone(),
+        context_generation: basis.context.clone(),
+        build_id: host.startup.lifecycle.build_id.clone(),
+        proof_run_id: host.startup.lifecycle.proof_run_id.clone(),
+        grant_ref: basis.grant_ref.clone(),
+        expected_revision: basis.revision.clone(),
+        request_digest: String::new(),
+        operation: CommandOperationV2::EnqueueInput(EnqueueInputPayloadV2 {
             input_id: format!("input:{}", input.command_id),
             producer_ref: host.startup.lifecycle.principal.producer_ref.clone(),
-            text,
+            text: text.into(),
             text_digest,
         }),
-        None,
-    )
+    };
+    command.request_digest = CodecContract::LifecycleCommandV2
+        .digest_json(&command.digest_basis())
+        .map_err(|_| TaskError::Invalid)?
+        .hex();
+    Ok(AdmissionCommand {
+        command_id: input.command_id.clone(),
+        request_digest: command.request_digest.clone(),
+        command_json: serde_json::to_string(&command)?,
+    })
+}
+
+fn reconcile_admission(
+    host: &Host,
+    command: &AdmissionCommand,
+    allow_send: bool,
+) -> Result<Option<Value>, HostError> {
+    let dto = validated_admission(host, command)?;
+    let prior = read_command_result(host, &command.command_id)?;
+    if prior
+        .as_ref()
+        .and_then(|reply| reply.get("status"))
+        .and_then(Value::as_str)
+        != Some("unknown")
+        || !allow_send
+    {
+        return Ok(prior);
+    }
+    validate_admission_send_binding(host, &dto)?;
+    let reply = exchange(
+        &host.startup.lifecycle.socket_path,
+        &json!({"op":"command","command":dto}),
+    )?;
+    if reply.get("code").is_some() {
+        return Ok(Some(reply));
+    }
+    if reply.get("protocol_version").and_then(Value::as_u64) != Some(2)
+        || reply.get("command_id").and_then(Value::as_str) != Some(&command.command_id)
+        || reply.get("accepted").and_then(Value::as_bool).is_none()
+    {
+        return Err(HostError::LifecycleUnavailable);
+    }
+    Ok(Some(reply))
+}
+
+fn validated_admission(host: &Host, command: &AdmissionCommand) -> Result<CommandDtoV2, HostError> {
+    let dto =
+        parse_command_v2(command.command_json.as_bytes()).map_err(|_| HostError::Configuration)?;
+    let CommandOperationV2::EnqueueInput(payload) = &dto.operation else {
+        return Err(HostError::Configuration);
+    };
+    if dto.command_id != command.command_id
+        || dto.request_digest != command.request_digest
+        || CodecContract::LifecycleCommandV2
+            .digest_json(&dto.digest_basis())
+            .map_err(|_| HostError::Configuration)?
+            .hex()
+            != command.request_digest
+        || dto.subject_id != host.startup.lifecycle.subject_id
+        || payload.input_id != format!("input:{}", command.command_id)
+        || payload.text_digest
+            != CodecContract::LifecycleTextInputV1
+                .digest_binary(payload.text.as_bytes())
+                .map_err(|_| HostError::Configuration)?
+                .hex()
+        || dto.expected_revision.parse::<u64>().is_err()
+    {
+        return Err(HostError::Configuration);
+    }
+    let locator = host
+        .store
+        .validate_input(&payload.input_id, &payload.text)?;
+    if locator.subject_id != dto.subject_id
+        || locator.snapshot_ref != host.startup.approved_snapshot_ref
+    {
+        return Err(HostError::Configuration);
+    }
+    Ok(dto)
+}
+
+fn validate_admission_send_binding(host: &Host, dto: &CommandDtoV2) -> Result<(), HostError> {
+    let CommandOperationV2::EnqueueInput(payload) = &dto.operation else {
+        return Err(HostError::Configuration);
+    };
+    if dto.principal_ref != host.startup.lifecycle.principal.principal_ref
+        || dto.build_id != host.startup.lifecycle.build_id
+        || dto.proof_run_id != host.startup.lifecycle.proof_run_id
+        || payload.producer_ref != host.startup.lifecycle.principal.producer_ref
+    {
+        return Err(HostError::Configuration);
+    }
+    let grant = grant_for_context(
+        &host.startup.lifecycle.grants,
+        &dto.context_generation,
+        "enqueue_input",
+    )?;
+    if grant.grant_ref != dto.grant_ref {
+        return Err(HostError::Configuration);
+    }
+    Ok(())
 }
 fn command(
     host: &Host,
@@ -519,6 +734,10 @@ fn command(
     operation: CommandOperationV2,
     control: Option<(&str, &str)>,
 ) -> Result<Value, HostError> {
+    if matches!(&operation, CommandOperationV2::EnqueueInput(_)) {
+        // Enqueue is prepared with the owner receipt in a single transaction.
+        return Err(HostError::Configuration);
+    }
     let current = read_subject_revision(&host.startup.lifecycle.socket_path, subject)?;
     let revision = current
         .get("revision")
@@ -548,13 +767,7 @@ fn command(
         .digest_json(&command.digest_basis())
         .map_err(|_| HostError::Configuration)?
         .hex();
-    if matches!(&command.operation, CommandOperationV2::EnqueueInput(_)) {
-        host.store.record_admission_command(&AdmissionCommand {
-            command_id: command_id.into(),
-            request_digest: command.request_digest.clone(),
-            command_json: serde_json::to_string(&command)?,
-        })?;
-    } else if let Some((kind, request_sha256)) = control {
+    if let Some((kind, request_sha256)) = control {
         host.store.record_control_command(&ControlCommand {
             command_id: command_id.into(),
             kind: kind.into(),
@@ -799,11 +1012,28 @@ fn validate_startup(s: &HostStartup) -> Result<(), HostError> {
     if s.socket_path == s.lifecycle.socket_path {
         return Err(startup_invalid("socket path collision"));
     }
-    if s.provider_identity != "native-sim-proof-v1"
-        || s.lifecycle.native.is_none()
-        || s.lifecycle.profile != PROFILE
+    let native = s
+        .lifecycle
+        .native
+        .as_ref()
+        .ok_or_else(|| startup_invalid("native configuration"))?;
+    if s.lifecycle.profile != PROFILE
+        || s.provider_identity != native.provider_route.identity()
+        || native
+            .provider_route
+            .configured_base_url(&native.simulator_base_url)
+            .is_none()
+        || (native.provider_route == NativeProviderRoute::OpenaiResponsesFakeV1
+            && !cfg!(feature = "controlled-proof"))
     {
         return Err(startup_invalid("provider identity or profile"));
+    }
+    if native.provider_route.requires_runtime_key() {
+        let key = std::env::var("OPENAI_API_KEY")
+            .map_err(|_| startup_invalid("runtime provider credential unavailable"))?;
+        if key.is_empty() || key.len() > 512 || !key.bytes().all(|b| (0x21..=0x7e).contains(&b)) {
+            return Err(startup_invalid("runtime provider credential unavailable"));
+        }
     }
     validate_compiled_features(&s.features)?;
     for digest in [
@@ -957,6 +1187,12 @@ fn task_code(e: &retained_task_workflow::TaskError) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        io::{BufRead, BufReader},
+        os::unix::net::UnixListener as SyncUnixListener,
+        sync::atomic::{AtomicUsize, Ordering},
+        thread,
+    };
 
     fn grant(reference: &str, context: &str, scope: &str) -> GrantConfig {
         GrantConfig {
@@ -966,6 +1202,322 @@ mod tests {
             expires_wall_ms: i64::MAX,
             revision: 1,
         }
+    }
+
+    fn admission_host(root: &Path, socket: &Path, recovery_only: bool) -> Host {
+        let lifecycle = ServiceConfig {
+            profile: PROFILE.into(),
+            store_root: root.join("lifecycle-store"),
+            socket_path: socket.into(),
+            peer_socket_path: root.join("unused-peer.sock"),
+            verifier_executable: None,
+            verifier_ledger_path: None,
+            proof_barrier_dir: None,
+            trusted_issuer: "issuer-0".into(),
+            principal: lifecycle_service::PrincipalConfig {
+                uid: current_uid().unwrap(),
+                principal_ref: "principal-0".into(),
+                producer_ref: "producer-0".into(),
+            },
+            subject_id: "subject-0".into(),
+            context_generation: "context-0".into(),
+            build_id: "build-0".into(),
+            proof_run_id: "proof-0".into(),
+            grants: vec![grant("grant-0", "context-0", "enqueue_input")],
+            max_executions: 1,
+            max_wait_ms: 1000,
+            verifier_proof_ms: None,
+            verifier_cleanup_ms: None,
+            native: None,
+        };
+        let startup = HostStartup {
+            profile: PROFILE.into(),
+            task_store_path: root.join("tasks.sqlite"),
+            socket_path: root.join("host.sock"),
+            approved_snapshot_ref: "snapshot-0".into(),
+            answer_authority_ref: "human-operator".into(),
+            enqueue_grant_ref: "grant-0".into(),
+            replacement_grant_ref: "grant-1".into(),
+            executable_sha256: String::new(),
+            source_root: root.into(),
+            source_manifest_path: root.join("manifest.json"),
+            source_sha256: String::new(),
+            lock_path: root.join("Cargo.lock"),
+            lock_sha256: String::new(),
+            toolchain_path: root.join("rust-toolchain.toml"),
+            toolchain_sha256: String::new(),
+            features: compiled_features(),
+            provider_identity: "native-sim-proof-v1".into(),
+            lifecycle,
+        };
+        let mode = OnceLock::new();
+        mode.set(recovery_only).unwrap();
+        Host {
+            store: Arc::new(
+                TaskStore::open(&startup.task_store_path, "human-operator".into()).unwrap(),
+            ),
+            startup,
+            identity: HostIdentity {
+                pid: 1,
+                linux_starttime_ticks: "1".into(),
+                incarnation: "host-test".into(),
+                build_id: "build-0".into(),
+                profile: PROFILE.into(),
+                executable_sha256: String::new(),
+                source_sha256: String::new(),
+                lock_sha256: String::new(),
+                toolchain_sha256: String::new(),
+                features: compiled_features(),
+                provider_identity: "native-sim-proof-v1".into(),
+            },
+            admission_gate: Mutex::new(()),
+            recovery_only: mode,
+            selected: true,
+        }
+    }
+
+    fn fake_admission_service(
+        socket: &Path,
+        requests: usize,
+        sends: Arc<AtomicUsize>,
+    ) -> thread::JoinHandle<()> {
+        let listener = SyncUnixListener::bind(socket).unwrap();
+        thread::spawn(move || {
+            let mut accepted: Option<Value> = None;
+            for _ in 0..requests {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut line = Vec::new();
+                BufReader::new(stream.try_clone().unwrap())
+                    .read_until(b'\n', &mut line)
+                    .unwrap();
+                let request: Value = serde_json::from_slice(&line).unwrap();
+                let reply = match request["op"].as_str().unwrap() {
+                    "subject_revision" => {
+                        json!({"protocol_version":1,"subject_id":"subject-0","store_id":"store-0","context_generation":"context-0","revision":"1"})
+                    }
+                    "command_result" => accepted
+                        .clone()
+                        .unwrap_or_else(|| json!({"status":"unknown"})),
+                    "command" => {
+                        let dto: CommandDtoV2 =
+                            serde_json::from_value(request["command"].clone()).unwrap();
+                        assert_eq!(dto.expected_revision, "1");
+                        assert_eq!(dto.context_generation, "context-0");
+                        sends.fetch_add(1, Ordering::SeqCst);
+                        let reply = json!({"protocol_version":2,"command_id":dto.command_id,"accepted":true,"outcome_kind":"enqueued","outcome_ref":"delivery-0","rejection_code":null,"resulting_revision":"2"});
+                        accepted = Some(reply.clone());
+                        reply
+                    }
+                    other => panic!("unexpected lifecycle operation: {other}"),
+                };
+                stream
+                    .write_all(serde_json::to_string(&reply).unwrap().as_bytes())
+                    .unwrap();
+                stream.write_all(b"\n").unwrap();
+            }
+        })
+    }
+
+    fn admission_submit() -> Value {
+        json!({"command_id":"command-0","task_id":"task-0","subject_id":"subject-0","kind":"repository_analysis","objective":"Analyze approved source","engineering_question":"Who owns this?","snapshot_ref":"snapshot-0"})
+    }
+
+    #[test]
+    fn selected_submit_and_duplicate_keep_one_owner_revision_and_one_admission() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("lifecycle.sock");
+        let sends = Arc::new(AtomicUsize::new(0));
+        let service = fake_admission_service(&socket, 4, sends.clone());
+        let host = admission_host(root.path(), &socket, false);
+        let submit = admission_submit();
+        let first = dispatch(&host, json!({"op":"task.submit.v1","payload":submit}));
+        assert_eq!(first["status"], "admitted");
+        assert_eq!(first["owner"]["owner_revision"], 1);
+        let duplicate = dispatch(
+            &host,
+            json!({"op":"task.submit.v1","payload":admission_submit()}),
+        );
+        assert_eq!(duplicate["status"], "admitted");
+        assert_eq!(duplicate["owner"], first["owner"]);
+        assert_eq!(host.store.observe("task-0").unwrap().unwrap().revision, 1);
+        service.join().unwrap();
+        assert_eq!(sends.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn selected_restart_resends_only_recorded_unknown_and_recovery_only_only_reads() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("lifecycle.sock");
+        let sends = Arc::new(AtomicUsize::new(0));
+        let service = fake_admission_service(&socket, 4, sends.clone());
+        let host = admission_host(root.path(), &socket, false);
+        let submit: SubmitTask = serde_json::from_value(admission_submit()).unwrap();
+        let basis = admission_basis(&host, &submit.subject_id).unwrap();
+        let (owner, first) = host
+            .store
+            .submit_with_admission(&submit, &mut |text| {
+                build_admission(&host, &submit, &basis, text)
+            })
+            .unwrap();
+        assert!(first);
+        let recorded = host
+            .store
+            .lookup_admission_command(&submit.command_id)
+            .unwrap()
+            .unwrap();
+        drop(host);
+        let restarted = admission_host(root.path(), &socket, false);
+        let recovered = reconcile_admission(&restarted, &recorded, true)
+            .unwrap()
+            .unwrap();
+        assert_eq!(recovered["accepted"], true);
+        let duplicate = dispatch(
+            &restarted,
+            json!({"op":"task.submit.v1","payload":admission_submit()}),
+        );
+        assert_eq!(duplicate["status"], "admitted");
+        assert_eq!(duplicate["owner"]["owner_revision"], owner.owner_revision);
+        service.join().unwrap();
+        assert_eq!(sends.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            restarted.store.observe("task-0").unwrap().unwrap().revision,
+            1
+        );
+        drop(restarted);
+
+        let readonly_socket = root.path().join("readback.sock");
+        let readonly_sends = Arc::new(AtomicUsize::new(0));
+        let readonly_service = fake_admission_service(&readonly_socket, 1, readonly_sends.clone());
+        let mode = admission_host(root.path(), &readonly_socket, true);
+        let prior = reconcile_admission(&mode, &recorded, false)
+            .unwrap()
+            .unwrap();
+        assert_eq!(prior["status"], "unknown");
+        readonly_service.join().unwrap();
+        assert_eq!(readonly_sends.load(Ordering::SeqCst), 0);
+        assert_eq!(mode.store.observe("task-0").unwrap().unwrap().revision, 1);
+    }
+
+    #[test]
+    fn recovery_only_old_unbound_receipt_stays_pending_without_admission() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("unused-lifecycle.sock");
+        let host = admission_host(root.path(), &socket, true);
+        let submit: SubmitTask = serde_json::from_value(admission_submit()).unwrap();
+        let owner = host.store.submit(&submit).unwrap();
+        let duplicate = dispatch(
+            &host,
+            json!({"op":"task.submit.v1","payload":admission_submit()}),
+        );
+        assert_eq!(duplicate["status"], "pending_admission");
+        assert_eq!(duplicate["admission_reason"], "unbound_owner_receipt");
+        assert_eq!(duplicate["owner"]["owner_revision"], owner.owner_revision);
+        assert!(
+            host.store
+                .lookup_admission_command(&submit.command_id)
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(host.store.observe("task-0").unwrap().unwrap().revision, 1);
+    }
+
+    #[test]
+    fn altered_recorded_admission_refuses_before_lifecycle_exchange() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("unused-lifecycle.sock");
+        let host = admission_host(root.path(), &socket, false);
+        let submit: SubmitTask = serde_json::from_value(admission_submit()).unwrap();
+        let basis = AdmissionBasis {
+            revision: "1".into(),
+            context: "context-0".into(),
+            grant_ref: "grant-0".into(),
+        };
+        host.store
+            .submit_with_admission(&submit, &mut |text| {
+                build_admission(&host, &submit, &basis, text)
+            })
+            .unwrap();
+        let mut command = host
+            .store
+            .lookup_admission_command(&submit.command_id)
+            .unwrap()
+            .unwrap();
+        command.request_digest = "0".repeat(64);
+        assert!(reconcile_admission(&host, &command, true).is_err());
+        assert_eq!(host.store.observe("task-0").unwrap().unwrap().revision, 1);
+    }
+
+    #[test]
+    fn final_rejected_readback_does_not_rebase_or_send_again() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("lifecycle.sock");
+        let listener = SyncUnixListener::bind(&socket).unwrap();
+        let service = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut line = Vec::new();
+            BufReader::new(stream.try_clone().unwrap())
+                .read_until(b'\n', &mut line)
+                .unwrap();
+            let request: Value = serde_json::from_slice(&line).unwrap();
+            assert_eq!(request["op"], "command_result");
+            let reply = json!({"protocol_version":2,"command_id":"command-0","accepted":false,"outcome_kind":"rejected","outcome_ref":null,"rejection_code":"stale_revision","resulting_revision":"2"});
+            stream
+                .write_all(serde_json::to_string(&reply).unwrap().as_bytes())
+                .unwrap();
+            stream.write_all(b"\n").unwrap();
+        });
+        let host = admission_host(root.path(), &socket, false);
+        let submit: SubmitTask = serde_json::from_value(admission_submit()).unwrap();
+        let basis = AdmissionBasis {
+            revision: "1".into(),
+            context: "context-0".into(),
+            grant_ref: "grant-0".into(),
+        };
+        host.store
+            .submit_with_admission(&submit, &mut |text| {
+                build_admission(&host, &submit, &basis, text)
+            })
+            .unwrap();
+        let command = host
+            .store
+            .lookup_admission_command(&submit.command_id)
+            .unwrap()
+            .unwrap();
+        let prior = reconcile_admission(&host, &command, true).unwrap().unwrap();
+        assert_eq!(prior["accepted"], false);
+        assert_eq!(prior["rejection_code"], "stale_revision");
+        assert_eq!(host.store.observe("task-0").unwrap().unwrap().revision, 1);
+        service.join().unwrap();
+    }
+
+    #[test]
+    fn changed_selected_binding_refuses_unknown_record_without_send() {
+        let root = tempfile::tempdir().unwrap();
+        let socket = root.path().join("lifecycle.sock");
+        let sends = Arc::new(AtomicUsize::new(0));
+        let service = fake_admission_service(&socket, 1, sends.clone());
+        let mut host = admission_host(root.path(), &socket, false);
+        let submit: SubmitTask = serde_json::from_value(admission_submit()).unwrap();
+        let basis = AdmissionBasis {
+            revision: "1".into(),
+            context: "context-0".into(),
+            grant_ref: "grant-0".into(),
+        };
+        host.store
+            .submit_with_admission(&submit, &mut |text| {
+                build_admission(&host, &submit, &basis, text)
+            })
+            .unwrap();
+        let command = host
+            .store
+            .lookup_admission_command(&submit.command_id)
+            .unwrap()
+            .unwrap();
+        host.startup.lifecycle.build_id = "changed-build".into();
+        assert!(reconcile_admission(&host, &command, true).is_err());
+        service.join().unwrap();
+        assert_eq!(sends.load(Ordering::SeqCst), 0);
+        assert_eq!(host.store.observe("task-0").unwrap().unwrap().revision, 1);
     }
 
     #[test]
@@ -1109,6 +1661,7 @@ mod tests {
             },
             admission_gate: Mutex::new(()),
             recovery_only: mode,
+            selected: false,
         };
         let submit = json!({"command_id":"command-0","task_id":"task-0","subject_id":"subject-0","kind":"repository_analysis","objective":"Analyze approved source","engineering_question":"Who owns this?","snapshot_ref":"snapshot-0"});
         let new_work = dispatch(&host, json!({"op":"task.submit.v1","payload":submit}));

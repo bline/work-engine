@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs,
     io::Write,
     sync::Arc,
@@ -276,6 +277,9 @@ pub struct Actor {
     native_sender: mpsc::Sender<NativeMessage>,
     native_messages: mpsc::Receiver<NativeMessage>,
     native_task_work: Option<mpsc::Sender<NativeTaskWork>>,
+    // Only an agentMessage item already started in this bound turn may emit
+    // text deltas. Deltas are transport evidence, never task results.
+    native_agent_message_items: HashSet<(String, String, String)>,
     native_work_pending: bool,
     native_successor_requested: Option<String>,
     native_segment_pending: Option<NativeSegmentIntent>,
@@ -285,6 +289,49 @@ pub struct Actor {
     native_close_unsafe: bool,
     material_port: Option<Arc<dyn CanonicalMaterialPort>>,
     task_operation_port: Option<Arc<dyn TaskOperationPort>>,
+}
+
+/// The installed 0.163 app-server emits this notification between an
+/// agentMessage start and completion. It has no settlement authority. Require
+/// the exact observed envelope and the item already bound to this turn.
+fn agent_message_delta_matches(
+    value: &Value,
+    thread: &str,
+    turn: &str,
+    started_items: &HashSet<(String, String, String)>,
+) -> bool {
+    let Some(envelope) = value.as_object() else {
+        return false;
+    };
+    if envelope.len() != 3
+        || envelope.get("method").and_then(Value::as_str) != Some("item/agentMessage/delta")
+        || envelope
+            .get("emittedAtMs")
+            .and_then(Value::as_u64)
+            .is_none()
+    {
+        return false;
+    }
+    let Some(params) = envelope.get("params").and_then(Value::as_object) else {
+        return false;
+    };
+    if params.len() != 4
+        || params.get("threadId").and_then(Value::as_str) != Some(thread)
+        || params.get("turnId").and_then(Value::as_str) != Some(turn)
+    {
+        return false;
+    }
+    let Some(item_id) = params.get("itemId").and_then(Value::as_str) else {
+        return false;
+    };
+    let Some(delta) = params.get("delta").and_then(Value::as_str) else {
+        return false;
+    };
+    !item_id.is_empty()
+        && item_id.len() <= 256
+        && started_items.contains(&(thread.to_owned(), turn.to_owned(), item_id.to_owned()))
+        && !delta.is_empty()
+        && delta.len() <= 65_536
 }
 
 struct NativeSegmentIntent {
@@ -658,7 +705,11 @@ impl Actor {
             if native.followup_turns.len() > 3 {
                 return Err(ServiceError::Configuration);
             }
-            let mut launch = operations::prepare_native_launch(native, config.principal.uid)?;
+            let mut launch = if config.profile == "retained-repository-analysis-v1" {
+                operations::prepare_native_task_launch(native, config.principal.uid)?
+            } else {
+                operations::prepare_native_launch(native, config.principal.uid)?
+            };
             launch.proof_barrier_dir = config.proof_barrier_dir.clone();
             let snapshot = workspace_snapshot_read::publish(
                 &mut store,
@@ -701,6 +752,7 @@ impl Actor {
             native_sender,
             native_messages,
             native_task_work: None,
+            native_agent_message_items: HashSet::new(),
             native_work_pending: false,
             native_successor_requested: None,
             native_segment_pending: None,
@@ -984,6 +1036,9 @@ impl Actor {
                             turn,
                         )
                     });
+                if result.is_ok() {
+                    self.native_agent_message_items.clear();
+                }
                 let _ = reply.send(result);
             }
             NativeMessage::Ingress { event, reply } => {
@@ -1336,6 +1391,24 @@ impl Actor {
                     "unsupported"
                 }
             }
+            NativeEventKind::Notification { method } if method == "item/agentMessage/delta" => {
+                if self.config.profile == "retained-repository-analysis-v1"
+                    && self.native_turn.as_ref().is_some_and(|entry| {
+                        entry.turn().is_some_and(|turn| {
+                            agent_message_delta_matches(
+                                &event.value,
+                                entry.thread().as_str(),
+                                turn.as_str(),
+                                &self.native_agent_message_items,
+                            )
+                        })
+                    })
+                {
+                    "qualified"
+                } else {
+                    "unsupported"
+                }
+            }
             NativeEventKind::Notification { method }
                 if method == "thread/readState/changed"
                     && lifecycle_codex::read_state_changed_matches(&event.value) =>
@@ -1377,6 +1450,24 @@ impl Actor {
             item,
             clock_sample(),
         )?;
+        if status == "qualified"
+            && applied != NativeIngressApply::ConflictFenced
+            && let NativeEventKind::Notification { method } = &event.kind
+            && matches!(method.as_str(), "item/started" | "item/completed")
+            && params
+                .and_then(|p| p.get("item"))
+                .and_then(|item| item.get("type"))
+                .and_then(Value::as_str)
+                == Some("agentMessage")
+            && let (Some(thread), Some(turn), Some(id)) = (thread, turn, item)
+        {
+            let key = (thread.to_owned(), turn.to_owned(), id.to_owned());
+            if method == "item/started" {
+                self.native_agent_message_items.insert(key);
+            } else {
+                self.native_agent_message_items.remove(&key);
+            }
+        }
         if applied == NativeIngressApply::ConflictFenced
             || matches!(status, "unsupported" | "malformed")
         {
@@ -2208,5 +2299,142 @@ mod observation_tests {
         let unavailable = native_observation_reply(Err(StoreError::Unavailable), false);
         assert_eq!(unavailable["code"], "observation_unavailable");
         assert!(unavailable.get("reason").is_none());
+    }
+}
+
+#[cfg(test)]
+mod native_agent_delta_tests {
+    use super::*;
+
+    fn observed_shape() -> Value {
+        // Text and identities are substituted; envelope, method, param names,
+        // and value types match the retained 0.163 live ingress at sequence 15.
+        json!({"method":"item/agentMessage/delta","params":{
+            "threadId":"thread:fixture","turnId":"turn:fixture",
+            "itemId":"item:fixture","delta":"x"},"emittedAtMs":1})
+    }
+
+    #[test]
+    fn exact_started_agent_message_delta_is_transport_only() {
+        let started = HashSet::from([(
+            "thread:fixture".to_owned(),
+            "turn:fixture".to_owned(),
+            "item:fixture".to_owned(),
+        )]);
+        let value = observed_shape();
+        assert!(agent_message_delta_matches(
+            &value,
+            "thread:fixture",
+            "turn:fixture",
+            &started
+        ));
+        let event = lifecycle_codex::parse_event(
+            "transport:fixture".into(),
+            15,
+            serde_json::to_vec(&value).unwrap(),
+        )
+        .unwrap();
+        assert!(event.terminal().unwrap().is_none());
+        assert!(event.tool_call().unwrap().is_none());
+    }
+
+    #[test]
+    fn delta_rejects_unstarted_or_completed_item_and_wrong_coordinates() {
+        let mut started = HashSet::new();
+        let value = observed_shape();
+        assert!(!agent_message_delta_matches(
+            &value,
+            "thread:fixture",
+            "turn:fixture",
+            &started
+        ));
+        started.insert((
+            "thread:other".to_owned(),
+            "turn:fixture".to_owned(),
+            "item:fixture".to_owned(),
+        ));
+        assert!(!agent_message_delta_matches(
+            &value,
+            "thread:fixture",
+            "turn:fixture",
+            &started
+        ));
+        let key = (
+            "thread:fixture".to_owned(),
+            "turn:fixture".to_owned(),
+            "item:fixture".to_owned(),
+        );
+        started.insert(key.clone());
+        assert!(!agent_message_delta_matches(
+            &value,
+            "thread:other",
+            "turn:fixture",
+            &started
+        ));
+        assert!(!agent_message_delta_matches(
+            &value,
+            "thread:fixture",
+            "turn:other",
+            &started
+        ));
+        started.remove(&key);
+        assert!(!agent_message_delta_matches(
+            &value,
+            "thread:fixture",
+            "turn:fixture",
+            &started
+        ));
+    }
+
+    #[test]
+    fn delta_rejects_new_fields_missing_fields_and_nontext_payload() {
+        let started = HashSet::from([(
+            "thread:fixture".to_owned(),
+            "turn:fixture".to_owned(),
+            "item:fixture".to_owned(),
+        )]);
+        let valid = observed_shape();
+        let mut variants = Vec::new();
+        let mut value = valid.clone();
+        value["params"]["extra"] = json!(true);
+        variants.push(value);
+        let mut value = valid.clone();
+        value["extra"] = json!(true);
+        variants.push(value);
+        let mut value = valid.clone();
+        value.as_object_mut().unwrap().remove("emittedAtMs");
+        variants.push(value);
+        let mut value = valid.clone();
+        value["emittedAtMs"] = json!("1");
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"]["delta"] = json!({"text":"x"});
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"]["delta"] = json!("");
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"]["delta"] = json!("x".repeat(65_537));
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"]["itemId"] = json!("item:other");
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"].as_object_mut().unwrap().remove("itemId");
+        variants.push(value);
+        let mut value = valid.clone();
+        value["params"]["delivery"] = json!({"state":"completed"});
+        variants.push(value);
+        let mut value = valid.clone();
+        value["method"] = json!("item/agentMessage/other");
+        variants.push(value);
+        for variant in variants {
+            assert!(!agent_message_delta_matches(
+                &variant,
+                "thread:fixture",
+                "turn:fixture",
+                &started
+            ));
+        }
     }
 }

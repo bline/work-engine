@@ -28,6 +28,7 @@ pub const OWNER_NAMESPACE: &str = "retained-task-workflow";
 const MAX_TEXT: usize = 8 * 1024;
 type TaskGrantFence<'a> =
     dyn FnMut(&mut dyn FnMut() -> Result<(), TaskError>) -> Result<(), TaskError> + 'a;
+type AdmissionBuilder<'a> = dyn FnMut(&str) -> Result<AdmissionCommand, TaskError> + 'a;
 type CommandRow = (String, String, String, Vec<u8>);
 
 // Keep the legacy six-table layout unchanged. Existing stores are checked
@@ -458,6 +459,25 @@ impl TaskStore {
     /// The boolean is true only for the first owner publication. A repeated
     /// command must read lifecycle admission back, never be reissued by absence.
     pub fn submit_with_status(&self, input: &SubmitTask) -> Result<(TaskCommit, bool), TaskError> {
+        self.submit_inner(input, None)
+    }
+
+    /// Commit the owner input and the exact lifecycle admission command as one
+    /// owner transaction. The builder receives the locator text made at the
+    /// committed owner revision and must not perform external effects.
+    pub fn submit_with_admission(
+        &self,
+        input: &SubmitTask,
+        build: &mut AdmissionBuilder<'_>,
+    ) -> Result<(TaskCommit, bool), TaskError> {
+        self.submit_inner(input, Some(build))
+    }
+
+    fn submit_inner(
+        &self,
+        input: &SubmitTask,
+        mut build: Option<&mut AdmissionBuilder<'_>>,
+    ) -> Result<(TaskCommit, bool), TaskError> {
         validate_submit(input)?;
         let payload_digest = json_digest(input)?;
         let mut connection = self.lock()?;
@@ -480,6 +500,13 @@ impl TaskStore {
             }
             record.revision += 1;
             let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+            let admission = build
+                .as_mut()
+                .map(|build| build(&task_input.locator_text))
+                .transpose()?;
+            if let Some(command) = &admission {
+                validate_admission_for_submit(input, &task_input, command)?;
+            }
             record.inputs.push(task_input);
             write_task(&tx, &record)?;
             let commit = commit_of(&record)?;
@@ -492,6 +519,9 @@ impl TaskStore {
                     serde_json::to_vec(&commit)?
                 ],
             )?;
+            if let Some(command) = admission {
+                insert_admission(&tx, &command)?;
+            }
             tx.commit()?;
             return Ok((commit, true));
         }
@@ -538,6 +568,13 @@ impl TaskStore {
             record.fact_kinds.insert(fact.id.clone(), fact.kind);
         }
         let task_input = make_input(&record, &input.command_id, &input.engineering_question)?;
+        let admission = build
+            .as_mut()
+            .map(|build| build(&task_input.locator_text))
+            .transpose()?;
+        if let Some(command) = &admission {
+            validate_admission_for_submit(input, &task_input, command)?;
+        }
         record.inputs.push(task_input);
         write_task(&tx, &record)?;
         let commit = commit_of(&record)?;
@@ -550,6 +587,9 @@ impl TaskStore {
                 serde_json::to_vec(&commit)?
             ],
         )?;
+        if let Some(command) = admission {
+            insert_admission(&tx, &command)?;
+        }
         tx.commit()?;
         Ok((commit, true))
     }
@@ -722,6 +762,34 @@ impl TaskStore {
             )
             .optional()
             .map_err(TaskError::from)
+    }
+
+    pub fn admission_commands(&self) -> Result<Vec<AdmissionCommand>, TaskError> {
+        let connection = self.lock()?;
+        let mut statement = connection.prepare(
+            "SELECT a.command_id,a.request_digest,a.command_json,c.kind \
+             FROM admission_commands a LEFT JOIN commands c ON c.command_id=a.command_id \
+             ORDER BY a.command_id",
+        )?;
+        let rows = statement.query_map([], |row| {
+            Ok((
+                AdmissionCommand {
+                    command_id: row.get(0)?,
+                    request_digest: row.get(1)?,
+                    command_json: row.get(2)?,
+                },
+                row.get::<_, Option<String>>(3)?,
+            ))
+        })?;
+        let mut commands = Vec::new();
+        for row in rows {
+            let (command, kind) = row?;
+            if kind.as_deref() != Some("submit") {
+                return Err(TaskError::Invalid);
+            }
+            commands.push(command);
+        }
+        Ok(commands)
     }
 
     pub fn record_control_command(&self, command: &ControlCommand) -> Result<bool, TaskError> {
@@ -1158,6 +1226,77 @@ fn commit_of(record: &TaskRecord) -> Result<TaskCommit, TaskError> {
         digest: json_digest(record)?,
     })
 }
+fn insert_admission(
+    tx: &rusqlite::Transaction<'_>,
+    command: &AdmissionCommand,
+) -> Result<(), TaskError> {
+    tx.execute(
+        "INSERT INTO admission_commands VALUES (?1,?2,?3)",
+        params![
+            command.command_id,
+            command.request_digest,
+            command.command_json
+        ],
+    )?;
+    Ok(())
+}
+
+fn validate_admission_for_submit(
+    submit: &SubmitTask,
+    input: &TaskInput,
+    command: &AdmissionCommand,
+) -> Result<(), TaskError> {
+    if command.command_id != submit.command_id
+        || !valid_digest(&command.request_digest)
+        || command.command_json.len() > MAX_TEXT
+    {
+        return Err(TaskError::Invalid);
+    }
+    let dto: serde_json::Value = serde_json::from_str(&command.command_json)?;
+    let object = dto.as_object().ok_or(TaskError::Invalid)?;
+    const FIELDS: &[&str] = &[
+        "protocol_version",
+        "principal_ref",
+        "command_id",
+        "subject_id",
+        "context_generation",
+        "build_id",
+        "proof_run_id",
+        "grant_ref",
+        "expected_revision",
+        "request_digest",
+        "kind",
+        "payload",
+    ];
+    if object.len() != FIELDS.len()
+        || object.keys().any(|key| !FIELDS.contains(&key.as_str()))
+        || dto["protocol_version"].as_u64() != Some(2)
+        || dto["command_id"].as_str() != Some(submit.command_id.as_str())
+        || dto["subject_id"].as_str() != Some(submit.subject_id.as_str())
+        || dto["request_digest"].as_str() != Some(command.request_digest.as_str())
+        || dto["kind"].as_str() != Some("enqueue_input")
+        || dto["expected_revision"]
+            .as_str()
+            .and_then(|value| value.parse::<u64>().ok())
+            .is_none()
+    {
+        return Err(TaskError::Invalid);
+    }
+    let payload = dto["payload"].as_object().ok_or(TaskError::Invalid)?;
+    const PAYLOAD: &[&str] = &["input_id", "producer_ref", "text", "text_digest"];
+    if payload.len() != PAYLOAD.len()
+        || payload.keys().any(|key| !PAYLOAD.contains(&key.as_str()))
+        || dto["payload"]["input_id"].as_str() != Some(input.input_id.as_str())
+        || dto["payload"]["text"].as_str() != Some(input.locator_text.as_str())
+        || !dto["payload"]["text_digest"]
+            .as_str()
+            .is_some_and(valid_digest)
+    {
+        return Err(TaskError::Invalid);
+    }
+    Ok(())
+}
+
 fn make_input(
     record: &TaskRecord,
     command_id: &str,

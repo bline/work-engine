@@ -26,7 +26,9 @@ use lifecycle_store::{
 use serde_json::{Value, json};
 use tokio::time::timeout;
 
-use crate::{NativeConfig, SemanticNativeConfig, actor::clock_sample, operations};
+use crate::{
+    NativeConfig, NativeProviderRoute, SemanticNativeConfig, actor::clock_sample, operations,
+};
 
 pub struct ControlTurnSpec<'a> {
     pub subject: SubjectId,
@@ -287,12 +289,13 @@ pub async fn run_control_turn(
         return Err(StoreError::ClaimConflict);
     }
     let transport = format!("transport:{}:{}", spec.session_id, spec.invocation_id);
-    let harness = NativeHarness::spawn(
+    let harness = NativeHarness::spawn_with_runtime_key(
         &native.executable,
         &launch.work,
         &launch.home,
         &launch.codex_home,
         transport,
+        launch.requires_runtime_key,
     )
     .map_err(|_| StoreError::Unavailable)?;
     let pid = harness.pid();
@@ -310,14 +313,14 @@ pub async fn run_control_turn(
         runner.harness.send_notification("initialized",json!({})).await.map_err(|_|StoreError::Unavailable)?;
         let (effective,_)=runner.rpc("config/read",json!({"includeLayers":false})).await?;
         let c=&effective["config"];
-        if c["model_provider"]!="local_probe" || c["model"]!="gpt-6-sol"
-            || c["sandbox_mode"]!="read-only" || c["approval_policy"]!="never"
+        operations::validate_effective_provider(c,&launch)?;
+        if c["sandbox_mode"]!="read-only" || c["approval_policy"]!="never"
             || c["web_search"]!="disabled" || c["features"]["shell_tool"]!=false
             || c["features"]["multi_agent"]!=false || c["features"]["code_mode_host"]!=false
             || c["agents"]["enabled"]!=false || c["apps"]["_default"]["enabled"]!=false
         {return Err(StoreError::Rejected);}
-        let (started,_)=runner.rpc("thread/start",json!({"cwd":launch.work,"model":"gpt-6-sol",
-            "modelProvider":"local_probe","approvalPolicy":"never","sandbox":"read-only",
+        let (started,_)=runner.rpc("thread/start",json!({"cwd":launch.work,"model":NativeProviderRoute::MODEL,
+            "modelProvider":launch.provider_name,"approvalPolicy":"never","sandbox":"read-only",
             "environments":[],"dynamicTools":[],"ephemeral":false,"historyMode":"legacy"})).await?;
         let thread=started["thread"]["id"].as_str().ok_or(StoreError::Unavailable)?.to_owned();
         if started["thread"]["ephemeral"]!=false {return Err(StoreError::Rejected);}
@@ -363,8 +366,8 @@ pub async fn run_control_turn(
         runner.store.settle_native_turn(&turn,&final_text,"observed_complete",&history_transport,history_sequence,clock_sample())?;
         operations::optional_native_barrier(proof_dir,&format!("semantic_{role_name}_after_result"))?;
         let final_material=runner.store.native_final_material(spec.invocation_id)?.ok_or(StoreError::Unavailable)?;
-        Ok(ControlTurnResult{binding,final_material,observed_provider:"local_probe".into(),
-            observed_model:"gpt-6-sol".into(),exposure_ref:format!("native:{}:{}",spec.session_id,thread)})
+        Ok(ControlTurnResult{binding,final_material,observed_provider:launch.provider_name.clone(),
+            observed_model:NativeProviderRoute::MODEL.into(),exposure_ref:format!("native:{}:{}",spec.session_id,thread)})
     }.await;
     let exit = runner.harness.terminate_and_reap().await;
     let outcome = if execution.is_ok() {
