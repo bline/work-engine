@@ -19,7 +19,7 @@ fn run() -> Result<()> {
     let observed = match args[5].as_str() {
         "provider" => source_read::provider_capture::inspect(&admitted)?,
         "scheduler" => source_read::scheduler_item::inspect(&admitted)?,
-        "metrics" => source_read::frozen_metrics::inspect(&admitted)?,
+        "metrics" => source_read::frozen_metrics::inspect_optional(&admitted)?,
         _ => return Err("unsupported source section".into()),
     };
     let encoded = serde_json::to_string(&observed).map_err(|e| e.to_string())?;
@@ -39,6 +39,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::source_read::{decimal_scaled, decimal_sum};
+    use serde_json::json;
     #[test]
     fn literal_decimal_cost_has_no_f64_rounding() {
         let costs = [
@@ -56,5 +57,29 @@ mod tests {
             "15.7545494999999994"
         );
         assert!(decimal_scaled("1e10").is_err());
+    }
+
+    #[test]
+    fn exact_missing_metrics_commit_is_typed_optional_only() {
+        let repository =
+            std::env::temp_dir().join(format!("s5-missing-metrics-{}", std::process::id()));
+        std::fs::create_dir(&repository).unwrap();
+        let status = std::process::Command::new("git")
+            .arg("init")
+            .arg("--quiet")
+            .arg(&repository)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let grant = json!({
+            "repository":repository,
+            "metrics":{"commit_oid":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}
+        });
+        let result = super::source_read::frozen_metrics::inspect_optional(&grant).unwrap();
+        assert_eq!(result["status"], "unavailable");
+        assert_eq!(result["reason"], "exact_frozen_metrics_commit_unreadable");
+        let invalid = json!({"repository":repository,"metrics":{"commit_oid":"invalid"}});
+        assert!(super::source_read::frozen_metrics::inspect_optional(&invalid).is_err());
+        std::fs::remove_dir_all(repository).unwrap();
     }
 }

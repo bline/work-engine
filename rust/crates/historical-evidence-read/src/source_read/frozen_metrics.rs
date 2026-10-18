@@ -2,8 +2,53 @@ use super::{Result, hex, sha, string};
 use serde_json::{Value, json};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
+use std::io::Write;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
+
+fn exact_commit_present(repository: &Path, oid: &str) -> Result<bool> {
+    if !matches!(oid.len(), 40 | 64) || !oid.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("metrics commit OID invalid".into());
+    }
+    let mut child = Command::new("git")
+        .arg("-C")
+        .arg(repository)
+        .arg("cat-file")
+        .arg("--batch-check=%(objectname) %(objecttype)")
+        .env("GIT_NO_REPLACE_OBJECTS", "1")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    child
+        .stdin
+        .take()
+        .ok_or("metrics Git stdin absent")?
+        .write_all(format!("{oid}\n").as_bytes())
+        .map_err(|e| e.to_string())?;
+    let output = child.wait_with_output().map_err(|e| e.to_string())?;
+    if !output.status.success() || output.stdout.len() > 128 || !output.stderr.is_empty() {
+        return Err("metrics exact-object probe failed".into());
+    }
+    let line = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
+    match line.trim_end() {
+        found if found == format!("{oid} commit") => Ok(true),
+        missing if missing == format!("{oid} missing") => Ok(false),
+        _ => Err("metrics exact-object type or probe result invalid".into()),
+    }
+}
+
+pub fn inspect_optional(grant: &Value) -> Result<Value> {
+    let repository = Path::new(string(grant, "repository")?);
+    let commit_oid = string(&grant["metrics"], "commit_oid")?;
+    if !exact_commit_present(repository, commit_oid)? {
+        return Ok(
+            json!({"status":"unavailable", "reason":"exact_frozen_metrics_commit_unreadable"}),
+        );
+    }
+    Ok(json!({"status":"available", "metrics":inspect(grant)?}))
+}
 
 fn git(repository: &Path, args: &[&str]) -> Result<Vec<u8>> {
     let out = Command::new("git")

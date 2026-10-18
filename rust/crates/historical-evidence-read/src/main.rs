@@ -529,7 +529,7 @@ fn hash_regular_file(identity: &mut Sha256, path: &Path, limit: u64) -> Result<(
         return Err("owner source file type or size invalid".into());
     }
     let mut read_total = 0u64;
-    let mut chunk = [0u8; 8192];
+    let mut chunk = [0u8; 256 * 1024];
     loop {
         let count = file.read(&mut chunk).map_err(|e| e.to_string())?;
         if count == 0 {
@@ -545,6 +545,22 @@ fn hash_regular_file(identity: &mut Sha256, path: &Path, limit: u64) -> Result<(
 }
 
 fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
+    let host_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let admitted: Value = serde_json::from_slice(grant_bytes).map_err(|e| e.to_string())?;
+    let helper_exe = if admitted["schema_version"] == 2 {
+        Some(source_helper_exe()?)
+    } else {
+        None
+    };
+    source_identity_with_executables(repository, grant_bytes, helper_exe.as_deref(), &host_exe)
+}
+
+fn source_identity_with_executables(
+    repository: &Path,
+    grant_bytes: &[u8],
+    helper_exe: Option<&Path>,
+    host_exe: &Path,
+) -> Result<String> {
     let cp_script = "skills/slice-checkpoint/scripts/checkpoint.py";
     let gate_script = "skills/slice-builder/scripts/legacy_gate_inspect.py";
     let review_script = "skills/independent-review-state/scripts/historical_inspect.py";
@@ -563,7 +579,11 @@ fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
     }
     let admitted: Value = serde_json::from_slice(grant_bytes).map_err(|e| e.to_string())?;
     if admitted["schema_version"] == 2 {
-        hash_regular_file(&mut identity, &source_helper_exe()?, 64 * 1024 * 1024)?;
+        hash_regular_file(
+            &mut identity,
+            helper_exe.ok_or("v2 source helper executable absent")?,
+            64 * 1024 * 1024,
+        )?;
         let captures = admitted["provider"]["captures"]
             .as_array()
             .ok_or("v2 capture inventory absent")?;
@@ -602,12 +622,52 @@ fn source_identity(repository: &Path, grant_bytes: &[u8]) -> Result<String> {
             }
         }
     }
-    hash_regular_file(
-        &mut identity,
-        &std::env::current_exe().map_err(|e| e.to_string())?,
-        64 * 1024 * 1024,
-    )?;
+    hash_regular_file(&mut identity, host_exe, 64 * 1024 * 1024)?;
     Ok(format!("{:x}", identity.finalize()))
+}
+
+fn checked_section<I, O>(mut identity: I, expected: &str, owner: O) -> Result<Value>
+where
+    I: FnMut() -> Result<String>,
+    O: FnOnce() -> Result<Value>,
+{
+    if identity()? != expected {
+        return Err("source implementation changed before v2 owner invocation".into());
+    }
+    let result = owner();
+    if identity()? != expected {
+        return Err("source implementation changed during v2 owner invocation".into());
+    }
+    result
+}
+
+fn metrics_section(value: Value) -> Result<(Option<MetricsRead>, Option<String>)> {
+    let object = value
+        .as_object()
+        .ok_or("metrics section is not an object")?;
+    match object.get("status").and_then(Value::as_str) {
+        Some("available") if object.len() == 2 => {
+            let metrics = serde_json::from_value::<MetricsRead>(
+                object
+                    .get("metrics")
+                    .ok_or("metrics value missing")?
+                    .clone(),
+            )
+            .map_err(|e| format!("metrics source projection invalid: {e}"))?;
+            Ok((Some(metrics), None))
+        }
+        Some("unavailable")
+            if object.len() == 2
+                && object.get("reason").and_then(Value::as_str)
+                    == Some("exact_frozen_metrics_commit_unreadable") =>
+        {
+            Ok((
+                None,
+                Some("Frozen metrics source unavailable under this read".into()),
+            ))
+        }
+        _ => Err("metrics section outcome invalid".into()),
+    }
 }
 
 fn observe(
@@ -868,48 +928,31 @@ fn observe_v2(grant: &Grant, grant_path: &Path, grant_bytes: &[u8]) -> Result<Ob
     let repository = Path::new(&grant.repository);
     let grant_sha = format!("{:x}", Sha256::digest(grant_bytes));
     let read_section = |section: &str| {
-        if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
-            return Err("source implementation changed before v2 owner invocation".into());
-        }
-        let result = owner_call(
-            repository,
-            SOURCE_HELPER,
-            &[
-                "--grant".into(),
-                grant_path.to_string_lossy().to_string(),
-                "--grant-sha256".into(),
-                grant_sha.clone(),
-                "--section".into(),
-                section.into(),
-            ],
-            deadline,
-        );
-        if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
-            return Err("source implementation changed during v2 owner invocation".into());
-        }
-        result
+        checked_section(
+            || source_identity(repository, grant_bytes),
+            &base.source_identity_sha256,
+            || {
+                owner_call(
+                    repository,
+                    SOURCE_HELPER,
+                    &[
+                        "--grant".into(),
+                        grant_path.to_string_lossy().to_string(),
+                        "--grant-sha256".into(),
+                        grant_sha.clone(),
+                        "--section".into(),
+                        section.into(),
+                    ],
+                    deadline,
+                )
+            },
+        )
     };
     let provider: ProviderRead = serde_json::from_value(read_section("provider")?)
         .map_err(|e| format!("provider source projection invalid: {e}"))?;
     let scheduler: SchedulerRead = serde_json::from_value(read_section("scheduler")?)
         .map_err(|e| format!("scheduler source projection invalid: {e}"))?;
-    let metrics_result = read_section("metrics");
-    if source_identity(repository, grant_bytes)? != base.source_identity_sha256 {
-        return Err("source implementation changed during metrics read".into());
-    }
-    let (metrics, metrics_unavailable) = match metrics_result {
-        Ok(value) => (
-            Some(
-                serde_json::from_value::<MetricsRead>(value)
-                    .map_err(|e| format!("metrics source projection invalid: {e}"))?,
-            ),
-            None,
-        ),
-        Err(_) => (
-            None,
-            Some("Frozen metrics source unavailable under this read".into()),
-        ),
-    };
+    let (metrics, metrics_unavailable) = metrics_section(read_section("metrics")?)?;
     let mut source_reads = base.source_reads.clone();
     source_reads.push(SourceRead {
         owner: "slice-builder captured provider output".into(),
@@ -1216,6 +1259,189 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+    use std::os::unix::fs::symlink;
+
+    #[test]
+    fn ordered_v2_identity_fences_each_admitted_file_class() {
+        let directory = std::env::temp_dir().join(format!(
+            "s5-identity-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&directory).unwrap();
+        let repo = directory.join("repo");
+        let scripts = [
+            "skills/slice-checkpoint/scripts/checkpoint.py",
+            "skills/slice-builder/scripts/legacy_gate_inspect.py",
+            "skills/independent-review-state/scripts/historical_inspect.py",
+            "skills/independent-review-state/scripts/independent_review_state.py",
+            "skills/durable-state/scripts/durable_state.py",
+        ];
+        let helper = directory.join("helper");
+        let host = directory.join("host");
+        let capture_a = directory.join("capture-a");
+        let capture_b = directory.join("capture-b");
+        let db = directory.join("scheduler.db");
+        let wal = directory.join("scheduler.db-wal");
+        let shm = directory.join("scheduler.db-shm");
+        let mut sources: Vec<PathBuf> = scripts.iter().map(|s| repo.join(s)).collect();
+        sources.extend([
+            helper.clone(),
+            capture_a.clone(),
+            capture_b.clone(),
+            db.clone(),
+            wal.clone(),
+            shm.clone(),
+            host.clone(),
+        ]);
+        for (index, path) in sources.iter().enumerate() {
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            // Cross both the old 8 KiB and new 256 KiB hash chunk boundaries.
+            fs::write(path, vec![index as u8 + 1; 300_123]).unwrap();
+        }
+        let grant = serde_json::to_vec(&json!({
+            "schema_version":2,
+            "provider":{"captures":[{"path":capture_a},{"path":capture_b}]},
+            "scheduler":{"db_path":db}
+        }))
+        .unwrap();
+        let inspect = || source_identity_with_executables(&repo, &grant, Some(&helper), &host);
+        let original = inspect().unwrap();
+        // Independently frame the pre-change ordered identity with 8 KiB reads.
+        let mut old = Sha256::new();
+        old.update(&grant);
+        for path in sources.iter().take(8) {
+            for part in fs::read(path).unwrap().chunks(8192) {
+                old.update(part);
+            }
+        }
+        for (suffix, path) in [("", &db), ("-wal", &wal), ("-shm", &shm)] {
+            old.update(suffix.as_bytes());
+            old.update([1]);
+            for part in fs::read(path).unwrap().chunks(8192) {
+                old.update(part);
+            }
+        }
+        for part in fs::read(&host).unwrap().chunks(8192) {
+            old.update(part);
+        }
+        assert_eq!(original, format!("{:x}", old.finalize()));
+
+        for section in ["provider", "scheduler", "metrics"] {
+            for path in &sources {
+                let bytes = fs::read(path).unwrap();
+                let failed = checked_section(inspect, &original, || {
+                    let mut changed = bytes.clone();
+                    changed[150_000] ^= 1;
+                    fs::write(path, changed).unwrap();
+                    Ok(json!({
+                        "status":"unavailable",
+                        "reason":"exact_frozen_metrics_commit_unreadable"
+                    }))
+                });
+                assert!(
+                    failed.unwrap_err().contains("changed during"),
+                    "{section}: {}",
+                    path.display()
+                );
+                fs::write(path, bytes).unwrap();
+                assert_eq!(
+                    inspect().unwrap(),
+                    original,
+                    "{section}: {}",
+                    path.display()
+                );
+            }
+        }
+
+        fs::remove_file(&capture_a).unwrap();
+        symlink(&capture_b, &capture_a).unwrap();
+        assert!(inspect().is_err());
+        fs::remove_file(&capture_a).unwrap();
+        fs::write(&capture_a, vec![7u8; 300_123]).unwrap();
+        let failed = checked_section(inspect, &original, || {
+            fs::remove_file(&capture_a).unwrap();
+            symlink(&capture_b, &capture_a).unwrap();
+            Ok(json!({
+                "status":"unavailable",
+                "reason":"exact_frozen_metrics_commit_unreadable"
+            }))
+        });
+        assert!(failed.is_err(), "post-fence hashing error must be fatal");
+        fs::remove_file(&capture_a).unwrap();
+        fs::write(&capture_a, vec![7u8; 300_123]).unwrap();
+        assert_eq!(inspect().unwrap(), original);
+        fs::write(repo.join(scripts[0]), vec![1u8; 1024 * 1024 + 1]).unwrap();
+        assert!(inspect().unwrap_err().contains("size invalid"));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn detected_metrics_fence_change_is_fatal_even_if_bytes_restore() {
+        let mut observed = ["A", "B", "A"].into_iter();
+        let result = checked_section(
+            || Ok(observed.next().unwrap().into()),
+            "A",
+            || {
+                Ok(
+                    json!({"status":"unavailable","reason":"exact_frozen_metrics_commit_unreadable"}),
+                )
+            },
+        );
+        assert!(result.unwrap_err().contains("changed during"));
+        // The next, final-fence sample would be A again. The already detected B
+        // cannot be reclassified as optional metrics unavailability.
+        assert_eq!(observed.next(), Some("A"));
+    }
+
+    #[test]
+    fn only_typed_metrics_absence_is_optional() {
+        let (metrics, limit) = metrics_section(json!({
+            "status":"unavailable","reason":"exact_frozen_metrics_commit_unreadable"
+        }))
+        .unwrap();
+        assert!(metrics.is_none());
+        assert!(limit.unwrap().contains("unavailable"));
+        for invalid in [
+            json!({"status":"unavailable","reason":"source_hash_mismatch"}),
+            json!({"status":"unavailable","reason":"exact_frozen_metrics_commit_unreadable","extra":1}),
+            json!({"status":"available","metrics":{}}),
+        ] {
+            assert!(metrics_section(invalid).is_err());
+        }
+    }
+
+    #[test]
+    fn larger_source_chunk_preserves_ordered_bytes_and_detects_same_size_edit() {
+        let path = std::env::temp_dir().join(format!("s5-source-chunk-{}", std::process::id()));
+        let bytes: Vec<u8> = (0..550_000).map(|i| (i % 251) as u8).collect();
+        fs::write(&path, &bytes).unwrap();
+        let mut actual = Sha256::new();
+        actual.update(b"prefix");
+        hash_regular_file(&mut actual, &path, 600_000).unwrap();
+        let mut expected = Sha256::new();
+        expected.update(b"prefix");
+        for chunk in bytes.chunks(8192) {
+            expected.update(chunk);
+        }
+        assert_eq!(actual.finalize(), expected.finalize());
+        let first = fs::read(&path).unwrap();
+        let mut changed = first.clone();
+        changed[270_000] ^= 1;
+        fs::write(&path, changed).unwrap();
+        let mut changed_hash = Sha256::new();
+        changed_hash.update(b"prefix");
+        hash_regular_file(&mut changed_hash, &path, 600_000).unwrap();
+        let mut prior = Sha256::new();
+        prior.update(b"prefix");
+        prior.update(first);
+        assert_ne!(changed_hash.finalize(), prior.finalize());
+        fs::remove_file(path).unwrap();
+    }
 
     #[test]
     fn stalled_and_oversized_owners_are_bounded_then_next_read_succeeds() {

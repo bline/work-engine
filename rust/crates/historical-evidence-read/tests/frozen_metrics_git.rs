@@ -45,7 +45,7 @@ fn row(cost: &str) -> Value {
 }
 
 #[test]
-fn sha256_git_tree_and_replacement_read_original_frozen_row() {
+fn sha256_git_tree_replacement_and_corruption_are_not_optional_absence() {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -76,6 +76,23 @@ fn sha256_git_tree_and_replacement_read_original_frozen_row() {
     let first = source_read::frozen_metrics::inspect(&grant).unwrap();
     assert_eq!(first["provider_cost_usd"], "15.7545495");
     assert_eq!(first["row_number"], 21);
+    let mut wrong_blob = grant.clone();
+    wrong_blob["metrics"]["blob_oid"] = "f".repeat(64).into();
+    assert_eq!(
+        source_read::frozen_metrics::inspect_optional(&wrong_blob).unwrap_err(),
+        "metrics blob identity differs"
+    );
+    let mut wrong_row = grant.clone();
+    wrong_row["metrics"]["row_sha256"] = "f".repeat(64).into();
+    assert_eq!(
+        source_read::frozen_metrics::inspect_optional(&wrong_row).unwrap_err(),
+        "metrics row digest differs"
+    );
+    let mut missing_commit = grant.clone();
+    missing_commit["metrics"]["commit_oid"] = "e".repeat(64).into();
+    let absent = source_read::frozen_metrics::inspect_optional(&missing_commit).unwrap();
+    assert_eq!(absent["status"], "unavailable");
+    assert_eq!(absent["reason"], "exact_frozen_metrics_commit_unreadable");
     write_row("999.0");
     git(&repo, &["add", "docs/ai-workflow-metrics.jsonl"]);
     git(&repo, &["commit", "-qm", "replacement row"]);
@@ -84,5 +101,31 @@ fn sha256_git_tree_and_replacement_read_original_frozen_row() {
     let after = source_read::frozen_metrics::inspect(&grant).unwrap();
     assert_eq!(after["provider_cost_usd"], "15.7545495");
     assert_eq!(after["row_sha256"], grant["metrics"]["row_sha256"]);
+    git(&repo, &["replace", "-d", &original]);
+    let commit_text = git(&repo, &["cat-file", "commit", &original]);
+    let changed = commit_text.replace("original frozen row", "corrupted frozen row");
+    assert_ne!(changed, commit_text);
+    let changed_path = repo.join("changed-commit-body");
+    fs::write(&changed_path, changed).unwrap();
+    let changed_oid = git(
+        &repo,
+        &[
+            "hash-object",
+            "-t",
+            "commit",
+            "-w",
+            changed_path.to_str().unwrap(),
+        ],
+    );
+    let object_path = |oid: &str| repo.join(".git/objects").join(&oid[..2]).join(&oid[2..]);
+    // Corrupt only this disposable repository's loose object. The exact
+    // frozen OID still names a commit, but its raw bytes have a different hash.
+    fs::remove_file(object_path(&original)).unwrap();
+    fs::copy(object_path(&changed_oid), object_path(&original)).unwrap();
+    let raw_error = source_read::frozen_metrics::inspect_optional(&grant).unwrap_err();
+    assert!(
+        raw_error.contains("raw Git object identity differs"),
+        "{raw_error}"
+    );
     fs::remove_dir_all(repo).unwrap();
 }

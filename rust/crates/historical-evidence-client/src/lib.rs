@@ -1,9 +1,13 @@
 //! Passive local client for the bounded historical S5 read operation.
-use historical_evidence_wire::{MAX_FRAME, Observation, Reply, Request};
+use historical_evidence_wire::{
+    MAX_FRAME, Observation, ObservationV2, Reply, ReplyV2, Request, RequestV2,
+};
 use std::io::{Read, Write};
+use std::os::fd::{AsRawFd, FromRawFd};
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub enum ReadError {
@@ -11,6 +15,438 @@ pub enum ReadError {
     Unavailable,
     Refused,
     InvalidResponse,
+}
+
+/// One live, locally cancellable inspection. No background worker owns its socket.
+pub enum Inspected {
+    V1(Box<Observation>),
+    V2(Box<ObservationV2>),
+}
+
+enum Phase {
+    Connecting,
+    Sending { frame: Vec<u8>, offset: usize },
+    Length { bytes: [u8; 4], offset: usize },
+    Body { bytes: Vec<u8>, offset: usize },
+}
+
+pub struct InspectAttempt {
+    socket: std::path::PathBuf,
+    stream: UnixStream,
+    phase: Phase,
+    v1: bool,
+    deadline: Instant,
+}
+
+impl InspectAttempt {
+    pub fn start(socket: &Path, deadline: Instant) -> Result<Self, ReadError> {
+        let now = Instant::now();
+        if !socket.is_absolute() || now >= deadline {
+            return Err(ReadError::InvalidRequest);
+        }
+        let deadline = deadline.min(now + Duration::from_secs(35));
+        let (stream, connecting) = nonblocking_connect(socket)?;
+        let mut attempt = Self {
+            socket: socket.to_path_buf(),
+            stream,
+            phase: Phase::Connecting,
+            v1: false,
+            deadline,
+        };
+        if !connecting {
+            attempt.begin_send()?;
+        }
+        Ok(attempt)
+    }
+
+    fn begin_send(&mut self) -> Result<(), ReadError> {
+        let bytes = if self.v1 {
+            let request = Request::all();
+            request.validate().map_err(|_| ReadError::InvalidRequest)?;
+            serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+        } else {
+            let request = RequestV2::all();
+            request.validate().map_err(|_| ReadError::InvalidRequest)?;
+            serde_json::to_vec(&request).map_err(|_| ReadError::InvalidRequest)?
+        };
+        if bytes.len() > MAX_FRAME {
+            return Err(ReadError::InvalidRequest);
+        }
+        let mut frame = Vec::with_capacity(bytes.len() + 4);
+        frame.extend_from_slice(&(bytes.len() as u32).to_be_bytes());
+        frame.extend_from_slice(&bytes);
+        self.phase = Phase::Sending { frame, offset: 0 };
+        Ok(())
+    }
+
+    fn fallback(&mut self) -> Result<(), ReadError> {
+        if Instant::now() >= self.deadline {
+            return Err(ReadError::Unavailable);
+        }
+        let (stream, connecting) = nonblocking_connect(&self.socket)?;
+        self.stream = stream;
+        self.v1 = true;
+        self.phase = Phase::Connecting;
+        if !connecting {
+            self.begin_send()?;
+        }
+        Ok(())
+    }
+
+    /// Advances at most one bounded nonblocking socket operation.
+    pub fn poll(&mut self) -> Option<Result<Inspected, ReadError>> {
+        if Instant::now() >= self.deadline {
+            return Some(Err(ReadError::Unavailable));
+        }
+        match &mut self.phase {
+            Phase::Connecting => {
+                let mut fd = libc::pollfd {
+                    fd: self.stream.as_raw_fd(),
+                    events: libc::POLLOUT,
+                    revents: 0,
+                };
+                let ready = unsafe { libc::poll(&mut fd, 1, 0) };
+                if ready < 0 {
+                    return Some(Err(ReadError::Unavailable));
+                }
+                if ready == 0 {
+                    return None;
+                }
+                match self.stream.take_error() {
+                    Ok(Some(_)) | Err(_) => return Some(Err(ReadError::Unavailable)),
+                    Ok(None) => (),
+                }
+                if self.begin_send().is_err() {
+                    return Some(Err(ReadError::InvalidRequest));
+                }
+                None
+            }
+            Phase::Sending { frame, offset } => match self.stream.write(&frame[*offset..]) {
+                Ok(0) => Some(Err(ReadError::Unavailable)),
+                Ok(count) => {
+                    *offset += count;
+                    if *offset == frame.len() {
+                        self.phase = Phase::Length {
+                            bytes: [0; 4],
+                            offset: 0,
+                        };
+                    }
+                    None
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => None,
+                Err(_) => Some(Err(ReadError::Unavailable)),
+            },
+            Phase::Length { bytes, offset } => match self.stream.read(&mut bytes[*offset..]) {
+                Ok(0) => Some(Err(ReadError::Unavailable)),
+                Ok(count) => {
+                    *offset += count;
+                    if *offset == 4 {
+                        let len = u32::from_be_bytes(*bytes) as usize;
+                        if len == 0 || len > MAX_FRAME {
+                            return Some(Err(ReadError::InvalidResponse));
+                        }
+                        self.phase = Phase::Body {
+                            bytes: vec![0; len],
+                            offset: 0,
+                        };
+                    }
+                    None
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => None,
+                Err(_) => Some(Err(ReadError::Unavailable)),
+            },
+            Phase::Body { bytes, offset } => {
+                let end = (*offset + 64 * 1024).min(bytes.len());
+                match self.stream.read(&mut bytes[*offset..end]) {
+                    Ok(0) => Some(Err(ReadError::Unavailable)),
+                    Ok(count) => {
+                        *offset += count;
+                        if *offset != bytes.len() {
+                            return None;
+                        }
+                        if Instant::now() >= self.deadline {
+                            return Some(Err(ReadError::Unavailable));
+                        }
+                        if self.v1 {
+                            let result: Reply = match serde_json::from_slice(bytes) {
+                                Ok(reply) => reply,
+                                Err(_) => return Some(Err(ReadError::InvalidResponse)),
+                            };
+                            if Instant::now() >= self.deadline {
+                                return Some(Err(ReadError::Unavailable));
+                            }
+                            match result {
+                                Reply::Observed { observation } => {
+                                    if observation.validate().is_err() {
+                                        Some(Err(ReadError::InvalidResponse))
+                                    } else if Instant::now() >= self.deadline {
+                                        Some(Err(ReadError::Unavailable))
+                                    } else {
+                                        Some(Ok(Inspected::V1(Box::new(observation))))
+                                    }
+                                }
+                                Reply::Refused { .. } => Some(Err(ReadError::Refused)),
+                                Reply::Unavailable { .. } => Some(Err(ReadError::Unavailable)),
+                            }
+                        } else {
+                            let result: ReplyV2 = match serde_json::from_slice(bytes) {
+                                Ok(reply) => reply,
+                                Err(_) => return Some(Err(ReadError::InvalidResponse)),
+                            };
+                            if Instant::now() >= self.deadline {
+                                return Some(Err(ReadError::Unavailable));
+                            }
+                            match result {
+                                ReplyV2::Observed { observation } => {
+                                    if observation.validate().is_err() {
+                                        Some(Err(ReadError::InvalidResponse))
+                                    } else if Instant::now() >= self.deadline {
+                                        Some(Err(ReadError::Unavailable))
+                                    } else {
+                                        Some(Ok(Inspected::V2(Box::new(observation))))
+                                    }
+                                }
+                                ReplyV2::Refused { .. } => match self.fallback() {
+                                    Ok(()) => None,
+                                    Err(error) => Some(Err(error)),
+                                },
+                                ReplyV2::Unavailable { .. } => Some(Err(ReadError::Unavailable)),
+                            }
+                        }
+                    }
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => None,
+                    Err(_) => Some(Err(ReadError::Unavailable)),
+                }
+            }
+        }
+    }
+}
+
+fn nonblocking_connect(path: &Path) -> Result<(UnixStream, bool), ReadError> {
+    let bytes = path.as_os_str().as_bytes();
+    let mut addr: libc::sockaddr_un = unsafe { std::mem::zeroed() };
+    if bytes.is_empty() || bytes.contains(&0) || bytes.len() >= addr.sun_path.len() {
+        return Err(ReadError::InvalidRequest);
+    }
+    addr.sun_family = libc::AF_UNIX as libc::sa_family_t;
+    for (slot, byte) in addr.sun_path.iter_mut().zip(bytes) {
+        *slot = *byte as libc::c_char;
+    }
+    let fd = unsafe {
+        libc::socket(
+            libc::AF_UNIX,
+            libc::SOCK_STREAM | libc::SOCK_NONBLOCK | libc::SOCK_CLOEXEC,
+            0,
+        )
+    };
+    if fd < 0 {
+        return Err(ReadError::Unavailable);
+    }
+    let stream = unsafe { UnixStream::from_raw_fd(fd) };
+    let len = std::mem::offset_of!(libc::sockaddr_un, sun_path) + bytes.len() + 1;
+    let result = unsafe {
+        libc::connect(
+            stream.as_raw_fd(),
+            (&addr as *const libc::sockaddr_un).cast::<libc::sockaddr>(),
+            len as libc::socklen_t,
+        )
+    };
+    if result == 0 {
+        return Ok((stream, false));
+    }
+    let error = std::io::Error::last_os_error();
+    if matches!(
+        error.raw_os_error(),
+        Some(libc::EINPROGRESS | libc::EALREADY)
+    ) {
+        Ok((stream, true))
+    } else {
+        Err(ReadError::Unavailable)
+    }
+}
+
+#[cfg(test)]
+mod bounded_attempt_tests {
+    use super::*;
+    use std::os::unix::fs::DirBuilderExt;
+    use std::os::unix::net::UnixListener;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn socket(case: &str) -> (std::path::PathBuf, UnixListener) {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::var_os("S5_TEST_SOCKET_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir);
+        let dir = base.join(format!(
+            "s5{}-{case}-{:x}",
+            std::process::id(),
+            nonce % 0x10000
+        ));
+        std::fs::DirBuilder::new().mode(0o700).create(&dir).unwrap();
+        let path = dir.join("read.sock");
+        let listener = UnixListener::bind(&path).unwrap();
+        (path, listener)
+    }
+
+    fn request(stream: &mut UnixStream) {
+        let mut len = [0; 4];
+        stream.read_exact(&mut len).unwrap();
+        let mut body = vec![0; u32::from_be_bytes(len) as usize];
+        stream.read_exact(&mut body).unwrap();
+    }
+
+    fn until_done(attempt: &mut InspectAttempt) -> Result<Inspected, ReadError> {
+        let started = Instant::now();
+        loop {
+            if let Some(result) = attempt.poll() {
+                assert!(started.elapsed() < Duration::from_secs(1));
+                return result;
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    #[test]
+    fn silent_peer_has_absolute_deadline_and_drop_closes_socket() {
+        let (path, listener) = socket("silent");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            request(&mut stream);
+            let mut byte = [0];
+            stream.read(&mut byte).unwrap()
+        });
+        let mut attempt =
+            InspectAttempt::start(&path, Instant::now() + Duration::from_millis(80)).unwrap();
+        assert!(matches!(
+            until_done(&mut attempt),
+            Err(ReadError::Unavailable)
+        ));
+        drop(attempt);
+        assert_eq!(server.join().unwrap(), 0);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn trickle_after_refused_v2_cannot_extend_v1_deadline() {
+        let (path, listener) = socket("trickle");
+        let server = std::thread::spawn(move || {
+            let (mut first, _) = listener.accept().unwrap();
+            request(&mut first);
+            let reply = serde_json::to_vec(&ReplyV2::Refused {
+                reason: "v2 not served".into(),
+            })
+            .unwrap();
+            first
+                .write_all(&(reply.len() as u32).to_be_bytes())
+                .unwrap();
+            first.write_all(&reply).unwrap();
+            let (mut second, _) = listener.accept().unwrap();
+            second
+                .set_read_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            request(&mut second);
+            let mut byte = [0];
+            second.write_all(&[0, 0, 0, 32]).unwrap();
+            for _ in 0..6 {
+                if second.write_all(b"x").is_err() {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+            second.read(&mut byte).unwrap_or(0)
+        });
+        let mut attempt =
+            InspectAttempt::start(&path, Instant::now() + Duration::from_millis(100)).unwrap();
+        assert!(matches!(
+            until_done(&mut attempt),
+            Err(ReadError::Unavailable)
+        ));
+        drop(attempt);
+        let _ = server.join().unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn v2_trickle_cannot_extend_absolute_deadline() {
+        let (path, listener) = socket("v2-trickle");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            request(&mut stream);
+            stream.write_all(&[0, 0, 0, 32]).unwrap();
+            for _ in 0..6 {
+                if stream.write_all(b"x").is_err() {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+        });
+        let mut attempt =
+            InspectAttempt::start(&path, Instant::now() + Duration::from_millis(80)).unwrap();
+        assert!(matches!(
+            until_done(&mut attempt),
+            Err(ReadError::Unavailable)
+        ));
+        drop(attempt);
+        server.join().unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires S5_QUALIFIED_REPLY from a private admitted owner read"]
+    fn valid_observed_frame_delivered_after_deadline_is_rejected() {
+        let reply = std::fs::read(std::env::var("S5_QUALIFIED_REPLY").unwrap()).unwrap();
+        let (path, listener) = socket("late-valid");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            request(&mut stream);
+            std::thread::sleep(Duration::from_millis(90));
+            stream
+                .write_all(&(reply.len() as u32).to_be_bytes())
+                .unwrap();
+            stream.write_all(&reply).unwrap();
+        });
+        let mut attempt =
+            InspectAttempt::start(&path, Instant::now() + Duration::from_millis(50)).unwrap();
+        // Drive the nonblocking connect/request before waiting for the peer.
+        assert!(attempt.poll().is_none());
+        server.join().unwrap();
+        assert!(matches!(attempt.poll(), Some(Err(ReadError::Unavailable))));
+        drop(attempt);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn repeated_abandonment_drops_each_local_socket() {
+        let (path, listener) = socket("abandon");
+        let server = std::thread::spawn(move || {
+            for _ in 0..3 {
+                let (mut stream, _) = listener.accept().unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(1)))
+                    .unwrap();
+                let mut byte = [0];
+                assert_eq!(stream.read(&mut byte).unwrap(), 0);
+            }
+        });
+        for _ in 0..3 {
+            let attempt =
+                InspectAttempt::start(&path, Instant::now() + Duration::from_secs(1)).unwrap();
+            drop(attempt);
+        }
+        server.join().unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(path.parent().unwrap()).unwrap();
+    }
 }
 
 pub fn inspect(socket: &Path, request: Request) -> Result<Observation, ReadError> {
@@ -117,7 +553,10 @@ mod v2_nullable_regression_tests {
     use std::os::unix::net::UnixListener;
 
     fn read_through_client(reply: &serde_json::Value, case: &str) -> Result<(), ReadError> {
-        let directory = std::env::temp_dir().join(format!(
+        let base = std::env::var_os("S5_TEST_SOCKET_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir);
+        let directory = base.join(format!(
             "historical-evidence-client-{}-{case}",
             std::process::id()
         ));

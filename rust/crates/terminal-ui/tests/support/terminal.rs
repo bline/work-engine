@@ -95,8 +95,8 @@ impl Terminal {
             parser: vt100::Parser::new(rows, cols, 0),
             raw: vec![],
             evidence: evidence.into(),
-            // Historical owner reads have a 30-second server deadline and a
-            // 35-second client deadline before the first frame can appear.
+            // The loading frame is immediate; validated owner evidence can
+            // still take up to the client's absolute 35-second attempt budget.
             read_deadline: Duration::from_secs(40),
         }
     }
@@ -146,6 +146,10 @@ impl Terminal {
     #[allow(dead_code)]
     pub fn close_history(&mut self) {
         self.close_with(b"q");
+    }
+    #[allow(dead_code)]
+    pub fn close_history_with(&mut self, key: &[u8]) {
+        self.close_with(key);
     }
     fn close_with(&mut self, key: &[u8]) {
         self.input(key);

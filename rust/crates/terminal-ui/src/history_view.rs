@@ -5,7 +5,7 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use historical_evidence_client::{ReadError, inspect, inspect_v2};
+use historical_evidence_client::{InspectAttempt, Inspected, ReadError, inspect, inspect_v2};
 use historical_evidence_wire::{
     Observation, ObservationV2, Request, RequestV2, ReviewEpisode, ReviewRevision,
 };
@@ -93,33 +93,24 @@ impl State {
             "ADMITTED LOCAL V2 READ · captured provider and scheduler sources · no actions".into();
         state
     }
-    fn refresh(&mut self, socket: &Path) {
-        if self.extended.is_some() {
-            match inspect_v2(socket, RequestV2::all()) {
-                Ok(next) => {
-                    if next.source_identity_sha256
-                        != self.extended.as_ref().unwrap().source_identity_sha256
-                    {
-                        self.stage = Stage::Candidate;
-                        self.selected_attempt = 5;
-                        self.selected_provider = 5;
-                        self.detail_scroll = 0;
-                        self.notice = "Source identity changed; inspection anchor cleared".into();
-                    } else {
-                        self.notice = "Owner sources refreshed under the same v2 grant".into();
-                    }
-                    self.observation = next.base.clone();
-                    self.extended = Some(next);
+    fn refresh_with(&mut self, next: Inspected) {
+        match next {
+            Inspected::V2(next) if self.extended.is_some() => {
+                if next.source_identity_sha256
+                    != self.extended.as_ref().unwrap().source_identity_sha256
+                {
+                    self.stage = Stage::Candidate;
+                    self.selected_attempt = 5;
+                    self.selected_provider = 5;
+                    self.detail_scroll = 0;
+                    self.notice = "Source identity changed; inspection anchor cleared".into();
+                } else {
+                    self.notice = "Owner sources refreshed under the same v2 grant".into();
                 }
-                Err(error) => {
-                    self.notice =
-                        format!("Historical v2 read unavailable: {error:?}; prior frame is stale")
-                }
+                self.observation = next.base.clone();
+                self.extended = Some(*next);
             }
-            return;
-        }
-        match inspect(socket, Request::all()) {
-            Ok(next) => {
+            Inspected::V1(next) if self.extended.is_none() => {
                 if next.source_identity_sha256 != self.observation.source_identity_sha256 {
                     self.stage = Stage::Candidate;
                     self.selected_attempt = 5;
@@ -128,12 +119,10 @@ impl State {
                 } else {
                     self.notice = "Owner sources refreshed under the same read grant".into();
                 }
-                self.observation = next;
+                self.observation = *next;
             }
-            Err(error) => {
-                self.notice =
-                    format!("Historical read unavailable: {error:?}; prior frame is stale");
-            }
+            Inspected::V2(next) => *self = Self::from_v2(*next),
+            Inspected::V1(next) => *self = Self::new(*next),
         }
     }
     fn key(&mut self, code: KeyCode) -> bool {
@@ -815,6 +804,26 @@ impl Drop for Restore {
     }
 }
 
+fn draw_pending(frame: &mut Frame, message: &str, elapsed: Duration) {
+    let lines = vec![
+        Line::raw("Local historical evidence read"),
+        Line::raw(""),
+        Line::raw(message.to_string()),
+        Line::raw(format!("Elapsed: {:.1}s", elapsed.as_secs_f64())),
+        Line::raw("q/Esc: leave    r: retry"),
+    ];
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title("Historical read")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+        frame.area(),
+    );
+}
+
 pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if !socket.is_absolute() {
         return Err("--history-connect requires an absolute Unix socket".into());
@@ -822,23 +831,117 @@ pub fn run(socket: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
         return Err("history mode needs a terminal".into());
     }
-    let mut state = read_state(&socket)?;
     enable_raw_mode()?;
     let _restore = Restore;
     execute!(io::stdout(), EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
-    let mut last_read = Instant::now();
-    loop {
-        terminal.draw(|frame| draw(frame, &state))?;
-        if event::poll(Duration::from_millis(200))?
-            && let Event::Key(key) = event::read()?
-            && state.key(key.code)
-        {
-            break;
+    let mut state: Option<State> = None;
+    let mut message = "Local evidence read in progress; no evidence loaded".to_string();
+    let mut started = Instant::now();
+    let mut last_read = started;
+    let mut generation = 0u64;
+    // Draw before even beginning connection/admission. The first frame asserts no
+    // historical fact and remains interactive while the owner reads.
+    terminal.draw(|frame| draw_pending(frame, &message, started.elapsed()))?;
+    let mut active = match InspectAttempt::start(&socket, started + Duration::from_secs(35)) {
+        Ok(attempt) => {
+            generation += 1;
+            Some((generation, attempt))
         }
-        if last_read.elapsed() >= Duration::from_secs(4) {
-            state.refresh(&socket);
+        Err(error) => {
+            message = format!("Local evidence read unavailable: {error:?}; press r to retry");
+            None
+        }
+    };
+    loop {
+        if let Some(state) = state.as_ref() {
+            terminal.draw(|frame| draw(frame, state))?;
+        } else {
+            terminal.draw(|frame| draw_pending(frame, &message, started.elapsed()))?;
+        }
+        if event::poll(Duration::from_millis(20))?
+            && let Event::Key(key) = event::read()?
+        {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('r') => {
+                    drop(active.take()); // Close the prior socket before retry.
+                    started = Instant::now();
+                    message = "Local evidence read in progress; no evidence loaded".into();
+                    if let Some(state) = state.as_mut() {
+                        state.notice =
+                            "LAST OBSERVED · local refresh requested; admission pending".into();
+                    }
+                    generation += 1;
+                    active = match InspectAttempt::start(&socket, started + Duration::from_secs(35))
+                    {
+                        Ok(attempt) => Some((generation, attempt)),
+                        Err(error) => {
+                            message = format!(
+                                "Local evidence read unavailable: {error:?}; press r to retry"
+                            );
+                            if let Some(state) = state.as_mut() {
+                                state.notice = format!(
+                                    "LAST OBSERVED · refresh unavailable: {error:?}; stale"
+                                );
+                            }
+                            None
+                        }
+                    };
+                }
+                code => {
+                    if let Some(state) = state.as_mut() {
+                        state.key(code);
+                    }
+                }
+            }
+        }
+        if let Some((attempt_generation, attempt)) = active.as_mut()
+            && let Some(result) = attempt.poll()
+        {
+            let completed_generation = *attempt_generation;
+            active = None;
+            if completed_generation == generation {
+                match result {
+                    Ok(observation) => {
+                        if let Some(state) = state.as_mut() {
+                            state.refresh_with(observation);
+                        } else {
+                            state = Some(match observation {
+                                Inspected::V1(observation) => State::new(*observation),
+                                Inspected::V2(observation) => State::from_v2(*observation),
+                            });
+                        }
+                    }
+                    Err(error) => {
+                        message =
+                            format!("Local evidence read unavailable: {error:?}; press r to retry");
+                        if let Some(state) = state.as_mut() {
+                            state.notice =
+                                format!("LAST OBSERVED · refresh {error:?}; prior frame stale");
+                        }
+                    }
+                }
+            }
             last_read = Instant::now();
+        }
+        if active.is_none() && state.is_some() && last_read.elapsed() >= Duration::from_secs(4) {
+            started = Instant::now();
+            if let Some(state) = state.as_mut() {
+                state.notice = "LAST OBSERVED · refreshing; admission pending".into();
+            }
+            generation += 1;
+            active = match InspectAttempt::start(&socket, started + Duration::from_secs(35)) {
+                Ok(attempt) => Some((generation, attempt)),
+                Err(error) => {
+                    if let Some(state) = state.as_mut() {
+                        state.notice =
+                            format!("LAST OBSERVED · refresh {error:?}; prior frame stale");
+                    }
+                    last_read = Instant::now();
+                    None
+                }
+            };
         }
     }
     Ok(())

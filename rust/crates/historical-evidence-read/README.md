@@ -45,9 +45,8 @@ remove the host-owned socket so a fresh host can use the same path.
 
 The UI uses `--history-connect SOCKET`; its `--history-snapshot WIDTH HEIGHT
 [stage]` mode renders the same admitted projection for local qualification.
-The frozen metrics row, provider attempts, quota and scheduler item have no
-public reader in this increment. The UI labels the five receipt checks and
-leaves the eight-stage historical metric unverified through this read.
+The UI labels the five receipt checks separately from the frozen eight-stage
+metric; that discrepancy remains unresolved.
 
 The `historical_s5.inspect.v2` increment adds a private Rust
 `historical_s5_source_read` helper beside the host. The trusted launcher issues a
@@ -66,8 +65,18 @@ have exact typed schemas and fixed case bindings, with unknown or duplicate
 fields refused before any owner read. Scheduler inspection enters a Linux
 Landlock no-filesystem-write domain before SQLite opens the DB; if this
 protection or a side-effect-free WAL read is unavailable, the scheduler read
-fails closed. Optional frozen-metrics failure is an explicit typed unavailable
-comparison throughout the terminal view, without stage or token comparisons.
+fails closed. Only an exactly missing frozen metrics commit is a typed optional
+unavailable comparison, without stage or token comparisons. A failed source
+fence, Git identity/digest mismatch, malformed row, unexpected helper failure
+or deadline fails the whole read even if source bytes are restored before a
+later check. Actual source bytes remain hashed before and after every v2 helper
+call and before response publication; a larger read chunk and optimized SHA-2
+dev profile change speed, not the ordered digest or admission contract. The
+interactive terminal shows a neutral loading frame before admission is known,
+keeps input responsive during refresh, and owns a nonblocking local socket with
+one absolute 35-second attempt deadline covering explicit-refusal v1 fallback.
+Leaving the view closes that socket; it does not cancel the host's bounded owner
+work remotely. Snapshot reads remain a separate synchronous qualification path.
 The v1 operation and its grant remain available for older clients. A v2 failure
 does not fall back to the local evidence map or a partial v1 story.
 
