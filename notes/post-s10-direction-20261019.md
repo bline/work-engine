@@ -409,6 +409,33 @@ enum and size constraints together rather than patching one field. These belong
 to the *correctness* branch of the distinction in step 1: no reasoning effort
 recovers a constraint that was never supplied.
 
+**Candidate invariant arising from these findings, 2026-10-19.** Proposed by
+ChatGPT, recorded here as a candidate and not a decision:
+
+> Every validator-enforced constraint relevant to an execution contract must
+> either be represented in the contract, or explicitly identified as requiring
+> discovery or verification.
+
+This is stronger than "write more detailed plans" because it is a completeness
+obligation with a falsifier. Two notes on where it belongs and what it costs:
+
+- **Owner.** As an invariant on the compiled implementation contract it belongs
+  to `implementation-contract-compilation.md`, which is `exploration_only` with
+  `implementation: none`, so nothing can be built against it yet. But the
+  *discover-or-supply* half is a readiness question, and
+  `decision-specific-readiness.md` is accepted and
+  `implementation_authorized` (step 2b). That is the surface where this invariant
+  could be tested before any compiler exists.
+- **Test cost, measured.** The probe is the test: 8 calls and 0.099 Mweighted
+  found three violations in one 444-line contract. Across the 65 `rust-*.md`
+  documents that is on the order of **6.5 Mweighted**, about 0.04 of a Pro-200
+  week. Cheap enough to run before committing to the invariant, which is the
+  right order.
+
+One claim this does **not** support: that the three findings generalise. They are
+three absent constraints in one contract. The invariant is falsifiable at known
+cost; it is not yet tested.
+
 **Positive pilot evidence - verified retrieval attribution.** Both
 self-classifications were checked independently and held: the overlooked item is
 genuinely present in the contract, and the three discovered limits are genuinely
