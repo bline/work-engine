@@ -16,7 +16,7 @@ use lifecycle_semantic::{
 use lifecycle_store::{SemanticControlRole, SqliteLifecycleStore, StoreError};
 
 use crate::{
-    CanonicalMaterialPort, NativeConfig, SemanticNativeConfig,
+    CanonicalMaterialPort, NativeConfig, NativeProviderRoute, SemanticNativeConfig,
     actor::clock_sample,
     semantic_control::{self, ControlTurnSpec},
 };
@@ -37,6 +37,36 @@ pub struct SemanticRuntime {
 
 fn semantic_store_error(_: lifecycle_semantic::SemanticError) -> StoreError {
     StoreError::Rejected
+}
+
+#[allow(clippy::too_many_arguments)]
+fn verifier_exposure(
+    route: NativeProviderRoute,
+    verifier_session_id: &str,
+    compiler_session_id: &str,
+    successor_session_id: Option<&str>,
+    input_sha256: &str,
+    observed_provider: &str,
+    observed_model: &str,
+    exposure_id: &str,
+    host_evidence_ref: &str,
+) -> ObservedVerifierExposure {
+    ObservedVerifierExposure {
+        verifier_session_id: verifier_session_id.into(),
+        compiler_session_id: compiler_session_id.into(),
+        successor_session_id: successor_session_id.map(str::to_owned),
+        input_sha256: input_sha256.into(),
+        saw_compiler_reasoning: false,
+        saw_hidden_oracle: false,
+        dynamic_tools_enabled: false,
+        human_side_effects_enabled: false,
+        requested_provider: route.provider_name().into(),
+        requested_model: NativeProviderRoute::MODEL.into(),
+        observed_provider: observed_provider.into(),
+        observed_model: observed_model.into(),
+        exposure_id: exposure_id.into(),
+        host_evidence_ref: host_evidence_ref.into(),
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -264,22 +294,17 @@ pub async fn establish_checkpoint(
         &runtime.semantic.candidate_verify_invocation_id,
         &verifier_artifact,
     )?;
-    let observed = ObservedVerifierExposure {
-        verifier_session_id: verified.binding.session_id.clone(),
-        compiler_session_id: compile.binding.session_id.clone(),
-        successor_session_id: None,
-        input_sha256: verify.prompt_sha256.clone(),
-        saw_compiler_reasoning: false,
-        saw_hidden_oracle: false,
-        dynamic_tools_enabled: false,
-        human_side_effects_enabled: false,
-        requested_provider: "local_probe".into(),
-        requested_model: "gpt-6-sol".into(),
-        observed_provider: verified.observed_provider,
-        observed_model: verified.observed_model,
-        exposure_id: verified.binding.exposure_id.clone(),
-        host_evidence_ref: verified.exposure_ref,
-    };
+    let observed = verifier_exposure(
+        runtime.native.provider_route,
+        &verified.binding.session_id,
+        &compile.binding.session_id,
+        None,
+        &verify.prompt_sha256,
+        &verified.observed_provider,
+        &verified.observed_model,
+        &verified.binding.exposure_id,
+        &verified.exposure_ref,
+    );
     let result = VerifierResult {
         invocation_id: verified.binding.invocation_id.clone(),
         attempt_id: verified.binding.attempt_id.clone(),
@@ -462,22 +487,17 @@ pub async fn assess_successor_use(
         &runtime.semantic.successor_verify_invocation_id,
         &verifier_artifact,
     )?;
-    let exposure = ObservedVerifierExposure {
-        verifier_session_id: verified.binding.session_id.clone(),
-        compiler_session_id: package.candidate.compile_session_id.clone(),
-        successor_session_id: Some(runtime.native.session_id.clone()),
-        input_sha256: verify.prompt_sha256.clone(),
-        saw_compiler_reasoning: false,
-        saw_hidden_oracle: false,
-        dynamic_tools_enabled: false,
-        human_side_effects_enabled: false,
-        requested_provider: "local_probe".into(),
-        requested_model: "gpt-6-sol".into(),
-        observed_provider: verified.observed_provider,
-        observed_model: verified.observed_model,
-        exposure_id: verified.binding.exposure_id.clone(),
-        host_evidence_ref: verified.exposure_ref,
-    };
+    let exposure = verifier_exposure(
+        runtime.native.provider_route,
+        &verified.binding.session_id,
+        &package.candidate.compile_session_id,
+        Some(&runtime.native.session_id),
+        &verify.prompt_sha256,
+        &verified.observed_provider,
+        &verified.observed_model,
+        &verified.binding.exposure_id,
+        &verified.exposure_ref,
+    );
     let result = VerifierResult {
         invocation_id: verified.binding.invocation_id.clone(),
         attempt_id: verified.binding.attempt_id.clone(),
@@ -516,4 +536,52 @@ pub async fn assess_successor_use(
         "semantic_after_successor_result",
     )?;
     Ok(checked.status == VerdictStatus::Accepted)
+}
+
+#[cfg(test)]
+mod provider_exposure_tests {
+    use super::*;
+
+    #[test]
+    fn candidate_and_successor_exposures_bind_selected_route_independently_of_observation() {
+        for (route, expected_provider) in [
+            (NativeProviderRoute::NativeSimProofV1, "local_probe"),
+            (
+                NativeProviderRoute::OpenaiResponsesLiveV1,
+                "openai_responses_live",
+            ),
+            (
+                NativeProviderRoute::OpenaiResponsesFakeV1,
+                "openai_responses_fake",
+            ),
+        ] {
+            for successor in [None, Some("successor-session")] {
+                let exposure = verifier_exposure(
+                    route,
+                    "verifier-session",
+                    "compiler-session",
+                    successor,
+                    "input-digest",
+                    "local_probe",
+                    NativeProviderRoute::MODEL,
+                    "exposure-id",
+                    "host-evidence",
+                );
+                assert_eq!(exposure.requested_provider, expected_provider);
+                assert_eq!(exposure.observed_provider, "local_probe");
+                assert_eq!(exposure.requested_model, NativeProviderRoute::MODEL);
+                assert_eq!(exposure.observed_model, NativeProviderRoute::MODEL);
+                assert_eq!(exposure.verifier_session_id, "verifier-session");
+                assert_eq!(exposure.compiler_session_id, "compiler-session");
+                assert_eq!(exposure.successor_session_id.as_deref(), successor);
+                assert_eq!(exposure.input_sha256, "input-digest");
+                assert_eq!(exposure.exposure_id, "exposure-id");
+                assert_eq!(exposure.host_evidence_ref, "host-evidence");
+                assert!(!exposure.saw_compiler_reasoning);
+                assert!(!exposure.saw_hidden_oracle);
+                assert!(!exposure.dynamic_tools_enabled);
+                assert!(!exposure.human_side_effects_enabled);
+            }
+        }
+    }
 }

@@ -23,6 +23,8 @@ const MAX_HEADER: usize = 16_384;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Reply {
     Text(String),
+    /// Test-only Responses SSE streaming for the actual native control runner.
+    Streamed(Box<Reply>),
     /// A bounded fixture compiler over the actual owner-authored source prompt.
     /// It never sets lifecycle readiness or mutates owner state.
     SemanticCompile,
@@ -212,6 +214,7 @@ fn serve(
                     }
                     let reply_kind = match &step.reply {
                         Reply::Text(_) => "text",
+                        Reply::Streamed(_) => "streamed",
                         Reply::SemanticCompile => "semantic_compile",
                         Reply::SemanticVerify => "semantic_verify",
                         Reply::SuccessorUse => "successor_use",
@@ -608,7 +611,12 @@ fn write_reply(
     reply: Reply,
     request: &Value,
 ) -> Result<()> {
+    let (streamed, reply) = match reply {
+        Reply::Streamed(inner) => (true, *inner),
+        other => (false, other),
+    };
     let item = match reply {
+        Reply::Streamed(_) => return Err(ProofError::Contract("nested streamed reply".into())),
         Reply::DropConnection => return Ok(()),
         Reply::HttpError(code) => {
             write!(
@@ -681,11 +689,38 @@ fn write_reply(
         "status":"completed","output":[item.clone()],
         "usage":{"input_tokens":3,"output_tokens":2,"total_tokens":5}
     });
-    let events = [
+    let mut events = vec![
         json!({"type":"response.created","response":{"id":response_id,"status":"in_progress","output":[]}}),
-        json!({"type":"response.output_item.done","output_index":0,"item":item}),
-        json!({"type":"response.completed","response":response}),
     ];
+    if streamed {
+        if item["type"] != "message" {
+            return Err(ProofError::Contract(
+                "streaming fixture needs text message".into(),
+            ));
+        }
+        let text = item["content"][0]["text"]
+            .as_str()
+            .ok_or_else(|| ProofError::Contract("streaming text absent".into()))?;
+        let item_id = item["id"].clone();
+        events.push(json!({"type":"response.output_item.added","output_index":0,
+            "item":{"type":"message","id":item_id,"role":"assistant","status":"in_progress","content":[]}}));
+        events.push(
+            json!({"type":"response.content_part.added","output_index":0,"content_index":0,
+            "part":{"type":"output_text","text":"","annotations":[]}}),
+        );
+        for chunk in text.as_bytes().chunks(12) {
+            let delta = std::str::from_utf8(chunk)
+                .map_err(|_| ProofError::Contract("fixture text is not ASCII".into()))?;
+            events.push(json!({"type":"response.output_text.delta","output_index":0,
+                "content_index":0,"item_id":item_id,"delta":delta}));
+        }
+        events.push(json!({"type":"response.output_text.done","output_index":0,
+            "content_index":0,"item_id":item_id,"text":text}));
+        events.push(json!({"type":"response.content_part.done","output_index":0,
+            "content_index":0,"part":item["content"][0]}));
+    }
+    events.push(json!({"type":"response.output_item.done","output_index":0,"item":item}));
+    events.push(json!({"type":"response.completed","response":response}));
     let wire = events
         .iter()
         .map(|event| format!("data: {event}\n\n"))

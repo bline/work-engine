@@ -347,6 +347,34 @@ fn missing_findings_or_unobserved_isolation_never_accept() {
     )
     .unwrap();
     assert_eq!(verdict.status, VerdictStatus::Unresolved);
+
+    for observed_provider in ["local_probe", "openai_responses_fake"] {
+        let mut wrong_provider = exposure(&request);
+        wrong_provider.requested_provider = "openai_responses_live".into();
+        wrong_provider.observed_provider = observed_provider.into();
+        let verdict = assess_candidate(
+            &material,
+            &candidate,
+            &request,
+            result(&request, &report(&material, FindingStatus::Satisfied)),
+            wrong_provider,
+            &policy,
+        )
+        .unwrap();
+        assert_eq!(verdict.status, VerdictStatus::Unresolved);
+    }
+    let mut wrong_input = exposure(&request);
+    wrong_input.input_sha256 = "different-input".into();
+    let verdict = assess_candidate(
+        &material,
+        &candidate,
+        &request,
+        result(&request, &report(&material, FindingStatus::Satisfied)),
+        wrong_input,
+        &policy,
+    )
+    .unwrap();
+    assert_eq!(verdict.status, VerdictStatus::Unresolved);
 }
 
 #[test]

@@ -2062,12 +2062,36 @@ impl SqliteLifecycleStore {
                     "SELECT COUNT(*) FROM inputs WHERE subject_id=?1 AND input_id!=?2 AND state IN ('entered','failed_blocked','unknown')",
                     params![subject.subject.as_str(),retained_input], |row| row.get(0),
                 ).map_err(|_| StoreError::Unavailable)?;
-                let native_unresolved: i64 = tx.query_row(
+                let schema_version: i64 = tx
+                    .query_row("PRAGMA user_version", [], |row| row.get(0))
+                    .map_err(|_| StoreError::Unavailable)?;
+                // Schema 7 can retain the pre-spawn allocation intent of a
+                // predecessor selected out by a productive restart. Only that
+                // exact, silent historical epoch is no longer live allocation
+                // uncertainty. All turns and operations, including historical
+                // ones, retain their independent settlement barriers.
+                let native_unresolved_sql = if schema_version == 7 {
+                    "SELECT (SELECT COUNT(*) FROM native_sessions s WHERE s.subject_id=?1 AND s.allocation_state!='bound' AND NOT (
+                         s.allocation_state='intent' AND s.role IN ('domain','successor') AND s.control_transition_id IS NULL
+                         AND NOT EXISTS(SELECT 1 FROM native_turns t WHERE t.session_id=s.session_id)
+                         AND NOT EXISTS(SELECT 1 FROM native_ingress i WHERE i.session_id=s.session_id)
+                         AND EXISTS(SELECT 1 FROM native_execution_epochs h JOIN native_execution_epochs a
+                           ON a.subject_id=h.subject_id AND a.context_id=h.context_id AND a.state='active' AND a.epoch>h.epoch
+                           WHERE h.target_session_id=s.session_id AND h.subject_id=s.subject_id AND h.context_id=s.context_id
+                             AND h.state='historical')
+                     )) + \
+                     (SELECT COUNT(*) FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND t.state!='completed_settled') + \
+                     (SELECT COUNT(*) FROM native_operations o JOIN native_turns t ON t.invocation_id=o.parent_invocation_id JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND o.state!='completed_settled')"
+                } else {
                     "SELECT (SELECT COUNT(*) FROM native_sessions WHERE subject_id=?1 AND allocation_state!='bound') + \
                      (SELECT COUNT(*) FROM native_turns t JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND t.state!='completed_settled') + \
-                     (SELECT COUNT(*) FROM native_operations o JOIN native_turns t ON t.invocation_id=o.parent_invocation_id JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND o.state!='completed_settled')",
-                    [subject.subject.as_str()], |row| row.get(0),
-                ).map_err(|_|StoreError::Unavailable)?;
+                     (SELECT COUNT(*) FROM native_operations o JOIN native_turns t ON t.invocation_id=o.parent_invocation_id JOIN native_sessions s ON s.session_id=t.session_id WHERE s.subject_id=?1 AND o.state!='completed_settled')"
+                };
+                let native_unresolved: i64 = tx
+                    .query_row(native_unresolved_sql, [subject.subject.as_str()], |row| {
+                        row.get(0)
+                    })
+                    .map_err(|_| StoreError::Unavailable)?;
                 if unresolved != 0 || blocked != 0 || native_unresolved != 0 {
                     return Err(StoreError::Rejected);
                 }

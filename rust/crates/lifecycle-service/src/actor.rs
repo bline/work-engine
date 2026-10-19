@@ -295,7 +295,7 @@ pub struct Actor {
 /// The installed 0.163 app-server emits this notification between an
 /// agentMessage start and completion. It has no settlement authority. Require
 /// the exact observed envelope and the item already bound to this turn.
-fn agent_message_delta_matches(
+pub(crate) fn agent_message_delta_matches(
     value: &Value,
     thread: &str,
     turn: &str,

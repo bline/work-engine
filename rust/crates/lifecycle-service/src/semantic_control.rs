@@ -2,6 +2,7 @@
 //! lifecycle-store entry/ingress/settlement owner as S5 domain turns.
 
 use std::{
+    collections::HashSet,
     fs,
     os::unix::fs::PermissionsExt,
     path::Path,
@@ -27,7 +28,9 @@ use serde_json::{Value, json};
 use tokio::time::timeout;
 
 use crate::{
-    NativeConfig, NativeProviderRoute, SemanticNativeConfig, actor::clock_sample, operations,
+    NativeConfig, NativeProviderRoute, SemanticNativeConfig,
+    actor::{agent_message_delta_matches, clock_sample},
+    operations,
 };
 
 pub struct ControlTurnSpec<'a> {
@@ -60,7 +63,55 @@ struct DirectRunner<'a> {
     session: NativeSessionId,
     harness: NativeHarness,
     terminal: Option<lifecycle_codex::NativeTurnTerminal>,
+    bound_thread: Option<String>,
+    bound_turn: Option<String>,
+    started_agent_messages: HashSet<(String, String, String)>,
     gate: &'a AtomicBool,
+}
+
+fn control_agent_message_item_matches(
+    method: &str,
+    params: Option<&Value>,
+    bound_thread: Option<&str>,
+    bound_turn: Option<&str>,
+    started: &HashSet<(String, String, String)>,
+) -> bool {
+    let Some(params) = params else { return false };
+    let (Some(thread), Some(turn), Some(item)) = (
+        params.get("threadId").and_then(Value::as_str),
+        params.get("turnId").and_then(Value::as_str),
+        params.get("item"),
+    ) else {
+        return false;
+    };
+    let Some(item_id) = item.get("id").and_then(Value::as_str) else {
+        return false;
+    };
+    bound_thread == Some(thread)
+        && bound_turn == Some(turn)
+        && !item_id.is_empty()
+        && item_id.len() <= 256
+        && item["type"] == "agentMessage"
+        && item["questions"].is_null()
+        && item["delivery"].is_null()
+        && (method == "item/started"
+            || (method == "item/completed"
+                && started.contains(&(thread.to_owned(), turn.to_owned(), item_id.to_owned()))))
+}
+
+fn note_control_agent_message(
+    method: &str,
+    thread: &str,
+    turn: &str,
+    item: &str,
+    started: &mut HashSet<(String, String, String)>,
+) {
+    let key = (thread.to_owned(), turn.to_owned(), item.to_owned());
+    if method == "item/started" {
+        started.insert(key);
+    } else if method == "item/completed" {
+        started.remove(&key);
+    }
 }
 
 /// The simulator-only cut lets an external test operator request a real owner
@@ -126,13 +177,32 @@ impl DirectRunner<'_> {
                 match value.and_then(|i| i.get("type")).and_then(Value::as_str) {
                     Some("userMessage" | "reasoning") => "qualified",
                     Some("agentMessage")
-                        if value.is_some_and(|i| {
-                            i["questions"].is_null() && i["delivery"].is_null()
-                        }) =>
+                        if control_agent_message_item_matches(
+                            method,
+                            params,
+                            self.bound_thread.as_deref(),
+                            self.bound_turn.as_deref(),
+                            &self.started_agent_messages,
+                        ) =>
                     {
                         "qualified"
                     }
                     _ => "unsupported",
+                }
+            }
+            NativeEventKind::Notification { method } if method == "item/agentMessage/delta" => {
+                if let (Some(thread), Some(turn)) =
+                    (self.bound_thread.as_deref(), self.bound_turn.as_deref())
+                    && agent_message_delta_matches(
+                        &event.value,
+                        thread,
+                        turn,
+                        &self.started_agent_messages,
+                    )
+                {
+                    "qualified"
+                } else {
+                    "unsupported"
                 }
             }
             NativeEventKind::Notification { method } if method == "turn/completed" => {
@@ -184,6 +254,25 @@ impl DirectRunner<'_> {
             item,
             clock_sample(),
         )?;
+        if status == "qualified"
+            && applied != lifecycle_store::NativeIngressApply::ConflictFenced
+            && let NativeEventKind::Notification { method } = &event.kind
+            && matches!(method.as_str(), "item/started" | "item/completed")
+            && params
+                .and_then(|p| p.get("item"))
+                .and_then(|i| i.get("type"))
+                .and_then(Value::as_str)
+                == Some("agentMessage")
+            && let (Some(thread), Some(turn), Some(item)) = (thread, turn, item)
+        {
+            note_control_agent_message(
+                method,
+                thread,
+                turn,
+                item,
+                &mut self.started_agent_messages,
+            );
+        }
         if applied == lifecycle_store::NativeIngressApply::ConflictFenced || status != "qualified" {
             return Err(StoreError::ClaimConflict);
         }
@@ -304,6 +393,9 @@ pub async fn run_control_turn(
         session: session.id().clone(),
         harness,
         terminal: None,
+        bound_thread: None,
+        bound_turn: None,
+        started_agent_messages: HashSet::new(),
         gate,
     };
     let execution=async {
@@ -325,6 +417,7 @@ pub async fn run_control_turn(
         let thread=started["thread"]["id"].as_str().ok_or(StoreError::Unavailable)?.to_owned();
         if started["thread"]["ephemeral"]!=false {return Err(StoreError::Rejected);}
         runner.store.bind_native_thread(&mut session,ProviderThreadId::parse(thread.clone()).map_err(|_|StoreError::Rejected)?)?;
+        runner.bound_thread = Some(thread.clone());
         let binding=SemanticInvocationBinding{subject:spec.subject,transition:spec.transition,
             capture_id:semantic.capture_id.clone(),phase:spec.phase,
             purpose:if spec.phase==SemanticPhase::Compile {NativeInvocationPurpose::SemanticCompile} else {NativeInvocationPurpose::SemanticVerify},
@@ -347,6 +440,7 @@ pub async fn run_control_turn(
         let (response,_)=runner.rpc("turn/start",json!({"threadId":thread,"input":[{"type":"text","text":spec.prompt}],"environments":[]})).await?;
         let turn_id=response["turn"]["id"].as_str().ok_or(StoreError::Unavailable)?.to_owned();
         runner.store.bind_native_turn(&mut turn,ProviderTurnId::parse(turn_id.clone()).map_err(|_|StoreError::Rejected)?)?;
+        runner.bound_turn = Some(turn_id.clone());
         let terminal=loop {
             if let Some(terminal)=runner.terminal.take() {
                 if terminal.thread_id!=thread || terminal.turn_id!=turn_id {return Err(StoreError::ClaimConflict);}
@@ -394,4 +488,152 @@ pub async fn run_control_turn(
         )?,
     }
     execution
+}
+
+#[cfg(test)]
+mod control_delta_tests {
+    use super::*;
+    use lifecycle_codex::parse_event;
+
+    fn started() -> Value {
+        json!({"method":"item/started","params":{
+            "threadId":"thread:control","turnId":"turn:control",
+            "item":{"type":"agentMessage","id":"item:control","questions":null,"delivery":null}},
+            "emittedAtMs":1})
+    }
+    fn completed() -> Value {
+        let mut value = started();
+        value["method"] = json!("item/completed");
+        value
+    }
+    fn delta() -> Value {
+        json!({"method":"item/agentMessage/delta","params":{
+            "threadId":"thread:control","turnId":"turn:control",
+            "itemId":"item:control","delta":"{\n"},"emittedAtMs":2})
+    }
+    fn item_matches(event: &Value, started_items: &HashSet<(String, String, String)>) -> bool {
+        control_agent_message_item_matches(
+            event["method"].as_str().unwrap(),
+            event.get("params"),
+            Some("thread:control"),
+            Some("turn:control"),
+            started_items,
+        )
+    }
+
+    #[test]
+    fn captured_shape_qualifies_only_during_bound_agent_message_lifecycle() {
+        let mut items = HashSet::new();
+        let start = started();
+        let end = completed();
+        let stream = delta();
+        assert!(item_matches(&start, &items));
+        assert!(!agent_message_delta_matches(
+            &stream,
+            "thread:control",
+            "turn:control",
+            &items
+        ));
+        note_control_agent_message(
+            "item/started",
+            "thread:control",
+            "turn:control",
+            "item:control",
+            &mut items,
+        );
+        assert!(agent_message_delta_matches(
+            &stream,
+            "thread:control",
+            "turn:control",
+            &items
+        ));
+        let parsed = parse_event(
+            "transport:control".into(),
+            15,
+            serde_json::to_vec(&stream).unwrap(),
+        )
+        .unwrap();
+        assert!(parsed.terminal().unwrap().is_none());
+        assert!(parsed.tool_call().unwrap().is_none());
+        assert!(item_matches(&end, &items));
+        note_control_agent_message(
+            "item/completed",
+            "thread:control",
+            "turn:control",
+            "item:control",
+            &mut items,
+        );
+        assert!(!agent_message_delta_matches(
+            &stream,
+            "thread:control",
+            "turn:control",
+            &items
+        ));
+        assert!(!item_matches(&end, &items));
+    }
+
+    #[test]
+    fn control_delta_refuses_foreign_coordinates_and_bad_envelopes() {
+        let mut items = HashSet::new();
+        note_control_agent_message(
+            "item/started",
+            "thread:control",
+            "turn:control",
+            "item:control",
+            &mut items,
+        );
+        let valid = delta();
+        for (path, replacement) in [
+            ("threadId", json!("thread:foreign")),
+            ("turnId", json!("turn:foreign")),
+            ("itemId", json!("item:foreign")),
+            ("delta", json!("")),
+            ("delta", json!("x".repeat(65_537))),
+            ("delta", json!({"text":"x"})),
+        ] {
+            let mut bad = valid.clone();
+            bad["params"][path] = replacement;
+            assert!(!agent_message_delta_matches(
+                &bad,
+                "thread:control",
+                "turn:control",
+                &items
+            ));
+        }
+        let mut bad = valid.clone();
+        bad["params"]["extra"] = json!(true);
+        assert!(!agent_message_delta_matches(
+            &bad,
+            "thread:control",
+            "turn:control",
+            &items
+        ));
+        let mut bad = valid.clone();
+        bad.as_object_mut().unwrap().remove("emittedAtMs");
+        assert!(!agent_message_delta_matches(
+            &bad,
+            "thread:control",
+            "turn:control",
+            &items
+        ));
+        let mut bad = started();
+        bad["params"]["threadId"] = json!("thread:foreign");
+        assert!(!item_matches(&bad, &items));
+        let mut bad = started();
+        bad["params"]["turnId"] = json!("turn:foreign");
+        assert!(!item_matches(&bad, &items));
+        let mut bad = started();
+        bad["params"]["item"]["questions"] = json!([{"prompt":"unsolicited"}]);
+        assert!(!item_matches(&bad, &items));
+        let mut bad = started();
+        bad["params"]["item"]["type"] = json!("dynamicToolCall");
+        assert!(!item_matches(&bad, &items));
+        let server = parse_event(
+            "transport:control".into(),
+            16,
+            serde_json::to_vec(&json!({"id":1,"method":"item/tool/call","params":{}})).unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(server.kind, NativeEventKind::ServerRequest { .. }));
+    }
 }
