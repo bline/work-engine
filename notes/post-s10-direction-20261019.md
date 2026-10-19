@@ -426,15 +426,19 @@ obligation with a falsifier. Two notes on where it belongs and what it costs:
   `decision-specific-readiness.md` is accepted and
   `implementation_authorized` (step 2b). That is the surface where this invariant
   could be tested before any compiler exists.
-- **Test cost, measured.** The probe is the test: 8 calls and 0.099 Mweighted
-  found three violations in one 444-line contract. Across the 65 `rust-*.md`
-  documents that is on the order of **6.5 Mweighted**, about 0.04 of a Pro-200
-  week. Cheap enough to run before committing to the invariant, which is the
-  right order.
+- **Test cost: sample first, do not project across the corpus.** An earlier
+  version of this entry multiplied the probe's 0.099 Mweighted by the 65
+  `rust-*.md` documents to get ~6.5 Mweighted. **Withdrawn.** That extrapolation
+  takes one bounded comprehension probe as a unit cost for a different and
+  larger task - a validator-contract completeness audit - across documents that
+  differ substantially in size and in how many validators they touch. It is the
+  same error this note flags elsewhere, committed one paragraph after flagging
+  it. The correct design is a small representative sample with its cost measured,
+  and only then a corpus estimate if the sample supports one.
 
 One claim this does **not** support: that the three findings generalise. They are
-three absent constraints in one contract. The invariant is falsifiable at known
-cost; it is not yet tested.
+three absent constraints in one contract, found by a probe that was not looking
+for all of them. The invariant is falsifiable; its cost is not yet known.
 
 **Positive pilot evidence - verified retrieval attribution.** Both
 self-classifications were checked independently and held: the overlooked item is

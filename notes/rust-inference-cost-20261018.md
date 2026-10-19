@@ -44,6 +44,40 @@ Every figure here is one of three kinds, and the distinction is load-bearing:
 - **Projected** — a forecast, or a saving that has not occurred. Each carries the
   prerequisite it is waiting on.
 
+**The three classes are not sufficient, as this conversation demonstrated three
+times.** A figure can keep its class label and still lose the relationship that
+made it meaningful. Each of these happened within hours of the classes being
+written down:
+
+| restated as | actually | the slip |
+|---|---|---|
+| "62% of the programme" was rework | 49.3% of 953.3, and the iteration count never established iteration cost | wrong denominator, plus an assumption presented as a measurement |
+| M22 delivers "~30% savings" | -30%, the measured *penalty* at today's 116K floor | sign inverted; a cost became a benefit |
+| "56% projected efficiency improvement" | spend falling *to* ~56% (a 44% reduction) in a scenario model explicitly marked non-additive and untested; or the 56% throughput cut required to fit Pro 200 after 11-01 | reduction *to* read as reduction *by*, and a constraint read as a benefit |
+
+The third propagated into a derived figure before being caught: a 2.27x capacity
+multiplier, which assumed spend falling to 44%. The documented scenario gives
+**1.79x** (1 / 0.56). Neither should be booked, because the underlying ~56% is a
+non-additive prediction and not a result.
+
+So a figure stated anywhere downstream of this note must carry:
+
+1. the exact quantity **and its denominator**;
+2. whether a percentage is a reduction **by** or **to**;
+3. its basis - measurement, scenario, or forecast;
+4. the conditions under which it holds;
+5. the authoritative source **and revision**.
+
+That list is not a new invention. It is what
+[`evidence-and-claims.md`](../app-server/docs/architecture/evidence-and-claims.md)
+already specifies - "a claim is never the thing it is about; it is a
+materialization, a revision-bound, attributed copy of a fact some other
+authority already established" - and that dimension is `design: accepted`,
+`reconciliation: reconciled`, `authorization: design_work_authorized`,
+`implementation: none`. The architecture for this problem is designed and
+unbuilt, which is why the problem keeps recurring in prose. Carrying the five
+fields by hand is the interim discipline, not a substitute.
+
 A number does not change class by being repeated. One figure in an earlier draft
 of this note crossed from estimate to asserted fact between sections; it is
 retracted below, with the reason, rather than quietly corrected.
