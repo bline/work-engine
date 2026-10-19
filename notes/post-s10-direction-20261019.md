@@ -139,12 +139,14 @@ than anything in the builder's generation step.
 What the pilot establishes: whether a declared readiness profile lets an
 evidence battery be assembled without a model first deciding what to look for.
 
-### 2c. The Sol-medium builder trial, run in situ on S10
+### 2c. The Sol-medium builder trial (scope narrowed by the 2c-result ruling)
 
-The operator's plan for the next reset is to switch the live S10 implementation
-agent's builder to **Sol at medium effort**, dogfooding it with the Astra
-reviewer as the backstop. This is permitted and it is informative, with three
-guards.
+The operator's original plan for the next reset was to switch the live S10
+implementation agent's builder to **Sol at medium effort**, dogfooding it with
+the Astra reviewer as the backstop. **Superseded in part:** the 2c-result ruling
+permits a *controlled* medium builder trial after the reset and does not
+authorize changing S10's existing live qualification path. Read what follows as
+applying to that controlled trial.
 
 **Permitted.** `rust-context-lifecycle-s8-implementation-plan.md:187` records the
 *anticipated* builder as `gpt-6-sol/high` and adds "No model identity or
@@ -332,6 +334,92 @@ equivalence with high.
   are *narrative* contracts, so this is evidence **for** Plan IR's hypothesis
   that explicit structure can substitute for capability, not evidence against
   medium.
+
+### 2c-result. Probe outcome and the operator's scoring ruling, 2026-10-19
+
+**Executed** 2026-10-19T15:21:53-15:23:41Z. Requested `gpt-6-sol`/`medium`,
+**observed** `gpt-6-sol`/`medium` in `turn_context`. 8 calls, 1.8 minutes,
+**0.099 Mweighted** - 12% of the 0.800 ceiling, about 0.06 quota points, leaving
+~0.94 of the expiring remainder unspent. Read-only; no repository, provider or
+S10 artifact touched. Transcript at
+`~/cbm-work/rp2-probe/out/probe-result.md`; rollout
+`01a154c1-0f45-7cc0-b0d2-262b1b8bd264`.
+
+Eleven mandatory obligations enumerated from the contract alone, including the
+mutation boundary with its out-of-scope list, stop and deviation conditions, and
+the decisions reserved to campaign, compiler and provider owners. Pass 2: ten
+contract-communicated, one genuine owner-reserved ambiguity, one overlooked,
+three investigation-discovered. The declared boundary was respected.
+
+**A defect in this note's own pre-registration, recorded rather than smoothed
+over.** The frozen decision criterion disqualified a configuration for "a missed
+mandatory obligation," while the frozen rubric simultaneously defined OVERLOOKED
+as a scored class and called it the most valuable observation in the exercise.
+The two conflict, and the criterion never said which pass it scored. One
+overlooked item exists, so Pass 1 scoring would disqualify and Pass 2 scoring
+would pass. **The ambiguity was identified only after the result was known**, and
+the ruling below was therefore made with the outcome visible. That is a weaker
+form of pre-registration than this note claims elsewhere, and future protocols
+should fix the scoring pass in the frozen text.
+
+**Operator ruling, 2026-10-19 - the standing interpretation.** Qualification is
+scored on **Pass 2, the final enumeration**. Medium **passes the bounded
+comprehension gate**. The Pass 1 omission is **retained as a separate finding**
+and is not erased by the pass. The result is explicitly *not* an unqualified
+pass.
+
+Authority granted and withheld:
+
+- **Permits** a *controlled* medium builder trial after the reset.
+- **Does not authorize** changing S10's existing live qualification path. Section
+  2c above was drafted as an in-situ switch of the live S10 implementation agent;
+  that framing is now bounded by this ruling. A controlled trial is the permitted
+  shape.
+- Establishes nothing about equivalence with high, and nothing about
+  implementation capability. This was comprehension, not construction.
+
+**Retained finding - Pass 1 omission.** Pass 1 missed two requirements that were
+explicit in the contract: that the status/receipt identify storage policy,
+realized runtime limit and capacity refusal separately (line 287), and that the
+held-provider test use **four** simultaneous mutation requests with one admitted
+(line 389). Both verified present in the contract independently of the agent's
+self-report. Comprehension from the contract alone was incomplete; recovery
+required repository reads.
+
+**Retained representation findings - three absent scalar constraints.** All three
+investigation-discovered obligations are exact limits the accepted plan calls
+"bounded" without stating:
+
+| constraint | enforced in | in contract? |
+|---|---|---|
+| `requestId` 1-128 bytes, eight output slots, NDJSON `version: 1` | `review-workflow/src/protocol.rs`, `work-engine-review-host/src/control.rs` | absent |
+| `REQUEST_MAX_BYTES = 1048576` | `review-execution-evidence/src/contract.rs` | absent |
+| `STARTUP_LIMIT = 1048576`, combined input <= `4194304` | `review-workflow/src/startup.rs` | absent |
+
+Verified by search: zero occurrences of `1,048,576`, `REQUEST_MAX_BYTES`,
+`4,194,304`, `128 bytes` or `eight output` in the contract text.
+
+This is the same defect class as `S10-LIVE-COMPILER-IDENTIFIER-CONTRACT-P2`,
+where the compiler prompt described `recipient` only as a string while
+`valid_id` enforced a grammar. Independently reproduced on a different artifact,
+by a different model, at a different effort, hours apart. It is a **systematic
+property of the repository's prose contracts**, not a single field, which is
+also what the live3 reviewer advised - check neighbouring identifier, scope,
+enum and size constraints together rather than patching one field. These belong
+to the *correctness* branch of the distinction in step 1: no reasoning effort
+recovers a constraint that was never supplied.
+
+**Positive pilot evidence - verified retrieval attribution.** Both
+self-classifications were checked independently and held: the overlooked item is
+genuinely present in the contract, and the three discovered limits are genuinely
+absent. The probe also reported, unprompted, that most of its investigation
+reconfirmed relationships the contract already supplied and that the genuinely
+new facts were the exact limits.
+
+Self-declared, inline, four-way attribution of retrievals to the obligation that
+motivated them was therefore **practical to ask of a builder and accurate when
+audited**. That is the mechanism step 2's pilot depends on, and the only evidence
+we have that it works. It cost 8 calls to obtain.
 
 ### 3. Reconcile artifact ownership before any schema is committed.
 
