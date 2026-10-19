@@ -1,0 +1,352 @@
+# Rust programme inference cost, measured and projected
+
+What the Rust work has cost in inference, and what the work still planned
+should cost, denominated in weekly Codex quota. Measured 2026-10-18 from local
+rollouts. Scope is the Rust campaigns in `docs/rust-*.md` and
+[`experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md`](../experiments/context-lifecycle-rust/IMPLEMENTATION_PLAN.md),
+both what is implemented and what is currently planned. **The migration track
+(`rust-migration-plan.md`, `rust-host-replacement-plan.md`) is out of scope by
+instruction.**
+
+The forward half is a forecast, pre-registered here so it can be scored rather
+than reconstructed. The retrospective half is measurement.
+
+## Units
+
+A quota point is 1% of a weekly Codex window and is read directly from
+`rate_limits.primary.used_percent` in the rollouts, so costs stated as a share
+of a window carry **no multiplier assumption**. The plan tiers are Pro 100 =
+5x, **Pro 200 = 10x** (this account) and Pro 500 = 25x, which also retires the
+"assumed" qualifier the efficiency ledger has carried on Pro = 10x: the frozen
+baseline independently verified 5x for what was then the Pro 100 era.
+
+| unit | value |
+|---|---|
+| 1 Pro-200 week | 100 points = 1,000 Plus-units = **~162.3 Mweighted tokens** |
+| 1 Pro-100 week | ~81.2 Mweighted |
+| 1 Pro-500 week | ~405.8 Mweighted |
+| weighted token | `uncached + cached/10 + 5 x output` |
+| coefficient | **6.16 Plus-units per Mweighted**, fitted on 93 unclipped points over 151.0 Mweighted in the 10-15 window |
+
+Window-to-window scatter on the coefficient is about +/-25% (6.16, 6.42, 6.81,
+8.07 across four unclipped Pro-era windows), so treat every figure below as
+carrying that band before any other uncertainty.
+
+
+## Reading these numbers
+
+Every figure here is one of three kinds, and the distinction is load-bearing:
+
+- **Measured** — derived from rollout telemetry or repository state, reproducible
+  by a named script.
+- **Estimated** — derived from measured quantities under a stated assumption,
+  which is given with the number.
+- **Projected** — a forecast, or a saving that has not occurred. Each carries the
+  prerequisite it is waiting on.
+
+A number does not change class by being repeated. One figure in an earlier draft
+of this note crossed from estimate to asserted fact between sections; it is
+retracted below, with the reason, rather than quietly corrected.
+
+## The 28-day promotion changes capacity, not price
+
+OpenAI is running a 28-day campaign from **2026-10-05 to 2026-11-01**, giving a
+feature or a quota reset most days. Today is day 14. **Eight resets are visible
+in the rollouts** between 10-05 and 10-17, each starting a fresh 7-day window
+from that moment with `used_percent` dropping to zero and `credits` remaining
+`{"has_credits": false, "balance": "0"}` throughout.
+
+This matters for reading any quota figure. It is a capacity gift, not a price
+change: within each uninterrupted window `used_percent` is still monotone and
+the coefficient above holds. Two readings it invalidates:
+
+- Summing per-window spans across October over-counts; October received roughly
+  seven windows of allowance, not the 2.6 a fixed weekly cycle would give.
+- A sliding-window interpretation is **disproved**, not merely unused:
+  regressing `used_percent` on trailing spend gives R2 between -0.5 and 0.0 at
+  every lookback from 1 to 7 days.
+
+## Measured: what the Rust programme has cost
+
+2026-10-01 to 10-19, 198 threads after deduplicating the archived store against
+the live one, **953.3 Mweighted total**. Root orchestration is 187.9 Mweighted,
+**24.5% of all non-root work**, allocated back pro rata at a factor of 1.245;
+that corroborates the efficiency ledger's standing "orchestration adds ~25% on
+top" for M14 from an independent direction. Excluded from the Rust total:
+schema14 (36.5, not Rust), coordination and readiness (23.0), unclassified
+(8.5).
+
+| slice / track | measured Mwt | + root share | Pro-200 weeks | status |
+|---|---:|---:|---:|---|
+| S0 foundation | 9.4 | 11.7 | **0.072** | done |
+| S1 core + store | 12.8 | 15.9 | **0.098** | done |
+| S2 async execution | 8.9 | 11.1 | **0.068** | done |
+| S3 wire + client | 8.0 | 10.0 | **0.061** | done |
+| S4 first service | 18.1 | 22.5 | **0.139** | done |
+| S5 native provider | 64.4 | 80.2 | **0.494** | **reopened, active in A3** |
+| S6+S7 semantic + admin | 48.6 | 60.5 | **0.373** | done |
+| S8 retained workflow | 49.5 | 61.7 | **0.380** | done |
+| S lifecycle shared | 8.3 | 10.3 | **0.064** | done |
+| S9 fresh start + deferred migration | 109.9 | 136.9 | **0.843** | **active** |
+| S10 replacement qualification | 33.1 | 41.2 | **0.254** | **active** |
+| C compiler C0–C2, C4 | 48.4 | 60.3 | **0.371** | C3 open, C5 planning in A4 |
+| R review episode R0–R2 | 26.6 | 33.1 | **0.204** | R3 open |
+| RP review provider RP0–RP3 | 85.1 | 106.0 | **0.653** | **active in A2** (gate fix, live review) |
+| SC slice campaign SC0–SC3d | 48.9 | 60.9 | **0.375** | SC3 remainder open |
+| J owner join + completion | 67.7 | 84.3 | **0.520** | done |
+| W workspace W0–W1 | 14.4 | 17.9 | **0.111** | **active in A4** (disk recovery, gate fix) |
+| CE claim evidence | 10.8 | 13.5 | **0.083** | done |
+| HP host HP1–HP3 | 9.3 | 11.6 | **0.071** | done |
+| P replay regression | 7.2 | 9.0 | **0.055** | done |
+| E0 / ER evidence | 6.2 | 7.7 | **0.048** | done |
+| UI terminal | 1.7 | 2.1 | **0.013** | UI0 active in A3 |
+| **Rust programme total** | **697.3** | **868.5** | **5.35** | |
+
+
+Attribution is by `session_meta.agent_path`, which names the ordinal directly
+(`rust_lifecycle_s4_20261007`, `rp1_sol_implementation`, `sc3d_sol_implementation`),
+so it is exact rather than inferred from time intervals — interval attribution
+fails here because several campaigns ran concurrently.
+
+**Shape of the measured distribution.** Pure core slices cluster tightly at
+**0.06-0.10 Pro-200 weeks** (S0 0.072, S1 0.098, S2 0.068, S3 0.061). Anything
+that crosses a host, provider or evidence boundary costs three to eight times
+that: S4 0.139, S6+S7 0.373, S8 0.380, S5 0.494, J 0.520, RP 0.653. The
+cost driver is boundary crossing and review load, not lines of code — which is
+why lines are reported nowhere in this note as a denominator.
+
+## Planned: what remains
+
+Open ordinals are those with a plan document and no matching result or
+validation document, plus the two lifecycle slices in flight. Migration
+excluded.
+
+| open item | plan | analogue | spent | **remaining, Pro-200 weeks** |
+|---|---|---|---:|---|
+| S9 fresh start + deferred migration | plan §S9, 93 lines | in flight, largest single consumer | 0.843 | **0.25 – 0.90**, central 0.50 |
+| S10 replacement qualification | plan §S10, 25 lines | S8 0.380 plus review-heavy RP 0.653 | 0.254 | **0.40 – 1.00**, central 0.65 |
+| C3 compiler | `rust-compiler-c3-plan` 406 lines | C2 at 0.284 (plan 399 lines) | — | **0.10 – 0.30**, central 0.20 |
+| C5 compiler | `rust-compiler-c5-plan` 185 lines | roughly half C3 | — | **0.05 – 0.15**, central 0.09 |
+| R3 review episode | `rust-review-episode-r3-plan` 458 lines | R2 at 0.149 (plan 447 lines) | — | **0.10 – 0.25**, central 0.16 |
+| SC3 remainder | `rust-campaign-sc3-remediation-plan` 330 lines | SC3d already done at 0.159 | — | **0.08 – 0.25**, central 0.15 |
+| **total remaining** | | | | **1.08 – 2.85, central 1.75** |
+
+Ranges come from the measured spread of comparable completed ordinals, scaled
+by plan length only where a same-track analogue exists. They are not derived
+from a model of the work.
+
+
+## Execution runs as four parallel avenues
+
+The programme is not executed slice by slice; it runs as four concurrent root
+sessions, deliberately parallel so that the promotional resets are absorbed
+before they expire. Measured over the common window 2026-10-15 18:04 to
+2026-10-19 03:31 (3.39 days):
+
+| avenue | root | work | Mweighted | Pro-200 weeks | duty cycle |
+|---|---|---|---:|---:|---:|
+| A1 | `01a14128` | lifecycle S9 + S10 | 122.5 | 0.755 | 52% |
+| A2 | `01a140bc-8707` | review provider RP0–RP3 | 94.2 | 0.580 | 67% |
+| A3 | `01a140bc-d873` | S5 native provider + UI0 | 47.5 | 0.293 | 25% |
+| A4 | `01a14d30` | workspace W1 + compiler C4/C5 | 25.7 | 0.159 | burst |
+| **combined** | | | **289.9** | **1.79** | |
+
+Duty cycle is distinct clock-hours containing at least one call, over the
+avenue's own span. Combined sustained rate is **85.4 Mweighted/day against a
+gift rate of ~100.6, or 85% utilisation.** Four avenues is close to the right
+number: a fifth would exceed the reset cadence and buy time at 99% rather than
+throughput. The remaining 15% is duty cycle, concentrated in A3.
+
+## Reconciliation: the forecast is low, and by how much
+
+Projected to 11-01 at the observed rate, the four avenues consume **1,196
+Mweighted = 7.4 Pro-200 weeks**, against ~8.7 weeks of gift — **85% of
+promotional capacity**. The per-ordinal forecast above totals 175-463
+Mweighted, which at 85.4 Mweighted/day is only **2.0 to 5.4 days** of these
+avenues running against 14 days remaining.
+
+Both cannot be right. The burn rate is the better evidence, and the forecast is
+low by roughly three to seven times. **The cause is that "done" is not
+terminal and the analogue method priced first passes.** S5 is recorded above at
+0.494 weeks and marked done, yet A3 has spent a further 0.293 weeks on it since
+10-15 across `s5_attempt`, `s5_perf`, `s5_graph` and `s5_repair`; W1 is running
+`w1_disk_recovery` and `w1_gate_fix`; RP is running `rp2_root_gate_fix` and
+`rp3_astra_live_review`; C4 has a result document and `c4_builder` ran anyway.
+Reopening and remediation are the dominant missing term, consistent with the
+gpt-6-era measurement of 5.2 review findings and 2.6 fix iterations per slice.
+
+**Revised reading.** Treat the per-ordinal table as a floor on first-pass cost,
+not an estimate of completion cost. The defensible forward statement is the
+burn-rate one: at the current configuration the programme consumes most of the
+promotional gift by 11-01, and fits only while resets continue at the observed
+cadence. Scoring after 11-01 should compare both methods, since the gap between
+them is the measurement worth keeping.
+
+## What that costs against the quota
+
+Observed burn is **53.0 Mweighted per day**, or **2.28 Pro-200 weeks of quota
+per calendar week** — a rate that only the promotion has made affordable.
+
+| scenario | capacity | remaining programme at central 1.75 weeks |
+|---|---|---|
+| **Promotion, 10-18 to 11-01** | ~9.6 more windows at the observed 0.62 resets/day = **~1,560 Mweighted over 14 days** | per-ordinal forecast says 18%; **observed burn says 85%** — see Reconciliation |
+| Pro 200 after 11-01 | 162.3 Mweighted per calendar week | **~1.8 calendar weeks of the entire quota**, with nothing left for anything else |
+| Pro 100 after 11-01 | 81.2 Mweighted per week | ~3.5 calendar weeks |
+| Pro 500 after 11-01 | 405.8 Mweighted per week | ~0.7 calendar weeks |
+
+Two conclusions follow directly.
+
+**Quota capacity is not what limits this programme before 11-01** — the
+remaining work needs roughly a fifth of what the resets should hand over.
+Finishing C3, C5, R3, the SC3 remainder, S9 and S10 before that date is the
+difference between spending 18% of a gift and spending two full weeks of
+standing quota.
+
+**This is not a claim that the work completes by 11-01, and the distinction is
+not academic.** Three constraints sit outside the aggregate:
+
+- *Window capacity binds even when total capacity does not.* At the observed
+  0.62 resets/day the sustainable rate is ~101 Mweighted/day against an average
+  of 53, but bursts run far above that and then stall. Several October windows
+  clipped at 99-100%. At the time of writing the account is at **99% with the
+  nominal reset 5.8 days out**: ample aggregate capacity, no capacity today.
+- *The remaining work is gate-bound.* S10 requires human replacement acceptance
+  and a separately authorized bounded live proof, and S9's gating decision is
+  unresolved. Neither is moved by quota.
+- *The two largest forecast cells are the least reliable.* S9 and S10 are both
+  in flight; measured per-slice spread is 4.6x and gpt-6-era slices carried 5.2
+  review findings and 2.6 fix iterations each. For quota to bind, the pace would
+  have to roughly double, the resets slow, or S9+S10 exceed the high end by
+  about 3x.
+
+**Pro 500 is the tier that matches current habits.** The observed 2.28
+Pro-200 weeks per calendar week sits just under the 2.5x that Pro 500 provides.
+At Pro 200 after 11-01, throughput has to fall by about 56% from the October
+rate, which is a scheduling decision rather than an efficiency one — the
+measured levers in
+[`metrics/efficiency-ledger.md`](../metrics/efficiency-ledger.md) are worth tens
+of percent, not a factor of two.
+
+
+## Where engineering inference goes, by role (measured)
+
+Same corpus and attribution, classified by `agent_path`, root allocated pro rata
+([`metrics/scripts/rust_programme_roles.py`](../metrics/scripts/rust_programme_roles.py)):
+
+| role | Mweighted | + root | Pro-200 weeks | share of non-root |
+|---|---:|---:|---:|---:|
+| build | 461.9 | 575.6 | 3.546 | 60.4% |
+| other / coordination | 160.2 | 199.5 | 1.229 | 20.9% |
+| review + remediation | 92.7 | 115.5 | 0.712 | 12.1% |
+| planning + contract | 50.5 | 62.8 | 0.387 | 6.6% |
+
+**Reviewer threads are 20% of builder spend.** That is the whole of what this
+corpus establishes about the cost of correction.
+
+## What this telemetry cannot establish (negative result)
+
+An attempt was made to separate initial implementation from correction by
+segmenting each builder thread at the first non-plan review of its own ordinal.
+**It does not work, and the failure is more useful than the number would have
+been.** Ordinals fall into two populations:
+
+| pattern | ordinals | builder Mwt | spend after first review |
+|---|---|---:|---:|
+| build, then review | c4, ce3, j1, j2, s67, s8, sc3d, w1 | 137.3 | **27.4%** |
+| review interleaved | ce1, r2, rp1, s5, s9, sc1 | 234.2 | **88.2%** |
+
+Those are two **campaign styles**, not two correction rates. Where review runs
+concurrently with ongoing planned work, "after the first review" captures the
+entire build and says nothing about rework: a builder working after a review may
+be correcting a finding, fulfilling an obligation not yet attempted, responding
+to new evidence, or reconciling an integration consequence. Chronology does not
+recover purpose.
+
+**Retracted.** An earlier draft estimated in-builder rework at 354.2 Mweighted by
+assuming the measured 2.6 fix iterations per gpt-6 slice represent 2.6 equally
+expensive passes, and reported the total as "62% of the programme" against a
+denominator that excluded coordination. Both are withdrawn: iteration *count*
+does not establish iteration *cost*, a first pass and a small correction are not
+interchangeable, reviewer inference is not all rework, and the correct shares of
+the stated denominators were 49.3% and 54.1%. **The rework share is unknown**, and
+the 27.4% / 88.2% figures above must not be read as bounding it.
+
+The missing information is attribution of an execution attempt to the obligation
+or finding that caused it. Conventional agent logs record what happened, not its
+authoritative purpose — which is precisely the relationship
+`implementation-contract-compilation.md` and `evidence-and-claims.md` are
+designed to preserve.
+
+## Caveats
+
+- The coefficient carries +/-25% window-to-window scatter; every Pro-200-week
+  figure inherits it before any forecast error.
+- The cached/uncached price split remains an assumption, as the ledger records.
+  Total spend estimates are robust to it; the mix-sensitive figures are not.
+- Root orchestration is allocated pro rata, not measured per slice. A slice that
+  consumed more supervision than average is undercharged here and its neighbours
+  overcharged.
+- Remaining-work ranges are judgement anchored on analogues. S9 and S10 are both
+  in flight, so their "spent" column is a snapshot that will move.
+- Reset count assumes the observed 0.62 resets/day continues to 11-01. The last
+  four gaps average **2.45 days**, not 1.80, so the forward figure is the slower
+  one; the cadence is irregular (observed gaps 0.36 to 3.08 days) and this is the
+  largest single uncertainty in the forward budget.
+- **Projected, not realised.** M22's handoff saving and the 1.43x multiplier it
+  implies are replay-derived from traces, not production results, and they have an
+  unmet prerequisite: `ContextPressureController` and `TokenUsagePressureProjector`
+  exist only in `app-server/src/*.mjs`. **There is no pressure controller in the
+  Rust host** — `lifecycle-core` is contracts/reducer/state, `lifecycle-runtime` is
+  clock/executor/framing/process, and nothing in `rust/crates/` carries pressure
+  bands or hysteresis. Until it is ported, M22's thresholds have nothing to
+  configure, and no part of this saving should be booked when planning capacity.
+
+
+## Pilot scoring rule (pre-registered)
+
+The Plan IR pilot has two jobs. The first is the economic comparison. The second
+is to demonstrate that a structured contract carries enough identity to attribute
+inference to the obligation or finding that caused it — the thing the negative
+result above shows cannot be recovered afterwards.
+
+Headline outcome is **M14, estimated Plus-units per accepted slice**, fully
+loaded: planning, implementation, review, remediation, integration, and the cost
+of abandoned attempts. An arm costing more on its first pass wins if it needs
+fewer corrections, and an arm scored on builder tokens alone would wrongly reject
+it. Quality gates bind: a cheaper slice is not equivalent if it satisfies fewer
+obligations or leaves defects undiscovered, so M9 (attempts), M10 (findings) and
+the vertical/placement verdicts are reported beside every cost figure.
+
+Attribution must happen **at dispatch or transition time**, not by classification
+afterwards:
+
+| quantity | required evidence |
+|---|---|
+| initial implementation | calls attributed to the initial bounded attempt |
+| correction | calls attributable to a specific finding or failed obligation |
+| continued planned work | calls fulfilling obligations not yet attempted |
+| review | calls attributable to each review episode |
+| reopening | work after an earlier acceptance |
+| final outcome | accepted consequences and their verification |
+
+Arms, using existing plan documents so that no implementation is required:
+arm 1 is free (every builder run to date is Sol at high effort on current plan
+representation); arm 2 is Sol against a structurally detailed plan; arm 4 is
+medium effort against the same. Arm 2 against arm 1 isolates representation at
+fixed effort; arm 4 against arm 2 isolates effort at fixed representation. Keep
+every arm at slice level: the pilot must not silently settle whether Plan IR
+represents the compiled implementation contract or the accepted branch plan, a
+reconciliation its own source defers — "final role and artifact ownership should
+be reconciled against the post-migration App Server architecture before
+implementation."
+
+## Scoring this later
+
+After 11-01, re-run the attribution and compare actual against the central
+column. The forecast is wrong in a useful way if the error is systematic by
+bucket — core slices too cheap, qualification too dear — and uninformative if it
+is scattered. Record the result in the efficiency ledger's measurement log
+rather than editing the table above.
+
+Reproduce the measured half with
+[`metrics/scripts/rust_programme_cost.py`](../metrics/scripts/rust_programme_cost.py).
