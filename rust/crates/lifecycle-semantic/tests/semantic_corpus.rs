@@ -111,6 +111,61 @@ fn c5_forged_reference_and_untrusted_authority_are_refused() {
 }
 
 #[test]
+fn compiler_contract_exposes_citation_categories_and_rejects_live2_shape() {
+    let material = basis("C5");
+    let policy = SemanticPolicy::default();
+    let compile = compile_request(
+        &material,
+        binding(&material, SemanticPhase::Compile),
+        &policy,
+    )
+    .unwrap();
+    let prompt: serde_json::Value = serde_json::from_str(&compile.prompt).unwrap();
+    let rules = &prompt["model_output_contract"]["field_citation_rules"];
+    for field in [
+        "next_action",
+        "governing",
+        "canonical_refs",
+        "decisions",
+        "interactions",
+    ] {
+        assert!(rules[field].as_str().is_some_and(|rule| !rule.is_empty()));
+    }
+    let mut plan = complete_plan(&material);
+    let canonical = material
+        .sources
+        .iter()
+        .find(|source| source.kind == SourceKind::CanonicalRecord && source.current)
+        .unwrap();
+    plan.governing.push(AttributedStatement {
+        text: "A canonical question incorrectly presented as governing".into(),
+        sources: vec![canonical.reference()],
+    });
+    assert_eq!(
+        candidate_from_output(
+            &material,
+            &compile,
+            serde_json::to_vec(&plan).unwrap(),
+            &policy
+        ),
+        Err(SemanticError::InvalidReference)
+    );
+    assert_eq!(
+        candidate_from_output(&material, &compile, b"{".to_vec(), &policy),
+        Err(SemanticError::InvalidOutput)
+    );
+    assert_eq!(
+        candidate_from_output(
+            &material,
+            &compile,
+            vec![b'x'; policy.max_control_output_bytes + 1],
+            &policy
+        ),
+        Err(SemanticError::OutputTooLarge)
+    );
+}
+
+#[test]
 fn persisted_public_dto_swaps_cannot_change_the_assessed_subject() {
     let material = basis("C1");
     let policy = SemanticPolicy::default();

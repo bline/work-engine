@@ -39,6 +39,38 @@ pub struct SemanticMaterialRejectionRecord {
     pub eligibility: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SemanticCompileRefusalRecord {
+    pub transition_id: String,
+    pub capture_id: String,
+    pub invocation_id: String,
+    pub input_sha256: String,
+    pub output_sha256: String,
+    pub reason: String,
+}
+
+struct SettledCompileRow {
+    subject: String,
+    eligibility: String,
+    phase: String,
+    attempt_state: String,
+    result_sha: Option<String>,
+    native_state: String,
+    native_sha: Option<String>,
+    stage: String,
+    prompt_sha: String,
+    artifact_sha: Option<String>,
+}
+
+fn compile_refusal_event_kind(error: &SemanticError) -> Option<&'static str> {
+    match error {
+        SemanticError::InvalidOutput => Some("semantic_compile_invalid_output"),
+        SemanticError::InvalidReference => Some("semantic_compile_invalid_reference"),
+        SemanticError::OutputTooLarge => Some("semantic_compile_output_too_large"),
+        _ => None,
+    }
+}
+
 struct DigestWriter(Sha256);
 impl Write for DigestWriter {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -128,6 +160,115 @@ pub struct SemanticCheckpointPackage {
 }
 
 impl SqliteLifecycleStore {
+    /// A completed native turn can be semantically unusable. Keep its native
+    /// settlement intact and bind the refusal to the exact current attempt.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_semantic_compile_refusal(
+        &mut self,
+        transition: &TransitionId,
+        capture_id: &str,
+        invocation_id: &str,
+        input_sha256: &str,
+        output_sha256: &str,
+        error: &SemanticError,
+        clock: ClockSample,
+    ) -> Result<SemanticCompileRefusalRecord, StoreError> {
+        self.verify_identity()?;
+        let reason = compile_refusal_event_kind(error).ok_or(StoreError::Rejected)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| StoreError::Unavailable)?;
+        let row: Option<SettledCompileRow> = tx
+            .query_row(
+                "SELECT c.subject_id,c.eligibility,a.phase,a.state,a.result_sha256,n.state,n.final_sha256,tr.stage,a.input_sha256,a.result_artifact_sha256 \
+                 FROM semantic_attempts a JOIN semantic_captures c ON c.capture_id=a.capture_id \
+                 JOIN native_turns n ON n.invocation_id=a.invocation_id \
+                 JOIN transitions tr ON tr.transition_id=c.transition_id AND tr.subject_id=c.subject_id \
+                 WHERE a.invocation_id=?1 AND a.capture_id=?2 AND c.transition_id=?3",
+                params![invocation_id, capture_id, transition.as_str()],
+                |r| Ok(SettledCompileRow {
+                    subject: r.get(0)?,
+                    eligibility: r.get(1)?,
+                    phase: r.get(2)?,
+                    attempt_state: r.get(3)?,
+                    result_sha: r.get(4)?,
+                    native_state: r.get(5)?,
+                    native_sha: r.get(6)?,
+                    stage: r.get(7)?,
+                    prompt_sha: r.get(8)?,
+                    artifact_sha: r.get(9)?,
+                }),
+            )
+            .optional()
+            .map_err(|_| StoreError::Unavailable)?;
+        let Some(row) = row else {
+            return Err(StoreError::Rejected);
+        };
+        if row.eligibility != "current"
+            || row.phase != "compile"
+            || row.attempt_state != "completed_settled"
+            || row.native_state != "completed_settled"
+            || row.stage != "verifying"
+            || row.result_sha.as_deref() != Some(output_sha256)
+            || row.native_sha.as_deref() != Some(output_sha256)
+            || row.prompt_sha != input_sha256
+            || row.artifact_sha.is_some()
+        {
+            return Err(StoreError::Rejected);
+        }
+        let prior: Option<String> = tx.query_row(
+            "SELECT event_kind FROM journal WHERE subject_id=?1 AND event_ref=?2 AND event_kind IN ('semantic_compile_invalid_output','semantic_compile_invalid_reference','semantic_compile_output_too_large') ORDER BY sequence DESC LIMIT 1",
+            params![&row.subject, invocation_id], |r| r.get(0),
+        ).optional().map_err(|_| StoreError::Unavailable)?;
+        if let Some(prior) = prior {
+            if prior != reason {
+                return Err(StoreError::ClaimConflict);
+            }
+        } else {
+            tx.execute(
+                "INSERT INTO journal(subject_id,event_kind,event_ref,wall_ms) VALUES (?1,?2,?3,?4)",
+                params![&row.subject, reason, invocation_id, clock.wall.get()],
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+        }
+        tx.commit().map_err(|_| StoreError::Unavailable)?;
+        Ok(SemanticCompileRefusalRecord {
+            transition_id: transition.as_str().into(),
+            capture_id: capture_id.into(),
+            invocation_id: invocation_id.into(),
+            input_sha256: input_sha256.into(),
+            output_sha256: output_sha256.into(),
+            reason: reason.into(),
+        })
+    }
+
+    pub fn semantic_compile_refusal(
+        &self,
+        transition: &TransitionId,
+        capture_id: &str,
+        invocation_id: &str,
+    ) -> Result<Option<SemanticCompileRefusalRecord>, StoreError> {
+        self.verify_identity()?;
+        self.connection.query_row(
+            "SELECT c.transition_id,a.capture_id,a.invocation_id,a.input_sha256,a.result_sha256,j.event_kind \
+             FROM journal j JOIN semantic_attempts a ON a.invocation_id=j.event_ref \
+             JOIN semantic_captures c ON c.capture_id=a.capture_id \
+             JOIN native_turns n ON n.invocation_id=a.invocation_id \
+             WHERE c.transition_id=?1 AND a.capture_id=?2 AND a.invocation_id=?3 \
+             AND c.eligibility='current' AND a.phase='compile' AND a.state='completed_settled' \
+             AND n.state='completed_settled' AND n.final_sha256=a.result_sha256 \
+             AND a.result_artifact_sha256 IS NULL AND j.subject_id=c.subject_id \
+             AND j.event_kind IN ('semantic_compile_invalid_output','semantic_compile_invalid_reference','semantic_compile_output_too_large') \
+             ORDER BY j.sequence DESC LIMIT 1",
+            params![transition.as_str(),capture_id,invocation_id],
+            |r| Ok(SemanticCompileRefusalRecord {
+                transition_id:r.get(0)?,capture_id:r.get(1)?,invocation_id:r.get(2)?,
+                input_sha256:r.get(3)?,output_sha256:r.get(4)?,reason:r.get(5)?,
+            }),
+        ).optional().map_err(|_|StoreError::Unavailable)
+    }
+
     pub fn record_semantic_material_rejection(
         &mut self,
         input: &MaterialInput,

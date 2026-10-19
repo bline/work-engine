@@ -50,6 +50,7 @@ pub struct SubjectProjection {
 pub struct TransitionProjection {
     pub transition_id: String,
     pub stage: String,
+    pub semantic_compile_refusal: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

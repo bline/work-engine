@@ -157,6 +157,18 @@ pub async fn establish_checkpoint(
                 .map_err(|_| StoreError::Unavailable)?,
         ));
     }
+    // A native compiler turn may have completed while its model-authored
+    // content failed deterministic validation. Never send that attempt again.
+    if store
+        .semantic_compile_refusal(
+            transition,
+            &runtime.semantic.capture_id,
+            &runtime.semantic.compile_invocation_id,
+        )?
+        .is_some()
+    {
+        return Err(StoreError::Rejected);
+    }
     let input = runtime
         .material_port
         .project(subject, transition, &runtime.semantic.capture_id)
@@ -238,8 +250,32 @@ pub async fn establish_checkpoint(
         &compile_request,
         compile.final_material.final_text.clone(),
         &policy,
-    )
-    .map_err(semantic_store_error)?;
+    );
+    let candidate = match candidate {
+        Ok(candidate) => candidate,
+        Err(
+            error @ (lifecycle_semantic::SemanticError::InvalidOutput
+            | lifecycle_semantic::SemanticError::InvalidReference
+            | lifecycle_semantic::SemanticError::OutputTooLarge),
+        ) => {
+            if lifecycle_semantic::sha256_hex(&compile.final_material.final_text)
+                != compile.final_material.final_sha256
+            {
+                return Err(StoreError::Rejected);
+            }
+            store.record_semantic_compile_refusal(
+                transition,
+                &basis.capture_id,
+                &compile.binding.invocation_id,
+                &compile_request.prompt_sha256,
+                &compile.final_material.final_sha256,
+                &error,
+                clock_sample(),
+            )?;
+            return Err(StoreError::Rejected);
+        }
+        Err(error) => return Err(semantic_store_error(error)),
+    };
     let candidate_artifact = publish_bytes(store, subject, &candidate.raw)?;
     store.link_semantic_attempt_artifact(
         &runtime.semantic.compile_invocation_id,

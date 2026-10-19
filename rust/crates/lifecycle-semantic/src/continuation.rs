@@ -235,7 +235,14 @@ fn continuation_output_contract(schema_version: u32) -> serde_json::Value {
             "delivery_custody":"array of attributed_statement", "next_action":"attributed_statement"
         },
         "interaction_status":["pending","scoped_answer","resolved","uncertain"],
-        "citation_rule":"Each source_reference must match an admitted source exactly. Host identity and grant fields are outside model output."
+        "citation_rule":"Each source_reference must match an admitted source exactly. Host identity and grant fields are outside model output. The host rejects category-ineligible citations before a continuation can become a checkpoint.",
+        "field_citation_rules":{
+            "next_action":"Cite at least one current source whose trust is host_governing or host_canonical. This proposes work; it does not grant authority.",
+            "governing":"Each entry must cite at least one source with kind governing and trust host_governing. A canonical question or reference alone is not governing authority.",
+            "canonical_refs":"Each entry must cite at least one current source with kind canonical_record.",
+            "decisions":"Each decision statement must cite a decision source whose current value matches the entry. Every supersedes reference must resolve to a non-current decision source.",
+            "interactions":"Each entry must cite at least one current source with kind human_interaction. Pending entries cannot have an answer_id."
+        }
     })
 }
 

@@ -1323,6 +1323,24 @@ impl SqliteLifecycleStore {
         let unresolved_attempts: i64 = tx.query_row(
             "SELECT COUNT(*) FROM attempts a JOIN effects e ON e.effect_id=a.effect_id WHERE e.subject_id=?1 AND (a.state='entered' OR a.settlement_kind!='established')",
             [subject.as_str()], |row| row.get(0)).map_err(|_| StoreError::Unavailable)?;
+        let transition = transition.map(|(transition_id, stage)| {
+            let semantic_compile_refusal = if stage == "verifying" {
+                tx.query_row(
+                    "SELECT j.event_kind FROM journal j \
+                     JOIN semantic_attempts a ON a.invocation_id=j.event_ref \
+                     JOIN semantic_captures c ON c.capture_id=a.capture_id \
+                     JOIN native_turns n ON n.invocation_id=a.invocation_id \
+                     WHERE c.transition_id=?1 AND c.subject_id=?2 AND c.eligibility='current' \
+                     AND a.phase='compile' AND a.state='completed_settled' \
+                     AND n.state='completed_settled' AND n.final_sha256=a.result_sha256 \
+                     AND a.result_artifact_sha256 IS NULL AND j.subject_id=c.subject_id \
+                     AND j.event_kind IN ('semantic_compile_invalid_output','semantic_compile_invalid_reference','semantic_compile_output_too_large') \
+                     ORDER BY j.sequence DESC LIMIT 1",
+                    params![&transition_id,subject.as_str()], |r|r.get(0),
+                ).optional().map_err(|_|StoreError::Unavailable)?
+            } else { None };
+            Ok::<_, StoreError>(TransitionProjection {transition_id,stage,semantic_compile_refusal})
+        }).transpose()?;
         tx.commit().map_err(|_| StoreError::Unavailable)?;
         Ok(SubjectProjection {
             store_id,
@@ -1333,10 +1351,7 @@ impl SqliteLifecycleStore {
             owner_kind: state.3,
             owner_ref: state.4,
             journal_cursor: u64::try_from(journal_cursor).map_err(|_| StoreError::Unavailable)?,
-            transition: transition.map(|(transition_id, stage)| TransitionProjection {
-                transition_id,
-                stage,
-            }),
+            transition,
             delivery,
             unresolved_attempts: u64::try_from(unresolved_attempts)
                 .map_err(|_| StoreError::Unavailable)?,

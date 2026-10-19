@@ -28,6 +28,7 @@ pub enum Reply {
     /// A bounded fixture compiler over the actual owner-authored source prompt.
     /// It never sets lifecycle readiness or mutates owner state.
     SemanticCompile,
+    SemanticCompileInvalidGoverning,
     SemanticVerify,
     SuccessorUse,
     SemanticSuccessorVerify,
@@ -216,6 +217,9 @@ fn serve(
                         Reply::Text(_) => "text",
                         Reply::Streamed(_) => "streamed",
                         Reply::SemanticCompile => "semantic_compile",
+                        Reply::SemanticCompileInvalidGoverning => {
+                            "semantic_compile_invalid_governing"
+                        }
                         Reply::SemanticVerify => "semantic_verify",
                         Reply::SuccessorUse => "successor_use",
                         Reply::SemanticSuccessorVerify => "semantic_successor_verify",
@@ -472,6 +476,19 @@ fn semantic_compile_output(request: &Value) -> Result<String> {
     Ok(serde_json::to_string(&plan)?)
 }
 
+/// Reproduces live2's category error while retaining exact current references:
+/// a canonical engineering question is placed in the governing array.
+fn semantic_compile_invalid_governing_output(request: &Value) -> Result<String> {
+    let mut plan: Value = serde_json::from_str(&semantic_compile_output(request)?)?;
+    let prompt = semantic_prompt(request, "compile_attributed_continuation")?;
+    let question = semantic_source(&prompt, "engineering-question")?;
+    plan["governing"]
+        .as_array_mut()
+        .ok_or_else(|| ProofError::Contract("governing array absent".into()))?
+        .push(source_statement(question));
+    Ok(serde_json::to_string(&plan)?)
+}
+
 fn semantic_verify_output(request: &Value, successor: bool) -> Result<String> {
     let task = if successor {
         "verify_successor_use_of_continuation"
@@ -635,6 +652,11 @@ fn write_reply(
             "type":"message","id":format!("proof-message-{ordinal}"),
             "role":"assistant","status":"completed",
             "content":[{"type":"output_text","text":semantic_compile_output(request)?,"annotations":[]}]
+        }),
+        Reply::SemanticCompileInvalidGoverning => json!({
+            "type":"message","id":format!("proof-message-{ordinal}"),
+            "role":"assistant","status":"completed",
+            "content":[{"type":"output_text","text":semantic_compile_invalid_governing_output(request)?,"annotations":[]}]
         }),
         Reply::SemanticVerify => json!({
             "type":"message","id":format!("proof-message-{ordinal}"),

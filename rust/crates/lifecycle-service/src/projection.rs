@@ -6,6 +6,10 @@ use lifecycle_wire::{
 };
 
 pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnapshotV1 {
+    let semantic_compile_refusal = value
+        .transition
+        .as_ref()
+        .and_then(|item| item.semantic_compile_refusal.clone());
     let yielded_outcome_not_representable = value
         .delivery
         .as_ref()
@@ -72,6 +76,16 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
         .and_then(|item| item.source_ref.clone())
         .into_iter()
         .collect();
+    let mut blocking_reasons = Vec::new();
+    if value.unresolved_attempts > 0 {
+        blocking_reasons.push("unresolved_entered_attempt".to_owned());
+    }
+    if yielded_outcome_not_representable {
+        blocking_reasons.push("yielded_outcome_not_representable_v1".to_owned());
+    }
+    if let Some(reason) = &semantic_compile_refusal {
+        blocking_reasons.push(reason.clone());
+    }
     LifecycleSnapshotV1 {
         protocol_version: 1,
         subject_id: value.subject_id.clone(),
@@ -84,22 +98,17 @@ pub fn into_snapshot(value: SubjectProjection, targeted: bool) -> LifecycleSnaps
         transition,
         current_admission: admission,
         delivery,
-        runtime_availability: if value.unresolved_attempts > 0 {
+        runtime_availability: if value.unresolved_attempts > 0 || semantic_compile_refusal.is_some()
+        {
             RuntimeAvailabilityV1::Unknown
         } else {
             RuntimeAvailabilityV1::Available
         },
         runtime_provenance: FieldV1::Unknown,
-        blocking_reason: match (
-            value.unresolved_attempts > 0,
-            yielded_outcome_not_representable,
-        ) {
-            (true, true) => FieldV1::Known(
-                "unresolved_entered_attempt;yielded_outcome_not_representable_v1".into(),
-            ),
-            (true, false) => FieldV1::Known("unresolved_entered_attempt".into()),
-            (false, true) => FieldV1::Known("yielded_outcome_not_representable_v1".into()),
-            (false, false) => FieldV1::NotApplicable,
+        blocking_reason: if blocking_reasons.is_empty() {
+            FieldV1::NotApplicable
+        } else {
+            FieldV1::Known(blocking_reasons.join(";"))
         },
         authority_refs: Vec::new(),
         evidence_refs,
