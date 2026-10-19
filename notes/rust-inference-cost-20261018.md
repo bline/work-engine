@@ -72,11 +72,44 @@ That list is not a new invention. It is what
 [`evidence-and-claims.md`](../app-server/docs/architecture/evidence-and-claims.md)
 already specifies - "a claim is never the thing it is about; it is a
 materialization, a revision-bound, attributed copy of a fact some other
-authority already established" - and that dimension is `design: accepted`,
-`reconciliation: reconciled`, `authorization: design_work_authorized`,
-`implementation: none`. The architecture for this problem is designed and
-unbuilt, which is why the problem keeps recurring in prose. Carrying the five
-fields by hand is the interim discipline, not a substitute.
+authority already established."
+
+**Correction, and it is the fourth instance of the failure described above.** An
+earlier version of this paragraph said that dimension was "designed and unbuilt,"
+citing `authorization: design_work_authorized` / `implementation: none`. Wrong:
+that block is §6's `status_override`, scoped to the *refresh extension*. The
+page default, which governs §2-§5, is `design: accepted`,
+`authorization: implementation_authorized`, **`implementation: implemented`** -
+and §2 is titled "The Implemented Substrate Today." Verified in code: six
+operations in `app-server/src/services/claim-evidence/service.mjs`
+(`create_claim`, `publish_revision`, `publish_lineage`, `record_reliance`,
+`retire_reliance`, `retract_revision`), three profiles in `contract.mjs`
+(`proposal-research-v1`, `revision-bound-review-finding-v1`,
+`production-path-v1`), and a mechanically enforced non-authority boundary that
+throws `"production-path claim is self-authorized"` in
+`production-path-contract.mjs:62`.
+
+I read a component's status block as the dimension's status - a scope error, in a
+correction about scope errors, against a page whose own status section says §6,
+§7 and §8 "**must not be read as sharing this default**." The information was
+labelled, scoped, and accompanied by an explicit warning, and it still did not
+survive restatement. That is the strongest available evidence for the point this
+section is making: understanding an invariant is not the same as enforcing one.
+
+**What this changes practically.** The substrate for attributed, revision-bound
+claims exists and runs. What is missing is a *domain profile* for quantitative
+planning claims - §7's `planning-facts-v1` territory, which is `design: proposed`
+/ `authorization: exploration_only` / `implementation: none`. So the available
+move is a new profile on an implemented substrate, not a new mechanism, and the
+five fields above are the profile's candidate schema: quantity with denominator,
+direction (`reduction_by` versus `reduction_to`), basis, conditions, and
+source revision. Derived values would carry lineage to the parent revision via
+`publish_lineage`'s existing `derivation` edge, so a figure like the 1.79x
+multiplier inherits its parent scenario's unvalidated status instead of
+becoming an independent performance claim.
+
+Carrying the five fields by hand remains the interim discipline, and this
+section's own correction history is the argument for not leaving it there.
 
 A number does not change class by being repeated. One figure in an earlier draft
 of this note crossed from estimate to asserted fact between sections; it is
