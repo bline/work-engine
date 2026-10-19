@@ -47,6 +47,7 @@ their full path under `metrics/scripts/`.
 | M20 | Cost of resuming a stopped session | not measured | 69 resume boundaries (>4h gap) at median 165K context and **1.179 Plus-units for the single first call**, 63 of 69 with ≤20% of input cache-hit; 78.8 units in total, about 7× an ordinary call at that context | `metrics/experiments/codex-config-trim-20261014/` |
 | M21 | Standing context at session start | not measured | **17,716 tokens** for a fresh root (20,056 pre-trim). Model-visible message list is 5 messages / 23,181 bytes: harness guidance + skills index 13,105, `multi_agent_role` 2,400, `AGENTS.md` 7,403. The base prompt and tool schemas appear in neither the rollout nor `prompt-input`, so the balance of the floor is unattributed | `metrics/experiments/codex-config-trim-20261014/standing.py`, `floor.py`, `codex debug prompt-input` |
 | M16 | Tool output discarded by harness truncation before the model reads it | not measured | 3.4 truncations per 100 model calls (79 over 2,313, 2026-10-13 22:55Z to 10-14 04:00Z), against 3.1 before; **75 of 76 truncated calls had set an explicit `max_output_tokens`**; 32% touch a doctrine or skill document and 38% fall within 120 s of a context reset | `metrics/scripts/output_truncation.py` |
+| **M22** | **Cost-optimal context handoff threshold for a builder thread** | not measured | **conditional on the restart floor, not a fixed context level.** Break-even total restart (standing floor + brief + rediscovery) is **~75K**: at a 40K restart the optimum is a **70K** trigger worth **+29.6%**, at 60K a 100K trigger worth +11.4%, and at the measured **116K** floor every threshold loses (about **-30%**). Codex's own replacement triggers at median **207,819** and resets to median **29,410**, so the auto-brief is already the right size and only the timing is wrong | `metrics/scripts/handoff_threshold.py` |
 
 **M11 denominator.** Each independent review finding or contract/route revision
 in S4–S8 counted once; later candidate attempts, bundled multi-change revisions,
@@ -104,6 +105,18 @@ assumed-weighted tokens gives, for 92 Pro-plan segments of median 778 calls,
 10x Plus that is **6.84 Plus-units per million weighted tokens against the
 baseline's fitted 7.826** — 14% apart from an independent direction, which is
 reassuring for every aggregate figure in this ledger.
+
+Two later whole-window readings agree and sit lower still. Taking a whole
+weekly window as one segment, rather than 10-point increments, and using only
+windows that never clipped at 100%, four Pro-plan gpt-6 windows give **6.42**
+(10-05 to 10-07, 40 points), **8.07** (10-11 to 10-13, 44), **6.81** (10-13 to
+10-14, 44) and **6.16** Plus-units per million weighted tokens (10-15 to 10-17,
+**93 points over 151.0 Mweighted**, gpt-6 only, Pro throughout, the
+best-conditioned of the four). The baseline's 7.826 is above all four. Treat
+**6.2-6.8** as the current working coefficient and the window-to-window scatter
+as about ±25%: that scatter is wide enough that no single window demonstrates a
+price change, which is why the 2026-10-16 upstream caching announcement is not
+detectable here in either direction.
 
 Freeing the three weights does **not** identify them. The same 92 Pro segments
 give cached/uncached **-0.016** and output/uncached **21.2**; 63 Pro Lite
@@ -279,6 +292,86 @@ write-then-verify steps are genuinely sequential. The defensible figure is the
 could share a call, plus the 24 exact repeats: **about 20 units, 6% of the
 round**. The batching lever is real and cheap; it is not the big one.
 
+### What an earlier handoff is worth, replayed on 44 builder threads
+
+The projection above (~15% from the packet, ~30% with the trigger) came from
+one supervisor's cost-per-context curve. This replays the question against the
+work streams of **44 `gpt-6-sol` builder threads, 37,628 calls, 582.0
+Mweighted = 3,585 Plus-units**, 2026-10-07 to 10-17, and reaches the same
+conclusion with a number attached to it
+([`metrics/scripts/handoff_threshold.py`](scripts/handoff_threshold.py),
+run over `~/.codex/sessions/2026/10/*/rollout-*.jsonl` and
+`~/.codex/archived_sessions/*.jsonl`).
+
+Method: context per call is `last_token_usage.input_tokens`; the work stream is
+the per-call increment, with a drop below 60% of the previous context read as a
+replacement whose new base enters cold. Replaying those increments under
+"reset to R whenever context would exceed T" prices an earlier handoff while
+holding constant the work the session actually performed. The replayed baseline
+reproduces observed spend to within 7%.
+
+**Where builder spend sits.** 2.6% of weighted cost is incurred below 50K
+context, 16.2% at 50-100K, 31.2% at 100-150K, 39.2% at 150-200K and 10.8% above
+200K. **81% of builder spend is incurred above 100K**, which is why the
+threshold looks like a large lever before the restart cost is counted.
+
+**R is the whole restart, not the written brief.** Standing floor plus brief
+plus whatever the successor re-reads before it is productive. That third term
+decides the result:
+
+| total restart | best threshold | saving |
+|---|---|---|
+| 40K | 70K | **+29.6%** |
+| 60K | 100K | +11.4% |
+| 80K | 130K | -5.3% |
+| 100K | 150K | -21.6% |
+| 120K | 190K | -36.6% |
+| 140K | 210K | -51.2% |
+
+**Break-even total restart is ~75K.** Against the measured Codex-native floor of
+**116K**, every threshold loses roughly 30%. That is the same finding as "a 155K
+trigger with a 116K floor saves nothing" above, now stated as the condition it
+really is: *the trigger is worth nothing at any setting until the restart lands
+under ~75K*, and below that it is worth up to ~30%. Decomposed by brief and
+rediscovery, holding the 18.6K standing floor (M21):
+
+| brief | rediscovery per reset | best threshold | saving |
+|---|---|---|---|
+| 20K | 0 | 70K | +31.0% |
+| 20K | 18K | 100K | +14.5% |
+| 20K | 36K | 120K | **-1.0%** |
+| 30K | 0 | 90K | +21.5% |
+| 30K | 18K | 110K | +5.9% |
+| 50K | 0 | 110K | +4.1% |
+| 50K | 36K | 160K | -24.9% |
+
+The measured rediscovery is **36K** (5 doctrine calls, ~18 s) and the measured
+brief Codex itself writes is **~29K**. Those two values together put the native
+mechanism just the wrong side of break-even. The brief is not the problem:
+across 158 observed replacements in this cohort, Codex triggers at a median
+**207,819** context and resets to a median **29,410**, so it already produces a
+right-sized packet, roughly three times later than the cost curve wants it.
+**The addressable term is the 36K of doctrine the successor re-reads**, which is
+the ~36K the Replacement economics section already identifies as the host's
+reachable share of the floor. Halving it moves a 20K-brief policy from -1.0% to
+roughly +14%; removing it reaches +31%.
+
+**Correction to the first reading.** Taken earlier the same day without a
+rediscovery term, this analysis reported a flat "hand off at 70-80K for ~35%"
+and the break-even was stated as a property of the *brief* (~65K). Charging
+rediscovery on the resets a policy introduces — which the replay cannot observe,
+because the traces only contain rediscovery at their own 158 replacements —
+turns that into the conditional result above. The earlier figure is the
+rediscovery-free row of the table, not a separate finding.
+
+**What the replay cannot see.** It holds the work stream constant, so it prices
+carrying context, not redoing work: a successor that re-reads files or re-runs
+tests costs more than any row here. Rediscovery on added resets is modelled, not
+measured. The coefficient is this window's 6.16 Plus-units per Mweighted with
+about ±25% scatter, and the cached/uncached split remains an assumption, so a
+cached ratio cheaper than one tenth would make the high-context tail a smaller
+share than stated and push break-even lower still.
+
 ## Levers
 
 Each lever is judged on two separate questions: **was it adopted** (did the
@@ -301,7 +394,7 @@ did not operate.
 | Coherent, content-verified index observation in Codebase Memory (upstream snapshot-coherence fixes, local publication 2026-10-11) | M15, M6, M8 | agents rely on the graph instead of re-reading source to establish freshness | share of coverage observations recommending source fallback; `content_verified` and `generation_matches` present and true | shipped locally, adopted, M15 measured; cost effect not isolated | upstream `#2585`, PRs `#2600`–`#2613`, `proposals/evidence-lineage/claim-maintenance-and-reliance-propagation/evidence/` |
 | Bounded Codebase Memory requests (output budget, limit, field and path selection, narrow `edge_types`), batched only up to what fits | M16, M6 | graph evidence reaches the model instead of being truncated away, without spending extra calls on paging | truncation events whose lost payload was a codebase-memory result; requests carrying an explicit output budget | recorded in the orchestration brief 2026-10-13, unmeasured | `docs/codex-orchestration-brief.md` |
 | Status-probe discipline: no polling, `list_agents` only for a concrete coordination question that the wait result, messages and assignment record cannot answer | M1, M3 | removes the residue the long-wait lever left behind, about a third of remaining wait-only calls | `list_agents` calls per dispatch, and whether each one names the decision that needed it | **adopted, no saving measured** (2026-10-13 22:55Z on): probes 0.39 → 0.04 per dispatch, `list_agents` 39 of 828 calls → 1 of 208, `sleep` and `wait` to zero; units per dispatch 1.26 → 1.29 and wait-only share 17.2% → 18.1%, both flat | `docs/codex-orchestration-brief.md` |
-| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not actuable in these sessions**: no `new_context` tool appears in any measured session's tool list (`exec`, `spawn_agent`, `wait_agent`, `followup_task`, `send_message`, `list_agents`, `sleep`, `wait`, `request_user_input_async`, `interrupt_agent`), and all 76 observed window replacements fired at a 208–244K ceiling rather than a boundary. Mean context 166K → 168K, peak 238K → 237K. This is a missing capability in the session's tool set, not guidance that was ignored | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md` |
+| Context-boundary handoff: check context at each dispatch or integration boundary, plan a handoff at ~60% of the model window, transfer supervision only once the new root has accepted it | M8, M4, M3, M22 | caps the standing-context charge that every coordination call pays | peak context per call against 60% of `model_context_window`; handoffs performed at a boundary with verified ownership transfer and no stranded children | **not actuable in these sessions**: no `new_context` tool appears in any measured session's tool list (`exec`, `spawn_agent`, `wait_agent`, `followup_task`, `send_message`, `list_agents`, `sleep`, `wait`, `request_user_input_async`, `interrupt_agent`), and all 76 observed window replacements fired at a 208–244K ceiling rather than a boundary. Mean context 166K → 168K, peak 238K → 237K. This is a missing capability in the session's tool set, not guidance that was ignored. **Sizing added 2026-10-18 (M22): at the measured 116K restart floor this lever is worth about -30%, not a saving.** A 60% trigger is the wrong target; break-even is a restart under ~75K, and below that the optimum trigger is 70-100K. Build the floor reduction before the trigger | `docs/codex-orchestration-brief.md`, `skills/wind-walker/SKILL.md`, `metrics/scripts/handoff_threshold.py` |
 | Durable assignment record as the deterministic roster: owners, expected deliverables and received results updated on real events | M1, M3 | roster maintenance stops consuming inference; judgment about results stays with the supervisor | assignment record updated on assignment, message, completion and handoff, with `list_agents` not used to rediscover unchanged state | **adopted**: board messages naming a collector or resumer rose from 19 of 344 (6%) to 13 of 56 (23%), and two post-revision claims carry "Root collects" in the claim note | `docs/codex-orchestration-brief.md`, `skills/durable-state/` |
 | Batched evidence collection: independent checks in one cell, `skills/evidence-battery/` as the declared form, re-verification by digest comparison instead of restating evidence | M17, M18, M19, M14 | removes a subset of calls outright; ~20 of the 338 units in the 2026-10-13 round, from 211 small read-only checks and 24 exact repeats | tool invocations per call and output budget per call; share of hash or verify calls recomputing a path set an earlier call established | shipped 2026-10-14, starting values pre-registered, untested | `skills/evidence-battery/`, `docs/codex-orchestration-brief.md` |
 | Codex configuration trim: drop MCP servers and plugins whose tools are never invoked, so every session's standing tool-schema surface shrinks | M8, M19, M4, M21 | predicted ~2.7% of a round per 5K removed; **measured −2,333 tokens, 1.25%** | first call's `input_tokens` for a fresh root against the frozen pre-trim 19.8–20.6K starts | applied 2026-10-14T22:57Z, **measured 2026-10-15 on 2 fresh roots**: floor 20,056 → 17,723, attributed to a shorter harness base prompt (−3,383 bytes) and skills index (−2,813 bytes); the 4 unused MCP servers contributed a few hundred tokens at most | `metrics/experiments/codex-config-trim-20261014/` |
@@ -333,6 +426,8 @@ overlap.
 | 2026-10-14 | The `25a5164` revision tested, supervisor `01a1294e` against itself, 2026-10-13 22:55Z to 10-14 04:00Z, plus 5 workers and reviewers in the same window | M1, M5, M8, M16, all three pre-registered levers | status probes 0.39 → 0.04 per dispatch with units per dispatch flat at 1.26 → 1.29; durable assignment record adopted (collector named in 6% → 23% of board messages); context handoff not adopted (peak 237K of 258K); truncation 3.1 → 3.4 per 100 calls with 75 of 76 truncated calls having set a limit | table and reading in Supervision after the `25a5164` revision. Two of the three levers were adopted within minutes of the commit and neither moved spend, which is the result: the probing and the roster were not the cost. 2.3 hours and one supervisor, still running when measured; the after window is five times more dispatch-intense, so waits per dispatch is not comparable across it. The first reading of this window, taken at 903 calls, reported doctrine re-reads at 4.9 per 100 calls and truncation at 4.0; at 2,313 calls both fell to 2.4 and 3.4. The window opened minutes after several sessions had reset their context, so its early calls were reload traffic. A window that begins just after a context reset oversamples reload the way a session measured mid-run oversamples whatever it is doing |
 
 | 2026-10-13 | Pre-change values for the `25a5164` brief revision, supervisor `01a1294e` over 2026-10-12 to 10-13 | M8, M1 | peak context **238K of a 258K window**, mean 166K, so the 155K handoff trigger was crossed and never acted on; status probes 0.39 per dispatch; `turn_trigger` was `user` for **172 of 172** turns | taken before the sessions that will exercise the revision, so the comparison is pre-registered rather than reconstructed. No turn in the window was started by a child completion, which is the upstream behavior of #46120 stated in the harness's own attribution field |
+
+| 2026-10-18 | 44 `gpt-6-sol` builder threads, 2026-10-07 to 10-17, 37,628 calls and 582.0 Mweighted replayed against earlier-handoff policies | M22, M8, M19, cost model | break-even total restart **~75K**; at the measured 116K floor every threshold loses ~30%; at a 40K restart a 70K trigger is worth **+29.6%**. Codex replaces context at median 207,819 and resets to median 29,410 | tables and caveats in "What an earlier handoff is worth". **The first reading, taken hours earlier, omitted rediscovery on the resets a policy adds and reported a flat "+35% at 70-80K" with break-even framed as a property of the brief.** Charging the measured 36K doctrine re-read per reset makes the result conditional on the floor instead, which is the same conclusion the one-supervisor projection reached in the other direction. The replay holds the work stream constant, so it prices carrying context and not redoing work |
 
 **Reading Codex rollout logs.** Two mistakes have produced wrong values here and
 are now guarded against in
