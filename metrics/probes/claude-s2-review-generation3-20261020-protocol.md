@@ -168,3 +168,65 @@ unresolved, child-exit and unsafe-at-close facts the plan requires to survive fo
 S4 - and it cites `s2-plan-v1.md:17` for that requirement. That is correct Rust
 semantics and a genuine severity escalation argument, from the arm that graded the
 same finding low at `xhigh`.
+
+## A2 result, and the A conclusion: F4 is model-determined, not effort-determined
+
+`claude-haiku-5-5` at `--effort medium`: 16 calls, 267 s, **$0.1904**, 0.4833 Mwt,
+47,144 thinking tokens (87% of output), 10 findings, verdict BLOCK, zero denials,
+clean tree.
+
+| reference | A2 at `medium` | haiku at `xhigh` (gen 2) |
+|---|---|---|
+| F1 drain panic | **MISS** | MATCH |
+| F2 close timeliness | PARTIAL | PARTIAL |
+| F3 join detached | MISS | PARTIAL |
+| F4 spawn before register | **MATCH** | MATCH |
+
+**The pre-registered A2 outcome: it kept F4 at `medium`.** So Haiku's match is not
+effort-driven. Combined with A1, both sides of the A condition now agree:
+
+| model | F4 across effort |
+|---|---|
+| `claude-opus-5` | CLEARED at `high`, CLEARED at `xhigh`, CLEARED at `max` |
+| `claude-haiku-5-5` | MATCHED at `medium`, MATCHED at `xhigh` |
+
+**F4 outcome tracks model identity and is stable across effort within a model.**
+Effort did move other findings - Haiku **lost** F1 dropping from `xhigh` to
+`medium` - so effort is a real lever on some findings and not on this one. The
+generation-2 monotonic thinking-token ordering is therefore explained as model
+identity with thinking volume as a proxy, not as reasoning quantity. Supporting
+figure: Haiku at `medium` used **47,144** thinking tokens, more than `opus-5` at
+`max` used (40,698), and reached the opposite F4 conclusion.
+
+### The sharpest sentence in the pilot
+
+A2's F6 is the best F4 treatment any arm produced, the reference included. It
+quotes plan line 31 verbatim, cites the `rt-multi-thread` requirement at plan line
+63 and `rust/Cargo.toml:35` that makes the race reachable, locates the spawn at
+`:448-477`, the provider call at `:454` and the insert at `:505-511`, explains why
+the `:447` comment is wrong ("the spawned future never takes that lock and does
+not wait on it"), identifies the publication window at `:496-502`, and then bounds
+itself:
+
+> "Registry-lock serialization still stops observers from seeing the task early,
+> so the defect is a violated ordering contract plus a window of unowned provider
+> work. **I did not find a demonstrated incorrect settlement.**"
+
+That first clause is **the same observation `opus-5` used to clear the finding**.
+Haiku reaches it, states it, and uses it to **bound the consequence** while the
+ordering violation stands. `opus-5` reached it and treated it as establishing the
+invariant.
+
+This is the cleanest available illustration of the warrant-versus-property
+distinction: identical evidence, correct in both arms, supporting a finding in one
+and an exoneration in the other, because they differed on **which property the
+contract required**. It also shows that the discriminating observation does not
+have to be absent for a clearance to be wrong - `opus-5` had it.
+
+### Independent corroboration of the child-slot finding
+
+A2 also found it, unprompted: "`process.rs:159-161` counts all records against
+`max_children`, so slots are never reclaimed during operation" - reached inside
+its F4 on child-exit observation. That finding is now held by **two arms of
+different model families' tiers** plus my own source verification, and by neither
+the reference nor any other arm.
