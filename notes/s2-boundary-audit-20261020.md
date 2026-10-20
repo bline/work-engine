@@ -416,9 +416,20 @@ one row for a property that was really four.
 
 ## Candidate principle, recorded as formation evidence only
 
-**A compiled obligation should be independently decidable, and its satisfaction
-must never imply the satisfaction of another obligation without an explicit,
+**Every compiled obligation must have an independently attributable disposition.
+Its satisfaction may support another obligation only through an explicit,
 warranted relationship.**
+
+**Corrected from "independently decidable", which this pilot's own evidence
+refutes.** Some obligations are inherently relational and cannot be decided in
+isolation - and the clearest case is the one that worked. F3 ranges over the
+registry row, the `ClosedTask` local and the loop local at once, and the
+obligations that recovered it (D's OB1/OB2, and OB39 alone in E6) required
+tracing handle ownership *across* cancellation of enclosing futures. A
+decidability criterion would have disqualified the only obligations that
+succeeded. Attributable disposition is the property that matters: each obligation
+carries its own disposition, evidence and explicitly represented dependencies,
+and no successful check silently discharges an unrelated requirement.
 
 Invariant 4 is the instance. Four constituent obligations - wall-time sampling for
 authority checks, post-await classification, late close without extended proof
@@ -472,5 +483,14 @@ Four independent demonstrations of one failure, at four levels:
 
 In every case a locally valid result was promoted beyond what it warranted. The
 cheapest interventions found are, in order: **finer obligations in the plan**, and
-**recording what was inspected at the time it was inspected.** Neither requires a
-more capable model.
+**recording what each inspection was relied upon to establish** - a correction to
+my earlier "recording what was inspected". Provenance is not the scarce field.
+`S2-C2-F2`'s repair record has perfectly good provenance; what was overstated is
+what it was relied upon to establish. A record can carry exact digests, revisions
+and timestamps for a test and still warrant the wrong conclusion, which is the
+invariant-4 failure precisely. The missing field is the one connecting an
+observation to the specific clause it discharges.
+
+Neither requires a more capable model, and that is the economic point: once these
+relationships are durable and mechanically checkable, each new model does not have
+to reconstruct them through inference.
