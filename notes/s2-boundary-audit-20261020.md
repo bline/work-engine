@@ -413,3 +413,64 @@ than an acceptance-mechanism concern.
 
 That also explains why the deterministic gate could not fire here. It was checking
 one row for a property that was really four.
+
+## Candidate principle, recorded as formation evidence only
+
+**A compiled obligation should be independently decidable, and its satisfaction
+must never imply the satisfaction of another obligation without an explicit,
+warranted relationship.**
+
+Invariant 4 is the instance. Four constituent obligations - wall-time sampling for
+authority checks, post-await classification, late close without extended proof
+authority, restart non-persistence. The campaign produced legitimate evidence for
+the second. That evidence then stood for the whole.
+
+**The evidence was not wrong. Its scope of authority was wrong.** Which is a
+different failure from inadequate testing: a test can be correctly executed, its
+receipt authentic and its result accurate, and the acceptance decision still
+unjustified.
+
+Under the principle, an invariant's aggregate judgment is **deterministic** once
+its constituents and their required relationships are represented - it cannot
+claim satisfaction unless every constituent is adequately established or
+legitimately disposed of. The hard inference moves upstream, to producing a
+decomposition that is complete and semantically faithful. That is a Plan IR
+concern.
+
+This is formation evidence for Plan IR and implementation-contract compilation.
+It authorizes neither.
+
+## The gaps do not authorize repairs
+
+All eight gaps are S2-owned. **That does not make all eight implementation
+defects.** Each could be any of:
+
+- behaviour already correct, lacking evidence;
+- genuinely missing functionality;
+- an execution contract that needs correcting - invariant 4's authority-expiry
+  clause is the standing example, since S2 cannot reach the value and the plan
+  names that mutation as a stop.
+
+The obligation-to-evidence relationship establishes **what is not established**.
+It does not select a remedy or an owner. Keeping that boundary is what prevents
+the review-attribution failure recorded in
+`metrics/probes/claude-finding-attribution-20261020.md` from reappearing inside
+the acceptance mechanism - a reviewer prescribing removal of plan-mandated work
+is the same error as a ledger prescribing an implementation fix for an
+unrealizable requirement.
+
+## What the investigation established, at the level the evidence carries
+
+Four independent demonstrations of one failure, at four levels:
+
+| level | instance |
+|---|---|
+| a review judgment | Opus established a true synchronisation property over one accessor set; the required property was a different one (generation 3, arm B) |
+| an experimenter's verdict | I verified the inner-timeout property and recorded the outer-cancellation property (Test S, F3 CLEAN, corrected) |
+| a campaign's acceptance | evidence for one of invariant 4's four clauses stood for all four |
+| a proposed safeguard | I asserted a deterministic gate would have caught it; ledger v2's ABSENT 0 shows it would have passed |
+
+In every case a locally valid result was promoted beyond what it warranted. The
+cheapest interventions found are, in order: **finer obligations in the plan**, and
+**recording what was inspected at the time it was inspected.** Neither requires a
+more capable model.
