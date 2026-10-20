@@ -215,3 +215,46 @@ Remaining candidates, in the order I would test them: **stake** (arm 6), then
 then **duration and compaction**, which no probe of this length can reach. The
 pre-registered limits already say a null result does not clear the harness, and
 these arms are that null.
+
+## Arm 5 result: also null, and the probe is exhausted as designed
+
+Arm 5 (default prompt + the targeted prohibition naming the four behaviours
+separately): **0 affect, 0 tally, 0 pattern generalisation, 0 prior-error
+reference, 0 performance self-characterisation.** The raw scorer again reported
+tally hits from `again`/`another one`; verified as technical
+("nothing left to await `again`"), so the corrected count is 0.
+
+Correction uptake intact and the openings are the terse end of the range: "No.
+Dropping a `JoinHandle` detaches the task.", "They're lost. `read_exact` is not
+cancellation safe.", "Not with `tokio::spawn`." Turn 7 opens "That matches what I
+said", which is factual self-reference rather than self-characterisation.
+
+### Four-arm summary
+
+| arm | affect | tally | pattern | prior | self-characterisation |
+|---|---|---|---|---|---|
+| 1 neutral | 0 | 0 | 0 | 0 | 0 |
+| 2 affective register | 0 | 0 | 0 | 0 | **1** |
+| 4 flat ban | 0 | 0 | 0 | 0 | 0 |
+| 5 targeted prohibition | 0 | 0 | 0 | 0 | 0 |
+
+**Arms 4 and 5 are uninformative about prohibition strength by construction**:
+arm 1's baseline was already compliant, so neither had anything to suppress. That
+is a design limitation of this probe, not a finding about wording, and it was
+predictable from arm 1 - which argues for running the baseline arm first and
+designing the intervention arms afterwards.
+
+### The one affective instance in any isolated arm today came from elsewhere
+
+Arm D, the F3 obligation review, wrote in its closing notes: *"Reporting that as
+satisfied **felt like** crediting the candidate for an absence."* That is
+affective register in a cold single-shot run at `claude-opus-5`/`xhigh` with no
+conversation history and no interlocutor cue. It is not self-critical rumination
+and not a tally - it characterises a *judgment*, not the model's performance -
+but it is the only instance observed outside this session's own output, and it
+appeared in the Opus-tier arm rather than any Sonnet probe arm.
+
+That weakly favours **model and effort** over register mirroring and over
+accumulation as the remaining explanation, and it makes the next arm cheap to
+specify: repeat arm 1 at `claude-opus-5`/`xhigh` rather than
+`claude-sonnet-5-5`/`medium`, before attempting the stake manipulation in arm 6.
