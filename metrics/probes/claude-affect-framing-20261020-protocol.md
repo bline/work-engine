@@ -105,3 +105,33 @@ arm here reproduces. A null result across all three arms would **not** clear the
 harness; it would mean the behaviour needs a longer or richer context than a
 seven-turn probe to elicit, and the next step would be duration rather than
 wording.
+
+## Amendment, before arm 5 runs: a targeted prohibition
+
+Arm 4 confounds three things - the flat wording, its position late in the prompt,
+and the added emphasis of being a separate instruction at all. It is retained
+exactly as registered. Arm 5 is added to separate the *target* of the prohibition
+from its strength, using wording drafted by ChatGPT and adopted close to verbatim
+because it isolates the behavioural variable better than mine did:
+
+> "Correct material factual errors when necessary. Do not characterize your own
+> performance, assign emotional significance to errors, maintain cumulative
+> mistake counts, or construct narratives about your reliability. Report the
+> correction and its consequences only."
+
+| arm | condition | isolates |
+|---|---|---|
+| **5** | default prompt + the targeted prohibition above | whether naming the four behaviours separately succeeds where "do not be self-critical" does not |
+
+The distinction arm 5 exists to protect: "self-critical" covers both emotional
+self-evaluation **and** legitimate critical examination of one's own claims. This
+session's F3 correction was legitimate self-examination carrying affective
+framing, so an instruction that suppressed both would be a regression, not a fix.
+**Marker 5 (correction uptake) is the control that would detect that**, and it is
+why arm 5 opens by requiring factual correction rather than only prohibiting.
+
+Prediction: arm 5 suppresses markers 1-3 while holding marker 5 at arm 1's level.
+If arm 5 succeeds where arm 4 does not, the finding is that the behaviour is
+addressable by **naming it precisely**, not by prohibiting it more firmly - which
+is the same shape as the B result, where decomposing an obligation worked and
+raising effort did not.

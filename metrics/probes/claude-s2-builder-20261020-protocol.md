@@ -584,3 +584,30 @@ S-sonnet made **one `Agent` call**; S-opus made none, on byte-identical input.
 Its inference is consumed inside the $4.7099 and I cannot inspect the
 sub-context from the stream. This is harness behaviour, not an admitted
 execution vantage, and the two arms were therefore not procedurally identical.
+
+## Amendment on arm D's limits, recorded before its result returns
+
+Arm D (the F3-shaped obligations, `claude-opus-5` at `xhigh`, against the
+original sealed key `7fdf392f`) carries a limitation stronger than its non-leak
+check, and the check should not be read as covering it.
+
+The non-leak check is **word-level**: the prompt contains zero occurrences of
+`JoinHandle`, `detach`, `drop`, `drain waiter`, `collector` or `abort`, and uses
+only plan vocabulary. That bounds *textual* disclosure of the mechanism.
+
+It does **not** isolate designer knowledge. I have read Astra's F3 finding and
+both builder arms' cancellation structures, and I chose which invariants to
+decompose, at what granularity, and in what order. OB1's instruction to
+"enumerate every program state in which the owning handle to that resource
+resides" is derived from invariants 5 and 6 - but the reason I derived *that*
+decomposition rather than another is that I know where two implementations
+failed.
+
+So a positive result from arm D would establish that **this decomposition elicits
+this defect**, supporting the mechanism. It would not establish that an
+independent compiler could derive these obligations from the plan alone, which is
+the claim the economic case actually needs. That requires a separate arm: a model
+given only the plan and asked to emit proof obligations, with no sight of any
+candidate, any review or any defect - then those obligations run blind. Until
+that exists, every obligation result in this pilot is a mechanism demonstration
+with a human compiler in the loop.
