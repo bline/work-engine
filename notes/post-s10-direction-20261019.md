@@ -502,6 +502,57 @@ cross-checking a finding against a second model is worth its cost. It also shows
 what the Sol/medium probe's audit missed, and that the miss was in *my* scoring
 rather than in its reporting.
 
+### 2c-correction-2. The correction above overcorrected, 2026-10-19
+
+The `claude-opus-5` arm of the same pilot refuted **2c-correction**, in the
+opposite direction from the `sonnet-5-5` arm. Its finding N2 cites
+`review-workflow/src/startup.rs:357`:
+
+```rust
+if compiler_document.len() + compiler_options.len() + input.len() > INPUT_LIMIT {
+    return Err(refuse("capacity", "captured compiler/request input exceeds 4 MiB"));
+```
+
+So the combined 4 MiB input cap **is real**, and the Sol/medium probe's original
+claim was right. `INPUT_LIMIT` is *both* a multiplier base (`:222`, `:232`,
+`:235`, `:237`) **and** a direct combined cap (`:357`, and again at `:378`).
+
+**Mechanical cause, recorded because it is reusable.** The grep I verified
+against was run with `head -8`. It truncated at line 238 and cut off `:354`,
+`:356`, `:357` and `:378` - the lines that contained the refutation. The
+truncation was mine, in the same command whose output I then called
+verification. An absence claim drawn from a truncated search is not a search.
+
+**Final status of the three findings, after two independent refutations:**
+
+| finding | final status |
+|---|---|
+| F1 `requestId` 1-128 bytes, eight output slots, NDJSON `version: 1` | **Stands.** `protocol.rs:31` enforces `version != 1 \|\| request_id.is_empty() \|\| request_id.len() > 128`; `control.rs:13` sets `OUTPUT_SLOTS = 8`. The contract discloses none of the three. |
+| F2 `REQUEST_MAX_BYTES = 1048576` | **Partially refuted.** The constant name is absent, but the magnitude is stated at line 291 as "1 MiB result/observation" - `RESULT_MAX_BYTES`, equal in value. The contract names no *request* bound, so the number is present for a neighbouring quantity. |
+| F3 `STARTUP_LIMIT = 1048576`, combined input <= `4194304` | **Stands, reinstated.** `STARTUP_LIMIT` = 1 MiB bounds the startup document and the contract gives no number. The combined cap is enforced at `:357`. The contract's "4 MiB stream" is `STREAM_MAX_BYTES` - the same magnitude attached to a different quantity, which does not disclose this cap. |
+
+Two of three stand; one is partially refuted. That is much closer to the original
+record than 2c-correction claimed, and the net change from the pre-pilot state is
+**F2 alone**.
+
+**The better statement of the defect comes from the arm, not from me.** Opus's N3
+reframes it: the contract lists 64 KiB / 1 MiB as "bounded selections from the
+parent plan" *without indicating they are already a single shared public
+definition* (`protocol.rs:4-5` `COMMAND_LIMIT`, `REPLY_LIMIT`, consumed by
+`control.rs:2`) that the qualified protocol must **reuse rather than
+re-declare**. The actionable defect was never numeric absence. It is that the
+contract does not identify the authoritative definition site, so a builder may
+re-declare a constant that already exists. That is a sharper obligation than the
+completeness invariant as drafted, and it is falsifiable the same way.
+
+**What this episode establishes about the evidence base.** Three arms produced
+three different readings of the same frozen artifact, and the record only
+stabilised after two of them contradicted me in opposite directions. The pilot's
+strongest result is therefore not any arm's score. It is that a single-arm
+finding on this artifact was unreliable in **both** directions, and that
+cross-model checking is what made it reliable. That is the decorrelation argument
+with a measurement attached rather than an appeal to plausibility.
+
 ### 3. Reconcile artifact ownership before any schema is committed.
 
 Plan IR's own §0: it is "a candidate representation of **the compiled

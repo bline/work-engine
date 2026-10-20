@@ -55,6 +55,7 @@ written down:
 | M22 delivers "~30% savings" | -30%, the measured *penalty* at today's 116K floor | sign inverted; a cost became a benefit |
 | "56% projected efficiency improvement" | spend falling *to* ~56% (a 44% reduction) in a scenario model explicitly marked non-additive and untested; or the 56% throughput cut required to fit Pro 200 after 11-01 | reduction *to* read as reduction *by*, and a constraint read as a benefit |
 | three absent scalar constraints in the RP2 contract | one genuinely absent; one whose magnitude is stated at contract line 291 as "1 MiB result/observation"; one misdescribing `INPUT_LIMIT`, a multiplier base used as `128 x` and `64 x`, as a 4 MiB combined cap | an absence search tested *spellings and constant names*, not magnitudes in prose units, and a self-reported claim was never checked against the code it described |
+| "no 4 MiB combined input cap exists" | `startup.rs:357` enforces `compiler_document + compiler_options + input > INPUT_LIMIT`; the cap is real and the original report was right | an absence claim drawn from a grep truncated by my own `head -8`, which cut off the four lines containing the refutation |
 
 The third propagated into a derived figure before being caught: a 2.27x capacity
 multiplier, which assumed spend falling to 44%. The documented scenario gives
