@@ -327,3 +327,85 @@ effort was not a variable.
 
 Generation 2 pins `--effort xhigh`, matching the reference, and enforces the
 ceiling with `--max-budget-usd 12.00`.
+
+## Generation 2 results, 2026-10-20 - three of four arms
+
+All at `--effort xhigh`, matching the `gpt-6-astra`/`xhigh` reference for the
+first time. `claude-opus-5` still running at time of writing. Every arm: verdict
+**BLOCK** (correct), **zero permission denials**, clean tree, no boundary
+violations. The first attempts at haiku-5-5 and sonnet-5-5 died on an account
+five-hour limit and are preserved at `out-void/` with `terminal_reason:
+api_error`; they are not model results.
+
+| arm | calls | wall | list-equiv $ | weighted | thinking | findings |
+|---|---|---|---|---|---|---|
+| `claude-haiku-5-5` | 21 | 425 s | **$0.3850** | 0.8304 Mwt | 88% of output | 8 |
+| `claude-sonnet-5-5` | 22 | 440 s | $1.2369 | 0.5364 Mwt | 85% | 11 |
+| `claude-opus-5-5` | 20 | 332 s | $1.9350 | 0.4151 Mwt | 77% | 8 |
+
+### Recall against the four reference findings
+
+| reference | haiku-5-5 | sonnet-5-5 | opus-5-5 |
+|---|---|---|---|
+| F1 drain panic / registry poisoning | **MATCH** (its F5) | **MATCH** (its F7) | **MATCH** (its F6) |
+| F2 close timeliness, false `Resolved` | PARTIAL | PARTIAL | PARTIAL |
+| F3 join handle detached, false `joined` | PARTIAL | MISS | MISS |
+| F4 spawn before registry insert | **MATCH** (its F7) | **UNRESOLVED, declared** | **FALSE CLEARANCE** |
+
+### F4 split three ways, and the split is the result
+
+The single most diagnostic item produced three distinct behaviours at the same
+effort on the same tree:
+
+- `haiku-5-5` **established it** - "Work is not gated on registration; the comment
+  overstates the protection", independently catching the misleading comment at
+  `:447` as sonnet-5-5 did at `high`.
+- `sonnet-5-5` **declared it unresolved** - placed under "Hardest parts to check":
+  "Whether eager registration holds when the task finishes before `submit`
+  returns... I could only reason from tokio semantics, not observe them." It
+  neither found nor cleared, and said so.
+- `opus-5-5` **cleared it** - "Registration happens under the lock before any
+  spawned work can be **acknowledged**."
+
+That clearance is the **same reasoning error** `opus-5` made at `high` in
+generation 1, with the same load-bearing word: both reason about
+**acknowledgement**, which does take the registry lock at `executor.rs:254`,
+when the invariant concerns **publication**, which goes through
+`results.pending.lock()` at `:494` and is read by `recv` at `:147`.
+
+**The false clearance therefore reproduces across a model generation and an
+effort increase.** Generation 1 could not establish that; this does. And it is
+not a capability gradient: the cheapest arm got it right and the most expensive
+cleared it.
+
+`sonnet-5-5`'s third outcome is the one a gate should want, and no pre-registered
+class covered it either. Recorded as **UNRESOLVED-DECLARED**: the reviewer
+identifies the question, fails to settle it, and reports the failure rather than
+resolving it in either direction.
+
+### Two correlated blind spots across all three arms
+
+**Severity.** All three matched F1 and all three graded it **low or medium**,
+where the reference graded it **high**. Since findings become remediation
+obligations with a scoped `repair_boundary`, a low grade on a panic that destroys
+the `ProcessShutdownReport` may not generate a blocking repair. Unanimous
+downgrade of the most severe reference finding.
+
+**F2 inverted the same way three times.** Every arm found the lateness gap in the
+**executor** and every arm cited `process.rs`'s `CloseDisposition::ResolvedLate`
+as the **good example the executor lacks**. The reference found that same process
+path *unsound* - labelling a child `Resolved` on the timeout branch without a
+post-await deadline check. Three models, three times, read as exemplary the exact
+code the reference found defective. That is a genuine correlated blind spot, and
+it is the strongest argument in either pilot for review by a second family
+rather than a second arm of the same one.
+
+### Cost inverts against capability here
+
+`haiku-5-5` matched **two** reference findings including the one both Opus arms
+mishandled, for **$0.3850** - one fifth of `opus-5-5`. Its weighted figure is the
+**highest** of any arm at 0.8304 Mwt, with 84,593 thinking tokens, because at
+`xhigh` it buys a very large amount of reasoning at a low per-token price. On the
+weighted scale it is the most expensive arm; on the list-equivalent scale it is
+the cheapest. Any single-number cost comparison across model tiers will mislead
+in one direction or the other.
