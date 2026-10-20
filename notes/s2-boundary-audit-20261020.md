@@ -494,3 +494,43 @@ observation to the specific clause it discharges.
 Neither requires a more capable model, and that is the economic point: once these
 relationships are durable and mechanically checkable, each new model does not have
 to reconstruct them through inference.
+
+## A counter-instance: a deterministic check that did fire
+
+Recorded so the refutation above is not overgeneralised into "deterministic checks
+are useless". They catch what they are shaped to catch.
+
+`manual-decomposition-s10-20261020/slices/C2`, same day, different campaign: the
+artifact-manifest digest check reported **eight mismatches**. Cause, per
+`handoff-amendment-v2.md`: the result writer enumerated files while its SQLite
+connections were still open, so it bound eight transient `-wal` and `-shm`
+sidecars that SQLite then removed on close. V2 closes each connection before
+enumeration and excludes sidecars; verification opens copies in immutable
+read-only mode, leaving zero sidecars. 150 source-manifest paths, 20 request
+digests and four stopped-database integrity checks pass. `result-v1.json` is
+preserved unchanged.
+
+**Two things this establishes.**
+
+1. **A digest-and-existence check fires on a real receipt error.** What it cannot
+   do is adjudicate scope of authority - whether cited evidence establishes the
+   clause it is offered for. Both facts now have instances on the same day: this
+   check caught a perturbed inventory; my proposed gate would have passed S2's
+   invariant 4 because the row was non-empty and its citations resolved.
+   Structural completeness and semantic adequacy are independent dimensions, and
+   each layer is worth having for what it alone detects.
+2. **A distinct error class, not the one this audit is about.** This is not a
+   true-but-insufficient conclusion. It is an **observation that perturbed its own
+   subject**: the receipt writer created the artifacts it then bound as evidence.
+   Worth naming separately - measurement artifacts entering an evidence inventory
+   - because no amount of obligation decomposition addresses it, and the fix is
+   ordering, not representation.
+
+**And the lineage discipline is what S2's record lacked.** V1 is preserved, the
+amendment names the cause, states what did and did not change, and bounds the
+consequence explicitly - "no substantive effect on the C2 behavioral conclusions
+or process disposition; no test rerun was needed". Compare S2, where closure
+appears only in the terminal audit and no field records what the reviewer
+inspected. The contrast is evidence that the retention the audit asks for is
+achievable within the current artifact conventions, by a session that was not
+asked to do it.
