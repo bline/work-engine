@@ -356,3 +356,60 @@ because the deterministic layer would not have fired.** Assembling the reference
 verifying provenance and resolving disputed dispositions remain unmeasured, and
 the supervisor floor measured today is ~1 Mweighted per slice against which any of
 this must be charged.
+
+## Adjudication of the seven dispositions against S2's own scope
+
+The question: was the $0.4103 assessor detecting genuine evidence gaps, or applying
+requirements S2 did not own? Checked against the plan's deferred-scope paragraph -
+"S4 service/store composition, durable result-ingress/write-failure handling,
+authenticated command boundary, S5 native provider, live proof, S9
+migration/rollback, activation, Q3/Q4 and publication are deferred."
+
+| gap the ledger named | S2-owned? | basis |
+|---|---|---|
+| inv 2: port evidence extension only establishes local failure | **yes** | integration request 3 asks for the extension in `lifecycle-provider/src/lib.rs`, inside the 13-path boundary. "S5 native provider" is deferred; the **port contract** is S2's |
+| inv 3: overflow and gap reporting | **yes** | invariant 3 states "Preserve and report overflow/gap explicitly"; T32 is in the plan's own scenario list |
+| inv 4: wall-time sampling for S1 authority checks | **yes** | and this is the realizability conflict - S2 owns the sampling and cannot reach the value |
+| inv 4: late close must not extend proof authority | **yes** | invariant 4's own text |
+| inv 4: restart never persists a monotonic instant | **yes** | a type-design property of S2's clock seam. Not covered by "durable result-ingress" or "S9 migration/rollback" |
+| inv 5: framing task, malformed-frame test, `select!` audit | **yes** | invariant 5's own text, in the 13-path boundary |
+| inv 6: transport close, rejected and attempted states | **yes** | invariant 6 states "close transport" and names the full disposition vocabulary |
+| inv 7: production unreachability, peer alters only its ledger | **yes** | invariant 7's own text; the plan's `workspace_integrity` gate even names "no fixture provider in production capability" |
+
+**None is deferred. The assessor was not over-reaching.**
+
+Two supporting observations:
+
+1. **The restart clause is the one where the two runs disagreed, and the complete-record
+   run was the more accurate.** Attempt 1 called it "persistence scope the record
+   defers to S4"; attempt 2 called it "no S2 evidence". Attempt 2 is right - and it
+   is independently confirmed by both Claude builder arms, which implemented it as
+   a type-design property: private fields, no constructor from data, no `Serialize`,
+   epoch-tagged instants whose `duration_since` returns `None` across epochs. An
+   obligation two independent builders discharged in source is an obligation S2
+   owns.
+2. The remaining uncertainty is not scope but **adjudication of adequacy**, which
+   is a judgment and which this audit does not settle. The dispositions are
+   defensible against scope; whether each is the *correct* adequacy call is a
+   separate question an authority would own.
+
+## The lever is obligation granularity, not ledger sophistication
+
+Invariant 4 as written contains **four** distinct obligations - wall-time sampling
+for S1 authority checks, post-await deadline checks, late-close recording without
+extended authority, and restart non-persistence. The record offered evidence for
+the second and that evidence was accepted for the whole invariant.
+
+A finer-grained plan representation would have made that substitution impossible
+without stating it: four rows, four dispositions, and the F2 repair discharging
+exactly one of them.
+
+This is **not** a free deterministic win. Deriving correct sub-obligations is
+semantic work, and deriving them wrongly reproduces E1's coverage failure -
+E1 held the right cancellation property and bound it to the wrong subject class.
+But it relocates the lever: from making the evidence ledger cleverer to making
+the accepted obligations finer, which is a Plan IR and compiler concern rather
+than an acceptance-mechanism concern.
+
+That also explains why the deterministic gate could not fire here. It was checking
+one row for a property that was really four.
