@@ -452,6 +452,56 @@ motivated them was therefore **practical to ask of a builder and accurate when
 audited**. That is the mechanism step 2's pilot depends on, and the only evidence
 we have that it works. It cost 8 calls to obtain.
 
+### 2c-correction. Two of the three representation findings do not survive audit, 2026-10-19
+
+Produced by the Claude RP2 comprehension pilot (protocol `5d7aca3`, amended
+`0c636c0`). The `claude-sonnet-5-5` arm reported that the contract states its
+limits by reference to a parent plan. Checking that claim refuted two of the
+three findings recorded above. **This is the fifth instance of the restatement
+failure catalogued in `rust-inference-cost-20261018.md`, and it is mine.**
+
+The verification sentence above - "zero occurrences of `1,048,576`,
+`REQUEST_MAX_BYTES`, `4,194,304`, `128 bytes` or `eight output`" - is literally
+true and substantively misleading. It tested **byte-count spellings and constant
+names**, never the magnitudes in MiB prose. Contract lines 290-292 say:
+
+> The selected 10-minute provider horizon, 5-second local cleanup, 64 KiB
+> command, **1 MiB result/observation, 4 MiB stream** and 64 MiB
+> retained-session limits remain bounded selections from the parent plan.
+
+The same sentence I quoted as evidence of absence lists the numbers. Restated
+against the code in the pinned snapshot:
+
+| original finding | status after audit |
+|---|---|
+| `requestId` 1-128 bytes, eight output slots, NDJSON `version: 1` | **Stands.** `protocol.rs:31` enforces `version != 1 \|\| request_id.is_empty() \|\| request_id.len() > 128`. The contract's only uses of "slot" (lines 119, 333) are unrelated senses; no identifier grammar, length or protocol version appears. |
+| `REQUEST_MAX_BYTES = 1048576` | **Partially refuted.** The constant name is absent, but its magnitude is stated at line 291 as "1 MiB result/observation", which is `RESULT_MAX_BYTES` - equal in value. The contract names no *request* bound, so the magnitude is present for a neighbouring quantity. |
+| `STARTUP_LIMIT = 1048576`, combined input <= `4194304` | **Materially wrong, on two counts.** The 4 MiB figure is stated at line 291 as "4 MiB stream" = `STREAM_MAX_BYTES`. And there is no 4 MiB combined input cap: `INPUT_LIMIT = 4 * 1024 * 1024` is a *multiplier base*, used as `128 * INPUT_LIMIT` (512 MiB, host executable) and `64 * INPUT_LIMIT` (256 MiB, pins) at `startup.rs:222-235`. Only `STARTUP_LIMIT` = 1 MiB bounding the startup document is genuinely unstated. |
+
+The second count is the worse one: I recorded "combined input <= `4194304`" from the
+probe's self-report and verified only that the *string* was absent from the
+contract. I never checked whether the code does what the claim said. It does not.
+The audit above was described as having "checked independently and held"; that
+held for the overlooked item and for finding one, and not for the arithmetic of
+findings two and three.
+
+**What this does to the downstream claims.** The "same defect class as
+`S10-LIVE-COMPILER-IDENTIFIER-CONTRACT-P2`" reading is weakened but not empty:
+one of three findings is a genuine undisclosed constraint of exactly that class,
+and the identifier case in S10 is independently real from the live3 diagnosis.
+What fails is the *strength* - "all three investigation-discovered obligations
+are exact limits the plan calls bounded without stating" - and with it the claim
+that the pattern was reproduced three times on this artifact. It was reproduced
+once. The candidate completeness invariant is unaffected in form; its motivating
+evidence is one case here, not three.
+
+**What this does to the pilot.** The correction is a pilot result, not a setback.
+A cold arm reading the same frozen contract found an error in our own recorded
+evidence within one run, which is the most direct demonstration available that
+cross-checking a finding against a second model is worth its cost. It also shows
+what the Sol/medium probe's audit missed, and that the miss was in *my* scoring
+rather than in its reporting.
+
 ### 3. Reconcile artifact ownership before any schema is committed.
 
 Plan IR's own §0: it is "a candidate representation of **the compiled
