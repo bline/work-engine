@@ -152,3 +152,86 @@ the decision-specific readiness work and the formed concern-scoped review
 proposal, and it should not be read as approving either. Every source reference
 above was read at the stated path; the metrics figures are from
 `docs/ai-workflow-metrics.jsonl` as committed.
+
+## Retrospective test of boundary 4's proposed safeguard
+
+**Question:** could an invariant-to-evidence correspondence ledger have challenged
+S2's acceptance using only information available at the time?
+
+**Method.** A cold `claude-haiku-5-5`/`xhigh` arm, given the plan and the campaign's
+retained acceptance-time artifacts, and **no implementation** - boundary 4's
+question is whether the *record* supports the invariants. Four dispositions
+available: ADEQUATE / INSUFFICIENT / ABSENT / INDETERMINATE, with the prompt rule
+"Do not infer that an invariant holds because the slice was accepted, because
+tests passed, or because no finding mentioned it."
+
+### Attempt 1 VOID - my input selection, not the record
+
+I supplied **22 of 136** artifacts, selected by a glob matching `candidate-[2-5]`
+while the relevant files are named `candidate2`, `candidate3`. Every artifact the
+arm reported as "referenced but not supplied" - four contract result records, the
+F6 gate support script and its result - existed on disk. Result retracted:
+"ADEQUATE 0 of 7" described a subset I chose, not the acceptance record.
+
+Error class: selecting inputs by pattern without enumerating what was available,
+the same class as the `--add-dir` void earlier the same day. Missing check: list
+the directory before globbing it. **Caught by the arm's own
+`WHAT THE RECORD CANNOT SHOW` section**, which named the missing files by digest -
+the second time that day an arm's required statement of its own limits detected an
+experimenter error.
+
+### Attempt 2, with 132 of 134 acceptance-time files
+
+Excluded: the two source worktrees, deliberately, to keep this a record-only test.
+Included: every `.json`, `.md`, `.log`, `.txt` and the four gate-runner scripts.
+Pilot-output leak check 0. 23 calls, 364 s, **$0.4103**.
+
+**ADEQUATE 0 · INSUFFICIENT 6 · INDETERMINATE 1 · ABSENT 0.**
+
+Six times the evidence moved **nothing** to ADEQUATE. What changed is the
+precision: each disposition now names what the record establishes and what it does
+not.
+
+| invariant | disposition | what the record does not establish |
+|---|---|---|
+| 1 reservation and eager ordering | INDETERMINATE | whether the six named tests assert *ordering* rather than outcome; the registry-insert and spawn order in source |
+| 2 transport fact vs lifecycle observation | INSUFFICIENT | "establishes only local failure and unsettled ownership at the runtime boundary, by name" |
+| 3 bounded result channel | INSUFFICIENT | "establishes reserved capacity and no saturation deadlock... does not establish **overflow or gap reporting**" |
+| 4 clock seam and deadlines | INSUFFICIENT | "the restart clause has no S2 evidence" |
+| 5 framing ownership | INSUFFICIENT | the reader/writer task source, a malformed-frame test, an audit of the `select!` sites |
+| 6 launch gate and close record | INSUFFICIENT | "does not establish transport close or the rejected and attempted states" |
+| 7 controlled peers | INSUFFICIENT | "does not establish production unreachability or that a peer alters only its own ledger" |
+
+Invariant 3's gap independently matches the overflow finding three pilot arms
+raised - reached from the acceptance record alone, with no source and no
+knowledge of any defect.
+
+### The closing line is the boundary-4 finding in its sharpest form
+
+> "All invariants: the retained review records a status per finding and
+> **`tests_run_by_reviewer: 0`**. The `verified_resolved` statuses cannot be traced
+> to what the reviewer inspected, and the `no_open_findings` verdict is not
+> counted as evidence for any invariant."
+
+The reviewer ran zero tests, each `verified_resolved` is untraceable to an
+inspection, and the campaign's closure rests on the absence of open findings. That
+is the chain the correspondence requirement is meant to break, documented from the
+campaign's own records for 41 cents.
+
+### What this establishes, and what it does not
+
+**Establishes:** a cheap perspective, using only retained acceptance evidence and
+no implementation, finds that **no** mandatory invariant of an accepted slice was
+adequately evidenced, and names the specific gap per invariant. The safeguard is
+not hypothetical and not expensive.
+
+**Does not establish:** that any invariant is *violated*. INSUFFICIENT is a
+statement about the record, not the code - and the record's own
+`vertical_semantic_test_passed: true` and `verified_resolved` entries may well be
+true. The ledger's claim is that acceptance cannot be traced to them, which is
+exactly the distinction boundary 4 exists to enforce.
+
+It also does not establish that the required evidence was unavailable in 2026-10-07.
+Several gaps - test bodies, a `select!` audit, a repository-wide sleep search - are
+cheap artifacts that were simply never retained. That is the actionable half: the
+fix is largely a retention requirement, not new analysis.
