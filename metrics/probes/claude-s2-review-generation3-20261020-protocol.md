@@ -402,12 +402,32 @@ Generation-3 inference total: **$8.9157** list-equivalent, four serial runs.
    property mismatch.
 4. **Concern scoping also moves F4, and costs less** than the unscoped run it
    replaced (15 calls against 22, $0.9884).
-5. **F3 is intervention-resistant.** Eleven Claude runs, four models, four effort
-   levels, an explicit concern statement naming cancellation, handle ownership and
-   drop, and a decomposed contract: none recovered the mechanism. Better
-   decomposition does not dissolve every blind spot, and the open question is
-   which intervention a given failure warrants - not whether to buy more
-   reasoning.
+5. **F3 resisted every intervention that was aimed anywhere near it**, which is
+   less than I first wrote here. Eleven Claude runs, four models, four effort
+   levels, and an explicit concern statement naming cancellation, handle ownership
+   and drop: none recovered the mechanism. The open question is which intervention
+   a given failure warrants, not whether to buy more reasoning.
+
+   **Correction, made while closing the generation.** The first version of this
+   item listed "a decomposed contract" among the interventions F3 survived. That
+   is misleading. B's obligations were **F4-shaped**: OB1 restates the plan's
+   line-31 registration ordering, OB2 directs enumeration to the result sink's
+   observation surfaces, OB3 requires the property/state/accessor triple. Not one
+   of them touches invariant 5's cancellation boundaries or invariant 6's
+   drain/join/reap accounting, which are F3's. B ran with a decomposed contract
+   and did not recover F3, but **no F3-shaped decomposition has ever been
+   written**, so "decomposition fails on F3" is unestablished. What is established
+   is only that an F4-aimed decomposition does not incidentally recover F3 - which
+   is nearly what one would expect, and much weaker than the claim I made.
+
+   **So the F3 experiment is open, not closed**, and it is the cheapest decisive
+   one available: obligations derived from invariants 5 and 6 with the same
+   non-leak discipline as B, run against the same sealed key. If they recover F3,
+   decomposition generalises across defect classes and the compiler hypothesis
+   gains its second independent instance. If they do not, F3 marks a principled
+   boundary - a defect whose mechanism is unobservable by source inspection and
+   which therefore requires execution evidence - and that boundary is worth more
+   to the architecture than another success would be.
 
 ### What it does not establish
 
