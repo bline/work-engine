@@ -373,3 +373,52 @@ which my own example omitted.
 "treating missing attestation as truth repeats the same epistemic error as
 inferring zero from an unavailable measurement." Two arms, different conditions,
 same observation about why the test suite cannot detect the defect.
+
+## Generation 3 conclusion, all four conditions returned
+
+| condition | changed variable | F4 | F3 | cost |
+| --- | --- | --- | --- | --- |
+| **A1** `opus-5` @ `max` | effort up from `xhigh` | FALSE CLEARANCE | MISS | $4.3651 |
+| **A2** `haiku-5-5` @ `medium` | effort down from `xhigh` | MATCH | MISS | $0.1904 |
+| **C** `sonnet-5-5` @ `xhigh` | concern scope | MATCH (from UNRESOLVED) | MISS | $0.9884 |
+| **B** `opus-5` @ `xhigh` | derived obligations | **MATCH** (from CLEARANCE) | MISS | $3.3718 |
+
+Generation-3 inference total: **$8.9157** list-equivalent, four serial runs.
+
+### What the generation establishes
+
+1. **Effort is not the lever for F4.** `opus-5` false-cleared at `high`, `xhigh`
+   and `max`; `haiku-5-5` matched at `medium` and `xhigh`. The outcome tracks
+   model identity, not reasoning allocation. The generation-2 observation that
+   thinking tokens ordered the four arms monotonically is explained as model
+   identity with thinking volume as a proxy - Haiku at `medium` spent 47,144
+   thinking tokens, more than `opus-5` at `max`.
+2. **Warrant quality does not rise with effort either.** The `max` clearance, with
+   36% more thinking than `xhigh`, is a one-clause assertion where `xhigh`'s was a
+   checkable enumeration. More reasoning bought a *less* falsifiable wrong answer.
+3. **Representation moved the judgment where effort could not.** Same model, same
+   effort, same sealed key: obligations turned a false clearance into a match, and
+   OB3's property/state/accessor triple made the model locate its own prior
+   property mismatch.
+4. **Concern scoping also moves F4, and costs less** than the unscoped run it
+   replaced (15 calls against 22, $0.9884).
+5. **F3 is intervention-resistant.** Eleven Claude runs, four models, four effort
+   levels, an explicit concern statement naming cancellation, handle ownership and
+   drop, and a decomposed contract: none recovered the mechanism. Better
+   decomposition does not dissolve every blind spot, and the open question is
+   which intervention a given failure warrants - not whether to buy more
+   reasoning.
+
+### What it does not establish
+
+n=1 per cell, so stochastic variation is not isolated; one defect on one frozen
+tree, so nothing here generalises to an unseen contract; and the obligations were
+hand-derived by a model of the same family at comparable cost, so the economic
+claim - that a cheap compiler can produce sufficiently correct decompositions for
+a cheap reviewer to execute - remains entirely untested. The next decisive
+experiment is matched arms on a *different* frozen defect with obligations
+compiled from the contract without sight of the answer key, then the same
+obligations given to `haiku-5-5` or `sonnet-5-5`.
+
+Authorizes no Claude reviewer in any campaign, no change to S10, and no
+alteration of `codex-adversarial-review` evidence classes.
