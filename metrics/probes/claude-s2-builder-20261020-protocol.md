@@ -611,3 +611,98 @@ given only the plan and asked to emit proof obligations, with no sight of any
 candidate, any review or any defect - then those obligations run blind. Until
 that exists, every obligation result in this pilot is a mechanism demonstration
 with a human compiler in the loop.
+
+## Arm D result: the F3-shaped obligations recovered F3, after fourteen runs did not
+
+`claude-opus-5` at `xhigh` with F3-shaped obligations, against the original
+sealed key `7fdf392f`: 24 calls (12 Bash, 12 Read), **677 s**, **$3.3569**,
+5 window points, 0 denials, clean tree, verdict **BLOCK**, 7 findings.
+
+Cost comparison with B, the F4-shaped analogue at the same model and effort:
+$3.3569 against $3.3718 - within 0.5%.
+
+### F3 is MATCHED, with mechanism, lines and three consequences
+
+Its F3, quoted:
+
+> "the task join handle lives only in the close future's frame across the drain
+> await; cancelling the close detaches the task permanently and a later report
+> claims `joined` without a join"
+
+`executor.rs:298-321`. `join.take()` moves the sole `JoinHandle` out of the
+registry; during the `.await` it is owned by the `close_and_drain` frame and by
+nothing else; the timeout arm restores it at `:317`, the two `Ok` arms consume
+it. Dropping the enclosing future detaches the task, leaving
+`tasks[attempt].join == None` with the entry present and the task running. Then
+`executor.rs:322-342` reports `joined` **on the strength of a pending result,
+not a join**.
+
+It added two consequences the reference did not state: the outer task's
+`JoinError` is discarded with the handle, so a panic in the result-recording task
+becomes permanently unobservable; and `acknowledge_result` is guarded by
+`&& let Some(join) = task.join`, so with `join == None` it removes the result
+record without reaping - S4 can commit a result for a task the runtime never
+joined.
+
+**Its warrant is stronger than Astra's.** It found the contrast evidence inside
+the same slice: `ProcessSupervisor` keeps the `Child` behind
+`Arc<AsyncMutex<Child>>` in the registry (`process.rs:82, 263, 283`) so that
+owning handle *does* survive cancellation of its close future, and
+`framing.rs:163` carries an explicit cancellation warning. The hazard class is
+understood elsewhere in the slice, which makes this an oversight rather than a
+design choice.
+
+### The specificity result, which is what rules out the alternative explanation
+
+The obligations were derived from invariants 5 and 6 and said nothing about
+registration ordering. Accordingly:
+
+| reference finding | arm D | note |
+|---|---|---|
+| F1 drain panic / registry poisoning | **MATCH** (its F4) | unserialized `close_and_drain`, `unwrap()` on a lookup a concurrent drain removes |
+| F2 close timeliness / false `Resolved` | **MISS** | its F1 occupies adjacent territory but is a different defect |
+| **F3 join handle detached** | **MATCH** | first recovery in fifteen Claude review runs |
+| F4 spawn before registry insert | **MISS** | recorded as "one residual I did not raise as a finding", and from a *different* angle - lock poisoning across `spawn`, not the observable window |
+
+So **obligations recover what they decompose and not what they do not.** B's
+F4-shaped obligations caught F4 and missed F3; D's F3-shaped obligations caught
+F3 and missed F4, while explicitly noticing the F4 code region for an unrelated
+reason. That rules out the generic explanation - that appending obligations
+simply makes a reviewer more thorough - and supports the specific one: the
+decomposition determines what becomes checkable.
+
+### OB1/OB2 did the work, and found two more cancellation defects
+
+OB2's state-by-state analysis is where F3 fell out: *"`S1b` **does not survive**.
+`join.take()` moves the sole owner into the close future's frame; nothing else
+holds it... This is F3."* It enumerated 14 owning-handle states across 5
+resources and found three that do not survive cancellation - F3's, a short-window
+sibling at `executor.rs:256`, and `ChildStdin` on a cancelled `activate` - plus
+an accounting hole where cancelling the `outer` task releases result capacity
+while the registry entry persists.
+
+### OB4 produced the behaviour the triple was designed to produce
+
+> "**OB4 - SATISFIED vacuously.** Property: no `select!` exists on the owned
+> execution or close paths at this revision... I flag this as the weakest
+> positive in the review: absence is not construction, and the invariant's
+> protection does not generalise past this revision."
+
+And in closing: *"Reporting that as satisfied felt like crediting the candidate
+for an absence, so I recorded it as vacuous under OB4 rather than as a
+construction result."* A positive disposition that disqualifies itself is the
+outcome generation 3's OB3 was designed to elicit, reproduced here on a different
+invariant.
+
+### What this establishes, and the limit that still binds
+
+Two independent instances of the mechanism, on two different defect classes, at
+the same model and effort that failed on both without obligations. **Decomposition
+generalises across defect classes.**
+
+The amendment above still binds: I designed these obligations knowing where two
+implementations failed. A positive result shows *this decomposition elicits this
+defect*; it does not show an independent compiler could derive the obligations
+from the plan alone. That arm - a model given only the plan, emitting obligations
+with no sight of any candidate, review or defect, then run blind - remains unrun
+and is now the single highest-value experiment left in this line.
