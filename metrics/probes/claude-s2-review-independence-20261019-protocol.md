@@ -513,3 +513,61 @@ full four-arm `xhigh` review batch costs roughly **8 points of a five-hour
 window**, which makes the five-hour window the binding constraint at about a
 dozen such batches per window, while the seven-day window is nowhere near
 binding. This is the Claude-side denominator that was previously unmeasured.
+
+## Retraction, 2026-10-20 - the "unanimous F2 inversion" was my construction, not the data
+
+I wrote above that "every arm found the lateness gap in the **executor** and every
+arm cited `process.rs`'s `CloseDisposition::ResolvedLate` as the **good example
+the executor lacks**", and called it a correlated blind spot and "the strongest
+argument in either pilot" for a second review family. **That is not supported by
+the arms' text.** Checked sentence by sentence:
+
+| arm | every mention of `ResolvedLate` | what it actually does |
+|---|---|---|
+| `haiku-5-5` | **none** | Its F2 is purely executor-side plus `clock.rs`, `lifecycle-core` and `lifecycle-store`. It never references `process.rs` for lateness at all. |
+| `opus-5` | one, at its line 72 | Inside a **remediation proposal** for its `unsafe_at_close` finding ("latch only on children whose close was `TimedOut`/`Rejected`/`ResolvedLate`"). Not a claim about process-side correctness. |
+| `opus-5-5` | one, at its line 29 | A structural cite of the **enum definition** at `process.rs:30-35` - "`TaskDrainReport` ... has no 'late' category (compare ...)". Says the variant exists, not that its assignment is sound. |
+| `sonnet-5-5` | two | The only arm resembling my claim: "`ProcessShutdownReport` does have `ResolvedLate`." **But it also filed a finding against process-side labelling** at `process.rs:284-302` - a child "killed at once and labelled `ResolvedLate`, although the lateness came from the task wait" - overlapping the reference's own cited `:284-299`. |
+
+So one arm of four made a structural reference I over-read, and that same arm
+independently found a *different* labelling-soundness defect at nearly the same
+lines the reference cited.
+
+**What is actually true:** no arm recovered the reference's F2 mechanism (a
+`Resolved` disposition assigned on the timeout branch with no post-await deadline
+check, `previous_exit` relabelled unconditionally, `ChildExit` carrying no
+timestamp). The lateness work was executor-side in every arm. `sonnet-5-5`'s
+PARTIAL stands, but for a better reason than I gave it.
+
+**How the error propagated, recorded because the mechanism matters.** I built a
+striking four-model symmetry from one arm's sentence, committed it, and in the
+next exchange it was restated back to me as "they weren't merely overlooking the
+defect; they were treating its implementation as an example to follow" - further
+from the text than my own version. An overstatement that is interesting travels
+faster than one that is dull, and a second reader sharpened rather than checked
+it. The unanimous **severity downgrade** on F1 is unaffected and remains
+measured: four arms, four `low` grades, reference `high`.
+
+This is the sixth instance of the restatement failure catalogued in
+`notes/rust-inference-cost-20261018.md` and the fourth of mine.
+
+## Verified, 2026-10-20: `opus-5`'s child-slot finding holds
+
+Checked in the pinned snapshot:
+
+- `process.rs:159` gates admission on `registry.children.len() >= self.max_children`.
+- `process.rs:348` reclaims entries only inside `close_and_drain`, via
+  `registry.children.retain(|_, record| record.exit.is_none())`.
+- There is **no** `try_reap`/`try_wait` that records `exit` while the gate is open.
+
+So while the gate is open an exited child keeps `exit: None`, `children.len()`
+never decreases, and `max_children` bounds **total launches over the supervisor's
+open lifetime** rather than concurrency. Child replacement after a death is
+unreachable until shutdown. The plan's named "T22 launch gate/**child
+replacement** races" is therefore not merely untested but **unreachable by
+construction**, which is a conformance defect of a different kind from a missing
+test. No other arm and not the reference found it.
+
+It also interacts with the `unsafe_at_close` finding three arms raised: the same
+open-gate reap that would make replacement reachable is what would make a safe
+close reachable.
