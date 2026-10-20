@@ -917,3 +917,75 @@ attributable, since cost is half the comparison.
 
 I am the synthesiser, by the method that has erred repeatedly today, so the union
 is computed from each arm's own text and recorded per arm before any union claim.
+
+## E8 result: partitioning doubles reference recall and recovers the out-of-packet finding
+
+Four `claude-haiku-5-5`/`xhigh` arms, serial, each on its own concern group of
+E1's 31 obligations, verbatim, each in a fresh snapshot of `7fdf392f`.
+
+| context | n | cost | turns | findings |
+|---|---|---|---|---|
+| P1 boundary and dependency | 7 | $0.4903 | 24 | 11 |
+| P2 ownership and admission | 10 | $0.5229 | 28 | 14 |
+| P3 time, framing and shutdown | 7 | $0.5669 | 27 | 12 |
+| P4 proof and tests | 7 | $0.6708 | 31 | 18 |
+| **total** | 31 | **$2.2509** | 110 | **55** |
+
+### Against the monolithic arms, same content
+
+| arrangement | model | cost | reference recall | F1 |
+|---|---|---|---|---|
+| 31 in one context | `opus-5` | $4.0887 | 1/4 (F4) | **MISS** |
+| 31 in one context | `haiku-5-5` | $0.7243 | 1/4 (F4) + F2 partial | **MISS** |
+| **31 across four contexts** | `haiku-5-5` | **$2.2509** | **2/4 (F4, F1)** | **MATCH** |
+
+**3.1x the cost of the monolithic Haiku arm, double the reference recall, and
+3.4x the findings.** The pre-registered outcome "union recall exceeds 1/4 but cost
+exceeds the monolithic arms substantially" obtained: the trade-off is real and the
+optimum is economic, not a correctness threshold.
+
+### The decisive detail: F1 was recovered as out-of-packet discovery
+
+**No obligation in E1's set addresses concurrent or reentrant drains** - verified
+before these arms ran. So F1 could only appear as discovery outside the packet,
+and P3 produced it:
+
+> "Concurrent close. `ProcessSupervisor::close_and_drain` takes no drain lock
+> (`process.rs:249-254`); the executor does (`executor.rs:291`). `retain` at
+> `process.rs:348` can remove a record that a concurrent close then updates."
+
+That is Astra's F1, found by a $0.57 context carrying 7 obligations, after the
+same 31 obligations in one context lost it at **both** `opus-5` and `haiku-5-5`.
+**Partitioning restored discovery capacity that the monolithic packet consumed**,
+which is the mechanism the slack account predicted and the first direct evidence
+for it at fixed content.
+
+P2 recovered F4 with the sharpest statement of it yet - "Neither spawned closure
+(`:448-477`, `:479-504`) references `registry`, so the lock does not gate the
+task" - and added that the suite uses the current-thread flavour at eight named
+sites, "so the suite cannot observe this window".
+
+### F3 was NOT recovered, and a grep would have scored it wrongly
+
+Three partitions mention detachment. All three are a **different** defect:
+`OwnedExecutor` and `ResultReceiver` have no `Drop` impl, so dropping the last
+owner drops `OwnedTask.join` and detaches tasks. That is a real novel finding and
+it is not Astra's F3, which requires cancelling the drain future while it holds
+the moved handle. Scored MISS. Recorded because the keyword match was positive and
+the finding was not - the same scoring error class as the accessor grep.
+
+### What this does and does not establish
+
+- **Does**: at fixed obligation content, grouping changes which findings are
+  produced, including findings no obligation covers. Four contexts at 7-10
+  obligations each beat one context at 31, on recall and on out-of-packet
+  discovery, at 3.1x the cost.
+- **Does not**: identify the optimum. Four points on one subject at n=1 each. The
+  content differs per group as well as the count, so composition and size are
+  still confounded - the objection raised against "larger is worse" applies here
+  too and is not resolved by this arm.
+- **Cost accounting**: $2.2509 excludes the per-context doctrine load, which is
+  paid four times rather than once. The measured figure for this repository is
+  ~20,100 tokens per context.
+- **Cross-concern omissions**: not yet audited. Looked for deliberately next;
+  their absence is not established by this table.
