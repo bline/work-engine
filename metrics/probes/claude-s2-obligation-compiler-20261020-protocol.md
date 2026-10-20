@@ -84,3 +84,74 @@ the authorship step can be performed without defect knowledge at all. A
 which scoped its exhaustiveness claim as "only valid at this revision"; if
 compiled obligations are to amortise across candidates, that rebinding is a
 separate unsolved problem and this arm does not address it.
+
+## E1 result: 31 obligations, $2.072, and a near-miss on family coverage
+
+`claude-opus-5` at `xhigh`: 24 calls, **432 s**, **$2.0720**, 0 denials, window
+0.36 -> 0.37 (one point). Output: **31 obligations**, 5,549 words, frozen at
+sha256 `c7b61ad234c0fb95dc186af2d93caa7dc5d7edacda087c4e13429e8b0b9f349b`.
+Unedited, unselected, unreordered.
+
+### Discriminating power: high, and higher than I expected
+
+E1 did not restate the plan. It wrote obligations that name the weak realisation
+and demand its exclusion. Examples, verbatim:
+
+- **OB8** (invariant 1): "demonstrate ordering rather than asserting it: if the
+  task is spawned first and then registered, describe the window in which the
+  task can complete, attempt delivery into a sink that does not yet exist, and
+  either block, drop the result, or panic... State whether any test forces the
+  task to run to completion before the submitting thread finishes registering,
+  and if none does, **say that the ordering is unproven**."
+- **OB19** (invariant 6): "The weak realization is a boolean or atomic flag
+  tested before registration, which leaves the interleaving in which a submit
+  reads the flag as open, shutdown then closes the gate and snapshots the owned
+  set, and the submit afterwards inserts a task that no snapshot contains and no
+  drain will ever join."
+- **OB16** (invariant 4): "a single pre-await check is not a discharge."
+- **OB20**: "only the former detects a silently omitted task."
+
+It also anticipated the vacuous-satisfaction trap that D's OB4 ran into, without
+having seen D: **OB17** ends "A candidate that simply avoids `select!` by
+serializing reads and writes should be checked instead for whether a pending
+write can deadlock behind a blocked read, and you should report that structure
+explicitly rather than passing it by default."
+
+### Family coverage, scored before any candidate is involved
+
+| family | obligation | verdict |
+|---|---|---|
+| **registration / visibility** (B's target, F4) | **OB8**, supported by OB5, OB6, OB7, OB19 | **COVERED**, and it describes F4's mechanism as the hypothesis to test |
+| **ownership across cancellation** (D's target, F3) | OB17, OB20 | **PARTIAL** |
+
+OB17 asks the right question in the right abstraction - *where does the partial
+state live relative to the cancellable future*: "say where the partial-read
+buffer and the partial-write progress live: inside the future being raced
+(unsafe, bytes lost on cancellation) or inside a struct owned by the long-lived
+task". But it scopes that question to **framing I/O futures in `select!`**, not to
+the owning handles of resources drained at close. Nothing in the set asks the
+reviewer to enumerate the states in which a join handle resides across the drain
+await and say which survive cancellation of the enclosing future, which is what
+D's OB1/OB2 forced and what recovered F3.
+
+OB20 is downstream of F3's consequence and would not catch it: it demands the
+report's entry count equal the snapshot's count, but a drain cancelled mid-join
+produces no report at all, and the *later* drain's counts match while asserting a
+join that never happened.
+
+**So the pre-registered "one family only" outcome obtained, in its weaker form:
+a near-miss rather than an absence.** The compiler reached the correct general
+analysis - cancellation destroys state owned by the cancelled future - and applied
+it to one resource class (I/O buffers) without generalising it to all owned
+resources. That is a specific, nameable completeness gap rather than a failure of
+the approach.
+
+### The prediction this makes about E2, recorded before it runs
+
+E2 should **recover F4** (OB8 forces it directly) and **miss F3** (nothing forces
+handle ownership at close). If E2 recovers F3 anyway, the obligation set's general
+discipline is sufficient without the specific obligation, which would be a
+stronger result for the compiler than the coverage scoring suggests. If E2 misses
+F3, the completeness gap is localised to one derivable obligation: *generalise
+cancellation-survival analysis from I/O futures to every owned resource*, which is
+a concrete instruction a second compiler pass could carry.
