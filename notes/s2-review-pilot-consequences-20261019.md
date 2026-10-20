@@ -159,3 +159,78 @@ check is a **necessary** condition, never a sufficient one.
 
 Still a candidate. The owning proposal is `formed` with
 `implementation_authorized: false`, and this note does not edit it.
+
+## 5. Refinement: the binding is to a causal surface, not a single state
+
+Added 2026-10-20. Section 4's three-field schema (property / state / accessor
+set) is **insufficient for the very example that motivated it**, and the contract
+text shows why.
+
+**The contract states invariant 1 as an ordering, twice, in temporal terms:**
+
+> line 17: "eagerly register entry and sink **before scheduling**"
+>
+> line 31: "The supervisor holds the registry/result sink. **Work cannot start
+> until registry insertion and sink creation finish.**"
+
+Two states are named - `registry` insertion **and** sink creation - and the
+requirement is a *happens-before* relation against a third event, work starting.
+A property over one state and its accessor set cannot express that.
+
+**What `opus-5` actually did, in the invariant's own words.** It quoted line 31
+verbatim, then wrote: "holding a `std::sync::Mutex` does not stop the task
+spawned at line 448 from calling the provider." That sentence **is** the
+violation of the sentence it quoted - work starts before registry insertion
+finishes. It then cleared the invariant by answering a different question, whether
+a consumer could act on an unregistered result, and answered that one correctly
+for the registry half.
+
+So the failure is not a missed access path and not faulty reasoning. It is a
+**correspondence failure between the property the contract required and the
+proposition the evidence established.**
+
+### Two distinct completenesses, and only one of them was satisfied
+
+| completeness | question | how established |
+|---|---|---|
+| **evidence** | were all relevant accesses within the declared domain enumerated? | deterministic enumeration, exact-revision inspection, explicit unresolved references |
+| **warrant** | does that evidence establish the property the contract requires? | causal and temporal reasoning, counterexample, semantic judgment |
+
+`opus-5` satisfied evidence completeness for the domain it chose - its five named
+holders cover all nine registry-lock sites - and failed warrant completeness. An
+exhaustive enumeration of the wrong domain is still exhaustive, and still
+irrelevant. This is why a list of inspected functions is not a sufficient
+requirement.
+
+### Why this is compiler work rather than another review layer
+
+The ordering obligations are **already in the contract text**, in explicit
+temporal language, at two separate lines. They do not need to be inferred. A
+compiler could derive the proof obligations directly - registration completes
+before work starts; sink creation completes before work starts; a published result
+is not observable before both - and hand the reviewer the remaining semantic
+question instead of requiring it to choose which property matters.
+
+That is a cheaper intervention than adding a reviewer, and it addresses the
+observed failure rather than a hypothesised one. Compiler implementation is step 4
+of `post-s10-direction-20261019.md` and is **not authorized**; this is evidence
+for that step, not a grant.
+
+### Observation on effort, which cuts against a tempting conclusion
+
+"More thinking would not have helped" is the natural reading, and the data does
+not support it. Thinking tokens against F4 outcome, all four arms at `xhigh`:
+
+| arm | thinking tokens | F4 outcome |
+|---|---|---|
+| `haiku-5-5` | 84,593 | **MATCH** |
+| `sonnet-5-5` | 46,448 | UNRESOLVED-DECLARED |
+| `opus-5` | 29,984 | FALSE CLEARANCE |
+| `opus-5-5` | 25,775 | FALSE CLEARANCE |
+
+Perfectly monotonic across four arms: more thinking, better F4 outcome, with the
+two clearances at the bottom. **Confound stated:** thinking volume is entangled
+with model identity, and a smaller model may emit more tokens for the same work,
+so this does not isolate reasoning quantity from model choice. n=1 per cell. But
+any claim that effort was irrelevant here must contend with a clean monotonic
+ordering in the opposite direction.
