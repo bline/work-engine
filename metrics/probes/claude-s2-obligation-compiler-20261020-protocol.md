@@ -466,3 +466,34 @@ passing gates is not acceptance.
   mechanism: cheap construction, capable obligation derivation, cheap discharge.
 - **E4 reports the defect despite the prohibition** - instruction non-adherence,
   recorded as such, and the arm cannot speak to the separation question.
+
+### E4 attempt 1 VOID: a harness error of mine, caught by audit
+
+**What happened.** I launched E4 with `--add-dir /home/bline/cbm-work/s2-compiler-e`
+to expose `E1-obligations.txt`. That directory also contains **`E2-findings.md`
+and `E2H-findings.md`** - the two reviews of this same candidate, including the
+F4 match and 29 findings between them. The pre-registration withholds every
+historical finding; the launch made two of them readable.
+
+**Audit of what it actually accessed before I killed it**, from the stream, all
+five tool calls: a listing of its own snapshot, a listing of the contract
+directory, `Read` of `s2-plan-v1.md`, `Read` of `E1-obligations.txt`, and a
+`git diff --stat` against the baseline. **It did not open either findings file.**
+
+**Disposition: VOID anyway.** Stream preserved at `E4-VOID-attempt1-stream.jsonl`.
+Isolation by audit is weaker than isolation by construction, and every other arm
+in this pilot met the stronger standard. Accepting the weaker one here to save
+about $1 of inference would make this arm's isolation claim unverifiable by anyone
+who did not watch me check, so it is rerun rather than defended.
+
+**Fix.** A dedicated input directory `e4-inputs/` containing exactly one file,
+`E1-obligations.txt`, mode 444. Prompt path updated; new prompt sha256
+`6edd5474204be6758664f06c9ef3b2174389338f04179fd065b5e7e03df7b721`. Fresh
+snapshot at `7fdf392f`. The findings files are no longer reachable from any
+`--add-dir`.
+
+**Error class:** granting directory access for one file in it. This is the third
+`--add-dir` defect in this pilot - the first voided both RP2 arms by omitting the
+flag, the second was this. **Missing check:** list a directory's contents before
+exposing it, or expose a directory built for the purpose. The latter is now the
+practice.
