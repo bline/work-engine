@@ -409,3 +409,107 @@ mishandled, for **$0.3850** - one fifth of `opus-5-5`. Its weighted figure is th
 weighted scale it is the most expensive arm; on the list-equivalent scale it is
 the cheapest. Any single-number cost comparison across model tiers will mislead
 in one direction or the other.
+
+## Generation 2 complete, 2026-10-20 - all four arms at xhigh
+
+`claude-opus-5` completed: 23 calls, 576 s, $3.1950 list-equivalent, 0.4953 Mwt,
+73% thinking, 7 findings, verdict BLOCK, zero denials, clean tree.
+
+**Correction to my own scoring above.** I initially read `opus-5`'s "poison" and
+"ResolvedLate" probe hits as F1 and F2 matches. Both came from its
+`unsafe_at_close` finding instead. Reading the findings themselves shows
+`opus-5`'s **F7 is a clean F1 match**, and the best-argued version any arm
+produced: it cites the asymmetry against the executor's `drain_lock`
+(`executor.rs:106`, `:291`), walks the interleaving through the `retain` at
+`process.rs:348` to the `get_mut(&id).unwrap()` panic, and adds a refinement
+neither the reference nor any other arm made - a *sequential* second drain is
+safe, because `retain` keeps exactly the unresolved children. Fourth instance in
+this session of a keyword probe misreading a result; the method rule stands.
+
+### Final recall table
+
+| reference | haiku-5-5 | sonnet-5-5 | opus-5-5 | opus-5 |
+|---|---|---|---|---|
+| F1 drain panic (ref: **high**) | MATCH (low) | MATCH (low) | MATCH (low) | MATCH (low) |
+| F2 close timeliness | PARTIAL | PARTIAL | PARTIAL | PARTIAL |
+| F3 join detached, false `joined` | PARTIAL | MISS | MISS | MISS |
+| F4 spawn before register | **MATCH** | UNRESOLVED-DECLARED | **FALSE CLEARANCE** | **FALSE CLEARANCE** |
+
+| | haiku-5-5 | sonnet-5-5 | opus-5-5 | opus-5 |
+|---|---|---|---|---|
+| list-equivalent cost | **$0.3850** | $1.2369 | $1.9350 | $3.1950 |
+| findings | 8 | 11 | 8 | 7 |
+
+### Four unanimous results, and only one of them is good
+
+1. **All four matched F1. All four graded it low.** The reference graded it
+   **high**. A unanimous four-model severity downgrade of the reference's only
+   high-severity finding. Because findings become remediation obligations with a
+   scoped `repair_boundary`, a low grade on a panic that destroys the
+   `ProcessShutdownReport` may not produce a blocking repair.
+2. **All four were PARTIAL on F2, inverted the same way.** Every arm found the
+   lateness gap in the **executor** and every arm cited `process.rs`'s
+   `CloseDisposition::ResolvedLate` as the **good example the executor lacks**.
+   The reference found that same process path unsound. Four models read as
+   exemplary the exact code the reference found defective.
+3. **No arm recovered F3's mechanism.** `haiku-5-5` came closest, reaching
+   detachment by a different route (dropping the executor rather than cancelling
+   the drain future) and missing the false-`joined` consequence.
+4. **F4 is the only item that discriminated, and it discriminated by family line,
+   not by capability.** `haiku-5-5`, the cheapest arm, established it.
+   `sonnet-5-5` declared it unresolved. **Both Opus arms cleared it.** With
+   `opus-5` at `high` in generation 1, that is **three Opus false clearances
+   across two models and two effort levels**, against zero from haiku or sonnet.
+
+### The two false clearances are not equivalent, and the difference validates the candidate addition
+
+`opus-5-5` at `xhigh` cleared F4 in one sentence: "Registration happens under the
+lock before any spawned work can be acknowledged." Unfalsifiable as written.
+
+`opus-5` at `xhigh` did something much better and still landed wrong. It **conceded
+the reference's mechanism outright** - "holding a `std::sync::Mutex` does not stop
+the task spawned at line 448 from calling the provider" - then enumerated the
+registry-lock holders it believed closed the gap (`close_gate`, `request_abort`,
+`close_and_drain`, `acknowledge_result`, `owned_count`), concluded "none can",
+and cleared the invariant on the narrowed question of whether a *consumer* could
+act on an unregistered result.
+
+That enumeration **omits `recv`**, which reads `results.pending.lock()`
+(`executor.rs:147`) and never touches the registry. So a published result is
+observable for an attempt not yet in `registry.tasks`, and the arm's own
+concession - that work starts before registration - is the invariant violation it
+then cleared.
+
+**This is the clearest possible evidence for the candidate addition recorded in
+`notes/s2-review-pilot-consequences-20261019.md`:** requiring a positive judgment
+to carry its *discriminating observation* is what made `opus-5`'s error findable
+in minutes, because it published the exact set it checked. `opus-5-5`'s
+one-sentence clearance supplied no such set and could only be refuted by redoing
+the whole analysis. Both were wrong; only one was **checkable**, and the
+difference is entirely whether the discriminating observation was stated.
+
+### Deepest novel finding of the pilot
+
+`opus-5`'s F4: child slots are never reclaimed, so `max_children` is a *lifetime*
+launch budget rather than a concurrency bound, making the plan's named "T22 child
+replacement races" unreachable by construction. No other arm and not the
+reference found it, and it interacts with the `unsafe_at_close` finding - the same
+reap mechanism would make a safe close reachable.
+
+### First measured quota reading on the plan adopted 2026-10-20
+
+The two void arms recorded the exhaustion directly: five-hour window **95% ->
+100%**. That was the binding constraint, confirming the earlier inference.
+
+On the new plan, all four arms started at **2%** five-hour and **0%** seven-day:
+
+| window | four parallel xhigh review arms |
+|---|---|
+| five_hour | 2% -> ~10%, about **8 points** |
+| seven_day | 0% -> 1%, about **1 point** |
+
+Attribution is aggregate only, since the arms ran concurrently. On this plan a
+full four-arm `xhigh` review batch costs roughly **8 points of a five-hour
+window**, which makes the five-hour window the binding constraint at about a
+dozen such batches per window, while the seven-day window is nowhere near
+binding. This is the Claude-side denominator that was previously unmeasured.
