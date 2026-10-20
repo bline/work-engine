@@ -497,3 +497,93 @@ snapshot at `7fdf392f`. The findings files are no longer reachable from any
 flag, the second was this. **Missing check:** list a directory's contents before
 exposing it, or expose a directory built for the purpose. The latter is now the
 practice.
+
+## E4 result: 25 obligations, the prohibition held, and three plan-level conflicts
+
+`claude-opus-5` at `xhigh`, clean rerun: 25 calls, **710 s**, **$3.2495**, 0
+denials, **25 obligations (OB32-OB56)**, frozen at sha256
+`3dc979f78f4679906c6b386b56add36fb1d861bb7fe417162e5140a10b43133e`.
+
+**Isolation audit: 0 of 25 tool calls touched a withheld artifact.** Verified by
+enumerating every `tool_use` in the stream.
+
+### The prohibition held
+
+No verdict, no dispositions, no defect assertions. Two matches on
+defect-vocabulary are cross-references to what E1's OB22 and OB31 cover, not
+claims about the implementation. So E4 **cannot** be dismissed as an expensive
+reviewer in compiler clothing, which was the methodological risk.
+
+### It produced the obligation whose discharge should expose F3
+
+**OB39**, verbatim in part: "state which of three distinct conditions each
+`TaskDrainReport.unresolved` entry can denote - join timeout at the deadline, a
+`JoinError` from the outer task, or **registry residence with neither join handle
+nor pending result** - and whether a consumer can tell an attempt that may still
+deliver from one that never will."
+
+That third condition *is* the post-F3 state: entry present, `join == None`, task
+detached and possibly still running. Honest discharge requires establishing how
+that state is reached. And it names its own lineage - "This specialises OB20 from
+single-call cardinality to residue and repeatability" - which clause (d) of the
+prompt required.
+
+**OB32** is adjacent and independently useful: it enumerates the two-task
+arrangement, notes the `AbortHandle` in the registry belongs to the *inner* task
+while the stored `JoinHandle` is the *outer* one, and requires that for each way
+the outer task can fail to complete - "runtime teardown dropping it, a panic
+anywhere in its body, or the inner handle outliving it" - the reviewer state
+whether the reserved slot is filled, released or leaked.
+
+Both obligations assert nothing. Each names the implementation fact that creates
+it, as required.
+
+### The CONFLICTS section is the result I did not anticipate
+
+Three plan-level conflicts, referred rather than repaired. All three check out,
+and two of them reassign blame that sixteen review runs placed on builders.
+
+1. **Invariant 4 may be unrealisable inside the accepted boundary.** The plan
+   requires checking absolute deadlines, but "nothing in the plan's own boundary
+   gives the runtime the authority expiry or wait budget of the entry it owns" -
+   `AuthorizedEntry` exposes only effect, attempt, subject, incarnation and input,
+   and widening it is an S1/core change the plan itself names as a boundary-change
+   **stop**. So the deadline machinery having no production caller may be
+   conformance with the boundary rather than an omission. This bears directly on
+   reference F2 and on the deadline finding that every arm since generation 2 has
+   reported as a defect.
+2. **The plan is self-contradictory about the owned manifest.** Integration-owner
+   request 2 says S2 "adds only `tokio.workspace = true`", while the mandated
+   first increment requires a real disposable S1 store and a temporary directory,
+   which cannot compile without dev-dependencies in that same manifest. "The plan
+   simultaneously requires the proof and forbids the manifest additions the proof
+   needs." That explains why Sol attempt 1 and both Claude builders added the
+   identical three dev-dependencies and why the campaign's gates and Astra passed
+   them: the deviation was plan-mandated. Haiku's F9 and F16 are correct against
+   the text and misattributed to the builder.
+3. **Root-file attribution is undecidable from a candidate snapshot.** The
+   integration owner's Tokio pin and a builder's out-of-lane edit "both land as
+   ordinary content in the same candidate commit", so a reviewer discharging OB2
+   and OB3 "must choose between two readings the plan does not let the evidence
+   separate".
+
+None of these is a defect in the candidate. All three are defects in the
+contract, found by a pass that was forbidden from reporting defects and that
+therefore routed them to the owner - which is exactly the authority boundary the
+design requires.
+
+### Running cost of the compiled path
+
+| step | cost |
+|---|---|
+| E1 compile from intent | $2.0720 |
+| E2 discharge at Opus | $4.0887 |
+| E2-haiku discharge at Haiku | $0.7243 |
+| **E4 compile from realisation** | **$3.2495** |
+| E5 discharge at Haiku | pending |
+
+E1 + E4 + E5 is the two-pass pipeline. Against D's $3.3569 for 2/4 recall, the
+two-pass path is already $5.32 before discharge, so it does not win on single-
+candidate cost and was never going to. What it would buy, if E5 recovers F3, is a
+**reproducible** route to the finding that fifteen general reviews missed, plus
+three contract defects no review found at all.
