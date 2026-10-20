@@ -428,3 +428,38 @@ window, for one slice built and independently reviewed end to end. The reviewer
 costs **4%** of the builder. That ratio, not the absolute number, is the
 operationally interesting figure: adversarial review is nearly free relative to
 construction, which argues for more reviewers rather than cheaper ones.
+
+## S-sonnet pre-registration, sealed before launch
+
+Byte-identical prompt (`ba82e404...`) and contract (`98390bd9...`), own pristine
+snapshot at the same baseline, `--effort high`, `--max-budget-usd 25`. The only
+variable against S-opus is the model.
+
+Two questions, in order of what I now care about:
+
+1. **Is the F3-class cancellation boundary a family-wide construction blind
+   spot?** S-opus wrote a correct inner-timeout mechanism, documented it, and
+   left the enclosing `shutdown` future unsafe to cancellation. If S-sonnet
+   reproduces that shape - handles taken out of durable state into locals owned
+   by an async fn, with no drop guard - then construction of cancellation safety
+   has a *systematic* gap in this family, which is a much stronger claim than one
+   run supports and the sharpest finding available from this arm. If S-sonnet
+   either keeps handles in durable state or has no analogous structure, the
+   S-opus instance is local.
+2. **Cost and quality at a fifth of the price.** S-opus: $12.4955, 15 window
+   points, 5,407 insertions, 44 tests, 7/7 gates.
+
+Pre-registered outcomes:
+
+- **Gates pass and invariant 1 CLEAN** - builder substitution is supported at the
+  *cheap* tier, and the economic case stops depending on Opus.
+- **Gates fail** - the ceiling S-opus established does not survive the price cut,
+  and the useful figure becomes the gap between tiers rather than either tier.
+- **F3-class defect recurs** - see 1; this is the outcome I would most want to
+  know and expect at better than even odds, because the same reasoning that made
+  S-opus's inner fix attractive is what hides the outer boundary.
+
+I am the scorer again, by the same source-read method that has erred seven times
+today. Every positive verdict in this arm will carry the property/state/accessor
+triple explicitly, which is the discipline whose absence produced each of those
+errors.
