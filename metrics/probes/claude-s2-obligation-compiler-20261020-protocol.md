@@ -182,12 +182,22 @@ connection with handle ownership.
 
 | arm | obligations | cost | reference recall |
 |---|---|---|---|
-| B (hand-authored, F4-shaped) | mine | $3.3718 | 1/4 (F4) |
-| D (hand-authored, F3-shaped) | mine | $3.3569 | **2/4** (F3, F1) |
-| **E1 + E2 (compiled blind)** | E1's | **$6.1607** | **1/4** (F4) |
+| B (hand-authored, F4-shaped) | 3, mine | $3.3718 | **2/4** (F4, F1) |
+| D (hand-authored, F3-shaped) | 5, mine | $3.3569 | **2/4** (F3, F1) |
+| **E1 + E2 (compiled blind)** | 31, E1's | **$6.1607** | **1/4** (F4) |
 
-The compiled path cost **1.8x** D and recovered **half** as many reference
-findings. On the metric fixed before any of this ran, **obligation authorship is
+**Correction to this table, 2026-10-20.** B was first recorded here as 1/4. It is
+**2/4**: its F6 is a clean match for reference F1 - "`ProcessSupervisor::close_and_drain`
+lacks the executor's drain lock and can panic under a concurrent drain", citing
+`process.rs:325-333` and the `get_mut(&id).unwrap()` at `:330-331`. I had never
+established B's F1 disposition and recorded an unknown as a miss. Consequence:
+the compiled path's deficit is larger than first stated - **both** hand-authored
+arms reached 2/4 and the compiled set reached 1/4 at 1.8x the cost. Missing
+check: read the arm's own output before entering a disposition, which is the same
+omission that produced the F3 CLEAN verdict.
+
+The compiled path cost **1.8x** each hand-authored arm and recovered **half** as
+many reference findings. On the metric fixed before any of this ran, **obligation authorship is
 not yet separable from defect knowledge.**
 
 ### What E2 did better, stated without moving the goalposts
@@ -234,3 +244,47 @@ resource in the lane, then re-run E2 against the enlarged set. If F3 appears,
 decomposition completeness is reachable by iteration rather than by defect
 knowledge, which is the result the economics need. If it does not, the gap is in
 the compiler's analysis rather than its coverage.
+
+## F1 across every Opus-tier run: packet volume, not packet direction
+
+Assembled after E2, from each arm's own output rather than from summaries.
+
+| run | obligations | F1 |
+|---|---|---|
+| generation-2 arm, `opus-5`/`xhigh`, prompt `27b666a4` | 0 | **MATCH** |
+| B, `opus-5`/`xhigh`, same base prompt | 3 | **MATCH** (its F6) |
+| D, `opus-5`/`xhigh`, same base prompt | 5 | **MATCH** (its F4) |
+| E2, `opus-5`/`xhigh`, same base prompt | 31 | **MISS** |
+
+Model, effort, subject (`7fdf392f`), base prompt bytes, tooling and isolation
+recipe are identical across all four. The only variable is the appended
+obligation set.
+
+**This is a matched comparison, not a historical one.** Astra's 4/4 is not the
+comparator and cannot be: Test R already records that Astra had gate receipts and
+validation evidence inside a retained episode while the arms get plan plus tree.
+
+**Two hypotheses, and the data separates them.** If the *semantic direction* of a
+packet determined which defects stay discoverable, B's registration-and-visibility
+obligations should have pulled attention away from a process-side drain panic -
+they did not. Every packet of 5 or fewer obligations preserved F1; only the
+31-obligation packet lost it. At n=1 per point that is a pattern and not a law,
+but it points at **volume** rather than direction.
+
+That makes the content-fixed organisational test the right next one: take the
+**same frozen 31 obligations**, partition them by concern across independent
+execution contexts, and combine the findings. It holds representation constant
+and varies only organisation. If the dispersed arrangement recovers F1 while the
+monolithic one does not, the finding is about attention allocation within a
+context rather than about obligation quality - and it would be the first direct
+evidence that organisational decomposition has value independent of what the
+obligations say.
+
+Costs to charge against it, so the comparison stays loaded: per-context doctrine
+re-read (~20,100 tokens of `AGENTS.md` + `DESIGN.md` + `PHILOSOPHY.md` measured
+in this repository), overlapping inference across partitions, cross-concern
+interactions that no single partition can see, and integration.
+
+**A dispersed review still cannot establish coverage of obligations the compiler
+never generated.** That remains a separate responsibility, and E1's partial
+cancellation coverage is the standing instance of it.
