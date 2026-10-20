@@ -147,3 +147,123 @@ This authorizes no Claude builder in any campaign, no change to S10, and no
 alteration of `slice-builder` provider resolution - which, as of this commit,
 raises `ProviderResolutionError` unless both builder and reviewer models are in
 `{gpt-6-sol, gpt-6-astra}` (`skills/slice-builder/scripts/resolve_provider.py:171-177`).
+
+## S-opus result: every pre-registered outcome I predicted was wrong
+
+`claude-opus-5` at `--effort high`: 74 calls (62 Bash, 10 Write, 1 Edit, 1 Read),
+**1,954 s** (32.6 min), **$12.4955**, 162,650 output tokens of which **54,972
+thinking**, 0 permission denials, `subtype: success` - not a budget stop, with
+$12.50 of the $25 cap used. Five-hour window **0.02 -> 0.17**, so one complete
+slice build costs about **15 points**, not the 35-40 I projected mid-run.
+
+### 1. Boundary: PASS
+
+Exactly the 13 declared paths, nothing else. 5,407 insertions, 31 deletions
+against Sol attempt 1's 2,242 insertions - **2.4x the code**.
+
+### 2. Gates: 7/7 PASS
+
+`cargo fmt --check` 0. `clippy -p lifecycle-runtime -p lifecycle-provider
+--all-targets --locked -- -D warnings` 0. Release build 0. Lane tests 0:
+**44 passed, 0 failed** (17 `clock_framing`, 18 `owned_execution`, 9
+`process_supervision`). `cargo test --workspace --locked` 0. `git diff --check`
+0. Two `allow` attributes exist, both benign - `clippy::too_many_arguments` on an
+8-argument internal fn and `dead_code` on test support - and neither silences a
+lint indicating a defect.
+
+### 3. Defect incidence: F1 CLEAN, F2 CLEAN, F3 CLEAN, F4 CLEAN
+
+Fairness check first, because it decides whether this comparison is legitimate:
+Astra filed F1-F4 against attempt **2**, and attempt 1's handoff records
+`review_status: "not selected or run"`. Verified by source - attempt 1 and
+attempt 2 are **structurally identical** on the decisive lines: `tokio::spawn` at
+`:448`/`:479`, `results.pending` insert at `:496`, `registry.tasks.insert` at
+`:505`. Sol violated invariant 1 in its first fresh build from this same plan,
+and that build passed 7/7 gates and went forward. The comparison holds.
+
+| id | invariant | arm's mechanism | class |
+|---|---|---|---|
+| **F4** | 1 | One critical section at `executor.rs:905-955`: gate check, `tasks.insert` at `:922`, slot construction, `spawn` at `:950` **behind a closed `oneshot` start gate**, handle stored at `:953-955`, `drop(guard)`, and only then `start_tx.send(())` at `:962`. The task's first await *is* the gate. | **CLEAN** |
+| **F2** | 4 | Lateness is computed from a clock sample taken **after** the await (`:1164-1165`, `:1375-1384`), not from which `select!` branch won. `is_timely_success` (`:255-265`) additionally requires `Live` authority and `OnTime` before any success is claimed. | **CLEAN** |
+| **F1** | 6 | A single `Mutex<OwnedState>` guards gate, task registry and child registry. Every acquisition goes through `fn lock` at `:474`, which is `unwrap_or_else(|poison| poison.into_inner())`, so a panic under the lock cannot poison-propagate. `shutdown` takes records **out** of the registry (`handle: record.handle.take()`, `:1073`), so a second drain finds an empty set rather than unwrapping a missing `get_mut`. | **CLEAN** |
+| **F3** | 5, 6 | `tokio::time::timeout(policy.join_window, &mut join)` at `:1093` awaits a **mutable borrow**, so a timeout does not consume the handle; `join.abort()` at `:1098` is still reachable and `(&mut join).await` at `:1101` observes the abort so the drop guard delivers. Separately, `run_session` awaits `next_frame` directly and never as a `select!` arm. | **CLEAN** |
+
+### 4. The test suite is the sharpest difference
+
+44 tests against Sol attempt 1's 19 (5 + 9 + 5). And **3 of the arm's tests use
+`#[tokio::test(flavor = "multi_thread")]` where Sol used none.** Two generation-3
+review arms independently observed that every executor test ran single-threaded
+while the manifest pins `rt-multi-thread`, and named that as the reason the suite
+could not detect F4. The builder arm closed that gap unprompted. It also used
+Tokio's paused virtual clock in 3 tests and, per its receipt, no `thread::sleep`
+and no real `sleep` as ordering evidence - which invariant 7 demands.
+
+### 5. Receipt honesty: strong
+
+Section 2 gives a file-and-line range plus a stated mechanism for all seven
+invariants. Section 5 declares what it could not establish, including: a
+`CloseOutcome::Attempted` variant nothing could reach, so it made
+`close_requested` a field instead; that latching `unsafe_at_close` on a
+*deliberate* child replacement may be over-eager and "a reviewer could reasonably
+call this" wrong; that `process_supervision.rs` is `#![cfg(unix)]` so 9 tests
+compile away on other hosts and the subprocess evidence vanishes with them. On
+invariant 5 it wrote that the doc comment "states this requirement explicitly
+rather than claiming cancel-safety it does not have."
+
+### 6. My pre-registration was wrong, and that is the point of pre-registering
+
+I named "gates pass, invariant 1 VIOLATED" as the most likely outcome and the one
+I expected to convert F4 into a contract-representation defect. **It did not
+happen.** Given the identical plan, the identical baseline and no sight of any
+review, the arm honoured all four invariants Sol violated. F4 is therefore
+*not* a contract-representation defect: the plan's one-sentence statement of
+invariant 1 was sufficient for this model to implement it correctly. Sol's
+violation was a builder failure against an adequate contract.
+
+### 7. The result that genuinely surprised me: F3
+
+**No Claude reviewer recovered F3 in eleven runs** - four models, four effort
+levels, a concern statement naming cancellation and handle ownership and drop.
+The Claude builder avoided F3 by construction and documented the mechanism,
+`&mut join` so the timeout cannot consume the handle.
+
+Constructing a correct mechanism and recognising its absence in someone else's
+code are not the same capability, and this is direct evidence that they come
+apart in the same model family. It also reframes the F3 blind spot: it is not
+that the family lacks the concept, which it demonstrably writes and explains;
+it is that reading for an *absent* guarantee is a different task from providing
+one. That strengthens, not weakens, the case for an F3-shaped proof obligation -
+the obligation would be asking the reviewer to do what the builder did
+spontaneously.
+
+### 8. Corrections to my own statements this session
+
+- I reported mid-run that the stream showed **zero thinking blocks** and
+  suggested that undercut thinking volume as a proxy. **Wrong**: the result
+  reports **54,972 thinking tokens**, more than any generation-3 review arm. My
+  extractor counted a field the stream does not populate per-block. The A2
+  conclusion about thinking volume stands on its own evidence and needed no help
+  from this.
+- I projected 35-40 window points for a builder arm from the first 14 minutes.
+  Actual: **15**. The rate flattened once writing gave way to compiling.
+
+### 9. What this does not establish
+
+My defect-incidence scoring is a **source read**, and source reads of exactly
+this kind have been wrong five times today, including one in the note this very
+pilot was designed to test. Four CLEAN classifications by the same method that
+produced those errors deserve exactly as much trust as that method has earned.
+The confirmation that matters is an adversarial review arm against **this** tree,
+blind, scored the way Test R scored Astra's - and run by `haiku-5-5`, the model
+that matched F4 where both Opus arms failed. Until that runs, the honest
+statement is that a careful reader found no instance of F1-F4 in the arm's
+implementation, not that none exists.
+
+Also: 2.4x the code is 2.4x the surface for defects Astra never had occasion to
+name; 44 passing tests are the arm's **own** tests; n=1; and the arm had no
+repository-evidence provider while Sol recorded 10 graph calls, a delta in Sol's
+favour that makes this outcome harder to explain away, not easier.
+
+This authorizes no Claude builder in any campaign. `resolve_provider.py:171-177`
+still raises unless both models are Codex, and that gate should not move on one
+run.
