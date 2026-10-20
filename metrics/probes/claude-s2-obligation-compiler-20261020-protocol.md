@@ -778,12 +778,66 @@ also does.
 Two independent defects, both suppressed at high packet volume and recovered at
 low volume, one of them with every variable but packet size held fixed.
 
-### Consequence for packet design, stated at the strength the evidence carries
+### Consequence for packet design - corrected, because "larger is worse" overreaches
 
-Packet size is a **first-order** design parameter and larger is worse, on this
-subject, for these two findings, at n=1 per cell. It is not a capability
-parameter: the $0.37 model found what the $4.09 model missed when the packet was
-small enough.
+**Withdrawn as stated.** Removing 24 obligations changed both volume **and
+composition**, there is one run per condition, and a four-way partition tests an
+execution organisation rather than producing a dose-response curve. Raised by
+both the context-lifecycle session and ChatGPT.
+
+**Also withdrawn: "the obligation was adequate as written."** One successful
+discharge establishes that OB39's wording *can* elicit the transition analysis.
+It does **not** establish that enumerating states without their causal
+transitions is an invalid discharge under that wording - which is the property
+that would matter when accepting a future result. OB39 is demonstrated **usable**,
+not demonstrated to **compel**.
+
+**The better model, from ChatGPT, derivable from data already in this file.** Two
+effects operate at once:
+
+- **Coverage benefit**: E5 recovered F1 *because* OB34 directed attention at mutex
+  operations; E2's 31 obligations lacked that coverage and missed F1.
+- **Competition cost**: E5 missed F3 while carrying 25 obligations; the same
+  obligation alone recovered it.
+
+Both happened in the **same run**. So the unit to optimise is not one obligation
+but a **bounded group whose shared context improves judgment more than its
+competition degrades it** - which is the organisational-formation problem, not a
+size rule.
+
+**And the economics forbid the degenerate answer.** E6 cost $0.3697 for one
+obligation; E5 cost $0.5542 for twenty-five. Discharging all 25 separately at
+E6's observed cost is about **$9.24, roughly 17x E5**. One obligation per context
+is prohibitive, so the optimum lies strictly between 1 and 25 and probably varies
+by concern. No rule mandating one obligation per agent is supported.
+
+What is supported: **the apparent capability of an execution configuration
+depends on how the problem is organised for it.** The $0.37 model found what the
+$4.09 model missed, at identical wording, when fewer obligations competed.
+
+### A separate dimension this pilot has been conflating: severity calibration
+
+E6 found F3's mechanism exactly and graded it **low**, reasoning "No work is
+abandoned, since the registry and result owner remain, but the report is wrong in
+the interval." The reference graded it medium, and its stated consequence is that
+"a later drain then reports joined when no join occurred" - a false claim in a
+close report, which is an evidence-integrity violation rather than a transient
+inaccuracy. E6 noticed the report is wrong and scoped it as temporary.
+
+This is the **second** instance: all four generation-2 arms matched F1 and all
+four graded it low against a reference high.
+
+**Detection and severity calibration are different capabilities and should be
+scored separately from here on.** A model that locates a mechanism is not thereby
+competent to assign its governance consequence - and in an architecture where
+findings drive remediation authority, the second is the one that decides what
+happens next. It is also separable, which is the useful part.
+
+### One measurement caveat accepted
+
+The ~20,100-token doctrine figure is a **measured configuration of this
+repository's** `AGENTS.md` requirement, not a universal per-worker floor. Another
+workflow's instructions may load less.
 
 That inverts the natural reading of the economics. The cheap tier is not a
 compromise to be compensated for with bigger packets - **bigger packets are the
