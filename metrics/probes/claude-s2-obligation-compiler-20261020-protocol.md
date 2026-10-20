@@ -723,3 +723,77 @@ ordering, cancellation or lifecycle evidence, the warrant must carry an
 exhaustiveness basis for the **transitions** into each relevant state, not only
 for the states and their accessors. It should be derived for those property
 classes rather than imposed on every review.
+
+## E6 result: the same obligation, alone, recovers F3. Packet size is the lever.
+
+`claude-haiku-5-5` at `xhigh`, **OB39 alone**, base prompt otherwise byte-identical
+to Test R's: 18 calls, **452 s**, **$0.3697**, 0 denials, verdict with 7 findings.
+
+**F3 is MATCHED.** Its F6, verbatim:
+
+> "**Cancelling the drain future permanently drops a `JoinHandle`.** Evidence:
+> `executor.rs:306` (`task.join.take()`) removes the handle before the await at
+> `executor.rs:308`. It is restored only in the timeout arm (`executor.rs:314-318`).
+> If the caller drops the drain future at that await, the handle is dropped and the
+> entry is left as `join: None` with no pending result."
+
+Graded **low** where the reference graded medium, with a stated reason: "No work
+is abandoned, since the registry and result owner remain, but the report is wrong
+in the interval." It also declared its own limit under hardest-to-check: "whether
+dropping a `JoinHandle` detaches the task as I read it... Both are inference."
+
+### The matched pair
+
+| arm | model | effort | obligation text | packet | F3 |
+|---|---|---|---|---|---|
+| E5 | `haiku-5-5` | `xhigh` | OB39 verbatim | **25 obligations** | **MISS** |
+| E6 | `haiku-5-5` | `xhigh` | OB39 verbatim | **1 obligation** | **MATCH** |
+
+Model, effort, subject (`7fdf392f`), base prompt bytes and the obligation's own
+wording are identical. The only variable is how many other obligations
+accompanied it. **The pre-registered "E6 succeeds" outcome obtained: Haiku had the
+capability, and the 25-obligation packet suppressed the investigation.**
+
+### This resolves the question I got wrong, in favour of my original claim
+
+I recorded OB39 as "adequate" with the failure in execution; ChatGPT correctly
+objected that adequacy was not established, since OB39 demands distinguishing
+report *conditions* and not enumerating *transitions*. The matched pair settles
+it: **the obligation was adequate as written**, because the same text alone
+produced the transition analysis. The correction was right to demand the test and
+the test vindicates the first claim - which is the only reason the first claim is
+now usable.
+
+E7 (`opus-5` on OB39 alone) is no longer discriminating for the capability
+question: the cheap tier has the capability. It would only establish whether Opus
+also does.
+
+### Two findings, two packet sizes, same direction
+
+| finding | lost at | recovered at |
+|---|---|---|
+| **F1** drain panic | 31 obligations, at **both** `opus-5` and `haiku-5-5` | 0, 3 and 5 obligations; and at 25 when OB34 covered it |
+| **F3** handle detach | 25 obligations | **1 obligation, same text, same model** |
+
+Two independent defects, both suppressed at high packet volume and recovered at
+low volume, one of them with every variable but packet size held fixed.
+
+### Consequence for packet design, stated at the strength the evidence carries
+
+Packet size is a **first-order** design parameter and larger is worse, on this
+subject, for these two findings, at n=1 per cell. It is not a capability
+parameter: the $0.37 model found what the $4.09 model missed when the packet was
+small enough.
+
+That inverts the natural reading of the economics. The cheap tier is not a
+compromise to be compensated for with bigger packets - **bigger packets are the
+thing that breaks it**. A plausible operating rule, untested: prefer many small
+single-concern discharges at the cheap tier over one comprehensive discharge at
+any tier, and charge the per-context doctrine re-read (~20,100 tokens measured in
+this repository) against the saving.
+
+Total for the F3 recovery by this route: E1 $2.0720 + E4 $3.2495 + E6 $0.3697 =
+**$5.69**, against D's $3.3569 which recovered F3 and F1 with hand-authored
+obligations. Still not cheaper on one candidate. But E6 alone, given the
+obligation, cost **$0.37** - and that is the number that matters if obligations
+amortise across candidates.
