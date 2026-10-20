@@ -463,3 +463,124 @@ I am the scorer again, by the same source-read method that has erred seven times
 today. Every positive verdict in this arm will carry the property/state/accessor
 triple explicitly, which is the discipline whose absence produced each of those
 errors.
+
+## S-sonnet result: cheaper, equal on gates, and the F3-class gap recurs
+
+`claude-sonnet-5-5` at `--effort high`: 69 calls (54 Bash, 7 Read, 6 Write, 1
+Edit, **1 Agent**), **934 s** (15.6 min), **$4.7099**, 19 turns, 0 denials,
+`subtype: success`. Five-hour window 0.20 -> 0.28, **8 points**. 4,864 insertions
+over **exactly the 13 declared paths**.
+
+### Gates: 7/7 PASS, 44 tests
+
+`fmt` 0, `clippy --all-targets -D warnings` 0, release build 0, lane tests 0
+(1 unit + 10 `clock_framing` + 18 `owned_execution` + 15 `process_supervision` =
+**44**), `--workspace` 0, `git diff --check` 0.
+
+### Head-to-head against S-opus
+
+| | S-opus | S-sonnet |
+|---|---|---|
+| cost | $12.4955 | **$4.7099** (2.65x cheaper) |
+| wall | 32.6 min | **15.6 min** (2.1x faster) |
+| window points | 15 | **8** |
+| insertions | 5,407 | 4,864 (90%) |
+| tests | 44 | 44 |
+| gates | 7/7 | 7/7 |
+| boundary | exact 13 | exact 13 |
+
+The pre-registered outcome "gates pass and invariant 1 CLEAN" obtained at the
+cheap tier. **Builder substitution no longer depends on Opus**, and the economic
+case improves by 2.65x without a measured quality cost on this subject. It is
+*not* the 5x I assumed from review-arm pricing; builder work compresses the tier
+gap.
+
+### Defect incidence: F1 CLEAN, F2 CLEAN, F4 CLEAN, F3 DIVERGENT
+
+**F4 - invariant 1 - CLEAN.** `oneshot` start gate, same construction as S-opus
+reached independently. `executor.rs:654` creates `(start_tx, start_rx)`; the
+comment at `:655` reads "Register first, under the gate. The task cannot start
+before `start_tx` fires"; `registry.tasks.insert` at `:666`; spawn at `:698` with
+`start: start_rx`; `start_tx.send(())` at `:718`. Two models, two families of
+implementation, same answer to the invariant Sol violated.
+
+**F2 - invariant 4 - CLEAN, with a better warrant than S-opus's.** At
+`:1041-1050` it demotes a timely result to late *after* child reaping, with the
+reason stated in the code: "Reaping took time. Success must still hold at the
+moment it is claimed: evidence that was timely when the provider returned is
+demoted to late if the absolute deadline passed while the child was being
+closed." It names the specific await that can outlast the authority, which
+S-opus's equivalent did not.
+
+**F1 - invariant 6 - CLEAN.** `lock_registry` at `:391` is
+`unwrap_or_else(PoisonError::into_inner)`, as is every other acquisition, so a
+panic under the lock cannot poison-propagate. `begin_shutdown` is
+**synchronous** and idempotent - `if registry.snapshot.is_none()` at `:511`
+latches the owned set once - so two concurrent closers cannot interleave the
+snapshot step at all.
+
+**F3 - invariants 5 and 6 - DIVERGENT. The pre-registered recurrence happened.**
+
+Scored with the property/state/accessor triple this time, which is the discipline
+whose absence produced my F3 CLEAN error on S-opus:
+
+- **Required property**: no owned join handle is lost to cancellation at any
+  boundary, and the close report truthfully describes what was joined.
+- **States**: handle in the registry record / handle in `shared.joins` / handle
+  in a `shutdown`-local vector / handle consumed by `await`.
+- **Accessor set**: `TaskRecord.join` (`:356`), `Shared.joins:
+  Mutex<Vec<JoinHandle<()>>>` (`:381`), the local `handles` after
+  `std::mem::take` (`:552`), the loop-local `handle` (`:554`).
+- **Which survive cancellation of `shutdown` after `:552`**: **none.**
+  `shared.joins` has just been emptied by `mem::take`; the local vector and the
+  loop-local are destroyed with the future; dropping a Tokio `JoinHandle`
+  detaches.
+
+Sonnet's design is **better than Opus's in one respect and worse in another.**
+Better: `begin_shutdown` is synchronous, so gate-close and handle-collection
+cannot be interrupted part-way, and the handles land in *durable shared state*
+rather than a future-owned local - exactly the structure that would fix this.
+Worse: `shutdown` then takes them straight back out into a local and does
+`for handle in handles { handle.await ... }`, awaiting **by value** with no
+per-handle join window and no abort at that site, where Opus at least held
+`&mut join` with a `timeout` and an abort.
+
+So Sonnet built the right home for the handles and then moved them out of it.
+
+**Consequence.** A `shutdown` cancelled after `:552` detaches every not-yet-awaited
+task. A later `shutdown` takes an empty vector, reports `task_join_panics = 0`,
+and reports `owned_at_close` from the retained snapshot - so it names the right
+owned set while having joined none of it. Unlike Opus's `NeverCleared`, no
+variant asserts something false; the report is silent rather than wrong. Partial
+mitigation exists: a detached task's queued unresolved result can still latch
+`unsafe_latched` through the `results_undelivered` sweep, which Opus's path did
+not do.
+
+### What the recurrence establishes, and what it does not
+
+**Two models, independently, from the same 83-line plan, both got invariant 1
+right by the same mechanism and both left the shutdown join loop unsafe to outer
+cancellation.** That is the pre-registered sharp finding: cancellation safety has
+a **systematic construction gap** in this family at the *enclosing-future*
+boundary, while the *inner-await* boundary is handled correctly and even
+commented. n=2, one subject, so it is a pattern and not a law - but it is no
+longer a property of one run.
+
+It also sharpens what the thirteen review runs were failing at. The family can
+construct the inner mechanism, explain it, and miss the outer boundary; and when
+reviewing, it does not look at the outer boundary either. **The same blind spot
+appears on both sides of the role**, which is a different and more useful claim
+than "construction and detection come apart". They come apart on F3's
+*instance* - Sol's exact defect - and they coincide on F3's *class*.
+
+That is now the strongest available case for the F3-shaped proof obligation, and
+it predicts what the obligation must say: not "check the join handle" but
+"enumerate every state in which the handle resides and name which survive
+cancellation of each enclosing future". Which is the triple.
+
+### One stated delta
+
+S-sonnet made **one `Agent` call**; S-opus made none, on byte-identical input.
+Its inference is consumed inside the $4.7099 and I cannot inspect the
+sub-context from the stream. This is harness behaviour, not an admitted
+execution vantage, and the two arms were therefore not procedurally identical.
