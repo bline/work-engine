@@ -288,3 +288,68 @@ interactions that no single partition can see, and integration.
 **A dispersed review still cannot establish coverage of obligations the compiler
 never generated.** That remains a separate responsibility, and E1's partial
 cancellation coverage is the standing instance of it.
+
+## E2-haiku: the frozen packet executes at the cheap tier, and the F1 loss replicates
+
+`claude-haiku-5-5` at `xhigh`, byte-identical prompt to E2 (same 31 frozen
+obligations, same sealed key `7fdf392f`): 29 calls, **785 s**, **$0.7243**,
+0 denials, clean tree, **16 findings**, verdict **BLOCK**. Window 0.45 -> 0.46.
+
+| | E2 (`opus-5`) | E2-haiku (`haiku-5-5`) |
+|---|---|---|
+| cost | $4.0887 | **$0.7243** (5.6x cheaper) |
+| findings | 13 | **16** |
+| reference recall | 1/4 (F4) | 1/4 + 1 partial (F4; F2 partial) |
+| F1 | **MISS** | **MISS** |
+| verdict | BLOCK | BLOCK |
+
+### Disposition quality at the cheap tier is not degraded
+
+Haiku returned an explicit OB-by-OB table with a **Basis** column, where E2 wrote
+prose. Sampled entries, verbatim:
+
+- "OB9 | Pass (weak reading); strong reading untested | No `ExecutionOutcome::*`
+  or `EffectSettlement::*` value is constructed in runtime `src`; the only
+  transfers are `executor.rs:469-470`... No negative controlled-peer test exists."
+- "OB12 | Pass (complete space); assertions partial | Error space is exactly
+  `{UnsupportedProfile, EntryUncertain, ObservationUnavailable}`... Retry search
+  over `retry`, `backoff`, `resend`, `re-dispatch`, `re-execute`: no hits."
+- "OB5 | Fail (convention only) | Three call paths... Nothing links the
+  reservation to the claim."
+
+Those are properties with stated bases and named enumerations, and they split weak
+from strong readings unprompted. **The claim that obligations make review
+mechanical enough for a cheap model is supported on this subject.** The 16
+findings are *not* adjudicated, so "16 versus 13" is a count and not value.
+
+### The displacement result is now n=2 matched pairs
+
+| model | effort | obligations | F1 |
+|---|---|---|---|
+| `opus-5` | xhigh | 0 | **MATCH** |
+| `opus-5` | xhigh | 31 | **MISS** |
+| `haiku-5-5` | xhigh | 0 | **MATCH** |
+| `haiku-5-5` | xhigh | 31 | **MISS** |
+
+Both models matched F1 unaugmented in generation 2 on this exact tree with this
+exact base prompt, and both missed it carrying the 31-obligation packet. So the
+loss is **not a model-capability artifact and not a one-run accident**: it
+replicates across a 5.6x capability-and-price gap.
+
+Combined with B (3 obligations, F1 matched) and D (5 obligations, F1 matched),
+the pattern across six runs is that F1 survives no packet and small packets, and
+is lost by the large packet at two different tiers.
+
+### What this changes for the recommended order
+
+The economic premise is established cheaply: a compiled packet is dischargeable
+at $0.72 with warranted dispositions. The open question is no longer *can a cheap
+worker execute a packet* but *what does a large packet cost in discovery*, and
+that now has a replicated answer rather than a single observation.
+
+So the content-fixed organisational test moves ahead of further model
+comparisons: partition these same 31 obligations by concern across independent
+contexts, run them at `haiku-5-5` where the per-context price is $0.72 rather
+than $4.09, and see whether F1 returns. If it does, the fix for the displacement
+is organisational and affordable. If it does not, the loss is caused by something
+other than attention allocation within one context.
