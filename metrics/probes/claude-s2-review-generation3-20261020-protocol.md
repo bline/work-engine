@@ -299,3 +299,77 @@ C's F4: "Child slots are never released before terminal shutdown, and there is n
 per-child reap or replacement." That is now **three arms** (`opus-5` at `xhigh`,
 `haiku-5-5` at `medium`, and C) plus my own source verification, against zero from
 the reference.
+
+## B result: the decomposition caught what three effort levels could not
+
+`claude-opus-5` at `xhigh` with derived obligations: 25 calls, 758 s, **$3.3718**,
+0.5348 Mwt, 39,793 thinking tokens, verdict BLOCK, zero denials, clean tree.
+
+**OB1 — NOT satisfied. OB2 — NOT satisfied. F4 is MATCHED.**
+
+Same model, same effort, same sealed key as the generation-2 run that
+**false-cleared** F4. The only changed variable is the contract decomposition.
+The pre-registered success condition obtained: "B catches F4 -> the
+correspondence failure is addressable by contract decomposition, and the compiler
+path is supported by direct evidence."
+
+### The model diagnosed its own prior failure
+
+OB3 required the property/state/accessor triple for any obligation reported
+SATISFIED. B reported none satisfied, and then volunteered this:
+
+> "the property I *did* establish is the weaker one named under OB1 (atomic
+> registry transition), ranging over the states `{open/closed gate} x {task
+> absent, task registered, task registered+result pending, task acknowledged}`,
+> over the accessor set `{submit, close_gate, close_and_drain, request_abort,
+> owned_count, acknowledge_result}`. **That property is not the one invariant 1
+> requires, and it does not cover accessors 1-3 above.**"
+
+That accessor set is **exactly** the one the same model enumerated at `xhigh`
+without obligations, when it cleared F4. Required to state the triple, it
+identified the property mismatch itself. The triple is not merely a checking aid
+for a later reader; here it was **self-diagnosing**.
+
+### B's enumeration is better than mine, and corrects my own record
+
+B enumerated six observation surfaces of the result sink with an explicit
+exhaustiveness basis:
+
+> "`ResultState`, its `pending` field, `ResultRecord`, and `ResultReceiver`'s
+> `notifications`/`results` fields carry no `pub` or `pub(crate)` modifier, and
+> `src/lib.rs:16-20` re-exports only the public type names... Rust privacy
+> therefore confines every accessor to `src/executor.rs`, which makes a grep of
+> that one file an exhaustive enumeration - that is the basis on which I treat the
+> list as complete, and it is only valid at this revision."
+
+It found **three** unguarded readers that leak a `TaskResult` before registration:
+`ResultReceiver::recv` (`:150`), `ResultReceiver::pending` (`:160`), and
+`OwnedExecutor::pending_results` (`:233`); and correctly separated
+`acknowledge_result` and `close_and_drain`, which do serialize behind the registry
+lock.
+
+**This corrects section 4 of `notes/s2-review-pilot-consequences-20261019.md`,
+which stated the relevant set had "exactly two members ... two lines of grep."**
+Verified: `:158` and `:230` both lock `results.pending`, both are `pub`, both
+return full result values, and my grep missed them because it required `pending`
+and `.lock()` on one line while Rust method chains span lines.
+
+Fifth pattern-matching failure of mine this session, and the most pointed: I used
+that grep as **the worked example** for why the accessor-set check is mechanical,
+and the example was itself produced by a defective mechanical check. B's
+exhaustiveness basis - module privacy confines the accessor set to one file - is
+**sounder than the one I demonstrated**, because it argues from the language's
+visibility rules rather than from a text pattern.
+
+So the candidate survives and its demonstration does not: the triple works, and
+my instance of it was wrong. A deterministic accessor check is only as good as its
+exhaustiveness argument, which is precisely the field the candidate requires and
+which my own example omitted.
+
+### B also reached C's independent point
+
+"every executor test runs single-threaded while the manifest pins
+`rt-multi-thread`", tied to `DESIGN.md` §3.9 and §12 and `PHILOSOPHY.md` §18 -
+"treating missing attestation as truth repeats the same epistemic error as
+inferring zero from an unavailable measurement." Two arms, different conditions,
+same observation about why the test suite cannot detect the defect.

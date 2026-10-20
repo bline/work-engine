@@ -160,6 +160,40 @@ check is a **necessary** condition, never a sufficient one.
 Still a candidate. The owning proposal is `formed` with
 `implementation_authorized: false`, and this note does not edit it.
 
+## 4b. Correction to section 4: my accessor enumeration was incomplete
+
+2026-10-20. Section 4 states that the set relevant to the F4 property "has
+exactly two members - `:150` (`recv`, reader), `:496` (publisher)" and calls it
+"two lines of grep". **Both claims are wrong.**
+
+There are **four** accessors of `results.pending`, three of them readers that
+leak a full `TaskResult`:
+
+| site | accessor | visibility | leaks a result? |
+|---|---|---|---|
+| `:150` | `ResultReceiver::recv` | `pub` | yes |
+| `:160` | `ResultReceiver::pending` | `pub` | yes |
+| `:233` | `OwnedExecutor::pending_results` | `pub` | yes |
+| `:496` | publisher, inside the spawned collector | - | writes |
+
+My grep required `pending` and `.lock()` on the same line; Rust method chains
+span lines, so `:158` and `:230` were invisible to it.
+
+This was found by the `B` arm of generation 3, which also supplied a **better
+exhaustiveness basis** than mine: `ResultState`, its `pending` field,
+`ResultRecord` and `ResultReceiver`'s fields carry no `pub`/`pub(crate)`
+modifier and `lib.rs:16-20` re-exports only type names, so **module privacy
+confines every accessor to `executor.rs`** and a grep of that one file is
+exhaustive - an argument from the language's visibility rules rather than from a
+text pattern.
+
+**What this does to the candidate.** It survives and is strengthened; its
+demonstration does not. I used the two-member grep as the worked example for
+"given the property and the state, the accessor set is deterministically
+checkable", and the example was produced by a defective check. The lesson is
+that the **exhaustiveness basis is the load-bearing field**, not the list: a
+list without one is an assertion, and mine had none.
+
 ## 5. Refinement: the binding is to a causal surface, not a single state
 
 Added 2026-10-20. Section 4's three-field schema (property / state / accessor
