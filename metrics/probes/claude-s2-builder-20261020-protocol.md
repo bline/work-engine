@@ -220,7 +220,7 @@ review, the arm honoured all four invariants Sol violated. F4 is therefore
 invariant 1 was sufficient for this model to implement it correctly. Sol's
 violation was a builder failure against an adequate contract.
 
-### 7. The result that genuinely surprised me: F3
+### 7. F3: the construction/detection divergence
 
 **No Claude reviewer recovered F3 in eleven runs** - four models, four effort
 levels, a concern statement naming cancellation and handle ownership and drop.
@@ -322,7 +322,7 @@ mechanism and violated against another one on the same invariant.
 The finding in section 7 is weakened in precisely the way that matters. The
 builder did **not** avoid F3's defect class - it avoided F3's *instance* while
 reintroducing the class at a different cancellation boundary. That is a sharper
-and less flattering version of the same point: the family can write a correct
+and narrower version of the same point: the family can write a correct
 cancellation mechanism, explain it in a doc comment, and still miss a second
 cancellation boundary in the same function. Section 7's claim that construction
 and detection "come apart" stands; its claim that F3 was avoided "by
@@ -330,20 +330,20 @@ construction" does not.
 
 ### What this does to my own method
 
-Sixth source-read error of the session, and the most predictable one: I verified
-the mechanism the ground truth named and stopped. **B's entire result was that
-the property you establish is not automatically the property required**, and I
-then established "the inner timeout does not consume the handle" and recorded it
-as "the handle survives cancellation". Those are different properties. The
-property/state/accessor triple would have caught it - the accessor set for the
-handle is {registry row, `ClosedTask` local, `closed` loop local}, and two of
-those three are destroyed by outer cancellation. I did not write the triple for
-my own verdict.
+Wrong claim: F3 CLEAN. Error class: establishing a weaker property than the one
+required - I verified the mechanism the ground truth named and stopped, so
+"the inner timeout does not consume the handle" was recorded as "the handle
+survives cancellation". Consequence: a published CLEAN verdict on a tree that
+does not hold the property, plus a board post and a section 7 claim built on it.
+Missing check: the property/state/accessor triple applied to my own positive
+verdict - the handle's accessor set is {registry row, `ClosedTask` local,
+`closed` loop local}, and two of the three are destroyed by outer cancellation.
 
-This is now the strongest argument in the pilot for making the triple mandatory
-on a *positive* finding, because every instance of this error today - the
-accessor grep, the F3 decomposition claim, this one - was a positive claim about
-a property nobody required me to state precisely.
+This is the same failure B diagnosed in the arm it scored: the property
+established is not automatically the property required. It argues for requiring
+the triple on *positive* findings, where it has never been required - the
+accessor-grep error, the F3-decomposition claim and this one are all positive
+claims about properties that were never stated precisely.
 
 ## Blind review of the Claude-built tree: `haiku-5-5` at `xhigh`
 
@@ -387,7 +387,7 @@ closed channel. I did not verify that against the dependency source, which is
 outside the snapshot." That is the declared-limitation behaviour generation 3
 valued, produced unprompted by the cheapest model.
 
-### It found a scope violation I missed, and the history makes it more interesting
+### It found a scope violation I missed, and the history reassigns the blame
 
 **F9**: the owned manifest adds `serde_json`, `tempfile = "=3.27.0"` and
 `work-engine-types` as dev-dependencies, where the plan says the owned manifest
@@ -459,10 +459,10 @@ Pre-registered outcomes:
   know and expect at better than even odds, because the same reasoning that made
   S-opus's inner fix attractive is what hides the outer boundary.
 
-I am the scorer again, by the same source-read method that has erred seven times
-today. Every positive verdict in this arm will carry the property/state/accessor
-triple explicitly, which is the discipline whose absence produced each of those
-errors.
+I am the scorer again, by the same source-read method that produced the wrong F3
+CLEAN verdict on S-opus. Every positive verdict in this arm will carry the
+property/state/accessor triple explicitly, since its absence is what allowed a
+weaker property to be recorded as the required one.
 
 ## S-sonnet result: cheaper, equal on gates, and the F3-class gap recurs
 

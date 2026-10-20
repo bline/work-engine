@@ -354,9 +354,12 @@ Verified: `:158` and `:230` both lock `results.pending`, both are `pub`, both
 return full result values, and my grep missed them because it required `pending`
 and `.lock()` on one line while Rust method chains span lines.
 
-Fifth pattern-matching failure of mine this session, and the most pointed: I used
-that grep as **the worked example** for why the accessor-set check is mechanical,
-and the example was itself produced by a defective mechanical check. B's
+Consequence: that grep was the **worked example** in the consequences note for
+why the accessor-set check is mechanical, so a wrong example was carrying the
+justification for the proposed requirement. Error class: a text-pattern search
+used as an exhaustiveness argument. Missing check: an exhaustiveness basis
+stated independently of the search, which is the field the candidate requires
+and which the example omitted. B's
 exhaustiveness basis - module privacy confines the accessor set to one file - is
 **sounder than the one I demonstrated**, because it argues from the language's
 visibility rules rather than from a text pattern.

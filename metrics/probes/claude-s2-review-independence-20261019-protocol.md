@@ -539,13 +539,13 @@ check, `previous_exit` relabelled unconditionally, `ChildExit` carrying no
 timestamp). The lateness work was executor-side in every arm. `sonnet-5-5`'s
 PARTIAL stands, but for a better reason than I gave it.
 
-**How the error propagated, recorded because the mechanism matters.** I built a
-striking four-model symmetry from one arm's sentence, committed it, and in the
-next exchange it was restated back to me as "they weren't merely overlooking the
-defect; they were treating its implementation as an example to follow" - further
-from the text than my own version. An overstatement that is interesting travels
-faster than one that is dull, and a second reader sharpened rather than checked
-it. The unanimous **severity downgrade** on F1 is unaffected and remains
+**How the error propagated, recorded because the mechanism matters.** I
+generalised a four-model symmetry from one arm's sentence, committed it, and in
+the next exchange it was restated back to me as "they weren't merely overlooking
+the defect; they were treating its implementation as an example to follow" -
+further from the source text than my own version. The mechanism: a claim that
+unifies several observations invites extension rather than verification, so the
+second reader sharpened it instead of checking it against the arm outputs. The unanimous **severity downgrade** on F1 is unaffected and remains
 measured: four arms, four `low` grades, reference `high`.
 
 This is the sixth instance of the restatement failure catalogued in
