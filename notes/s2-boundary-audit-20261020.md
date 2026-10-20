@@ -47,9 +47,12 @@ subsystems.
    artifact in the campaign state records a stop or boundary-change event** -
    searched; the only matches are `stop_on`/`stopping_criteria` in agent-loop
    configuration, which is orchestration and unrelated.
-4. **Transition.** The builder met the stop condition, implemented a disconnected
-   mechanism, and the receipt recorded no stop. Nothing downstream could observe
-   that a stop had been due.
+4. **Transition.** The condition for a stop obtained, no stop was recorded, and a
+   disconnected mechanism was implemented. **Evidentiary limit:** the absence of a
+   record establishes that no stop event was retained in the searched artifacts.
+   It does **not** establish that the builder recognised the condition and chose
+   to proceed. Nothing downstream could observe that a stop had been due, which is
+   the defect regardless of what the builder knew.
 5. **Smallest missing capability.** Not "accepted with a stop reason" - a null
    `stop_reason` on a final receipt may be correct. What is missing is a **stop
    event with a disposition**, retained independently of the terminal receipt, so
@@ -115,14 +118,31 @@ evidence after. Boundary 4's version is strictly cheaper: it needs no model of
 producers, interfaces or authority, only a table with a row per invariant, and an
 unrealizable invariant announces itself by having nothing in its row.
 
-So the realizability analyzer of boundary 1 may be **unnecessary for this failure
-class**. One mapping requirement at acceptance would have caught it, and would
-also catch invariants that are realizable and simply unevidenced - a larger class.
+So the realizability analyzer of boundary 1 is **deferrable, not eliminated** -
+a correction to my first wording. The two act at different times and prevent
+different losses:
+
+- **Boundary 1** prevents spending a build on an obligation that cannot be
+  satisfied. S2 spent five candidates and three repair rounds on a slice carrying
+  an unsatisfiable invariant.
+- **Boundary 4** prevents promoting an unestablished obligation into an accepted
+  one.
+
+Only the second is needed to stop *unsupported acceptance*, and it is far cheaper.
+The economic order follows: implement the acceptance correspondence first, then
+**measure** whether pre-execution checking avoids enough failed work to justify
+its cost. That measurement does not exist and should not be assumed either way.
+
+**The ledger must distinguish two dispositions, not one.** "Evidence absent" and
+"evidence present but insufficient to establish the property" are different states,
+and collapsing them lets a weak test receipt fill a row while establishing
+nothing - which is the same true-but-insufficient failure this audit is about,
+reproduced in the instrument built to detect it.
 
 Two of the four boundaries need no new subsystem: boundary 4 needs a
 correspondence obligation over artifacts that already exist, and boundary 3 needs a
 vocabulary field. Boundary 2 needs a retained stop event, which is new state but
-small. Boundary 1 may need nothing.
+small. Boundary 1 is deferred pending a measurement of avoided waste.
 
 ## Scope and authority
 
