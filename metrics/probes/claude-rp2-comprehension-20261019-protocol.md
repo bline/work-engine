@@ -280,3 +280,82 @@ real: `sonnet-5-5` 1,077 thinking tokens (14% of output), `opus-5` 12,645 (41%).
 
 Generation 2 pins `--effort medium`, matching the `gpt-6-sol`/`medium` baseline,
 and enforces the ceiling with `--max-budget-usd 3.00` rather than by inspection.
+
+## Generation 2 results, 2026-10-20
+
+All four arms at `--effort medium`, matching the `gpt-6-sol`/`medium` baseline.
+**Zero permission denials, clean trees, no boundary violations in any arm** - the
+harness fix holds.
+
+| arm | effort | calls | wall | cost | weighted | thinking |
+|---|---|---|---|---|---|---|
+| `gpt-6-sol` (baseline) | medium | 8 | ~108 s | ~0.06 quota pts | 0.099 Mwt | not reported |
+| `claude-haiku-5-5` | medium | 8 | 103 s | **$0.0216** | 0.1733 Mwt | 60% of output |
+| `claude-sonnet-5-5` | medium | 6 | 72 s | $0.2441 | 0.0919 Mwt | 10% |
+| `claude-opus-5-5` | medium | 10 | 141 s | $0.7262 | 0.1573 Mwt | 33% |
+| `claude-opus-5` | medium | 7 | 258 s | $1.2558 | 0.1944 Mwt | 27% |
+
+### The effort effect is real and reproducible
+
+Both arms that ran at inherited `high` in generation 1 and at pinned `medium` in
+generation 2 lost **the same two constants**:
+
+| arm | effort | `REQUEST_MAX_BYTES` | `STARTUP_LIMIT` |
+|---|---|---|---|
+| sonnet-5-5 gen 1 | high | found | found |
+| sonnet-5-5 gen 2 | **medium** | **lost** | **lost** |
+| opus-5 gen 1 | high | found | found |
+| opus-5 gen 2 | **medium** | **lost** | **lost** |
+
+Two models, same direction, same two constants. Dropping one effort level costs
+code-level constant recovery on this task. Both still recovered the "4 MiB"
+magnitude and the line-287 checkpoint at medium.
+
+### F1 is not recovered by any Claude arm, in any generation, at any effort
+
+Across **six** Claude runs - sonnet and opus-5 at high, and haiku, sonnet,
+opus-5 and opus-5-5 at medium - **not one** recovered `request_id` <= 128 bytes,
+`OUTPUT_SLOTS = 8`, or NDJSON `version: 1`. `gpt-6-sol`/`medium` recovered all
+three in 8 calls.
+
+This is the finding that **fully survives audit** (see `2c-correction-2`), and it
+is the defect class both open S10 P2s concern. It is now the most robust result
+either pilot has produced, and it belongs to the baseline.
+
+### Haiku is the anomaly and I will not explain it from n=1
+
+`claude-haiku-5-5` at medium recovered **both** `REQUEST_MAX_BYTES` and
+`STARTUP_LIMIT`, which sonnet-5-5 and opus-5 **lost** at the same effort, for
+**$0.0216** - one fifty-eighth of opus-5's cost on the same task. Its thinking
+share was the highest of any arm at 60% of output. But sonnet-5-5 at generation 1
+recovered both constants on only 1,077 thinking tokens, so absolute thinking
+volume does not explain it either. Recorded as an observation; n=1 per cell
+supports no causal account.
+
+### The weighted-token metric hides what USD shows
+
+Every arm sits in a narrow 0.09-0.19 Mweighted band, close to the baseline's
+0.099, while **USD spans 58x** ($0.0216 to $1.2558). The weighted model was built
+for Codex quota, where output is ~10% of a call. On Claude, output at the 5x
+weight is a much larger share, and thinking tokens are output. For cross-provider
+work the weighted figure is a comparability aid only; **USD is the decision
+number**, and the two disagree by a factor of nearly sixty here.
+
+### Checkpoint recall against the two items the baseline missed
+
+| | ckpt 287 | ckpt 389 |
+|---|---|---|
+| haiku-5-5 | found | - |
+| sonnet-5-5 | found | found |
+| opus-5-5 | found | - |
+| opus-5 | found | found |
+
+All four Claude arms recovered line 287, which the baseline missed. Two of four
+recovered line 389.
+
+### Tagging format varies and is not countable
+
+Three valid formats appeared: per-row full tag names (sonnet), per-row
+abbreviations defined in a legend (haiku: `CC`/`ID`/`OL`/`GA`), and section
+groupings (both opus arms). Tag-occurrence counting is therefore **not** a
+compliance measure across arms, and compliance was assessed structurally instead.
