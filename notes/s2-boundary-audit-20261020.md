@@ -235,3 +235,70 @@ It also does not establish that the required evidence was unavailable in 2026-10
 Several gaps - test bodies, a `select!` audit, a repository-wide sleep search - are
 cheap artifacts that were simply never retained. That is the actionable half: the
 fix is largely a retention requirement, not new analysis.
+
+### Correction: `tests_run_by_reviewer: 0` is a conformance attestation, not a defect
+
+**Claim.** I reported the ledger's closing line as "the reviewer ran zero tests",
+framed as damning.
+
+**Error class.** Reading a boundary-conformance counter as a performance measure.
+In `s2-candidate5-contract-retained-result.json` the field sits beside
+`source_mutations_by_reviewer = 0`. Both are attestations that the reviewer stayed
+**read-only**, which `codex-adversarial-review` requires - the same constraint my
+own Test R prompt imposed on every arm ("no builds, no test runs"). Zero is the
+correct value. A non-zero value would be the finding.
+
+**Consequence.** I presented conformance as misconduct and overstated the audit's
+force. The surviving finding is narrower and is the one the ledger actually
+supports: the record carries `finding_statuses[*].status = verified_resolved`
+with **no field recording what the reviewer inspected to reach that status**. The
+reviewer's conformance is attested; the basis of each resolution is not.
+
+**Missing check.** Read the field's siblings before interpreting it.
+
+Nothing in the audit establishes that the reviewer performed no source
+inspection, that validators ran no tests, or that any invariant is violated. What
+it establishes is that the retained evidence does not connect individual
+invariants to the observations that warranted accepting them.
+
+### What the correspondence requirement should actually demand
+
+Not retention of everything - a test body is reconstructible from a pinned
+revision, and duplicating it into every acceptance record buys nothing. What is
+needed is a **relationship**, one row per mandatory invariant:
+
+| field | content |
+|---|---|
+| required property | the invariant, in the plan's terms |
+| observations relied upon | the exact tests, inspections or gate checks |
+| pinned identity | artifact digest and revision at which they were taken |
+| what they establish | stated, not implied by their passing |
+| remaining gap | and its authorized disposition |
+
+**And two levels of checking, which must not be conflated.**
+
+- **Deterministic:** every mandatory invariant has a row, each cited artifact
+  exists at the cited revision, and no row is empty. Cheap, mechanical, no
+  inference. This alone would have surfaced invariant 4 at S2's acceptance gate.
+- **Semantic:** whether the cited observations actually establish the required
+  property. This is what the $0.41 arm did, and it still needs inference or
+  authorized human judgment.
+
+Treating the second as though the first guarantees it would reproduce, at the
+level of the mechanism, exactly the true-but-insufficient failure the mechanism
+exists to catch.
+
+### The next test is prospective, not retrospective
+
+This audit shows the mechanism can expose a deficiency in a historical record.
+It does not show that it changes a decision at the moment the decision is made.
+The test that would: require the correspondence rows for a candidate **approaching**
+acceptance, before the acceptance decision, and measure two things - whether the
+disposition changes, and **whether the supervisor can construct the rows from
+existing artifacts without substantial additional inference.** The second is the
+economic question; if row construction costs as much as a review, the mechanism
+is not the cheap safeguard this audit suggests.
+
+`manual-decomposition-s10-20261020` has slice C pending, which is the natural
+subject. That is the campaign owner's decision, not mine, and this audit
+authorizes nothing there.
