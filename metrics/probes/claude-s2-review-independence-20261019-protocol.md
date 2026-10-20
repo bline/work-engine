@@ -122,3 +122,132 @@ arm: **$8.00** and **25 minutes**; exceeding either is recorded as exceeded.
 This tests review capability on one frozen tree. It does not test implementation,
 and it authorizes no Claude reviewer in any campaign, no change to S10, and no
 alteration of the `codex-adversarial-review` evidence classes.
+
+## Results, 2026-10-19
+
+Both arms: no writes (`git status --porcelain` empty), no `tool_use` referencing
+the out-of-scope path, verdict **BLOCK** - which is the correct verdict.
+
+| | Astra (reference) | sonnet-5-5 | opus-5 |
+|---|---|---|---|
+| calls | - | 17 | 48 |
+| wall clock | - | 87.8 s | 806 s |
+| weighted | - | 0.1808 Mwt | 0.8165 Mwt |
+| real cost | Codex quota | **$0.505** | **$4.818** |
+| findings returned | 4 | 7 | 9 |
+| verdict | blocked | BLOCK | BLOCK |
+
+### Recall against the four reference findings
+
+| | sonnet-5-5 | opus-5 |
+|---|---|---|
+| F1 drain panic / registry poisoning | MISS | **MATCH** |
+| F2 close timeliness, false `Resolved` | MISS | MISS (adjacent) |
+| F3 join handle detached, false `joined` | MISS | MISS |
+| F4 spawn before registry insert | **MATCH** | **FALSE CLEARANCE** |
+| **recall** | **1/4** | **1/4** |
+
+**The two Claude arms matched disjoint findings.** Their union is 2/4; neither
+recovered F2 or F3. Opus's F1 match is **better argued than the reference**: it
+observed that `OwnedExecutor` guards its drain with `drain_lock`
+(`executor.rs:106`, `:243`, `:291`) while `ProcessSupervisor` has no equivalent,
+and cited the crate's own test sharing the supervisor via `Arc`
+(`process.rs:379`) as evidence the overlap is reachable through intended use.
+Astra made neither argument.
+
+### The false clearance, and why it is worse than a miss
+
+Opus placed F4 under "What the candidate gets right (**checked, not assumed**)"
+and concluded "the comment at `executor.rs:447` is accurate in effect... there is
+no 'accepted but unregistered' observable window."
+
+Adjudicated against source, Opus is **wrong** and both Astra and Sonnet are
+right. `submit` holds a `std::sync::MutexGuard` on the registry from `:413`
+through the insert at `:505`. The collector publishes via
+`results.pending.lock()` at `:494` - **a different mutex** - then fires
+`notifications.try_send`. `ResultReceiver::recv` also reads `results.pending`,
+never the registry. A published result is therefore observable for an attempt
+not yet in `registry.tasks`.
+
+Opus's premise was true: `acknowledge_result` does take the registry lock at
+`:254`. Its inference was false, because it conflated **acknowledgement** with
+**publication**, and the invariant concerns work starting and results becoming
+visible, not acknowledgement.
+
+A miss leaves a defect undiscovered. A confident clearance **terminates further
+inquiry into a defect that exists**, and it was recorded in the section the
+reviewer reserved for verified non-issues. For a gate role that is the worst
+outcome class available, and it is not reflected in a recall number.
+
+### Verified novel findings
+
+Both arms produced substantial novel yield, verified by me against source:
+
+- shared by both: the deadline invariant is wired nowhere in the owned execution
+  path (`MonotonicDeadline::status` defined at `clock.rs:69`, called from neither
+  `executor.rs` nor `process.rs`); `close_and_drain` never requests cancellation
+  though `request_abort` exists at `:270`; `ResultReceiver::recv` is
+  non-consuming and head-of-line - `pending` is a `BTreeMap`, so
+  `.values().next()` always yields the lowest key.
+- sonnet only: `TaskTermination::Cancelled` is returned from both `:452` (never
+  dispatched) and `:482` (aborted in flight), so pre-send and in-flight
+  cancellation are indistinguishable.
+- opus only: `TaskExit` emits `local_task_ended: true` and
+  `child_exit_code: None` as literal constants at `:487-489`, reporting
+  unavailable measurements as observations (confirmed in source); no test
+  composes a claimed entry, an owned task and a child - `owned_count` and
+  `born_at` appear zero times in `tests/`; the declared 13-path boundary exceeds
+  the plan's 11 and adds an unauthorized dev-dependency block.
+- opus, verified with qualification: `unsafe_at_close` is effectively always true
+  in the normal path. The assignment at `process.rs:243` is *conditional* on an
+  unreaped child, but `close_gate` runs before reaping, so any live child sets
+  it, leaving three of four test assertions non-discriminating. "Unconditionally"
+  overstates the mechanism; the substance holds.
+
+**Union across all three reviewers is roughly 13 distinct source-grounded
+concerns with only two cross-family overlaps.** That is the complementarity
+result. It is not yet a causal result - see the confound below.
+
+### Harness defect that disadvantaged opus-5
+
+Opus hit **10 permission denials, every one a `git diff` or `git show` against
+the baseline** - the operation the prompt explicitly calls "permitted and the
+intended way to see what this slice added." It retried across flag orders and
+invocation forms, burning calls, then fell back to reading files directly. It
+flagged the consequence itself: F9's authorship question is left unresolved
+"because `git diff`/`git show` were denied in this session."
+
+Sonnet hit one denial on the same class of command and also reported being
+blocked from the provider diff.
+
+This is mine, not the model's, and it is the third harness defect in two pilots
+(after the missing `--add-dir`). Any rerun must establish that baseline diffing
+actually works before the arm starts.
+
+### Protocol limitation found by the data
+
+The frozen scoring scheme had four classes: MATCH, NOVEL-VERIFIED, UNVERIFIED,
+MISS. It had **no class for a confident clearance of a real defect**, which is
+the single most consequential behaviour observed. It is recorded here as its own
+category. Note it is *worse* than every pre-registered class, so naming it after
+the fact does not flatter any arm - but a scoring scheme that cannot express the
+worst outcome is a defective scheme, and the next protocol must include it. It
+also had no PARTIAL class, which is why Opus's adjacent F2 finding is scored a
+clean MISS rather than part credit.
+
+### What this does and does not establish
+
+Establishes: both Claude arms return the correct verdict; both find real defects
+the reference missed; neither approaches reference recall on concurrency
+mechanisms; the top-tier arm produced a confident false clearance; cost differs
+9.5x for identical recall.
+
+Does **not** establish causation. The arms were given the plan and the tree;
+Astra had gate receipts and validation evidence inside a retained campaign
+episode. The prompt's review sentence is near-verbatim from
+`codex-adversarial-review/SKILL.md`, but two deltas - "the plan's stated
+invariants and proposed mechanics" and "its tests" where the skill says
+"available validation evidence" - tilt toward plan conformance. Complementarity
+is demonstrated; whether it is model-family or review-framing is **not
+isolated**, and the next arm should be concern-scoped to concurrency against
+this same sealed key to separate them.
