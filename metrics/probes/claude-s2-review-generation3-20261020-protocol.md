@@ -107,3 +107,64 @@ one obligation decomposition, not the space of them, and a negative result does
 not condemn the compiler approach generally. C tests one concern statement; a
 different wording could perform differently. None of this authorizes a Claude
 reviewer, a change to S10, or compiler implementation.
+
+## A1 result, 2026-10-20: the clearance is effort-independent
+
+`claude-opus-5` at `--effort max`: 29 calls, 735 s, **$4.3651**, 0.7127 Mwt,
+**40,698 thinking tokens** (76% of output, up 36% from `xhigh`'s 29,984),
+6 findings, verdict BLOCK, zero denials, clean tree.
+
+| reference | A1 at `max` |
+|---|---|
+| F1 drain panic | **MATCH** (its F5) |
+| F2 close timeliness | MISS |
+| F3 join detached | MISS |
+| F4 spawn before register | **FALSE CLEARANCE** |
+
+Recall 1/4, identical to the same model at `high` and at `xhigh`.
+
+### The pre-registered outcome obtained: effort is not the lever
+
+The protocol stated that if A1 "clears F4 again at the maximum available effort
+-> the clearance is effort-independent for this model, which is a much stronger
+claim than generation 2 can make." That is what happened. `claude-opus-5` has now
+false-cleared F4 at **three ascending effort levels**:
+
+| run | effort | thinking | how F4 was cleared |
+|---|---|---|---|
+| gen 1 | `high` | 39,468 | argued from `acknowledge_result` taking the registry lock |
+| gen 2 | `xhigh` | 29,984 | enumerated all nine registry-lock sites, **conceded** the mutex does not stop the spawned task, cleared on a narrowed question |
+| gen 3 A1 | `max` | 40,698 | bare assertion in a "what the candidate gets right" list: "`submit` is synchronous, registers under the registry lock, and returns an inert observer ticket" |
+
+### The finding I did not anticipate: warrant quality does not rise with effort
+
+The `xhigh` clearance was the **most** substantiated and the **most** checkable -
+it named its enumerated set, which is what let the error be located in minutes.
+The `max` clearance, with 36% more thinking, is a one-clause assertion inside a
+list of strengths, carrying no enumerated set and no discriminating observation.
+
+So raising effort produced a **less falsifiable** wrong claim. This matters
+directly for the candidate addition in
+`notes/s2-review-pilot-consequences-20261019.md`: it shows that requiring the
+property/state/accessor triple cannot be obtained by buying more inference. The
+triple has to be a **contract requirement on the judgment's form**, because
+effort alone moved it in the wrong direction here.
+
+It also qualifies the generation-2 observation that thinking tokens ordered the
+F4 outcomes monotonically across arms. Within a single model across three effort
+levels, thinking volume does **not** order outcome or warrant quality: 39,468
+(clear), 29,984 (clear, best warrant), 40,698 (clear, worst warrant). The
+monotonic cross-arm ordering is therefore more likely model identity than
+reasoning quantity - which is the question A2 was designed to settle from the
+other side.
+
+### A1 also improved on the reference
+
+Its F5 names a mechanism the reference only implied. The reference said the panic
+"occurs while holding the registry mutex, preventing subsequent truthful
+cleanup/reporting". A1 states why: the panic **poisons** `registry: Mutex<...>`,
+so every subsequent `registry.lock().unwrap()` panics, losing exactly the
+unresolved, child-exit and unsafe-at-close facts the plan requires to survive for
+S4 - and it cites `s2-plan-v1.md:17` for that requirement. That is correct Rust
+semantics and a genuine severity escalation argument, from the arm that graded the
+same finding low at `xhigh`.
