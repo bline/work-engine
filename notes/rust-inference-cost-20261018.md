@@ -419,3 +419,71 @@ rather than editing the table above.
 
 Reproduce the measured half with
 [`metrics/scripts/rust_programme_cost.py`](../metrics/scripts/rust_programme_cost.py).
+
+## The Claude-side meter, 2026-10-20
+
+Added because the Claude pilots needed a denominator and I was initially using the
+wrong numerator. Everything here is **measured**, with its attribution limits
+stated.
+
+### `total_cost_usd` is not money on a subscription
+
+The Claude Code result object reports `total_cost_usd`. On a subscription plan
+that figure is **list-equivalent usage**, not marginal spend: the runs cost
+nothing additional until the plan's limits bind. Treating it as money is the same
+category error as treating Codex weighted tokens as dollars.
+
+Earlier in this session I wrote that "USD is the decision number" for
+cross-provider comparison. **Amended:** list-equivalent USD is a *usage proxy*.
+The decision number on either provider is **fraction of allowance consumed**, and
+both providers now have one.
+
+### The real meter is in the stream
+
+`--output-format stream-json` emits `rate_limit_event` records carrying
+`rate_limit_info.unifiedWindows`:
+
+```json
+{"five_hour": {"utilization": 0.78, "resetsAt": 1792489200},
+ "seven_day": {"utilization": 0.42, "resetsAt": 1792555200}}
+```
+
+Two windows, a five-hour and a seven-day, each reported as a utilization
+fraction with its reset time, plus `overageStatus` and `isUsingOverage`. This is
+directly analogous to the Codex quota-point model and is the figure to track.
+
+### Attribution requires serial runs
+
+**Per-run quota attribution is invalid for concurrently executed runs.** The four
+Test C generation-2 arms ran in parallel; all four observed a five-hour window
+starting at 78%, and each one's final reading is a *cumulative* total including
+the others, not its own contribution. The deltas 83/91/85/83 are therefore not
+per-arm costs, and any table presenting them that way is wrong.
+
+The only valid reading from a parallel batch is the aggregate:
+
+| window | Test C gen 2, four arms together |
+|---|---|
+| five_hour | 78% -> 91%, about **13 points** |
+| seven_day | 42% -> 44%, about **2 points** |
+
+Measuring per-arm quota cost requires running arms **serially**. That is a real
+experimental-design constraint on every future pilot, and it trades wall-clock
+time for attributable measurement.
+
+### What exhausted the account, measured rather than inferred
+
+The two Test R generation-2 arms that terminated with `terminal_reason:
+api_error` and "You've hit your session limit" died against the **five-hour**
+window, which Test C had already driven to 91%. The seven-day window was at 44%
+and was never the binding constraint. A limit event therefore does not imply
+weekly exhaustion, and reading one as the other would overstate the programme's
+cost by more than a factor of two.
+
+### Calibration does not carry across the account change
+
+The readings above belong to the account in use before 2026-10-20. The plan
+changed that day, so those numbers calibrate neither the new plan's windows nor
+its utilization baseline. Fresh readings must come from runs on the current plan,
+and until several exist the correct statement about Claude-side capacity is that
+**the denominator is not yet measured** - not an estimate carried over.
