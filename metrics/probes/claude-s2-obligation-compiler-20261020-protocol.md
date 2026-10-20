@@ -851,3 +851,69 @@ Total for the F3 recovery by this route: E1 $2.0720 + E4 $3.2495 + E6 $0.3697 =
 obligations. Still not cheaper on one candidate. But E6 alone, given the
 obligation, cost **$0.37** - and that is the number that matters if obligations
 amortise across candidates.
+
+## E8 pre-registration: the content-fixed partition test
+
+Frozen before any arm runs. This is the organisational test both reviewers
+prioritised: hold the obligation **content** exactly fixed and vary only how it is
+grouped into execution contexts.
+
+### Partition, frozen and grouped by semantic concern
+
+Grouped by the plan structure the obligations address, **not** by which historical
+findings any group might recover. All 31 of E1's obligations are used exactly
+once, verbatim.
+
+| context | obligations | n | prompt sha256 (first 16) |
+|---|---|---|---|
+| **P1** boundary and dependency | OB1-4, OB29-31 | 7 | `22a759df33524947` |
+| **P2** ownership and admission | OB5-14 | 10 | `aed78862310190b1` |
+| **P3** time, framing and shutdown | OB15-21 | 7 | `f37fe44034a45995` |
+| **P4** proof and tests | OB22-28 | 7 | `6ffcae3f8464fad3` |
+
+Each prompt is the Test R base prompt (sha256 `27b666a4...`) plus its own
+obligations and nothing else. `claude-haiku-5-5` at `xhigh`, serial, each in its
+own fresh snapshot of `7fdf392f`. Serial rather than parallel so per-arm cost is
+attributable, since cost is half the comparison.
+
+### Comparators, already measured
+
+| arm | grouping | cost | reference recall |
+|---|---|---|---|
+| E2 | 31 in one context, `opus-5` | $4.0887 | 1/4 (F4) |
+| E2-haiku | 31 in one context, `haiku-5-5` | $0.7243 | 1/4 + F2 partial |
+| **E8 = P1+P2+P3+P4** | 31 across four contexts, `haiku-5-5` | to measure | to measure |
+
+### Scoring
+
+1. **Reference recall**, union across the four contexts, under the frozen classes.
+2. **Out-of-packet discovery.** F1 is not covered by any obligation in E1's set -
+   verified earlier, no obligation addresses concurrent or reentrant drains - so
+   F1 appearing in any partition is out-of-packet discovery and is scored in that
+   category, not as discharge.
+3. **Warrant quality** per obligation: property, states, exhaustiveness basis
+   stated, versus assertion.
+4. **Severity calibration**, scored separately from detection, per the dimension
+   added above.
+5. **Cross-concern omissions**: anything that spans two partitions and that no
+   single context could see. This is the cost of partitioning and must be looked
+   for deliberately rather than inferred from its absence.
+6. **Loaded cost**: four discharges plus four doctrine loads plus the synthesis I
+   perform to union the findings. The doctrine load is the measured
+   ~20,100-token figure for this repository and is charged four times.
+
+### Pre-registered outcomes
+
+- **Union recall exceeds 1/4 at comparable cost** - organisation improves verified
+  coverage at fixed content, which is the first direct evidence for smaller
+  execution perspectives and the result both reviewers predicted is worth testing.
+- **Union recall exceeds 1/4 but cost exceeds the monolithic arms substantially** -
+  the trade-off is real and the optimum is an economic question, not a
+  correctness one.
+- **Union recall equals 1/4** - grouping is not the lever at this granularity, and
+  E6's result was about something narrower than partition size.
+- **Cross-concern omissions appear** - partitioning has a specific cost, and the
+  synthesis step needs an owner rather than being assumed free.
+
+I am the synthesiser, by the method that has erred repeatedly today, so the union
+is computed from each arm's own text and recorded per arm before any union claim.
