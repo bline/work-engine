@@ -302,3 +302,57 @@ is not the cheap safeguard this audit suggests.
 `manual-decomposition-s10-20261020` has slice C pending, which is the natural
 subject. That is the campaign owner's decision, not mine, and this audit
 authorizes nothing there.
+
+### Correction: the deterministic gate as I specified it would have passed S2
+
+**Claim.** I wrote that the deterministic check - "every mandatory invariant has a
+row, each cited artifact exists at the cited revision, and no row is empty" -
+"alone would have surfaced invariant 4 at S2's acceptance gate".
+
+**Refuted by this audit's own result.** Ledger v2, given the complete record,
+returned **ABSENT 0**. Every one of the seven invariants had *something* citable.
+Invariant 4 had the S2-C2-F2 repair summary ("monotonic post-await deadline
+classification and latched late disposition across drains") and the
+`ready_exit_after_cutoff_and_later_drain_keep_late_disposition` test. A row for
+invariant 4 would have been non-empty, its citations exist at their revisions, and
+the gate would have passed.
+
+Attempt 1 returned ABSENT 1 only because I had withheld most of the record. So
+the single state my deterministic gate detects is the state that **did not occur
+here**, and it appeared in my data only as an artifact of my own input error.
+
+**Consequence.** The cheap deterministic layer does **not** substitute for the
+semantic pass on this case. The $0.4103 judgment did the work: it is what
+distinguished "the F2 repair establishes post-await monotonic classification" from
+"invariant 4 as stated also requires wall-time sampling for S1 authority checks,
+the rule that a late close does not extend proof authority, and restart
+non-persistence - none of which is named". No structural check reaches that.
+
+**Error class.** Proposing a mechanism and asserting its sufficiency without
+running it against the case that motivated it. This is the same
+true-but-insufficient shape the audit is about, now in the safeguard I proposed -
+the fourth level at which it has appeared today, after a review judgment, an
+experimenter's verdict and a campaign's acceptance.
+
+### The corrected design
+
+**ABSENT is a valid ledger state, not a condition to forbid.** Requiring a
+non-empty row rewards filling it with a weak citation, which is the failure mode
+S2's seven green gates against seven invariants already demonstrates.
+
+| layer | what it establishes | cost |
+|---|---|---|
+| **deterministic** | every mandatory invariant has a row; the row carries a disposition; references resolve at their cited revision, or the row carries an explanation of what is missing | no inference |
+| **semantic** | which of **SUPPORTED / INSUFFICIENT / ABSENT / INDETERMINATE** holds, with its basis | inference or authorized human judgment |
+
+The deterministic layer guarantees **complete accounting**. It does not and cannot
+guarantee **sufficient evidence**. On this case it would have caught nothing; its
+value is preventing an invariant from silently vanishing, which is a different and
+still worthwhile protection.
+
+So the honest economic statement is: **the audit priced the semantic layer at
+$0.4103 for seven invariants and did not price the deterministic layer at all,
+because the deterministic layer would not have fired.** Assembling the references,
+verifying provenance and resolving disputed dispositions remain unmeasured, and
+the supervisor floor measured today is ~1 Mweighted per slice against which any of
+this must be charged.
