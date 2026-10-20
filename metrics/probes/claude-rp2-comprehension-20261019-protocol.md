@@ -265,3 +265,18 @@ Generation-1 results are retained, not discarded; they are comparable on
 substance and carry one denial each.
 
 Ceiling per arm: **$3.00** and 15 minutes.
+
+### Correction to confound 2, and effort control in generation 2
+
+Confound 2 above - "Effort is not comparable. The arms expose no equivalent
+knob" - is **wrong**. The CLI has `--effort` taking **low, medium, high, xhigh,
+max**: the same five levels as Codex `reasoning_effort`.
+
+Worse, generation 1 did not choose a level. `CLAUDE_EFFORT=high` is set in the
+launching environment, so every generation-1 arm **inherited `high`** while the
+baseline ran at **`medium`**. The arms were effort-advantaged, by accident, and
+the protocol asserted the opposite. Measured thinking confirms the reasoning was
+real: `sonnet-5-5` 1,077 thinking tokens (14% of output), `opus-5` 12,645 (41%).
+
+Generation 2 pins `--effort medium`, matching the `gpt-6-sol`/`medium` baseline,
+and enforces the ceiling with `--max-budget-usd 3.00` rather than by inspection.

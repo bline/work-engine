@@ -309,3 +309,21 @@ session I made that error three times - `head -8` on the grep that hid
 `Read` of `executor.rs`, and `head -c 400` on a model-availability probe. Every
 scoring command must print complete match sets or explicit counts, and any
 `head`/`-c` limit disqualifies the output as evidence for a claim.
+
+### Correction to confound 2, and effort control in generation 2
+
+Confound 2 above is **wrong** in the same way. `--effort` exists and takes
+**low, medium, high, xhigh, max**, matching Codex `reasoning_effort` exactly.
+
+Generation 1 inherited `CLAUDE_EFFORT=high` from the launching environment while
+the reference reviewer ran at **`xhigh`**. The arms were therefore one level
+**below** the reference, not incomparable to it. Measured thinking:
+`sonnet-5-5` 4,123 thinking tokens (43% of output), `opus-5` 39,468 (74%).
+
+This does not excuse the false clearance - a confident exoneration of a real
+defect is not a resource-starvation artifact, and `opus-5` had `executor.rs` in
+full - but it means generation 1 compared `high` against `xhigh` while claiming
+effort was not a variable.
+
+Generation 2 pins `--effort xhigh`, matching the reference, and enforces the
+ceiling with `--max-budget-usd 12.00`.
