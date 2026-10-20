@@ -155,3 +155,82 @@ stronger result for the compiler than the coverage scoring suggests. If E2 misse
 F3, the completeness gap is localised to one derivable obligation: *generalise
 cancellation-survival analysis from I/O futures to every owned resource*, which is
 a concrete instruction a second compiler pass could carry.
+
+## E2 result: the prediction held, and the compiled path lost on the pre-registered metric
+
+`claude-opus-5` at `xhigh`, Test R base prompt plus E1's 31 obligations verbatim:
+25 calls, **881 s**, **$4.0887**, 0 denials, clean tree, **13 findings**, verdict
+**BLOCK**. Window 0.39 -> 0.42.
+
+### Recall against the sealed key: 1/4
+
+| reference finding | E2 | note |
+|---|---|---|
+| F1 drain panic / registry poisoning | **MISS** | no obligation forced concurrent-drain serialisation on the process side; OB19 covered the launch gate, not concurrent drains |
+| F2 close timeliness / false `Resolved` | **MISS** | its F2 (HIGH) covers invariant 4 on the *execution* path, a different defect |
+| F3 join handle detached | **MISS** | predicted |
+| **F4 spawn before registry insert** | **MATCH** (its F10) | predicted |
+
+**Both pre-registered predictions were correct.** OB8 forced F4; nothing forced
+F3, and F3 did not appear. Confirmed mechanically: OB17's disposition reads
+"**`select!` branches. NONE EXIST; serialized structure reported explicitly**" -
+E2 honoured OB17's own fallback clause, so the *discipline* was intact and the
+*scoping* was the gap. `cancel` appears 5 times in the whole review and never in
+connection with handle ownership.
+
+### Cost, against the hand-authored arms
+
+| arm | obligations | cost | reference recall |
+|---|---|---|---|
+| B (hand-authored, F4-shaped) | mine | $3.3718 | 1/4 (F4) |
+| D (hand-authored, F3-shaped) | mine | $3.3569 | **2/4** (F3, F1) |
+| **E1 + E2 (compiled blind)** | E1's | **$6.1607** | **1/4** (F4) |
+
+The compiled path cost **1.8x** D and recovered **half** as many reference
+findings. On the metric fixed before any of this ran, **obligation authorship is
+not yet separable from defect knowledge.**
+
+### What E2 did better, stated without moving the goalposts
+
+Recall against a sealed key is the pre-registered metric and it says 1/4. Three
+things it does not capture, recorded because they bear on the next design:
+
+1. **13 findings against D's 7**, including two HIGH. Its F2 - "Invariant 4's
+   deadline recheck does not exist on the execution path", with the deadline
+   machinery having *no call sites* outside `clock.rs` - is the generation-2
+   novel finding, now graded HIGH and argued from a complete absence of call
+   sites rather than from a single missing check.
+2. **Its F4 match is better calibrated than the reference.** OB8 asked it to
+   describe the window in which a task "attempt[s] delivery into a sink that does
+   not yet exist". E2 checked whether that mode is reachable, found it is not
+   (the sink is created in `with_clock_and_limits` at `:198-201` before any
+   `submit` can run), and downgraded to **LOW** as "a false-claim and
+   observability finding, not a lost-result bug" - while still closing with OB8's
+   own clause: "No test forces a task to run to completion before the submitting
+   thread finishes registering, so the stated ordering is unproven as well as
+   unenforced."
+3. It identified `executor.rs:447`'s comment as "literally true and causally
+   irrelevant", because the spawned tasks never acquire the registry mutex and
+   `outer`'s delivery target is a different mutex - the same reasoning the B arm
+   needed obligations to reach.
+
+### The conclusion this generation supports
+
+The compiler step **works as a generator of discriminating obligations** - E1's
+set names weak realisations, demands exhaustiveness bases, and anticipated a
+vacuity trap it had never seen - and **fails on completeness**. The failure is
+not diffuse: it is one missing generalisation, visible in E1's text before any
+candidate was reviewed, and it propagated exactly as scored.
+
+So the architecture claim splits. *Obligations can be compiled from a contract
+without defect knowledge* is supported. *A single blind compilation pass yields a
+review at least as good as a targeted one* is refuted at n=1, by a margin that
+is explained entirely by one absent obligation family.
+
+The next arm is therefore cheap and well-specified: a **second compiler pass**
+whose only instruction is to generalise each cancellation- or
+ownership-sensitive obligation from the resource class it names to every owned
+resource in the lane, then re-run E2 against the enlarged set. If F3 appears,
+decomposition completeness is reachable by iteration rather than by defect
+knowledge, which is the result the economics need. If it does not, the gap is in
+the compiler's analysis rather than its coverage.
