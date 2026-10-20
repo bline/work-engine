@@ -587,3 +587,92 @@ two-pass path is already $5.32 before discharge, so it does not win on single-
 candidate cost and was never going to. What it would buy, if E5 recovers F3, is a
 **reproducible** route to the finding that fifteen general reviews missed, plus
 three contract defects no review found at all.
+
+## E5 result: compilation succeeded, cheap discharge did not. Pre-registered outcome 2.
+
+`claude-haiku-5-5` at `xhigh` on E4's 25 realisation obligations only (prompt
+sha256 `98b4b733...`): 20 calls, **691 s**, **$0.5542**, 0 denials, **18
+findings**, verdict **BLOCK**. Window 0 -> 0.02.
+
+### F3 is MISSED, and the miss is inside the right obligation
+
+OB39 was the obligation designed to force the post-F3 state, and E5 discharged it
+seriously. Its disposition enumerates exactly the three conditions OB39 demanded:
+
+> "`TaskDrainReport.unresolved` (`92-93`) can mean three things: (i) join timeout
+> with the task alive and the join restored (`313-319`); (ii) a `JoinError` from
+> the outer task (`312`), join consumed, task ended abnormally and will never
+> deliver; (iii) **residence with neither join nor pending** (`340-341`), **which
+> arises for (ii) on a later drain**. The report cannot tell (i) from (ii) or
+> (iii)."
+
+It found condition (iii) - the post-F3 state - and attributed it to a single
+cause, a `JoinError` on a later drain. It never reached the cancellation route:
+that dropping the `close_and_drain` future while it holds the moved handle
+detaches a **live** task into that same state. So the enumeration was right and
+the causal analysis was incomplete.
+
+**This is the cleanest possible form of the negative result.** The obligation was
+adequate - it named the state, required the enumeration, and asked whether a
+consumer can distinguish an attempt that may still deliver from one that never
+will. The cheap executor answered "cannot tell (i) from (ii) or (iii)", which is
+a true and useful finding, and stopped short of asking how (iii) is reached. The
+failure is in **execution of an adequate obligation**, not in coverage.
+
+### Two results that do land
+
+**Reference F1 MATCHED** (its F5): "`ProcessSupervisor::close_and_drain` has no
+drain lock, so concurrent calls can panic under the registry guard." Note this is
+*consistent with* and not evidence against the obligation-coverage account: E4's
+**OB34** requires enumerating "every `std::sync::Mutex` the lane owns and every
+operation performed while one of its guards is held, and establish that no
+reachable panic can poison a lock". E2's packet contained no such obligation and
+E2 missed F1. Both arms recovered what their packet covered.
+
+**The decomposition defect was reached independently at $0.55.** Its F2: "The
+absolute-deadline check in invariant 4 is not realised, **and the lane has no
+authority input to perform it**." That is E4's CONFLICTS #1, reached by a cheap
+executor from the obligations alone - and it corroborates the source check I ran
+separately: `AuthorizedEntry` exposes five getters and none carries authority
+expiry or wait budget; `lifecycle-store` uses `AuthorityExpiresAt` only internally
+at `sqlite.rs:1289`; the runtime imports the *types* at `clock.rs:3` and has no
+value source.
+
+### Two-pass pipeline, measured
+
+| step | model | cost |
+|---|---|---|
+| E1 compile from intent | `opus-5` | $2.0720 |
+| E4 compile from realisation | `opus-5` | $3.2495 |
+| E5 discharge | `haiku-5-5` | $0.5542 |
+| **total** | | **$5.8757** |
+
+Against D's $3.3569 for 2/4 recall, the two-pass path costs **1.75x** for 1/4
+(F1) plus one contract defect no review found. It does not win on this subject.
+
+### What the generation now supports, stated at the level the evidence reaches
+
+- **Obligations can be compiled from a contract without defect knowledge.**
+  Supported (E1).
+- **Obligations can be specialised against a realisation without reporting
+  defects.** Supported (E4): the prohibition held, every obligation named its
+  implementation fact, and three contract-level conflicts were routed to the
+  plan's owner rather than repaired.
+- **A realisation pass can detect a defect in the decomposition itself.**
+  Supported (E4 CONFLICTS #1), verified against source, and independently
+  reproduced by E5.
+- **Arms recover what their packet covers and not what it omits.** Supported
+  across B, D, E2, E5 - four packets, four matching outcomes.
+- **Cheap discharge is sufficient for a compiled packet.** **Not supported.** E5
+  executed an adequate obligation and produced a true but incomplete answer. The
+  gap is one causal step: from "this state exists and is ambiguous" to "here is
+  how it is reached".
+- **The two-pass path is cheaper than targeted review.** Not supported at n=1 on
+  one candidate.
+
+The next arm that would discriminate is narrow: run **E4's OB39 alone** at
+`opus-5`/`xhigh`. If Opus reaches the cancellation route from the same obligation,
+the deficit is executor capability on a known-adequate obligation, and the cheap
+tier needs either a capability floor for this obligation class or an obligation
+that names the question one step more precisely. If Opus also stops at the
+ambiguity finding, the obligation is not as adequate as it reads.
