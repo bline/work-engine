@@ -488,3 +488,101 @@ changed that day, so those numbers calibrate neither the new plan's windows nor
 its utilization baseline. Fresh readings must come from runs on the current plan,
 and until several exist the correct statement about Claude-side capacity is that
 **the denominator is not yet measured** - not an estimate carried over.
+
+### Context economics, measured on the Test S builder and review arms, 2026-10-20
+
+Prompted by a ChatGPT proposal that model identity should be fixed per compiled
+execution unit to protect prompt-cache reuse, with switching allowed only at
+checkpoints. The proposal's premise and my first rebuttal were **both** built on
+a conflation, so the labels below are deliberate.
+
+**Three different quantities, which must not be substituted for each other.**
+
+| quantity | S-opus (build, 122 turns) | `haiku-5-5` (review, 66 turns) |
+|---|---|---|
+| **entry context**, first turn | **28,386** | **27,184** |
+| **peak working context** (max per-turn read + creation + input) | **276,471** | **241,698** |
+| mean per-turn context | 153,137 | 134,404 |
+| **accumulated** cache creation, summed over the run | 265,357 | 231,052 |
+| **accumulated** cache reads, summed over the run | 11,549,880 | 3,005,771 |
+
+Accumulated cache reads are **not** a context: they are per-turn re-reads of a
+growing one, 43.5x and 13.0x the creation figure respectively. Accumulated cache
+**creation** is not a working-context size either - it is the sum of cache
+writes, which includes incremental growth and any re-write of an expired
+segment. Here it happens to approximate the peak (265K vs 276K) only because
+context grew monotonically and nothing expired within the run. **Do not reuse
+that coincidence as a rule.**
+
+**The 12% figure, correctly labelled.** For S-opus the weighted split is cache
+reads 52%, cache creation 12%, output 36%. That 12% is a **share of this run's
+weighted inference**, not a measured model-switching cost and not a bound on
+one. A switching measurement would have to establish what the successor can
+reuse, what must be recreated at the transition, what extra repository
+investigation the successor performs, and the provider-priced cost and quota of
+all three. **None of that is measured. Reconstruction cost is unmeasured.**
+
+**What the entry figure does establish, and it is the useful result.** S-opus
+began with **28,386 tokens** of context - its prompt, the 83-line plan, and
+startup material - and from that produced a 13-path, 5,407-insertion tree that
+passed all seven configured gates. The 276K peak is **accumulated exploration,
+not required context**. So the cost of discontinuity at a checkpoint is not the
+peak; it is whatever re-exploration the successor must redo because the durable
+contract did not carry it. On this slice that was evidently small: two builders
+in different families, from the same 83-line plan and the same baseline, both
+reached gate-passing trees with no shared context.
+
+**A distinction that must be kept.** Fresh execution from a durable contract is
+established as cheap here. **Resumption of an interrupted, partially implemented
+increment with uncertain effects and no reasoning state is a different problem
+and is not measured.** The five-hour window makes that case operational, not
+hypothetical.
+
+**Weighted tokens misprice tiers by an order of magnitude.** `haiku-5-5` 1.00
+Mwt / **$0.5105**; `claude-opus-5` 2.23 Mwt / **$12.4955**. Weighted tokens
+differ 2.2x, money differs 24x. Any switching or routing arithmetic computed in
+tokens will mislead. Use provider price, and treat it as provider policy rather
+than a technical property.
+
+**Role asymmetry in output composition.** Haiku reviewing: 81,429 thinking
+tokens, 87% of output. Opus building: 54,972, 34%. Review is
+thinking-dominated, construction output-dominated. A router assigning tiers by
+assumed difficulty would invert this.
+
+**Context mass may be a property of the subject.** Two very different
+responsibilities over the same tree accumulated 265K and 231K of cache creation
+and peaked at 276K and 242K. That is **suggestive, not established** - n=1 per
+role, one subject.
+
+**The consequence for the compiler.** Compiling obligations alone does not shrink
+context: the Test S decision package was the 76-line prompt plus the 83-line plan,
+together on the order of 2,500 tokens, under 1% of the peak. The executor still
+read `DESIGN.md`, `PHILOSOPHY.md` and the source it had to modify. The
+opportunity is compiling **evidence projections** alongside obligations - and the
+F3 result is the standing warning on that path, because an omitted observation is
+exactly how a projection would fail while looking adequate.
+
+**Two competing hypotheses, neither settled.**
+
+- **A**: keep an expensive model's context alive as long as possible, because
+  cache reuse is valuable.
+- **B**: make each inference problem small and well-specified enough that cheap
+  models, short contexts and cold starts become preferable.
+
+The architecture points at B. The evidence does not yet decide. **The deciding
+experiment is not Opus versus Sonnet**: it is the *same* model discharging the
+*same* obligation under conventional repository exploration versus a compiled,
+evidence-complete decision package, measured on cost, quota, and whether the
+required finding survives the narrower evidence. If maximal cache reuse turns
+out to be optimal, A wins; if a compiled projection lets a cheap model establish
+what an expensive one established by exploring, losing the cache reuse is worth
+paying for.
+
+**One behavioural observation, bounded.** S-sonnet's stream contains one `Agent`
+call where S-opus had none, on byte-identical input - the executor created a
+sub-context on its own initiative. That is **harness behaviour, not an admitted
+execution vantage**: no authority was granted, the delegation's bounds were not
+specified by any contract, and its inference is consumed inside the arm's own
+cost. It is evidence about when delegation appeals to a model, not evidence that
+the delegation was necessary or correctly bounded, and it should not be cited as
+support for compiled execution units.
