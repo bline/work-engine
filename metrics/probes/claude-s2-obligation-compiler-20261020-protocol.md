@@ -612,12 +612,21 @@ that dropping the `close_and_drain` future while it holds the moved handle
 detaches a **live** task into that same state. So the enumeration was right and
 the causal analysis was incomplete.
 
-**This is the cleanest possible form of the negative result.** The obligation was
-adequate - it named the state, required the enumeration, and asked whether a
-consumer can distinguish an attempt that may still deliver from one that never
-will. The cheap executor answered "cannot tell (i) from (ii) or (iii)", which is
-a true and useful finding, and stopped short of asking how (iii) is reached. The
-failure is in **execution of an adequate obligation**, not in coverage.
+**Correction, same day.** I first recorded this as "the obligation was adequate
+and the failure is execution". That is not established. OB39 required
+distinguishing report *conditions*; it never required enumerating the
+*transitions* that produce each condition. D's obligations, which did recover F3,
+explicitly demanded tracing handle ownership through cancellation of enclosing
+futures. So the deficit may be in the obligation's demand rather than in the
+executor. Error class: treating "points at the right state" as "demands the right
+analysis". Consequence: a committed conclusion that located the deficit in the
+executor on no evidence. Missing check: compare the obligation's demand against
+the inference the finding requires, not against the state the finding concerns.
+Raised by ChatGPT.
+
+What is established is narrower: **the obligation located the state and the
+discharge did not reconstruct how the state is reached.** Which of the two is at
+fault is the subject of E6/E7 below.
 
 ### Two results that do land
 
@@ -670,9 +679,47 @@ Against D's $3.3569 for 2/4 recall, the two-pass path costs **1.75x** for 1/4
 - **The two-pass path is cheaper than targeted review.** Not supported at n=1 on
   one candidate.
 
-The next arm that would discriminate is narrow: run **E4's OB39 alone** at
-`opus-5`/`xhigh`. If Opus reaches the cancellation route from the same obligation,
-the deficit is executor capability on a known-adequate obligation, and the cheap
-tier needs either a capability floor for this obligation class or an obligation
-that names the question one step more precisely. If Opus also stops at the
-ambiguity finding, the obligation is not as adequate as it reads.
+### E6/E7: a matched pair, because my first proposal moved two variables
+
+Running OB39 alone at `opus-5` would change model capability **and** packet size
+relative to E5. The matched design, adopted from ChatGPT:
+
+| arm | model | packet | tests |
+|---|---|---|---|
+| E5 (done) | `haiku-5-5`/`xhigh` | 25 obligations | missed F3 |
+| **E6** | `haiku-5-5`/`xhigh` | **OB39 only** | whether packet competition caused the miss |
+| **E7** | `opus-5`/`xhigh` | OB39 only | whether capability helps at identical scope |
+
+- **E6 succeeds** - Haiku had the capability and the 25-obligation packet
+  suppressed the investigation. Supports the discovery-slack account and makes
+  packet sizing the lever.
+- **E6 fails, E7 succeeds** - a capability floor exists for this obligation class.
+- **both fail** - OB39's wording is the suspect, which is the transition-versus-state
+  gap below.
+- **both succeed** - the miss belongs to E5's broader context, not to either model.
+
+E6 prompt sha256 recorded at launch; one obligation, base prompt otherwise
+byte-identical to Test R's.
+
+### State completeness versus transition completeness
+
+A distinction the property/state/accessor triple does not currently carry, and
+which both of this pilot's central failures share.
+
+- **State completeness**: what states can exist, and what evidence is available
+  in each.
+- **Transition completeness**: what events, ownership transfers, interruptions or
+  failures can produce each state.
+
+B's false clearance established a property over one accessor set - state
+completeness - and the required property was a different one. E5 identified the
+post-F3 state and not its origins - state completeness again, transition
+completeness absent. **In both cases the model stopped at a true, insufficient
+result**, which is the same shape as every positive-claim error recorded in this
+pilot.
+
+Proposed extension, not yet tested: for a property concerning ownership,
+ordering, cancellation or lifecycle evidence, the warrant must carry an
+exhaustiveness basis for the **transitions** into each relevant state, not only
+for the states and their accessors. It should be derived for those property
+classes rather than imposed on every review.
