@@ -234,3 +234,34 @@ missing" as the actionable obligation.
 Comprehension only, n=1 per arm. Nothing here tests implementation capability or
 review independence, and nothing here authorizes a Claude builder, a Claude
 reviewer, or any change to S10's live qualification path.
+
+## Generation 2, 2026-10-19 - uniform rerun under a fixed invocation
+
+Both generation-1 arms hit one `Bash` permission denial each under
+`--permission-mode dontAsk`, which denies Bash generically outside its allowlist
+rather than denying any particular command. Generation 2 reruns every arm under
+one verified invocation so all arms are comparable to each other.
+
+**Fixed invocation**, preflighted for $0.0037 with zero denials and a clean tree:
+
+```
+claude -p "$(cat ~/cbm-work/rp2-probe/prompt.txt)" \
+  --model <arm> --permission-mode bypassPermissions \
+  --add-dir /home/bline/cbm-work/rp2-probe/contract \
+  --disallowedTools Write Edit NotebookEdit \
+  --output-format stream-json --verbose
+```
+
+Write protection still rests on denying the edit tools, a disposable per-arm
+snapshot copy, and a post-hoc `git status --porcelain`. Any arm whose result
+object reports a non-empty `permission_denials` is flagged in its row.
+
+**Arms:** `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5`,
+`claude-opus-5-5`. Run cost-ascending. `claude-fable-5-1` is **excluded**: it
+returns HTTP 429, "Fable 5.1 requires usage credits", on this account.
+
+**The prompt is unchanged**, byte-identical to the `gpt-6-sol`/`medium` baseline's.
+Generation-1 results are retained, not discarded; they are comparable on
+substance and carry one denial each.
+
+Ceiling per arm: **$3.00** and 15 minutes.

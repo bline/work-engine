@@ -272,3 +272,40 @@ Consequences for current state - the four surviving conformance concerns and the
 positive-judgment soundness gap - are in
 `notes/s2-review-pilot-consequences-20261019.md`, deliberately outside this
 frozen benchmark.
+
+## Generation 2, 2026-10-19 - uniform rerun, and two scoring classes added
+
+Generation 1 stands as recorded. Generation 2 reruns every arm under the fixed
+invocation from amendment 2, so `opus-5` gets the baseline diff it was denied and
+all arms share one environment.
+
+**Arms:** `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5`,
+`claude-opus-5-5`, cost-ascending. `claude-fable-5-1` excluded (HTTP 429, requires
+usage credits).
+
+**The prompt is unchanged.** Its two conformance-tilting deltas are left in place
+deliberately: changing them would break comparability with generation 1 and with
+each other. The framing confound is addressed by a separately labelled
+concern-scoped variant, not by editing the shared prompt.
+
+**Two scoring classes added, from generation 1's own data:**
+
+- **FALSE-CLEARANCE** - the arm affirmatively declares a real defect to be a
+  non-issue. Recorded separately and **never** averaged into recall. It is worse
+  than a MISS, because a miss leaves a defect undiscovered while a clearance
+  terminates inquiry into one that exists.
+- **PARTIAL** - the arm identifies the same defective component or evidence
+  surface as a reference finding but by a different mechanism. Generation 1
+  scored `opus-5`'s adjacent F2 observation as a clean MISS for want of this
+  class.
+
+Ceiling per arm: **$12.00** and 25 minutes.
+
+### Method rule adopted after three failures in one session
+
+No presence or absence claim may be drawn from truncated command output. In this
+session I made that error three times - `head -8` on the grep that hid
+`startup.rs:357`, a 90-character JSON truncation that hid `opus-5`'s successful
+`Read` of `executor.rs`, and `head -c 400` on a model-availability probe. Every
+scoring command must print complete match sets or explicit counts, and any
+`head`/`-c` limit disqualifies the output as evidence for a claim.
