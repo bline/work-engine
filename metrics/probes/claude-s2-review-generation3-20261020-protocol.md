@@ -230,3 +230,72 @@ A2 also found it, unprompted: "`process.rs:159-161` counts all records against
 its F4 on child-exit observation. That finding is now held by **two arms of
 different model families' tiers** plus my own source verification, and by neither
 the reference nor any other arm.
+
+## C result: concern scoping works on F4 and fails on F3
+
+`claude-sonnet-5-5` at `xhigh` with the concurrency/ordering/ownership concern:
+15 calls, 346 s, **$0.9884**, 0.4140 Mwt, 34,181 thinking tokens, 8 in-concern
+findings plus out-of-concern items noted in one line each, verdict BLOCK, zero
+denials, clean tree.
+
+| reference | sonnet unscoped (gen 2) | sonnet concern-scoped (C) |
+|---|---|---|
+| F1 drain panic | MATCH (low) | **MATCH** (medium), now naming mutex **poisoning** |
+| F2 close timeliness | PARTIAL | PARTIAL |
+| F3 join detached, false `joined` | MISS | **MISS** |
+| F4 spawn before register | UNRESOLVED-DECLARED | **MATCH** |
+
+### Framing moved F4, and made the review cheaper
+
+The pre-registered success condition for C obtained on F4: the same model at the
+same effort moved from "I could only reason from tokio semantics, not observe
+them" to a full finding citing `:447-448`, `:505-511`, the absent start signal,
+multi-thread reachability, and - a point no other arm made - that **every executor
+test uses plain `#[tokio::test]`, a current-thread runtime**, so spawned work
+cannot run before `submit` returns and the ordering is never forced by any test.
+It also noted `drop(ticket)` is vacuous because `ExecutionTicket` is a plain
+`AttemptId`.
+
+And it did this **more cheaply than the unscoped run**: $0.9884 against $1.2369,
+15 calls against 22, 34,181 thinking tokens against 46,448. Concern scoping was
+not a cost-for-quality trade here; it was cheaper and better on the item it
+targeted.
+
+### F3 is framing-resistant, which is the stronger finding
+
+The concern statement explicitly named "ownership and release of tasks,
+**handles**, slots and child processes across **cancellation**, timeout, **drop**
+and shutdown" - F3's exact subject matter. The arm then wrote about handle
+ownership under drop ("Dropping the last executor handle drops the `JoinHandle`s,
+which detaches the tasks instead of cancelling them") and **still did not reach
+F3's mechanism**: that cancelling the drain future mid-await skips the restore at
+`:313-320`, permanently detaching the collector, after which a later drain reports
+`joined` from `results.pending`.
+
+**Tally across all three generations: 11 Claude runs, 4 models, 4 effort levels,
+and one concern scope that named F3's subject. Zero recoveries.** I predicted
+before running that a C recovery of F3 would weaken the decorrelation argument.
+It did not recover it, under the most favourable framing available, so the
+argument is **strengthened**: F3 is a genuine blind spot that neither effort nor
+scoping reaches.
+
+### One imprecision worth recording
+
+C's F6 says "Every registry read blocks on the lock, so this is not observable
+through the executor API." That is **not quite right**: `ResultReceiver::recv` is
+part of the executor's public API and reads `results.pending`
+(`executor.rs:147`), never the registry, so a published result *is* observable
+through the executor API during the window. Haiku's A2 phrasing was more precise
+because it scoped the claim to the **task** rather than the API.
+
+So three arms now reached the same observation and used it three ways: `opus-5` to
+clear the finding, `haiku-5-5` to bound the consequence correctly, and C to bound
+it with an overstated scope. The observation is easy to reach; stating exactly
+what it does and does not cover is the hard part.
+
+### Child-slot finding, third independent arm
+
+C's F4: "Child slots are never released before terminal shutdown, and there is no
+per-child reap or replacement." That is now **three arms** (`opus-5` at `xhigh`,
+`haiku-5-5` at `medium`, and C) plus my own source verification, against zero from
+the reference.
