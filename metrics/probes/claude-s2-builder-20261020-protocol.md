@@ -344,3 +344,87 @@ This is now the strongest argument in the pilot for making the triple mandatory
 on a *positive* finding, because every instance of this error today - the
 accessor grep, the F3 decomposition claim, this one - was a positive claim about
 a property nobody required me to state precisely.
+
+## Blind review of the Claude-built tree: `haiku-5-5` at `xhigh`
+
+Subject `74cd89b42ae0b301f18c5adc899711300bfdbeb3`. Prompt and contract are
+**byte-identical to Test R's** (prompt sha256 `27b666a4...`, contract sha256
+`98390bd9...`), so the only changed variable against the generation-2 and -3
+review arms is the subject. Sol's trees are absent from the review snapshot;
+the baseline is present for diffing.
+
+25 calls (15 Read, 10 Bash), **430 s**, **$0.5105**, 0 denials, clean tree,
+five-hour window 0.18 -> 0.19 - **one point**. Twelve findings, verdict **BLOCK**.
+
+### It did not find the defect I had sealed, and it did not clear it either
+
+None of F1-F12 is the `shutdown` cancel-safety defect. Critically, its "What
+checks out from source" section lists eight things it affirmatively cleared and
+**the join/drain path is not among them**. So this scores **MISS**, not
+FALSE-CLEARANCE - the distinction generation 2 established as the one that
+matters. The reviewer left the area unexamined rather than pronouncing on it.
+
+Thirteen Claude review runs have now passed over an F3-class cancellation defect
+without one of them naming it, across two different implementations of the same
+contract.
+
+### It independently corroborated the verdict I was most confident in
+
+> "Registration in one critical section with the start gate opened last
+> (`executor.rs:902-962`)."
+
+Same line range I cited, reached blind. F4 CLEAN now has two independent reads.
+
+### It found the same *class* I found, at a different instance
+
+**F6, medium**: a required result can be discarded when the sink is dropped
+in flight while `emitted` still increments, `unaccounted_slots` reads 0, and
+"this path does not latch unsafe". That is structurally the same argument I made
+about `NeverCleared` - a drop boundary where evidence is lost and the counters
+still report success - at a different boundary. And it declared its own basis
+precisely: "It depends on tokio's `OwnedPermit::send` being infallible on a
+closed channel. I did not verify that against the dependency source, which is
+outside the snapshot." That is the declared-limitation behaviour generation 3
+valued, produced unprompted by the cheapest model.
+
+### It found a scope violation I missed, and the history makes it more interesting
+
+**F9**: the owned manifest adds `serde_json`, `tempfile = "=3.27.0"` and
+`work-engine-types` as dev-dependencies, where the plan says the owned manifest
+"adds only `tokio.workspace = true`" (plan line 63) and "request any addition
+first". It correctly noted that all 13 paths are inside my declared boundary and
+that the conflict is with the **plan's narrower lane**.
+
+I scored BOUNDARY: PASS by checking paths and never checking manifest contents.
+That is a scope check I defined too loosely.
+
+But the history complicates the blame. Sol's attempt 1 added the **identical
+three dev-dependencies**, including `tempfile = "=3.27.0"` as a version literal
+rather than a workspace entry, and the identical root Tokio pin down to the
+version and feature set. So F9 is a real plan deviation that **both builders made
+independently and that the campaign's own 7/7 gates and Astra both let through**.
+It is a finding against the process, not against either builder. The root-manifest
+half of F9 is mine - my prompt authorized the pin because no separate integration
+owner exists in this run.
+
+### Revised ledger for the Claude-built tree
+
+| source | finding |
+|---|---|
+| my read | F3-class: `shutdown` not cancel-safe; `NeverCleared` misreports detached tasks; no unsafe latch |
+| `haiku-5-5` | 12 findings incl. port-error-as-no-send proof (high), unenforced wait budget, no transport ever closed, locally invented 30 s timeliness window, sink-drop evidence loss, `register_transport` bypassing the gate, manifest scope |
+| both | the drop-boundary class, at two different boundaries |
+| neither | unknown - and the symmetry of the misses is the point |
+
+**Seven gates passing told us almost nothing.** A tree with 44 passing tests,
+clean `clippy -D warnings`, and a release build drew twelve findings and a BLOCK
+from a $0.51 reviewer. The gates and the review measure different things, which
+is what the campaign's own architecture already assumes.
+
+### Economics of the full Claude-only loop, measured
+
+Build $12.4955 + review $0.5105 = **$13.01**, and **16 points** of one five-hour
+window, for one slice built and independently reviewed end to end. The reviewer
+costs **4%** of the builder. That ratio, not the absolute number, is the
+operationally interesting figure: adversarial review is nearly free relative to
+construction, which argues for more reviewers rather than cheaper ones.
