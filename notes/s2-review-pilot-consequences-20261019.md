@@ -98,3 +98,64 @@ continues to rest on the disposable per-arm copy plus a post-hoc
 `git status --porcelain`, as before.
 
 Any further arm must preflight its exact commands before freezing.
+
+## 4. Narrowing the candidate addition: name the state, not just the observation
+
+Added 2026-10-20 after the candidate in section 2 was correctly challenged. The
+challenge: requiring a *discriminating observation* makes a judgment locally
+**challengeable**, but not locally **complete**. `opus-5` did enumerate the
+synchronization paths it considered and still omitted `recv`. How would a system
+that did not already know about `recv` notice the enumeration was short?
+
+That is a fair hit, and "collapses the regress" was too strong. But in this case
+the answer is mechanical, and the worked example is worth keeping.
+
+**Measured in the pinned snapshot:**
+
+| set | sites | enumerable by |
+|---|---|---|
+| registry-lock acquisitions in `executor.rs` | **9** - `:227`, `:254`, `:271`, `:282`, `:293`, `:315`, `:353`, `:367`, `:413` | one grep |
+| `results.pending` lock acquisitions | **2** - `:150` (`recv`, reader), `:496` (publisher) | one grep |
+
+`opus-5`'s five named holders (`close_gate`, `request_abort`, `close_and_drain`,
+`acknowledge_result`, `owned_count`, plus `submit` itself) **cover all nine
+registry sites**. Its enumeration was complete and correct **for the set it
+named**. It executed the right method on the **wrong set**.
+
+**So the defect is a property-to-state binding error, not an incomplete search.**
+The claim was about a result becoming *observable*. Results live in
+`results.pending`. The accessor set of that state has two members and is trivially
+enumerable. A warrant assembled from *registry*-lock holders therefore exhibits a
+visible mismatch between the state its claim ranges over and the state it
+enumerated - **detectable without prior knowledge that `recv` exists.**
+
+**Revised candidate, narrower and mechanically checkable.** A positive
+concern-scoped judgment should name:
+
+1. the **property** it establishes;
+2. the **state** that property ranges over;
+3. the **accessor set** of that state which it enumerated, and the basis for
+   treating that set as exhaustive at the subject revision.
+
+Given (1) and (2), (3) is checkable by a deterministic tool. What remains
+irreducibly a matter of judgment is only whether (1) is the right property for
+the governing contract - which is the frame question, and is far smaller than
+verifying the whole judgment.
+
+**This does not collapse the regress; it narrows it.** The claim is not that
+every judgment becomes self-certifying. It is that the non-mechanical residue
+shrinks from "is this conclusion sound" to "is this the property the contract
+requires", and the gap between the two is exactly where `opus-5` failed: it
+answered a true question (is acknowledgement serialized) that was not the
+contract's question (can work start, and a result become visible, before
+registration).
+
+Cost and limits, stated: this requires three additional fields on every positive
+judgment, some concerns will not have a single well-defined state their property
+ranges over, and the accessor-set check is only as complete as the tool's notion
+of an access - dynamic dispatch, callbacks and indirect state reach can defeat a
+purely syntactic enumeration. That last limit is real and means the mechanical
+check is a **necessary** condition, never a sufficient one.
+
+Still a candidate. The owning proposal is `formed` with
+`implementation_authorized: false`, and this note does not edit it.
