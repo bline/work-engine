@@ -251,3 +251,24 @@ invariants and proposed mechanics" and "its tests" where the skill says
 is demonstrated; whether it is model-family or review-framing is **not
 isolated**, and the next arm should be concern-scoped to concurrency against
 this same sealed key to separate them.
+
+## Amendment 2, 2026-10-19 - harness defect diagnosed and fixed for any rerun
+
+The 10 denials were not git-specific. `--permission-mode dontAsk` denies Bash
+generically outside its allowlist; the denial text is identical for every one and
+names the mode, not the command. Verified fix, preflighted for $0.0037:
+`--permission-mode bypassPermissions` with `--disallowedTools Write Edit
+NotebookEdit` ran the exact baseline diff with **zero denials** and left the tree
+clean. Write detection still rests on the disposable copy plus post-hoc
+`git status --porcelain`.
+
+The scored results above stand as recorded. They were produced under the
+defective invocation, and that limitation is part of the result rather than
+something to be corrected away: `opus-5`'s F9 authorship question is unresolved
+because of it. Any rerun uses the fixed invocation and must preflight its exact
+commands before freezing.
+
+Consequences for current state - the four surviving conformance concerns and the
+positive-judgment soundness gap - are in
+`notes/s2-review-pilot-consequences-20261019.md`, deliberately outside this
+frozen benchmark.
