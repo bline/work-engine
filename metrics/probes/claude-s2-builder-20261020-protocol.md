@@ -267,3 +267,80 @@ favour that makes this outcome harder to explain away, not easier.
 This authorizes no Claude builder in any campaign. `resolve_provider.py:171-177`
 still raises unless both models are Codex, and that gate should not move on one
 run.
+
+## Correction, sealed before the blind review returned: F3 is DIVERGENT, not CLEAN
+
+Raised by ChatGPT on reading the result above, investigated by me, and committed
+**while the `haiku-5-5` blind review of this tree was still running** - so whether
+an independent reviewer finds it is a live prediction, not a check I already knew
+the answer to.
+
+The concern: `timeout(join_window, &mut join)` protects the handle from being
+consumed by the **inner** timeout, which is the mechanism Sol got wrong. It says
+nothing about destruction of the **enclosing** `shutdown` future. Verified in the
+arm's source:
+
+- `shutdown` (`executor.rs:1060-1075`) takes the handles **out of durable state**
+  inside its first critical section: `guard.tasks.iter_mut().map(|(attempt,
+  record)| ClosedTask { ..., handle: record.handle.take() })`. The rows stay in
+  `guard.tasks`; only the handles leave, into a local `Vec<ClosedTask>` owned by
+  the `shutdown` future.
+- `for closed in records.drain(..)` then moves each handle into a local.
+- The only `impl Drop` in the file is for `ResultSlot` (`:537`). **There is no
+  drop guard that returns handles to the registry.**
+
+So if `shutdown` is cancelled while awaiting a join, every remaining
+`JoinHandle` drops with the future, and in Tokio dropping a `JoinHandle`
+**detaches** the task.
+
+**The consequence is worse than "reports joined", and it is self-documenting.**
+A later `shutdown` finds `handle: None` and takes the `None => TaskEnd::NeverCleared`
+branch at `:1090`. `TaskEnd::NeverCleared`'s own doc comment (`:605`) reads
+**"Never cleared the start gate, so it never dispatched."** After a cancelled
+shutdown that is false of exactly the tasks it will be applied to: they
+dispatched, they are detached, and they may still be running. And because only
+`Panicked | AbortedAtTimeout` latch (`:1105`), `ShutdownReport.unsafe_at_close`
+can come back **`false`** on a close that abandoned live work.
+
+**Reclassified under the pre-registered scheme as DIVERGENT** - a different defect
+against the same invariant (5 and 6) - at **medium** severity, matching Astra's
+grade for F3. Source-supported inference, not a reproduction.
+
+Two adjustments to the concern as it reached me, in fairness to the record:
+Astra's F3 consequence was "a later drain reports joined when no join occurred";
+here the later drain claims the task *never dispatched*, which is a different and
+arguably stronger false claim. And the task's **result is not lost**: `ResultSlot`
+holds a reserved `OwnedPermit` and sends from its `Drop`, so the detached task
+still delivers. The defect is join and close-evidence integrity, not result loss.
+
+### What this does to the result above
+
+Revised incidence: **F1 CLEAN, F2 CLEAN, F4 CLEAN, F3 DIVERGENT.** Three of four
+invariants Sol violated are honoured; the fourth is honoured against Sol's
+mechanism and violated against another one on the same invariant.
+
+The finding in section 7 is weakened in precisely the way that matters. The
+builder did **not** avoid F3's defect class - it avoided F3's *instance* while
+reintroducing the class at a different cancellation boundary. That is a sharper
+and less flattering version of the same point: the family can write a correct
+cancellation mechanism, explain it in a doc comment, and still miss a second
+cancellation boundary in the same function. Section 7's claim that construction
+and detection "come apart" stands; its claim that F3 was avoided "by
+construction" does not.
+
+### What this does to my own method
+
+Sixth source-read error of the session, and the most predictable one: I verified
+the mechanism the ground truth named and stopped. **B's entire result was that
+the property you establish is not automatically the property required**, and I
+then established "the inner timeout does not consume the handle" and recorded it
+as "the handle survives cancellation". Those are different properties. The
+property/state/accessor triple would have caught it - the accessor set for the
+handle is {registry row, `ClosedTask` local, `closed` loop local}, and two of
+those three are destroyed by outer cancellation. I did not write the triple for
+my own verdict.
+
+This is now the strongest argument in the pilot for making the triple mandatory
+on a *positive* finding, because every instance of this error today - the
+accessor grep, the F3 decomposition claim, this one - was a positive claim about
+a property nobody required me to state precisely.
