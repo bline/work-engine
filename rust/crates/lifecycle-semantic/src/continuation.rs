@@ -224,7 +224,11 @@ fn continuation_output_contract(schema_version: u32) -> serde_json::Value {
         "format":"Return one JSON object only. The host rejects missing required fields, wrong types, or invalid enum values before semantic assessment.",
         "schema_version":schema_version,
         "source_reference":source_reference_contract(),
-        "attributed_statement":{"text":"nonempty string", "sources":"nonempty array of source_reference"},
+        "attributed_statement":{"text":"string nonblank after trim", "sources":"nonempty array of exact admitted source_reference"},
+        "identifier_rule":"question_id, recipient, and any present answer_id are 1-128 UTF-8 bytes, using only ASCII letters or digits and -_.:/.",
+        "scope_rule":"interaction scope must be nonblank after trim. Attributed statement text must also be nonblank after trim.",
+        "output_byte_limit":"The host enforces the effective bound-policy max_control_output_bytes on the entire output.",
+        "recipient_free_pending_approval":"A canonical pending-approval fact with no recipient can be preserved as a cited uncertainty with no invented interaction. A task-owner question_open record has a recipient and can be represented as an interaction.",
         "required_fields":{
             "objective":"attributed_statement", "work_position":"attributed_statement",
             "completed":"array of attributed_statement", "commitments":"array of attributed_statement",
