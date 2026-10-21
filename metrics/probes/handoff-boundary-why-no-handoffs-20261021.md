@@ -135,3 +135,77 @@ where the need is weak.**
 Fixes 1-5 change the instruction and so require a new cohort; under the
 registration they cannot be applied to the closed one. Testing any of them needs
 account quota to return.
+
+## Amendment 1, 2026-10-22: the primitive does not exist, and I had already measured that
+
+Raised by the user: Codex handles children as subagents with almost no overhead.
+Correct, and it goes further than this document credited.
+
+**Verified on today's rollouts.** Tool names actually invoked by role:
+
+| role | tools |
+| --- | --- |
+| worker (`auth_worker`) | `exec`, `send_message`, `wait_agent` |
+| supervisor (`b2a`, `b2b`) | `exec`, `send_message`, `wait_agent`, `spawn_agent`, `followup_task` |
+
+**No context-replacement primitive appears at any level.** A worker cannot
+replace itself and has no tool that could; a supervisor's only renewal mechanism
+is `spawn_agent`, which creates a *new* child rather than a successor to an
+existing one. The contract's `handoff_ready` to parent-verified-successor
+sequence therefore rests on an operation the tool set does not provide. What it
+does provide is cheap subagent spawn, which the orchestration already uses
+constantly.
+
+**This was already in the ledger, measured by me on 2026-10-14**, and this
+document failed to cite it. The handoff lever row reads: *"not actuable in these
+sessions: no `new_context` tool appears in any measured session's tool list
+(`exec`, `spawn_agent`, `wait_agent`, `followup_task`, `send_message`,
+`list_agents`, `sleep`, `wait`, `request_user_input_async`, `interrupt_agent`),
+and all 76 observed window replacements fired at a 208-244K ceiling rather than
+a boundary."*
+
+### Correction
+
+**Wrong claim:** that the zero handoff rate is explained by the five instruction
+defects above plus the redundancy confound, with "move the check to pre-dispatch"
+as the lead fix.
+
+**Class:** an absence explained without checking whether the capability exists -
+the same failure rule 7 covers, with the aggravating detail that the
+completeness basis was in my own ledger row and I did not consult it before
+diagnosing.
+
+**Consequence:** it aimed the remedy at instruction wording when the primary
+blocker is a missing primitive. Acting on it would have meant rewording a brief
+to request an operation no role can perform, and the brief's authors would have
+complied and still produced no handoff.
+
+**Missing check:** enumerate the tools available to each role before explaining
+why a role does not perform an operation. Now done, and recorded above.
+
+### What survives, and what it reorders
+
+The sequencing defect in section 1 is unaffected - `auth_worker` did weigh
+next-task size two minutes before the parent sent the next task, and that is
+still worth fixing. Sections 2 and 6 are strengthened rather than weakened: the
+decision belongs with the parent precisely because `spawn_agent` is the parent's
+tool and the only renewal mechanism there is.
+
+But the priority inverts. **Fix 1 is no longer "reword the check" but "name the
+mechanism the brief actually has."** The brief describes a transfer sequence that
+reads as a distinct capability; the real capability is "dispatch the next task to
+a fresh subagent instead of the retained one", which costs a spawn.
+
+And M22 bounds how often even that is worth doing. The cost-optimal threshold is
+conditional on the restart floor, not a context level: break-even total restart
+is about **75K**, and at the measured **116K** builder floor every threshold
+loses roughly **30%**. Spawning is nearly free; bringing a fresh child up to the
+retained one's state is not, and that is where the cost sits - against a
+**17,716-token** standing floor for a fresh root (M21).
+
+So the honest reading of the zero rate changes. It is not mainly non-compliance,
+nor mainly bad wording. **The mechanism the pilot asked for does not exist, and
+the substitute that does exist is usually not worth using at the measured restart
+floor.** A pilot asking agents to choose handoff was asking them to choose an
+option that was unavailable, uneconomic, or both - and `continue` was the correct
+answer more often than this document allowed.
