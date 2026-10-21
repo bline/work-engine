@@ -1,6 +1,8 @@
 # Pre-registration draft: prospective correspondence trial
 
-**Status: DRAFT PRE-REGISTRATION. Not an authorization and not a launch.** Board
+**Status: subject-independent design FROZEN 2026-10-21. Not an authorization and
+not a launch.** Changes to §§1-6 and §§8-10 from here require a recorded
+re-registration, not an edit. Only §7's subject-dependent fields remain to be set. Board
 sequence 2266 reserves the next eligible not-yet-launched slice and requires, before
 launch: exact subject and baseline, frozen obligations and key, intervention and
 control design, independent evaluation, a complete cost schema, and explicit
@@ -82,29 +84,57 @@ result must state that the term was not measured rather than treating it as zero
 
 ## 3. What one slice can and cannot establish
 
-n = 1 per arm. Measured same-task variance in this campaign: builder arms on the
-identical S2 subject differed **2.65×** on model choice alone ($12.4955 against
-$4.7099); recovery of one specific finding ranged **$0.3697 to $4.0887** across
-packet compositions of the same content against the same sealed key.
+**Revised 2026-10-21.** This section previously forbade any cost conclusion beyond
+`G`, on the strength of a variance band taken from builder arms. That contradicted
+§2's paired endpoint, and the band was the wrong statistic.
 
-**Pre-registered now, before any result exists:** a single slice cannot establish a
-cost difference unless the observed effect exceeds that variance band. It can
-establish three things, and the report may claim only these.
+**Correction.** The figures I cited - builder arms differing **2.65×** on the
+identical S2 subject ($12.4955 against $4.7099), and single-finding recovery ranging
+**$0.3697 to $4.0887** - are differences across **model tier and packet
+composition**, not sampling error between two assessment arms reading the same
+evidence. E2 at $4.0887 was Opus and E6 at $0.3697 was Haiku, so that range
+conflates tier with composition twice over. Error class: importing a spread produced
+by varying the independent variable as an uncertainty bound for a design that holds
+it fixed. Consequence: the draft excluded in advance the one measurement §8 exists to
+make.
 
-1. **Feasibility** of the recording discipline under live execution, or its failure.
-2. **One honestly controlled measurement of G**, with a complete denominator.
-3. **Warrant equivalence or its absence** at basis level. Pilot 1 established that
-   two assessment routes replicated their per-invariant dispositions *and the bases
-   those dispositions rested on*, so basis-level comparison is the established
-   method and is the comparison to run.
+**What a single paired trial establishes, pre-registered:**
 
-Any cost verdict beyond "G was X for this slice" is outside what the design
-supports and is excluded in advance.
+1. **An observed cost difference for that subject.** `dC` is a measurement, not an
+   estimate of a population parameter. Reportable as such.
+2. **Feasibility** of the recording discipline under live execution, or its failure.
+3. **Warrant equivalence or its absence** at property level per §6, and at basis
+   level per Pilot 1's established method - two assessment routes replicated their
+   per-invariant dispositions *and the bases those dispositions rested on*.
+
+**What it does not establish:** a generalisable cost advantage, a population
+estimate, or any claim about `G_diffuse`, which is unmeasured by construction (§2).
+
+### Arm matching, required before launch
+
+The two assessment arms **must hold model and effort identical**. A difference there
+reintroduces exactly the confound this section's withdrawn variance band was made of,
+and it is the one confound this design can eliminate for free. If matching is
+impossible for a stated reason, the mismatch is recorded in §7 before launch and the
+cost difference is reported as confounded rather than as `dC`.
 
 ## 4. Cost schema, complete, identical for both arms
 
-Every charge below is in the denominator. Omitting any one of them is what made the
-S10 campaign uncostable.
+**Two ledgers, reported separately.** The first draft put every charge in one
+denominator while the primary formula held only three terms, which would have
+attributed the experiment's own overhead to a production workflow.
+
+- **Operational ledger** - what the two alternative workflows would cost in
+  production: prospective recording (`G_direct`) plus each assessment arm
+  (`C_mapped`, `C_unmapped`). This is the ledger `dC` is computed from.
+- **Experimental ledger** - everything spent conducting, controlling and evaluating
+  the trial: independent adjudication, key construction, isolation setup, manifest
+  freezing, this protocol. Real cost, reported in full, attributed to **neither**
+  production workflow.
+
+Omitting any charge from either ledger is what made the S10 campaign uncostable;
+merging them is what would make this trial's result misattributed. Each class below
+is marked with the ledger it belongs to.
 
 | class | what it covers |
 |---|---|
@@ -117,7 +147,12 @@ S10 campaign uncostable.
 | **recording** | the correspondence-generation turns themselves — this is `G_direct` |
 | **assessment, control** | §8's unmapped arm, every turn — this is `C_unmapped` |
 | **assessment, intervention** | §8's mapped arm, every turn — this is `C_mapped` |
-| **adjudication** | the human or agent checking the arms. Pilot 1's accounting omitted mine and that omission can invert the result |
+| **adjudication** | *experimental ledger.* The independent evaluation of the arms. Pilot 1's accounting omitted mine, and an omitted verification charge can invert a cheapness result - but it is measurement overhead, not a cost either production route would bear |
+| **key and manifest** | *experimental ledger.* Constructing the held-out key, freezing the evidence manifest, assembling isolated input directories |
+
+Coordinator, supervisor, worker, reviewer, repair and handoff belong to the
+operational ledger as ordinary engineering cost; recording and the two assessment
+arms are the operational terms `dC` uses.
 
 `G_diffuse` has no row because it is not separately observable in this design (§2).
 Its absence is declared in the result, not silently treated as zero.
@@ -253,6 +288,25 @@ of this exact harness, not a hypothetical.
   `tool_use` scanned for paths outside the declared input directory, and
   `permission_denials` inspected. Any leak voids that arm rather than being noted.
 
+### The common evidence corpus is a frozen manifest
+
+Because correspondence was recorded *during* execution, retained transcripts and
+receipts may themselves mention the map, which would reveal the intervention to the
+control through ordinary evidence rather than through a packaging mistake.
+
+So the eligible evidence corpus is **frozen as an explicit manifest before either
+arm launches**: every artifact listed with its content hash, both arms receiving
+byte-identical copies of exactly that set, and the intervention receiving **exactly
+one** additional artifact, the correspondence map.
+
+**If correspondence metadata cannot be separated from an artifact without removing
+evidence relevant to the assessment, that is an interpretability limitation of the
+trial and is declared as one.** It is not repaired by filtering the control's copy:
+filtering changes the evidence between arms and destroys the pairing that is the
+whole design. The admissible responses are to declare the limitation and report the
+affected properties as confounded, or to abandon the paired comparison for that
+subject. Quiet filtering is a void condition (§10).
+
 ### The hazard that is also the mechanism
 
 A map can reduce inference by narrowing attention, and narrowing attention is both
@@ -273,9 +327,11 @@ Fixed before execution so the result cannot be re-narrated afterwards.
    workflow. The mechanism's case then rests entirely on what it lets a reviewer
    establish, which is a separate claim needing separate evidence.
 3. **`dC` positive, warrant improved.** A quality result, not a cost result: state
-   the price of the improvement. The recall evidence - E8's doubled reference
-   recall, E6 recovering a finding fifteen general reviews missed - makes this the
-   most likely outcome.
+   the price of the improvement. E8's doubled reference recall and E6's recovery of
+   a finding fifteen general reviews missed **motivate** this hypothesis; they do
+   not establish its probability for a different subject, and the first draft's
+   claim that it was the most likely outcome is withdrawn as a comparative claim
+   with no check behind it.
 4. **`dC` negative, warrant worse.** The map saved inference by narrowing attention
    past the evidence. Scored, not discussed, per §8.
 5. **`dC` within the unsigned band.** No directional claim. Reported as such rather
@@ -300,3 +356,7 @@ Fixed before execution so the result cannot be re-narrated afterwards.
 - The key written in artifact terms rather than semantic requirements (§5), since a
   key naming a test or proof strategy cannot score an execution that established the
   property another way.
+- **Filtering the control arm's copy of a shared artifact** to remove correspondence
+  metadata (§8). The limitation is declared, not engineered away.
+- The two assessment arms running at different model or effort settings without that
+  mismatch being recorded in §7 before launch (§3).
