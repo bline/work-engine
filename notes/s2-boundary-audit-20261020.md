@@ -742,3 +742,37 @@ Controls, all of which must hold or the comparison is uninterpretable:
 No further retrospective S2 arm. That subject has yielded what it has, and
 additional arms would increasingly tailor the method to defects already
 understood.
+
+## Finding: the live decomposition workflow has no obligation representation
+
+Found while preflighting Pilot 1's inputs, before any inference was spent.
+
+`manual-decomposition-s10-20261020/slices/A` holds 38 files: 7 packets, 6
+results, 6 handoffs, 6 segment reviews, 10 logs, `acceptance-v1.json`,
+`root-validation-v2.json`, `preflight-astra.md`. No subdirectories.
+
+**The packets are prose worker assignments, not enumerated obligations.** They
+shrink from 33 lines (`packet-v1.md`) to 9 (`packet-v7.md`) as the work narrows.
+`packet-v1.md` is a briefing - outcome, authority and starting point, governing
+distinctions, known implementation. Requirements are present but stated as prose:
+"Run focused test and service `--lib`, retain exact log"; "Return
+`result-v6.json`/`handoff-v6.md` with hashes, property/state/observations and
+limitations".
+
+**Consequence for the pilot programme, and it is not small.** The prospective
+intervention D would test is not only "record the relationship when it becomes
+known". It presupposes **enumerated obligations for evidence to relate to**, and
+the current workflow produces none. There is nothing in A to record a
+relationship against.
+
+So the correspondence requirement has a prerequisite the pilot design assumed was
+already met: an obligation layer. S2's plan at least enumerated seven invariants;
+A's packets enumerate none. That makes A's status quo a **harder** baseline than
+S2's, not an easier one, and it means Pilot 2's decomposition step is not an
+optional refinement for D - it is the precondition for recording correspondence
+at all.
+
+Recorded as a finding rather than acted on. Pilot 1 moved to S2, where seven
+invariants are enumerated, so the cost measurement is not dominated by deriving
+requirements from prose. This asserts nothing about A's acceptance, which was the
+campaign owner's, and authorizes no change to the campaign's packet convention.
