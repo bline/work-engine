@@ -145,3 +145,69 @@ Compaction markers come from the `lineage` array. Per-call context is
 `info.total_token_usage` is account-lifetime cumulative and is not a thread
 measure. Message direction and payload readability come from `response_item`
 records of type `agent_message`, comparing `author` with `recipient`.
+
+## Amendment 1, 2026-10-21T20:18Z
+
+The brief was revised a second time at 20:15:07Z, after this registration. The
+revision moved three requirements from the brief's prose into the quoted block:
+the pilot's scope caveat, the reason not to build in the shared workspace, and
+`Record economics as not estimated unless an explicit scenario supplies its
+assumptions`. Because the block is the only part copied into a worker's brief,
+a faithfully delivered pre-revision block could omit the economics labelling and
+the scope caveat. That is a change in what a worker receives, so the cohort
+boundary has to move with it.
+
+**What was visible when this amendment was written**, so its independence from
+results is auditable: three `continue` decisions from `b1b_worker` (transition
+cohort) at 39,249 / 94,199 / 100,613 input tokens, all epoch 0; and two root
+`continue` decisions - `01a15b93` at 117,899 of 258,400, epoch 6, and
+`01a15f02` at 201,121 of 258,400, epoch 2. **No `post_change` thread has
+recorded a decision**; `b1b_reviewer` has self-queried its own session and
+written nothing yet.
+
+### Cohort change
+
+`post_change` splits, by thread start time:
+
+| cohort | n at amendment | window |
+| --- | ---: | --- |
+| `post_change_r1` | 1 (`b1b_reviewer`, 20:11:17Z) | 20:05:01Z <= start < 20:15:07Z |
+| `post_change_r2` | 0 | start >= 20:15:07Z |
+
+The frozen [baseline](handoff-boundary-pilot-baseline-20261021.json) keeps its
+original 20:08Z labelling and is not rewritten; this section supersedes its
+`cohort` field where they disagree.
+
+### New stratum: roots
+
+The two orchestrator roots are inside the pilot's scope - the block is for
+"coordinator, supervisor, worker and reviewer briefs" - but they were absent
+from the cohort table, which enumerated only `agents --recursive` descendants.
+Both are in fact running boundary checks and writing decisions in the prescribed
+schema (`root-context-boundary-v2.json`, `root-boundary-decision-v2.json`).
+Report them as a separate stratum and never pool them with child threads.
+
+### New decision class E: constrained continue
+
+A recorded `continue` whose stated reason cites the absence of an eligible
+successor or untransferable ownership, rather than next-task size, retained
+context value or reconstruction cost.
+
+The motivating instance is `01a15f02` at 20:07:39Z: 201,121 of 258,400 - 77.8% -
+two compaction markers, deciding `continue` because "no verified successor root
+owns this conversation" and to "avoid absorbing implementation context". A root
+cannot execute the contract's transfer step at all: that step requires a parent
+to verify the successor's session and publish the binding, and a root has no
+parent. The same applies to any thread whose ownership cannot transfer safely,
+which the brief already requires be deferred.
+
+Class E is **not** evidence of calibrated judgment and does not count toward
+outcome A or B. It records a structural ceiling in the role. Its presence at
+77.8% is the clearest available demonstration that telemetry can expose a
+boundary the agent is not permitted to act on, which is a finding about the
+protocol rather than about the judgment.
+
+Consequently the primary question is restricted to threads with an eligible
+successor path - non-root threads with a live parent - and class E threads are
+reported with their observed fraction and marker count, so a ceiling reached
+without a permitted handoff is visible rather than scored as a continue.
