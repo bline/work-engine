@@ -776,3 +776,51 @@ Recorded as a finding rather than acted on. Pilot 1 moved to S2, where seven
 invariants are enumerated, so the cost measurement is not dominated by deriving
 requirements from prose. This asserts nothing about A's acceptance, which was the
 campaign owner's, and authorizes no change to the campaign's packet convention.
+
+## Pilot 1 pre-registration: staged correspondence-cost measurement on S2
+
+Frozen before execution. Purpose is **cost measurement**, not improving S2's
+historical outcome and not challenging its acceptance.
+
+The single S2 ledger arm bundled three activities into 0.838 Mwt and could not
+decompose them. Three sequential arms separate them, each receiving the previous
+arm's output so it pays only its marginal cost.
+
+| stage | input | task | what it measures |
+|---|---|---|---|
+| **S1** | the 132 frozen acceptance artifacts | enumerate and classify the evidence artifacts; no mapping, no adequacy | cost of knowing what exists |
+| **S2** | the plan's 7 invariants + **S1's inventory** | map each invariant to the artifacts bearing on it, by name; **no adequacy judgment** | cost of reconstructing the relationship |
+| **S3** | the 7 invariants + **S2's mapping** | assign SUPPORTED / INSUFFICIENT / ABSENT / INDETERMINATE with basis | the judgment prospective recording cannot eliminate |
+
+`claude-haiku-5-5` at `xhigh` for all three, matching the single-arm ledger so the
+totals are comparable. Inputs are the already-frozen, already-leak-checked set at
+`~/cbm-work/s2-ledger-v2/inputs` (132 files, pilot-output leak check 0).
+
+**S1 + S2 is the reconstruction cost** that prospective recording would remove.
+**S3 is the irreducible remainder.**
+
+### Stated confound, so the totals are not misread
+
+Three arms pay **three startup contexts** (~31K each, measured in E8) plus the
+hand-off artifacts between stages. The staged total will therefore likely
+**exceed** the bundled $0.4103, and that is expected. **This experiment isolates
+component shares; it does not produce a cheaper number.** Reporting the staged
+total as the cost of correspondence would misattribute staging overhead to the
+mechanism.
+
+### Independent check
+
+I verify S2-stage's mapping against source before S3 runs. A mapping that cites
+an artifact which does not bear on the invariant inflates the reconstruction
+figure with wrong work, and the S2-ledger experience says a plausible-looking
+output can be wrong in a way only checking catches.
+
+### Pre-registered outcomes
+
+- **S1+S2 small relative to S3** - most of the cost is irreducible judgment, and
+  prospective recording buys little. Weakens the economic case.
+- **S1+S2 large relative to S3** - most of the cost is rediscovery, and the
+  prospective intervention has a measured target. Strengthens it.
+- **S2-stage mapping inaccurate** - reconstruction from a record of this shape is
+  unreliable regardless of cost, which is a finding about the record rather than
+  about the mechanism.
