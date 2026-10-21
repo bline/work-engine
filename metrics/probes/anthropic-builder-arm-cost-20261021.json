@@ -1,0 +1,20 @@
+{
+ "marker": "2026-10-21T23:25:29.887000+00:00",
+ "split": "2026-10-21T23:27:08+00:00",
+ "prereg": {
+  "calls": 11,
+  "weighted": 409686.9
+ },
+ "build": {
+  "calls": 44,
+  "weighted": 1553471.1,
+  "output": 43424
+ },
+ "total_since_marker": {
+  "calls": 55,
+  "weighted": 1963158.0
+ },
+ "rust_lines_added": 289,
+ "build_mwt_per_krs": 5.375332525951558,
+ "total_mwt_per_krs": 6.792934256055363
+}
