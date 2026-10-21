@@ -102,11 +102,12 @@ The registration says C "is the only outcome that can show the judgment itself,
 rather than its availability, to be miscalibrated". The readings separate it
 into two shapes, and only one of them is about judgment.
 
-**Shape 1, the reading was comfortable and growth outran it.** Four instances
-read 42-52% and compacted within 11-18 minutes. `session_quota_repair_worker`
-went from 109,654 at 20:14:46 to a 207,527 peak by 20:25:37 - about **9,000
-tokens per minute** inside one assignment. At that rate a 60% reading leaves
-roughly 11 minutes of headroom. A check-in at 42% is not a wrong judgment; the
+**Shape 1, the reading was comfortable and growth outran it.** Five readings
+fall in the 42-52% band, and **three** of them compacted within 11-18 minutes;
+the other two ran 53 and 81 minutes before compacting. In the fastest instance
+`session_quota_repair_worker` went from 109,654 at 20:14:46 to a 207,527 peak by
+20:25:37 - about **9,000 tokens per minute** inside one assignment, n=1 for that
+rate, one interval in one thread. A check-in at 42% is not a wrong judgment; the
 instantaneous reading is a weak predictor over a single task's horizon, and the
 brief's boundary check gives the agent a level when what decides the outcome is
 a rate. `recent_growth` is in the CLI's output and none of these decisions cites
@@ -114,14 +115,18 @@ it.
 
 **Shape 2, the reading was alarming and `continue` was recorded anyway.** Three
 instances read 75.9%, 76.0% and 84.1% and compacted 41 s, 10 min and 2 min
-later. These are class C in the registered sense. But the contract's transfer
-path is child declares `handoff_ready` with path and SHA-256, parent verifies,
-parent launches the successor, successor accepts ownership. At 84.1% with 2
-minutes left and ~9,000 tokens per minute of growth, that round trip cannot
-complete, so the actionable window had closed before the check-in was taken.
-**Transfer latency, not the decision, is the binding constraint at those
-readings.** A child cannot reset itself, which is correct for supervision and is
-also why a late reading leaves it nothing to do.
+later. These are class C in the registered sense: telemetry showed the boundary,
+`continue` was recorded, compaction followed.
+
+What those gaps are not is a handoff deadline. Each is time to compaction **under
+continued work**, measured on a thread that kept consuming context. Deciding to
+prepare a handoff changes that trajectory - the thread stops the token-heavy work
+and starts writing a packet - so the remaining headroom under a handoff decision
+is not the headroom observed here. Transfer latency is a plausible constraint at
+these readings and this dataset does not measure it. Measuring it needs the
+interval from a `handoff_ready` declaration to successor acceptance, plus token
+growth during packet preparation, and outcome A has not occurred, so neither
+exists yet.
 
 This is a registered-in-advance outcome, not a story fitted to the numbers: C
 was defined before any of these eleven instances existed, and the discriminating
@@ -179,9 +184,10 @@ right not to.
 
 `session_quota_repair_review` invokes the CLI through a wrapper that asserts the
 binary's SHA-256 before executing it, and two pinned digests appear over the
-run - `23a0ea4a...` earlier and `2f9fc0d1...` after the fork-identity repair.
-The build-lock risk raised against `cargo run` is handled, and the digest change
-is visible rather than silent.
+run. The order is `2f9fc0d1...` first, from 20:05:22Z, then `23a0ea4a...` from
+20:41:50Z - after the fork-identity repair, whose state directory was written
+20:37-20:40Z. The build-lock risk raised against `cargo run` is handled, and the
+digest change is visible rather than silent.
 
 Scoring note on my own instrument: the first pass classified this thread's
 invocations as "other" rather than self-queries, because the detector looked for
@@ -203,8 +209,50 @@ of trusting the tag.
 - Any thread citing `recent_growth` or a rate rather than a level in its
   recorded reason: the shape-1 gap closing.
 - An authored economics scenario: the registered economics measure becoming
-  scoreable at all.
+  scoreable at all. The orchestration side is preparing an explicitly labelled
+  sensitivity scenario. Scoring will read it as an assumption-backed bound and
+  report the assumptions beside the number, never as a measured saving.
+- A measured declare-to-acceptance interval, which is the only thing that can
+  turn the transfer-latency hypothesis above into a result.
 
 Reproduction is as registered. The per-thread frozen values, including
 `compaction_timestamps` and `compactions_after_first_checkin`, are in the score
 dataset beside this file.
+
+## Amendment 1, 2026-10-21T22:05Z: three revision-bound corrections
+
+Raised by the orchestration side against the pinned report and verified here
+against the rollouts before being accepted. The scored outcomes - B for
+`post_change_r3`, A not observed, C at 11 instances - are unchanged.
+
+**The 42-52% band.** The wrong claim was "four instances read 42-52% and
+compacted within 11-18 minutes". Five readings fall in that band and three of
+them compacted in that window; the remaining two ran 53 and 81 minutes. The
+class is a count stated without re-reading the rows it summarises - the band and
+the gap range were taken from different subsets of the same table. The
+consequence was to overstate how tight the level-to-compaction coupling is,
+which is the evidence for shape 1 being about rate rather than judgment. The
+check that would have caught it is filtering the table by both conditions and
+printing n, which is now done: five in band, three within 11-18 minutes.
+
+**The gaps are not a handoff deadline.** The wrong claim was that at 84.1% with
+two minutes left "that round trip cannot complete, so the actionable window had
+closed", and that transfer latency "is the binding constraint at those
+readings". Each gap is time to compaction under continued work; a handoff
+decision stops the consumption that produced it, so the observed trajectory is
+not the trajectory a handoff would have faced. The class is an unmeasured
+counterfactual asserted as a finding. The consequence is the more serious of the
+three, because it was the headline interpretation of shape 2 and it would have
+pointed design attention at transfer latency on evidence that cannot support it.
+The missing check is simply whether any declare-to-acceptance interval exists in
+the data: none does, since outcome A has not occurred.
+
+**Binary order.** The wrong claim was `23a0ea4a...` earlier and `2f9fc0d1...`
+after the fork-identity repair. First appearances are `2f9fc0d1...` at
+20:05:22Z and `23a0ea4a...` at 20:41:50Z, so the order is reversed and so is the
+attribution: `23a0ea4a...` is the post-repair binary. The class is an ordering
+inferred from the sequence in which I encountered the digests rather than from
+timestamps. The consequence is confined to this paragraph - the pinning
+behaviour it describes is unaffected - but it would have misdated which binary
+the post-change cohort ran. The check is a first-appearance timestamp per
+digest, which is what established the correct order.
