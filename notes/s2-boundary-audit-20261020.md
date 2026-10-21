@@ -716,12 +716,28 @@ Controls, all of which must hold or the comparison is uninterpretable:
    disposition name the property, the states it ranges over, and the basis on
    which its enumeration is complete - not by citation count or length.
 
-   **Volume and warrant quality were anti-correlated in a measured case this
-   session.** Generation-3 A1: `claude-opus-5` at `max` used 36% more thinking
-   than at `xhigh` and produced a *less* falsifiable clearance - a one-clause
-   assertion where `xhigh` had given a checkable enumeration. And E2 returned 13
-   findings against D's 7 at 1/4 recall against D's 2/4. Any rubric that rewards
-   elaboration would have scored both backwards.
+   **Completing the rubric, because as written it would misscore the defect class
+   this pilot is about.** A warrant is complete *relative to the property being
+   established*. For F4, state and observation surfaces sufficed. For F3, the
+   property also required the **transitions** that produce those states -
+   cancellation of the enclosing future - and E5 enumerated the state correctly
+   while attributing it to one cause. So for a property concerning ownership,
+   ordering, cancellation or lifecycle evidence, the exhaustiveness field must
+   cover the transitions into each relevant state and not only the states and
+   their accessors. This is recorded in
+   `metrics/probes/claude-s2-obligation-compiler-20261020-protocol.md` and was
+   missing here; the two artifacts now agree.
+
+   **Volume did not track warrant quality in either direction, which is the
+   defensible claim.** I first wrote "anti-correlated", which asserts an inverse
+   relationship from two instances. Instances against volume: generation-3 A1 used
+   36% more thinking at `max` than at `xhigh` and produced a *less* falsifiable
+   clearance; E2 returned 13 findings against D's 7 at 1/4 recall against 2/4.
+   Instance the other way: `haiku-5-5` on the same 31 obligations returned **16**
+   findings to `opus-5`'s 13, with per-obligation dispositions carrying an explicit
+   Basis column where the Opus arm wrote prose, at a fifth of the cost. **Volume is
+   not a proxy for quality in either direction**, which is a stronger and more
+   useful conclusion than an inverse relationship.
 
 No further retrospective S2 arm. That subject has yielded what it has, and
 additional arms would increasingly tailor the method to defects already
