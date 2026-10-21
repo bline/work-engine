@@ -534,3 +534,54 @@ appears only in the terminal audit and no field records what the reviewer
 inspected. The contrast is evidence that the retention the audit asks for is
 achievable within the current artifact conventions, by a session that was not
 asked to do it.
+
+## Capability and efficiency are separate, and every measurement says representation bought the first by paying for the second
+
+E6 is strong evidence that execution organisation changes **what a model
+establishes**: same `haiku-5-5`, same `xhigh`, same OB39 wording, F3 recovered
+alone and missed among 25. It is **not** evidence that representation reduces the
+inference needed to establish the same result, and the two measurements I have
+both go the other way for equivalent scope.
+
+| comparison | capability | cost for equivalent scope |
+|---|---|---|
+| E2-haiku (31 in one context) vs E8 (31 across four) | recall 1/4 -> **2/4** | $0.7243 -> **$2.2509**, 3.1x |
+| E5 (25 obligations) vs E6 (OB39 alone) | F3 miss -> **match** | $0.5542 for 25 -> $0.3697 for **1**; all 25 at that granularity is about **$9.24**, 17x |
+
+So the honest summary is: **better representation improved what was established
+and raised the cost of establishing an equivalent scope, in both cases I
+measured.** Nothing recorded here supports "structured representation is cheaper".
+What it supports is "structured representation establishes more, and the price of
+that is unpriced against an equivalent-coverage baseline".
+
+That is a real constraint on the economic hypothesis, not a caveat on it.
+
+## What the deterministic machinery should do, stated precisely
+
+The five recorded failures are all errors in the relationship between an
+observation and a conclusion. That suggests the machinery's job is **not** to
+determine whether each conclusion is true. It is to **preserve the boundaries of
+what has been established** - which is a far more achievable property, and the
+one every instance today argues for:
+
+- a completed execution does not imply satisfaction of every accepted obligation;
+- an authentic evidence receipt does not imply the evidence supports every
+  property associated with it;
+- a positive judgment does not discharge another property without an explicit
+  warranted relationship;
+- an unresolved obligation cannot silently disappear from the accepted
+  consequence.
+
+Each of those can be enforced once the relationships are represented, **without
+solving the underlying semantic question**. The distinction worth keeping:
+deterministically establishing correctness is not available; deterministically
+preventing unsupported claims of correctness is.
+
+## Control condition for D, so two benefits are not conflated
+
+The prospective and retrospective routes must reach the **same underlying
+artifacts** and be evaluated against the **same obligations**. If the prospective
+process also produces *better* evidence, a cheaper judgment could be credited to
+cheaper assessment when it was really improved evidence. Both are worth having;
+attributing one to the other would reproduce, in the measurement, the same
+scope-of-authority error this audit is about.
