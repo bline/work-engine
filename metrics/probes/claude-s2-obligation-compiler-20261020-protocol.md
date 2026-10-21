@@ -1090,3 +1090,75 @@ The design point that follows: hold the **number and independence of perspective
 fixed** between D's prospective and retrospective routes. Otherwise the
 representation benefit is conflated with a change of execution organisation,
 which E8 shows is a large and separate effect.
+
+## E9 pre-registration: does the conflicts channel fire before any implementation exists?
+
+**Frozen before execution, 2026-10-21.** E4 found three plan-level conflicts with
+both a CONFLICTS channel *and* the realisation in view. E1 had the plan and the
+baseline repository but **no channel** - its 36-line prompt specifies none - so it
+reported zero conflicts because it had nowhere to put one. Two variables differed,
+and the attribution between them is unresolved.
+
+E9 changes exactly one: **E1's configuration plus a conflicts channel.**
+
+| element | binding |
+|---|---|
+| model | `claude-opus-5` at `xhigh`, matched to E1 |
+| snapshot | fresh `e9-compiler` at `2bbc95c0`, the accepted predecessor baseline |
+| input | `contract/` - one file, `s2-plan-v1.md`, sha256 `98390bd9...`, mode 444 |
+| prompt | 50 lines, sha256 `4b9e414c0460ddd84f42a49f6c0c4ba3054bba22c2c42c052f3d5053e3d20bc5` |
+| withheld | E1's and E4's outputs, every historical finding, every candidate and later revision |
+
+**Isolation verified before launch.** HEAD `2bbc95c0`, working tree clean.
+`5e0377d0`, `7fdf392f`, `4071955`, `5beec3b1` all **absent**. `clock.rs`,
+`executor.rs`, `framing.rs`, `process.rs` all **absent** - the slice is unbuilt.
+Zero `S2-C2-F` strings in the tree. The only `--add-dir` is the one-file contract
+directory, built for the purpose, which is the practice adopted after E4 attempt 1.
+
+**The prompt diff against E1 is confined to the output-format section** and adds no
+information about what to look for - no mention of manifests, dependencies,
+deadlines, authority or any invariant. The added instruction mirrors E4's minimal
+phrasing: *"If you find a place where the accepted plan itself cannot be satisfied
+as written, do not invent an obligation for it and do not report it as a defect:
+state it in a separate CONFLICTS section for referral to the plan's owner. Name the
+plan clause and the basis on which you establish the conflict."* E4's own wording is
+conditioned on "the implementation reveals", which an arm with no implementation
+cannot satisfy, so that condition is the one thing adapted.
+
+**What this tests is a claim of mine, not of the mechanism.** On 2026-10-21 I
+asserted that both surviving conflicts are detectable from the plan text alone,
+because line 25's "Observed in pinned checkout" quotes the facts that lines 34 and
+41 contradict. That assertion has no run behind it.
+
+**Pre-registered outcomes:**
+
+1. **Reports the manifest contradiction** - line 41's mandated disposable-store and
+   temporary-directory increment against the scope clarification's "adds only
+   `tokio.workspace = true`" - and/or **invariant 4's authority-expiry conflict**.
+   My claim is **supported**, and a prose-only pre-dispatch pass has evidence
+   behind it.
+2. **Reports neither.** My claim is **contradicted by direct test**: the conflicts
+   required the realisation, E4's result is attributable to the implementation
+   rather than to the channel, and the cheap pre-dispatch check loses its basis.
+3. **Reports a conflict I have not identified**, verified against the plan.
+   NOVEL-VERIFIED, scored positively - evidence that E4's three were incomplete.
+4. **Reports something that is not a conflict.** FALSE-CONFLICT, scored against the
+   arm, and a caution that the channel manufactures referrals when offered.
+
+Scoring is mine, against the plan text, with the clause quoted for each entry. I am
+already contaminated on this subject and no eligibility is at stake.
+
+**E10 cancelled before launch.** I had pre-registered a builder-with-hatch arm on
+the premise that the S2 builders silently absorbed the manifest contradiction. They
+did not. **S-opus disclosed it under KNOWN LIMITATIONS, naming the clause**: "The
+plan says S2 adds 'only `tokio.workspace = true`'. I also added [four
+dev-dependencies]... the others are needed to drive a real S1 store from a test."
+S-sonnet disclosed it inline in PATHS CHANGED. So the builder channel already
+existed, was used, and worked. Error class: a negative claim about an artifact's
+contents asserted without opening it - the receipts were in the rig on disk.
+Consequence: an arm proposed to discover what was already recorded. The real failure
+is downstream and is not a model question: **the receipt was not in the review
+packet**, so sixteen runs attributed to the builder a deviation the builder had
+disclosed with its justification. That is the second instance of one failure -
+after the attribution manifest, which was likewise present in the candidate receipt
+and omitted from the packet - and both remedies are free.
