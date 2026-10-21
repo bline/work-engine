@@ -134,7 +134,27 @@ struct Report {
 }
 
 fn help() -> &'static str {
-    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--sessions-dir DIR] [--json]"
+    "Usage: work-engine-context-status --session ID [--rollout FILE | --sessions-dir DIR] [--json] [--fresh-input-tokens N --preparation-tokens N --launch-tokens N --rehydration-tokens N --reconstruction-tokens N [--fresh-cache-fraction F] [--cached-weight F] [--remaining-calls N]]\n       work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]"
+}
+
+/// Defaults for a report read on another session's rollout, as `agents
+/// --with-usage` does. Economics stays absent because no scenario inputs are
+/// supplied; the caller only wants the observed telemetry.
+fn args_for_child(session: String, rollout: PathBuf) -> Args {
+    Args {
+        session,
+        rollout: Some(rollout),
+        sessions_dir: None,
+        json: false,
+        fresh_input: None,
+        preparation: None,
+        launch: None,
+        rehydration: None,
+        reconstruction: None,
+        fresh_cache_fraction: 0.0,
+        cached_weight: 0.1,
+        remaining_calls: None,
+    }
 }
 
 fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Result<Args, String> {

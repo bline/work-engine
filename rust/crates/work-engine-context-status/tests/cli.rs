@@ -854,3 +854,159 @@ fn agents_path_ambiguity_changes_completeness() {
         2
     );
 }
+
+const USAGE_CHILD: &str = "01a15fd1-1225-7151-89df-cc883d248d31";
+const QUIET_CHILD: &str = "01a15fd2-1225-7151-89df-cc883d248d32";
+const BROKEN_CHILD: &str = "01a15fd3-1225-7151-89df-cc883d248d33";
+
+fn child_meta(id: &str, path: &str) -> String {
+    format!(
+        "{{\"type\":\"session_meta\",\"payload\":{{\"id\":\"{id}\",\"session_id\":\"{ID}\",\"parent_thread_id\":\"{ID}\",\"agent_path\":\"{path}\"}}}}\n"
+    )
+}
+fn agents_json(dir: &PathBuf, extra: &[&str]) -> Value {
+    let out = Command::new(env!("CARGO_BIN_EXE_work-engine-context-status"))
+        .arg("agents")
+        .arg("--parent-thread")
+        .arg(ID)
+        .arg("--sessions-dir")
+        .arg(dir)
+        .arg("--json")
+        .args(extra)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    serde_json::from_slice(&out.stdout).unwrap()
+}
+
+#[test]
+fn agents_with_usage_reports_each_child_pressure() {
+    let f = Fixture::new(&meta(ID));
+    fs::write(
+        f.0.join(format!("rollout-{USAGE_CHILD}.jsonl")),
+        child_meta(USAGE_CHILD, "/root/worker") + &usage("1200", "400", "2000"),
+    )
+    .unwrap();
+    let v = agents_json(&f.0, &["--with-usage"]);
+    let child = &v["agents"][0];
+    assert_eq!(child["thread_id"], USAGE_CHILD);
+    assert_eq!(child["usage"]["status"], "observed");
+    assert_eq!(child["usage"]["latest_request"]["input_tokens"], 1200);
+    assert_eq!(child["usage"]["latest_request"]["cached_input_tokens"], 400);
+    assert_eq!(child["usage"]["context_window_tokens"], 2000);
+    assert_eq!(child["usage"]["context_fraction_proxy"], 0.6);
+    assert_eq!(child["usage"]["lineage_markers"], 0);
+    assert!(child["usage"]["reason"].is_null());
+
+    // The parent-facing numbers must be the same ones the single-session report
+    // gives for that child, not a second derivation of them.
+    let single = Command::new(env!("CARGO_BIN_EXE_work-engine-context-status"))
+        .arg("--session")
+        .arg(USAGE_CHILD)
+        .arg("--rollout")
+        .arg(f.0.join(format!("rollout-{USAGE_CHILD}.jsonl")))
+        .arg("--json")
+        .output()
+        .unwrap();
+    let s: Value = serde_json::from_slice(&single.stdout).unwrap();
+    assert_eq!(child["usage"]["latest_request"], s["latest_request"]);
+    assert_eq!(
+        child["usage"]["context_window_tokens"],
+        s["context_window_tokens"]
+    );
+    assert_eq!(
+        child["usage"]["context_fraction_proxy"],
+        s["context_fraction_proxy"]
+    );
+
+    let text = Command::new(env!("CARGO_BIN_EXE_work-engine-context-status"))
+        .arg("agents")
+        .arg("--parent-thread")
+        .arg(ID)
+        .arg("--sessions-dir")
+        .arg(&f.0)
+        .arg("--with-usage")
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&text.stdout);
+    assert!(text.contains("usage: observed input=1200/2000 (60.0%)"));
+}
+
+#[test]
+fn agents_with_usage_distinguishes_absent_counters_from_unreadable_rollout() {
+    let f = Fixture::new(&meta(ID));
+    fs::write(
+        f.0.join(format!("rollout-{QUIET_CHILD}.jsonl")),
+        child_meta(QUIET_CHILD, "/root/quiet"),
+    )
+    .unwrap();
+    fs::write(
+        f.0.join(format!("rollout-{BROKEN_CHILD}.jsonl")),
+        child_meta(BROKEN_CHILD, "/root/broken") + &child_meta(BROKEN_CHILD, "/root/broken"),
+    )
+    .unwrap();
+    let v = agents_json(&f.0, &["--with-usage"]);
+    let rows = v["agents"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    let broken = rows
+        .iter()
+        .find(|r| r["thread_id"] == BROKEN_CHILD)
+        .unwrap();
+    let quiet = rows.iter().find(|r| r["thread_id"] == QUIET_CHILD).unwrap();
+
+    // Neither case may report a zero, and each must say which kind it is.
+    assert_eq!(quiet["usage"]["status"], "absent_counters");
+    assert!(quiet["usage"]["latest_request"].is_null());
+    assert!(quiet["usage"]["context_fraction_proxy"].is_null());
+    assert!(
+        quiet["usage"]["reason"]
+            .as_str()
+            .unwrap()
+            .contains("last_token_usage")
+    );
+    assert_eq!(broken["usage"]["status"], "unreadable_rollout");
+    assert!(broken["usage"]["latest_request"].is_null());
+    assert!(!broken["usage"]["reason"].as_str().unwrap().is_empty());
+    assert_ne!(quiet["usage"]["status"], broken["usage"]["status"]);
+
+    // One unreadable child does not cost the parent its other answers.
+    let text = Command::new(env!("CARGO_BIN_EXE_work-engine-context-status"))
+        .arg("agents")
+        .arg("--parent-thread")
+        .arg(ID)
+        .arg("--sessions-dir")
+        .arg(&f.0)
+        .arg("--with-usage")
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let text = String::from_utf8_lossy(&text.stdout);
+    assert!(text.contains("usage: absent_counters"));
+    assert!(text.contains("usage: unreadable_rollout"));
+}
+
+#[test]
+fn agents_without_usage_flag_keeps_its_exact_shape() {
+    let f = Fixture::new(&meta(ID));
+    fs::write(
+        f.0.join(format!("rollout-{USAGE_CHILD}.jsonl")),
+        child_meta(USAGE_CHILD, "/root/worker") + &usage("1200", "400", "2000"),
+    )
+    .unwrap();
+    let plain = agents_json(&f.0, &[]);
+    let with_usage = agents_json(&f.0, &["--with-usage"]);
+    assert!(plain["agents"][0].get("usage").is_none());
+    assert!(with_usage["agents"][0].get("usage").is_some());
+
+    // Dropping the added field must return the previous object exactly, so the
+    // flag adds and never rewrites.
+    let mut stripped = with_usage.clone();
+    for row in stripped["agents"].as_array_mut().unwrap() {
+        row.as_object_mut().unwrap().remove("usage");
+    }
+    assert_eq!(stripped, plain);
+}

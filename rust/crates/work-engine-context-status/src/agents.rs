@@ -11,6 +11,30 @@ use crate::{MAX_SCAN_ENTRIES, read_line_bounded, valid_session_id};
 const MAX_RESULTS: usize = 1_000;
 const MAX_DIAGNOSTICS: usize = 16;
 
+/// A child's own latest telemetry, read from its rollout by the same path the
+/// single-session report uses. A parent deciding whether to dispatch to a
+/// retained child needs the pressure, not just the identity.
+#[derive(Serialize, Clone)]
+struct ChildUsage {
+    /// `observed`, or a distinguishable class of why not. Never a zero standing
+    /// in for an unread counter.
+    status: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    observed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    recorded_model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    latest_request: Option<crate::Usage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    context_window_tokens: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    context_fraction_proxy: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    lineage_markers: Option<usize>,
+}
+
 #[derive(Serialize, Clone)]
 struct Agent {
     thread_id: String,
@@ -18,6 +42,10 @@ struct Agent {
     parent_thread_id: Option<String>,
     agent_path: Option<String>,
     rollout: String,
+    /// Absent unless `--with-usage` was requested, so the default report keeps
+    /// its exact shape.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    usage: Option<ChildUsage>,
 }
 
 #[derive(Serialize)]
@@ -40,6 +68,7 @@ struct Report {
 struct Args {
     parent: String,
     recursive: bool,
+    with_usage: bool,
     json: bool,
     sessions_dir: PathBuf,
 }
@@ -47,12 +76,14 @@ struct Args {
 fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Result<Args, String> {
     let mut parent = None;
     let mut recursive = false;
+    let mut with_usage = false;
     let mut json = false;
     let mut sessions_dir = None;
     let mut it = args.into_iter();
     while let Some(flag) = it.next() {
         match flag.as_str() {
             "--recursive" => recursive = true,
+            "--with-usage" => with_usage = true,
             "--json" => json = true,
             "--parent-thread" => parent = Some(next_value(&mut it, "--parent-thread")?),
             "--sessions-dir" => {
@@ -75,6 +106,7 @@ fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Result<Args, String> {
     Ok(Args {
         parent,
         recursive,
+        with_usage,
         json,
         sessions_dir,
     })
@@ -90,7 +122,7 @@ fn next_value(it: &mut impl Iterator<Item = String>, flag: &str) -> Result<Strin
 }
 
 fn help() -> &'static str {
-    "Usage: work-engine-context-status agents --parent-thread ID [--recursive] [--sessions-dir DIR] [--json]"
+    "Usage: work-engine-context-status agents --parent-thread ID [--recursive] [--with-usage] [--sessions-dir DIR] [--json]"
 }
 
 fn files(root: PathBuf) -> Result<Vec<PathBuf>, String> {
@@ -184,7 +216,50 @@ fn read_agent(path: &Path) -> Result<Option<Agent>, &'static str> {
         parent_thread_id,
         agent_path,
         rollout: path.display().to_string(),
+        usage: None,
     }))
+}
+
+/// Read one child's latest observation. A failure here is reported against that
+/// child and never fails the enumeration: a parent asking about five children
+/// should not lose four answers because one rollout is unreadable.
+fn child_usage(agent: &Agent) -> ChildUsage {
+    let child_args = crate::args_for_child(
+        agent.thread_id.clone(),
+        PathBuf::from(agent.rollout.clone()),
+    );
+    match crate::read_report(&child_args, Path::new(&agent.rollout)) {
+        Err(reason) => ChildUsage {
+            status: "unreadable_rollout",
+            reason: Some(reason),
+            observed_at: None,
+            recorded_model: None,
+            latest_request: None,
+            context_window_tokens: None,
+            context_fraction_proxy: None,
+            lineage_markers: None,
+        },
+        Ok(report) => {
+            let status = if report.latest_request.is_some() {
+                "observed"
+            } else {
+                "absent_counters"
+            };
+            let reason = (status == "absent_counters").then(|| {
+                String::from("rollout carries no readable last_token_usage for this session")
+            });
+            ChildUsage {
+                status,
+                reason,
+                observed_at: report.observed_at,
+                recorded_model: report.recorded_model,
+                latest_request: report.latest_request,
+                context_window_tokens: report.context_window_tokens,
+                context_fraction_proxy: report.context_fraction_proxy,
+                lineage_markers: Some(report.lineage.len()),
+            }
+        }
+    }
 }
 
 fn build_report(args: &Args) -> Result<Report, String> {
@@ -266,6 +341,11 @@ fn build_report(args: &Args) -> Result<Report, String> {
     matched.sort_by(|a, b| {
         (&a.agent_path, &a.thread_id, &a.rollout).cmp(&(&b.agent_path, &b.thread_id, &b.rollout))
     });
+    if args.with_usage {
+        for agent in &mut matched {
+            agent.usage = Some(child_usage(agent));
+        }
+    }
     let mut relevant_ids = matched
         .iter()
         .map(|a| a.thread_id.clone())
@@ -324,6 +404,34 @@ fn build_report(args: &Args) -> Result<Report, String> {
     })
 }
 
+fn render_usage(usage: &ChildUsage) -> String {
+    let Some(latest) = &usage.latest_request else {
+        return match &usage.reason {
+            Some(reason) => format!("{} ({reason})", usage.status),
+            None => usage.status.to_string(),
+        };
+    };
+    let window = match usage.context_window_tokens {
+        Some(window) => window.to_string(),
+        None => "unknown-window".to_string(),
+    };
+    let fraction = match usage.context_fraction_proxy {
+        Some(fraction) => format!("{:.1}%", fraction * 100.0),
+        None => "unknown-fraction".to_string(),
+    };
+    format!(
+        "{} input={}/{} ({fraction}) epoch={} lineage={} at={}",
+        usage.status,
+        latest.input_tokens,
+        window,
+        latest.epoch,
+        usage
+            .lineage_markers
+            .map_or_else(|| "unknown".to_string(), |n| n.to_string()),
+        usage.observed_at.as_deref().unwrap_or("unknown-time"),
+    )
+}
+
 pub(crate) fn run<I: IntoIterator<Item = String>>(args: I) -> Result<(), String> {
     let args = args.into_iter().collect::<Vec<_>>();
     if args.iter().any(|x| x == "--help" || x == "-h") {
@@ -357,6 +465,9 @@ pub(crate) fn run<I: IntoIterator<Item = String>>(args: I) -> Result<(), String>
                 agent.root_session_id.as_deref().unwrap_or("unknown-root"),
                 agent.rollout
             );
+            if let Some(usage) = &agent.usage {
+                println!("  usage: {}", render_usage(usage));
+            }
         }
         for id in &report.duplicate_thread_ids {
             println!("Ambiguous thread id: {id}");
