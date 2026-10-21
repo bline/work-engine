@@ -256,3 +256,104 @@ timestamps. The consequence is confined to this paragraph - the pinning
 behaviour it describes is unaffected - but it would have misdated which binary
 the post-change cohort ran. The check is a first-appearance timestamp per
 digest, which is what established the correct order.
+
+## Amendment 2, 2026-10-21T22:30Z: the cohort closed, and outcome C reached the post-change arm
+
+All Codex sessions reached their account quota limit at about 22:20Z. The
+registered 21:55Z dataset stands exactly as frozen. A separate post-cutoff
+[terminal snapshot](handoff-boundary-pilot-terminal-20261021.json), SHA-256
+`4047f5c502a3cccb55c1135fa1e1467148842b8086f84c02671fc77b2ec0c49c`, records what
+the rollouts held at 22:25Z and is labelled censored in its own `status` field.
+
+**Quota exhaustion is right-censoring and must be scored as such.** For every
+thread still running at 22:20Z, the absence of a compaction marker is `not
+established`, not a negative result: the thread stopped because the account ran
+out, not because its assignment finished inside its window. Five of the seven
+`post_change_r3` threads are in that state. Any later reading of this pilot that
+treats their zeros as evidence of avoided compaction is reading a censored
+observation as a resolved one.
+
+### Outcome C now appears in `post_change_r3`, n=2, instructed from launch
+
+Two post-change threads compacted in the last half hour, which is the condition
+this document listed under "what would change the result".
+
+| thread | last check-in | reading | compaction | at | gap |
+| --- | --- | ---: | --- | ---: | ---: |
+| `b2a/auth_worker` | 21:50:22 | 179,007 (69.3%) | 21:57:32 | 191,069 (73.9%) | 7 min 10 s |
+| `b2b/transport_worker` | 22:15:02 | 182,915 (70.8%) | 22:16:29 | 189,935 (73.5%) | 1 min 27 s |
+
+Both ran a dense check-in series from launch - 22.2%, 48.2%, 56.2%, 69.3% for
+`auth_worker`; 21.6%, 43.2%, 64.7%, 70.8% for `transport_worker` - recorded a
+`continue` decision at the last one, and compacted. `auth_worker`'s recorded
+reason is "finish bounded checks/report with retained context", the same 69.3%
+observation this document had called the closest the cohort had come to the
+decision under study. It was closer than that: it was seven minutes from losing
+the context it decided to keep.
+
+**This retires the retrofit explanation.** Outcome C was previously confined to
+threads that received the check-in block mid-flight, which left open that
+propagation rather than judgment was the weak link. These two had the block from
+launch, measured four times each, and reached the same end. Instruction-from-
+launch did not prevent outcome C at n=2.
+
+### The measured compaction trigger, and why a level overestimates headroom
+
+Across all 33 compaction events in the enumerated set that have a readable prior
+reading, the last recorded `input_tokens` before the marker ranges from
+**171,541 (66.4%) to 239,002 (92.5%)** of the 258,400 window, median 199,918
+(77.4%). This is a lower bound per event: the request that actually triggered
+compaction may be larger and unrecorded.
+
+That single distribution explains shape 1 without any appeal to a rate. A thread
+reading 42-52% is not 48-58% of a window away from trouble; it is 14-24 points
+away from the bottom of the observed firing range. The brief asks for a fraction
+of `model_context_window`, and `model_context_window` is not where compaction
+happens - it fires lower, and with a spread of 26 points. A level-based judgment
+against the stated window systematically overestimates headroom, and no fixed
+percentage rule can be read off a distribution this wide. That is a finding
+about the quantity the check reports, not about any agent's judgment.
+
+Growth rate does not rescue it either, and the earlier ~9,000 tokens per minute
+should not be read as a constant. Measured over their final legs the two
+post-change workers grew at **1,683** and **4,841** tokens per minute, against
+7,500-9,300 over their mid-task legs. The rate varies several-fold within a
+single thread, so headroom-divided-by-rate is not a stable quantity either.
+
+### Economics sensitivity exercise, recorded as the pre-committed bound
+
+The orchestration side authored the scenario this document asked for, at
+`~/.local/state/work-engine/s10-session-quota-repair-20261021/handoff-followup-037b2277/`.
+Amendment 1 fixed the scoring rule in advance and it applies unchanged: this is
+an **assumption-backed bound reported with its assumptions, not a measured
+saving**, and the four invocations are root-authored, post-cutoff, and excluded
+from every cohort measure. The scored 0 of 95 stands exactly at its cutoff.
+
+Four scenarios over one repair-worker observation at 21:56:09Z - input 136,773,
+cached 136,192, epoch 10, continuing cost 14,200.2 weighted input tokens per
+call at an assumed cache weight of 0.1 - give break-even at 2 calls, 7 calls,
+never, and never. **The conclusion inverts across the assumed range**, which is
+the result: at these inputs the comparison is assumption-dominated, so the CLI
+can express the trade-off but cannot settle it. Their own note says the same and
+states that the assumptions were frozen before the invocations; the files share a
+minute, so that ordering is recorded here as their attestation rather than as
+something checked independently.
+
+### Convergence
+
+The three corrections in amendment 1 were raised independently by the
+orchestration side and verified here against the rollouts before being accepted;
+they also bind the digest order with their own retained
+`context-status-tool-binding-v1.json` and `-v2.json`. Two parties reaching the
+same three corrections from different artifacts is the strongest thing this
+pilot has produced about the method, as distinct from about handoffs.
+
+### Standing state
+
+Outcome A was never observed: no `handoff_ready`, no verified successor, in any
+cohort, through quota exhaustion. The pilot therefore closes having established
+that the four legs are readable and that the decision is now exposed and
+recorded at boundaries, and having established nothing about whether a worker-
+owned handoff saves anything, because none occurred. The declare-to-acceptance
+interval named in amendment 1 remains unmeasured and remains the gating
+measurement for any transfer-cost claim.
