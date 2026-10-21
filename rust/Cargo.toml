@@ -27,6 +27,7 @@ members = [
   "crates/review-execution-custody",
   "crates/review-execution-evidence",
   "crates/slice-campaign",
+  "crates/work-engine-context-status",
   "crates/lifecycle-semantic-replay",
 ]
 exclude = ["crates/terminal-ui"]
