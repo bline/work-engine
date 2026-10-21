@@ -1162,3 +1162,89 @@ packet**, so sixteen runs attributed to the builder a deviation the builder had
 disclosed with its justification. That is the second instance of one failure -
 after the attribution manifest, which was likewise present in the candidate receipt
 and omitted from the packet - and both remedies are free.
+
+## E9 result: the channel fires with no implementation, and finds a FOURTH conflict
+
+`claude-opus-5` at `xhigh`, fresh baseline snapshot, one-file contract directory:
+21 turns, **578 s** (9.6 min), **$2.4981**, 0 denials, clean tree, `subtype:
+success`. **37 obligations** and **one conflict**.
+
+Against E1, which is the same configuration without the channel: **+6 obligations
+and +$0.4261, a 20.6% increase** for the channel. Weighted tokens 0.407 Mwt
+(uncached 92,301; cached 1,148,367; output 40,041).
+
+### Pre-registered outcome 3 obtained: NOVEL-VERIFIED
+
+E9 reported neither conflict I predicted. It reported a fourth one, in the same
+clause region as E4's conflict 2 but by a different mechanism: **the lock edge and
+the `--locked` gates deadlock request 1's prescribed ordering.**
+
+Its argument, compressed: request 1 has the integration owner serialize the Tokio
+pin into `rust/Cargo.toml` and `rust/Cargo.lock` first, after which "S2 then adds
+only `tokio.workspace = true` to its owned manifest". But `Cargo.lock` records a
+per-member dependency list, so that member edge **cannot be derived by ordinary
+resolution until the member manifest declares the dependency** - which the plan
+orders afterwards. The builder cannot repair the lock, because the boundary and
+`workspace_integrity` forbid root edits by the builder. So request 1 requires
+someone to hand-serialize the `lifecycle-runtime -> tokio` edge into the lock
+before the builder's manifest edit, and **the plan assigns that step to no one.**
+
+**Verified, six checks, all passing:**
+
+| claim | verification |
+|---|---|
+| request 1's wording | `s2-plan-v1.md:63`, verbatim |
+| builder may not edit root | boundary at `:45`; `workspace_integrity` at `:73` "confirm no root/S1/S3/main edits by this builder" |
+| root lock hash pinned at gate input | `:73`, verbatim |
+| `--locked` on the proof gates | `semantic_proof` `:71` and all four `risk_proportional_checks` commands `:72` |
+| lock records per-member edges | baseline `rust/Cargo.lock`: `lifecycle-runtime` lists exactly `lifecycle-core`, `lifecycle-provider`, `lifecycle-store`, `thiserror` |
+| tokio absent at baseline | zero `name = "tokio"` entries in the baseline lock |
+
+The plan is **aware of the hazard and its mitigation is insufficient rather than
+absent**: request 1 ends "Do not run `--locked` gates until this root dependency
+state is integrated." E9's point is that the integrated state is unreachable in the
+prescribed order, so deferring the gates does not resolve it. That sharpens the
+finding rather than weakening it.
+
+### The headline: E4's conflicts are not attributable to having the realisation
+
+E9 had the plan and the baseline repository, no implementation, and all four slice
+sources absent. It produced a verified plan conflict anyway. **A conflicts channel
+fires pre-implementation**, so the prose-only pre-dispatch pass is supported as a
+mechanism - at a measured 20.6% premium on the compile step.
+
+### My claim is NOT supported, and my pre-registration was defective
+
+I asserted that both of E4's surviving conflicts are detectable from the plan text
+alone, because line 25's "Observed in pinned checkout" quotes the facts that lines
+34 and 41 contradict. E9 reported neither. So that claim is **unsupported by this
+test**.
+
+It is also **not refuted**, and outcome 2 was unsound as written. Outcomes 1 and 2
+both presume the arm enumerates conflicts exhaustively, and **the prompt never asked
+it to** - it says "if you find a place", with no completeness requirement. A single
+reported conflict therefore does not establish that others were sought and not
+found. Error class: a pre-registered negative outcome that treats non-report as
+not-found, when the instrument requested neither exhaustiveness nor a search basis.
+Consequence: the test cannot discriminate outcome 1 from outcome 2, which is half
+of what it was built to do. **Check that would have caught it: read the arm's
+prompt against each pre-registered outcome and ask what output would distinguish
+them.** A corrected arm would require the CONFLICTS section to state its search
+basis - which clauses were examined for realisability - making non-report
+interpretable. Rule 7 applied to an instrument rather than to a claim.
+
+### An independent convergence on conflict 3's reclassification
+
+E9's **OB35** asks the reviewer to "establish how the candidate obtains Tokio and
+who authored each part of it", to report "whether any `rust/Cargo.toml` or
+`rust/Cargo.lock` delta is attributed to the builder rather than to the integration
+owner", and "whether any other third-party dependency was added to the runtime
+manifest".
+
+So E9 placed root-delta attribution, and the extra-dependency question, in a
+**reviewer obligation** rather than in CONFLICTS. That is the same classification I
+reached on 2026-10-21 when reclassifying E4's conflict 3 out of the contract
+category - reached independently, from the plan and baseline alone, by an arm with
+no access to that reasoning. It also means the dev-dependency territory was not
+missed so much as **routed to the reviewer as a conformance question**, which is a
+different judgment from E4's rather than an absence of one.
