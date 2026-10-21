@@ -702,6 +702,26 @@ Controls, all of which must hold or the comparison is uninterpretable:
    relationships, not only for the final assessment.
 5. The compared quantity is **inference per adequately warranted decision**, not
    receipt completeness and not any single token category.
+6. **Decision, warrant quality and economics are scored separately**, never
+   collapsed:
+
+   | dimension | measurement | failure it prevents |
+   |---|---|---|
+   | decision | did the authorized disposition change? | treating an unchanged decision as no benefit |
+   | warrant quality | was the decision more adequately supported? | treating more citations as more establishment |
+   | economics | fully loaded inference to reach that warranted decision | pricing volume instead of consequence |
+
+   Control 5 puts warrant in the denominator without saying how it is measured,
+   which is not enough. **Warrant quality is scored by the triple** - does each
+   disposition name the property, the states it ranges over, and the basis on
+   which its enumeration is complete - not by citation count or length.
+
+   **Volume and warrant quality were anti-correlated in a measured case this
+   session.** Generation-3 A1: `claude-opus-5` at `max` used 36% more thinking
+   than at `xhigh` and produced a *less* falsifiable clearance - a one-clause
+   assertion where `xhigh` had given a checkable enumeration. And E2 returned 13
+   findings against D's 7 at 1/4 recall against D's 2/4. Any rubric that rewards
+   elaboration would have scored both backwards.
 
 No further retrospective S2 arm. That subject has yielded what it has, and
 additional arms would increasingly tailor the method to defects already
