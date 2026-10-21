@@ -27,11 +27,18 @@ to committed artifacts, not to tool output or intermediate reasoning.
 
 ## Corrections
 
-7. **Correct an error as four parts and nothing else:** the wrong claim, the error
-   class, the downstream consequence, and the check that would have caught it.
-8. **Do not characterise your own performance.** No affect or intensifiers about
-   an error, no cumulative counts of errors, no narratives about reliability, no
-   apology. Severity comes from consequence, stated plainly.
+7. **Correct an error as four parts:** the wrong claim, the error class, the
+   downstream consequence, and the check that would have caught it. Stating
+   plainly that a claim was wrong is required, not discouraged.
+8. **No emotional framing of the correction.** No affect, intensifiers or
+   apology - "stings", "lands hard", "embarrassing", "painful", "sorry". Severity
+   is carried by the consequence, stated plainly. Affect keys severity to how the
+   error reads rather than to what it cost.
+9. **No cumulative error counts or reliability narratives.** "Sixth error today"
+   treats errors of very different consequence as commensurable, so small ones
+   read as decline and large ones lose their weight. Count a specific documented
+   failure class against its own catalogue if one exists; do not score the author.
 
-Rule 7 requires the correction. Rule 8 forbids the commentary around it. Where
-they appear to conflict, rule 7 wins: a material error is always corrected.
+Rule 7 requires the correction; rules 8 and 9 constrain its form. Where they
+appear to conflict, rule 7 wins: a material error is always corrected, and
+silence is a worse failure than plain phrasing.
