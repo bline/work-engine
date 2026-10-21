@@ -546,7 +546,7 @@ both go the other way for equivalent scope.
 | comparison | capability | cost for equivalent scope |
 |---|---|---|
 | E2-haiku (31 in one context) vs E8 (31 across four) | recall 1/4 -> **2/4** | $0.7243 -> **$2.2509**, 3.1x |
-| E5 (25 obligations) vs E6 (OB39 alone) | F3 miss -> **match** | $0.5542 for 25 -> $0.3697 for **1**; all 25 at that granularity is about **$9.24**, 17x |
+| E5 (25 obligations) vs E6 (OB39 alone) | F3 miss -> **match** | $0.5542 for 25 in one context -> $0.3697 for **1** alone |
 
 So the honest summary is: **better representation improved what was established
 and raised the cost of establishing an equivalent scope, in both cases I
@@ -555,6 +555,21 @@ What it supports is "structured representation establishes more, and the price o
 that is unpriced against an equivalent-coverage baseline".
 
 That is a real constraint on the economic hypothesis, not a caveat on it.
+
+**Withdrawn: the $9.24 figure.** I quoted 25 x $0.3697 as the cost of discharging
+E5's packet one obligation at a time. That is a linear extrapolation and the
+measured data contradicts it. E8 discharged **31 obligations across four contexts
+for $2.2509** - about $0.073 per obligation, a fifth of the per-obligation rate
+the extrapolation assumes - because cost is dominated by a **per-context** term,
+not a per-obligation one. E5 then measured **25 obligations in one context at
+$0.5542**, cheaper in absolute terms than E6's single obligation at $0.3697 plus
+any second context.
+
+So cost does not scale with obligation count in any simple way, and no measured
+figure supports a 17x penalty for full decomposition. The only measured
+multi-context total is E8's $2.2509 against E2-haiku's $0.7243 for the same
+content: **3.1x**. That is the number, and it is the one comparison where both
+arrangements discharged the same obligation set.
 
 ## What the deterministic machinery should do, stated precisely
 
