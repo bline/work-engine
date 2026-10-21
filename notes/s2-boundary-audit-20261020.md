@@ -824,3 +824,73 @@ output can be wrong in a way only checking catches.
 - **S2-stage mapping inaccurate** - reconstruction from a record of this shape is
   unreliable regardless of cost, which is a finding about the record rather than
   about the mechanism.
+
+## Pilot 1 result: reconstruction is 2.25x adequacy, but the saving ceiling is 28%
+
+| stage | USD | Mwt | turns |
+|---|---|---|---|
+| 1 discovery - enumerate and classify 132 artifacts | $0.2030 | 0.606 | 18 |
+| 2 mapping - 7 invariants to artifacts, no adequacy | **$0.4631** | 0.929 | 34 |
+| 3 adequacy - dispositions given the mapping | $0.2963 | 0.668 | 20 |
+| **staged total** | **$0.9624** | 2.203 | |
+| bundled single arm, all three at once | $0.4103 | 0.838 | 24 |
+
+**Reconstruction (stages 1+2) is $0.6661, 69% of the staged total and 2.25x the
+adequacy judgment.** That is the decomposition the single arm could not produce.
+
+### The share is not the saving, and conflating them would overstate by 2.5x
+
+Staged total is **2.35x** the bundled run - the predicted staging overhead, three
+startup contexts plus hand-offs. So 69% is a share of an inflated denominator.
+
+The measured saving ceiling is a different arithmetic: the status quo is doing all
+three from scratch (**$0.4103**); the hypothetical with correspondence already
+recorded is the adequacy stage alone (**$0.2963**).
+
+> **Ceiling on the assessment-side saving: $0.1140, or 28%.**
+
+Not 69%. And it is a **ceiling**, not an estimate, because:
+
+- Stage 3 still opened artifacts (17 Bash, 2 Read) - having the mapping did not
+  remove reading the evidence it cites.
+- **Generating the correspondence during execution is unmeasured.** Prospective
+  recording is not free; its cost is charged to the execution route and only D
+  can measure it. The 28% is the gross assessment-side saving before that charge.
+- **My adjudication is unmeasured.** I checked stage 2's scope compliance and its
+  mapping accuracy, and neither appears in any stage figure. For a mechanism whose
+  case is cheapness, an uncharged verification step is a real omission in the
+  accounting, and D must charge it.
+
+### The dispositions replicated exactly
+
+Stage 3, judging from a handed-over mapping: **SUPPORTED 0, INSUFFICIENT 6,
+ABSENT 0, INDETERMINATE 1**, with invariant 1 indeterminate.
+
+The bundled ledger v2, judging from the raw record: **ADEQUATE 0, INSUFFICIENT 6,
+ABSENT 0, INDETERMINATE 1**, with invariant 1 indeterminate.
+
+**Two independent runs, different decomposition, identical per-invariant result.**
+That is a replication of the 0-of-7 finding and the strongest support it has.
+
+### Two findings the mapping stage produced without judging adequacy
+
+1. **The terminal audit claims downstream proof by scenario ID and nothing maps
+   the IDs to tests.** Verbatim: "`downstream_proof` names T06/T07/T18/T21/T22/
+   T27/T32, the plan's scenario IDs. No test name in any artifact carries a
+   T-ID. Needed: a scenario-to-test index." The record asserts the scenarios were
+   proven and provides no path from the claim to a test.
+2. **Receipts record identity, not change content.** Path manifests list
+   `lifecycle-provider/src/lib.rs` and `tests/support/mod.rs`, but "none is mapped
+   by path or feature because they record identity, not change content". A
+   13-path manifest cannot serve as evidence that any particular invariant was
+   addressed.
+
+Both were reached by a stage forbidden from assessing sufficiency, which is why
+they are attributable to the record rather than to a reviewer's judgment.
+
+### Scope compliance check
+
+Stage 2's output contained three matches for adequacy vocabulary. All three are
+**quoted artifact text** - a finding description, a remedy field, a readback
+limitation - not stage 2's own judgments. The mapping stage stayed in scope, so
+the $0.4631 does not contain stage-3 work.
