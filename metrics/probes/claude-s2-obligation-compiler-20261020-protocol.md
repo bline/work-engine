@@ -567,10 +567,53 @@ and two of them reassign blame that sixteen review runs placed on builders.
    and OB3 "must choose between two readings the plan does not let the evidence
    separate".
 
-None of these is a defect in the candidate. All three are defects in the
-contract, found by a pass that was forbidden from reporting defects and that
-therefore routed them to the owner - which is exactly the authority boundary the
-design requires.
+None of these is a defect in the candidate. All three were routed to the owner
+by a pass forbidden from reporting defects - which is exactly the authority
+boundary the design requires. Their classification is corrected below.
+
+#### Correction, 2026-10-21: two contract defects and one packet defect
+
+Adjudicated against the plan text and the campaign record after the
+context-lifecycle session disputed two of my claims. Both disputes were correct.
+
+**Conflict 3 is not a contract defect.** I wrote that root-file attribution is
+"undecidable from a candidate snapshot" and filed it against the contract. The
+statement is true of the snapshot and the classification is wrong: the split is
+machine-represented in the campaign record.
+`s2-candidate-2-receipt.json` - the receipt for `7fdf392f`, the exact revision
+Astra and every pilot arm reviewed - carries 13 paths, **11 `task_owned` and 2
+`generated_dependency`** (`rust/Cargo.toml`, `rust/Cargo.lock`), and the accepted
+checkpoint receipt at `4071955` carries the identical split. The evidence existed
+at review time. Error class: inferring a contract gap from evidence absent in the
+artifact set handed to the reviewer, without searching the campaign record that
+owns it - the completeness-basis failure of rule 7, applied to a packet rather
+than a finding. Consequence: a defect routed to an owner who cannot fix it, with
+the actual remedy left unstated. The remedy is to put the attribution manifest in
+the review packet. Check that would have caught it: enumerate the campaign records
+that would carry the evidence, and grep them, before calling it unobtainable.
+
+**Conflict 1 does not bear on reference F2, and indicts it instead.** Invariant 4
+(`s2-plan-v1.md:34`) bundles two deadline concerns: "typed wall time for S1
+authority checks" and "process-local monotonic instants for wait budgets. Check
+absolute deadlines after awaits and before final success. A late close is recorded
+as late." Only the first is unrealisable. The second is realisable from local
+monotonic time - core carries typed `ClockSample { wall, wait_budget }` per the
+plan's own line 25 - and it is the clause F2 violates. So invariant 4's partial
+unrealisability does not excuse F2; the same invariant both mandates and enables
+the check F2 omits. My claim would have excused a real defect against a boundary
+limitation that does not reach it. Conflict 1 also stands only on **authority
+expiry**: E4's "authority expiry or wait budget of the entry it owns" overreached,
+because the plan never assigns the wait budget to `AuthorizedEntry`.
+
+**Both surviving conflicts are detectable from the plan text alone**, because the
+plan quotes the repository facts they turn on. Line 25 states that
+`AuthorizedEntry` "exposes effect/attempt/subject/incarnation/input getters" and
+that "Runtime/provider manifests contain no Tokio dependency". Conflict 1 is a
+contradiction between lines 25 and 34; conflict 2 between line 25, line 41's
+mandated disposable-store-and-temporary-directory increment, and the scope
+clarification's "adds only `tokio.workspace = true`". Repository access
+**verifies** those stated observations rather than supplying them - a different
+function, and the one a prose-only pass cannot perform.
 
 ### Running cost of the compiled path
 
