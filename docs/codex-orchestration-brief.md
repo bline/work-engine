@@ -86,6 +86,84 @@ only the facts that apply; loading everything recreates the context cost.
 Before freezing a contract or route revision, the builder checks its premises
 against them.
 
+### Context check-in block for task briefs
+
+Include this block in manual coordinator, supervisor, worker and reviewer briefs
+when adopting the boundary-check pilot below. The parent supplies the verified
+identity after launch; a role name or inherited environment variable may identify
+another session. This is an operating experiment, not a product retirement rule.
+Workers and reviewers are not assumed to read this document: copy the block into
+their scoped launch brief or post-launch identity message, with concrete values.
+For retained agents, deliver it explicitly and carry it in their continuation
+record; confirm receipt at the next task boundary. Do not load this entire brief
+merely to convey the block.
+
+> **Session:** `<verified session_meta.id>`; **rollout:** `<exact path>`;
+> **parent/collection owner:** `<owner>`; **continuation:** `<path>`;
+> **context-status binary:** `<prebuilt absolute path>`; **SHA-256:** `<digest>`.
+>
+> This is the adopted manual pilot's operating check, not a product retirement
+> rule or an override of owning campaign contracts. It tests telemetry-assisted
+> judgment, not a threshold or the CLI's isolated causal effect.
+>
+> At each logical task boundary, before starting another substantial task, run
+> the supplied binary with `--session <id> --json`; do not build in the shared
+> workspace for each check: build locks and transient edits can disable the
+> observer just when concurrent work is busiest. Retain the JSON and record observation time,
+> input/window proxy, `latest_request.epoch`, lineage/reset observations and
+> **transfer availability** (`available`, `unavailable`, or `unestablished`),
+> naming the actual transfer mechanism and owner. When transfer is available,
+> record **continue** or **prepare handoff**, with a short reason considering
+> next-task size, retained context value and reconstruction cost. Compare with
+> the previous boundary: low usage just after compaction does not erase earlier
+> pressure. Epoch changes can have causes other than compaction; do not count
+> them as successor handoffs. Record economics as `not estimated` unless an
+> explicit scenario supplies its assumptions. Put this in the existing
+> result or continuation; send a separate message only when parent action is
+> needed. Boundary checks expose the choice before compaction makes it for us;
+> they are not a per-call monitoring loop or an automatic percentage cutoff.
+>
+> If transfer is unavailable or unestablished, record **continue—transfer
+> unavailable/unestablished**, preserve the reason and observed pressure, and
+> exclude it from the pilot's primary handoff-choice assessment (class E).
+> This is a constrained continuation, not evidence that retaining context won
+> an economic judgment. Missing telemetry and missing transfer are separate.
+>
+> If identity or usage cannot be established, record **usage unavailable** and
+> distinguish launch/tool failure, identity rejection and absent counters;
+> do not substitute parent counters or treat missing usage as zero.
+> Maintain a recoverable continuation regardless. When replacement is warranted,
+> apply Wind Walker and report `handoff_ready` with the artifact path/revision
+> and SHA-256, unfinished obligations and live ownership. This requests transfer;
+> it does not claim task completion or permission to abandon children/processes.
+>
+> For a child, the parent verifies the handoff, launches the successor, verifies its actual
+> session ID and rollout, and publishes an updated binding before resuming work.
+> Preserve predecessor identity and accounting; a fresh session starts from zero.
+> Supply the successor its own ID and exact handoff reference, and obtain its
+> ownership acknowledgement. Same-session compaction retains the ID; a new
+> session does not. Preserve truthful reviewer continuity through replacement.
+> A root has no parent: transfer is available only through a separately verified
+> mechanism that preserves supervision and collection ownership. Merely spawning
+> a child, writing a packet or undergoing compaction does not transfer the root.
+> Without that mechanism, retain ownership and report the unavailable route.
+
+The [CLI guide](context-status-cli.md) owns telemetry semantics and metadata-only
+child discovery. Its latest-input fraction is a proxy, not live allocation or a
+demonstration of savings. The root uses its verified metadata and retains
+supervision until a successor or explicit continuation owner can collect results.
+The parent provisions a versioned prebuilt binary outside the shared Cargo target,
+verifies its digest at delivery, and supplies its path/digest to successors.
+Any tool upgrade gets a new binding; agents do not silently rebuild or replace it.
+This avoids shared build locks and transient workspace edits disabling observation.
+
+This pilot measures **telemetry-assisted boundary judgment**, not a calibrated
+threshold or the CLI's isolated causal effect. It cannot separate the effect of
+telemetry from asking an agent to reconsider continuation. Economics is optional:
+record `not estimated` when absent, or supply all five CLI restart-cost inputs
+and explicit cache/remaining-call assumptions with their basis. Those are
+conditional estimates, not measured reconstruction cost or proof of savings.
+
 ## Doctrine and coordination reads
 
 Sub-agents read DESIGN.md as AGENTS.md requires. PHILOSOPHY.md is needed in full
@@ -208,10 +286,82 @@ truncated.
 
 ## Effort and model
 
-High and extra-high effort are worth their cost for design, contract formation
-and independent review. For mechanical implementation, tests and validation runs
-against an explicit contract, consider medium effort and compare candidate
-attempts and findings with the baseline.
+Use [model-selection guidance](model-selection.md) for role-specific choices.
+The user's 2026-10-20 selection is **`gpt-6-sol` at medium effort for builders**,
+including implementation, integration, tests and ordinary remediation. Move
+existing builders at a completed handoff; record the requested and observed
+configuration of the successor. This selection does not change retained reviewer
+or architecture-role settings, or a live trial's provider configuration.
+
+Recent measurements show similar weighted tokens per call across Sol effort
+levels; they do not establish equal quality or total task cost. Compare calls
+to acceptance, repair rounds and escaped findings. Higher effort for design or
+review remains role guidance, not a measured guarantee of a better result.
+
+## Worker-owned handoff pilot
+
+For the current manually supervised Codex builders, try earlier context
+replacement without a supervisor monitoring loop. This is an operating pilot,
+not a Work Engine context-retirement policy or a measured optimum. It does not
+change the slice-builder skill's same-identity workflow or its terminal receipt
+schemas; campaign adoption needs a separate continuation-protocol change.
+
+The first worker did not hand off before context pressure: the soft observed-token
+trigger was unavailable to it. The current [manual decomposition
+experiment](manual-decomposition-pilot.md) therefore assigns a coherent bounded
+outcome to each fresh builder. At that outcome boundary, return the result;
+the supervisor evaluates it and refreshes evidence before dispatching the next
+packet. An unfinished worker can still return a safe handoff when needed.
+
+The collaboration interface alone did not expose worker usage in that initial
+trial. The [context-status CLI](context-status-cli.md) now reads explicitly bound
+rollout counters. For the current manual pilot, include the task-brief check-in
+block above and make the continue/handoff decision at logical task boundaries.
+An unavailable or rejected observation remains unavailable; it does not justify
+guessing an identity. Keep monitoring loops out of the workflow. Neither the
+CLI nor this experiment establishes a context ceiling or optimal reset threshold.
+
+Keep a compact continuation file current as decisions and validation state
+change. Before yielding, apply Wind Walker: the next worker must be able to
+continue without meaning available only in the departing context. Carry the
+objective and authority; source/worktree identity and uncommitted changes;
+settled decisions and rejected approaches worth preserving; exact evidence and
+test-result pointers; unfinished work, failures and pending review; and the next
+useful action. Aim for about 500–1,000 tokens plus links, without omitting a
+required obligation to meet that target. Preserve ownership of any running
+process or child; defer replacement if that ownership cannot transfer safely.
+
+The handoff uses the existing completion notification:
+
+1. The worker writes the durable continuation and ends with `handoff_ready`, its
+   path/revision, and a short account of remaining work. This is an unfinished
+   assignment, not successful slice completion or an audit receipt.
+2. The supervisor collects that event while doing independent work or using a
+   long `wait_agent`. It reads the compact handoff, checks that ownership and
+   pending obligations are covered, then launches a fresh builder with
+   `fork_turns="none"`, `gpt-6-sol`, and medium effort. It passes the continuation
+   reference and scoped assignment rather than copying the former conversation.
+3. The supervisor verifies the successor's actual session ID and rollout and
+   updates the versioned handoff binding, retaining the predecessor identity.
+   It passes the successor its own ID for telemetry and the exact continuation.
+   The successor acknowledges the assignment, binding and continuation at entry.
+   The supervisor records the new owner on that event; the old builder receives no
+   further work. The same retained reviewer remains responsible for its review
+   episode unless its own contract requires a change.
+
+Keep the supervisor turn active until required results are collected. Do not use
+an idle-agent message as a launch: use `followup_task` for an intended retained
+continuation and `spawn_agent` for a fresh context. Routine progress messages,
+roster probes and 60-second status loops add no handoff evidence. The parent
+still pays for collecting and dispatching at an actual handoff; this removes
+monitoring calls, not all supervision cost.
+
+Evaluate the pilot from existing receipts and session logs after meaningful
+work: handoff/opening context, reconstruction calls, calls and weighted cost to
+accepted work, repair rounds and escaped findings. Record unavailable values
+as unavailable. Compare the extra handoff/reconstruction cost with avoided
+context re-send before claiming savings. Worker completion and context handoff
+remain different outcomes throughout.
 
 ## Root context and supervision ownership
 
