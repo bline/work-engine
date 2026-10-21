@@ -268,3 +268,98 @@ with model identity, and a smaller model may emit more tokens for the same work,
 so this does not isolate reasoning quantity from model choice. n=1 per cell. But
 any claim that effort was irrelevant here must contend with a clean monotonic
 ordering in the opposite direction.
+
+## Qualification against contract, 2026-10-21 (revision `7f72a17b`, pushed)
+
+The source-currentness check is confirmed: all four patterns are present at
+`7f72a17b`, the tip of `origin/rescue-detached-20260911`. Qualifying them against
+the clauses they would violate changes three of the four. **One qualifies cleanly,
+one qualifies on a clause I had not cited, one is partly a contract referral, one
+fails qualification as stated.** Verified by reading each containing function at
+that revision.
+
+### Concern 2 qualifies, and against a second clause as well
+
+`close_and_drain` (`executor.rs:343`) performs invariant 6's sequence as: close
+the gate, snapshot `registry.tasks.keys()`, then `observe_terminal()` under
+`timeout_at`. `request_abort` exists at `executor.rs:324` and is called from
+`tests/owned_execution.rs:367` only. Invariant 6's "**request supported
+cancellation**" is a mandatory clause, the mechanism exists, and the shutdown
+sequence does not invoke it: a task that will not terminate is reported
+`unresolved` and left running.
+
+The same function fails a second invariant-6 clause. The invariant requires
+recording "close attempted/resolved/rejected/timed-out/late"; the implementation
+collapses them - `Ok(false) | Err(_) => unresolved.push(attempt)` merges "observed
+non-terminal" with "deadline expired", and `TaskDrainReport` has no field able to
+distinguish them. This is the same state-collapse that grounds invariant 6's
+standing INSUFFICIENT disposition, now located in one expression.
+
+### Concern 1 narrowed: part defect, part contract referral
+
+**Correction.** I wrote that "the deadline invariant is wired nowhere in the owned
+execution path". The dead-seam half is right - `MonotonicDeadline`,
+`DeadlineStatus` and `ClockSource::sample` have no caller outside
+`tests/clock_framing.rs` - but the conclusion overstates. `close_and_drain`
+enforces an absolute deadline by construction:
+`tokio::time::timeout_at(tokio::time::Instant::from_std(deadline))` is anchored to
+an absolute instant, so `Ok(true) => joined` cannot be reached after the deadline.
+Error class: reading a typed seam's absence as the absence of the behaviour it
+would implement. The check that would have caught it: read the function body
+rather than grepping for the type's name.
+
+What is genuinely uncovered is invariant 4's "before final success" on the
+**ordinary** completion path (`executor.rs:505-545`), which publishes a
+`TaskResult` with `finished_wall`/`finished_mono` and no deadline comparison at
+all. And invariant 4's other clause - "typed wall time for S1 authority checks" -
+is **unrealisable inside the accepted boundary** per E4 conflict 1, since no
+authority expiry reaches S2. So this concern splits: an ordinary-path check that
+is actionable now, and an authority-expiry requirement that needs a contract
+referral, not an implementation fix.
+
+### Concern 3 resolved: no invariant violated, hazard stands
+
+The non-consuming read is deliberate and documented. `acknowledge_result`
+(`executor.rs:289`) carries "Call only after S4 has committed the result or its
+unresolved disposition" and is the consuming path; `pending()` carries "A missed
+or dropped notification cannot erase an owned result". That is an acknowledge
+protocol, and it is what invariant 3's "never drop required evidence silently"
+asks for. No evidence is lost: an unreachable result is still returned by
+`pending()`.
+
+The head-of-line consequence is unchanged and is a liveness hazard, not a
+contract violation. `recv` returns `pending.values().next()`, the lowest
+`AttemptId`, so until S4 acknowledges that attempt every later completion is
+unreachable through a method named `recv`, and because `recv` returns early
+without consuming a notification the notification queue drifts from the pending
+set. File as an API/design clarification, not a defect.
+
+### Concern 4 fails qualification as stated
+
+**Correction.** I wrote that `TaskExit` "reports unavailable measurements as
+observations". Printing the containing function refutes it for both fields.
+`local_task_ended: true` is assigned inside the `outer` task after
+`inner.await`, where `inner` is the inner task's `JoinHandle`
+(`executor.rs:286`); every branch - value, `is_cancelled`, panic - is reached only
+once that task has ended. The literal is therefore true by position.
+`child_exit_code: None` is assigned in `OwnedExecutor`'s task path, which has no
+child process, so `None` is the accurate value rather than an unavailable one.
+
+Error class: scoring a literal as a fabricated observation without reading what
+the surrounding control flow had already established - rule 4, print the
+containing object.
+
+A narrower §12 concern survives at a different layer. This is the only producer of
+these fields (`local_task_ended: true` appears nowhere else in `rust/`), and
+`lifecycle-service/src/actor.rs:2252-2253` forwards them to
+`task_results.child_exit_code`, a nullable `INTEGER`
+(`lifecycle-store/migrations/0002_service.sql:10`). A reader of that column cannot
+distinguish "no child existed" from "child exit unknown". That is a persisted
+representation question for the store/service owner, not an executor bug.
+
+### Intake consequence
+
+**One bug report, not four.** Concern 2 is the single clean candidate, carrying
+both invariant-6 clauses. Concern 1's ordinary-path check is actionable and can
+accompany it or stand alone; its authority-expiry half and concern 4's schema
+question are referrals; concern 3 is a clarification request.
