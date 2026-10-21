@@ -1,0 +1,435 @@
+{
+  "schema": "compaction-band-v1",
+  "binary": "/home/bline/.local/state/work-engine/tools/context-status/23a0ea4a54941ee2e44e4f4fcda5b25c06fc0345ffbd8785264806709e1d6757/work-engine-context-status",
+  "binary_sha256": "23a0ea4a54941ee2e44e4f4fcda5b25c06fc0345ffbd8785264806709e1d6757",
+  "sessions_dir": "/home/bline/.codex/sessions",
+  "roots": [
+    "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+    "01a15f02-a935-7683-a849-9e919aecfe3c"
+  ],
+  "enumeration_completeness": {
+    "01a15b93-56c2-74f1-8c97-e471f81bc6e2": "partial_or_ambiguous",
+    "01a15f02-a935-7683-a849-9e919aecfe3c": "partial_or_ambiguous"
+  },
+  "threads": 48,
+  "compaction_events": 43,
+  "children": {
+    "n": 33,
+    "excluded_no_prior_reading": 1,
+    "min": 171541,
+    "median": 199918,
+    "max": 239002,
+    "windows": [
+      258400
+    ]
+  },
+  "roots_stratum": {
+    "n": 9,
+    "excluded_no_prior_reading": 0,
+    "min": 171267,
+    "median": 208631,
+    "max": 224762,
+    "windows": [
+      258400
+    ]
+  },
+  "all": {
+    "n": 42,
+    "excluded_no_prior_reading": 1,
+    "min": 171267,
+    "median": 204743.0,
+    "max": 239002,
+    "windows": [
+      258400
+    ]
+  },
+  "events": [
+    {
+      "thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T11:10:01.249Z",
+      "input_before": 223038,
+      "reading_at": "2026-10-21T11:08:03.453Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T13:26:15.626Z",
+      "input_before": 217856,
+      "reading_at": "2026-10-21T13:23:11.496Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T15:02:50.012Z",
+      "input_before": 186122,
+      "reading_at": "2026-10-21T14:59:43.768Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T18:24:55.180Z",
+      "input_before": 171267,
+      "reading_at": "2026-10-21T18:21:52.763Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15b93-56c2-74f1-8c97-e471f81bc6e2",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T22:07:47.222Z",
+      "input_before": 190197,
+      "reading_at": "2026-10-21T22:04:26.794Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15b97-14a8-7cc2-ae36-105c6677f5e4",
+      "agent_path": "/root/c1_supervisor/c1_reviewer_g2",
+      "stratum": "child",
+      "at": "2026-10-21T01:10:16.161Z",
+      "input_before": 239002,
+      "reading_at": "2026-10-21T01:08:41.572Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+      "agent_path": "/root/integration_prep_supervisor",
+      "stratum": "child",
+      "at": "2026-10-21T12:45:34.101Z",
+      "input_before": 215988,
+      "reading_at": "2026-10-21T12:44:41.690Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+      "agent_path": "/root/integration_prep_supervisor",
+      "stratum": "child",
+      "at": "2026-10-21T13:41:11.501Z",
+      "input_before": 187619,
+      "reading_at": "2026-10-21T13:40:15.145Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15e1c-9e0b-7e43-b26e-37b31e04a28e",
+      "agent_path": "/root/integration_prep_supervisor",
+      "stratum": "child",
+      "at": "2026-10-21T14:10:21.405Z",
+      "input_before": 171541,
+      "reading_at": "2026-10-21T14:09:21.798Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15ea5-c4bd-75d1-bb57-782b3b5e18a8",
+      "agent_path": "/root/live4_admission_reviewer",
+      "stratum": "child",
+      "at": "2026-10-21T15:30:34.469Z",
+      "input_before": 206121,
+      "reading_at": "2026-10-21T15:27:31.181Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15ef6-e6e1-7fb0-a6de-ec4868d3f075",
+      "agent_path": "/root/live4_execution_supervisor",
+      "stratum": "child",
+      "at": "2026-10-21T16:46:14.233Z",
+      "input_before": 203495,
+      "reading_at": "2026-10-21T16:45:32.678Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15ef6-e6e1-7fb0-a6de-ec4868d3f075",
+      "agent_path": "/root/live4_execution_supervisor",
+      "stratum": "child",
+      "at": "2026-10-21T20:29:48.117Z",
+      "input_before": 199918,
+      "reading_at": "2026-10-21T20:28:59.937Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15ef8-e611-7ec2-b871-8452b9729223",
+      "agent_path": "/root/live4_execution_supervisor/live4_engineering",
+      "stratum": "child",
+      "at": "2026-10-21T15:24:52.825Z",
+      "input_before": 189376,
+      "reading_at": "2026-10-21T15:23:52.867Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f02-a935-7683-a849-9e919aecfe3c",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T16:17:13.510Z",
+      "input_before": 224634,
+      "reading_at": "2026-10-21T16:15:33.051Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f02-a935-7683-a849-9e919aecfe3c",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T17:09:59.416Z",
+      "input_before": 224762,
+      "reading_at": "2026-10-21T17:08:33.880Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f02-a935-7683-a849-9e919aecfe3c",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T20:28:41.479Z",
+      "input_before": 208631,
+      "reading_at": "2026-10-21T20:27:01.803Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f02-a935-7683-a849-9e919aecfe3c",
+      "agent_path": "ROOT",
+      "stratum": "root",
+      "at": "2026-10-21T21:07:33.477Z",
+      "input_before": 206798,
+      "reading_at": "2026-10-21T21:05:39.853Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T15:58:58.040Z",
+      "input_before": 191444,
+      "reading_at": "2026-10-21T15:58:10.620Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T16:37:28.083Z",
+      "input_before": 206521,
+      "reading_at": "2026-10-21T16:36:43.249Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T17:10:07.110Z",
+      "input_before": 215465,
+      "reading_at": "2026-10-21T17:09:23.281Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T18:11:39.652Z",
+      "input_before": 181025,
+      "reading_at": "2026-10-21T18:11:06.592Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T18:47:40.776Z",
+      "input_before": 198629,
+      "reading_at": "2026-10-21T18:46:50.396Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T19:29:45.644Z",
+      "input_before": 179674,
+      "reading_at": "2026-10-21T19:28:48.873Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T20:03:31.231Z",
+      "input_before": 178447,
+      "reading_at": "2026-10-21T20:02:56.278Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T20:25:37.266Z",
+      "input_before": 207527,
+      "reading_at": "2026-10-21T20:25:05.362Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T21:07:38.979Z",
+      "input_before": 172703,
+      "reading_at": "2026-10-21T21:07:16.560Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T21:44:25.490Z",
+      "input_before": 206830,
+      "reading_at": "2026-10-21T21:43:50.682Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f1b-a44e-7060-8dc9-77ce29a6d235",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_worker",
+      "stratum": "child",
+      "at": "2026-10-21T22:14:16.540Z",
+      "input_before": 205991,
+      "reading_at": "2026-10-21T22:13:39.089Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f34-604c-7da1-bd56-729f821c6767",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_review",
+      "stratum": "child",
+      "at": "2026-10-21T17:16:51.806Z",
+      "input_before": 210661,
+      "reading_at": "2026-10-21T17:14:59.043Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f34-604c-7da1-bd56-729f821c6767",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_review",
+      "stratum": "child",
+      "at": "2026-10-21T18:57:48.085Z",
+      "input_before": 208482,
+      "reading_at": "2026-10-21T18:54:47.491Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f34-604c-7da1-bd56-729f821c6767",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_review",
+      "stratum": "child",
+      "at": "2026-10-21T20:28:20.043Z",
+      "input_before": 217221,
+      "reading_at": "2026-10-21T20:26:23.952Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f34-604c-7da1-bd56-729f821c6767",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_review",
+      "stratum": "child",
+      "at": "2026-10-21T21:22:05.559Z",
+      "input_before": 206111,
+      "reading_at": "2026-10-21T21:19:08.491Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f34-604c-7da1-bd56-729f821c6767",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_repair_review",
+      "stratum": "child",
+      "at": "2026-10-21T22:02:10.815Z",
+      "input_before": 223236,
+      "reading_at": "2026-10-21T21:59:28.880Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T17:32:16.919Z",
+      "input_before": null,
+      "reading_at": null,
+      "window": null
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T17:48:54.886Z",
+      "input_before": 193487,
+      "reading_at": "2026-10-21T17:48:09.945Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T19:43:41.534Z",
+      "input_before": 188042,
+      "reading_at": "2026-10-21T19:43:02.566Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T21:04:19.921Z",
+      "input_before": 185304,
+      "reading_at": "2026-10-21T21:03:40.243Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T21:41:05.481Z",
+      "input_before": 185061,
+      "reading_at": "2026-10-21T21:40:39.431Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T21:55:36.347Z",
+      "input_before": 178601,
+      "reading_at": "2026-10-21T21:55:01.543Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15f85-588a-7712-9731-c9801b028a05",
+      "agent_path": "/root/live4_execution_supervisor/session_quota_runtime_qualification",
+      "stratum": "child",
+      "at": "2026-10-21T22:12:40.103Z",
+      "input_before": 209801,
+      "reading_at": "2026-10-21T22:12:01.015Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a15fcc-78ce-73d1-9712-606ae35b9749",
+      "agent_path": "/root/bounded_inference_b1a/bounded_inference_reviewer",
+      "stratum": "child",
+      "at": "2026-10-21T19:14:44.493Z",
+      "input_before": 211359,
+      "reading_at": "2026-10-21T19:12:53.870Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a1605b-9162-70a0-8810-43df23b45e7f",
+      "agent_path": "/root/bounded_inference_b2a/auth_worker",
+      "stratum": "child",
+      "at": "2026-10-21T21:57:32.427Z",
+      "input_before": 191069,
+      "reading_at": "2026-10-21T21:57:06.869Z",
+      "window": 258400
+    },
+    {
+      "thread_id": "01a1607c-9904-7b90-b5db-d5b3db552a1e",
+      "agent_path": "/root/bounded_inference_b2b/transport_worker",
+      "stratum": "child",
+      "at": "2026-10-21T22:16:29.547Z",
+      "input_before": 189935,
+      "reading_at": "2026-10-21T22:15:54.972Z",
+      "window": 258400
+    }
+  ]
+}

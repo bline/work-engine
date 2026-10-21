@@ -14,9 +14,11 @@ task needs ([PHILOSOPHY.md §17](PHILOSOPHY.md#17-the-role-of-the-design-documen
 
 ## Coordinating sub-agents
 
-When this session coordinates sub-agents, consult the
-[Codex orchestration brief](docs/codex-orchestration-brief.md). It records
-measured operating defaults with their reasons, not contracts.
+Outside a configured Slice Builder campaign, a Codex session that coordinates
+sub-agents, or that a parent launches under
+[the manual-orchestration skill](skills/manual-orchestration/SKILL.md), uses
+that skill and loads only the references it names for the active role. A
+child launched under another skill or review contract follows that contract.
 
 ## Durable role schedules
 

@@ -1,0 +1,31 @@
+# Coordinator: decomposition, dispatch and collection
+
+Own the accepted objective and its authority map, current decomposition, packet readiness, cross-slice evidence, dependent refreshes, child collection, and root integration decision. Treat a decomposition as a versioned model of the work, not an automatic validated planner. Choose coherent outcomes and dependencies from the actual task; explain uncovered or uncertain boundaries.
+
+## Packets
+
+A useful packet conveys the exact accepted authority, source/subject identity, **applicable settled facts**, outcome, checks, limits and escalation owner. Settled facts are constraints already fixed by accepted slices, contracts or committed code - a schema's version gates, an actor's concurrency model, a published wire contract. In S4-S8 about 42% of independent findings reopened such a fact and about 36% more were arguably preventable by better contract formation. Include only the facts that apply; loading everything recreates the context cost. For an integration or replay assignment, include known predecessor attribution and likely derived dependencies such as a lockfile; mark unknown lineage for the supervisor to resolve rather than making a final patch stand for its history. Treat admission HEAD as a reference until current affected bytes are bound at execution. Give a child only its packet, its identity binding and mandatory repository context; it loads its own role reference from this skill.
+
+Before dispatch, compare the packet to the owning contract and current candidate. If the run is meant to be compared with another, freeze the subject, controls and scoring before either arm launches ([measurement](measurement.md#accounting-rules)); a run already started cannot be relabelled prospective.
+
+## Dispatch and the retained-or-fresh choice
+
+Before dispatch, designate who collects each result and who resumes the parent. End your turn only when no required collection or integration remains, or a **verified** external mechanism owns resumption; human visibility is not automatic wakeup. If neither waiting nor external resumption is available, surface the blocked handoff rather than assuming completion will restart you. Use `spawn_agent` with `fork_turns="none"` for a new context and `followup_task` only for an intended retained continuation; a message to an idle agent is not a launch. **Before any substantial `followup_task`, run the pre-dispatch check** in [context boundary](context-boundary.md) and record retain or fresh with its reason. Request the model and effort from the active user selection ([model selection](../../../docs/model-selection.md)); record requested and observed identity separately.
+
+Keep a durable, compact assignment record as the deterministic source for owners, packet revisions, context checks, expected deliverables and received results. Update it on actual assignment, message, completion and handoff events; do not call a model or `list_agents` to rediscover unchanged state.
+
+## Collection and refresh
+
+Continue independent work while children run; when required results remain and none remains, wait on the event rather than polling ([call cost](call-cost.md)). Completion wakes collection; it does not certify success. On a result, check the artifact and process dispositions, obtain required supervisor/reviewer decisions, and ask whether any changed fact invalidates other packets, evidence or acceptance claims. Preserve old evidence as historical; retain current claims only with a reason they still apply. New hashes cannot repair a wrong subject or missing semantic obligation. Issue revised packets when necessary. Before an absence claim, establish what artifact classes could contain the item and why the checked scope covers them; inspect a judgment's referenced inputs before inferring that an item omitted from its summary was never considered. Do not infer that outside-packet findings are absent because none were reported. Confirm no child or process ownership is stranded before replacing a context or declaring a group complete.
+
+## Your own context
+
+A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary as the [roots](context-boundary.md#roots) section describes; root transfer is out of scope. Keep the continuation and assignment record current continuously, because a ceiling replacement keeps only what was written.
+
+## Worktrees and Codebase Memory
+
+A lasting Codebase Memory watch belongs to a live MCP connection rooted at that worktree; querying or indexing another worktree does not register one, and the main repository and a slice worktree are distinct projects. At allocation or recovery, check the exact project root, `index_status` watch state and the current store generation. A watch marked active does not prove the latest edit is indexed: after edits, check candidate-file coverage and use direct source for unverified ranges. A manual `index_repository` with `persistence=false` avoids repository writes but keeps no watch. Tool availability can change mid-session, so rediscover the available MCP tools before falling back to CLI or source. Workspace cleanup does not authorize stopping a shared daemon or another agent's connection. [Repo-search](../../repo-search/SKILL.md) owns query, coverage and fallback rules.
+
+## Acceptance
+
+Keep acceptance with the owner named by the accepted contract. Supervisor acceptance of a bounded subject does not imply integration or full product acceptance. Recheck affected and overlapping destination bytes against the prepared baseline before deciding integration; an [evidence battery](../../evidence-battery/SKILL.md) over those paths with `--compare` is the cheap form. Record open obligations and unavailable evidence in the final disposition. Cost and comparison rules are in [measurement](measurement.md).

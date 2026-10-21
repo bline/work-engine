@@ -1,5 +1,13 @@
 # Codex orchestration brief
 
+> **Superseded 2026-10-21 by
+> [the manual-orchestration skill](../skills/manual-orchestration/SKILL.md).**
+> Agents do not need to read this document. It is kept as the history and
+> derivation of the measurements the skill cites. Its context check-in block,
+> its "not a threshold" wording and its unverified root-transfer procedure are
+> replaced by the skill's [context boundary](../skills/manual-orchestration/references/context-boundary.md)
+> reference.
+
 Operating defaults for a Codex session that coordinates sub-agents in this
 repository. They are default routes with their reasons, not contracts: depart
 from one when the situation warrants it, and keep every contract, authority
