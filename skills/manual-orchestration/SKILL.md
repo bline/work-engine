@@ -16,6 +16,7 @@ Use model judgment to divide an authorized objective into coherent outcomes whos
 - **Worker or reviewer**: [worker](references/worker.md) - one coherent bounded assignment.
 - **Every role**: [call cost](references/call-cost.md) - waiting, batching, request sizing.
 - **Coordinator and supervisor**: [context boundary](references/context-boundary.md) - retained or fresh before dispatch, transfer, roots. Workers carry their own mid-task check.
+- **On Claude Code** (Anthropic models), with any role: [anthropic host](references/anthropic-host.md) - tool mapping, transcript-based context check.
 - After a run: [measurement](references/measurement.md). For a concrete artifact example: [demonstrated forms](references/demonstrated-forms.md).
 
 Repository instructions and owning contracts still govern each role.
@@ -35,4 +36,4 @@ This is a manual coordination adapter. In a configured Slice Builder campaign, u
 ## Scripts
 
 - `scripts/provision_context_status.sh [repo]` - build and pin the context-status binary outside the shared target; prints path and SHA-256.
-- `scripts/child_context.py` - `check` one session or `tree` a parent's children against the trigger and observed compaction band; writes a record to retain.
+- `scripts/child_context.py` - `check` one Codex session, `tree` a parent's children, or `claude` a Claude Code subagent transcript against the trigger and observed compaction band; writes a record to retain.

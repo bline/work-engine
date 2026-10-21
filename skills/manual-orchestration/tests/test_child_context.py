@@ -136,5 +136,57 @@ class BinaryTests(unittest.TestCase):
         self.assertEqual(json.loads(out.read_text())["recommendation"], "fresh")
 
 
+class ClaudeTranscriptTests(unittest.TestCase):
+    def write(self, records):
+        handle = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        for record in records:
+            handle.write(json.dumps(record) + "\n")
+        handle.close()
+        self.addCleanup(os.unlink, handle.name)
+        return handle.name
+
+    def assistant(self, mid, inp, created, read):
+        return {"type": "assistant", "agentId": "agent-x", "requestId": mid, "timestamp": "t",
+                "message": {"id": mid, "model": "claude-opus-5-5",
+                            "usage": {"input_tokens": inp, "cache_creation_input_tokens": created,
+                                      "cache_read_input_tokens": read, "output_tokens": 9}}}
+
+    def run_claude(self, path, *extra):
+        out = Path(tempfile.mkdtemp()) / "out.json"
+        self.addCleanup(lambda: out.exists() and out.unlink())
+        code = CHILD.main(["claude", "--transcript", path, "--out", str(out), *extra])
+        self.assertEqual(code, 0)
+        return json.loads(out.read_text())
+
+    def test_context_is_sum_of_latest_call_and_needs_no_binary(self) -> None:
+        path = self.write([self.assistant("a", 10, 1_000, 50_000), self.assistant("b", 5, 2_000, 160_000)])
+        record = self.run_claude(path)
+        self.assertEqual(record["input_tokens"], 162_005)
+        self.assertEqual(record["recommendation"], "fresh")
+        self.assertEqual(record["trigger_tokens"], 150_000)
+        self.assertEqual(record["band_floor_tokens"], 202_533)
+        self.assertIsNone(record["fraction_of_window"])
+        self.assertEqual(record["host"], "claude-code")
+
+    def test_below_trigger_retains(self) -> None:
+        record = self.run_claude(self.write([self.assistant("a", 10, 1_000, 60_000)]))
+        self.assertEqual(record["recommendation"], "retain_ok")
+
+    def test_compaction_counted(self) -> None:
+        path = self.write([{"type": "system", "subtype": "compact_boundary",
+                            "compactMetadata": {"trigger": "auto", "preTokens": 210_000}},
+                           self.assistant("a", 10, 1_000, 20_000)])
+        record = self.run_claude(path)
+        self.assertEqual(record["compaction_markers"], 1)
+
+    def test_missing_transcript_is_unavailable(self) -> None:
+        record = self.run_claude("/nonexistent/agent.jsonl")
+        self.assertEqual(record["recommendation"], "usage_unavailable")
+
+    def test_no_usage_is_unavailable_not_zero(self) -> None:
+        record = self.run_claude(self.write([{"type": "user", "message": {"content": "hi"}}]))
+        self.assertEqual(record["unavailable_class"], "absent_counters")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,8 @@ Usage:
       --session ID --rollout PATH [--next-task-tokens N] [--out FILE]
   python3 -I child_context.py --binary BIN --sha256 DIGEST tree \
       --parent-thread ID [--recursive] [--sessions-dir DIR] [--out FILE]
+  python3 -I child_context.py claude --transcript PATH \
+      [--next-task-tokens N] [--out FILE]
 
 `check` reads one session through the pinned work-engine-context-status binary
 and compares its latest input with two levels on the same window:
@@ -15,7 +17,13 @@ and compares its latest input with two levels on the same window:
   band floor  the lowest pre-compaction reading observed
               (default 171,267 of 258,400: 42 compactions, 2026-10-21)
 
-Both scale with the session's own window. The output is a record to retain
+Both scale with the session's own window. `claude` reads a Claude Code
+subagent transcript (~/.claude/projects/<project>/<session>/subagents/
+agent-<id>.jsonl) instead, where context is input + cache-creation +
+cache-read tokens of the latest assistant call and no window is recorded, so
+it uses absolute levels: trigger 150,000 (cost-per-call basis, not a
+compaction level) and band floor 202,533 (lowest of 20 Claude Code
+auto-compactions on this machine, mixed windows, 2026-10-21). The output is a record to retain
 and a recommendation, not a decision: the parent or worker records the
 decision and its reason. Missing usage is reported as unavailable, never as
 zero. `tree` lists a parent's children from recorded metadata and checks each.
@@ -31,6 +39,8 @@ import sys
 from pathlib import Path
 
 REFERENCE_WINDOW = 258_400
+CLAUDE_TRIGGER_TOKENS = 150_000
+CLAUDE_BAND_FLOOR_TOKENS = 202_533
 DEFAULT_TRIGGER_FRACTION = 150_000 / REFERENCE_WINDOW
 DEFAULT_BAND_FLOOR_FRACTION = 171_267 / REFERENCE_WINDOW
 
@@ -76,6 +86,8 @@ def assess(
     next_task_tokens: int | None,
     trigger_fraction: float,
     band_floor_fraction: float,
+    trigger_tokens: int | None = None,
+    band_floor_tokens: int | None = None,
 ) -> dict:
     """Turn one context-status report into a retained-versus-fresh record."""
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -113,7 +125,9 @@ def assess(
         lineage=lineage,
         limitations=report.get("limitations") or [],
     )
-    if not isinstance(current, int) or not isinstance(window, int) or window <= 0:
+    absolute = trigger_tokens is not None and band_floor_tokens is not None
+    window_ok = isinstance(window, int) and window > 0
+    if not isinstance(current, int) or not (window_ok or absolute):
         record.update(
             status="usage_unavailable",
             unavailable_class="absent_counters",
@@ -122,15 +136,18 @@ def assess(
         )
         return record
 
-    trigger = round(window * trigger_fraction)
-    band_floor = round(window * band_floor_fraction)
+    if absolute:
+        trigger, band_floor = trigger_tokens, band_floor_tokens
+    else:
+        trigger = round(window * trigger_fraction)
+        band_floor = round(window * band_floor_fraction)
     record.update(
         status="observed",
         trigger_tokens=trigger,
         band_floor_tokens=band_floor,
         headroom_to_trigger=trigger - current,
         headroom_to_band_floor=band_floor - current,
-        fraction_of_window=round(current / window, 4),
+        fraction_of_window=round(current / window, 4) if window_ok else None,
     )
 
     reasons = []
@@ -156,6 +173,45 @@ def assess(
         )
     record["reasons"] = reasons
     return record
+
+
+def claude_report(path: str) -> dict:
+    """Shape a Claude Code transcript like a context-status report."""
+    transcript = Path(path)
+    if not transcript.is_file():
+        return {"_error": f"transcript not found: {transcript}", "_exit": 2}
+    latest, lineage, agent_id, model, observed = None, [], None, None, None
+    seen = set()
+    with transcript.open(encoding="utf-8", errors="replace") as handle:
+        for number, line in enumerate(handle, 1):
+            try:
+                record = json.loads(line)
+            except ValueError:
+                break  # never read an in-progress trailing record
+            agent_id = agent_id or record.get("agentId") or record.get("sessionId")
+            if record.get("compactMetadata") or record.get("subtype") == "compact_boundary":
+                lineage.append(f"compaction marker at line {number}")
+            message = record.get("message")
+            usage = message.get("usage") if isinstance(message, dict) else None
+            if record.get("type") != "assistant" or not isinstance(usage, dict):
+                continue
+            key = (message.get("id"), record.get("requestId"))
+            if key in seen:
+                continue
+            seen.add(key)
+            latest = sum(usage.get(k) or 0 for k in
+                         ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+            model, observed = message.get("model"), record.get("timestamp")
+    return {
+        "session_id": agent_id,
+        "rollout": str(transcript),
+        "observed_at": observed,
+        "recorded_model": model,
+        "latest_request": {"input_tokens": latest, "epoch": len(lineage)} if latest is not None else {},
+        "context_window_tokens": None,
+        "lineage": lineage,
+        "limitations": ["Claude Code transcripts record no context window; levels are absolute"],
+    }
 
 
 def check(binary: Path, args: argparse.Namespace) -> dict:
@@ -203,8 +259,8 @@ def tree(binary: Path, args: argparse.Namespace) -> dict:
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--binary", required=True, help="pinned work-engine-context-status path")
-    p.add_argument("--sha256", required=True, help="expected binary SHA-256")
+    p.add_argument("--binary", help="pinned work-engine-context-status path (check, tree)")
+    p.add_argument("--sha256", help="expected binary SHA-256 (check, tree)")
     p.add_argument("--trigger-fraction", type=float, default=DEFAULT_TRIGGER_FRACTION)
     p.add_argument("--band-floor-fraction", type=float, default=DEFAULT_BAND_FLOOR_FRACTION)
     p.add_argument("--out", help="also write the JSON record here")
@@ -220,17 +276,36 @@ def parser() -> argparse.ArgumentParser:
     t.add_argument("--recursive", action="store_true")
     t.add_argument("--sessions-dir")
     t.add_argument("--out", dest="sub_out", help="also write the JSON record here")
+    a = sub.add_parser("claude", help="assess a Claude Code subagent transcript")
+    a.add_argument("--transcript", required=True)
+    a.add_argument("--next-task-tokens", type=int, help="parent's estimate of the next task's growth")
+    a.add_argument("--trigger-tokens", type=int, default=CLAUDE_TRIGGER_TOKENS)
+    a.add_argument("--band-floor-tokens", type=int, default=CLAUDE_BAND_FLOOR_TOKENS)
+    a.add_argument("--out", dest="sub_out", help="also write the JSON record here")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    try:
-        binary = verify_binary(args.binary, args.sha256)
-    except UsageError as error:
-        print(json.dumps({"status": "usage_unavailable", "unavailable_class": "launch_or_tool_failure", "detail": str(error)}))
-        return 2
-    result = check(binary, args) if args.command == "check" else tree(binary, args)
+    if args.command == "claude":
+        result = assess(
+            claude_report(args.transcript),
+            next_task_tokens=args.next_task_tokens,
+            trigger_fraction=args.trigger_fraction,
+            band_floor_fraction=args.band_floor_fraction,
+            trigger_tokens=args.trigger_tokens,
+            band_floor_tokens=args.band_floor_tokens,
+        )
+        result["host"] = "claude-code"
+    else:
+        try:
+            if not args.binary or not args.sha256:
+                raise UsageError("--binary and --sha256 are required for check and tree")
+            binary = verify_binary(args.binary, args.sha256)
+        except UsageError as error:
+            print(json.dumps({"status": "usage_unavailable", "unavailable_class": "launch_or_tool_failure", "detail": str(error)}))
+            return 2
+        result = check(binary, args) if args.command == "check" else tree(binary, args)
     text = json.dumps(result, indent=2)
     out = args.sub_out or args.out
     if out:
