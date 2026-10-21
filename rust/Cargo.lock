@@ -648,6 +648,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifecycle-semantic-replay"
+version = "0.1.0"
+dependencies = [
+ "bounded-inference",
+ "lifecycle-core",
+ "lifecycle-semantic",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lifecycle-service"
 version = "0.1.0"
 dependencies = [

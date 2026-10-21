@@ -6,11 +6,13 @@
 
 mod assessment;
 mod continuation;
+mod invocation_v2;
 mod material;
 mod policy;
 
 pub use assessment::*;
 pub use continuation::*;
+pub use invocation_v2::*;
 pub use material::*;
 pub use policy::*;
 

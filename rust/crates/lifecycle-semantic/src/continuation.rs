@@ -368,11 +368,30 @@ pub fn candidate_from_output(
     {
         return Err(SemanticError::WrongBinding);
     }
+    let plan = validate_candidate_content(material, &raw, policy)?;
+    Ok(Candidate {
+        source_basis_sha256: material.sha256.clone(),
+        compile_invocation_id: request.binding.invocation_id.clone(),
+        compile_attempt_id: request.binding.attempt_id.clone(),
+        compile_session_id: request.binding.session_id.clone(),
+        compile_prompt_sha256: request.prompt_sha256.clone(),
+        sha256: sha256_hex(&raw),
+        raw,
+        plan,
+    })
+}
+
+pub(crate) fn validate_candidate_content(
+    material: &SourceBasis,
+    raw: &[u8],
+    policy: &SemanticPolicy,
+) -> Result<ContinuationPlan, SemanticError> {
+    material.validate(policy)?;
     if raw.len() > policy.max_control_output_bytes {
         return Err(SemanticError::OutputTooLarge);
     }
     let plan: ContinuationPlan =
-        serde_json::from_slice(&raw).map_err(|_| SemanticError::InvalidOutput)?;
+        serde_json::from_slice(raw).map_err(|_| SemanticError::InvalidOutput)?;
     if plan.schema_version != material.schema_version {
         return Err(SemanticError::InvalidOutput);
     }
@@ -458,16 +477,7 @@ pub fn candidate_from_output(
             return Err(SemanticError::InvalidReference);
         }
     }
-    Ok(Candidate {
-        source_basis_sha256: material.sha256.clone(),
-        compile_invocation_id: request.binding.invocation_id.clone(),
-        compile_attempt_id: request.binding.attempt_id.clone(),
-        compile_session_id: request.binding.session_id.clone(),
-        compile_prompt_sha256: request.prompt_sha256.clone(),
-        sha256: sha256_hex(&raw),
-        raw,
-        plan,
-    })
+    Ok(plan)
 }
 
 pub fn verify_candidate(
@@ -492,24 +502,8 @@ pub fn verify_candidate(
     {
         return Err(SemanticError::WrongBinding);
     }
-    let sources = prompt_sources(material)?;
-    let (prompt, prompt_sha256) = prompt_json(
-        &serde_json::json!({
-            "task": "verify_candidate_semantics",
-            "source_basis_sha256": material.sha256,
-            "candidate_sha256": candidate.sha256,
-            "sources": sources,
-            "candidate": candidate.plan,
-            "required_obligations": prompt_obligations(material),
-            "model_output_contract": verifier_output_contract(),
-            "constraints": [
-                "Assess every required obligation against source material and the whole candidate. Report satisfied, violated or indeterminate with exact source citations.",
-                "Report invented approval, stale authority, revived superseded action, omitted commitment, fabricated source, or completed-effect replay as critical contradictions.",
-                "A pending approval may be preserved accurately while the dependent action remains unauthorized. Do not treat matching hashes as adequacy."
-            ]
-        }),
-        policy,
-    )?;
+    let (prompt, prompt_sha256) =
+        candidate_verification_prompt(material, &candidate.plan, &candidate.sha256, policy)?;
     Ok(VerifyRequest {
         binding,
         source_basis_sha256: material.sha256.clone(),
@@ -523,6 +517,32 @@ pub fn verify_candidate(
         prompt_sha256,
         max_output_bytes: policy.max_control_output_bytes,
     })
+}
+
+pub(crate) fn candidate_verification_prompt(
+    material: &SourceBasis,
+    plan: &ContinuationPlan,
+    candidate_sha256: &str,
+    policy: &SemanticPolicy,
+) -> Result<(String, String), SemanticError> {
+    let sources = prompt_sources(material)?;
+    prompt_json(
+        &serde_json::json!({
+            "task": "verify_candidate_semantics",
+            "source_basis_sha256": material.sha256,
+            "candidate_sha256": candidate_sha256,
+            "sources": sources,
+            "candidate": plan,
+            "required_obligations": prompt_obligations(material),
+            "model_output_contract": verifier_output_contract(),
+            "constraints": [
+                "Assess every required obligation against source material and the whole candidate. Report satisfied, violated or indeterminate with exact source citations.",
+                "Report invented approval, stale authority, revived superseded action, omitted commitment, fabricated source, or completed-effect replay as critical contradictions.",
+                "A pending approval may be preserved accurately while the dependent action remains unauthorized. Do not treat matching hashes as adequacy."
+            ]
+        }),
+        policy,
+    )
 }
 
 pub fn challenge_successor(

@@ -191,13 +191,50 @@ fn derive(
         return Err(SemanticError::WrongBinding);
     }
     validate_result_binding(request, &result, policy)?;
+    derive_report(
+        material,
+        request.binding.phase,
+        &request.candidate_sha256,
+        request.challenge_sha256.clone(),
+        request.successor_response_sha256.clone(),
+        result.invocation_id,
+        result.sha256,
+        &result.raw,
+        exposure.valid_for(request, policy),
+        policy,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn derive_report(
+    material: &SourceBasis,
+    phase: SemanticPhase,
+    candidate_sha256: &str,
+    challenge_sha256: Option<String>,
+    successor_response_sha256: Option<String>,
+    verifier_invocation_id: String,
+    verifier_result_sha256: String,
+    raw: &[u8],
+    exposure_established: bool,
+    policy: &SemanticPolicy,
+) -> Result<CheckedSemanticResult, SemanticError> {
+    material.validate(policy)?;
+    if !policy.within_frozen_limits()
+        || material.policy_id != policy.id
+        || candidate_sha256.is_empty()
+    {
+        return Err(SemanticError::WrongBinding);
+    }
+    if raw.len() > policy.max_control_output_bytes || verifier_result_sha256 != sha256_hex(raw) {
+        return Err(SemanticError::WrongBinding);
+    }
     let report: VerifierReport =
-        serde_json::from_slice(&result.raw).map_err(|_| SemanticError::InvalidOutput)?;
+        serde_json::from_slice(raw).map_err(|_| SemanticError::InvalidOutput)?;
     let mut reasons = Vec::new();
     if !material.is_eligible() {
         reasons.push("source basis incomplete or over bound".into());
     }
-    if !exposure.valid_for(request, policy) {
+    if !exposure_established {
         reasons.push("verifier exposure or observed model identity unestablished".into());
     }
     if !report.whole_response_assessed {
@@ -276,14 +313,14 @@ fn derive(
         VerdictStatus::Accepted
     };
     Ok(CheckedSemanticResult {
-        phase: request.binding.phase,
+        phase,
         status,
         source_basis_sha256: material.sha256.clone(),
-        candidate_sha256: request.candidate_sha256.clone(),
-        challenge_sha256: request.challenge_sha256.clone(),
-        successor_response_sha256: request.successor_response_sha256.clone(),
-        verifier_invocation_id: result.invocation_id,
-        verifier_result_sha256: result.sha256,
+        candidate_sha256: candidate_sha256.into(),
+        challenge_sha256,
+        successor_response_sha256,
+        verifier_invocation_id,
+        verifier_result_sha256,
         policy_id: policy.id.clone(),
         findings: report.findings,
         critical_errors: report.critical_errors,
