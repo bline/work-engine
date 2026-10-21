@@ -624,9 +624,26 @@ where help was needed.** F1 needed no help. F3 needed a dedicated obligation and
 an uncontested context, and even then two of seventeen runs found it.
 
 So exploitation metrics are **anti-correlated with where additional perspectives
-pay** on this subject. Any routing policy needs an exploration term whose cost
-and authority are explicitly governed, and recall history is close to the worst
-single signal available for it.
+pay** on this subject, and recall history is close to the worst single signal
+available for that decision.
+
+**And exploration is not a weighting problem.** My first wording - "an
+exploration term whose cost and authority are explicitly governed" - still frames
+it as a coefficient in a score over history. No score over historical data
+reaches a concern that was never represented in it. The instance is in this
+session: E4's three CONFLICTS are **contract** defects, and no reviewer-recall
+statistic over any history would have surfaced them, because no reviewer was ever
+asked. Exploration needs an independent justification, not a different formula.
+
+**Two routing decisions, needing different evidence:**
+
+| decision | question | evidence that bears on it |
+|---|---|---|
+| perspective formation | what material uncertainty requires independent investigation? | not recall history; this is the exploration problem |
+| model selection | which configuration can establish the admitted property at acceptable cost? | E6 is exactly this evidence - `haiku-5-5` can discharge OB39 alone for $0.37 |
+
+Collapsing them is how a system becomes efficient at familiar defects. E6
+answers the second question and says nothing about the first.
 
 ## The three-way relationship this investigation found
 
@@ -641,12 +658,51 @@ Stated because the pilot kept treating these as one variable and they are not:
   ledger: 0 of 7 invariants adequately evidenced, with no implementation read and
   no defect discovered.
 
-**Model capability operates inside all three** and was never the binding
-constraint on any of them. That is the investigation's answer to the question it
-started from, and it is not the answer it set out to get.
+**Model capability operates inside all three.**
+
+**Correction to my first wording, "was never the binding constraint on any of
+them".** Error class: generalising from the F3 and F4 outcomes to the whole
+investigation. Counter-instance from this pilot's own record: in the RP2
+comprehension arms, **six Claude runs at two effort levels all failed to recover
+the `requestId` 128-byte grammar, `OUTPUT_SLOTS` and the NDJSON version, which
+`gpt-6-sol`/medium recovered in 8 calls.** Nobody showed that to be a
+representation or organisation failure; it may be capability, and it was never
+isolated. Consequence: a stronger claim than the evidence supports, in the
+sentence meant to summarise the investigation. Missing check: look for a cell
+where the intervention was not tried before claiming the variable never bound.
+
+The defensible version, which is also the more useful one:
+
+> **Apparent model incapability can be a failure of representation or execution
+> organisation, so increasing model capability is not necessarily the remedy.**
+
+That is testable and actionable. "Capability never binds" is neither.
 
 ## Correction to a figure quoted at close
 
 The closing summary cites "thirteen recorded corrections". The measured figure is
 **19 correction commits of 56 commits** on 2026-10-20, counted from the commit
 log. Thirteen was my own earlier in-conversation estimate, made before I counted.
+
+## Pre-registered stopping condition for D
+
+Recorded now so it cannot be adjusted later: **if prospectively recorded
+correspondence costs more fully loaded inference without improving warranted
+decisions, that is a valid negative result and is to be reported as one.**
+
+Controls, all of which must hold or the comparison is uninterpretable:
+
+1. Independently adjudicable obligations frozen **before** execution.
+2. **Perspective count and grouping identical** between the two arms - E8 shows
+   organisation is a large separate effect.
+3. Both arms reach the **same underlying artifacts** and are evaluated against the
+   **same obligations**, so improved evidence production is not credited as
+   cheaper assessment.
+4. The prospective route is charged for **generating and validating** the
+   relationships, not only for the final assessment.
+5. The compared quantity is **inference per adequately warranted decision**, not
+   receipt completeness and not any single token category.
+
+No further retrospective S2 arm. That subject has yielded what it has, and
+additional arms would increasingly tailor the method to defects already
+understood.
