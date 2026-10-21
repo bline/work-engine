@@ -825,7 +825,7 @@ output can be wrong in a way only checking catches.
   unreliable regardless of cost, which is a finding about the record rather than
   about the mechanism.
 
-## Pilot 1 result: reconstruction is 2.25x adequacy, but the saving ceiling is 28%
+## Pilot 1 result: reconstruction is 2.25x adequacy; assessment-side headroom is 28%
 
 | stage | USD | Mwt | turns |
 |---|---|---|---|
@@ -843,7 +843,7 @@ adequacy judgment.** That is the decomposition the single arm could not produce.
 Staged total is **2.35x** the bundled run - the predicted staging overhead, three
 startup contexts plus hand-offs. So 69% is a share of an inflated denominator.
 
-The measured saving ceiling is a different arithmetic: the status quo is doing all
+The headroom figure is a different arithmetic: the status quo is doing all
 three from scratch (**$0.4103**); the hypothetical with correspondence already
 recorded is the adequacy stage alone (**$0.2963**).
 
