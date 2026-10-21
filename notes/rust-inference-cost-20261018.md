@@ -586,3 +586,63 @@ specified by any contract, and its inference is consumed inside the arm's own
 cost. It is evidence about when delegation appeals to a model, not evidence that
 the delegation was necessary or correctly bounded, and it should not be cited as
 support for compiled execution units.
+
+### Correspondence reconstruction cost, and why its avoidable fraction is unestablished
+
+The S2 acceptance-ledger arm (`notes/s2-boundary-audit-20261020.md`): seven
+invariants, 132 retained artifacts, `claude-haiku-5-5`/`xhigh`, **$0.4103** and
+**0.838 Mwt**. Accounting decomposition:
+
+| component | Mwt | share |
+|---|---|---|
+| output x5 (81,688 output, of which **69,588 thinking**) | 0.408 | 49% |
+| cache reads /10 (2,397,209 tokens) | 0.240 | 29% |
+| cache creation + input (first read of 132 artifacts) | 0.189 | 23% |
+
+**That is accounting, not a decomposition of avoidable work.** Two corrections,
+both recorded because each was a claim I made and withdrew:
+
+1. **"Prospective recording saves the whole 0.838"** - wrong. Judging what evidence
+   establishes is irreducible; only rediscovering the relationship is avoidable.
+2. **"The ceiling is 0.430 Mwt (51%)"** - also wrong, in the other direction. The
+   output category is *where* inference was charged, not *what for*. Some of the
+   69,588 thinking tokens reconstructed which evidence applies to which invariant,
+   which prospective recording removes. **The avoidable fraction of every category
+   is unknown.**
+
+**And this telemetry cannot settle it.** `thinking_chars` is 0 in every arm this
+session: the stream reports thinking token counts without content, so no purpose
+attribution is possible. That is the **fifth** instance of the failure catalogued
+in this note - a record preserving *that* something happened without *what it was
+for* - and the first one inside the measuring instrument rather than the measured
+artifacts.
+
+**Cross-provider arithmetic withdrawn.** I compared 0.838 Claude Mwt against the
+~1.0 Codex Mwt per-slice supervisor figure and reported 81%. This note's own
+"weighted tokens misprice tiers by an order of magnitude" rule forbids that. The
+comparison is suggestive of scale only; the percentage should not be quoted.
+
+**The two benefits structured representation might deliver, only one of which has
+evidence.**
+
+- *Avoiding reconstruction* - relationships known during execution are retained.
+  **No evidence yet.** This is what D would measure.
+- *Reducing judgment complexity* - a well-formed obligation with its evidence
+  already associated may need less reasoning than the same information scattered
+  across a record. **This has evidence**: generation-3 arm B, arm D, and most
+  cleanly E6, where identical obligation text in a smaller packet moved F3 from
+  miss to match at the same model and effort. The cost decomposition above cannot
+  see this benefit at all.
+
+**Pre-registered budget, as an engineering threshold and not a discovered
+boundary:** reconstruction alone above **0.2 Mwt** is material against the ~1 Mwt
+per-slice supervisor reference, measured in the same provider's units as the
+baseline it is charged against, with API-equivalent cost and quota utilisation
+recorded separately rather than converted into one another.
+
+**The measurement that would settle it**, on the same underlying work: the
+marginal inference required to reach the same adequately warranted decision, with
+and without prospectively retained correspondence - the prospective route charged
+for generating and validating the relationships, and both routes held to the same
+evidentiary standard, since a cheaper judgment that establishes less is not the
+same judgment.
