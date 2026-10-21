@@ -360,3 +360,48 @@ Fixed before execution so the result cannot be re-narrated afterwards.
   metadata (§8). The limitation is declared, not engineered away.
 - The two assessment arms running at different model or effort settings without that
   mismatch being recorded in §7 before launch (§3).
+
+## 11. Eligibility register (additive, 2026-10-21)
+
+§6 is unchanged. This section does not alter a rule; it records which people and
+sessions those rules already exclude, because eligibility depends on what each
+party has read and nobody will reconstruct that from memory weeks later. **Append
+an entry when a party reads the key, authors a packet, or takes a role. An
+unrecorded exposure is treated as an exposure.**
+
+Roles to be filled, with their §6 exclusions restated:
+
+| role | excluded if |
+|---|---|
+| key author | also serving as an assessment arm |
+| assessment arm, control | has read the key, the map, or the intervention packet |
+| assessment arm, intervention | has read the key |
+| independent adjudicator | authored the packets, the obligations, or the key |
+
+### Recorded exposures
+
+- **`claude-metrics`, session `e702a3e4`** (this protocol's author). Has read: the
+  S2 sealed key for Test R - Astra's four findings on `7fdf392f` - the full E1-E8
+  results, and the public obligations in
+  `planning/s10-next-slice-scope-20261021.md`. The public obligations are public by
+  construction and carry no exclusion.
+  **Excluded from: both assessment arms**, under the rule Test R applied to its own
+  author.
+  **Declines: independent adjudicator.** Formally eligible, since authoring the
+  protocol is not authoring the packets, obligations or key. Declined anyway: this
+  session argued the mechanism's case in both directions all through its
+  development and published a prediction of the likely outcome before withdrawing
+  it, so its scoring would not be disinterested even where it was correct. Formal
+  eligibility is not the standard this role should meet.
+  **Remains available for:** recovering the cost denominators from rollouts under
+  §4, checking the arithmetic, and checking the reported result against what this
+  protocol pre-registered. All three are mechanical and none of them touches the
+  key.
+
+### Interpretation is not adjudication
+
+Reading the adjudicated output, verifying its arithmetic, and deciding what it
+supports is not an experimental role and carries no exclusion. **Scoring the arms
+against the key is**, and if the protocol's author does that, the result is authored
+by the party whose design it tests - which is the single confound §6 exists to
+prevent. The two activities are kept separate by name in the final report.
