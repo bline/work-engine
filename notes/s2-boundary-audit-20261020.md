@@ -847,9 +847,20 @@ The measured saving ceiling is a different arithmetic: the status quo is doing a
 three from scratch (**$0.4103**); the hypothetical with correspondence already
 recorded is the adequacy stage alone (**$0.2963**).
 
-> **Ceiling on the assessment-side saving: $0.1140, or 28%.**
+> **Measured assessment-side headroom under the tested procedure: $0.1140, or
+> 28%.**
 
-Not 69%. And it is a **ceiling**, not an estimate, because:
+Not 69%. **And not a ceiling** - I first called it one, which repeats the error
+class of the "51% savings ceiling" withdrawn earlier in this session: asserting a
+bound from a measurement that does not establish one. It is the observed
+difference between the bundled run and this particular adequacy-only run. It
+becomes a ceiling only under the assumption that prospective recording cannot
+reduce adequacy-stage inference further - and it might, by organising the
+evidence around the property being judged rather than only by removing discovery
+and mapping. It might equally add more than it saves. Carry $0.1140 forward as
+headroom under this procedure, not as a bound on D.
+
+Three further reasons the figure is not a clean saving:
 
 - Stage 3 still opened artifacts (17 Bash, 2 Read) - having the mapping did not
   remove reading the evidence it cites.
@@ -870,7 +881,26 @@ The bundled ledger v2, judging from the raw record: **ADEQUATE 0, INSUFFICIENT 6
 ABSENT 0, INDETERMINATE 1**, with invariant 1 indeterminate.
 
 **Two independent runs, different decomposition, identical per-invariant result.**
-That is a replication of the 0-of-7 finding and the strongest support it has.
+
+**And the bases correspond, not only the labels** - checked rather than assumed,
+since matching dispositions could in principle rest on different reasoning:
+
+| invariant | both runs say covered | both runs say not covered |
+|---|---|---|
+| 3 | reserved capacity, no deadlock under saturation, dropped listener | overflow and gap reporting |
+| 4 | wall/monotonic split, late disposition, post-await recheck via S2-C2-F2 closure | restart non-persistence of monotonic instants, with both noting the restart-named tests concern a different property |
+| 6 | gate, snapshot, drain, cancelled-waiter retention, exact reap, late disposition, unsafe latch | transport close, and the `rejected`/`attempted` close states |
+
+Same tests named, same gaps identified, same reasons. That makes this a
+replication of the warrant and not just of the verdict.
+
+**One asymmetry, in the staged run's favour.** Its invariant-6 basis adds
+something the bundled run did not reach: "the reviewer recorded that the
+join-retention test's assertions would also hold on the defective detach path, so
+names alone do not settle it." That is a record statement showing the test cannot
+discriminate the F3 defect - a sharper observation than the bundled run produced,
+and it complicates the pure cost story: staging cost 2.35x and returned at least
+one better-warranted basis.
 
 ### Two findings the mapping stage produced without judging adequacy
 
