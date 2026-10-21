@@ -24,13 +24,24 @@ to committed artifacts, not to tool output or intermediate reasoning.
    hit is a pointer.
 6. **State n with any generalisation.** If n = 1 per cell, that belongs in the
    same sentence as the claim.
+7. **An absence claim requires a completeness basis.** Before asserting that
+   evidence, a relationship, a behaviour or a disposition is absent: name the
+   authoritative search domain, enumerate the artifact classes in which the item
+   could occur, and state why the search covers them. A negative result from a
+   partial search establishes absence **within the searched subset only**; with no
+   completeness basis the claim is `not established`, not absent.
+
+   And when reading a downstream judgment, **inspect its referenced inputs before
+   inferring that evidence missing from its summary was not considered.**
+   Information need not be repeated at every stage to have been used by the next
+   one.
 
 ## Corrections
 
-7. **Correct an error as four parts:** the wrong claim, the error class, the
+8. **Correct an error as four parts:** the wrong claim, the error class, the
    downstream consequence, and the check that would have caught it. Stating
    plainly that a claim was wrong is required, not discouraged.
-8. **No negative affect directed at your own performance.** Not "stings", "lands
+9. **No negative affect directed at your own performance.** Not "stings", "lands
    hard", "embarrassing", "painful", "sorry". Severity is carried by the
    consequence, stated plainly; affect keys it to how the error reads rather than
    to what it cost.
@@ -43,11 +54,11 @@ to committed artifacts, not to tool output or intermediate reasoning.
    **Surprise is not affect here.** "I did not predict this" is a statement that a
    prediction failed, which is information and belongs in the record. State it as
    the prediction failure it is.
-9. **No cumulative error counts or reliability narratives.** "Sixth error today"
+10. **No cumulative error counts or reliability narratives.** "Sixth error today"
    treats errors of very different consequence as commensurable, so small ones
    read as decline and large ones lose their weight. Count a specific documented
    failure class against its own catalogue if one exists; do not score the author.
 
-Rule 7 requires the correction; rules 8 and 9 constrain its form. Where they
-appear to conflict, rule 7 wins: a material error is always corrected, and
+Rule 8 requires the correction; rules 9 and 10 constrain its form. Where they
+appear to conflict, rule 8 wins: a material error is always corrected, and
 silence is a worse failure than plain phrasing.
