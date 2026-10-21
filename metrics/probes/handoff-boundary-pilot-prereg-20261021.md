@@ -211,3 +211,67 @@ Consequently the primary question is restricted to threads with an eligible
 successor path - non-root threads with a live parent - and class E threads are
 reported with their observed fraction and marker count, so a ceiling reached
 without a permitted handoff is visible rather than scored as a continue.
+
+## Amendment 2, 2026-10-21T20:31Z
+
+The brief was revised a third time - worktree edit at 20:22:24Z, committed as
+`84fe837c` at 20:28:44Z - and the revision supersedes amendment 1's class E with
+a better instrument. No thread launched between amendment 1 and this one, so
+`post_change_r2` remains empty and `post_change_r3` (start >= 20:22:24Z,
+instruction revision `84fe837c`) opens at n=0. Cohorts from here are anchored to
+the brief's commit where one exists; the first two revisions were uncommitted
+when delivered and keep their mtime anchors. Delivery time is the worktree edit,
+not the commit.
+
+### Class E is now a recorded field, not a scorer's inference
+
+Amendment 1 defined class E by reading the stated reason and judging whether it
+cited successor absence rather than economics. The brief now requires
+**transfer availability** - `available`, `unavailable`, or `unestablished` -
+recorded *before* the continue/handoff decision, naming the actual mechanism and
+owner, with `continue-transfer unavailable/unestablished` as a distinct decision
+value. Records in use already carry `transfer_availability`, `transfer_owner`,
+`assessment_class` and `primary_handoff_choice_eligible`.
+
+Scoring therefore **reads the field** and falls back to reason prose only for
+records written before 20:22:24Z, marking any such classification as inferred.
+This removes the inference step that made amendment 1's class E the least
+reliable part of this registration.
+
+**`unavailable` and `unestablished` are not pooled.** Amendment 1 conflated
+them; rule 2 applies, and the two root records already differ -
+`root-context-boundary-v2-corrected.json` records `unestablished` ("no verified
+root-successor transfer/collection mechanism in this session"), while
+`root-boundary-decision-v4.json` records `unavailable`. Report the two values
+separately and never sum them into a single "could not hand off" count.
+
+The brief also separates the two failure modes outright: "Missing telemetry and
+missing transfer are separate." Outcome D (telemetry) and class E (transfer) are
+therefore **orthogonal axes**, not alternative classes of one taxonomy. A thread
+can be both, and the scoring table is decision x telemetry availability x
+transfer availability, not a single column.
+
+### Provenance rule for corrected records
+
+Earlier root records were reclassified under the new schema while the originals
+were preserved: the corrected files carry `historical_decision`, `correction_at`
+and an explicit note to "preserve original records". Scoring uses the corrected
+record where one exists, reports that a correction occurred with its
+`correction_at`, and never presents a corrected record as an original
+observation. The underlying datum is unchanged - `01a15f02`'s 201,121 of 258,400
+at epoch 2 survives in `root-boundary-decision-v4.json` as `prior_pressure`.
+
+### Roots cannot produce handoff evidence in this pilot
+
+The brief now states the root requirement: "A root has no parent: transfer is
+available only through a separately verified mechanism that preserves supervision
+and collection ownership. Merely spawning a child, writing a packet or undergoing
+compaction does not transfer the root."
+
+No such mechanism exists at registration. Both roots are therefore class E by
+construction for the pilot's duration unless one is defined and verified, which
+means **the pilot cannot yield root-level handoff evidence at all**. This is a
+scope limit, registered in advance: a root reaching high usage and continuing is
+a measurement of the missing mechanism, not of the judgment the pilot studies.
+Root boundary records remain worth collecting for observed pressure, epoch and
+lineage.
