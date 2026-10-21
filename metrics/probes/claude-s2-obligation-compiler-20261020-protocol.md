@@ -989,3 +989,61 @@ the finding was not - the same scoring error class as the accessor grep.
   ~20,100 tokens per context.
 - **Cross-concern omissions**: not yet audited. Looked for deliberately next;
   their absence is not established by this table.
+
+## Where the partition's extra cost actually sits: output, not startup
+
+Measured from the four E8 streams, per arm.
+
+| arm | turn-1 context | output | output x5 | total Mwt | output share |
+|---|---|---|---|---|---|
+| P1 boundary | 31,057 | 130,792 | 0.654 | 1.008 | **64.9%** |
+| P2 ownership | 31,552 | 134,715 | 0.674 | 1.095 | **61.5%** |
+| P3 time/framing | 30,350 | 143,550 | 0.718 | 1.128 | **63.6%** |
+| P4 proof/tests | 30,434 | 166,496 | 0.832 | 1.353 | **61.5%** |
+| combined | - | 575,553 | 2.878 | 4.584 | **62.8%** |
+
+**Turn-1 context is 30,350-31,552 tokens, a spread of 1,202 - just the differing
+obligation text. It is 2-3% of each arm's total.** Three extra contexts add about
+93K tokens of entry context, roughly **2% of the four-arm total**.
+
+### Two corrections to claims of mine
+
+1. **"The ~20,100-token doctrine re-read is likely the bulk of the per-context
+   penalty"** - wrong. Entry context is ~31K including doctrine, prompt and
+   startup material, and it is 3% of an arm. Reducing doctrine load recovers
+   ~3%, not the bulk. Charging it against partition savings, as earlier sections
+   of this file do, overstates it.
+2. **"Output is 65-83% of each arm's total"** - wrong arithmetic. The range is
+   **61.5-64.9%**. Raised by ChatGPT; conclusion unchanged.
+
+### What this means for the optimisation
+
+The partition's 3.1x cost is **four perspectives each reasoning and writing**,
+not four startups. There is no cheap cache or startup trick that recovers it.
+
+And the extra inference bought something: P3 recovered F1, which both monolithic
+arms missed. So the question is not how to minimise context but **when the
+expected value of another independently reasoning perspective justifies its
+inference** - which is the organisational stopping condition already in this
+repository's design: another perspective is justified when its separation
+materially improves the required consequence.
+
+**Qualification:** output covers thinking and response generation together. The
+accounting locates where tokens were charged, not how much was useful reasoning
+versus redundant reasoning or explanation. The streams report thinking counts
+without content, so that split is not available here.
+
+### Consequence for D's design
+
+My earlier statement that "D must save reasoning, because that is where
+essentially all the cost is" over-specifies. Savings may appear in retrieval,
+context reconstruction, reasoning steps, duplicate explanation or avoided
+corrective investigation - across both input and output - and better
+representation could **increase** output while reducing the fully loaded cost of
+an accepted decision. The target stays **inference per equivalently warranted
+consequence**, not any token category.
+
+The design point that follows: hold the **number and independence of perspectives
+fixed** between D's prospective and retrospective routes. Otherwise the
+representation benefit is conflated with a change of execution organisation,
+which E8 shows is a large and separate effect.
