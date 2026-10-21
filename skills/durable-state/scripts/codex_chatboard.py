@@ -4,9 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 from datetime import datetime, timedelta, timezone
+import errno
 import json
+import math
+import os
 from pathlib import Path
+import select
+import struct
+import sys
+import time
 from typing import Any, Callable
 from uuid import UUID, uuid4
 
@@ -185,6 +193,147 @@ def read_view(board: dict[str, Any], *, since: int | None, limit: int,
     return {"messages": rows, "claims": claims}
 
 
+class RefChanges:
+    """Linux notifications are wake hints; integrity-checked Git reads own truth."""
+
+    EVENT = struct.Struct("iIII")
+    # modify, attrib, close_write, moved_from/to, create/delete, delete/move_self
+    WATCH_MASK = 0x00000FCE
+    INVALIDATED = 0x0000EC00  # delete_self, move_self, unmount, overflow, ignored
+
+    def __init__(self, repository: Path) -> None:
+        if sys.platform != "linux":
+            raise ChatboardError("wait requires Linux inotify; polling fallback is not enabled")
+        store = GitRefDurableStateStore(repository, NAMESPACE)
+        if store._git(["rev-parse", "--show-ref-format"]).strip() != b"files":
+            raise ChatboardError("wait requires the Git files ref backend")
+        common = Path(store._git([
+            "rev-parse", "--path-format=absolute", "--git-common-dir"
+        ]).decode().strip())
+        self.paths: list[tuple[Path, set[str]]] = []
+        directory = common
+        for component in store._ref(BOARD_KEY).split("/"):
+            names = {component}
+            if directory == common:
+                names.add("packed-refs")
+            self.paths.append((directory, names))
+            directory /= component
+        self.libc = ctypes.CDLL(None, use_errno=True)
+        self.libc.inotify_init1.argtypes = [ctypes.c_int]
+        self.libc.inotify_init1.restype = ctypes.c_int
+        self.libc.inotify_add_watch.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_uint32]
+        self.libc.inotify_add_watch.restype = ctypes.c_int
+        self.fd = -1
+        self.watches: dict[int, set[str]] = {}
+        self.arm()
+
+    def arm(self) -> None:
+        # Watch ancestors before descendants, including when the board has
+        # never been posted. Re-arm BEFORE rereading after topology changes.
+        fd = self.libc.inotify_init1(os.O_NONBLOCK | os.O_CLOEXEC)
+        if fd < 0:
+            raise OSError(ctypes.get_errno(), "cannot initialize board notifications")
+        watches = {}
+        try:
+            for directory, names in self.paths:
+                wd = self.libc.inotify_add_watch(fd, os.fsencode(directory), self.WATCH_MASK)
+                if wd < 0:
+                    error = ctypes.get_errno()
+                    if error == errno.ENOENT and watches:
+                        break  # the nearest existing ancestor is already watched
+                    raise OSError(error, "cannot watch board ref directory")
+                watches[wd] = names
+        except BaseException:
+            os.close(fd)
+            raise
+        self.close()
+        self.fd, self.watches = fd, watches
+
+    def wait(self, timeout: float | None) -> bool:
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+            remaining = None if deadline is None else max(0, deadline - time.monotonic())
+            ready, _, _ = select.select([self.fd], [], [], remaining)
+            if not ready:
+                return False
+            try:
+                events = os.read(self.fd, 65536)
+            except BlockingIOError:
+                continue
+            offset = 0
+            while offset < len(events):
+                wd, mask, _, length = self.EVENT.unpack_from(events, offset)
+                offset += self.EVENT.size
+                name = os.fsdecode(events[offset:offset + length].split(b"\0", 1)[0])
+                offset += length
+                if mask & self.INVALIDATED or name in self.watches.get(wd, set()):
+                    return True
+            # Unrelated Git activity does not trigger another board read.
+
+    def close(self) -> None:
+        if self.fd >= 0:
+            os.close(self.fd)
+            self.fd = -1
+
+    def __enter__(self) -> RefChanges:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+
+def wait_board(repository: Path, *, since: int, limit: int = 100,
+               topic: str | None = None, topics: list[str] | None = None,
+               timeout_seconds: float | None = None) -> dict[str, Any]:
+    if since < 0 or not 1 <= limit <= 500:
+        raise ChatboardError("--since must be nonnegative and --limit must be 1..500")
+    selected = [*(topics or []), *([topic] if topic is not None else [])]
+    if any(not name.strip() for name in selected):
+        raise ChatboardError("--topic must be nonempty")
+    selected = sorted(set(selected))
+    if timeout_seconds is not None and (not math.isfinite(timeout_seconds) or timeout_seconds < 0):
+        raise ChatboardError("--timeout-seconds must be finite and nonnegative")
+    deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
+    # Subscribe first, then read: a publication during the read remains queued.
+    with RefChanges(repository) as changes:
+        while True:
+            board, revision = read_board(repository)
+            matches = [row for row in board["messages"] if row["sequence"] > since
+                       and (not selected or row["topic"] in selected)]
+            rows = matches[:limit]
+            more = len(matches) > limit
+            cursor = rows[-1]["sequence"] if more else max(since, board["next_sequence"] - 1)
+            result = {"status": "messages" if rows else "timeout", "revision": revision,
+                      "messages": rows, "next_since": cursor, "has_more": more,
+                      "topics": selected, "topic": selected[0] if len(selected) == 1 else None}
+            if rows or (deadline is not None and time.monotonic() >= deadline):
+                return result
+            remaining = None if deadline is None else max(0, deadline - time.monotonic())
+            if changes.wait(remaining):
+                changes.arm()
+            # Also reread once at timeout: return the last authoritative view.
+
+
+def topics_view(board: dict[str, Any], *, since: int, limit: int, offset: int) -> dict[str, Any]:
+    if since < 0 or offset < 0 or not 1 <= limit <= 500:
+        raise ChatboardError("--since and --offset must be nonnegative; --limit must be 1..500")
+    topics: dict[str, dict[str, Any]] = {}
+    for row in board["messages"]:
+        if row["sequence"] <= since:
+            continue
+        entry = topics.setdefault(row["topic"], {"topic": row["topic"], "message_count": 0})
+        entry["message_count"] += 1
+        entry["latest_sequence"] = row["sequence"]
+        entry["latest_observed_at"] = row["observed_at"]
+    ordered = [topics[name] for name in sorted(topics)]
+    page = ordered[offset:offset + limit]
+    more = offset + len(page) < len(ordered)
+    return {"topics": page, "total_topics": len(ordered), "since": since,
+            "next_offset": offset + len(page) if more else None, "has_more": more}
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     root.add_argument("--repository", type=Path, default=Path.cwd())
@@ -193,6 +342,17 @@ def parser() -> argparse.ArgumentParser:
     read.add_argument("--since", type=int, default=None)
     read.add_argument("--limit", type=int, default=100)
     read.add_argument("--active-claims", action="store_true")
+    wait = commands.add_parser("wait", help="block for new messages without periodic polling")
+    wait.add_argument("--since", type=int, required=True)
+    wait.add_argument("--limit", type=int, default=100)
+    wait.add_argument("--topic", action="append", dest="topics", default=[],
+                      help="exact topic match; repeat to match any selected topic; omit for all")
+    wait.add_argument("--timeout-seconds", type=float, default=None,
+                      help="default: indefinite; 0 checks once; timeout exits 2")
+    topics = commands.add_parser("topics", help="list recorded topics with counts and latest sequence")
+    topics.add_argument("--since", type=int, default=0)
+    topics.add_argument("--limit", type=int, default=100)
+    topics.add_argument("--offset", type=int, default=0)
     post_cmd = commands.add_parser("post")
     for name in ("author", "session-id", "topic", "body"):
         post_cmd.add_argument(f"--{name}", required=True)
@@ -219,6 +379,15 @@ def main() -> int:
             view = read_view(board, since=args.since, limit=args.limit,
                              active_claims=args.active_claims, observed_at=timestamp())
             print(json.dumps({"revision": revision, **view}, indent=2))
+        elif args.command == "wait":
+            result = wait_board(args.repository, since=args.since, limit=args.limit,
+                                topics=args.topics, timeout_seconds=args.timeout_seconds)
+            print(json.dumps(result, indent=2))
+            return 0 if result["status"] == "messages" else 2
+        elif args.command == "topics":
+            board, revision = read_board(args.repository)
+            view = topics_view(board, since=args.since, limit=args.limit, offset=args.offset)
+            print(json.dumps({"revision": revision, **view}, indent=2))
         elif args.command == "post":
             print(json.dumps(post(
                 args.repository, author=args.author, session_id=args.session_id,
@@ -236,7 +405,12 @@ def main() -> int:
                 args.repository, resource=args.resource, session_id=args.session_id,
                 claim_id=args.claim_id,
             ), indent=2))
-    except (ChatboardError, DurableStateError, OSError) as failure:
+    except KeyboardInterrupt:
+        if args.command != "wait":
+            raise
+        print("wait cancelled; board messages remain available", file=sys.stderr)
+        return 130
+    except (ChatboardError, DurableStateError, OSError, OverflowError) as failure:
         print(f"error: {failure}", file=__import__("sys").stderr)
         return 1
     return 0
