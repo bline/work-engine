@@ -600,3 +600,53 @@ process also produces *better* evidence, a cheaper judgment could be credited to
 cheaper assessment when it was really improved evidence. Both are worth having;
 attributing one to the other would reproduce, in the measurement, the same
 scope-of-authority error this audit is about.
+
+## A hazard for adaptive perspective routing, with a data instance
+
+Raised by ChatGPT at close: historical success cannot be the only criterion for
+choosing which perspectives to fund, or the system becomes efficient at finding
+familiar defects while systematically ignoring novel ones.
+
+**This session supplies the instance that makes it concrete rather than
+cautionary.** From the dispositions recorded across the protocol files - my own
+records, not re-derived from the streams:
+
+- **F1** (concurrent-drain panic) was matched by nearly every arm that looked at
+  the process side: all four generation-2 arms, A1, C, B, D, E5, and partition
+  P3. It is the cheapest finding in the pilot.
+- **F3** (handle detached on drain cancellation) was matched by **two** arms in
+  the whole investigation - D, with hand-authored ownership obligations, and E6,
+  with one obligation and nothing competing.
+
+A router allocating perspectives by historical recall would therefore fund
+F1-class concerns heavily and F3-class concerns barely - **the exact inversion of
+where help was needed.** F1 needed no help. F3 needed a dedicated obligation and
+an uncontested context, and even then two of seventeen runs found it.
+
+So exploitation metrics are **anti-correlated with where additional perspectives
+pay** on this subject. Any routing policy needs an exploration term whose cost
+and authority are explicitly governed, and recall history is close to the worst
+single signal available for it.
+
+## The three-way relationship this investigation found
+
+Stated because the pilot kept treating these as one variable and they are not:
+
+- **Representation determines what can be asked.** E1 held the right cancellation
+  property and bound it to the wrong subject class, so the question was never put.
+- **Organisation influences what gets examined.** E6: identical obligation text,
+  one obligation instead of 25, F3 from miss to match at the same model and
+  effort.
+- **Evidence determines what can legitimately be concluded.** The acceptance
+  ledger: 0 of 7 invariants adequately evidenced, with no implementation read and
+  no defect discovered.
+
+**Model capability operates inside all three** and was never the binding
+constraint on any of them. That is the investigation's answer to the question it
+started from, and it is not the answer it set out to get.
+
+## Correction to a figure quoted at close
+
+The closing summary cites "thirteen recorded corrections". The measured figure is
+**19 correction commits of 56 commits** on 2026-10-20, counted from the commit
+log. Thirteen was my own earlier in-conversation estimate, made before I counted.
