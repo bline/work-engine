@@ -5,15 +5,19 @@
 //! (`{kind, message}`, the kind mapped from the JS message by a regex table). Each test replays
 //! the corpus through the Rust API and requires `serde_json::Value` equality of outputs and
 //! equality of error kind and message; revision strings are compared by `==`. The fixture header
-//! records the Node version and the sha256 of both JS files, and `fixture_matches_js_sources`
-//! fails when either file has changed since generation.
+//! records the Node version, the time zone (`UTC`, pinned by the generator) and the sha256 of both
+//! JS files, and `fixture_matches_js_sources` fails when either file has changed since generation.
 //!
 //! Declared differences (not parity claims):
 //! * `deviationCases`: the JS hashes and interpolates a missing or non-string `threadId` and a
 //!   missing `schemaVersion`; Rust rejects them (`invalid_snapshot_field`).
 //! * Timestamps tagged `legacy`: V8 `Date.parse` accepts non-ISO legacy forms; Rust accepts only
-//!   the ECMAScript date-time grammar and must never accept what V8 rejects. Tagged `es_iso`
-//!   strings must have identical verdicts.
+//!   the ECMAScript date-time grammar and, on this corpus, never accepts what V8 rejects. Tagged
+//!   `es_iso` strings must have identical verdicts. The V8 verdicts are recorded under
+//!   `TZ=UTC`. For a date-time with no offset V8 applies the local zone before its range check,
+//!   so within 14 hours of either range bound (about `+275760-09-13T00:00:00` and
+//!   `-271821-04-20T00:00:00`) its verdict depends on the zone, while Rust checks such strings as
+//!   UTC; outside that window the verdicts do not depend on the zone.
 //! * Not covered: lone-surrogate strings (not representable in `serde_json` input), and numbers
 //!   outside f64 range (JS `JSON.parse` yields Infinity; `serde_json` rejects the text).
 
@@ -112,6 +116,7 @@ fn fixture_header_is_consistent() {
             .as_str()
             .is_some_and(|v| v.starts_with('v'))
     );
+    assert_eq!(header["timeZone"].as_str(), Some("UTC"));
 }
 
 #[test]

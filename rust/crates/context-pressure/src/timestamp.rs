@@ -4,8 +4,14 @@
 ///
 /// V8 additionally accepts legacy forms (`"Aug 25 2026"`, `"2026-8-25"`, a space separator,
 /// lowercase `t`/`z`, `+0530` offsets, surrounding whitespace). This function rejects those, so
-/// it never accepts a string `Date.parse` rejects but may reject strings it accepts. Local-time
-/// strings (no offset) are range-checked as UTC.
+/// it may reject strings `Date.parse` accepts.
+///
+/// For every string with an explicit offset (`Z` or `+hh:mm`) it never accepts a string
+/// `Date.parse` rejects. A date-time with no offset is local time to V8, which applies the local
+/// zone before its +/-8.64e15 ms range check; this function range-checks it as UTC. The two agree
+/// under `TZ=UTC` (the basis of the golden corpus) and away from the range bounds; within 14
+/// hours of either bound (about `+275760-09-13T00:00:00` and `-271821-04-20T00:00:00`) a
+/// non-UTC zone can make V8 reject a string this function accepts.
 pub(crate) fn is_es_iso_timestamp(text: &str) -> bool {
     parse_es_iso(text).is_some()
 }

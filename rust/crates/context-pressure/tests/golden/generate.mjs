@@ -9,6 +9,14 @@
 // a message with no entry fails the run.
 //
 // Usage: node rust/crates/context-pressure/tests/golden/generate.mjs
+// Pin the time zone before any Date use. `Date.parse` interprets an ES date-time string that has
+// no offset in the local zone, and V8 applies the zone before its +/-8.64e15 ms range check, so
+// the verdict for such strings near a range bound depends on TZ. The corpus is therefore
+// generated, and its verdicts are defined, under UTC.
+process.env.TZ = "UTC";
+if (new Date(2026, 0, 1).getTimezoneOffset() !== 0 || new Date(2026, 6, 1).getTimezoneOffset() !== 0) {
+  throw new Error("could not pin TZ=UTC for the golden generator");
+}
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -613,7 +621,8 @@ const esIso = [
   "2026-08-25T22:60Z", "2026-08-25T22:59:60Z", "2026-08-25T22:59:59.9999Z", "2026-08-25T22:00:00.1Z", "2026-08-25T22:00:00.12Z", "2026-08-25T22:00:00.123456789Z", "2026-08-25T22:00:00.1234567890123Z", "2026-08-25T22:00:00.Z", "2026-08-25T22:00:00,5Z",
   "2026-08-25T22:00:00+00:00", "2026-08-25T22:00:00-00:00", "2026-08-25T22:00:00+05:30", "2026-08-25T22:00:00-23:59", "2026-08-25T22:00:00+23:59", "2026-08-25T22:00:00+24:00", "2026-08-25T22:00:00-24:00", "2026-08-25T22:00:00+00:60", "2026-08-25T22:00:00+25:00", "2026-08-25T22:00:00+0530", "2026-08-25T22:00:00+05", "2026-08-25T22:00:00 +05:30",
   "2026-08-25T22:00+05:30", "2026-08-25T22:00:00.5+05:30", "2026-08-25T22+05:30", "2026-08-25T22",
-  "2026-08-25T22:00:00", "2026-08-25T22:00", "2026-08-25T22:00:00.000", "2026-08-25T", "2026-08-25T:", "T22:00:00Z",
+  "2026-08-25T22:00:00", "2026-08-25T22:00", "2026-08-25T22:00:00.000",
+  "+275760-09-13T00:00:00", "+275760-09-13T00:00:00.001", "-271821-04-20T00:00:00", "-271821-04-19T23:59:59.999", "2026-08-25T", "2026-08-25T:", "T22:00:00Z",
   "+002026-08-25T22:00:00.000Z", "-000001-01-01T00:00:00.000Z", "-000000-01-01T00:00:00.000Z", "+000000-01-01T00:00:00.000Z", "+275760-09-13T00:00:00.000Z", "+275760-09-13T00:00:00.001Z", "+275760-09-13", "+275760-09-14", "+275761-01-01", "-271821-04-20T00:00:00.000Z", "-271821-04-19T23:59:59.999Z", "-271821-04-20", "-271821-04-19", "-271822-01-01", "+002026", "+002026-08", "+02026-08-25", "+2026-08-25", "-2026-08-25", "+0020260-08-25",
   "2026-8-25", "26-08-25", "02026-08-25", "2026-08-5", "2026/08/25", "20260825", "20260825T220000Z",
   "2026-08-25t22:00:00z", "2026-08-25T22:00:00z", "2026-08-25t22:00:00Z", "2026-08-25 22:00:00Z", "2026-08-25 22:00:00",
@@ -660,6 +669,7 @@ const fixture = {
   header: {
     generator: "rust/crates/context-pressure/tests/golden/generate.mjs",
     nodeVersion: process.version,
+    timeZone: process.env.TZ,
     jsSha256: Object.fromEntries(Object.entries(jsFiles).map(([name, path]) => [name, createHash("sha256").update(readFileSync(path)).digest("hex")])),
     caseCount,
     sections: {
