@@ -1,7 +1,7 @@
 {
  "schema": "claude-observational-cohort-v1",
  "registered_at": "2026-10-22T16:25:00Z",
- "status": "open: builder running at registration time",
+ "status": "scored 2026-10-22T18:30Z; builder line complete, not integrated",
  "label": "observational cohort, NOT R2",
  "r2_disposition": "frozen and pending. No R2 builder has been dispatched.",
  "why_not_r2": {
@@ -52,7 +52,8 @@
   "api_calls": 66,
   "max_context": 110815,
   "weighted_tokens": 1249470,
-  "adjudication": "candidate write calls were listed and the matched command read; no detector output was taken at face value"
+  "adjudication": "candidate write calls were listed and the matched command read; no detector output was taken at face value",
+  "superseded_by": "results"
  },
  "comparison_against_frozen_baselines": {
   "B1_corrected_median": 102049,
@@ -105,5 +106,225 @@
    "observation": "the successor root crossed the 150,000 trigger 73 minutes after the transfer that reset it to 51,954. Relevant to R3 and to the root-transfer economics: a root reaches the trigger quickly, which is consistent with the measured 1.4-call break-even rather than against it."
   }
  },
- "instrument_note": "No live poller was run for this cohort. R1 defect R1-M-002 came from a watcher that derived idleness from transcript mtime; a single-builder cohort is fully recoverable post hoc from the transcript, so the instrument was omitted rather than repeated."
+ "instrument_note": "No live poller was run for this cohort. R1 defect R1-M-002 came from a watcher that derived idleness from transcript mtime; a single-builder cohort is fully recoverable post hoc from the transcript, so the instrument was omitted rather than repeated.",
+ "results": {
+  "window_utc": [
+   "2026-10-22T14:47:59Z",
+   "2026-10-22T18:06:51Z"
+  ],
+  "agents": 6,
+  "commits": 6,
+  "head": "2e0a80eb",
+  "branch": "worktree-agent-ad67ff1b4318eee35",
+  "integrated": false,
+  "added_lines": {
+   "rust_src": 1527,
+   "rust_tests": 1061,
+   "rust_total": 2588,
+   "js_generator_mjs": 698,
+   "fixture_json_lines": 1,
+   "fixture_bytes": 2698719,
+   "cargo_toml": 19,
+   "cargo_lock": 212,
+   "basis": "git diff --numstat 6f4d08a1..worktree-agent-ad67ff1b4318eee35, all additions, no deletions"
+  },
+  "per_agent": [
+   {
+    "agent": "a1fb23e0beb53db59",
+    "role": "port-boundary scout",
+    "model": "opus-5-5",
+    "calls": 41,
+    "weighted": 636425,
+    "max_context": 93089,
+    "start": "14:47:59",
+    "end": "14:51:16"
+   },
+   {
+    "agent": "acff6f62c6078c24b",
+    "role": "design alignment check",
+    "model": "opus-5-5",
+    "calls": 77,
+    "weighted": 1070180,
+    "max_context": 121864,
+    "start": "15:49:41",
+    "end": "15:54:02"
+   },
+   {
+    "agent": "ad67ff1b4318eee35",
+    "role": "builder, units 1-3",
+    "model": "sonnet-5-5",
+    "calls": 122,
+    "weighted": 2478018,
+    "max_context": 148507,
+    "start": "15:58:38",
+    "end": "16:08:40",
+    "ended": "handoff_ready"
+   },
+   {
+    "agent": "acae03b0f8c240eec",
+    "role": "successor, unit 4",
+    "model": "sonnet-5-5",
+    "calls": 53,
+    "weighted": 1330538,
+    "max_context": 141015,
+    "start": "16:09:11",
+    "end": "16:16:00"
+   },
+   {
+    "agent": "a118ffaef45ac2ea6",
+    "role": "tier-1 review",
+    "model": "opus-5-5",
+    "calls": 74,
+    "weighted": 1479905,
+    "max_context": 167078,
+    "start": "16:16:30",
+    "end": "16:22:57"
+   },
+   {
+    "agent": "aef469db429d6513a",
+    "role": "P3 fix pass (F1, F3)",
+    "model": "sonnet-5-5",
+    "calls": 35,
+    "weighted": 429564,
+    "max_context": 72964,
+    "start": "18:04:21",
+    "end": "18:06:51"
+   }
+  ],
+  "economics": {
+   "subagent_weighted_Mwt": 7.425,
+   "orchestrator_weighted_Mwt": 3.704,
+   "total_weighted_Mwt": 11.129,
+   "orchestration_share": 0.333,
+   "Mwt_per_krs_subagents_only": 2.869,
+   "Mwt_per_krs_with_orchestration": 4.3,
+   "slice_cohort_Mwt_per_krs": 2.209,
+   "slice_cohort_definition": "builder + successor + tier-1 review + P3 fix pass over 2,588 gross added Rust lines, the same shape as R1's B4 cohort figures",
+   "gating_share_of_subagent_cost": 0.23,
+   "gating_note": "scout 0.636 + alignment 1.070 = 1.707 Mwt read-only before any code; R1's comparable contract-and-planning cohort was 11.311 Mwt or 30.7% of subagent cost"
+  },
+  "comparison_to_B4": {
+   "B4_s1": 1.255,
+   "B4_s2": 1.778,
+   "B4_mean": 1.517,
+   "p1_slice": 2.209,
+   "delta_vs_mean": 0.456,
+   "reading": "the port cost 45.6% more per 1k Rust lines than the mean of R1's two greenfield code slices. n=1 per cell. A port and a greenfield crate are not comparable denominators, which is why this was registered as observational: the port carries a parity obligation (a 698-line JS generator, a 2.7 MB fixture, 10,168 cases) that produces no Rust lines."
+  },
+  "comparison_to_B5": {
+   "B5": 0.362,
+   "p1": 0.333,
+   "not_comparable": "B5 is post-integration; P1 is not integrated. R1's pre-integration share was 0.339, which P1's 0.333 is within 0.6 points of."
+  },
+  "quality": {
+   "tier1_verdict": "ready",
+   "findings": 4,
+   "by_severity": {
+    "P1": 0,
+    "P2": 0,
+    "P3": 4
+   },
+   "first_candidate_accepted": true,
+   "verification_depth": "the reviewer reproduced all four gates and ran 12 targeted mutations against the parity harness; the harness failed under each",
+   "fix_pass": "F1 (golden generator time-zone dependence) and F3 (a wrong comment) fixed in 2771b3ee and 2e0a80eb; F2 and F4 deferred to the wiring step by the reviewer",
+   "rust_behaviour_changed_by_fix_pass": false,
+   "baseline": "R1: 19 findings, 0 P1, 2 of 3 slices accepted first candidate; pure-Codex baseline: mean 6.0 findings over 11 slices and 0 of 14 first-candidate",
+   "severity_caveat": "the pure-Codex baseline records finding counts without severities, so no cross-arm severity comparison is supportable"
+  },
+  "handoff": {
+   "outcome": "A",
+   "declared_at_context": 143399,
+   "trigger": 150000,
+   "below_trigger_by": 6601,
+   "rule_applied": "packet: declare if a check reads >=150,000 or the next unit would cross it",
+   "predecessor_end": "16:08:40",
+   "successor_start": "16:09:11",
+   "turnaround_s": 31,
+   "r1_range_s": [
+    27.9,
+    58.4
+   ],
+   "claude_arm_running_total": "5 instances of outcome A; 3 of the 5 declared below the trigger",
+   "codex_pilot_comparator": "0 instances in 120 records",
+   "workspace_note": "the successor ran in the predecessor's worktree, not an isolated one, so this handoff did not test worktree re-entry"
+  },
+  "context_at_first_code_write": [
+   {
+    "agent": "ad67ff1b4318eee35",
+    "first_source_write": 81055,
+    "language": "rust",
+    "read_calls_before": 26,
+    "api_call": 33,
+    "detail": "Write src/error.rs; a Cargo.toml write preceded it at 72,427"
+   },
+   {
+    "agent": "acae03b0f8c240eec",
+    "first_source_write": 83177,
+    "language": "javascript",
+    "read_calls_before": 9,
+    "api_call": 15,
+    "detail": "Write tests/golden/generate.mjs; its first .rs write is tests/golden.rs at 106,127"
+   },
+   {
+    "agent": "aef469db429d6513a",
+    "first_source_write": 60744,
+    "language": "javascript",
+    "read_calls_before": 9,
+    "api_call": 13,
+    "detail": "heredoc Python patch of tests/golden/generate.mjs"
+   }
+  ],
+  "context_at_first_code_write_reading": "all three are below the corrected B1 median of 102,049 (amendment 3), and pre-write read calls are 26, 9 and 9 against B6's 15.5. This is not evidence about the instruction change: the named read set is 813 lines against B1 builders reading a ~2,700-line crate, n=3, and two of the three entered an existing crate rather than starting one.",
+  "context_discipline": {
+   "compactions": 0,
+   "completeness_basis": "grep for both marker forms, \"compactMetadata\" and \"compact_boundary\", over all 6 subagent transcripts in the orchestrator's own subagents directory plus the orchestrator transcript: 7 files, 7 counts of 0. Subagent transcripts are written only in that directory, so the domain is complete for this campaign.",
+   "context_checks": 8,
+   "checks_detail": "6 by the two builders, 1 by the tier-1 reviewer, 1 by the fix pass",
+   "reviewer_override": {
+    "agent": "a118ffaef45ac2ea6",
+    "input_tokens": 157436,
+    "recommendation": "fresh",
+    "action": "continued to completion",
+    "max_context": 167078,
+    "justification_recorded": "read-only review with no claims",
+    "measurement_note": "the first observed case of a worker continuing against a fresh recommendation; it was a reviewer, not a builder, and it declared the reading in its result"
+   },
+   "orchestrator_peak": 190668,
+   "orchestrator_note": "the root reached 190,668 without compacting, 40,668 above the trigger and 11,865 below the lowest auto-compaction observed on this machine (202,533). Another R3 data point."
+  },
+  "js_to_rust_expansion": {
+   "js_subject_src": 369,
+   "rust_src": 1527,
+   "src_ratio": 4.14,
+   "js_subject_src_plus_test": 499,
+   "rust_src_plus_tests": 2588,
+   "total_ratio": 5.19,
+   "including_generator_written": {
+    "lines": 3286,
+    "ratio": 6.59
+   },
+   "scout_estimate": "2.0-3.0x, total Rust 1,400-2,100",
+   "actual": 2588,
+   "miss": "23% above the top of the estimated range; 85% above its bottom",
+   "significance": "first measured in-repo JS->Rust expansion ratio. R1 was greenfield and gave none. A port's Rust output is about 4x its JS source, not 2-3x, and the parity obligation adds a further 698 JS lines and a 2.7 MB fixture that produce no Rust."
+  },
+  "defects_found": [
+   {
+    "id": "P1-M-001",
+    "severity": "P2",
+    "owner": "coordinator",
+    "what": "The P1 packet named 813 product read lines, but 176 of them did not exist at the base commit: docs/rust-development.md (158) and app-server/docs/context-lifecycle-transition-protocol.md (18). The builder read about 637.",
+    "evidence": "result-v1.json open_issues item 4 (self-reported by the builder line); packet-v2-successor records it as a coordinator error",
+    "consequence": "the named read set, which is the quantity R2's restated criterion is measured against, was 22% smaller in fact than on paper. For R2 this is the difference between meeting and missing a threshold.",
+    "remedy": "R2 dispatch must verify every read-set path exists at the required base commit before the packet is frozen, and the criterion must be evaluated on the verified set."
+   }
+  ],
+  "what_it_answered": {
+   "read_set_adherence": "the builders read approximately the named set and declared their additions (decision-readiness lib.rs, rust-toolchain.toml); no builder swept the repository",
+   "trigger_behaviour": "the 150,000 trigger produced a handoff on a single-slice port, at 143,399, by the next-unit rule rather than by crossing",
+   "expansion_ratio": "measured for the first time, 4.14x source",
+   "port_cost": "2.209 Mwt/krs for the slice cohort, a new comparator with no prior baseline"
+  },
+  "what_it_did_not_answer": "H1 to H5 all remain unscored. R2 is still frozen and still needs a subject with a verified read set of at least 2,000 existing lines, at least 1,000 added lines in one language, and at least three code-slice builders."
+ }
 }
