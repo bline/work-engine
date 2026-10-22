@@ -1,0 +1,843 @@
+{
+ "schema": "claude-builder-campaign-score-v1",
+ "scored_at": "2026-10-22T13:09:35.939825+00:00",
+ "campaign": "readiness-r1-20261021",
+ "host": "claude-code",
+ "orchestrator_session": "bf60b4c1-34d1-4900-bbe0-15042efb0e2c",
+ "state_dir": "/home/bline/.local/state/work-engine/readiness-r1-20261021",
+ "window_utc": {
+  "start": "2026-10-21T23:47:57.732000+00:00",
+  "end": "2026-10-22T03:03:53+00:00",
+  "hours": 3.265
+ },
+ "status": "campaign complete; integration proposed and awaiting user confirmation",
+ "cohorts": {
+  "contract_and_planning": {
+   "agents": 7,
+   "calls": 383,
+   "weighted_Mwt": 11.311,
+   "window": [
+    "2026-10-21T23:47:57.732000+00:00",
+    "2026-10-22T00:54:11.423000+00:00"
+   ],
+   "rust_lines_gross": 0,
+   "Mwt_per_krs": "not meaningful: cohort produced no Rust of comparable size"
+  },
+  "s1": {
+   "agents": 3,
+   "calls": 236,
+   "weighted_Mwt": 6.085,
+   "window": [
+    "2026-10-22T00:55:26.296000+00:00",
+    "2026-10-22T01:22:49.947000+00:00"
+   ],
+   "rust_lines_gross": 4849,
+   "Mwt_per_krs": 1.255
+  },
+  "s2": {
+   "agents": 7,
+   "calls": 471,
+   "weighted_Mwt": 9.597,
+   "window": [
+    "2026-10-22T01:23:30.456000+00:00",
+    "2026-10-22T02:14:56.158000+00:00"
+   ],
+   "rust_lines_gross": 5398,
+   "Mwt_per_krs": 1.778
+  },
+  "s3": {
+   "agents": 6,
+   "calls": 378,
+   "weighted_Mwt": 6.177,
+   "window": [
+    "2026-10-22T02:16:21.379000+00:00",
+    "2026-10-22T03:03:53+00:00"
+   ],
+   "rust_lines_gross": 63,
+   "Mwt_per_krs": "not meaningful: cohort produced no Rust of comparable size"
+  },
+  "a1_and_tier2_final": {
+   "agents": 2,
+   "calls": 167,
+   "weighted_Mwt": 3.678,
+   "window": [
+    "2026-10-22T02:35:20.982000+00:00",
+    "2026-10-22T02:58:13.844000+00:00"
+   ],
+   "rust_lines_gross": 0,
+   "Mwt_per_krs": "not meaningful: cohort produced no Rust of comparable size"
+  }
+ },
+ "campaign_totals": {
+  "r1_agents": 25,
+  "subagent_weighted_Mwt": 36.847,
+  "subagent_calls": 1635,
+  "orchestrator_weighted_Mwt": 18.869,
+  "orchestrator_calls": 355,
+  "total_weighted_Mwt": 55.716,
+  "orchestration_share": 0.339,
+  "rust_lines_net_added": 10203,
+  "Mwt_per_krs_subagents_only": 3.611,
+  "Mwt_per_krs_with_orchestration": 5.461,
+  "plus_unit_equivalent_per_krs_subagents_only": 28.3,
+  "plus_unit_equivalence_caveat": "7.826 units/Mwt is the baseline's fitted gpt-6 Codex quota price. Applied here only to restate an identically-defined weighted-token count in the baseline's display unit. This arm consumes no Codex quota; it is not a quota claim."
+ },
+ "baseline_comparators_Mwt_per_krs": {
+  "lifecycle_S0_S3": {
+   "rs_lines": 11403,
+   "units_per_krs": 31,
+   "Mwt_per_krs": 3.978,
+   "note": "closest by size and by multi-slice shape"
+  },
+  "lifecycle_S4": {
+   "rs_lines": 5492,
+   "units_per_krs": 27,
+   "Mwt_per_krs": 3.49
+  },
+  "lifecycle_S5": {
+   "rs_lines": 5236,
+   "units_per_krs": 40,
+   "Mwt_per_krs": 5.174
+  },
+  "lifecycle_S6_S7": {
+   "rs_lines": 14873,
+   "units_per_krs": 25,
+   "Mwt_per_krs": 3.162
+  },
+  "domain_libraries": {
+   "rs_lines": 43296,
+   "units_per_krs": 16,
+   "Mwt_per_krs": 2.028,
+   "note": "standalone libraries; arguably the nearer category for a new crate"
+  },
+  "orchestrator_overhead_on_top_of_slices": 0.25
+ },
+ "handoffs": {
+  "outcome_a_instances": 4,
+  "instances": [
+   {
+    "boundary": "s1",
+    "predecessor": "a27d1ec9c1e4acca4",
+    "successor": "abeb3da4543a8545f",
+    "declaration": "s1/handoff-v1.md",
+    "reading_at_declaration": 165624,
+    "tool_recommendation": "fresh",
+    "declared_below_trigger": false,
+    "predecessor_last_activity": "2026-10-22T01:05:07.017Z",
+    "successor_first_activity": "2026-10-22T01:05:37.520Z",
+    "turnaround_seconds": 30.5
+   },
+   {
+    "boundary": "s2_a",
+    "predecessor": "a0e59f73949c117b9",
+    "successor": "a68b863f021a779a8",
+    "declaration": "s2/handoff-v1.md",
+    "reading_at_declaration": 145858,
+    "tool_recommendation": "retain_ok",
+    "declared_below_trigger": true,
+    "predecessor_last_activity": "2026-10-22T01:28:46.789Z",
+    "successor_first_activity": "2026-10-22T01:29:41.296Z",
+    "turnaround_seconds": 54.5
+   },
+   {
+    "boundary": "s2_a2",
+    "predecessor": "a68b863f021a779a8",
+    "successor": "aed2ceafc33b90035",
+    "declaration": "s2/handoff-a2-v1.md",
+    "reading_at_declaration": 159897,
+    "tool_recommendation": "fresh",
+    "declared_below_trigger": false,
+    "predecessor_last_activity": "2026-10-22T01:37:05.578Z",
+    "successor_first_activity": "2026-10-22T01:38:03.950Z",
+    "turnaround_seconds": 58.4
+   },
+   {
+    "boundary": "s2_b2",
+    "predecessor": "a5d3ffe262a707e38",
+    "successor": "a74b04b4ca3160232",
+    "declaration": "s2/handoff-b2-v1.md",
+    "reading_at_declaration": 149478,
+    "tool_recommendation": "retain_ok",
+    "declared_below_trigger": true,
+    "predecessor_last_activity": "2026-10-22T01:53:58.913Z",
+    "successor_first_activity": "2026-10-22T01:54:26.838Z",
+    "turnaround_seconds": 27.9
+   }
+  ],
+  "turnaround_seconds": {
+   "min": 27.9,
+   "max": 58.4,
+   "mean": 42.8
+  },
+  "declared_below_trigger": 2,
+  "mechanism": "parent-mediated: predecessor writes a handoff file and returns handoff_ready; the coordinator launches a successor with the file as its entry read",
+  "excluded_from_count": [
+   {
+    "file": "s3/handoff-a1-v1.md",
+    "reason": "read-set handoff to a downstream assessor, not a context boundary"
+   },
+   {
+    "file": "s3/handoff-b-v1.md",
+    "reason": "header states 'not a handoff_ready; S3a is complete'"
+   },
+   {
+    "file": "s3/handoff-c-v1.md",
+    "reason": "header states 'S3b complete; not a handoff_ready'"
+   }
+  ],
+  "note": "18 further matches of 'handoff*' under s3/ are copies of this repo's own pilot probe files inside slice 3's subject tree"
+ },
+ "context_discipline": {
+  "self_checks": 47,
+  "distinct_agents": 22,
+  "trigger_tokens": 150000,
+  "readings": {
+   "min": 45987,
+   "max": 204161,
+   "median": 126183
+  },
+  "recommendations": {
+   "retain_ok": 39,
+   "fresh": 8
+  },
+  "at_or_over_trigger": 8,
+  "compactions_observed": 0,
+  "compaction_completeness_basis": "searched every record of the orchestrator transcript and all 28 subagent transcripts for compactMetadata and subtype==compact_boundary; the only matches are the literal strings inside skill text and tool-input source code, read and confirmed as such. No compaction record exists in this session.",
+  "machine_compaction_band": {
+   "events": 21,
+   "preTokens_min": 202533,
+   "preTokens_max": 968704,
+   "source": "all compactMetadata records under ~/.claude/projects, independently re-derived for this record",
+   "trigger_set_below_lowest_observed_by": 52533
+  },
+  "readings_above_lowest_observed_compaction": [
+   {
+    "file": "cs1/context-check-3.json",
+    "agent": "a4675d48b42da1f6b",
+    "at": "2026-10-22T00:22:19.327495+00:00",
+    "input_tokens": 204161,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   }
+  ],
+  "window_fraction": "not established: Claude Code transcripts record no context window, so all levels here are absolute",
+  "checks": [
+   {
+    "file": "a1/context-check-1.json",
+    "agent": "aaf1117f433249703",
+    "at": "2026-10-22T02:41:56.828154+00:00",
+    "input_tokens": 152415,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "a1/context-check-2.json",
+    "agent": "aaf1117f433249703",
+    "at": "2026-10-22T02:43:54.905386+00:00",
+    "input_tokens": 174602,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "cs1/context-check-1.json",
+    "agent": "a4675d48b42da1f6b",
+    "at": "2026-10-22T00:03:55.812611+00:00",
+    "input_tokens": 114743,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "cs1/context-check-2.json",
+    "agent": "a4675d48b42da1f6b",
+    "at": "2026-10-22T00:06:38.572638+00:00",
+    "input_tokens": 138316,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "cs1/context-check-3.json",
+    "agent": "a4675d48b42da1f6b",
+    "at": "2026-10-22T00:22:19.327495+00:00",
+    "input_tokens": 204161,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "cs1/context-check-predispatch-remediation.json",
+    "agent": "a4675d48b42da1f6b",
+    "at": "2026-10-22T00:16:42.582866+00:00",
+    "input_tokens": 143364,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "cs1/context-check-predispatch-rereview.json",
+    "agent": "a6fc32ac84e01c7e1",
+    "at": "2026-10-22T00:23:11.866813+00:00",
+    "input_tokens": 131976,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "p0/context-check-1.json",
+    "agent": "af7e8d1a5461a11ff",
+    "at": "2026-10-21T23:52:32.475040+00:00",
+    "input_tokens": 126183,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "plan/context-check-1.json",
+    "agent": "a91b6fb930204aed5",
+    "at": "2026-10-22T00:01:11.249306+00:00",
+    "input_tokens": 119203,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "plan/context-check-plan2-1.json",
+    "agent": "ad10247f04f9d2aaa",
+    "at": "2026-10-22T00:21:51.744917+00:00",
+    "input_tokens": 131190,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "plan/context-check-plan3-1.json",
+    "agent": "aa87c4d6ab9a42e55",
+    "at": "2026-10-22T00:49:32.351374+00:00",
+    "input_tokens": 139307,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "plan/context-check-plan3-2.json",
+    "agent": "aa87c4d6ab9a42e55",
+    "at": "2026-10-22T00:53:39.711592+00:00",
+    "input_tokens": 192290,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "plan/context-check-predispatch-v2.json",
+    "agent": "a91b6fb930204aed5",
+    "at": "2026-10-22T00:13:50.152488+00:00",
+    "input_tokens": 158145,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s0/context-check-1.json",
+    "agent": "aa36a9c3b4f77173a",
+    "at": "2026-10-22T00:35:41.508451+00:00",
+    "input_tokens": 79964,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s1/context-check-1.json",
+    "agent": "a27d1ec9c1e4acca4",
+    "at": "2026-10-22T01:04:00.017216+00:00",
+    "input_tokens": 165624,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s1/context-check-2.json",
+    "agent": "abeb3da4543a8545f",
+    "at": "2026-10-22T01:10:04.068909+00:00",
+    "input_tokens": 149505,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s1/context-check-3.json",
+    "agent": "abeb3da4543a8545f",
+    "at": "2026-10-22T01:10:47.863942+00:00",
+    "input_tokens": 160210,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-1.json",
+    "agent": "a0e59f73949c117b9",
+    "at": "2026-10-22T01:27:34.549489+00:00",
+    "input_tokens": 145858,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a-1.json",
+    "agent": "a68b863f021a779a8",
+    "at": "2026-10-22T01:35:00.263418+00:00",
+    "input_tokens": 144143,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a-2.json",
+    "agent": "a68b863f021a779a8",
+    "at": "2026-10-22T01:36:10.875129+00:00",
+    "input_tokens": 159897,
+    "trigger": 150000,
+    "recommendation": "fresh",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a2-1.json",
+    "agent": "aed2ceafc33b90035",
+    "at": "2026-10-22T01:38:19.840823+00:00",
+    "input_tokens": 45987,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a2-2.json",
+    "agent": "aed2ceafc33b90035",
+    "at": "2026-10-22T01:41:08.228262+00:00",
+    "input_tokens": 90025,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a2-3.json",
+    "agent": "aed2ceafc33b90035",
+    "at": "2026-10-22T01:43:10.223353+00:00",
+    "input_tokens": 118233,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-a2-4.json",
+    "agent": "aed2ceafc33b90035",
+    "at": "2026-10-22T01:45:26.272287+00:00",
+    "input_tokens": 135255,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-b-1.json",
+    "agent": "a5d3ffe262a707e38",
+    "at": "2026-10-22T01:47:46.558520+00:00",
+    "input_tokens": 92518,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-b-2.json",
+    "agent": "a5d3ffe262a707e38",
+    "at": "2026-10-22T01:50:56.186412+00:00",
+    "input_tokens": 130613,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-b-3.json",
+    "agent": "a5d3ffe262a707e38",
+    "at": "2026-10-22T01:52:52.284773+00:00",
+    "input_tokens": 149478,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-b2-1.json",
+    "agent": "a74b04b4ca3160232",
+    "at": "2026-10-22T01:56:47.045523+00:00",
+    "input_tokens": 63004,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-b2-2.json",
+    "agent": "a74b04b4ca3160232",
+    "at": "2026-10-22T01:58:37.967276+00:00",
+    "input_tokens": 79222,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-c-1.json",
+    "agent": "a4bd51a6de49cb1d2",
+    "at": "2026-10-22T02:10:05.966525+00:00",
+    "input_tokens": 104953,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-c-2.json",
+    "agent": "a4bd51a6de49cb1d2",
+    "at": "2026-10-22T02:11:01.367535+00:00",
+    "input_tokens": 112583,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-c-3.json",
+    "agent": "a4bd51a6de49cb1d2",
+    "at": "2026-10-22T02:13:35.143985+00:00",
+    "input_tokens": 139176,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-c-4.json",
+    "agent": "a4bd51a6de49cb1d2",
+    "at": "2026-10-22T02:14:01.414891+00:00",
+    "input_tokens": 141094,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s2/context-check-predispatch-clippyfix.json",
+    "agent": "a74b04b4ca3160232",
+    "at": "2026-10-22T01:58:03.092323+00:00",
+    "input_tokens": 73917,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-a-1.json",
+    "agent": "a9dccbfb07e821d79",
+    "at": "2026-10-22T02:17:31.048562+00:00",
+    "input_tokens": 86828,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-a-2.json",
+    "agent": "a9dccbfb07e821d79",
+    "at": "2026-10-22T02:20:45.273067+00:00",
+    "input_tokens": 122698,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-a-3.json",
+    "agent": "a9dccbfb07e821d79",
+    "at": "2026-10-22T02:21:05.376970+00:00",
+    "input_tokens": 124737,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-b-1.json",
+    "agent": "afd6ae453ed824ee9",
+    "at": "2026-10-22T02:23:04.518252+00:00",
+    "input_tokens": 66230,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-b-2.json",
+    "agent": "afd6ae453ed824ee9",
+    "at": "2026-10-22T02:24:45.032715+00:00",
+    "input_tokens": 99431,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-b-3.json",
+    "agent": "afd6ae453ed824ee9",
+    "at": "2026-10-22T02:27:07.682691+00:00",
+    "input_tokens": 129534,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-b-4.json",
+    "agent": "afd6ae453ed824ee9",
+    "at": "2026-10-22T02:28:34.006057+00:00",
+    "input_tokens": 140731,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-c-1.json",
+    "agent": "acf7df679ca72351c",
+    "at": "2026-10-22T02:30:50.185896+00:00",
+    "input_tokens": 72393,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-c-2.json",
+    "agent": "acf7df679ca72351c",
+    "at": "2026-10-22T02:31:43.617391+00:00",
+    "input_tokens": 92000,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-c-3.json",
+    "agent": "acf7df679ca72351c",
+    "at": "2026-10-22T02:33:19.307238+00:00",
+    "input_tokens": 111233,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-d-1.json",
+    "agent": "aca483ce4178a6ad5",
+    "at": "2026-10-22T02:46:07.225208+00:00",
+    "input_tokens": 58431,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-e-1.json",
+    "agent": "a91103b0fdfa84e2a",
+    "at": "2026-10-22T03:02:44.912096+00:00",
+    "input_tokens": 92660,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   },
+   {
+    "file": "s3/context-check-t1-3.json",
+    "agent": "a21bcb589924fcf00",
+    "at": "2026-10-22T02:41:19.562887+00:00",
+    "input_tokens": 124722,
+    "trigger": 150000,
+    "recommendation": "retain_ok",
+    "compaction_markers": 0,
+    "epoch": 0
+   }
+  ],
+  "defects": [
+   {
+    "id": "R1-M-001",
+    "severity": "P2",
+    "what": "Two copies of the manual-orchestration skill exist and have diverged.",
+    "detail": "The Skill tool resolves to /home/bline/.claude/skills/manual-orchestration; worker prompts cat /home/bline/code/work-engine/skills/manual-orchestration. Commit cb61f807 wrote the read-set sizing guidance to the repo copy at 2026-10-22T01:59:50Z and not to the user-scope copy, which still holds fa163bad. worker.md and coordinator.md differ by exactly those additions.",
+    "consequence": "A worker briefed through the Skill tool alone does not receive the newest instruction change, so cohort membership cannot be read off the commit time alone. afd6ae453ed824ee9 (S3b) read only the user-scope copy after the divergence and is the one confirmed instance.",
+    "remedy": "Make one copy authoritative, or have the parent state the commit it expects and have the worker verify the digest of what it actually read. S2 already pins a required skill commit in its prompt; no worker verifies the text against it.",
+    "role_note": "Reported, not fixed: the skill text is the instrument of the arm under measurement and this role is excluded from both arms."
+   },
+   {
+    "id": "R1-M-002",
+    "severity": "P3",
+    "what": "The trajectory watcher idle test measured the wrong thing.",
+    "detail": "watch.sh derived idleness from stat -c %Y on the orchestrator transcript. Records with no timestamp (permission-mode, atis-latch) kept the mtime current to 2026-10-22T12:04Z although the last conversation record is 03:04:26Z, so the 3600s idle exit never fired and the watcher ran to its 12h deadline.",
+    "consequence": "None to the data: the poller makes no model calls and the 144 snapshots are intact. It cost 10 hours of pointless sampling and would have mis-reported session end had anything depended on the exit.",
+    "remedy": "Take the idle reference from the last record carrying a timestamp, not the file mtime.",
+    "role_note": "Defect in my own instrument, not in the arm."
+   }
+  ]
+ },
+ "quality": {
+  "tier1_reviews": {
+   "s1": {
+    "tier": 1,
+    "reviewer_model": "claude-opus-5-5",
+    "findings": 4,
+    "by_severity": {
+     "P3": 4
+    },
+    "verdict": "ready",
+    "scope": "S1 slice acceptance as base for S2 (not A1)",
+    "missing": []
+   },
+   "s2": {
+    "tier": 1,
+    "reviewer_model": "claude-opus-5-5",
+    "findings": 6,
+    "by_severity": {
+     "P2": 1,
+     "P3": 5
+    },
+    "verdict": "ready",
+    "scope": "S2 slice acceptance as base for S3 (not A1)",
+    "missing": [
+     "S2-T1-001"
+    ]
+   },
+   "s3": {
+    "tier": 1,
+    "reviewer_model": "claude-opus-5-5",
+    "findings": 4,
+    "by_severity": {
+     "P3": 4
+    },
+    "verdict": "ready",
+    "scope": "private slice readiness for the coordinator; not integration, not the A1 assessment",
+    "missing": []
+   }
+  },
+  "tier2_final": {
+   "reviewer_model": "claude-fable-5-1",
+   "verdict": "integrate after fixes",
+   "findings": 5,
+   "by_severity": {
+    "P2": 2,
+    "P3": 3
+   },
+   "ac_status": {
+    "AC1": "met (stated deviation E4: first serde error only)",
+    "AC2": "met",
+    "AC3": "met",
+    "AC4": "met",
+    "AC5": "met",
+    "AC6": "met (report wording: T2F-005)",
+    "AC6prime": "met",
+    "AC7": "met",
+    "AC8": "met (re-run on d1efa078)",
+    "AC9": "met (S1, S2, S3 tier-1 Opus reviews; this tier-2; context-trigger overruns recorded by two tier-1 reviewers and A1)"
+   },
+   "manifest_verified": true,
+   "direct_gates": {
+    "fmt": 0,
+    "clippy_all_targets_D_warnings": 0,
+    "clippy_recompiled": true,
+    "test_failed": 0,
+    "test_passed_summed": 113,
+    "shared_cargo_status": "empty",
+    "binary_sha256_prefix": "6d3673098fdcc8f2",
+    "binary_equals_s3_frozen": true
+   }
+  },
+  "totals": {
+   "findings_all_tiers": 19,
+   "P1": 0,
+   "P2": 3,
+   "P3": 16
+  },
+  "candidate_attempts": {
+   "s1": {
+    "accepted_candidate": 1,
+    "basis": "tier-1 ready, missing_requirements empty"
+   },
+   "s2": {
+    "accepted_candidate": 2,
+    "basis": "tier-1 ready conditional on S2-T1-001 (P2); S2c was the fix round"
+   },
+   "s3": {
+    "accepted_candidate": 1,
+    "basis": "tier-1 ready, missing_requirements empty"
+   },
+   "campaign": {
+    "accepted_candidate": 2,
+    "basis": "tier-2 final returned 'integrate after fixes'; S3e closed T2F-001/002/003"
+   },
+   "mean_over_three_slices": 1.33,
+   "baseline": {
+    "mean_accepted_candidate": 2.8,
+    "range": [
+     2,
+     5
+    ],
+    "first_candidate_accepted": "0 of 14"
+   }
+  },
+  "findings_comparison": {
+   "r1_tier1_mean_per_slice": 4.67,
+   "baseline_mean_per_slice": 6.0,
+   "baseline_slices_with_stated_counts": 11,
+   "baseline_range": [
+    2,
+    10
+   ],
+   "severity_comparability": "not established: the baseline records finding counts without severities, so the P1/P2/P3 mix here has no baseline counterpart"
+  },
+  "integration": {
+   "status": "proposed_integrate",
+   "owner": "coordinator; awaits user confirmation",
+   "range": "6a945b15..8e68518a",
+   "commits": 23,
+   "paths": 28,
+   "all_added": true,
+   "gates": "cargo 114 passed 0 failed; python unittest 41 OK; 7/7 part-e logs exit 0"
+  }
+ }
+}

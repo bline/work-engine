@@ -22,7 +22,11 @@
   "launched": "2026-10-22T00:55:00Z",
   "read_skill_md": "2026-10-22T00:55:31Z",
   "read_references": "2026-10-22T00:55:35Z",
-  "references_read": ["worker.md", "call-cost.md", "anthropic-host.md"],
+  "references_read": [
+   "worker.md",
+   "call-cost.md",
+   "anthropic-host.md"
+  ],
   "reread_after_change": false,
   "gap_seconds_read_to_commit": 1002
  },
@@ -32,5 +36,35 @@
   "first_clean_post_change": "the next worker launched after 2026-10-22T01:12:17Z"
  },
  "consequence_if_ignored": "Scoring slice 1 as post-change would attribute to the new instruction a run that never saw it, in the direction that flatters the change: the two edits target mid-task checking frequency and growth estimation, which is what this worker is doing now under the old text.",
- "precedent": "Same structure as the handoff pilot's transition cohort, where the orchestration brief was revised three times mid-flight and cohort membership had to move with each revision rather than be assigned afterwards."
+ "precedent": "Same structure as the handoff pilot's transition cohort, where the orchestration brief was revised three times mid-flight and cohort membership had to move with each revision rather than be assigned afterwards.",
+ "amendment_1": {
+  "amended_at": "2026-10-22T13:20:00Z",
+  "settles": "slice_1 cohort label, which v1 left contingent on parent re-delivery",
+  "wrong_claim": "slice_1 is a transition cohort that holds the pre-change reference text unless the parent re-delivers it.",
+  "error_class": "a cohort label left contingent on an event that the transcripts already recorded, so the record carried an open question that the evidence had closed.",
+  "finding": "Both slice-1 builders read the pre-change text and finished before the commit: a27d1ec9c1e4acca4 read the references at 00:55:35Z, abeb3da4543a8545f at 01:05:44Z, last activity 01:11:58Z, commit fa163bad at 01:12:17Z. No re-delivery occurred. The slice-1 tier-1 reviewer a1707d68eb26fb81c read references/worker.md and references/anthropic-host.md at 01:12:54Z, 37 seconds after the commit, so it read the new text.",
+  "settled_label": {
+   "slice_1_build": "pre_change",
+   "slice_1_review": "post_change",
+   "slice_1": "split cohort, settled"
+  },
+  "check_that_established_it": "intersect each agent read command with the commit file list from git show --stat fa163bad, matching on basenames because prompts and shell commands name the references relatively (references/worker.md), not under the skill path."
+ },
+ "amendment_2": {
+  "amended_at": "2026-10-22T13:20:00Z",
+  "finding": "The cohort boundary cannot be read off commit time alone, because two copies of the skill exist and diverged after this record was written.",
+  "detail": "The Skill tool resolves to /home/bline/.claude/skills/manual-orchestration; worker prompts cat /home/bline/code/work-engine/skills/manual-orchestration. Commit cb61f807 wrote the read-set sizing guidance to the repo copy at 2026-10-22T01:59:50Z only. worker.md and coordinator.md now differ by exactly those additions; the user-scope copy still holds fa163bad.",
+  "consequence": "Membership in any cohort after 01:59:50Z depends on which copy an agent read, not on when it ran. afd6ae453ed824ee9 (S3b) read only the user-scope copy after the divergence and did not receive cb61f807.",
+  "per_agent_cohorts": "instruction source and pre/post labels for all 22 agents that read the skill are in claude-builder-campaign-r1-score-20261022.json",
+  "defect": "R1-M-001, reported not fixed"
+ },
+ "first_clean_post_change_confirmed": {
+  "agent": "a0e59f73949c117b9",
+  "role": "S2 builder",
+  "model": "claude-sonnet-5-5",
+  "skill_tool_at": "2026-10-22T01:23:32Z",
+  "read_repo_references_at": "2026-10-22T01:23:36Z",
+  "prompt_pinned_commit": "fa163bad",
+  "note": "first builder to read the post-fa163bad text; its prompt pins the required skill commit, though nothing verifies the text against the pin"
+ }
 }

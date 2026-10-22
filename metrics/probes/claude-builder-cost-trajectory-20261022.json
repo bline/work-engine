@@ -1,0 +1,414 @@
+{
+ "schema": "claude-builder-cost-trajectory-v1",
+ "session": "bf60b4c1-34d1-4900-bbe0-15042efb0e2c",
+ "sampler": "plain poller, 300s interval, no model calls; 144 raw snapshots",
+ "raw_snapshots": 144,
+ "rows_kept": 28,
+ "compaction": "rows where neither call count nor subagent count changed are dropped; the final row is kept",
+ "last_conversation_record": "2026-10-22T03:04:26.181Z",
+ "note": "the session covers more than campaign R1: slice 0, the CS-1 slice and the skill instruction review precede it. R1 totals are in claude-builder-campaign-r1-score-20261022.json.",
+ "columns": [
+  "at",
+  "calls",
+  "weighted",
+  "output",
+  "subagents",
+  "orchestrator_share",
+  "weighted_by_model",
+  "newest_subagent"
+ ],
+ "rows": [
+  {
+   "at": "2026-10-22T00:59:01.511498+00:00",
+   "calls": 1172,
+   "weighted": 34304278.1,
+   "output": 1960850,
+   "subagents": 11,
+   "orchestrator_share": 0.447943307689078,
+   "weighted_by_model": {
+    "claude-opus-5-5": 31000663.400000095,
+    "claude-sonnet-5-5": 1974224.1999999993,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T00:56:10.096000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:04:01.601557+00:00",
+   "calls": 1215,
+   "weighted": 35809280.6,
+   "output": 2119040,
+   "subagents": 11,
+   "orchestrator_share": 0.4291170205748283,
+   "weighted_by_model": {
+    "claude-opus-5-5": 31000663.400000095,
+    "claude-sonnet-5-5": 3479226.6999999993,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:03:59.660000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:09:01.699185+00:00",
+   "calls": 1263,
+   "weighted": 37237534.1,
+   "output": 2191533,
+   "subagents": 12,
+   "orchestrator_share": 0.4254976620484652,
+   "weighted_by_model": {
+    "claude-opus-5-5": 31478775.300000086,
+    "claude-sonnet-5-5": 4429368.299999999,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:08:26.149000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:14:01.784371+00:00",
+   "calls": 1332,
+   "weighted": 39265291.6,
+   "output": 2278953,
+   "subagents": 13,
+   "orchestrator_share": 0.4256216092891565,
+   "weighted_by_model": {
+    "claude-opus-5-5": 32711005.000000093,
+    "claude-sonnet-5-5": 5224896.099999998,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:13:47.866000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:19:01.904454+00:00",
+   "calls": 1389,
+   "weighted": 40686728.0,
+   "output": 2350506,
+   "subagents": 13,
+   "orchestrator_share": 0.41075204179603725,
+   "weighted_by_model": {
+    "claude-opus-5-5": 34132441.40000009,
+    "claude-sonnet-5-5": 5224896.099999998,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:18:53.708000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:24:02.008104+00:00",
+   "calls": 1446,
+   "weighted": 42700351.1,
+   "output": 2431931,
+   "subagents": 14,
+   "orchestrator_share": 0.41296515475255663,
+   "weighted_by_model": {
+    "claude-opus-5-5": 35810677.400000066,
+    "claude-sonnet-5-5": 5560283.199999997,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:23:56.899000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:29:02.106175+00:00",
+   "calls": 1470,
+   "weighted": 43566307.1,
+   "output": 2504490,
+   "subagents": 14,
+   "orchestrator_share": 0.40475675524951715,
+   "weighted_by_model": {
+    "claude-opus-5-5": 35810677.400000066,
+    "claude-sonnet-5-5": 6426239.200000002,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:28:46.407000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:34:02.209881+00:00",
+   "calls": 1506,
+   "weighted": 44692096.4,
+   "output": 2553078,
+   "subagents": 15,
+   "orchestrator_share": 0.40747863418642405,
+   "weighted_by_model": {
+    "claude-opus-5-5": 36387994.70000005,
+    "claude-sonnet-5-5": 6974711.200000004,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:32:01.822000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:39:02.308983+00:00",
+   "calls": 1562,
+   "weighted": 46492297.7,
+   "output": 2666766,
+   "subagents": 16,
+   "orchestrator_share": 0.4042614224248159,
+   "weighted_by_model": {
+    "claude-opus-5-5": 36971962.70000004,
+    "claude-sonnet-5-5": 8190944.500000002,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:39:01.758000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:44:02.435961+00:00",
+   "calls": 1614,
+   "weighted": 47528557.0,
+   "output": 2746896,
+   "subagents": 16,
+   "orchestrator_share": 0.3954473602049395,
+   "weighted_by_model": {
+    "claude-opus-5-5": 36971962.70000004,
+    "claude-sonnet-5-5": 9227203.799999997,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:43:58.694000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:49:02.544202+00:00",
+   "calls": 1658,
+   "weighted": 48701661.0,
+   "output": 2796146,
+   "subagents": 17,
+   "orchestrator_share": 0.3950466966619475,
+   "weighted_by_model": {
+    "claude-opus-5-5": 37416350.60000007,
+    "claude-sonnet-5-5": 9955919.899999999,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:48:20.976000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:54:02.649310+00:00",
+   "calls": 1689,
+   "weighted": 49706718.6,
+   "output": 2893134,
+   "subagents": 17,
+   "orchestrator_share": 0.3870589498136777,
+   "weighted_by_model": {
+    "claude-opus-5-5": 37416350.60000007,
+    "claude-sonnet-5-5": 10960977.500000004,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:53:58.489000+00:00"
+  },
+  {
+   "at": "2026-10-22T01:59:02.754447+00:00",
+   "calls": 1750,
+   "weighted": 51102632.7,
+   "output": 2946918,
+   "subagents": 18,
+   "orchestrator_share": 0.39223418522623393,
+   "weighted_by_model": {
+    "claude-opus-5-5": 38221119.80000007,
+    "claude-sonnet-5-5": 11552122.400000004,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T01:59:00.760000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:04:02.861362+00:00",
+   "calls": 1825,
+   "weighted": 52842160.5,
+   "output": 3015078,
+   "subagents": 19,
+   "orchestrator_share": 0.3922216465770736,
+   "weighted_by_model": {
+    "claude-opus-5-5": 39960647.600000046,
+    "claude-sonnet-5-5": 11552122.400000004,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:03:59.388000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:09:02.972264+00:00",
+   "calls": 1882,
+   "weighted": 54299743.0,
+   "output": 3078744,
+   "subagents": 20,
+   "orchestrator_share": 0.39161771907465565,
+   "weighted_by_model": {
+    "claude-opus-5-5": 40933640.00000005,
+    "claude-sonnet-5-5": 12036712.500000004,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:08:59.545000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:14:03.085958+00:00",
+   "calls": 1954,
+   "weighted": 55447988.8,
+   "output": 3122590,
+   "subagents": 20,
+   "orchestrator_share": 0.38350789560107545,
+   "weighted_by_model": {
+    "claude-opus-5-5": 40933640.00000005,
+    "claude-sonnet-5-5": 13184958.3,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:14:01.051000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:19:03.202638+00:00",
+   "calls": 2018,
+   "weighted": 57221671.3,
+   "output": 3182406,
+   "subagents": 21,
+   "orchestrator_share": 0.3888781923781384,
+   "weighted_by_model": {
+    "claude-opus-5-5": 41921158.60000007,
+    "claude-sonnet-5-5": 13971122.200000001,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:18:20.582000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:24:03.320159+00:00",
+   "calls": 2086,
+   "weighted": 58999512.0,
+   "output": 3265589,
+   "subagents": 22,
+   "orchestrator_share": 0.38946300437196835,
+   "weighted_by_model": {
+    "claude-opus-5-5": 42647025.70000008,
+    "claude-sonnet-5-5": 15023095.8,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:23:49.948000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:29:03.443218+00:00",
+   "calls": 2125,
+   "weighted": 59922925.7,
+   "output": 3338631,
+   "subagents": 22,
+   "orchestrator_share": 0.38346137027818716,
+   "weighted_by_model": {
+    "claude-opus-5-5": 42647025.70000008,
+    "claude-sonnet-5-5": 15946509.500000002,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:28:41.331000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:34:03.556534+00:00",
+   "calls": 2180,
+   "weighted": 61596506.0,
+   "output": 3415427,
+   "subagents": 23,
+   "orchestrator_share": 0.38615330551379,
+   "weighted_by_model": {
+    "claude-opus-5-5": 43454592.900000066,
+    "claude-sonnet-5-5": 16812522.60000001,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:33:59.077000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:39:03.681356+00:00",
+   "calls": 2322,
+   "weighted": 64166292.3,
+   "output": 3497990,
+   "subagents": 25,
+   "orchestrator_share": 0.3804215223449961,
+   "weighted_by_model": {
+    "claude-opus-5-5": 45958784.200000025,
+    "claude-sonnet-5-5": 16878117.60000001,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:39:01.305000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:44:03.804472+00:00",
+   "calls": 2370,
+   "weighted": 65558861.2,
+   "output": 3585765,
+   "subagents": 25,
+   "orchestrator_share": 0.376412336155711,
+   "weighted_by_model": {
+    "claude-opus-5-5": 47351353.1,
+    "claude-sonnet-5-5": 16878117.60000001,
+    "claude-fable-5-1": 1329390.4999999998
+   },
+   "newest_subagent": "2026-10-22T02:43:54.239000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:49:03.932582+00:00",
+   "calls": 2442,
+   "weighted": 67499178.7,
+   "output": 3651009,
+   "subagents": 27,
+   "orchestrator_share": 0.3814258720750924,
+   "weighted_by_model": {
+    "claude-opus-5-5": 48451199.29999997,
+    "claude-sonnet-5-5": 17171774.00000001,
+    "claude-fable-5-1": 1876205.4
+   },
+   "newest_subagent": "2026-10-22T02:48:54.851000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:54:04.060365+00:00",
+   "calls": 2467,
+   "weighted": 68217054.8,
+   "output": 3707789,
+   "subagents": 27,
+   "orchestrator_share": 0.3774119708844423,
+   "weighted_by_model": {
+    "claude-opus-5-5": 48451199.29999997,
+    "claude-sonnet-5-5": 17171774.00000001,
+    "claude-fable-5-1": 2594081.500000002
+   },
+   "newest_subagent": "2026-10-22T02:53:26.163000+00:00"
+  },
+  {
+   "at": "2026-10-22T02:59:04.188620+00:00",
+   "calls": 2494,
+   "weighted": 69490353.0,
+   "output": 3785277,
+   "subagents": 28,
+   "orchestrator_share": 0.3781991134798236,
+   "weighted_by_model": {
+    "claude-opus-5-5": 48986456.09999997,
+    "claude-sonnet-5-5": 17357814.90000001,
+    "claude-fable-5-1": 3146082.0000000033
+   },
+   "newest_subagent": "2026-10-22T02:59:00.167000+00:00"
+  },
+  {
+   "at": "2026-10-22T03:04:04.320775+00:00",
+   "calls": 2578,
+   "weighted": 70527307.0,
+   "output": 3834730,
+   "subagents": 28,
+   "orchestrator_share": 0.3735427257983918,
+   "weighted_by_model": {
+    "claude-opus-5-5": 49050228.69999997,
+    "claude-sonnet-5-5": 18330996.30000001,
+    "claude-fable-5-1": 3146082.0000000033
+   },
+   "newest_subagent": "2026-10-22T03:03:52.593000+00:00"
+  },
+  {
+   "at": "2026-10-22T03:09:04.456688+00:00",
+   "calls": 2584,
+   "weighted": 70957664.2,
+   "output": 3843682,
+   "subagents": 28,
+   "orchestrator_share": 0.37734218004318126,
+   "weighted_by_model": {
+    "claude-opus-5-5": 49480585.89999995,
+    "claude-sonnet-5-5": 18330996.30000001,
+    "claude-fable-5-1": 3146082.0000000033
+   },
+   "newest_subagent": "2026-10-22T03:03:52.593000+00:00"
+  },
+  {
+   "at": "2026-10-22T12:54:19.764508+00:00",
+   "calls": 2584,
+   "weighted": 70957664.2,
+   "output": 3843682,
+   "subagents": 28,
+   "orchestrator_share": 0.37734218004318126,
+   "weighted_by_model": {
+    "claude-opus-5-5": 49480585.89999995,
+    "claude-sonnet-5-5": 18330996.30000001,
+    "claude-fable-5-1": 3146082.0000000033
+   },
+   "newest_subagent": "2026-10-22T03:03:52.593000+00:00"
+  }
+ ]
+}
