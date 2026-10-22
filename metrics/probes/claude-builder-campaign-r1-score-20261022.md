@@ -205,3 +205,45 @@ widens.
 decision and the cherry-pick. Worth noting as a process fact: the measured and
 the measuring sessions share a branch, and here the measurement landed inside
 the subject's own integration record.
+
+## Amendment 2, 2026-10-22: the quality totals are reviewer-relative
+
+A user-commissioned non-Claude review at xhigh effort, outside this
+orchestration, covered the P1 port slice and — as its second slice — **R1's S3**,
+`3b5f5c07..24c41cb9`. It returned three P2 findings in R1's own code that neither
+the S3 tier-1 Opus review (4 findings, all P3, verdict `ready`) nor the Fable
+tier-2 final surfaced.
+
+**The wrong claim.** This score reported 19 findings, **P1 0, P2 3**, as a property
+of the delivered code.
+
+**The error class.** A measured property of the *reviewers* reported as a property
+of the *code*. Every finding counted here came from reviewers inside the
+orchestration being measured — which this score's own limits section names as a
+confound — and the totals were still stated unqualified.
+
+| finding | severity | location | what |
+| --- | --- | --- | --- |
+| EXT-002 | P2 | `decision-readiness/src/check.rs:529` (`8c59af02`) | the attributed-basis check trusts the class the supplied evaluation claims; a forged `mechanical` relabel of an attributed requirement passes at exit 0. `--rederive` rejects it |
+| EXT-003 | P2 | `integration_readiness.py:110` (`7b60043f`) | the pinned executable is verified once before `plan`; a replacement during the battery still exits 0 and the summary reports the pin that did not run |
+| EXT-004 | P2 | `decision-readiness/src/cli.rs:353` (`24c41cb9`) | an assessment citing a nonexistent `evaluation.path` passes at exit 0, so a successful check does not establish a usable evidence pointer |
+
+**Revised totals.** In-orchestration: 19 findings, 0 P1, 3 P2, 16 P3. Adding the
+outside review of S3: **22 findings, 0 P1, 6 P2, 16 P3** — and S1 and S2 have had
+no outside reader at all, so their figures stay in-orchestration only.
+
+**What this does not change.** The gates, line counts, economics and handoff
+results, none of which depend on review severity. The baseline comparison was
+already recorded as severity-incomparable, since the pure-Codex baseline carries
+no severities.
+
+**What it does change.** "0 P1, 3 P2" has to be read as *no P1 and three P2 were
+found by reviewers inside the orchestration*. The one slice given an outside
+reader returned three more P2s; the separately measured port slice returned a P1.
+The honest reading: in-orchestration review at these tiers finds P3-class issues
+reliably and **provenance- and contract-class issues unreliably**.
+
+**The check that would have caught it** is the one that produced this amendment —
+commissioning an outside review. Registered as a standing requirement for R2: the
+quality figure is not reportable without at least one reviewer outside the
+orchestration.

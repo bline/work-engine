@@ -229,7 +229,8 @@
    "fix_pass": "F1 (golden generator time-zone dependence) and F3 (a wrong comment) fixed in 2771b3ee and 2e0a80eb; F2 and F4 deferred to the wiring step by the reviewer",
    "rust_behaviour_changed_by_fix_pass": false,
    "baseline": "R1: 19 findings, 0 P1, 2 of 3 slices accepted first candidate; pure-Codex baseline: mean 6.0 findings over 11 slices and 0 of 14 first-candidate",
-   "severity_caveat": "the pure-Codex baseline records finding counts without severities, so no cross-arm severity comparison is supportable"
+   "severity_caveat": "the pure-Codex baseline records finding counts without severities, so no cross-arm severity comparison is supportable",
+   "external_review_outcome": "1 P1, 3 P2, 1 P3 found outside the orchestration after the in-orchestration tier-1 review passed the slice ready with four P3 findings and no P1 or P2"
   },
   "handoff": {
    "outcome": "A",
@@ -333,5 +334,82 @@
    "verified_by_measurement": "cargo test --offline on the integrated branch: 32 passed, 0 failed across five binaries (lib 2, controller 8, golden 10, policy_profile 5, projector 7)",
    "verified_at": "2026-10-22T18:45Z"
   }
+ },
+ "external_review": {
+  "at": "2026-10-22T20:30Z",
+  "reviewer": "non-Claude model, xhigh effort, user-commissioned; outside the orchestration that produced and reviewed the code",
+  "prompt": "/home/bline/cbm-work/review-prompts/astra-slice-review-20261022.md",
+  "report": "/home/bline/cbm-work/review-prompts/astra-review-result.md",
+  "artifacts": "/home/bline/cbm-work/astra-review-20261022-01a16562/",
+  "scope": "slice A context-pressure e71c5b7b..65096374; slice B integration-readiness 3b5f5c07..24c41cb9; read-only, no source changed",
+  "verdict": "parity established only over the corpus; the general byte-parity claim is false",
+  "findings": {
+   "P1": 1,
+   "P2": 3,
+   "P3": 1
+  },
+  "p1_finding": {
+   "id": "EXT-001",
+   "severity": "P1",
+   "location": "rust/crates/context-pressure/src/js.rs:95",
+   "what": "js_number uses format!(\"{:e}\", value.abs()) for the shortest round-trip digits and then rearranges the exponent per the ES rules. Rust and ECMAScript both emit a shortest round-trip representation but break ties between equally short candidates differently, so the digits can differ and the sha256 revision over the canonical JSON differs with them.",
+   "overclaim_location": "the doc comment at src/js.rs:85 and the crate claim at src/lib.rs:12",
+   "reproduction": "an extra observation field of 1000000000000000.25 inside a snapshot the default profile accepts: both sides project 5000 basis points, JS sourceRevision sha256:db57444e..., Rust sha256:77cabf57...",
+   "independently_verified_by_measurement": {
+    "at": "2026-10-22T20:40Z",
+    "js": "node: String(1000000000000000.25) and JSON.stringify both give 1000000000000000.2",
+    "rust": "rustc 1.92.0, format!(\"{:e}\") gives 1.0000000000000003e15, Display gives 1000000000000000.3",
+    "second_case": "771558860699787.2: JS 771558860699787.2, Rust 771558860699787.3",
+    "mechanism": "the exact value is the midpoint between the two shortest 17-digit candidates. ECMAScript Number::toString breaks that tie to the even last digit; Rust's shortest-representation algorithm does not, so this is a systematic class rather than one input.",
+    "conclusion": "confirmed. The finding stands as written."
+   },
+   "incidence": "not established through the normal JS lifecycle collector, which strips unknown observation fields; the reviewer says so and does not claim a live incident. The defect is in the hash-compatibility contract, which the crate states without qualification.",
+   "owner": "the crate; reported, not fixed (measurement role)"
+  },
+  "other_findings": [
+   {
+    "id": "EXT-002",
+    "severity": "P2",
+    "location": "rust/crates/decision-readiness/src/check.rs:529",
+    "what": "the attributed-basis check added in 8c59af02 compares against the status the supplied evaluation claims without checking that the evaluation's requirement class matches the profile. Changing an attributed requirement to class mechanical in a forged evaluation passes both structural and assessment checks at exit 0.",
+    "mitigation_noted_by_reviewer": "check --kind evaluation --rederive rejects the same artifact with rederive_mismatch, so the guard is conditional on a trustworthy evaluation",
+    "status": "not independently verified by measurement"
+   },
+   {
+    "id": "EXT-003",
+    "severity": "P2",
+    "location": "skills/manual-orchestration/scripts/integration_readiness.py:110",
+    "what": "the pinned executable is verified once before plan, then the same pathname is executed for evaluate and the original digest is reported. A replacement during the battery interval still exits 0 while the summary reports the pin that did not run.",
+    "status": "not independently verified by measurement"
+   },
+   {
+    "id": "EXT-004",
+    "severity": "P2",
+    "location": "rust/crates/decision-readiness/src/cli.rs:353",
+    "what": "an assessment citing a nonexistent evaluation.path passes at exit 0 when the real evaluation is supplied via --evaluation; a successful check does not establish a usable evidence pointer. Re-find of the limitation disclosed in 24c41cb9, with a concrete case.",
+    "status": "not independently verified by measurement"
+   },
+   {
+    "id": "EXT-005",
+    "severity": "P3",
+    "location": "rust/crates/context-pressure/tests/golden.rs:88",
+    "what": "the golden suite has no independent nonempty-corpus guard: section sizes are compared only against counts inside the same fixture. With the ordinary sections emptied and their header counts zeroed, all ten golden tests pass.",
+    "status": "bears on this record's own claim; see correction_1"
+   }
+  ],
+  "findings_the_review_closed": {
+   "F4": "experimentally resolved: a consumer can depend on the crate while it keeps its own [workspace], but the enclosing workspace must exclude the path. rust/Cargo.toml currently excludes only crates/terminal-ui, so adding the dependency alone is insufficient.",
+   "F1_fix": "effective: regeneration from America/Denver and Pacific/Kiritimati produced bytes identical to the committed fixture including the timeZone: UTC header. The residual runtime asymmetry is the already recorded and now disclosed F1 limitation.",
+   "generator_authenticity": "the generator imports and executes the two real JS modules; it is not a second implementation.",
+   "corpus_decomposition": "the 10,168 header items are heterogeneous (5,383 sweep rows, 441 controller constructions of which 336 construct and 105 reject, 1,007 steps, 3,137 timestamps, 2 pipelines containing 20 steps); the total is not 10,168 independent full-parity inputs."
+  }
+ },
+ "correction_1": {
+  "at": "2026-10-22T20:45Z",
+  "wrong_claim": "This record said of the in-orchestration review: it ran 12 targeted mutations against the parity harness, which failed under each -- 'that is the check that distinguishes a parity proof from a parity claim.'",
+  "error_class": "a sufficiency claim drawn from a necessary-condition test, and an absence claim with no completeness basis over the input domain. Mutation resistance shows the harness detects changes to the implementation; it says nothing about inputs the corpus does not contain, and EXT-005 shows the same harness also passes an emptied fixture whose header counts were zeroed.",
+  "downstream_consequence": "this record presented byte-level parity as established when it holds only over the corpus. A reader deciding to wire the crate for hash interchange with the JS would have been misled by my wording, not only by the crate's.",
+  "check_that_would_have_caught_it": "a differential probe on number formatting outside the corpus -- the external reviewer's -- or simply asking what the evidence domain is and what lies outside it. The corpus was the whole evidence base and I did not ask that question of it.",
+  "what_stands": "the mutation result itself, and the 32 passing tests, are as recorded. The parity claim is restated as corpus-only."
  }
 }

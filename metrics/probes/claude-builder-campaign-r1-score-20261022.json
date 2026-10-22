@@ -800,7 +800,8 @@
    "findings_all_tiers": 19,
    "P1": 0,
    "P2": 3,
-   "P3": 16
+   "P3": 16,
+   "note": "in-orchestration reviewers only; see amendment_2"
   },
   "candidate_attempts": {
    "s1": {
@@ -882,5 +883,56 @@
    "Mwt_per_krs_with_orchestration": 5.659
   },
   "what_changed": "The subagents-only figure of 3.61 Mwt/krs is unchanged, because the whole integration phase was orchestrator cost. Including orchestration the campaign moves from 5.46 to 5.66 Mwt/krs, and orchestration overhead from 33.9% to 36.2% against the baseline 25%."
+ },
+ "amendment_2": {
+  "at": "2026-10-22T20:50Z",
+  "title": "The quality totals are reviewer-relative: outside review of S3 found three P2s that both review tiers missed",
+  "trigger": "A user-commissioned non-Claude review at xhigh effort, outside this orchestration, covered the P1 port slice and -- as its slice B -- R1's S3 commits 3b5f5c07..24c41cb9. Report and artifacts: /home/bline/cbm-work/review-prompts/astra-review-result.md, /home/bline/cbm-work/astra-review-20261022-01a16562/",
+  "wrong_claim": "The quality totals presented 19 findings with P1 0 and P2 3 as a property of the delivered code.",
+  "error_class": "a measured property of the reviewers reported as a property of the code. Every finding counted in this score came from reviewers inside the orchestration being measured, which the score's own limits section names as a confound, and the totals were nonetheless stated unqualified.",
+  "new_findings_in_r1_code": [
+   {
+    "id": "EXT-002",
+    "severity": "P2",
+    "slice": "S3",
+    "commit": "8c59af02",
+    "location": "rust/crates/decision-readiness/src/check.rs:529",
+    "what": "the attributed-basis check compares against the status the supplied evaluation claims without checking that the evaluation's requirement class matches the profile; a forged evaluation relabelling an attributed requirement as mechanical passes at exit 0. check --kind evaluation --rederive rejects it."
+   },
+   {
+    "id": "EXT-003",
+    "severity": "P2",
+    "slice": "S3",
+    "commit": "7b60043f",
+    "location": "skills/manual-orchestration/scripts/integration_readiness.py:110",
+    "what": "the pinned executable is verified once before plan, then the same pathname is executed for evaluate and the original digest is reported; a replacement during the battery interval exits 0 while the summary reports a pin that did not run."
+   },
+   {
+    "id": "EXT-004",
+    "severity": "P2",
+    "slice": "S3",
+    "commit": "24c41cb9 (disclosure)",
+    "location": "rust/crates/decision-readiness/src/cli.rs:353",
+    "what": "an assessment citing a nonexistent evaluation.path passes at exit 0 when the real evaluation is supplied via --evaluation, so a successful check does not establish a usable evidence pointer. The limitation was disclosed; the concrete case is new."
+   }
+  ],
+  "revised_totals": {
+   "in_orchestration": {
+    "findings": 19,
+    "P1": 0,
+    "P2": 3,
+    "P3": 16
+   },
+   "plus_outside_review_of_s3": {
+    "findings": 22,
+    "P1": 0,
+    "P2": 6,
+    "P3": 16
+   },
+   "coverage": "one of R1's three slices (S3) has had outside review. S1 and S2 have not, and their figures remain in-orchestration only."
+  },
+  "what_this_does_not_change": "the gates, the line counts, the economics and the handoff results, none of which depend on review severity. The baseline comparison was already recorded as severity-incomparable because the pure-Codex baseline has no severities.",
+  "what_it_does_change": "'0 P1, 3 P2' must be read as 'no P1 and three P2 were found by reviewers inside the orchestration'. The one slice given an outside reader returned three further P2s, and the port slice measured separately returned a P1. The honest reading is that in-orchestration review at these tiers detects P3-class issues reliably and provenance- and contract-class issues unreliably.",
+  "check_that_would_have_caught_it": "commissioning one outside review per campaign, which is what produced this amendment. Registered as a standing requirement for R2: the quality figure is not reportable without at least one reviewer outside the orchestration."
  }
 }

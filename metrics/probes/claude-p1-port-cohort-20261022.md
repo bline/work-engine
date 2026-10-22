@@ -239,3 +239,112 @@ coordinator then integrated the slice onto `rescue-detached-20260911` as
 `cargo test --offline --manifest-path rust/crates/context-pressure/Cargo.toml`
 gives **32 passed, 0 failed** across five binaries (lib 2, controller 8, golden 10,
 policy_profile 5, projector 7).
+
+---
+
+# External review, 2026-10-22T20:30Z
+
+A non-Claude model at xhigh effort, commissioned by the user and outside the
+orchestration that produced *and* reviewed this code, reviewed slice A
+(`e71c5b7b..65096374`) and slice B (`3b5f5c07..24c41cb9`) read-only. Prompt at
+`/home/bline/cbm-work/review-prompts/astra-slice-review-20261022.md`, report at
+`/home/bline/cbm-work/review-prompts/astra-review-result.md`, artifacts under
+`/home/bline/cbm-work/astra-review-20261022-01a16562/`.
+
+**Verdict: parity is established only over the corpus. The general byte-parity
+claim is false.** One P1, three P2, one P3 — after the in-orchestration tier-1
+review passed the slice `ready` with four P3 findings and no P1 or P2.
+
+## EXT-001 (P1), `src/js.rs:95` — confirmed independently
+
+`js_number` takes the shortest round-trip digits from `format!("{:e}", …)` and
+then rearranges the exponent per the ECMAScript rules. Both languages emit *a*
+shortest round-trip representation, but they break ties between equally short
+candidates differently, so the digits can differ — and the `sha256` revision over
+the canonical JSON differs with them.
+
+I verified this from the measurement side rather than taking the report at face
+value:
+
+| | `1000000000000000.25` | `771558860699787.2` |
+| --- | --- | --- |
+| node, `String` and `JSON.stringify` | `1000000000000000.2` | `771558860699787.2` |
+| rustc 1.92.0, `{:e}` → digits | `1.0000000000000003e15` | `7.715588606997873e14` |
+| rustc 1.92.0, `Display` | `1000000000000000.3` | `771558860699787.3` |
+
+The exact value is the midpoint between the two shortest 17-digit candidates.
+**ECMAScript `Number::toString` breaks that tie toward the even last digit; Rust's
+shortest-representation algorithm does not.** So this is a systematic class, not
+one unlucky input. Confirmed; the finding stands as written.
+
+The reviewer is careful about incidence: the normal JS lifecycle collector strips
+unknown observation fields, so occurrence through *that* producer is **not
+established**, and no live incident is claimed. The defect is in the
+hash-compatibility contract, which the crate asserts without that qualification.
+
+Reported, not fixed — the owner is the crate.
+
+## The other findings
+
+- **EXT-002 (P2)**, `decision-readiness/src/check.rs:529`. The attributed-basis
+  check added in `8c59af02` compares against the status the supplied evaluation
+  claims, without checking that the evaluation's requirement *class* matches the
+  profile. A forged evaluation that relabels an attributed requirement as
+  `mechanical` passes both structural and assessment checks at exit 0.
+  `check --kind evaluation --rederive` rejects it, so the guard is conditional on
+  a trustworthy evaluation.
+- **EXT-003 (P2)**, `integration_readiness.py:110`. The pinned executable is
+  verified once before `plan`, then the same pathname is executed for `evaluate`
+  and the original digest is reported. A replacement during the battery interval
+  exits 0 while the summary reports a pin that did not run.
+- **EXT-004 (P2)**, `decision-readiness/src/cli.rs:353`. An assessment citing a
+  nonexistent `evaluation.path` passes at exit 0 when the real evaluation arrives
+  via `--evaluation`. A re-find of the limitation disclosed in `24c41cb9`, now with
+  a concrete case: a successful check does not establish a usable evidence pointer.
+- **EXT-005 (P3)**, `tests/golden.rs:88`. The golden suite has no independent
+  nonempty-corpus guard — section sizes are compared only against counts inside the
+  same fixture. With the ordinary sections emptied and the header counts zeroed,
+  **all ten golden tests pass.**
+
+EXT-002 through EXT-004 are recorded as reported; I have not independently
+reproduced them.
+
+## What the review closed
+
+- **F4 is answered experimentally**: a consumer *can* depend on the crate while it
+  keeps its own `[workspace]`, but the enclosing workspace must `exclude` the path.
+  `rust/Cargo.toml` excludes only `crates/terminal-ui`, so adding the dependency
+  alone is insufficient.
+- **The F1 time-zone fix is effective**: regeneration from `America/Denver` and
+  `Pacific/Kiritimati` produced bytes identical to the committed fixture, header
+  included.
+- **The generator is authentic** — it imports and executes the two real JS modules.
+- **The corpus decomposes honestly**: the 10,168 header items are heterogeneous
+  (5,383 sweep rows, 441 controller constructions of which 336 construct and 105
+  reject, 1,007 steps, 3,137 timestamps, 2 pipelines holding 20 steps). The total
+  is **not** 10,168 independent full-parity inputs.
+
+## Correction to this record
+
+**The wrong claim.** Of the in-orchestration review, I wrote that it ran 12
+targeted mutations which the parity harness caught, and added: *"that is the check
+that distinguishes a parity proof from a parity claim."*
+
+**The error class.** A sufficiency claim drawn from a necessary-condition test,
+plus an absence claim with no completeness basis over the input domain. Mutation
+resistance shows the harness notices changes to the *implementation*; it says
+nothing about inputs the corpus does not contain. EXT-005 makes the gap concrete:
+the same harness passes an emptied fixture.
+
+**The downstream consequence.** This record presented byte-level parity as
+established when it holds only over the corpus. A reader deciding to wire the
+crate for hash interchange with the JS would have been misled by my wording, not
+only by the crate's.
+
+**The check that would have caught it.** A differential probe on number formatting
+outside the corpus — the external reviewer's — or simply asking what the evidence
+domain is and what lies outside it. The corpus *was* the entire evidence base, and
+I did not ask that question of it.
+
+The mutation result and the 32 passing tests stand as recorded. The parity claim
+is restated as **corpus-only**.
