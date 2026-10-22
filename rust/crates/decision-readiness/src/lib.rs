@@ -8,6 +8,13 @@
 //! S1 provides the types, `check` for profile, subject and observation, and `plan`. S2 part a
 //! adds `evaluate`.
 //!
+//! Provenance boundary (contract N3). `check --kind assessment` validates structure and
+//! digests, not provenance: it confirms an assessment is consistent with the evaluation file it
+//! cites, not that the evaluation was derived from the plan, battery and subject. An internally
+//! consistent forged evaluation passes both `check --kind evaluation` and `check --kind
+//! assessment`; only `check --kind evaluation --rederive` catches it, so a decision must cite a
+//! rederive result alongside the assessment check.
+//!
 //! Stated deviations from contract v3 (errata v2): E3, an attributed requirement with
 //! `predicates: []` is accepted, and duplicate keys inside a subject's maps are not rejected
 //! (the last wins; rejecting needs a custom deserializer). E4, `check` reports only the first

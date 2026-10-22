@@ -24,6 +24,11 @@ The tool never reads the clock; this script supplies every time. A battery
 exit of 0 or 1 with a saved result is a valid observation (errored checks are
 data). The script reads the result file, not only the exit code.
 
+Provenance boundary: `check --kind assessment` validates structure and digests, not
+provenance. It does not show that an evaluation was derived from the plan, battery and
+subject; an internally consistent forged evaluation passes it. Only `check --kind
+evaluation --rederive` catches that, so a decision must cite a rederive result.
+
 Exit codes:
   0  at least one evaluation per pair was written, whatever the statuses
   2  usage or input error, including a refused `plan` and an existing output
