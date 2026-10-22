@@ -153,17 +153,40 @@ fn the_cli_has_no_subcommand_that_writes_an_assessment() {
         assert_eq!(run.code, 2, "{subcommand}");
         assert!(run.stdout.is_empty());
     }
-    // `check --kind assessment` is not available in this build (S2), and it never writes.
+    // `check --kind assessment` without its inputs is a usage error and writes nothing; it has
+    // no `--out`, so it cannot write a document even with them.
     let run = cli(&["check", "--kind", "assessment", &s(&case.profile_path())]);
     assert_eq!(run.code, 2);
     assert!(run.stdout.is_empty());
-    // The usage text lists exactly the subcommands this build provides.
+    let out = case.dir.join("assessment-out.json");
+    let run = cli(&[
+        "check",
+        "--kind",
+        "assessment",
+        &s(&case.profile_path()),
+        "--evaluation",
+        &s(&case.profile_path()),
+        "--profile",
+        &s(&case.profile_path()),
+        "--out",
+        &s(&out),
+    ]);
+    assert_eq!(run.code, 2);
+    assert!(!out.exists());
+    // The usage text lists exactly the subcommands this build provides (AC5 c): none of them
+    // writes an assessment.
     let usage = cli::<&str>(&[]).err_json()["usage"]
         .as_str()
         .unwrap()
         .to_string();
-    assert!(usage.contains("check") && usage.contains("plan"));
-    assert!(!usage.contains("assess") && !usage.contains("verdict"));
+    let mut subcommands: Vec<&str> = usage
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("work-engine-readiness "))
+        .filter_map(|rest| rest.split_whitespace().next())
+        .collect();
+    subcommands.sort_unstable();
+    subcommands.dedup();
+    assert_eq!(subcommands, ["check", "evaluate", "plan", "recheck"]);
 }
 
 #[test]
