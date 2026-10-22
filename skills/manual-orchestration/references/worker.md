@@ -6,6 +6,8 @@ Follow [call cost](call-cost.md): batch, size requests, do not poll, and message
 
 ## Context
 
+Read only what your packet's read list names; reading spends the same budget as writing. Prefer signatures (`grep -n 'pub fn'`) and targeted line ranges over whole files, batch independent reads, and commit after each independently passing unit.
+
 Keep a compact continuation current as decisions and validation state change, not only when handing off: a compaction takes the window without asking, and the next context holds only what you wrote down. You do not decide the context for your *next* assignment; your parent checks that before dispatching it, because only the parent knows that task's size.
 
 **Mid-task check.** At each logical boundary inside the assignment - before each substantial phase, not once - and again before writing your result if an earlier reading was above about 120,000, run:
