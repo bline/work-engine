@@ -37,6 +37,16 @@ pub(crate) fn reject_unknown(
     ))
 }
 
+pub(crate) fn text<'a>(value: Option<&'a Value>, label: &str) -> Result<&'a str, PressureError> {
+    match value {
+        Some(Value::String(text)) if !js::trims_to_empty(text) => Ok(text),
+        _ => Err(PressureError::new(
+            ErrorKind::NotNonEmptyString,
+            format!("{label} must be a non-empty string"),
+        )),
+    }
+}
+
 pub(crate) fn basis_points(value: Option<&Value>, label: &str) -> Result<u16, PressureError> {
     match value.and_then(js::safe_integer) {
         Some(points @ 0..=10_000) => Ok(points as u16),
@@ -44,6 +54,47 @@ pub(crate) fn basis_points(value: Option<&Value>, label: &str) -> Result<u16, Pr
             ErrorKind::NotBasisPoints,
             format!("{label} must be an integer from 0 through 10000 basis points"),
         )),
+    }
+}
+
+pub(crate) fn positive_integer(value: Option<&Value>, label: &str) -> Result<u64, PressureError> {
+    match value.and_then(js::safe_integer) {
+        Some(number) if number >= 1 => Ok(number as u64),
+        _ => Err(PressureError::new(
+            ErrorKind::NotPositiveInteger,
+            format!("{label} must be a positive safe integer"),
+        )),
+    }
+}
+
+pub(crate) fn sha_revision<'a>(
+    value: Option<&'a Value>,
+    label: &str,
+) -> Result<&'a str, PressureError> {
+    let revision = text(value, label)?;
+    let hex = revision.strip_prefix("sha256:").unwrap_or("");
+    if hex.len() == 64 && hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
+        Ok(revision)
+    } else {
+        Err(PressureError::new(
+            ErrorKind::NotShaRevision,
+            format!("{label} must be SHA-256 bound"),
+        ))
+    }
+}
+
+pub(crate) fn timestamp<'a>(
+    value: Option<&'a Value>,
+    label: &str,
+) -> Result<&'a str, PressureError> {
+    let stamp = text(value, label)?;
+    if crate::timestamp::is_es_iso_timestamp(stamp) {
+        Ok(stamp)
+    } else {
+        Err(PressureError::new(
+            ErrorKind::NotIsoTimestamp,
+            format!("{label} must be an ISO timestamp"),
+        ))
     }
 }
 

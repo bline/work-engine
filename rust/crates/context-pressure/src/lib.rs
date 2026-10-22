@@ -18,6 +18,7 @@
 //! wired to Rust ingress rows. No Rust lifecycle type carries this evidence today; wiring is the
 //! lifecycle owner's step.
 
+mod controller;
 mod error;
 mod fields;
 mod js;
@@ -27,6 +28,10 @@ mod profile;
 mod projector;
 mod timestamp;
 
+pub use controller::{
+    ContextPressureController, ControllerSnapshot, ObserveResult, ObserveStatus,
+    PressureTransition, TransitionReason,
+};
 pub use error::{ErrorKind, PressureError};
 pub use observation::{PRESSURE_OBSERVATION_SCHEMA_VERSION, PressureObservation};
 pub use policy::{

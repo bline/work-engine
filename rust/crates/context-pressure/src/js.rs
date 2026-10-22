@@ -137,6 +137,29 @@ pub(crate) fn safe_integer(value: &Value) -> Option<i64> {
     }
 }
 
+/// JS `WhiteSpace` and `LineTerminator` code points, the set `String#trim` removes.
+fn is_js_whitespace(ch: char) -> bool {
+    matches!(
+        ch,
+        '\u{9}'..='\u{d}'
+            | '\u{20}'
+            | '\u{a0}'
+            | '\u{1680}'
+            | '\u{2000}'..='\u{200a}'
+            | '\u{2028}'
+            | '\u{2029}'
+            | '\u{202f}'
+            | '\u{205f}'
+            | '\u{3000}'
+            | '\u{feff}'
+    )
+}
+
+/// `value.trim() === ""`.
+pub(crate) fn trims_to_empty(text: &str) -> bool {
+    text.chars().all(is_js_whitespace)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
