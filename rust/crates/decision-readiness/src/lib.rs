@@ -15,6 +15,10 @@
 //! assessment`; only `check --kind evaluation --rederive` catches it, so a decision must cite a
 //! rederive result alongside the assessment check.
 //!
+//! An assessment's `evaluation.path` is a pointer for the reader and is not compared with the path
+//! passed to `check --kind assessment`; the `evaluation.sha256` digest binds the content, so a
+//! byte-identical copy at another path is accepted with the recorded path unchanged.
+//!
 //! Stated deviations from contract v3 (errata v2): E3, an attributed requirement with
 //! `predicates: []` is accepted, and duplicate keys inside a subject's maps are not rejected
 //! (the last wins; rejecting needs a custom deserializer). E4, `check` reports only the first
