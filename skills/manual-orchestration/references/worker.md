@@ -8,7 +8,7 @@ Follow [call cost](call-cost.md): batch, size requests, do not poll, and message
 
 Keep a compact continuation current as decisions and validation state change, not only when handing off: a compaction takes the window without asking, and the next context holds only what you wrote down. You do not decide the context for your *next* assignment; your parent checks that before dispatching it, because only the parent knows that task's size.
 
-**Mid-task check.** At a logical boundary inside the assignment - not after returning a result - run:
+**Mid-task check.** At each logical boundary inside the assignment - before each substantial phase, not once - and again before writing your result if an earlier reading was above about 120,000, run:
 
 ```
 python3 -I skills/manual-orchestration/scripts/child_context.py \

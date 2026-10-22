@@ -57,7 +57,10 @@ when you can estimate it, input plus the next task's growth stays below the
 band floor. Otherwise launch a fresh child with `fork_turns="none"` and a
 packet. Record the decision (`retain` or `fresh`), the check's path and a
 one-line reason in the assignment record. A recommendation you overrule needs
-a stated reason; that is evidence, not a violation. A child that has compacted
+a stated reason; that is evidence, not a violation. Parent estimates of a
+task's growth are not yet calibrated: on 2026-10-22 a remediation estimated at
+40K grew about 61K (n=1). Until more data exists, use the largest growth
+observed for comparable work, not a guess. A child that has compacted
 reads low, but holds only what its continuation kept; weigh that, not just the
 number.
 
