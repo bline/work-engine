@@ -620,3 +620,67 @@ fn a_malformed_evaluated_at_and_an_invalid_profile_exit_2() {
     assert_eq!(run.code, 2, "stderr: {}", run.stderr);
     assert!(run.stdout.is_empty());
 }
+
+/// S2-T1-004. A `manifest_match` whose entry is absent (rule 2 alone: `absent`) and whose
+/// `.manifest` check errored (rule 1 alone: `existence_check_error`) at once: rule 1 is read
+/// first, so the predicate is indeterminate, not unmet. `break_manifest` makes the manifest check
+/// error by reaching the manifest file through a symlinked directory that leaves every root.
+fn manifest_with_absent_entry(name: &str, break_manifest: bool) -> Value {
+    let mut case = single(
+        name,
+        vec![json!({"kind": "manifest_match", "manifest": {"param": "m3"}})],
+    );
+    case.profile["parameters"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"name": "m3", "kind": "manifest", "entries_root": "cand"}));
+    write(&case.cand.join("gone.txt"), "soon gone\n");
+    case.subject["values"]["m3"] = manifest(
+        &case.evid,
+        "mdir/m3.json",
+        "evid",
+        &case.cand,
+        &["src/a.txt", "gone.txt"],
+    );
+    case.write_documents();
+    let (observed, evaluation) = evaluated(&case, "both", || {
+        std::fs::remove_file(case.cand.join("gone.txt")).unwrap();
+        if break_manifest {
+            let outside = case.dir.join("outside-manifest");
+            std::fs::rename(case.evid.join("mdir"), &outside).unwrap();
+            symlink(&outside, &case.evid.join("mdir"));
+        }
+    });
+    assert_eq!(observed.exit, if break_manifest { 1 } else { 0 });
+    evaluation
+}
+
+#[test]
+fn rule1_wins_over_rule2_when_a_manifest_check_errored_and_an_entry_is_absent() {
+    // Control: the manifest is readable, so the absent entry alone makes the predicate unmet.
+    let control = manifest_with_absent_entry("eval-rule12-control", false);
+    let list = predicates(&control);
+    expect(&list, 0, "unmet", Some("absent"));
+    assert!(
+        detail(&list, 0).contains("gone.txt"),
+        "{}",
+        detail(&list, 0)
+    );
+    assert_eq!(control["requirements"][0]["status"], "unmet");
+
+    // Both apply: the entry is still absent, and the `.manifest` check now carries an error.
+    let both = manifest_with_absent_entry("eval-rule12-both", true);
+    let list = predicates(&both);
+    expect(&list, 0, "indeterminate", Some("existence_check_error"));
+    assert!(
+        detail(&list, 0).contains(".manifest"),
+        "rule 1 names the errored manifest check: {}",
+        detail(&list, 0)
+    );
+    assert!(
+        !detail(&list, 0).contains("gone.txt"),
+        "rule 2's detail is not reported: {}",
+        detail(&list, 0)
+    );
+    assert_eq!(both["requirements"][0]["status"], "indeterminate");
+}
