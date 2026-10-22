@@ -21,14 +21,21 @@
 mod error;
 mod fields;
 mod js;
+mod observation;
 mod policy;
 mod profile;
+mod projector;
+mod timestamp;
 
 pub use error::{ErrorKind, PressureError};
+pub use observation::{PRESSURE_OBSERVATION_SCHEMA_VERSION, PressureObservation};
 pub use policy::{
     Band, CONTEXT_PRESSURE_POLICY_SCHEMA_VERSION, ContextPressurePolicy, Disposition, PolicyUnit,
 };
 pub use profile::{
     Rounding, Saturation, TOKEN_USAGE_PRESSURE_PROFILE_SCHEMA_VERSION, TokenUsagePressureProfile,
     UsageField, WindowField,
+};
+pub use projector::{
+    PressureProjection, ProjectedPressure, TokenUsagePressureProjector, UnavailableReason,
 };
