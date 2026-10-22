@@ -364,26 +364,42 @@ impl ProfileContext<'_> {
                 self.path_ref(&p.file, &format!("{at}.file"), errors);
                 self.key_and_each(&p.key, &p.each, at, errors);
             }
-            Predicate::GrepCount(p) => match &p.files {
-                FilesSpec::Param(param) => self.param(
-                    &param.param,
-                    &[ParamKind::PathList],
-                    &format!("{at}.files"),
-                    errors,
-                ),
-                FilesSpec::List(list) => {
-                    if list.is_empty() {
-                        errors.push(ErrorItem::new(
-                            codes::EMPTY_FILES,
-                            format!("{at}.files"),
-                            "files is an empty array",
-                        ));
-                    }
-                    for (n, reference) in list.iter().enumerate() {
-                        self.path_ref(reference, &format!("{at}.files[{n}]"), errors);
+            Predicate::GrepCount(p) => {
+                // Errata E2: a count with no bound is always met; min > max is never met.
+                match (p.min, p.max) {
+                    (None, None) => errors.push(ErrorItem::new(
+                        codes::GREP_COUNT_UNBOUNDED,
+                        at,
+                        "grep_count needs min, max or both",
+                    )),
+                    (Some(min), Some(max)) if min > max => errors.push(ErrorItem::new(
+                        codes::GREP_COUNT_MIN_GT_MAX,
+                        at,
+                        format!("min {min} is greater than max {max}"),
+                    )),
+                    _ => {}
+                }
+                match &p.files {
+                    FilesSpec::Param(param) => self.param(
+                        &param.param,
+                        &[ParamKind::PathList],
+                        &format!("{at}.files"),
+                        errors,
+                    ),
+                    FilesSpec::List(list) => {
+                        if list.is_empty() {
+                            errors.push(ErrorItem::new(
+                                codes::EMPTY_FILES,
+                                format!("{at}.files"),
+                                "files is an empty array",
+                            ));
+                        }
+                        for (n, reference) in list.iter().enumerate() {
+                            self.path_ref(reference, &format!("{at}.files[{n}]"), errors);
+                        }
                     }
                 }
-            },
+            }
             Predicate::GitOutputEquals(p) => {
                 self.git_args(&p.args, &format!("{at}.args"), errors);
                 self.str_val(&p.expected, &format!("{at}.expected"), errors);

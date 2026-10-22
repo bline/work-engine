@@ -76,9 +76,33 @@ pub struct PairBytes<'a> {
     pub subject: &'a [u8],
 }
 
-struct Pair {
-    profile: Profile,
-    subject: TypedSubject,
+/// A validated profile with its typed subject.
+pub struct Pair {
+    pub profile: Profile,
+    pub subject: TypedSubject,
+}
+
+/// The battery checks one predicate derives, by id (contract 3.5).
+///
+/// `main` is the one check (or, for a `per_path` grep, one per file), `exists` the
+/// `.exists` check of json and grep predicates, `manifest` the `.manifest` check of a
+/// `manifest_match`. Evaluation reads results by these ids; it never re-parses ids.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PredicateChecks {
+    pub pair: usize,
+    pub requirement: usize,
+    pub predicate: usize,
+    pub main: Vec<String>,
+    pub exists: Option<String>,
+    pub manifest: Option<String>,
+}
+
+/// A derived plan with, per pair, the id of its `_git_root` check and its predicates' checks.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Derivation {
+    pub plan: Plan,
+    pub git_root_checks: Vec<Option<String>>,
+    pub predicates: Vec<PredicateChecks>,
 }
 
 fn internal(at: &str, message: &str) -> ErrorItem {
@@ -96,6 +120,12 @@ fn parse_error(label: &str, error: DocError) -> PlanError {
 
 /// Derive a battery plan from one or more profile and subject pairs (contract 4).
 pub fn derive_plan(pairs: &[PairBytes<'_>], read: ReadFile<'_>) -> Result<Plan, PlanError> {
+    let loaded = load_pairs(pairs, read)?;
+    Ok(derive(&loaded)?.plan)
+}
+
+/// Parse and validate every profile and subject (contract 3, 4).
+pub fn load_pairs(pairs: &[PairBytes<'_>], read: ReadFile<'_>) -> Result<Vec<Pair>, PlanError> {
     if pairs.is_empty() {
         return Err(PlanError::Input(
             "plan needs at least one profile and subject".into(),
@@ -137,8 +167,13 @@ pub fn derive_plan(pairs: &[PairBytes<'_>], read: ReadFile<'_>) -> Result<Plan, 
     if !errors.is_empty() {
         return Err(PlanError::Refused(errors));
     }
-    cross_pair_errors(&loaded)?;
-    build(&loaded).map_err(|e| PlanError::Refused(vec![e]))
+    Ok(loaded)
+}
+
+/// Apply the multi-profile rules and derive the plan with its per-predicate check ids.
+pub fn derive(loaded: &[Pair]) -> Result<Derivation, PlanError> {
+    cross_pair_errors(loaded)?;
+    build(loaded).map_err(PlanError::Refused)
 }
 
 /// Multi-profile rules (contract 4): no repeated (id, version), shared root names map
@@ -193,7 +228,7 @@ fn cross_pair_errors(pairs: &[Pair]) -> Result<(), PlanError> {
     }
 }
 
-fn build(pairs: &[Pair]) -> Result<Plan, ErrorItem> {
+fn build(pairs: &[Pair]) -> Result<Derivation, Vec<ErrorItem>> {
     // Roots (contract 3.4 rule 2).
     let mut git_root_path: Option<&str> = None;
     for pair in pairs {
@@ -207,7 +242,7 @@ fn build(pairs: &[Pair]) -> Result<Plan, ErrorItem> {
         .first()
         .and_then(|pair| pair.profile.roots.first().map(|root| (pair, root)))
         .and_then(|(pair, root)| pair.subject.roots.get(&root.name))
-        .ok_or_else(|| internal("roots", "the first pair declares no root"))?;
+        .ok_or_else(|| vec![internal("roots", "the first pair declares no root")])?;
     let root = git_root_path.unwrap_or(first_path.as_str()).to_string();
     let mut extra_roots: Vec<String> = Vec::new();
     for pair in pairs {
@@ -222,13 +257,41 @@ fn build(pairs: &[Pair]) -> Result<Plan, ErrorItem> {
     }
 
     let mut checks = Vec::new();
-    for pair in pairs {
-        derive_pair(pair, &mut checks)?;
+    let mut git_root_checks = Vec::new();
+    let mut predicates = Vec::new();
+    for (n, pair) in pairs.iter().enumerate() {
+        let git_root = derive_pair(n, pair, &mut checks, &mut predicates).map_err(|e| vec![e])?;
+        git_root_checks.push(git_root);
     }
-    Ok(Plan {
-        root,
-        extra_roots,
-        checks,
+    // Namespacing by profile and version does not make ids unique (errata E1): profile `x`
+    // with requirement `v1` and profile `x.v1` with requirement `1` derive the same id.
+    let mut seen = BTreeSet::new();
+    let mut duplicates = Vec::new();
+    for check in &checks {
+        if !seen.insert(check.id.as_str()) && !duplicates.contains(&check.id) {
+            duplicates.push(check.id.clone());
+        }
+    }
+    if !duplicates.is_empty() {
+        return Err(duplicates
+            .into_iter()
+            .map(|id| {
+                ErrorItem::new(
+                    codes::DUPLICATE_CHECK_ID,
+                    "checks",
+                    format!("derived check id {id:?} is produced more than once"),
+                )
+            })
+            .collect());
+    }
+    Ok(Derivation {
+        plan: Plan {
+            root,
+            extra_roots,
+            checks,
+        },
+        git_root_checks,
+        predicates,
     })
 }
 
@@ -302,28 +365,43 @@ impl PairView<'_> {
     }
 }
 
-fn derive_pair(pair: &Pair, checks: &mut Vec<PlanCheck>) -> Result<(), ErrorItem> {
+fn push(checks: &mut Vec<PlanCheck>, id: String, spec: CheckSpec) {
+    checks.push(PlanCheck { id, spec });
+}
+
+/// Derive one pair's checks. Returns the id of its `_git_root` check, when it has one, and
+/// appends one [`PredicateChecks`] per mechanical predicate.
+fn derive_pair(
+    pair_index: usize,
+    pair: &Pair,
+    checks: &mut Vec<PlanCheck>,
+    predicates: &mut Vec<PredicateChecks>,
+) -> Result<Option<String>, ErrorItem> {
     let view = PairView { pair };
     let profile = &pair.profile;
     let prefix = format!("{}.v{}", profile.profile_id, profile.version);
-    let mut push = |id: String, spec: CheckSpec| checks.push(PlanCheck { id, spec });
+    let mut git_root_check = None;
 
     if profile.roots.iter().any(|root| root.git) {
+        let id = format!("{prefix}._git_root");
         push(
-            format!("{prefix}._git_root"),
+            checks,
+            id.clone(),
             CheckSpec::Git(vec!["rev-parse".to_string(), "--show-toplevel".to_string()]),
         );
+        git_root_check = Some(id);
     }
 
-    for requirement in &profile.requirements {
+    for (requirement_index, requirement) in profile.requirements.iter().enumerate() {
         if requirement.class != RequirementClass::Mechanical {
             continue;
         }
         for (index, predicate) in requirement.predicates.iter().enumerate() {
             let id = format!("{prefix}.{}.{}", requirement.id, index + 1);
+            let start = checks.len();
             match predicate {
                 Predicate::FileSha256(p) => {
-                    push(id, CheckSpec::Sha256(vec![view.path_ref(&p.file)?]));
+                    push(checks, id, CheckSpec::Sha256(vec![view.path_ref(&p.file)?]));
                 }
                 Predicate::ManifestMatch(p) => {
                     let (value, entries) = view.manifest(&p.manifest.param)?;
@@ -340,20 +418,21 @@ fn derive_pair(pair: &Pair, checks: &mut Vec<PlanCheck>) -> Result<(), ErrorItem
                         .map(|entry| view.abs(entries_root, &entry.path))
                         .collect::<Result<Vec<_>, _>>()?;
                     let manifest_file = view.abs(&value.root, &value.path)?;
-                    push(id.clone(), CheckSpec::Sha256(paths));
+                    push(checks, id.clone(), CheckSpec::Sha256(paths));
                     push(
+                        checks,
                         format!("{id}.manifest"),
                         CheckSpec::Sha256(vec![manifest_file]),
                     );
                 }
                 Predicate::JsonEquals(p) => {
-                    push_json(&mut push, &view, id, &p.file, &p.key, &p.each)?;
+                    push_json(checks, &view, id, &p.file, &p.key, &p.each)?;
                 }
                 Predicate::JsonCompare(p) => {
-                    push_json(&mut push, &view, id, &p.file, &p.key, &p.each)?;
+                    push_json(checks, &view, id, &p.file, &p.key, &p.each)?;
                 }
                 Predicate::JsonPresent(p) => {
-                    push_json(&mut push, &view, id, &p.file, &p.key, &p.each)?;
+                    push_json(checks, &view, id, &p.file, &p.key, &p.each)?;
                 }
                 Predicate::GrepCount(p) => {
                     let paths = match &p.files {
@@ -372,6 +451,7 @@ fn derive_pair(pair: &Pair, checks: &mut Vec<PlanCheck>) -> Result<(), ErrorItem
                     if p.per_path {
                         for (j, path) in paths.iter().enumerate() {
                             push(
+                                checks,
                                 format!("{id}.{}", j + 1),
                                 CheckSpec::Grep(GrepSpec {
                                     pattern: p.pattern.clone(),
@@ -381,6 +461,7 @@ fn derive_pair(pair: &Pair, checks: &mut Vec<PlanCheck>) -> Result<(), ErrorItem
                         }
                     } else {
                         push(
+                            checks,
                             id.clone(),
                             CheckSpec::Grep(GrepSpec {
                                 pattern: p.pattern.clone(),
@@ -388,18 +469,36 @@ fn derive_pair(pair: &Pair, checks: &mut Vec<PlanCheck>) -> Result<(), ErrorItem
                             }),
                         );
                     }
-                    push(format!("{id}.exists"), CheckSpec::Sha256(paths));
+                    push(checks, format!("{id}.exists"), CheckSpec::Sha256(paths));
                 }
                 Predicate::GitOutputEquals(p) => {
-                    push(id, CheckSpec::Git(git_args(&view, &p.args)?));
+                    push(checks, id, CheckSpec::Git(git_args(&view, &p.args)?));
                 }
                 Predicate::GitOutputEmpty(p) => {
-                    push(id, CheckSpec::Git(git_args(&view, &p.args)?));
+                    push(checks, id, CheckSpec::Git(git_args(&view, &p.args)?));
                 }
             }
+            let mut record = PredicateChecks {
+                pair: pair_index,
+                requirement: requirement_index,
+                predicate: index,
+                main: Vec::new(),
+                exists: None,
+                manifest: None,
+            };
+            for check in &checks[start..] {
+                if check.id.ends_with(".exists") {
+                    record.exists = Some(check.id.clone());
+                } else if check.id.ends_with(".manifest") {
+                    record.manifest = Some(check.id.clone());
+                } else {
+                    record.main.push(check.id.clone());
+                }
+            }
+            predicates.push(record);
         }
     }
-    Ok(())
+    Ok(git_root_check)
 }
 
 fn git_args(view: &PairView<'_>, args: &[StrVal]) -> Result<Vec<String>, ErrorItem> {
@@ -408,7 +507,7 @@ fn git_args(view: &PairView<'_>, args: &[StrVal]) -> Result<Vec<String>, ErrorIt
 }
 
 fn push_json(
-    push: &mut impl FnMut(String, CheckSpec),
+    checks: &mut Vec<PlanCheck>,
     view: &PairView<'_>,
     id: String,
     file: &PathRef,
@@ -417,13 +516,18 @@ fn push_json(
 ) -> Result<(), ErrorItem> {
     let path = view.path_ref(file)?;
     push(
+        checks,
         id.clone(),
         CheckSpec::Json(JsonSpec {
             path: path.clone(),
             select: view.select(key, each)?,
         }),
     );
-    push(format!("{id}.exists"), CheckSpec::Sha256(vec![path]));
+    push(
+        checks,
+        format!("{id}.exists"),
+        CheckSpec::Sha256(vec![path]),
+    );
     Ok(())
 }
 

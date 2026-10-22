@@ -37,6 +37,8 @@ pub mod codes {
     pub const GIT_SUBCOMMAND_NOT_LITERAL: &str = "git_subcommand_not_literal";
     pub const GIT_SUBCOMMAND_FORBIDDEN: &str = "git_subcommand_forbidden";
     pub const GIT_ARGUMENT_FORBIDDEN: &str = "git_argument_forbidden";
+    pub const GREP_COUNT_UNBOUNDED: &str = "grep_count_unbounded";
+    pub const GREP_COUNT_MIN_GT_MAX: &str = "grep_count_min_gt_max";
     // Subject
     pub const PROFILE_ID_MISMATCH: &str = "profile_id_mismatch";
     pub const PROFILE_VERSION_MISMATCH: &str = "profile_version_mismatch";
@@ -57,6 +59,7 @@ pub mod codes {
     pub const DUPLICATE_PROFILE: &str = "duplicate_profile";
     pub const ROOT_PATH_CONFLICT: &str = "root_path_conflict";
     pub const MULTIPLE_GIT_ROOT_PATHS: &str = "multiple_git_root_paths";
+    pub const DUPLICATE_CHECK_ID: &str = "duplicate_check_id";
     pub const INTERNAL: &str = "internal_inconsistency";
     // Observation
     pub const INVALID_ABSOLUTE_PATH: &str = "invalid_absolute_path";

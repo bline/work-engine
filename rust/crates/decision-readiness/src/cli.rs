@@ -5,10 +5,11 @@
 //!
 //! Exit codes: 0 success, 1 `check` found the document invalid, 2 usage, IO or parse
 //! error (including a refused `plan`), 3 a binding error (`evaluate`, `recheck`).
-//! This build provides `check --kind profile|subject|observation` and `plan`.
+//! This build provides `check --kind profile|subject|observation`, `plan` and `evaluate`.
 
 use crate::diag::{CheckReport, ErrorItem, codes};
 use crate::digest::sha256_hex;
+use crate::evaluate::{EvalError, EvaluateInputs, Recorded, evaluate as run_evaluate};
 use crate::model::*;
 use crate::plan::{PairBytes, PlanError, derive_plan, plan_to_string};
 use crate::validate::{
@@ -20,8 +21,9 @@ use std::io::Write;
 pub const EXIT_OK: i32 = 0;
 pub const EXIT_INVALID: i32 = 1;
 pub const EXIT_USAGE: i32 = 2;
+pub const EXIT_BINDING: i32 = 3;
 
-const USAGE: &str = "usage:\n  work-engine-readiness check --kind profile|subject|observation FILE [--profile P]\n  work-engine-readiness plan (--profile P --subject S)+ [--out FILE]\n(`subject` requires --profile; `plan` pairs the nth --profile with the nth --subject)";
+const USAGE: &str = "usage:\n  work-engine-readiness check --kind profile|subject|observation FILE [--profile P]\n  work-engine-readiness plan (--profile P --subject S)+ [--out FILE]\n  work-engine-readiness evaluate --profile P --subject S --run-plan RP --battery R --observation O --evaluated-at YYYY-MM-DDTHH:MM:SSZ [--out FILE]\n(`subject` requires --profile; `plan` pairs the nth --profile with the nth --subject)";
 
 /// Serialise any output document: `to_string_pretty` plus one `\n`.
 pub fn to_output_string<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
@@ -33,6 +35,8 @@ pub fn to_output_string<T: Serialize>(value: &T) -> Result<String, serde_json::E
 pub struct Failure {
     pub message: String,
     pub errors: Vec<ErrorItem>,
+    /// The process exit code: 2 (usage, IO, parse, a refused document) or 3 (a binding refusal).
+    pub code: i32,
 }
 
 impl Failure {
@@ -40,6 +44,23 @@ impl Failure {
         Failure {
             message: message.into(),
             errors: Vec::new(),
+            code: EXIT_USAGE,
+        }
+    }
+
+    fn refused(message: impl Into<String>, errors: Vec<ErrorItem>) -> Self {
+        Failure {
+            message: message.into(),
+            errors,
+            code: EXIT_USAGE,
+        }
+    }
+
+    fn binding(message: impl Into<String>, errors: Vec<ErrorItem>) -> Self {
+        Failure {
+            message: message.into(),
+            errors,
+            code: EXIT_BINDING,
         }
     }
 }
@@ -59,7 +80,7 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 "usage": USAGE,
             });
             let _ = writeln!(err, "{body}");
-            EXIT_USAGE
+            failure.code
         }
     }
 }
@@ -68,24 +89,43 @@ fn dispatch(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     match args.first().map(String::as_str) {
         Some("check") => check(&args[1..], out),
         Some("plan") => plan(&args[1..], out),
+        Some("evaluate") => evaluate(&args[1..], out),
         Some(other) => Err(Failure::usage(format!("unknown subcommand {other:?}"))),
         None => Err(Failure::usage("no subcommand given")),
     }
 }
 
-/// Parsed options: repeated `--name value` pairs and positional arguments.
+/// Parsed options: repeated `--name value` pairs, boolean `--flag`s and positional arguments.
 struct Options {
     named: Vec<(String, String)>,
+    flags: Vec<String>,
     positional: Vec<String>,
 }
 
 impl Options {
     fn parse(args: &[String], allowed: &[&str]) -> Result<Self, Failure> {
+        Self::parse_with_flags(args, allowed, &[])
+    }
+
+    /// `flags` name options that take no value (`--rederive`).
+    fn parse_with_flags(
+        args: &[String],
+        allowed: &[&str],
+        flags: &[&str],
+    ) -> Result<Self, Failure> {
         let mut named = Vec::new();
+        let mut flag_set = Vec::new();
         let mut positional = Vec::new();
         let mut iter = args.iter();
         while let Some(arg) = iter.next() {
             if let Some(name) = arg.strip_prefix("--") {
+                if flags.contains(&name) {
+                    if flag_set.iter().any(|f| f == name) {
+                        return Err(Failure::usage(format!("--{name} given more than once")));
+                    }
+                    flag_set.push(name.to_string());
+                    continue;
+                }
                 if !allowed.contains(&name) {
                     return Err(Failure::usage(format!("unexpected option --{name}")));
                 }
@@ -97,7 +137,19 @@ impl Options {
                 positional.push(arg.clone());
             }
         }
-        Ok(Options { named, positional })
+        Ok(Options {
+            named,
+            flags: flag_set,
+            positional,
+        })
+    }
+
+    #[allow(
+        dead_code,
+        reason = "used by check --kind evaluation --rederive (part b)"
+    )]
+    fn flag(&self, name: &str) -> bool {
+        self.flags.iter().any(|f| f == name)
     }
 
     fn all(&self, name: &str) -> Vec<&str> {
@@ -204,10 +256,10 @@ pub fn check_subject_bytes(
     };
     let profile_errors = validate_profile(&profile);
     if !profile_errors.is_empty() {
-        return Err(Failure {
-            message: "--profile is not a valid profile; run check --kind profile".to_string(),
-            errors: profile_errors,
-        });
+        return Err(Failure::refused(
+            "--profile is not a valid profile; run check --kind profile",
+            profile_errors,
+        ));
     }
     let subject = match parse_document::<Subject>(subject_bytes) {
         Ok(subject) => subject,
@@ -246,12 +298,18 @@ fn plan(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     let read = |path: &str| std::fs::read(path);
     let plan = derive_plan(&pairs, &read).map_err(|error| match error {
         PlanError::Input(message) => Failure::usage(message),
-        PlanError::Refused(errors) => Failure {
-            message: format!("plan refused: {} violated rule(s)", errors.len()),
+        PlanError::Refused(errors) => Failure::refused(
+            format!("plan refused: {} violated rule(s)", errors.len()),
             errors,
-        },
+        ),
     })?;
     let text = plan_to_string(&plan).map_err(serialise_failure)?;
+    write_output(out, out_path, &text)?;
+    Ok(EXIT_OK)
+}
+
+/// Write `text` to `--out` (refusing to overwrite) or to stdout.
+fn write_output(out: &mut dyn Write, out_path: Option<&str>, text: &str) -> Result<(), Failure> {
     match out_path {
         Some(path) => {
             let mut file = std::fs::OpenOptions::new()
@@ -260,9 +318,88 @@ fn plan(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
                 .open(path)
                 .map_err(|error| Failure::usage(format!("cannot create {path}: {error}")))?;
             file.write_all(text.as_bytes())
-                .map_err(|error| Failure::usage(format!("cannot write {path}: {error}")))?;
+                .map_err(|error| Failure::usage(format!("cannot write {path}: {error}")))
         }
-        None => emit(out, &text)?,
+        None => emit(out, text),
     }
+}
+
+/// The canonical absolute path of `path`, as a string, and its bytes.
+fn read_recorded(path: &str) -> Result<(String, Vec<u8>), Failure> {
+    let canonical = std::fs::canonicalize(path)
+        .map_err(|error| Failure::usage(format!("cannot resolve {path}: {error}")))?;
+    let text = canonical
+        .to_str()
+        .ok_or_else(|| Failure::usage(format!("{path} is not a UTF-8 path")))?
+        .to_string();
+    let bytes = read_file(&text)?;
+    Ok((text, bytes))
+}
+
+fn required<'a>(options: &'a Options, name: &str) -> Result<&'a str, Failure> {
+    options
+        .one(name)?
+        .ok_or_else(|| Failure::usage(format!("evaluate needs --{name}")))
+}
+
+fn evaluate(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
+    let options = Options::parse(
+        args,
+        &[
+            "profile",
+            "subject",
+            "run-plan",
+            "battery",
+            "observation",
+            "evaluated-at",
+            "out",
+        ],
+    )?;
+    if !options.positional.is_empty() {
+        return Err(Failure::usage("evaluate takes no positional arguments"));
+    }
+    let profile = read_file(required(&options, "profile")?)?;
+    let subject = read_file(required(&options, "subject")?)?;
+    let (plan_path, plan_bytes) = read_recorded(required(&options, "run-plan")?)?;
+    let (battery_path, battery_bytes) = read_recorded(required(&options, "battery")?)?;
+    let (observation_path, observation_bytes) = read_recorded(required(&options, "observation")?)?;
+    let evaluated_at = required(&options, "evaluated-at")?;
+    let out_path = options.one("out")?;
+    let binary = std::env::current_exe()
+        .and_then(std::fs::read)
+        .map_err(|error| Failure::usage(format!("cannot read the running binary: {error}")))?;
+    let binary_sha256 = sha256_hex(&binary);
+    let inputs = EvaluateInputs {
+        profile: &profile,
+        subject: &subject,
+        run_plan: Recorded {
+            path: &plan_path,
+            bytes: &plan_bytes,
+        },
+        battery: Recorded {
+            path: &battery_path,
+            bytes: &battery_bytes,
+        },
+        observation: Recorded {
+            path: &observation_path,
+            bytes: &observation_bytes,
+        },
+        evaluated_at,
+        binary_sha256: &binary_sha256,
+    };
+    let read = |path: &str| std::fs::read(path);
+    let evaluation = run_evaluate(&inputs, &read).map_err(|error| match error {
+        EvalError::Input(message) => Failure::usage(message),
+        EvalError::Invalid(errors) => Failure::refused(
+            format!("evaluate refused: {} violated rule(s)", errors.len()),
+            errors,
+        ),
+        EvalError::Binding(errors) => Failure::binding(
+            format!("evaluate refused: {} binding violation(s)", errors.len()),
+            errors,
+        ),
+    })?;
+    let text = to_output_string(&evaluation).map_err(serialise_failure)?;
+    write_output(out, out_path, &text)?;
     Ok(EXIT_OK)
 }

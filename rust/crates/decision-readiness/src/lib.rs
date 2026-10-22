@@ -5,11 +5,19 @@
 //! never emits a verdict, reads no clock, and does not observe the state a requirement
 //! is about: the evidence battery runs unchanged and observes.
 //!
-//! S1 provides the types, `check` for profile, subject and observation, and `plan`.
+//! S1 provides the types, `check` for profile, subject and observation, and `plan`. S2 part a
+//! adds `evaluate`.
+//!
+//! Stated deviations from contract v3 (errata v2): E3, an attributed requirement with
+//! `predicates: []` is accepted, and duplicate keys inside a subject's maps are not rejected
+//! (the last wins; rejecting needs a custom deserializer). E4, `check` reports only the first
+//! serde error on a closed-schema violation, and an unknown key inside a subject value object
+//! reports `value_type_mismatch` rather than `schema`.
 
 pub mod cli;
 pub mod diag;
 pub mod digest;
+pub mod evaluate;
 pub mod model;
 pub mod plan;
 pub mod validate;

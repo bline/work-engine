@@ -369,8 +369,9 @@ pub fn base_case(name: &str) -> Case {
     case
 }
 
-/// Run `evidence_battery.py --plan P --save R` and return `(exit code, result JSON)`.
-pub fn run_battery(plan: &Path, result: &Path) -> (i32, Value) {
+/// Run `evidence_battery.py --plan P --save R --quiet`; return `(exit code, saved result JSON,
+/// stdout JSON)`. The battery refuses an existing `result`, as the contract requires.
+pub fn run_battery_full(plan: &Path, result: &Path) -> (i32, Value, Value) {
     let output = Command::new("python3")
         .arg("-I")
         .arg(battery_script())
@@ -388,5 +389,96 @@ pub fn run_battery(plan: &Path, result: &Path) -> (i32, Value) {
         String::from_utf8_lossy(&output.stderr)
     );
     let saved: Value = serde_json::from_slice(&std::fs::read(result).unwrap()).unwrap();
+    let stdout: Value = serde_json::from_slice(&output.stdout).unwrap();
+    (code, saved, stdout)
+}
+
+/// Run `evidence_battery.py --plan P --save R` and return `(exit code, result JSON)`.
+pub fn run_battery(plan: &Path, result: &Path) -> (i32, Value) {
+    let (code, saved, _) = run_battery_full(plan, result);
     (code, saved)
+}
+
+/// The files of one plan -> battery -> observation run, and the facts an observation records.
+pub struct Observed {
+    pub plan: PathBuf,
+    pub result: PathBuf,
+    pub observation: PathBuf,
+    pub exit: i32,
+    pub stdout_battery_sha256: String,
+}
+
+/// Write an observation record for `plan` and `result` as the consumer script would.
+pub fn write_observation(
+    path: &Path,
+    plan: &Path,
+    result: &Path,
+    exit: i32,
+    stdout_battery_sha256: &str,
+) -> String {
+    write_json(
+        path,
+        &json!({
+            "schema": "decision-readiness-observation-v1",
+            "plan": {"path": s(plan), "sha256": file_sha(plan)},
+            "result": {"path": s(result), "sha256": file_sha(result)},
+            "battery_script": {"path": s(&std::fs::canonicalize(battery_script()).unwrap()), "sha256": "1".repeat(64)},
+            "battery_exit": exit,
+            "stdout_battery_sha256": stdout_battery_sha256,
+            "started_at": "2026-10-21T12:00:00Z",
+            "finished_at": "2026-10-21T12:00:03Z",
+            "invoker": {"script": "/abs/integration_readiness.py", "sha256": "2".repeat(64)}
+        }),
+    )
+}
+
+/// Derive the plan for `case`, run the battery over it, and write the observation record.
+/// Files are named `<tag>.plan.json`, `<tag>.result.json`, `<tag>.observation.json`.
+pub fn observe(case: &Case, tag: &str) -> Observed {
+    let plan = case.dir.join(format!("{tag}.plan.json"));
+    let planned = case.plan();
+    assert_eq!(planned.code, 0, "plan failed: {}", planned.stderr);
+    write(&plan, &planned.stdout);
+    observe_plan(case, tag, &plan)
+}
+
+/// As [`observe`], for a plan file that already exists.
+pub fn observe_plan(case: &Case, tag: &str, plan: &Path) -> Observed {
+    let result = case.dir.join(format!("{tag}.result.json"));
+    let (exit, _, stdout) = run_battery_full(plan, &result);
+    let stdout_battery_sha256 = stdout["battery_sha256"].as_str().unwrap().to_string();
+    let observation = case.dir.join(format!("{tag}.observation.json"));
+    write_observation(&observation, plan, &result, exit, &stdout_battery_sha256);
+    Observed {
+        plan: plan.to_path_buf(),
+        result,
+        observation,
+        exit,
+        stdout_battery_sha256,
+    }
+}
+
+pub const EVALUATED_AT: &str = "2026-10-21T12:00:04Z";
+
+impl Case {
+    /// `evaluate` over `observed`, with `extra` arguments (for example `--out F`).
+    pub fn evaluate(&self, observed: &Observed, extra: &[&str]) -> Run {
+        let mut args = vec![
+            "evaluate".to_string(),
+            "--profile".to_string(),
+            s(&self.profile_path()),
+            "--subject".to_string(),
+            s(&self.subject_path()),
+            "--run-plan".to_string(),
+            s(&observed.plan),
+            "--battery".to_string(),
+            s(&observed.result),
+            "--observation".to_string(),
+            s(&observed.observation),
+            "--evaluated-at".to_string(),
+            EVALUATED_AT.to_string(),
+        ];
+        args.extend(extra.iter().map(|a| a.to_string()));
+        cli(&args)
+    }
 }
