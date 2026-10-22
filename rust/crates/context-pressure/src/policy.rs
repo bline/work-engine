@@ -50,8 +50,10 @@ impl Disposition {
 }
 
 /// The measurement unit thresholds are stated in. The controller reads thresholds only through
-/// the policy, so a later unit (for example absolute tokens) adds a variant here and a matching
-/// observation reading without changing controller logic.
+/// the policy. A later unit (for example absolute tokens) adds a variant here and a matching
+/// observation reading and keeps the branching logic, but it changes the value types: `Band`,
+/// `next_disposition` and `PressureObservation` are fixed to `u16` basis points today, and
+/// `observe` reads `pressure_basis_points()` directly.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PolicyUnit {
