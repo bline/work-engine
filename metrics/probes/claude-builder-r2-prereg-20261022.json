@@ -156,5 +156,81 @@
   "context trigger changes (R3)",
   "comparison with pure-Codex on handoff behaviour: Codex has no context-replacement primitive, so the arms differ in capability not only instruction",
   "Plus-unit or quota claims; weighted tokens are the only common unit"
- ]
+ ],
+ "amendment_1": {
+  "amended_at": "2026-10-22T14:40:00Z",
+  "trigger": "the orchestration side reported that c56ab8ec landed 26 minutes after this registration was frozen, and asked for either a classification or a revert",
+  "commit": "c56ab8ec",
+  "committed_at": "2026-10-22T14:27:44Z",
+  "subject": "Make root context transfer a user-mediated procedure",
+  "verification": {
+   "files_changed": [
+    "references/anthropic-host.md",
+    "references/context-boundary.md",
+    "references/coordinator.md"
+   ],
+   "worker_read_set": [
+    "worker.md",
+    "call-cost.md",
+    "anthropic-host.md"
+   ],
+   "read_set_basis": "the exact cat commands issued by R1 builders a27d1ec9c1e4acca4, a0e59f73949c117b9 and a68b863f021a779a8; context-boundary.md is not in the worker read set",
+   "byte_delta_in_worker_read_set": {
+    "worker.md": 0,
+    "call-cost.md": 0,
+    "anthropic-host.md": 1110
+   },
+   "byte_delta_outside_it": {
+    "context-boundary.md": 1910,
+    "coordinator.md": 245
+   },
+   "treatment_text_intact": "the cb61f807 read-set paragraphs in worker.md and coordinator.md are untouched by this commit",
+   "changed_lines_scope": "every changed line is root-scoped: one table row for root pressure, the rewritten Roots section, a Claude-specific root transfer section, and two coordinator paragraphs on root context and integration binding",
+   "worker_row_unchanged": "'A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or handoff_ready' is unchanged"
+  },
+  "classification": "root and coordinator scoped; recorded as a covariate, not a treatment change",
+  "decision": "amend, do not revert",
+  "reasoning": "The treatment under test is worker-facing read-set sizing. No line this commit changes is worker-facing in effect, and the measured worker read set grows by 1110 bytes of root-only material, roughly 280 tokens. Reverting would withdraw a root-transfer capability to protect an experiment of about n=3 builders per slice from a change that cannot touch the measured path.",
+  "bias_direction": "against H1. The worker read set is 1110 bytes larger, so context at first code write is pushed up, not down. The change cannot manufacture support for H1; if H1 is supported, it is supported against this small headwind.",
+  "residual_defect": {
+   "id": "R2-M-001",
+   "severity": "P3",
+   "what": "anthropic-host.md, a worker-read file, now carries a root-transfer section that workers cannot execute.",
+   "consequence": "about 280 tokens of every worker's startup reading is a procedure for a role it does not hold, in a skill whose own change under test tells workers to read only what their packet names.",
+   "remedy": "move the root-specific section out of the worker read set",
+   "deferred": "applying that move would change the measured text; it should wait until R2 finishes"
+  },
+  "standing_rule_for_further_skill_changes": {
+   "registered_now": "so that each future change is classified by rule rather than adjudicated after the fact",
+   "treatment_relevant": "any change to worker.md or call-cost.md, or to anything in anthropic-host.md that names read sets, packet sizing, mid-task check cadence or worker handoff declaration. Such a change pauses R2 or voids the comparison with B1-B6, and must be declared before dispatch.",
+   "covariate": "changes confined to root, coordinator or supervisor procedure. Recorded with commit, per-file byte delta inside the worker read set, and bias direction.",
+   "applies_to": "the unapplied v2 skill diff as well; classify it by this rule before applying it, and prefer holding it until R2 finishes"
+  }
+ },
+ "amendment_2": {
+  "amended_at": "2026-10-22T14:40:00Z",
+  "trigger": "the orchestration side reported R2's subject is a controller and projector of 369 JavaScript lines against a criterion of two Rust slices of 2000-5000 lines",
+  "finding": "369 JavaScript lines cannot test R2 as registered, and the criterion as written named the wrong quantity.",
+  "why_the_subject_fails": {
+   "H1": "the baseline 94,353 came from builders reading a 2,700-line Rust crate plus contract sections. A far smaller read set lowers context at first code write for a reason the hypothesis does not claim, so the result would be uninterpretable.",
+   "H2": "the failure mode, a builder consuming its context without writing, occurs under a large read set. With a small one, 0 of n is the expected result whatever the instruction says.",
+   "H3": "handoffs arise from context pressure; small slices do not generate it.",
+   "H4": "needs a comparable Rust denominator against B4. 369 JavaScript lines is not one."
+  },
+  "criterion_restated": {
+   "was": "at least two Rust-building slices of 2000-5000 added Rust lines each",
+   "now": "each scored code slice must give its builders a read set of at least 2000 existing lines, and add at least 1000 lines in one language; at least 3 code-slice builders in total",
+   "why": "the causal driver of B1, B2 and B3 is the size of the read set a builder is given, not the size of its output. The original criterion named the output and so would have excluded a qualifying experiment and admitted a non-qualifying one.",
+   "H4_condition": "H4 is scored only if the added lines are Rust. Otherwise H4 is recorded as not established, and H1-H3 can still be scored.",
+   "honesty_note": "this is a change to acceptance criteria made after learning that the intended subject does not fit, and before any R2 data exists. It is stated as an amendment rather than presented as the original criterion."
+  },
+  "ruling": "If the scout finds no slice meeting the restated criterion, do not bend the registration to fit the subject. Run the port as a delivery campaign, instrumented identically, recorded as an observational cohort labelled not-R2, and leave R2 frozen and pending. Several small observational campaigns can be pooled later; one bent registration cannot be unbent.",
+  "instrumentation_requested_even_if_not_scored": [
+   "per-builder context at first code write",
+   "per-builder pre-write read calls",
+   "the read set each packet names, and how many existing lines it comprises",
+   "context checks at each phase boundary",
+   "handoffs per slice, with declaration reading and turnaround"
+  ]
+ }
 }

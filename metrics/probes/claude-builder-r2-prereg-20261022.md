@@ -149,3 +149,93 @@ Changing two things at once would make the result unattributable:
   establishes, so the arms differ in capability and not only in instruction.
 - Plus-unit or quota claims. This arm consumes no Codex quota; weighted tokens are
   the only common unit.
+
+## Amendment 1, 2026-10-22: `c56ab8ec` is a covariate, not a treatment change
+
+`c56ab8ec` ("Make root context transfer a user-mediated procedure") landed 26
+minutes after this registration was frozen. **Ruling: amend, do not revert.**
+
+What I verified rather than accepted:
+
+- The worker read set is `worker.md`, `call-cost.md`, `anthropic-host.md`. Basis:
+  the exact `cat` commands issued by R1 builders `a27d1ec9c1e4acca4`,
+  `a0e59f73949c117b9` and `a68b863f021a779a8`. **`context-boundary.md` is not in
+  it**, so the +1,910 bytes there do not reach a worker.
+- Byte deltas inside the worker read set: `worker.md` **+0**, `call-cost.md`
+  **+0**, `anthropic-host.md` **+1,110**.
+- The `cb61f807` read-set paragraphs in `worker.md` and `coordinator.md` are
+  untouched. The worker row of the boundary table — "a single assignment is
+  outgrowing its window mid-task → mid-task check, then continue or
+  `handoff_ready`" — is unchanged.
+
+The reported classification is right in substance but not in wording: this is not
+"coordinator-side only". `context-boundary.md` and `anthropic-host.md` are
+worker-read files; what is true is that **every changed line is root-scoped**.
+
+**Bias direction: against H1.** The worker read set is 1,110 bytes larger, so
+context at first code write is pushed up, not down. The change cannot manufacture
+support for H1; if H1 is supported, it is supported against this headwind. That
+is why reverting is the worse trade — it would withdraw a root-transfer
+capability to protect an experiment of roughly three builders per slice from a
+change that cannot touch the measured path.
+
+**R2-M-001 (P3)**, residual: `anthropic-host.md`, a worker-read file, now carries
+a root-transfer procedure workers cannot execute — about 280 tokens of every
+worker's startup reading, in the skill whose change under test tells workers to
+read only what their packet names. The remedy is to move it out of the worker
+read set, and that must wait until R2 finishes, because applying it changes the
+measured text.
+
+### Standing rule for further skill changes
+
+Registered now so each change is classified by rule rather than argued after the
+fact:
+
+- **Treatment-relevant** — any change to `worker.md` or `call-cost.md`, or to
+  anything in `anthropic-host.md` naming read sets, packet sizing, mid-task check
+  cadence or worker handoff declaration. Such a change pauses R2 or voids the
+  comparison with B1–B6, and must be declared before dispatch.
+- **Covariate** — changes confined to root, coordinator or supervisor procedure.
+  Recorded with the commit, the per-file byte delta *inside the worker read set*,
+  and the bias direction.
+
+This applies to the unapplied v2 skill diff too: classify it by this rule before
+applying it, and prefer holding it until R2 finishes.
+
+## Amendment 2, 2026-10-22: the size criterion named the wrong quantity
+
+R2's intended subject is a controller and projector of **369 JavaScript lines**
+against a criterion of two Rust slices of 2,000–5,000 lines. That subject cannot
+test R2 as registered — and the criterion as written named the wrong quantity.
+
+Why the subject fails: B1's 94,353 came from builders reading a 2,700-line Rust
+crate plus contract sections. A much smaller read set lowers context at first
+code write for a reason H1 does not claim. H2's failure mode — a builder
+consuming its context without writing — only arises under a large read set, so
+0 of n is the expected result whatever the instruction says. H3's handoffs come
+from context pressure that small slices do not generate. H4 has no comparable
+Rust denominator.
+
+**Criterion restated.** Was: two Rust-building slices of 2,000–5,000 added Rust
+lines each. Now: each scored code slice must give its builders a **read set of at
+least 2,000 existing lines** and add at least 1,000 lines in one language, with
+at least three code-slice builders in total. H4 is scored only if the added lines
+are Rust; otherwise H4 is `not established` and H1–H3 can still be scored.
+
+The reason is that the causal driver of B1, B2 and B3 is the size of the read set
+a builder is *given*, not the size of its output. The original criterion named
+the output, and so would have excluded a qualifying experiment and admitted a
+non-qualifying one. **This is a change to acceptance criteria made after learning
+that the intended subject does not fit, and before any R2 data exists.** It is
+stated as an amendment, not presented as the original criterion.
+
+**Ruling.** If the scout finds no slice meeting the restated criterion, do not
+bend the registration to fit the subject. Run the port as a delivery campaign,
+instrumented identically, recorded as an observational cohort labelled **not
+R2**, and leave R2 frozen and pending. Several small observational campaigns can
+be pooled later; one bent registration cannot be unbent.
+
+Instrument it either way: per-builder context at first code write, per-builder
+pre-write read calls, the read set each packet names and how many existing lines
+it comprises, context checks at each phase boundary, and handoffs per slice with
+declaration reading and turnaround.
