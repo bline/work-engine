@@ -105,6 +105,8 @@ fn fixture(name: &str, met: bool) -> Fixture {
     let case = if met { met_case(name) } else { base_case(name) };
     let observed = observe(&case, "run");
     let evaluation = evaluation_file(&case, &observed, "e.json");
+    // AC5 (a): the evaluation every assessment fixture starts from has no verdict key anywhere.
+    assert!(!has_key_deep(&read_json(&evaluation), "verdict"));
     let doc = honest(&case.profile_path(), &evaluation);
     Fixture {
         case,
@@ -500,6 +502,9 @@ fn same_evidence_different_verdicts_under_two_profiles() {
         evaluations.push(out);
     }
     let (ea, eb) = (read_json(&evaluations[0]), read_json(&evaluations[1]));
+    for evaluation in [&ea, &eb] {
+        assert!(!has_key_deep(evaluation, "verdict"), "AC5 (a)");
+    }
     assert_eq!(
         ea["battery"], eb["battery"],
         "one battery result under both profiles"
@@ -543,6 +548,7 @@ fn an_assessment_over_a_structurally_invalid_evaluation_is_refused_with_evaluati
     let observed = observe(&case, "run");
     let genuine = evaluation_file(&case, &observed, "genuine.json");
     let genuine_json = read_json(&genuine);
+    assert!(!has_key_deep(&genuine_json, "verdict"), "AC5 (a)");
     assert_eq!(
         (
             genuine_json["counts"]["met"].clone(),

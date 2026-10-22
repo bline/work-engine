@@ -17,6 +17,8 @@ fn setup(name: &str) -> Setup {
     let case = met_case(name);
     let first = observe(&case, "run");
     let evaluation = evaluation_file(&case, &first, "e.json");
+    // AC5 (a): the evaluation every recheck test starts from has no verdict key anywhere.
+    assert!(!has_key_deep(&read_json(&evaluation), "verdict"));
     Setup {
         case,
         first,

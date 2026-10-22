@@ -497,6 +497,10 @@ pub fn evaluation_file(case: &Case, observed: &Observed, name: &str) -> PathBuf 
     let out = case.dir.join(name);
     let run = case.evaluate(observed, &["--out", &s(&out)]);
     assert_eq!(run.code, 0, "evaluate failed: {}", run.stderr);
+    assert!(
+        !has_key_deep(&read_json(&out), "verdict"),
+        "{name}: an evaluation carries no verdict key (AC5 a)"
+    );
     out
 }
 
