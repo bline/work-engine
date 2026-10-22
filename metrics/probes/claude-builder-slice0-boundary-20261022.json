@@ -1,0 +1,139 @@
+{
+ "target": "/home/bline/.claude/projects/-home-bline-code-work-engine/bf60b4c1-34d1-4900-bbe0-15042efb0e2c",
+ "since": null,
+ "until": null,
+ "components": [
+  {
+   "component": "orchestrator",
+   "calls": 445,
+   "weighted": 15060260.5,
+   "output": 562038,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-21T23:04:26.166000+00:00",
+   "last": "2026-10-22T00:54:57.185000+00:00"
+  },
+  {
+   "component": "subagent a0e3ac7f02518cf",
+   "calls": 78,
+   "weighted": 1690583.4,
+   "output": 96591,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-21T23:26:32.126000+00:00",
+   "last": "2026-10-21T23:39:17.034000+00:00"
+  },
+  {
+   "component": "subagent a4675d48b42da1f",
+   "calls": 142,
+   "weighted": 3602873.2,
+   "output": 233905,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-21T23:58:14.578000+00:00",
+   "last": "2026-10-22T00:22:58.039000+00:00"
+  },
+  {
+   "component": "subagent a6fc32ac84e01c7",
+   "calls": 96,
+   "weighted": 2041920.3,
+   "output": 112197,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-22T00:08:36.827000+00:00",
+   "last": "2026-10-22T00:28:00.286000+00:00"
+  },
+  {
+   "component": "subagent a91b6fb930204ae",
+   "calls": 64,
+   "weighted": 1723182.0,
+   "output": 136415,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-21T23:58:10.692000+00:00",
+   "last": "2026-10-22T00:05:44.123000+00:00"
+  },
+  {
+   "component": "subagent a9932298e9e6fd2",
+   "calls": 48,
+   "weighted": 1661706.6,
+   "output": 141888,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-22T00:34:34.552000+00:00",
+   "last": "2026-10-22T00:46:20.692000+00:00"
+  },
+  {
+   "component": "subagent aa36a9c3b4f7717",
+   "calls": 27,
+   "weighted": 602743.4,
+   "output": 46916,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-22T00:34:34.525000+00:00",
+   "last": "2026-10-22T00:38:10.008000+00:00"
+  },
+  {
+   "component": "subagent aa87c4d6ab9a42e",
+   "calls": 55,
+   "weighted": 1682453.1,
+   "output": 119099,
+   "models": [
+    "claude-sonnet-5-5"
+   ],
+   "first": "2026-10-22T00:46:52.271000+00:00",
+   "last": "2026-10-22T00:54:10.858000+00:00"
+  },
+  {
+   "component": "subagent aac2c75c37b85c1",
+   "calls": 32,
+   "weighted": 1329390.5,
+   "output": 114611,
+   "models": [
+    "claude-fable-5-1"
+   ],
+   "first": "2026-10-22T00:06:18.809000+00:00",
+   "last": "2026-10-22T00:13:39.003000+00:00"
+  },
+  {
+   "component": "subagent ad10247f04f9d2a",
+   "calls": 70,
+   "weighted": 2979401.6,
+   "output": 327053,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-22T00:14:22.167000+00:00",
+   "last": "2026-10-22T00:31:52.758000+00:00"
+  },
+  {
+   "component": "subagent af7e8d1a5461a11",
+   "calls": 87,
+   "weighted": 1331881.1,
+   "output": 56223,
+   "models": [
+    "claude-opus-5-5"
+   ],
+   "first": "2026-10-21T23:48:00.909000+00:00",
+   "last": "2026-10-21T23:55:06.114000+00:00"
+  }
+ ],
+ "total": {
+  "calls": 1144,
+  "weighted": 33706395.7,
+  "output": 1946936,
+  "weighted_by_model": {
+   "claude-opus-5-5": 30694552.100000087,
+   "claude-sonnet-5-5": 1682453.0999999996,
+   "claude-fable-5-1": 1329390.4999999998
+  },
+  "orchestrator_share": 0.44680720638427673
+ }
+}
