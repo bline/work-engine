@@ -116,7 +116,7 @@
   "commits": 6,
   "head": "2e0a80eb",
   "branch": "worktree-agent-ad67ff1b4318eee35",
-  "integrated": false,
+  "integrated": true,
   "added_lines": {
    "rust_src": 1527,
    "rust_tests": 1061,
@@ -325,6 +325,13 @@
    "expansion_ratio": "measured for the first time, 4.14x source",
    "port_cost": "2.209 Mwt/krs for the slice cohort, a new comparator with no prior baseline"
   },
-  "what_it_did_not_answer": "H1 to H5 all remain unscored. R2 is still frozen and still needs a subject with a verified read set of at least 2,000 existing lines, at least 1,000 added lines in one language, and at least three code-slice builders."
+  "what_it_did_not_answer": "H1 to H5 all remain unscored. R2 is still frozen and still needs a subject with a verified read set of at least 2,000 existing lines, at least 1,000 added lines in one language, and at least three code-slice builders.",
+  "integration": {
+   "range": "e71c5b7b..65096374",
+   "onto": "rescue-detached-20260911",
+   "note": "integrated after the score was written, which said integrated: false and was true at that time",
+   "verified_by_measurement": "cargo test --offline on the integrated branch: 32 passed, 0 failed across five binaries (lib 2, controller 8, golden 10, policy_profile 5, projector 7)",
+   "verified_at": "2026-10-22T18:45Z"
+  }
  }
 }

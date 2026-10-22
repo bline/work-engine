@@ -230,3 +230,12 @@ the expansion ratio; a port cost comparator where none existed.
 Not answered: **H1 through H5 remain unscored.** R2 is still frozen and still
 needs a subject with a *verified* read set of at least 2,000 existing lines, at
 least 1,000 added lines in one language, and at least three code-slice builders.
+
+## Integration (recorded after the score)
+
+The score above says **not integrated**, which was true when it was written. The
+coordinator then integrated the slice onto `rescue-detached-20260911` as
+`e71c5b7b..65096374`. Verified from the measurement side on the integrated branch:
+`cargo test --offline --manifest-path rust/crates/context-pressure/Cargo.toml`
+gives **32 passed, 0 failed** across five binaries (lib 2, controller 8, golden 10,
+policy_profile 5, projector 7).
