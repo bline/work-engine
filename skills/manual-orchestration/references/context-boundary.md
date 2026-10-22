@@ -13,7 +13,7 @@ knows the task's size and holds the launch authority:
 | --- | --- | --- |
 | A retained child is about to receive a substantial new task, including remediation after review | parent (coordinator or supervisor) | pre-dispatch check, then `followup_task` or `spawn_agent` |
 | A single assignment is outgrowing its window mid-task | worker | mid-task check, then continue or `handoff_ready` |
-| Root context pressure | root | record only; transfer is out of scope |
+| Root context pressure | root | at a quiescent boundary, write a root handoff; the user starts the successor |
 
 In the 2026-10-21 case that motivated this, a parent sent `followup_task` to an
 idle child reading 190,902 of 258,400 without checking it, and the child
@@ -95,14 +95,47 @@ safely, and record why.
 
 ## Roots
 
-Root transfer is **out of scope** until one verified trial preserves
-supervision and collection ownership; a trial needs separate authorization.
-Merely spawning a child, writing a packet or compacting does not transfer the
-root. At dispatch and integration boundaries the root records its reading and
-`continue - transfer unavailable` once, keeps its assignment record and
-continuation current continuously, and keeps its own context small by
-delegating reads (coordinator reference). Root records are pressure
-observations, not handoff decisions.
+A root cannot launch its own replacement: it has no parent, and nothing it can
+call starts a new top-level session. **The user is the root's parent for
+transfer.** The root prepares everything; the user performs the one step it
+cannot. Merely spawning a child, writing a packet or compacting does not
+transfer the root.
+
+Record the root's reading at each dispatch and integration boundary, and keep
+the assignment record and continuation current continuously. Plan a transfer
+when the reading passes the trigger and substantial coordination remains; on
+2026-10-22 a Claude root reached about 580K while its children stayed under
+200K, paying that context on every coordination call.
+
+**Transfer only at a quiescent boundary.** A successor root cannot reach the
+predecessor's children: their IDs, completion notifications and `SendMessage`
+routes belong to the predecessor's session. So before transferring:
+
+1. Stop dispatching. For each live child, collect its result or have it end
+   with `handoff_ready`; record each in the assignment record. No child may be
+   running when the root hands off.
+2. Settle or record every decision in flight, and refresh the assignment
+   record (owners, results, open obligations, pinned binaries, frozen and
+   errata digests, skill commit).
+3. Apply `$wind-walker` and write a root handoff: objective and authority,
+   accepted decisions and open questions for the user, the assignment record
+   path and digest, every child handoff the successor must dispatch from,
+   claims held, the destination ref and HEAD, and the next actions. Record its
+   sha256.
+4. Give the user the exact successor instruction: start a new session in the
+   repository and paste a prompt naming the root handoff path and sha256, the
+   skill to load as coordinator, and the first actions (verify the digest,
+   read the assignment record, re-claim board resources under the new session
+   id, post a transition message).
+5. The successor verifies the digest, acknowledges ownership in the assignment
+   record, and only then dispatches. The predecessor takes no further
+   coordination action; the user stops using it except to answer questions
+   about its own record.
+
+Release the predecessor's board claims at step 3 and have the successor
+re-claim them at step 4, so a claim never names a session that no longer
+coordinates. If a child cannot reach a safe stop, defer the transfer and
+record why.
 
 ## Telemetry rules
 

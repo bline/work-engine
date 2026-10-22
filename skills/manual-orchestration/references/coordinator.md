@@ -22,7 +22,7 @@ Continue independent work while children run; when required results remain and n
 
 ## Your own context
 
-A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary as the [roots](context-boundary.md#roots) section describes; root transfer is out of scope. Keep the continuation and assignment record current continuously, because a ceiling replacement keeps only what was written.
+A root's context grows with every report; roots averaged about 144K per call in the baseline. Keep it small by delegating reads to children and reading their compact results, not their evidence. Record your reading at each dispatch and integration boundary, and transfer at a quiescent boundary through the user as the [roots](context-boundary.md#roots) section describes. Keep the continuation and assignment record current continuously, because a ceiling replacement keeps only what was written.
 
 ## Worktrees and Codebase Memory
 
@@ -30,4 +30,4 @@ A lasting Codebase Memory watch belongs to a live MCP connection rooted at that 
 
 ## Acceptance
 
-Keep acceptance with the owner named by the accepted contract. Supervisor acceptance of a bounded subject does not imply integration or full product acceptance. Recheck affected and overlapping destination bytes against the prepared baseline before deciding integration; an [evidence battery](../../evidence-battery/SKILL.md) over those paths with `--compare` is the cheap form. Record open obligations and unavailable evidence in the final disposition. Cost and comparison rules are in [measurement](measurement.md).
+Keep acceptance with the owner named by the accepted contract. Supervisor acceptance of a bounded subject does not imply integration or full product acceptance. Recheck affected and overlapping destination bytes against the prepared baseline before deciding integration, and bind the destination HEAD in the same operation that integrates: abort if HEAD is not the commit the decision named (other sessions commit to shared branches; on 2026-10-22 one did between a check and a cherry-pick); an [evidence battery](../../evidence-battery/SKILL.md) over those paths with `--compare` is the cheap form. Record open obligations and unavailable evidence in the final disposition. Cost and comparison rules are in [measurement](measurement.md).

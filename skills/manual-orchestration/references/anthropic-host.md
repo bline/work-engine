@@ -70,6 +70,29 @@ reason).
   finished agent it resumes the full transcript. Use it for bindings and scope
   additions, and count it as a retained dispatch when it carries work.
 
+## Root transfer on Claude Code
+
+The procedure is in [context boundary](context-boundary.md#roots). Claude
+specifics:
+
+- The user starts the successor: a new `claude` session in the repository
+  directory. The predecessor cannot do it.
+- The predecessor's subagents are not reachable from the successor, but their
+  transcripts (`~/.claude/projects/<project>/<old session>/subagents/`) and every
+  file they wrote stay readable by path, so handoffs and evidence carry over.
+- Hand the user a prompt of this shape, filled in:
+
+```
+Act as coordinator under $manual-orchestration (read skills/manual-orchestration/SKILL.md
+and references/coordinator.md by repository path). Continue from the root handoff
+<path>, sha256 <digest>: verify the digest, read it and the assignment record it names,
+acknowledge ownership in that record under this session's id, re-claim <resources> on the
+coordination board, post a transition message, then take the next actions it lists.
+```
+
+- Bind the successor's identity by reading its own transcript path
+  (`~/.claude/projects/<project>/<new session id>.jsonl`) and record it.
+
 ## What does not carry over
 
 - The Codex `--session` and `agents` modes read rollouts only; use the `claude`
