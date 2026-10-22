@@ -1,0 +1,69 @@
+{
+  "schema": "decision-readiness-profile-v1",
+  "profile_id": "test.campaign-acceptance-sketch",
+  "version": 1,
+  "decision": {
+    "id": "test-campaign-acceptance-falsifier",
+    "owner_role": "coordinator"
+  },
+  "profile_owner": "coordinator",
+  "assessor_roles": [
+    "tier1-reviewer",
+    "supervisor"
+  ],
+  "authority_refs": [
+    {"path": "app-server/docs/architecture/decision-specific-readiness.md", "lines": "9-16"},
+    {"path": "app-server/docs/architecture/decision-specific-readiness.md", "lines": "170-175"}
+  ],
+  "roots": [
+    {"name": "destination", "git": true},
+    {"name": "candidate"},
+    {"name": "evidence"},
+    {"name": "binaries"}
+  ],
+  "parameters": [
+    {"name": "authority_manifest", "kind": "manifest", "entries_root": "evidence"},
+    {"name": "source_manifest", "kind": "manifest", "entries_root": "candidate"},
+    {"name": "binary_manifest", "kind": "manifest", "entries_root": "binaries"},
+    {"name": "evidence_manifest", "kind": "manifest", "entries_root": "evidence"},
+    {"name": "validation_record", "kind": "path", "bound_by": "evidence_manifest"},
+    {"name": "review_receipt", "kind": "path", "bound_by": "evidence_manifest"},
+    {"name": "suite_logs", "kind": "path_list", "bound_by": "evidence_manifest"},
+    {"name": "suites", "kind": "list"},
+    {"name": "destination_head", "kind": "string"},
+    {"name": "affected_paths", "kind": "list"},
+    {"name": "builder_result", "kind": "path", "bound_by": "evidence_manifest"}
+  ],
+  "requirements": [
+    {
+      "id": "M-evidence",
+      "class": "mechanical",
+      "statement": "Every evidence artifact has the file bytes its evidence manifest records.",
+      "predicates": [
+        {"kind": "manifest_match", "manifest": {"param": "evidence_manifest"}}
+      ]
+    },
+    {
+      "id": "M-no-retained-failures",
+      "class": "mechanical",
+      "statement": "The builder result records no initial failure retained.",
+      "predicates": [
+        {"kind": "json_equals", "file": {"param": "builder_result"}, "key": "initial_failures_retained", "expected": {}}
+      ]
+    },
+    {
+      "id": "M-no-open-p2",
+      "class": "mechanical",
+      "statement": "The validation record lists no originally open P2 finding.",
+      "predicates": [
+        {"kind": "json_equals", "file": {"param": "validation_record"}, "key": "original_open_p2", "expected": []}
+      ]
+    },
+    {
+      "id": "A-acceptance",
+      "class": "attributed",
+      "statement": "The candidate meets the campaign's acceptance conditions. TEST PROFILE for the AC4 falsifier only: it is not a proposed consumer and is never to be cited as authority for an integration.",
+      "evidence_from": ["M-evidence", "M-no-retained-failures", "M-no-open-p2"]
+    }
+  ]
+}
