@@ -38,8 +38,10 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import errno
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -129,6 +131,8 @@ def main(argv: list[str]) -> int:
     out_dir = arguments.out_dir.resolve()
     paths = output_paths(out_dir, len(arguments.profile))
     out_dir.mkdir(parents=True, exist_ok=True)
+    if not os.access(out_dir, os.W_OK | os.X_OK):
+        raise PermissionError(errno.EACCES, "output directory is not writable", str(out_dir))
     existing = [str(path) for path in paths.values() if path.exists() or path.is_symlink()]
     if existing:
         raise Stop(EXIT_USAGE, "refusing to overwrite existing output: " + ", ".join(existing))
@@ -219,3 +223,12 @@ if __name__ == "__main__":
     except Stop as stop:
         sys.stderr.write(stop.message.rstrip("\n") + "\n")
         sys.exit(stop.code)
+    except OSError as error:
+        sys.stderr.write(json.dumps({
+            "error": "os_error",
+            "class": type(error).__name__,
+            "errno": error.errno,
+            "path": None if error.filename is None else str(error.filename),
+            "message": error.strerror or str(error),
+        }, sort_keys=True) + "\n")
+        sys.exit(EXIT_USAGE)

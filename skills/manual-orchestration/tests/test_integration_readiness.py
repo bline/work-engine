@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import stat
 import subprocess
 import sys
@@ -181,6 +182,33 @@ class ExitTwoTests(unittest.TestCase):
         self.assertIn("refusing to overwrite", done.stderr)
         self.assertEqual(fixture.binary_calls(), [])
         self.assertEqual(fixture.battery_calls(), [])
+
+    def test_out_dir_that_is_an_existing_file_exits_two_with_a_json_error(self) -> None:
+        fixture = Fixture()
+        fixture.out_dir.write_text("not a directory\n")
+        done = fixture.run()
+        self.assertEqual(done.returncode, 2)
+        self.assertNotIn("Traceback", done.stderr)
+        lines = done.stderr.splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(json.loads(lines[0])["error"], "os_error")
+        self.assertEqual(fixture.binary_calls(), [])
+        self.assertEqual(fixture.battery_calls(), [])
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root ignores directory permissions")
+    def test_unwritable_out_dir_exits_two_with_a_json_error(self) -> None:
+        fixture = Fixture()
+        fixture.out_dir.mkdir()
+        fixture.out_dir.chmod(0o500)
+        try:
+            done = fixture.run()
+        finally:
+            fixture.out_dir.chmod(0o700)
+        self.assertEqual(done.returncode, 2)
+        self.assertNotIn("Traceback", done.stderr)
+        lines = done.stderr.splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(json.loads(lines[0])["error"], "os_error")
 
     def test_second_run_into_the_same_directory_is_refused(self) -> None:
         fixture = Fixture()
