@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod agents;
+mod claude;
 
 const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_LINE_BYTES: usize = 8 * 1024 * 1024;
@@ -955,6 +956,21 @@ fn main() {
         .is_some_and(|x| x == "--help" || x == "-h")
     {
         println!("{}", help());
+        return;
+    }
+    if let Some(mode) = env::args()
+        .nth(1)
+        .filter(|x| x == "claude" || x == "claude-agents")
+    {
+        let result = if mode == "claude" {
+            claude::run_report(env::args().skip(2))
+        } else {
+            claude::run_agents(env::args().skip(2))
+        };
+        if let Err(e) = result {
+            eprintln!("context-status {mode}: {e}");
+            std::process::exit(1);
+        }
         return;
     }
     if env::args().nth(1).as_deref() == Some("agents") {
