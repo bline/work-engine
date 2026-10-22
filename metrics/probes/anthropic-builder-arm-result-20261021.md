@@ -98,3 +98,37 @@ An independent review of `e785aeb7` against the seven conditions and the crate's
 own standards, yielding M9 and M10. Until then the cost figure stands alone,
 and the ledger rule applies: a cheaper run that needs more attempts or lets more
 defects escape is not an improvement.
+
+## Amendment 1, 2026-10-22: the cost was over-counted about 2x
+
+Written by a different Claude session (coordinator `bf60b4c1`), not the arm.
+
+**The wrong claim:** build segment 44 calls, 1.553 Mwt, 5.38 Mwt/krs, and the
+reading that this sits above the baseline range 2.04-5.11.
+
+**Error class:** `metrics/scripts/claude_transcript_usage.py` deduplicated on
+`(message.id, timestamp)`. Claude Code writes one API response as several
+assistant records sharing `message.id` with different timestamps, so each
+response was counted once per record. On this arm's transcript
+(`e702a3e4-...jsonl`) the whole-file over-count is 2.17x (4,632 rows counted
+against 2,170 distinct ids). Found by the CS-1 builder's A4 reconciliation in
+run `readiness-r1-20261021` and confirmed by its tier-1 reviewer across 117
+transcripts.
+
+**Corrected figure:** counting each `message.id` once, with the maximum
+`output_tokens` across its records, the build segment from the recorded split
+`23:27:08Z` gives **19 calls, 0.661 Mwt (2.29 Mwt/krs)** ending at the
+`e785aeb7` commit time `23:31:07Z`, or **22 calls, 0.797 Mwt (2.76 Mwt/krs)**
+ending at this result's commit `23:32:46Z`. The arm did not record its segment
+end, so the exact figure is `not established`; under the old rule the same two
+windows give 41 and 50 calls, bracketing the recorded 44.
+
+**Consequence:** the slice's first-candidate cost falls inside the baseline
+range rather than above it. The predicted "small-slice penalty" is not
+observed in this figure. Every other caveat above still applies (n=1,
+first-candidate against accepted-slice baselines, weak spec independence,
+harness confound), and M9/M10 remain `not established`.
+
+**The check that would have caught it:** compare rows counted with distinct
+`message.id` values. The script now deduplicates on `message.id` with maximum
+output, and states the rule in its docstring.
