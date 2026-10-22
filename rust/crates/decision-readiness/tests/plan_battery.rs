@@ -647,6 +647,7 @@ fn exit_codes_zero_one_and_two() {
             "check".into(),
             "--kind".into(),
             "evaluation".into(),
+            "--rederive".into(),
             s(&case.profile_path()),
         ],
         vec![
