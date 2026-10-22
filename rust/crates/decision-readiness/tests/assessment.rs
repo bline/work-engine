@@ -530,3 +530,85 @@ fn same_evidence_different_verdicts_under_two_profiles() {
         0
     );
 }
+
+/// Errata E9 / S2-T1-001. An evaluation whose mechanical statuses are all `met` while its
+/// predicates stay `unmet` fails `check --kind evaluation`; an assessment over it is refused too,
+/// whatever verdict it claims, instead of being compared with statuses nothing validated.
+#[test]
+fn an_assessment_over_a_structurally_invalid_evaluation_is_refused_with_evaluation_invalid() {
+    let mut case = base_case("assess-forged-evaluation");
+    // Mechanical requirements only, so that `ready` is the honest verdict over the forgery.
+    case.profile["requirements"].as_array_mut().unwrap().pop();
+    case.write_documents();
+    let observed = observe(&case, "run");
+    let genuine = evaluation_file(&case, &observed, "genuine.json");
+    let genuine_json = read_json(&genuine);
+    assert_eq!(
+        (
+            genuine_json["counts"]["met"].clone(),
+            genuine_json["counts"]["unmet"].clone()
+        ),
+        (json!(6), json!(1)),
+        "the base case has exactly one unmet requirement, R-json"
+    );
+
+    // The forgery: every requirement status `met` and the counts recounted, predicates untouched.
+    let mut forged_json = genuine_json.clone();
+    for r in forged_json["requirements"].as_array_mut().unwrap() {
+        r["status"] = json!("met");
+    }
+    forged_json["counts"] = json!({"met": 7, "unmet": 0, "indeterminate": 0});
+    let unmet_predicates = forged_json["requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|r| r["predicates"].as_array().unwrap())
+        .filter(|p| p["status"] == "unmet")
+        .count();
+    assert_eq!(unmet_predicates, 1, "the predicates stay unmet");
+    let forged = case.dir.join("forged.json");
+    write_json(&forged, &forged_json);
+
+    // The structural check alone rejects it.
+    let run = cli(&["check", "--kind", "evaluation", &s(&forged)]);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["status_inconsistent"]);
+
+    // A `ready` assessment over it, internally consistent and digest-bound to the forgery.
+    let ready = honest(&case.profile_path(), &forged);
+    assert_eq!(ready["verdict"], "ready");
+    let run = assess(&case.dir, "ready", &case.profile_path(), &forged, &ready);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_invalid", "status_inconsistent"]);
+    assert_eq!(run.out_json()["valid"], false);
+    // The code is the same for any verdict: the evaluation, not the assessment, is at fault.
+    let mut blocked = ready.clone();
+    blocked["verdict"] = json!("blocked");
+    let run = assess(
+        &case.dir,
+        "blocked",
+        &case.profile_path(),
+        &forged,
+        &blocked,
+    );
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert!(run.codes().contains(&"evaluation_invalid".to_string()));
+
+    // Control: the same profile and the genuine evaluation. The honest assessment is accepted,
+    // and the `ready` claim is refused for its own reason, not `evaluation_invalid`.
+    let honest_doc = honest(&case.profile_path(), &genuine);
+    assert_eq!(honest_doc["verdict"], "blocked");
+    let run = assess(
+        &case.dir,
+        "honest",
+        &case.profile_path(),
+        &genuine,
+        &honest_doc,
+    );
+    assert_eq!(run.code, 0, "{}", run.stdout);
+    let mut claim = honest_doc.clone();
+    claim["verdict"] = json!("ready");
+    let run = assess(&case.dir, "claim", &case.profile_path(), &genuine, &claim);
+    assert_eq!(run.code, 1);
+    assert_eq!(run.codes(), ["verdict_inconsistent"]);
+}

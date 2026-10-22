@@ -47,6 +47,7 @@ pub mod check_codes {
     pub const AUTHORITY_REF_EMPTY: &str = "authority_ref_empty";
     pub const FRESHNESS_BASIS_MISMATCH: &str = "freshness_basis_mismatch";
     pub const CLAIM_RELIANCE_INVALID: &str = "claim_reliance_invalid";
+    pub const EVALUATION_INVALID: &str = "evaluation_invalid";
 }
 use check_codes as cc;
 
@@ -329,6 +330,18 @@ pub struct AssessmentContext<'a> {
 }
 
 pub fn check_assessment(a: &Assessment, ctx: &AssessmentContext<'_>) -> Vec<ErrorItem> {
+    // Errata E9: the evaluation the assessment cites is structurally checked first. Every rule
+    // below compares against its statuses, so none is meaningful over an inconsistent one.
+    let structural = check_evaluation(ctx.evaluation);
+    if !structural.is_empty() {
+        let mut errors = vec![err(
+            cc::EVALUATION_INVALID,
+            "--evaluation",
+            "the evaluation fails check --kind evaluation; the underlying codes follow",
+        )];
+        errors.extend(structural);
+        return errors;
+    }
     let mut errors = Vec::new();
     let profile = ctx.profile;
     let evaluation = ctx.evaluation;
