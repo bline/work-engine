@@ -28,52 +28,67 @@
    {
     "agent": "a27d1ec9c1e4acca4",
     "role": "S1 builder",
-    "context_at_first_code_write": 88562,
-    "pre_write_read_calls": 26
+    "context_at_first_code_write": 113522,
+    "pre_write_read_calls": 28,
+    "context_at_first_code_write_as_registered": 88562,
+    "pre_write_read_calls_as_registered": 26,
+    "corrected_by": "amendment_3",
+    "correction_note": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
    },
    {
     "agent": "abeb3da4543a8545f",
     "role": "S1 successor",
     "context_at_first_code_write": 116779,
-    "pre_write_read_calls": 16
+    "pre_write_read_calls": 16,
+    "verified_by": "amendment_3 (candidate list read, not detector output)"
    },
    {
     "agent": "a0e59f73949c117b9",
     "role": "S2 builder",
     "context_at_first_code_write": null,
-    "pre_write_read_calls": 29
+    "pre_write_read_calls": 29,
+    "verified_by": "amendment_3: no .rs or .toml write candidate anywhere in the transcript"
    },
    {
     "agent": "a68b863f021a779a8",
     "role": "S2a successor",
     "context_at_first_code_write": 100144,
-    "pre_write_read_calls": 15
+    "pre_write_read_calls": 15,
+    "verified_by": "amendment_3 (candidate list read, not detector output)"
    },
    {
     "agent": "aed2ceafc33b90035",
     "role": "S2a-2 successor",
     "context_at_first_code_write": 71539,
-    "pre_write_read_calls": 14
+    "pre_write_read_calls": 14,
+    "verified_by": "amendment_3 (candidate list read, not detector output)"
    },
    {
     "agent": "a5d3ffe262a707e38",
     "role": "S2b builder",
     "context_at_first_code_write": 103954,
-    "pre_write_read_calls": 14
+    "pre_write_read_calls": 14,
+    "verified_by": "amendment_3 (candidate list read, not detector output)"
    },
    {
     "agent": "a74b04b4ca3160232",
     "role": "S2b-2 successor",
-    "context_at_first_code_write": 58097,
-    "pre_write_read_calls": 10
+    "context_at_first_code_write": 77556,
+    "pre_write_read_calls": 22,
+    "context_at_first_code_write_as_registered": 58097,
+    "pre_write_read_calls_as_registered": 10,
+    "corrected_by": "amendment_3",
+    "correction_note": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
    }
   ],
   "B1_context_at_first_code_write": {
    "n": 6,
-   "median": 94353,
-   "mean": 89846,
-   "min": 58097,
-   "max": 116779
+   "median": 102049,
+   "mean": 97249,
+   "min": 71539,
+   "max": 116779,
+   "definition": "first write to a .rs file; a Cargo.toml write does not count",
+   "corrected_by": "amendment_3"
   },
   "B2_builders_writing_no_code": {
    "count": 1,
@@ -93,10 +108,29 @@
   },
   "B5_orchestration_share": 0.362,
   "B6_pre_write_read_calls": {
+   "n": 6,
+   "median": 15.5,
+   "mean": 18.2,
+   "min": 14,
+   "max": 28,
+   "definition": "read-class tool calls before the first .rs write, over the six builders that wrote Rust source",
+   "note": "the as-registered n=7 pooled the non-writer's 29 and a74b04b4's wrong 10",
+   "corrected_by": "amendment_3"
+  },
+  "B1_context_at_first_code_write_as_registered": {
+   "n": 6,
+   "median": 94353,
+   "mean": 89846,
+   "min": 58097,
+   "max": 116779,
+   "superseded_by": "amendment_3"
+  },
+  "B6_pre_write_read_calls_as_registered": {
    "n": 7,
    "median": 15,
    "min": 10,
-   "max": 29
+   "max": 29,
+   "superseded_by": "amendment_3"
   }
  },
  "hypotheses": {
@@ -232,5 +266,50 @@
    "context checks at each phase boundary",
    "handoffs per slice, with declaration reading and turnaround"
   ]
+ },
+ "amendment_3": {
+  "at": "2026-10-22T16:20:00Z",
+  "title": "Two of seven B1 values were detector false positives; B1 and B6 corrected",
+  "wrong_claim": "B1 context at first code write: median 94,353, mean 89,846, range 58,097-116,779 (n=6), and B6 median 15, range 10-29 (n=7).",
+  "error_class": "instrument defect: the first-code-write detector accepted any Bash command containing both a '>' character and the substring '.rs', so a redirect to an unrelated path (2>/dev/null, > /tmp/x, > a .md result file) in a command that merely mentioned a .rs path counted as a code write. It also counted a Cargo.toml write as a code write.",
+  "corrected_values": {
+   "B1": {
+    "median": 102049,
+    "mean": 97249,
+    "min": 71539,
+    "max": 116779,
+    "n": 6
+   },
+   "B6": {
+    "median": 15.5,
+    "mean": 18.2,
+    "min": 14,
+    "max": 28,
+    "n": 6
+   }
+  },
+  "per_builder": {
+   "a27d1ec9c1e4acca4": {
+    "as_registered": 88562,
+    "corrected": 113522,
+    "reason": "88,562 was the first write of Cargo.toml (cat > ... Cargo.toml, call 24). The first write of a .rs file is at call 28."
+   },
+   "a74b04b4ca3160232": {
+    "as_registered": 58097,
+    "corrected": 77556,
+    "reason": "58,097 was a write of /tmp/x and a mutate.py under the run directory (call 15), not crate source. The first .rs write is a heredoc Python patch of tests/rederive.rs at call 38."
+   }
+  },
+  "unchanged_and_now_verified": [
+   "abeb3da4543a8545f",
+   "a68b863f021a779a8",
+   "aed2ceafc33b90035",
+   "a5d3ffe262a707e38",
+   "a0e59f73949c117b9"
+  ],
+  "downstream_consequence": "H1's bar was set 7,696 tokens below the true pre-change median, which made H1 harder to support than the data warrants. Correcting it moves the bar in the direction that favours the treatment. B2 (1 of 7) and B3-B5 are unaffected: B2's instance was re-verified as having no write candidate of any kind, and B3-B5 do not use this detector.",
+  "check_that_caught_it": "Instrumenting the P1 builder, the detector reported a first code write on a command that was a sed/cat read with 2>/dev/null in it. Re-running with a write-construct regex then disagreed with the frozen table on two builders, and each of the seven was adjudicated by listing every candidate write call and reading the matched command rather than trusting any detector.",
+  "sequence_disclosure": "This amendment was made while the P1 builder was running and after its first code write had been measured. At the time of amendment P1's first .rs write was 81,055 with 26 pre-write read calls. P1 is an observational cohort labelled not R2 and is not scored against B1 as an R2 result; the disclosure is recorded so the order of discovery is auditable.",
+  "second_defect_found_and_fixed": "The replacement detector's own git-commit test matched only the literal 'git commit' and so missed 'git -C <dir> commit'. Both detector versions are therefore unreliable on their own; the committed values come from read adjudication of every candidate."
  }
 }

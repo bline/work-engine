@@ -1,0 +1,109 @@
+{
+ "schema": "claude-observational-cohort-v1",
+ "registered_at": "2026-10-22T16:25:00Z",
+ "status": "open: builder running at registration time",
+ "label": "observational cohort, NOT R2",
+ "r2_disposition": "frozen and pending. No R2 builder has been dispatched.",
+ "why_not_r2": {
+  "scout": "~/.local/state/work-engine/r2-pressure-controller-20261022/scout/result-v1.json",
+  "verdict": "does_not_meet",
+  "criterion": "each scored code slice gives its builders a read set of >=2,000 existing lines, adds >=1,000 lines in one language, with >=3 code-slice builders in total (prereg amendment 2)",
+  "failures": {
+   "read_set": "P1 packet names 813 product lines (+251 skill) = 1,064; criterion is >=2,000",
+   "builders": "1 planned; criterion is >=3",
+   "added_lines": "1,400-2,100 Rust estimated; this leg would likely meet"
+  },
+  "ruling_applied": "prereg amendment 2: do not bend the registration; run the port instrumented identically and label it not R2"
+ },
+ "subject": {
+  "port": "app-server/src/token-usage-pressure-projection.mjs (112) + context-pressure-controller.mjs (257) -> rust/crates/context-pressure",
+  "scope": "evidence producer only; hash parity with the JS canonical-JSON sha256 revisions, proven by JS-generated golden vectors",
+  "base": "6f4d08a18e103f1411f192665b72b2abea9c353e",
+  "worktree_branch": "worktree-agent-ad67ff1b4318eee35"
+ },
+ "builder": {
+  "agent": "ad67ff1b4318eee35",
+  "model": "claude-sonnet-5-5",
+  "effort": "high",
+  "spawned_with_worktree": true,
+  "started": "2026-10-22T15:58:38Z",
+  "named_read_set_lines": {
+   "product": 813,
+   "skill": 251,
+   "total": 1064
+  },
+  "trigger": 150000
+ },
+ "measurements_as_of": {
+  "as_of": "2026-10-22T16:04:42Z",
+  "note": "builder still running; these are not final",
+  "first_manifest_write": {
+   "context": 72427,
+   "api_call": 28,
+   "read_calls_before": 24,
+   "detail": "mkdir + cp Cargo.lock + cat > Cargo.toml"
+  },
+  "first_rust_source_write": {
+   "context": 81055,
+   "api_call": 33,
+   "read_calls_before": 26,
+   "detail": "Write rust/crates/context-pressure/src/error.rs"
+  },
+  "api_calls": 66,
+  "max_context": 110815,
+  "weighted_tokens": 1249470,
+  "adjudication": "candidate write calls were listed and the matched command read; no detector output was taken at face value"
+ },
+ "comparison_against_frozen_baselines": {
+  "B1_corrected_median": 102049,
+  "p1_first_rust_write": 81055,
+  "delta": -20994,
+  "B6_corrected_median": 15.5,
+  "p1_pre_write_read_calls": 26,
+  "read_calls_delta": 10.5,
+  "reading": "context at first Rust write is below the corrected pre-change median while pre-write read calls are ABOVE it. Under the registered disambiguation rule that pattern is earlier committing, not leaner reading. n=1.",
+  "confound_that_blocks_any_causal_reading": "P1's named read set is 1,064 lines against B1 builders reading a ~2,700-line Rust crate plus contract sections. A smaller read set lowers this metric for a reason the treatment does not claim. This is exactly the confound prereg amendment 2 named when it restated the criterion."
+ },
+ "what_this_cohort_can_support": [
+  "whether a builder given an explicitly enumerated read set reads only it (read_set_actual vs the 813 named)",
+  "whether the 150,000 trigger fires for a single-slice port, and the handoff turnaround if it does",
+  "first in-repo JS->Rust expansion ratio (added Rust lines per JS line), which R1 could not give because R1 was greenfield",
+  "Mwt per 1k added Rust lines for a port, as a new comparator with no prior baseline"
+ ],
+ "what_this_cohort_cannot_support": [
+  "H1 as a test of the read-set instruction: read set too small, n=1",
+  "H2: n=1 cannot distinguish 0 of 1 from the 14.3% base rate",
+  "H3 handoffs per Rust slice: one slice",
+  "H4 against B4's 1.52 Mwt/krs: a port and a greenfield crate are not comparable denominators",
+  "H5 orchestration share: no multi-slice campaign"
+ ],
+ "coordinator_side": {
+  "session": "c1d31e88-2169-456f-8673-e29f643e9fb2",
+  "scout": {
+   "agent": "a1fb23e0beb53db59",
+   "model": "claude-opus-5-5",
+   "weighted_tokens": 636425,
+   "max_context": 93089,
+   "duration_s": 198
+  },
+  "alignment_check": {
+   "agent": "acff6f62c6078c24b",
+   "model": "claude-opus-5-5",
+   "weighted_tokens": 1070180,
+   "max_context": 121864,
+   "duration_s": 260,
+   "verdict": "aligned_with_changes",
+   "result": "~/.local/state/work-engine/r2-pressure-controller-20261022/alignment/result-v1.md"
+  },
+  "gating_cost_before_any_code": {
+   "weighted_tokens": 1706605,
+   "note": "scout + alignment = 1.707 Mwt spent establishing that R2 does not apply here and that the design still wants this component. Both were read-only and both changed the plan."
+  },
+  "root_context": {
+   "max_context_at_1559Z": 154879,
+   "api_calls": 120,
+   "observation": "the successor root crossed the 150,000 trigger 73 minutes after the transfer that reset it to 51,954. Relevant to R3 and to the root-transfer economics: a root reaches the trigger quickly, which is consistent with the measured 1.4-call break-even rather than against it."
+  }
+ },
+ "instrument_note": "No live poller was run for this cohort. R1 defect R1-M-002 came from a watcher that derived idleness from transcript mtime; a single-builder cohort is fully recoverable post hoc from the transcript, so the instrument was omitted rather than repeated."
+}

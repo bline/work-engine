@@ -239,3 +239,54 @@ Instrument it either way: per-builder context at first code write, per-builder
 pre-write read calls, the read set each packet names and how many existing lines
 it comprises, context checks at each phase boundary, and handoffs per slice with
 declaration reading and turnaround.
+
+## Amendment 3, 2026-10-22: two of the seven B1 values were instrument artifacts
+
+**The wrong claim.** B1 was registered as median **94,353**, mean 89,846, range
+58,097–116,779 over the six pre-change builders that wrote code, and B6 as median
+15, range 10–29 over seven.
+
+**The error class.** The first-code-write detector accepted any `Bash` command
+containing both a `>` character and the substring `.rs`. A command that merely
+*mentioned* a `.rs` path while redirecting somewhere else — `2>/dev/null`,
+`> /tmp/x`, `> result-b-v1.md` — therefore counted as a code write. The detector
+also counted a `Cargo.toml` write as a code write.
+
+**Corrected per builder.**
+
+| builder | as registered | corrected | why |
+| --- | --- | --- | --- |
+| `a27d1ec9c1e4acca4` | 88,562 | **113,522** | 88,562 was `cat > …/Cargo.toml` at call 24; the first `.rs` write is call 28 |
+| `a74b04b4ca3160232` | 58,097 | **77,556** | 58,097 wrote `/tmp/x` and a `mutate.py` under the run directory; the first `.rs` write is a heredoc Python patch of `tests/rederive.rs` at call 38 |
+
+The other five were adjudicated and stand: `abeb3da4543a8545f` 116,779
+(`cat > tests/support/mod.rs`), `a68b863f021a779a8` 100,144 (heredoc Python patch
+of `src/plan.rs`), `aed2ceafc33b90035` 71,539 (`cat >> tests/evaluate_outcomes.rs`),
+`a5d3ffe262a707e38` 103,954 (`Write src/check.rs`). `a0e59f73949c117b9` has **no
+write candidate of any kind** in its transcript, so B2's instance is re-verified
+rather than merely re-asserted.
+
+**Corrected baselines.** **B1** median **102,049**, mean 97,249, range
+71,539–116,779, n=6, defined as the first write to a `.rs` file. **B6** median
+**15.5**, mean 18.2, range 14–28, n=6, over the builders that wrote Rust source;
+the registered n=7 had pooled the non-writer's 29 with `a74b04b4`'s wrong 10.
+B2 (1 of 7), B3, B4 and B5 do not use this detector and are unchanged.
+
+**Downstream consequence.** H1's bar sat **7,696 tokens below** the true
+pre-change median, making H1 harder to support than the data warranted.
+Correcting it moves the bar in the direction that favours the treatment, which is
+why the next paragraph exists.
+
+**Sequence disclosure.** This correction was found while instrumenting the P1
+builder and was written **after** P1's first code write had been measured. At the
+time of amendment P1 stood at 81,055 with 26 pre-write read calls. P1 is an
+observational cohort labelled **not R2** and is not scored against B1 as an R2
+result; the order of discovery is recorded so a reader can judge it.
+
+**Check that caught it, and a second defect.** The detector flagged a `sed -n`
+read containing `2>/dev/null` as P1's first code write. A rewritten detector then
+disagreed with the frozen table on two builders — and its own `git commit` test
+matched only the literal string, missing `git -C <dir> commit`. Neither detector
+version is reliable alone. Every value above comes from listing all candidate
+write calls per builder and **reading the matched command**, which is what rule 5
+requires and what the original pass did not do.
