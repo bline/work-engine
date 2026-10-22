@@ -1,0 +1,157 @@
+{
+  "schema": "decision-readiness-profile-v1",
+  "profile_id": "manual-orchestration.integration-readiness",
+  "version": 1,
+  "decision": {
+    "id": "root-integration-of-private-candidate",
+    "owner_role": "coordinator"
+  },
+  "profile_owner": "coordinator",
+  "assessor_roles": [
+    "tier1-reviewer",
+    "supervisor"
+  ],
+  "authority_refs": [
+    {"path": "app-server/docs/proposal-research-maturity-and-freshness-reconciliation.md", "lines": "369-373"},
+    {"path": "app-server/docs/architecture/decision-specific-readiness.md", "lines": "170-175"},
+    {"path": "skills/manual-orchestration/SKILL.md", "lines": "32"},
+    {"path": "skills/manual-orchestration/references/coordinator.md", "lines": "29-31"},
+    {"path": "skills/manual-orchestration/references/supervisor.md", "lines": "13-19"}
+  ],
+  "roots": [
+    {"name": "destination", "git": true},
+    {"name": "candidate"},
+    {"name": "evidence"},
+    {"name": "binaries"}
+  ],
+  "parameters": [
+    {"name": "authority_manifest", "kind": "manifest", "entries_root": "evidence"},
+    {"name": "source_manifest", "kind": "manifest", "entries_root": "candidate"},
+    {"name": "binary_manifest", "kind": "manifest", "entries_root": "binaries"},
+    {"name": "evidence_manifest", "kind": "manifest", "entries_root": "evidence"},
+    {"name": "validation_record", "kind": "path", "bound_by": "evidence_manifest"},
+    {"name": "review_receipt", "kind": "path", "bound_by": "evidence_manifest"},
+    {"name": "suite_logs", "kind": "path_list", "bound_by": "evidence_manifest"},
+    {"name": "suites", "kind": "list"},
+    {"name": "destination_head", "kind": "string"},
+    {"name": "affected_paths", "kind": "list"}
+  ],
+  "requirements": [
+    {
+      "id": "M-authority",
+      "class": "mechanical",
+      "statement": "Every authority artifact the candidate was built under has the file bytes its authority manifest records.",
+      "predicates": [
+        {"kind": "manifest_match", "manifest": {"param": "authority_manifest"}}
+      ]
+    },
+    {
+      "id": "M-source",
+      "class": "mechanical",
+      "statement": "Every candidate source file has the file bytes its source manifest records, so the subject of integration is exactly the qualified candidate.",
+      "predicates": [
+        {"kind": "manifest_match", "manifest": {"param": "source_manifest"}}
+      ]
+    },
+    {
+      "id": "M-binaries",
+      "class": "mechanical",
+      "statement": "Every binary the validation exercised has the file bytes its binary manifest records.",
+      "predicates": [
+        {"kind": "manifest_match", "manifest": {"param": "binary_manifest"}}
+      ]
+    },
+    {
+      "id": "M-evidence",
+      "class": "mechanical",
+      "statement": "Every evidence artifact (validation record, review receipt, suite logs, results, handoffs) has the file bytes its evidence manifest records.",
+      "predicates": [
+        {"kind": "manifest_match", "manifest": {"param": "evidence_manifest"}}
+      ]
+    },
+    {
+      "id": "M-suites",
+      "class": "mechanical",
+      "statement": "The validation record shows every required suite exited 0 with zero failed tests.",
+      "predicates": [
+        {"kind": "json_compare", "file": {"param": "validation_record"}, "key": "supervisor_final_tests.{each}.exit_code", "each": {"param": "suites"}, "op": "eq", "value": 0},
+        {"kind": "json_compare", "file": {"param": "validation_record"}, "key": "supervisor_final_tests.{each}.counts.failed", "each": {"param": "suites"}, "op": "eq", "value": 0}
+      ]
+    },
+    {
+      "id": "M-review-bound",
+      "class": "mechanical",
+      "statement": "The review receipt records a review conclusion and records that the integration decision was not made by the reviewer but left to the root owner.",
+      "predicates": [
+        {"kind": "json_present", "file": {"param": "review_receipt"}, "key": "review_conclusion"},
+        {"kind": "json_equals", "file": {"param": "review_receipt"}, "key": "integration_decision", "expected": "not_made_root_owned"}
+      ]
+    },
+    {
+      "id": "M-logs",
+      "class": "mechanical",
+      "statement": "No suite log reports a failed test result, and every suite log reports at least one passing test result.",
+      "predicates": [
+        {"kind": "grep_count", "pattern": "test result: FAILED", "files": {"param": "suite_logs"}, "max": 0},
+        {"kind": "grep_count", "pattern": "test result: ok", "files": {"param": "suite_logs"}, "min": 1, "per_path": true}
+      ]
+    },
+    {
+      "id": "M-baseline",
+      "class": "mechanical",
+      "statement": "The destination is still at the prepared baseline commit, and the affected destination paths carry no uncommitted or untracked change relative to it.",
+      "predicates": [
+        {"kind": "git_output_equals", "args": ["rev-parse", "HEAD"], "expected": {"param": "destination_head"}},
+        {"kind": "git_output_empty", "args": ["status", "--porcelain", "--", {"param": "affected_paths"}]}
+      ]
+    },
+    {
+      "id": "A-review",
+      "class": "attributed",
+      "statement": "The retained review examined this exact candidate source, and its conclusion, its findings and their dispositions, and its stated limits suffice for this integration.",
+      "evidence_from": ["M-review-bound", "M-evidence"]
+    },
+    {
+      "id": "A-filtered",
+      "class": "attributed",
+      "statement": "Any filtered, skipped, ignored or unqualified tests in the required suites are compatible with integration.",
+      "evidence_from": ["M-suites", "M-logs", "M-evidence"]
+    },
+    {
+      "id": "A-obligations",
+      "class": "attributed",
+      "statement": "The recorded open obligations are compatible with integration and are carried forward to a named owner.",
+      "evidence_from": ["M-evidence", "M-authority"]
+    },
+    {
+      "id": "A-scope",
+      "class": "attributed",
+      "statement": "The candidate's changes stay within the accepted authority.",
+      "evidence_from": ["M-authority", "M-source"]
+    },
+    {
+      "id": "A-coverage",
+      "class": "attributed",
+      "statement": "The required suites named for this subject, and the downstream consumers they reach, cover the candidate's changes.",
+      "evidence_from": ["M-suites", "M-source"]
+    },
+    {
+      "id": "A-affected-set",
+      "class": "attributed",
+      "statement": "The affected path list covers every destination path the integration writes or overlaps, so the baseline recheck observed all of them.",
+      "evidence_from": ["M-baseline", "M-source"]
+    },
+    {
+      "id": "A-collection",
+      "class": "attributed",
+      "statement": "Every required child result has been collected and every launched process is accounted for, with none stranded.",
+      "evidence_from": ["M-evidence"]
+    },
+    {
+      "id": "A-limits",
+      "class": "attributed",
+      "statement": "The recorded limitations and unavailable evidence are compatible with integration.",
+      "evidence_from": ["M-evidence", "M-review-bound"]
+    }
+  ]
+}
