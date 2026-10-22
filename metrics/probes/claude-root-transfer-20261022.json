@@ -1,0 +1,104 @@
+{
+ "schema": "claude-root-transfer-record-v1",
+ "recorded_at": "2026-10-22T15:00:00Z",
+ "event": "first use of the user-mediated root transfer procedure",
+ "procedure": {
+  "defined_by": "c56ab8ec",
+  "location": "skills/manual-orchestration/references/context-boundary.md#roots",
+  "claude_specifics": "skills/manual-orchestration/references/anthropic-host.md"
+ },
+ "predecessor": {
+  "session": "bf60b4c1-34d1-4900-bbe0-15042efb0e2c",
+  "first_activity": "2026-10-21T23:03:38.654Z",
+  "last_activity": "2026-10-22T14:45:49.534Z",
+  "orchestrator_calls": 688,
+  "orchestrator_weighted_Mwt": 31.196,
+  "peak_context": 656196,
+  "peak_at": "2026-10-22T14:45:49.522Z",
+  "context_at_last_call": 656196,
+  "compactions": 0,
+  "compaction_basis": "zero compactMetadata records in the transcript, re-checked after the transfer"
+ },
+ "successor": {
+  "session": "c1d31e88-2169-456f-8673-e29f643e9fb2",
+  "first_activity": "2026-10-22T14:46:29.579Z",
+  "context_at_first_call": 51954
+ },
+ "turnaround_seconds": 40.0,
+ "context_reduction": {
+  "from": 656196,
+  "to": 51954,
+  "share": 0.921
+ },
+ "per_call_economics": {
+  "predecessor_last_20_calls": {
+   "mean_weighted": 73706,
+   "mean_context": 648583
+  },
+  "predecessor_last_10_calls": {
+   "mean_weighted": 72761,
+   "mean_context": 653068
+  },
+  "successor": {
+   "calls": 34,
+   "mean_weighted": 14610,
+   "mean_context": 79362
+  },
+  "saving_per_call": 59096,
+  "ratio": 5.0,
+  "successor_startup_first_5_calls_weighted": 81834,
+  "break_even_coordination_calls": 1.4,
+  "projection_100_further_calls": {
+   "predecessor_Mwt": 7.371,
+   "successor_Mwt": 1.461
+  }
+ },
+ "mechanism": {
+  "claim": "a root's context is carrying cost, paid on every coordination call and doing no bulk work, which is why transfer pays back almost at once",
+  "support": {
+   "predecessor_last_20_calls": {
+    "cached_resend_share": 0.878,
+    "uncached_share": 0.02,
+    "output_share": 0.102
+   },
+   "successor": {
+    "cached_resend_share": 0.511,
+    "uncached_share": 0.324,
+    "output_share": 0.165
+   },
+   "baseline_comparison": "the pure-Codex baseline records ~73% cached re-send at 126-144K context per call; the root at 648K was at 87.8%"
+  }
+ },
+ "contrast_with_worker_handoff": {
+  "root": "break-even at 1.4 coordination calls",
+  "worker": "the handoff_threshold replay over Codex builder traces found break-even restart at about 75K, and at the measured 116K floor every threshold lost about 30%",
+  "reading": "the asymmetry is expected under the mechanism above: a worker's context is mostly task-essential reading a successor must redo, while a root's is re-sent state. Stated as the proposed reading of two measurements on different hosts and roles, not as a measured causal claim.",
+  "caveat": "different hosts (Codex builders vs a Claude root) and different roles; not a like-for-like comparison"
+ },
+ "procedure_compliance": {
+  "quiescent": "all 28 predecessor subagents finished; no child crossed the boundary; no board claims held",
+  "handoff_written": "root-handoff-v2.md, superseding v1 with v1's sha256 recorded",
+  "handoff_sha256": "dc0b8218a7da80cf016f793329ca2ec3313746c76d2dce5f2666dfb7e4ffc36e",
+  "successor_verified_digest": true,
+  "successor_acknowledged_ownership": "c1d31e88-2169-456f-8673-e29f643e9fb2 recorded as coordinator in r2-pressure-controller-20261022/assignments.json"
+ },
+ "corrections": [
+  {
+   "claim": "the root handoff states the transfer reason as 'about 580K context at a quiescent boundary'",
+   "measured": 656196,
+   "class": "a reading stated from recollection rather than from the transcript at the moment of writing",
+   "consequence": "none to the decision, which was correct in direction; the recorded reason understates the pressure by about 76K",
+   "check": "max of input_tokens + cache_creation_input_tokens + cache_read_input_tokens over the transcript"
+  }
+ ],
+ "harness_note": {
+  "observation": "the predecessor reached 656,196 context with no auto-compaction",
+  "significance": "the 202,533 floor recorded elsewhere in these probes is the minimum of 21 observed auto-compactions, not a ceiling. A session can run far above it without compacting, so that figure bounds where compaction has been seen and does not predict where it fires.",
+  "window_fraction": "not established: Claude Code transcripts record no context window"
+ },
+ "limits": [
+  "n = 1 root transfer",
+  "the successor had completed 34 calls when this was recorded; its per-call mean will move as it takes on coordination load",
+  "break-even uses the predecessor's last-20-call mean as the counterfactual cost of continuing, which assumes its context would not have grown further. It would have, so 1.4 calls is an upper bound on the payback period."
+ ]
+}
