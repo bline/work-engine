@@ -6,7 +6,10 @@ One API response is written as several assistant records sharing
 `message.id`, each with its own timestamp. Count each id once: input and cache
 counters are identical across its records, and `output_tokens` can be partial
 on early records, so take the maximum. Records with model `<synthetic>` are not
-API calls. Weighted = uncached + cached/10 + 5 x output, the baseline's unit.
+API calls. A fork subagent transcript starts with a `fork-context-ref` record
+followed by a copy of the parent's spawning call (assistant records with a null
+`parentUuid`); those inherited calls are excluded, so main and subagent totals
+can be summed. Weighted = uncached + cached/10 + 5 x output, the baseline's unit.
 
 Corrected 2026-10-22: the first version deduplicated on (message.id, timestamp),
 which counted repeated records of one response separately (1.95x on one
@@ -19,15 +22,26 @@ DEFAULT = "/home/bline/.claude/projects/-home-bline-code-work-engine/e702a3e4-eb
 T = sys.argv[2] if len(sys.argv) > 2 else DEFAULT
 
 calls = {}
+inherited = set()
+prefix = False
 with open(T, errors="ignore") as f:
-    for line in f:
-        if '"usage"' not in line:
-            continue
+    for number, line in enumerate(f, 1):
         try:
             r = json.loads(line)
         except Exception:
             continue
+        if not isinstance(r, dict):
+            continue
+        if r.get("type") == "fork-context-ref":
+            prefix = number == 1
+            continue
+        is_inherited = prefix and r.get("type") == "assistant" and "parentUuid" in r and r["parentUuid"] is None
+        if prefix and not is_inherited:
+            prefix = False
         m = r.get("message") or {}
+        if is_inherited:
+            inherited.add(m.get("id") if isinstance(m, dict) else None)
+            continue
         u = m.get("usage") if isinstance(m, dict) else None
         if r.get("type") != "assistant" or not isinstance(u, dict) or m.get("model") == "<synthetic>":
             continue
@@ -39,7 +53,7 @@ with open(T, errors="ignore") as f:
 rows = list(calls.values())
 W = lambda r: r["uncached"] + r["cached"] / 10.0 + 5 * r["output"]
 tot = sum(W(r) for r in rows)
-print(f"distinct API calls (message.id): {len(rows)}")
+print(f"distinct API calls (message.id): {len(rows)}" + (f"  (excluded {len(inherited)} inherited fork call(s))" if inherited else ""))
 print(f"cumulative weighted tokens: {tot:,.0f}  ({tot/1e6:.3f} Mwt)")
 print(f"  uncached {sum(r['uncached'] for r in rows):,}  cached {sum(r['cached'] for r in rows):,}  output {sum(r['output'] for r in rows):,}")
 if rows:
@@ -47,5 +61,5 @@ if rows:
 json.dump(dict(calls=len(rows), weighted=tot,
                uncached=sum(r["uncached"] for r in rows), cached=sum(r["cached"] for r in rows),
                output=sum(r["output"] for r in rows), last_ts=rows[-1]["ts"] if rows else None,
-               dedup="message.id, max output"),
+               inherited_fork_calls=len(inherited), dedup="message.id, max output, fork prefix excluded"),
           open(sys.argv[1], "w"), indent=1)
