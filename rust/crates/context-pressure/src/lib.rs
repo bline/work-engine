@@ -10,7 +10,10 @@
 //! Parity. Inputs are the JS plain-object shapes as `serde_json::Value`; outputs serialize to
 //! the JS wire forms. Revision strings (`sha256:<hex>` over the sorted-key canonical JSON text)
 //! are byte-identical to the JS for the same input, proven by JS-generated golden vectors under
-//! `tests/`. Failures carry the JS message and a closed [`ErrorKind`].
+//! `tests/`. Failures carry the JS message and a closed [`ErrorKind`]. Non-integer numbers in
+//! hashed input (extra nested fields) match the JS only when the caller's `serde_json` parses
+//! floats correctly rounded; this crate enables `serde_json`'s `float_roundtrip` feature, which
+//! Cargo unifies across a workspace, and the golden vectors fail without it.
 //!
 //! Known open issue (not resolved here). The controller requires `sequence` to increase
 //! strictly. Rust native-ingress sequences restart per transport session, so a lifecycle-owned
