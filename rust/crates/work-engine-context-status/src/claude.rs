@@ -16,7 +16,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
     MAX_DIAGNOSTICS, MAX_FILE_BYTES, MAX_RECENT, MAX_SCAN_ENTRIES, STALE_SECONDS, bounded_string,
-    note, read_line_bounded, valid_session_id,
+    note, read_line_bounded_as, valid_session_id,
 };
 
 const MAX_LINEAGE: usize = 32;
@@ -69,6 +69,9 @@ pub(crate) struct Call {
     timestamp: Option<String>,
     line: usize,
     epoch: u64,
+    /// Used to apply a later, larger output to the same call; not reported.
+    #[serde(skip)]
+    message_id: Option<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -83,6 +86,14 @@ struct Growth {
 #[derive(Serialize, Clone)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum LineageEvent {
+    /// A `fork-context-ref` first record: this transcript starts from a copy
+    /// of its parent's context. `context_length` is recorded as is; its unit
+    /// is not established.
+    Fork {
+        parent_session_id: Option<String>,
+        context_length: Option<u64>,
+        line: usize,
+    },
     Compaction {
         trigger: Option<String>,
         pre_tokens: Option<u64>,
@@ -131,6 +142,10 @@ pub(crate) struct Report {
     recent_growth: Option<Growth>,
     lineage: Vec<LineageEvent>,
     cumulative: Cumulative,
+    /// Present for a fork: the parent's copied call(s), excluded from
+    /// `cumulative`, the latest call, models and effort.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inherited: Option<Cumulative>,
     limitations: Vec<String>,
     diagnostic_counts: BTreeMap<&'static str, u64>,
     diagnostics_omitted: u64,
@@ -191,6 +206,59 @@ fn u64_field(v: &Value, key: &str) -> Option<u64> {
     v.get(key)?.as_u64()
 }
 
+/// First-seen counters of one `message.id`, and the largest output seen so far.
+struct Seen {
+    counters: Option<(u64, u64, u64)>,
+    output: Option<u64>,
+    inherited: bool,
+}
+
+/// Running totals for one accounting scope (own calls or inherited calls).
+struct Account {
+    totals: Cumulative,
+    weighted: f64,
+}
+impl Account {
+    fn new() -> Self {
+        Self {
+            totals: Cumulative {
+                weighting: WEIGHTING,
+                ..Cumulative::default()
+            },
+            weighted: 0.0,
+        }
+    }
+    fn add(&mut self, uncached: u64, cached: u64, output: Option<u64>) {
+        let t = &mut self.totals;
+        t.distinct_calls = t.distinct_calls.saturating_add(1);
+        t.uncached_tokens = t.uncached_tokens.saturating_add(uncached);
+        t.cached_tokens = t.cached_tokens.saturating_add(cached);
+        self.weighted += uncached as f64 + cached as f64 / 10.0;
+        match output {
+            Some(o) => {
+                t.output_tokens = t.output_tokens.saturating_add(o);
+                self.weighted += 5.0 * o as f64;
+            }
+            None => t.calls_missing_output = t.calls_missing_output.saturating_add(1),
+        }
+    }
+    /// A later record of the same call carries a larger output: replace the
+    /// earlier (streaming partial) value.
+    fn raise_output(&mut self, old: Option<u64>, new: u64) {
+        let t = &mut self.totals;
+        let before = old.unwrap_or(0);
+        if old.is_none() {
+            t.calls_missing_output = t.calls_missing_output.saturating_sub(1);
+        }
+        t.output_tokens = t.output_tokens.saturating_sub(before).saturating_add(new);
+        self.weighted += 5.0 * (new as f64 - before as f64);
+    }
+    fn finish(mut self) -> Cumulative {
+        self.totals.weighted_tokens = self.weighted;
+        self.totals
+    }
+}
+
 pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, String> {
     let metadata = fs::metadata(path).map_err(|e| format!("cannot stat transcript: {e}"))?;
     if !metadata.is_file() || metadata.len() > MAX_FILE_BYTES {
@@ -206,7 +274,11 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
     let mut limitations = Vec::new();
     let mut counts = BTreeMap::new();
     let mut gap = false;
-    let mut seen_ids: HashMap<String, (u64, u64, u64, Option<u64>)> = HashMap::new();
+    let mut seen_ids: HashMap<String, Seen> = HashMap::new();
+    let mut fork = false;
+    let mut in_inherited_prefix = false;
+    let mut own = Account::new();
+    let mut inherited = Account::new();
     let mut models = BTreeSet::new();
     let mut models_truncated = false;
     let mut latest_model: Option<String> = None;
@@ -216,11 +288,6 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
     let mut epoch = 0_u64;
     let mut lineage = Vec::new();
     let mut lineage_truncated = false;
-    let mut cumulative = Cumulative {
-        weighting: WEIGHTING,
-        ..Cumulative::default()
-    };
-    let mut weighted = 0.0_f64;
     // First, so the diagnostic cap can never drop it.
     note(
         &mut limitations,
@@ -236,7 +303,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         }
     };
     loop {
-        let read = read_line_bounded(&mut reader, &mut line)?;
+        let read = read_line_bounded_as(&mut reader, &mut line, "transcript")?;
         if read == 0 {
             break;
         }
@@ -278,6 +345,44 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             .get("timestamp")
             .and_then(Value::as_str)
             .map(bounded_string);
+        let ty = record.get("type").and_then(Value::as_str);
+        if ty == Some("fork-context-ref") {
+            if line_no == 1 {
+                fork = true;
+                in_inherited_prefix = true;
+                push_lineage(
+                    &mut lineage,
+                    LineageEvent::Fork {
+                        parent_session_id: record
+                            .get("parentSessionId")
+                            .and_then(Value::as_str)
+                            .filter(|s| valid_session_id(s))
+                            .map(str::to_owned),
+                        context_length: u64_field(&record, "contextLength"),
+                        line: line_no,
+                    },
+                );
+            } else {
+                note(
+                    &mut limitations,
+                    &mut counts,
+                    "fork_reference_not_first",
+                    format!(
+                        "fork-context-ref at line {line_no} is not the first record; no history excluded"
+                    ),
+                );
+            }
+            continue;
+        }
+        // In the observed fork format the parent's spawning call is copied
+        // directly after the reference, as assistant record(s) with a null
+        // parentUuid. The prefix ends at the fork's first own record.
+        let is_inherited = in_inherited_prefix
+            && ty == Some("assistant")
+            && record.get("parentUuid").is_some_and(Value::is_null);
+        if in_inherited_prefix && !is_inherited {
+            in_inherited_prefix = false;
+        }
         if record.get("compactMetadata").is_some_and(Value::is_object)
             || record.get("subtype").and_then(Value::as_str) == Some("compact_boundary")
         {
@@ -300,7 +405,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             );
             continue;
         }
-        if record.get("type").and_then(Value::as_str) != Some("assistant") {
+        if ty != Some("assistant") {
             continue;
         }
         let message = record.get("message").unwrap_or(&Value::Null);
@@ -332,19 +437,37 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
                 u64_field(u, "output_tokens"),
             ))
         });
-        // One API response is written as several records sharing message.id;
-        // only its first record counts.
+        // One API response is written as several records sharing message.id.
+        // It counts once: input and cache counters from its first record,
+        // output as the largest recorded value, since an early record can
+        // hold a streaming partial.
         if let Some(id) = &message_id {
-            if let Some(first) = seen_ids.get(id) {
-                if counters.is_some_and(|c| c != *first) {
-                    note(
+            if let Some(seen) = seen_ids.get_mut(id) {
+                match (seen.counters, counters) {
+                    (Some(first), Some((i, c, r, o))) if first == (i, c, r) => {
+                        if let Some(new) = o.filter(|n| Some(*n) > seen.output) {
+                            if seen.inherited {
+                                inherited.raise_output(seen.output, new);
+                            } else {
+                                own.raise_output(seen.output, new);
+                                for call in latest.iter_mut().chain(recent.iter_mut()) {
+                                    if call.message_id.as_deref() == Some(id.as_str()) {
+                                        call.output_tokens = Some(new);
+                                    }
+                                }
+                            }
+                            seen.output = Some(new);
+                        }
+                    }
+                    (_, Some(_)) => note(
                         &mut limitations,
                         &mut counts,
                         "duplicate_message_usage_differs",
                         format!(
-                            "line {line_no} repeats an earlier message.id with different usage; first record kept"
+                            "line {line_no} repeats an earlier message.id with different input/cache usage; first record kept"
                         ),
-                    );
+                    ),
+                    _ => {}
                 }
                 continue;
             }
@@ -357,6 +480,28 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
                     "assistant record at line {line_no} lacks message.id; counted once as its own call"
                 ),
             );
+        }
+        if is_inherited {
+            match counters {
+                Some((i, c, r, o)) => {
+                    inherited.add(i.saturating_add(c), r, o);
+                    if let Some(id) = message_id {
+                        seen_ids.insert(
+                            id,
+                            Seen {
+                                counters: Some((i, c, r)),
+                                output: o,
+                                inherited: true,
+                            },
+                        );
+                    }
+                }
+                None => {
+                    inherited.totals.calls_without_usage =
+                        inherited.totals.calls_without_usage.saturating_add(1)
+                }
+            }
+            continue;
         }
         if let Some(m) = &model {
             if let Some(prev) = &latest_model
@@ -388,9 +533,16 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         }
         let Some((input, creation, read_tokens, output)) = counters else {
             gap = true;
-            cumulative.calls_without_usage = cumulative.calls_without_usage.saturating_add(1);
+            own.totals.calls_without_usage = own.totals.calls_without_usage.saturating_add(1);
             if let Some(id) = message_id {
-                seen_ids.insert(id, (u64::MAX, u64::MAX, u64::MAX, None));
+                seen_ids.insert(
+                    id,
+                    Seen {
+                        counters: None,
+                        output: None,
+                        inherited: false,
+                    },
+                );
             }
             note(
                 &mut limitations,
@@ -402,8 +554,15 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             );
             continue;
         };
-        if let Some(id) = message_id {
-            seen_ids.insert(id, (input, creation, read_tokens, output));
+        if let Some(id) = &message_id {
+            seen_ids.insert(
+                id.clone(),
+                Seen {
+                    counters: Some((input, creation, read_tokens)),
+                    output,
+                    inherited: false,
+                },
+            );
         }
         let Some(context) = input
             .checked_add(creation)
@@ -418,20 +577,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             );
             continue;
         };
-        cumulative.distinct_calls = cumulative.distinct_calls.saturating_add(1);
-        let uncached = input.saturating_add(creation);
-        cumulative.uncached_tokens = cumulative.uncached_tokens.saturating_add(uncached);
-        cumulative.cached_tokens = cumulative.cached_tokens.saturating_add(read_tokens);
-        weighted += uncached as f64 + read_tokens as f64 / 10.0;
-        match output {
-            Some(o) => {
-                cumulative.output_tokens = cumulative.output_tokens.saturating_add(o);
-                weighted += 5.0 * o as f64;
-            }
-            None => {
-                cumulative.calls_missing_output = cumulative.calls_missing_output.saturating_add(1)
-            }
-        }
+        own.add(input.saturating_add(creation), read_tokens, output);
         let call = Call {
             input_tokens: input,
             cache_creation_input_tokens: creation,
@@ -441,6 +587,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
             timestamp,
             line: line_no,
             epoch,
+            message_id,
         };
         latest = Some(call.clone());
         if recent.len() == MAX_RECENT {
@@ -448,7 +595,19 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         }
         recent.push_back(call);
     }
-    cumulative.weighted_tokens = weighted;
+    let cumulative = own.finish();
+    let inherited = fork.then(|| inherited.finish());
+    if let Some(inh) = &inherited {
+        note(
+            &mut limitations,
+            &mut counts,
+            "inherited_history_excluded",
+            format!(
+                "fork transcript: {} copied parent call(s) excluded from cumulative, latest call, models and effort",
+                inh.distinct_calls + inh.calls_without_usage
+            ),
+        );
+    }
     if latest.is_none() {
         note(
             &mut limitations,
@@ -546,6 +705,7 @@ pub(crate) fn read_report(path: &Path, expected: &Expected) -> Result<Report, St
         recent_growth,
         lineage,
         cumulative,
+        inherited,
         limitations,
         diagnostic_counts: counts,
         diagnostics_omitted,
@@ -594,10 +754,14 @@ fn locate_transcript(root: &Path, session: &str, agent: Option<&str>) -> Result<
     for dir in project_dirs(root)? {
         let candidate = match agent {
             None => dir.join(format!("{session}.jsonl")),
-            Some(a) => dir
-                .join(session)
-                .join("subagents")
-                .join(format!("agent-{a}.jsonl")),
+            Some(a) => {
+                // Same rule as claude-agents: no symlinked component.
+                let sub = dir.join(session).join("subagents");
+                if !is_real_dir(&dir.join(session)) || !is_real_dir(&sub) {
+                    continue;
+                }
+                sub.join(format!("agent-{a}.jsonl"))
+            }
         };
         if is_regular_file(&candidate) {
             matches.push(candidate);
@@ -708,6 +872,15 @@ fn render_report(r: &Report) {
                 pre_tokens.map_or_else(|| "unknown".to_string(), |n| n.to_string()),
                 post_tokens.map_or_else(|| "unknown".to_string(), |n| n.to_string()),
             ),
+            LineageEvent::Fork {
+                parent_session_id,
+                context_length,
+                line,
+            } => println!(
+                "Fork at line {line}: parent session {}, recorded contextLength {}",
+                parent_session_id.as_deref().unwrap_or("unknown"),
+                context_length.map_or_else(|| "unknown".to_string(), |n| n.to_string()),
+            ),
             LineageEvent::ModelChange { from, to, line, .. } => {
                 println!("Model change at line {line}: {from} -> {to}")
             }
@@ -723,6 +896,12 @@ fn render_report(r: &Report) {
         c.output_tokens,
         c.weighted_tokens
     );
+    if let Some(i) = &r.inherited {
+        println!(
+            "Inherited (fork copy, excluded above): {} call(s); weighted {:.0}",
+            i.distinct_calls, i.weighted_tokens
+        );
+    }
     for note in &r.limitations {
         println!("Limit: {note}");
     }
@@ -815,6 +994,9 @@ struct AgentUsage {
     compactions: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     cumulative: Option<Cumulative>,
+    /// For a fork: copied parent calls excluded from `cumulative`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inherited_calls: Option<u64>,
 }
 
 #[derive(Serialize)]
@@ -828,6 +1010,11 @@ struct AgentRow {
     description: Option<String>,
     /// Model requested at spawn (meta.json), distinct from observed models.
     requested_model: Option<String>,
+    /// Effort requested at spawn (meta.json), distinct from recorded effort.
+    requested_effort: Option<String>,
+    /// meta.json `isFork`: the agent started from a copy of its parent's
+    /// context (retained, not fresh).
+    is_fork: Option<bool>,
     spawn_depth: Option<u64>,
     tool_use_id: Option<String>,
     finished: Option<bool>,
@@ -845,6 +1032,9 @@ struct AgentsReport {
     completeness: &'static str,
     agents_listed: usize,
     ignored_entries: usize,
+    /// Agent-named entries that are symlinks or not regular files; any makes
+    /// the listing partial.
+    skipped_agent_entries: usize,
     diagnostics: Vec<String>,
     agents: Vec<AgentRow>,
 }
@@ -879,6 +1069,7 @@ fn agent_usage(path: &Path, session: &str, agent: &str) -> AgentUsage {
             epoch: None,
             compactions: None,
             cumulative: None,
+            inherited_calls: None,
         },
         Ok(r) => {
             let observed = r.latest_call.is_some();
@@ -900,6 +1091,9 @@ fn agent_usage(path: &Path, session: &str, agent: &str) -> AgentUsage {
                         .count(),
                 ),
                 cumulative: Some(r.cumulative),
+                inherited_calls: r
+                    .inherited
+                    .map(|i| i.distinct_calls.saturating_add(i.calls_without_usage)),
             }
         }
     }
@@ -924,6 +1118,7 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
         completeness: "complete_within_subagents_directory",
         agents_listed: 0,
         ignored_entries: 0,
+        skipped_agent_entries: 0,
         diagnostics,
         agents: Vec::new(),
     };
@@ -955,6 +1150,7 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
     let mut transcripts = BTreeSet::new();
     let mut metas = BTreeSet::new();
     let mut ignored = 0;
+    let mut skipped_agent_entries = 0;
     for (count, entry) in entries.enumerate() {
         if count >= MAX_SCAN_ENTRIES {
             return Err("subagents directory entry limit reached".into());
@@ -970,8 +1166,13 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
                 .filter(|id| valid_agent_id(id))
                 .map(str::to_owned)
         };
+        let agent_shaped = id_of(".meta.json").is_some() || id_of(".jsonl").is_some();
         if !ty.is_file() || ty.is_symlink() {
-            ignored += 1;
+            if agent_shaped {
+                skipped_agent_entries += 1;
+            } else {
+                ignored += 1;
+            }
         } else if let Some(id) = id_of(".meta.json") {
             metas.insert(id);
         } else if let Some(id) = id_of(".jsonl") {
@@ -984,7 +1185,7 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
     if ids.len() > MAX_AGENTS {
         return Err(format!("agent result limit reached ({MAX_AGENTS})"));
     }
-    let mut partial = false;
+    let mut partial = skipped_agent_entries > 0;
     let mut agents = Vec::new();
     for id in ids {
         let meta_path = sub.join(format!("agent-{id}.meta.json"));
@@ -1018,6 +1219,7 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
                     epoch: None,
                     compactions: None,
                     cumulative: None,
+                    inherited_calls: None,
                 }
             }
         });
@@ -1031,6 +1233,8 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
             agent_type: s("agentType"),
             description: s("description"),
             requested_model: s("model"),
+            requested_effort: s("effort"),
+            is_fork: meta.get("isFork").and_then(Value::as_bool),
             spawn_depth: meta.get("spawnDepth").and_then(Value::as_u64),
             tool_use_id: s("toolUseId"),
             finished: meta.get("finished").and_then(Value::as_bool),
@@ -1040,6 +1244,11 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
             meta_reason,
             usage,
         });
+    }
+    if skipped_agent_entries > 0 {
+        diagnostics.push(format!(
+            "{skipped_agent_entries} agent-named entr(ies) in subagents/ are symlinks or not regular files; skipped, listing partial"
+        ));
     }
     if ignored > 0 && diagnostics.len() < MAX_DIAGNOSTICS {
         diagnostics.push(format!(
@@ -1058,6 +1267,7 @@ fn build_agents(root: &Path, session: &str, with_usage: bool) -> Result<AgentsRe
         },
         agents_listed: agents.len(),
         ignored_entries: ignored,
+        skipped_agent_entries,
         diagnostics,
         agents,
     })
@@ -1072,7 +1282,7 @@ fn render_agent_usage(u: &AgentUsage) -> String {
     };
     let cum = u.cumulative.as_ref();
     format!(
-        "{} model={} context={} epoch={} compactions={} calls={} weighted={:.0} at={}",
+        "{} model={} context={} epoch={} compactions={} calls={} weighted={:.0}{} at={}",
         u.status,
         u.latest_model.as_deref().unwrap_or("unknown"),
         c.context_tokens,
@@ -1081,6 +1291,9 @@ fn render_agent_usage(u: &AgentUsage) -> String {
             .map_or_else(|| "unknown".into(), |n| n.to_string()),
         cum.map_or_else(|| "unknown".into(), |c| c.distinct_calls.to_string()),
         cum.map_or(f64::NAN, |c| c.weighted_tokens),
+        u.inherited_calls
+            .map(|n| format!(" inherited_calls={n}"))
+            .unwrap_or_default(),
         c.timestamp.as_deref().unwrap_or("unknown-time"),
     )
 }
@@ -1124,9 +1337,12 @@ pub(crate) fn run_agents<I: IntoIterator<Item = String>>(args: I) -> Result<(), 
     );
     for a in &report.agents {
         println!(
-            "{}  {}  finished={}  meta={}  {}  {}",
+            "{}  {}  fork={}  effort={}  finished={}  meta={}  {}  {}",
             a.agent_id,
             a.agent_type.as_deref().unwrap_or("unknown-type"),
+            a.is_fork
+                .map_or_else(|| "unknown".to_string(), |f| f.to_string()),
+            a.requested_effort.as_deref().unwrap_or("unknown"),
             a.finished
                 .map_or_else(|| "unknown".to_string(), |f| f.to_string()),
             a.meta_status,

@@ -375,11 +375,21 @@ fn economics(a: &Args, latest: Option<&Usage>) -> Option<Economics> {
 }
 
 fn read_line_bounded(reader: &mut impl BufRead, line: &mut Vec<u8>) -> Result<usize, String> {
+    read_line_bounded_as(reader, line, "rollout")
+}
+
+/// `noun` names the input in errors, so a Claude transcript is not called a
+/// rollout. The Codex path keeps its exact wording.
+fn read_line_bounded_as(
+    reader: &mut impl BufRead,
+    line: &mut Vec<u8>,
+    noun: &str,
+) -> Result<usize, String> {
     line.clear();
     loop {
         let buf = reader
             .fill_buf()
-            .map_err(|e| format!("rollout read error: {e}"))?;
+            .map_err(|e| format!("{noun} read error: {e}"))?;
         if buf.is_empty() {
             return Ok(line.len());
         }
@@ -388,7 +398,7 @@ fn read_line_bounded(reader: &mut impl BufRead, line: &mut Vec<u8>) -> Result<us
             .position(|b| *b == b'\n')
             .map_or(buf.len(), |n| n + 1);
         if line.len().saturating_add(take) > MAX_LINE_BYTES {
-            return Err("rollout line exceeds 8 MiB bound".into());
+            return Err(format!("{noun} line exceeds 8 MiB bound"));
         }
         let complete = buf[take - 1] == b'\n';
         line.extend_from_slice(&buf[..take]);

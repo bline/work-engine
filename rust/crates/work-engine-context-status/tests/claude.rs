@@ -427,3 +427,240 @@ fn claude_modes_offer_help_and_reject_bad_options() {
     );
     assert!(!run(&["claude-agents"]).status.success());
 }
+
+#[test]
+fn repeated_message_id_takes_largest_output() {
+    let root = Root::new();
+    let body = [
+        // Streaming partial first, final value later; input/cache identical.
+        line(assistant(
+            "msg_1",
+            "claude-opus-5-5",
+            Some((1, 10, 100, 16)),
+        )),
+        line(assistant(
+            "msg_1",
+            "claude-opus-5-5",
+            Some((1, 10, 100, 374)),
+        )),
+        line(assistant("msg_2", "claude-opus-5-5", Some((1, 20, 110, 8)))),
+        line(assistant(
+            "msg_2",
+            "claude-opus-5-5",
+            Some((1, 20, 110, 19_409)),
+        )),
+        // A later smaller value never lowers it.
+        line(assistant("msg_2", "claude-opus-5-5", Some((1, 20, 110, 5)))),
+    ]
+    .concat();
+    let p = root.write(&format!("a/{SID}.jsonl"), &body);
+    let v = transcript_json(&p);
+    let c = &v["cumulative"];
+    assert_eq!(c["distinct_calls"], 2);
+    assert_eq!(c["output_tokens"], 374 + 19_409);
+    assert_eq!(c["uncached_tokens"], 11 + 21);
+    assert_eq!(c["cached_tokens"], 210);
+    assert_eq!(c["weighted_tokens"], 32.0 + 21.0 + 5.0 * 19_783.0);
+    assert_eq!(v["latest_call"]["output_tokens"], 19_409);
+    assert_eq!(v["latest_call"]["line"], 3);
+    assert_eq!(v["recent_calls"][0]["output_tokens"], 374);
+    assert!(
+        v["diagnostic_counts"]
+            .get("duplicate_message_usage_differs")
+            .is_none()
+    );
+
+    // Differing input/cache on a repeat keeps the first record and says so.
+    let q = root.write(
+        &format!("b/{SID}.jsonl"),
+        &[
+            line(assistant(
+                "msg_1",
+                "claude-opus-5-5",
+                Some((1, 10, 100, 16)),
+            )),
+            line(assistant(
+                "msg_1",
+                "claude-opus-5-5",
+                Some((9, 10, 100, 99)),
+            )),
+        ]
+        .concat(),
+    );
+    let v = transcript_json(&q);
+    assert_eq!(v["cumulative"]["output_tokens"], 16);
+    assert_eq!(v["diagnostic_counts"]["duplicate_message_usage_differs"], 1);
+}
+
+fn fork_ref(agent: &str) -> Value {
+    json!({"type": "fork-context-ref", "agentId": agent, "parentSessionId": SID,
+           "parentLastUuid": "u-1", "contextLength": 225})
+}
+fn inherited_call(agent: &str) -> Value {
+    let mut v = assistant(
+        "msg_parent",
+        "claude-opus-5-5",
+        Some((2, 3711, 168_055, 3886)),
+    );
+    v["parentUuid"] = Value::Null;
+    v["agentId"] = json!(agent);
+    v
+}
+
+#[test]
+fn fork_excludes_inherited_parent_call() {
+    let root = Root::new();
+    let mut prompt = user();
+    prompt["parentUuid"] = json!("u-1");
+    prompt["agentId"] = json!("f0f0");
+    let mut own = assistant("msg_own", "claude-opus-5-5", Some((1, 500, 171_000, 40)));
+    own["parentUuid"] = json!("u-2");
+    own["agentId"] = json!("f0f0");
+    let body = [
+        line(fork_ref("f0f0")),
+        line(inherited_call("f0f0")),
+        line(prompt),
+        line(own),
+    ]
+    .concat();
+    let p = root.write(&format!("p/{SID}/subagents/agent-f0f0.jsonl"), &body);
+    let v = transcript_json(&p);
+    assert_eq!(v["agent_id"], "f0f0");
+    assert_eq!(v["lineage"][0]["kind"], "fork");
+    assert_eq!(v["lineage"][0]["parent_session_id"], SID);
+    assert_eq!(v["lineage"][0]["context_length"], 225);
+    assert_eq!(v["lineage"][0]["line"], 1);
+    assert_eq!(v["epoch"], 0);
+    assert_eq!(v["cumulative"]["distinct_calls"], 1);
+    assert_eq!(v["cumulative"]["output_tokens"], 40);
+    assert_eq!(v["latest_call"]["context_tokens"], 171_501);
+    assert_eq!(v["inherited"]["distinct_calls"], 1);
+    assert_eq!(v["inherited"]["uncached_tokens"], 3713);
+    assert_eq!(v["recent_calls"].as_array().unwrap().len(), 1);
+    assert_eq!(v["diagnostic_counts"]["inherited_history_excluded"], 1);
+
+    // A fork with no call of its own never reports the parent's call.
+    let q = root.write(
+        &format!("p/{SID}/subagents/agent-f0f1.jsonl"),
+        &[line(fork_ref("f0f1")), line(inherited_call("f0f1"))].concat(),
+    );
+    let v = transcript_json(&q);
+    assert_eq!(v["latest_call"], Value::Null);
+    assert_eq!(v["latest_call_status"], "unavailable");
+    assert_eq!(v["cumulative"]["distinct_calls"], 0);
+    assert_eq!(v["observed_models"], json!([]));
+    assert_eq!(v["inherited"]["distinct_calls"], 1);
+
+    // A non-fork transcript has no inherited block.
+    let n = root.write(
+        &format!("q/{SID}.jsonl"),
+        &line(assistant("msg_1", "claude-opus-5-5", Some((1, 1, 1, 1)))),
+    );
+    assert!(transcript_json(&n).get("inherited").is_none());
+
+    // claude-agents reports the fork flag, requested effort and inherited calls.
+    root.write(
+        &format!("p/{SID}/subagents/agent-f0f0.meta.json"),
+        r#"{"agentType":"fork","isFork":true,"effort":"high","description":"d","model":"inherit"}"#,
+    );
+    let v = ok_json(&[
+        "claude-agents",
+        "--session",
+        SID,
+        "--projects-dir",
+        root.0.to_str().unwrap(),
+        "--with-usage",
+        "--json",
+    ]);
+    let a = &v["agents"][0];
+    assert_eq!(a["agent_id"], "f0f0");
+    assert_eq!(a["is_fork"], true);
+    assert_eq!(a["requested_effort"], "high");
+    assert_eq!(a["usage"]["inherited_calls"], 1);
+    assert_eq!(a["usage"]["cumulative"]["distinct_calls"], 1);
+}
+
+#[cfg(unix)]
+#[test]
+fn symlinks_are_handled_alike_and_never_complete_silently() {
+    use std::os::unix::fs::symlink;
+    let root = Root::new();
+    let dir = root.0.to_str().unwrap();
+    let mut call = assistant("msg_1", "claude-opus-5-5", Some((1, 1, 1, 1)));
+    call["agentId"] = json!("aaa1");
+    let real = root.write("elsewhere/subagents/agent-aaa1.jsonl", &line(call));
+    root.write(&format!("p/{SID}.jsonl"), "");
+    fs::create_dir_all(root.0.join(format!("p/{SID}"))).unwrap();
+    // Symlinked subagents directory: rejected by both subcommands.
+    symlink(
+        real.parent().unwrap(),
+        root.0.join(format!("p/{SID}/subagents")),
+    )
+    .unwrap();
+    let agent_args = [
+        "claude",
+        "--session",
+        SID,
+        "--agent",
+        "aaa1",
+        "--projects-dir",
+        dir,
+    ];
+    assert!(!run(&agent_args).status.success());
+    let list = [
+        "claude-agents",
+        "--session",
+        SID,
+        "--projects-dir",
+        dir,
+        "--json",
+    ];
+    let v = ok_json(&list);
+    assert_eq!(v["agents_listed"], 0);
+    assert_eq!(v["subagents_dir"], Value::Null);
+
+    // A symlinked agent-named file inside a real subagents/ makes it partial.
+    fs::remove_file(root.0.join(format!("p/{SID}/subagents"))).unwrap();
+    root.write(&format!("p/{SID}/subagents/agent-bbb2.jsonl"), "");
+    symlink(
+        &real,
+        root.0.join(format!("p/{SID}/subagents/agent-aaa1.jsonl")),
+    )
+    .unwrap();
+    let v = ok_json(&list);
+    assert_eq!(v["skipped_agent_entries"], 1);
+    assert_eq!(v["completeness"], "partial");
+    assert!(!run(&agent_args).status.success());
+}
+
+#[test]
+fn absent_counters_do_not_make_listing_partial() {
+    let root = Root::new();
+    let mut call = assistant("msg_1", "claude-opus-5-5", None);
+    call["agentId"] = json!("aaa1");
+    root.write(&format!("p/{SID}/subagents/agent-aaa1.jsonl"), &line(call));
+    root.write(&format!("p/{SID}/subagents/agent-aaa1.meta.json"), "{}");
+    let v = ok_json(&[
+        "claude-agents",
+        "--session",
+        SID,
+        "--projects-dir",
+        root.0.to_str().unwrap(),
+        "--with-usage",
+        "--json",
+    ]);
+    assert_eq!(v["agents"][0]["usage"]["status"], "absent_counters");
+    assert_eq!(v["completeness"], "complete_within_subagents_directory");
+}
+
+#[test]
+fn transcript_errors_use_transcript_wording() {
+    let root = Root::new();
+    let big = "x".repeat(8 * 1024 * 1024 + 1);
+    let p = root.write(&format!("a/{SID}.jsonl"), &big);
+    let out = run(&["claude", "--transcript", p.to_str().unwrap()]);
+    assert!(!out.status.success());
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("transcript line exceeds 8 MiB bound"), "{err}");
+    assert!(!err.contains("rollout"));
+}
