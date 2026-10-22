@@ -6,6 +6,8 @@ use serde_json::{Value, json};
 use std::path::Path;
 use support::*;
 
+type Mutation = Box<dyn Fn(&mut Value)>;
+
 fn rederive_args(case: &Case, evaluation: &Path) -> Vec<String> {
     vec![
         "check".into(),
@@ -104,7 +106,7 @@ fn a_mutated_evaluation_field_fails_rederive_with_exit_1_naming_the_field() {
     let observed = observe(&case, "run");
     let file = evaluation_file(&case, &observed, "e.json");
     let original = read_json(&file);
-    let mutations: [(&str, Box<dyn Fn(&mut Value)>); 3] = [
+    let mutations: [(&str, Mutation); 3] = [
         (
             "binding",
             Box::new(|v| v["binding"]["git_root"] = json!("mismatch")),
@@ -169,7 +171,7 @@ fn structural_rules_each_report_their_code() {
     let original = read_json(&file);
     let last = original["requirements"].as_array().unwrap().len() - 1;
     assert_eq!(original["requirements"][last]["class"], "attributed");
-    let cases: Vec<(&str, Box<dyn Fn(&mut Value)>)> = vec![
+    let cases: Vec<(&str, Mutation)> = vec![
         (
             "counts_inconsistent",
             Box::new(|v| v["counts"]["met"] = json!(99)),
