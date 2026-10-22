@@ -482,3 +482,47 @@ impl Case {
         cli(&args)
     }
 }
+
+/// The base case with its one unmet predicate made met: every mechanical requirement is met and
+/// the attributed one is indeterminate.
+pub fn met_case(name: &str) -> Case {
+    let mut case = base_case(name);
+    case.profile["requirements"][2]["predicates"][5]["expected"] = json!("ok");
+    case.write_documents();
+    case
+}
+
+/// `evaluate` over `observed` into `<case dir>/<name>`; the exit code must be 0.
+pub fn evaluation_file(case: &Case, observed: &Observed, name: &str) -> PathBuf {
+    let out = case.dir.join(name);
+    let run = case.evaluate(observed, &["--out", &s(&out)]);
+    assert_eq!(run.code, 0, "evaluate failed: {}", run.stderr);
+    out
+}
+
+pub fn read_json(path: &Path) -> Value {
+    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+}
+
+/// Whether any object under `value` has the key `key` (AC5 a).
+pub fn has_key_deep(value: &Value, key: &str) -> bool {
+    match value {
+        Value::Object(map) => map.contains_key(key) || map.values().any(|v| has_key_deep(v, key)),
+        Value::Array(items) => items.iter().any(|v| has_key_deep(v, key)),
+        _ => false,
+    }
+}
+
+/// Append one space to a file: the same JSON, a different digest.
+pub fn touch_bytes(path: &Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    bytes.push(b' ');
+    std::fs::write(path, bytes).unwrap();
+}
+
+/// Remove the last byte appended by [`touch_bytes`].
+pub fn untouch_bytes(path: &Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    bytes.pop();
+    std::fs::write(path, bytes).unwrap();
+}

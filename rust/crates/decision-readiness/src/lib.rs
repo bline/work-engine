@@ -14,6 +14,7 @@
 //! serde error on a closed-schema violation, and an unknown key inside a subject value object
 //! reports `value_type_mismatch` rather than `schema`.
 
+pub mod check;
 pub mod cli;
 pub mod diag;
 pub mod digest;

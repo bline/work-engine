@@ -104,6 +104,9 @@ pub struct CheckReport {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub purpose: Option<String>,
     pub errors: Vec<ErrorItem>,
+    /// Non-violations worth reporting (`tool_differs` under `--rederive`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub notes: Vec<ErrorItem>,
 }
 
 impl CheckReport {
@@ -113,6 +116,7 @@ impl CheckReport {
             kind: kind.to_string(),
             purpose: None,
             errors,
+            notes: Vec::new(),
         }
     }
 }

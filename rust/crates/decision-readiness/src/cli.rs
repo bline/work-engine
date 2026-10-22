@@ -5,17 +5,25 @@
 //!
 //! Exit codes: 0 success, 1 `check` found the document invalid, 2 usage, IO or parse
 //! error (including a refused `plan`), 3 a binding error (`evaluate`, `recheck`).
-//! This build provides `check --kind profile|subject|observation`, `plan` and `evaluate`.
+//! This build provides `check --kind profile|subject|observation|evaluation|assessment`, `plan`,
+//! `evaluate` and `recheck`. It has no subcommand that writes an assessment.
 
+use crate::check::{
+    AssessmentContext, changed_checks, check_assessment, check_codes as cc, check_evaluation,
+    compare_evaluations, raw_purpose,
+};
 use crate::diag::{CheckReport, ErrorItem, codes};
 use crate::digest::sha256_hex;
-use crate::evaluate::{EvalError, EvaluateInputs, Recorded, evaluate as run_evaluate};
+use crate::evaluate::{
+    EvalError, EvaluateInputs, Recorded, binding_codes as bc, evaluate as run_evaluate,
+};
 use crate::model::*;
 use crate::plan::{PairBytes, PlanError, derive_plan, plan_to_string};
 use crate::validate::{
     DocError, parse_document, validate_observation, validate_profile, validate_subject,
 };
 use serde::Serialize;
+use serde_json::Value;
 use std::io::Write;
 
 pub const EXIT_OK: i32 = 0;
@@ -23,7 +31,7 @@ pub const EXIT_INVALID: i32 = 1;
 pub const EXIT_USAGE: i32 = 2;
 pub const EXIT_BINDING: i32 = 3;
 
-const USAGE: &str = "usage:\n  work-engine-readiness check --kind profile|subject|observation FILE [--profile P]\n  work-engine-readiness plan (--profile P --subject S)+ [--out FILE]\n  work-engine-readiness evaluate --profile P --subject S --run-plan RP --battery R --observation O --evaluated-at YYYY-MM-DDTHH:MM:SSZ [--out FILE]\n(`subject` requires --profile; `plan` pairs the nth --profile with the nth --subject)";
+const USAGE: &str = "usage:\n  work-engine-readiness check --kind profile|observation FILE\n  work-engine-readiness check --kind subject FILE --profile P\n  work-engine-readiness check --kind evaluation FILE [--rederive --profile P --subject S]\n  work-engine-readiness check --kind assessment FILE --evaluation E --profile P\n  work-engine-readiness plan (--profile P --subject S)+ [--out FILE]\n  work-engine-readiness evaluate --profile P --subject S --run-plan RP --battery R --observation O --evaluated-at YYYY-MM-DDTHH:MM:SSZ [--out FILE]\n  work-engine-readiness recheck --evaluation E --battery R2 --observation O2 [--out FILE]\n(`subject` requires --profile; `plan` pairs the nth --profile with the nth --subject)";
 
 /// Serialise any output document: `to_string_pretty` plus one `\n`.
 pub fn to_output_string<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
@@ -90,6 +98,7 @@ fn dispatch(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
         Some("check") => check(&args[1..], out),
         Some("plan") => plan(&args[1..], out),
         Some("evaluate") => evaluate(&args[1..], out),
+        Some("recheck") => recheck(&args[1..], out),
         Some(other) => Err(Failure::usage(format!("unknown subcommand {other:?}"))),
         None => Err(Failure::usage("no subcommand given")),
     }
@@ -144,10 +153,6 @@ impl Options {
         })
     }
 
-    #[allow(
-        dead_code,
-        reason = "used by check --kind evaluation --rederive (part b)"
-    )]
     fn flag(&self, name: &str) -> bool {
         self.flags.iter().any(|f| f == name)
     }
@@ -184,7 +189,11 @@ fn schema_report(kind: &str, message: String) -> CheckReport {
 }
 
 fn check(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
-    let options = Options::parse(args, &["kind", "profile"])?;
+    let options = Options::parse_with_flags(
+        args,
+        &["kind", "profile", "subject", "evaluation"],
+        &["rederive"],
+    )?;
     let kind = options
         .one("kind")?
         .ok_or_else(|| Failure::usage("check needs --kind"))?;
@@ -192,35 +201,192 @@ fn check(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
         return Err(Failure::usage("check takes exactly one FILE"));
     };
     let profile_arg = options.one("profile")?;
+    let subject_arg = options.one("subject")?;
+    let evaluation_arg = options.one("evaluation")?;
+    let rederive = options.flag("rederive");
+    let allowed: &[&str] = match kind {
+        "profile" | "observation" => &[],
+        "subject" => &["profile"],
+        "evaluation" => &["profile", "subject", "rederive"],
+        "assessment" => &["profile", "evaluation"],
+        other => return Err(Failure::usage(format!("unknown --kind {other:?}"))),
+    };
+    for (name, present) in [
+        ("profile", profile_arg.is_some()),
+        ("subject", subject_arg.is_some()),
+        ("evaluation", evaluation_arg.is_some()),
+        ("rederive", rederive),
+    ] {
+        if present && !allowed.contains(&name) {
+            return Err(Failure::usage(format!(
+                "--{name} does not apply to --kind {kind}"
+            )));
+        }
+    }
     let report = match kind {
-        "profile" => {
-            if profile_arg.is_some() {
-                return Err(Failure::usage("--profile does not apply to --kind profile"));
-            }
-            check_profile_bytes(&read_file(file)?)?
-        }
-        "observation" => {
-            if profile_arg.is_some() {
-                return Err(Failure::usage(
-                    "--profile does not apply to --kind observation",
-                ));
-            }
-            check_observation_bytes(&read_file(file)?)?
-        }
+        "profile" => check_profile_bytes(&read_file(file)?)?,
+        "observation" => check_observation_bytes(&read_file(file)?)?,
         "subject" => {
             let profile_path = profile_arg
                 .ok_or_else(|| Failure::usage("check --kind subject needs --profile"))?;
             check_subject_bytes(&read_file(profile_path)?, &read_file(file)?)?
         }
-        "evaluation" | "assessment" => {
-            return Err(Failure::usage(format!(
-                "check --kind {kind} is not available in this build"
-            )));
+        "evaluation" => check_evaluation_file(file, rederive, profile_arg, subject_arg)?,
+        _ => {
+            let profile_path = profile_arg
+                .ok_or_else(|| Failure::usage("check --kind assessment needs --profile"))?;
+            let evaluation_path = evaluation_arg
+                .ok_or_else(|| Failure::usage("check --kind assessment needs --evaluation"))?;
+            check_assessment_file(file, evaluation_path, profile_path)?
         }
-        other => return Err(Failure::usage(format!("unknown --kind {other:?}"))),
     };
     emit(out, &to_output_string(&report).map_err(serialise_failure)?)?;
     Ok(if report.valid { EXIT_OK } else { EXIT_INVALID })
+}
+
+fn parse_input<T: serde::de::DeserializeOwned>(what: &str, bytes: &[u8]) -> Result<T, Failure> {
+    parse_document::<T>(bytes)
+        .map_err(|error| Failure::usage(format!("{what} does not parse: {error}")))
+}
+
+fn check_evaluation_file(
+    file: &str,
+    rederive: bool,
+    profile: Option<&str>,
+    subject: Option<&str>,
+) -> Result<CheckReport, Failure> {
+    if rederive != (profile.is_some() || subject.is_some())
+        || (rederive && (profile.is_none() || subject.is_none()))
+    {
+        return Err(Failure::usage(
+            "--rederive needs --profile and --subject, and they apply only with --rederive",
+        ));
+    }
+    let bytes = read_file(file)?;
+    let evaluation = match parse_document::<Evaluation>(&bytes) {
+        Ok(evaluation) => evaluation,
+        Err(DocError::Schema(message)) => return Ok(schema_report("evaluation", message)),
+        Err(DocError::Syntax(message)) => {
+            return Err(Failure::usage(format!("evaluation: {message}")));
+        }
+    };
+    let mut report = CheckReport::new("evaluation", check_evaluation(&evaluation));
+    if let (true, Some(profile), Some(subject)) = (rederive, profile, subject) {
+        let (errors, notes) = rederive_evaluation(&evaluation, profile, subject)?;
+        report.errors.extend(errors);
+        report.notes = notes;
+        report.valid = report.errors.is_empty();
+    }
+    Ok(report)
+}
+
+/// Verify every recorded file digest (exit 3 on a difference), re-run `evaluate` with the
+/// recorded `evaluated_at`, and compare.
+fn rederive_evaluation(
+    recorded: &Evaluation,
+    profile_path: &str,
+    subject_path: &str,
+) -> Result<(Vec<ErrorItem>, Vec<ErrorItem>), Failure> {
+    let profile = read_file(profile_path)?;
+    let subject = read_file(subject_path)?;
+    let plan = read_file(&recorded.run_plan.path)?;
+    let battery = read_file(&recorded.battery.path)?;
+    let observation = read_file(&recorded.observation.path)?;
+    let mut bad = Vec::new();
+    for (code, at, bytes, want) in [
+        (
+            cc::PROFILE_FILE_DIGEST_MISMATCH,
+            "profile.sha256",
+            &profile,
+            &recorded.profile.sha256,
+        ),
+        (
+            cc::SUBJECT_FILE_DIGEST_MISMATCH,
+            "subject.sha256",
+            &subject,
+            &recorded.subject.sha256,
+        ),
+        (
+            cc::RUN_PLAN_FILE_DIGEST_MISMATCH,
+            "run_plan.sha256",
+            &plan,
+            &recorded.run_plan.sha256,
+        ),
+        (
+            cc::BATTERY_FILE_DIGEST_MISMATCH,
+            "battery.file_sha256",
+            &battery,
+            &recorded.battery.file_sha256,
+        ),
+        (
+            cc::OBSERVATION_FILE_DIGEST_MISMATCH,
+            "observation.sha256",
+            &observation,
+            &recorded.observation.sha256,
+        ),
+    ] {
+        if &sha256_hex(bytes) != want {
+            bad.push(ErrorItem::new(
+                code,
+                at,
+                "the file's digest differs from the recorded one",
+            ));
+        }
+    }
+    if !bad.is_empty() {
+        return Err(Failure::binding(
+            format!("rederive refused: {} digest mismatch(es)", bad.len()),
+            bad,
+        ));
+    }
+    let fresh = evaluate_bytes(
+        &profile,
+        &subject,
+        (&recorded.run_plan.path, &plan),
+        (&recorded.battery.path, &battery),
+        (&recorded.observation.path, &observation),
+        &recorded.evaluated_at,
+    )?;
+    Ok(compare_evaluations(recorded, &fresh))
+}
+
+fn check_assessment_file(
+    file: &str,
+    evaluation_path: &str,
+    profile_path: &str,
+) -> Result<CheckReport, Failure> {
+    let profile_bytes = read_file(profile_path)?;
+    let evaluation_bytes = read_file(evaluation_path)?;
+    let profile: Profile = parse_input("--profile", &profile_bytes)?;
+    let profile_errors = validate_profile(&profile);
+    if !profile_errors.is_empty() {
+        return Err(Failure::refused(
+            "--profile is not a valid profile; run check --kind profile",
+            profile_errors,
+        ));
+    }
+    let evaluation: Evaluation = parse_input("--evaluation", &evaluation_bytes)?;
+    let bytes = read_file(file)?;
+    let mut report = match parse_document::<Assessment>(&bytes) {
+        Ok(assessment) => CheckReport::new(
+            "assessment",
+            check_assessment(
+                &assessment,
+                &AssessmentContext {
+                    profile: &profile,
+                    profile_bytes: &profile_bytes,
+                    evaluation: &evaluation,
+                    evaluation_bytes: &evaluation_bytes,
+                },
+            ),
+        ),
+        Err(DocError::Schema(message)) => schema_report("assessment", message),
+        Err(DocError::Syntax(message)) => {
+            return Err(Failure::usage(format!("assessment: {message}")));
+        }
+    };
+    report.purpose = raw_purpose(&bytes);
+    Ok(report)
 }
 
 /// `check --kind profile` on file bytes.
@@ -365,30 +531,52 @@ fn evaluate(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     let (observation_path, observation_bytes) = read_recorded(required(&options, "observation")?)?;
     let evaluated_at = required(&options, "evaluated-at")?;
     let out_path = options.one("out")?;
+    let evaluation = evaluate_bytes(
+        &profile,
+        &subject,
+        (&plan_path, &plan_bytes),
+        (&battery_path, &battery_bytes),
+        (&observation_path, &observation_bytes),
+        evaluated_at,
+    )?;
+    let text = to_output_string(&evaluation).map_err(serialise_failure)?;
+    write_output(out, out_path, &text)?;
+    Ok(EXIT_OK)
+}
+
+/// Run `evaluate` over file bytes, each with the absolute path to record.
+fn evaluate_bytes(
+    profile: &[u8],
+    subject: &[u8],
+    plan: (&str, &[u8]),
+    battery: (&str, &[u8]),
+    observation: (&str, &[u8]),
+    evaluated_at: &str,
+) -> Result<Evaluation, Failure> {
     let binary = std::env::current_exe()
         .and_then(std::fs::read)
         .map_err(|error| Failure::usage(format!("cannot read the running binary: {error}")))?;
     let binary_sha256 = sha256_hex(&binary);
     let inputs = EvaluateInputs {
-        profile: &profile,
-        subject: &subject,
+        profile,
+        subject,
         run_plan: Recorded {
-            path: &plan_path,
-            bytes: &plan_bytes,
+            path: plan.0,
+            bytes: plan.1,
         },
         battery: Recorded {
-            path: &battery_path,
-            bytes: &battery_bytes,
+            path: battery.0,
+            bytes: battery.1,
         },
         observation: Recorded {
-            path: &observation_path,
-            bytes: &observation_bytes,
+            path: observation.0,
+            bytes: observation.1,
         },
         evaluated_at,
         binary_sha256: &binary_sha256,
     };
     let read = |path: &str| std::fs::read(path);
-    let evaluation = run_evaluate(&inputs, &read).map_err(|error| match error {
+    run_evaluate(&inputs, &read).map_err(|error| match error {
         EvalError::Input(message) => Failure::usage(message),
         EvalError::Invalid(errors) => Failure::refused(
             format!("evaluate refused: {} violated rule(s)", errors.len()),
@@ -398,8 +586,128 @@ fn evaluate(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
             format!("evaluate refused: {} binding violation(s)", errors.len()),
             errors,
         ),
-    })?;
-    let text = to_output_string(&evaluation).map_err(serialise_failure)?;
+    })
+}
+
+/// `recheck --evaluation E --battery R2 --observation O2`: which derived checks observed
+/// something different in a second battery result. Refusals exit 3.
+fn recheck(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
+    let options = Options::parse(args, &["evaluation", "battery", "observation", "out"])?;
+    if !options.positional.is_empty() {
+        return Err(Failure::usage("recheck takes no positional arguments"));
+    }
+    let need = |name: &str| -> Result<&str, Failure> {
+        options
+            .one(name)?
+            .ok_or_else(|| Failure::usage(format!("recheck needs --{name}")))
+    };
+    let evaluation_bytes = read_file(need("evaluation")?)?;
+    let second_bytes = read_file(need("battery")?)?;
+    let observation_bytes = read_file(need("observation")?)?;
+    let out_path = options.one("out")?;
+    let refuse = |errors: Vec<ErrorItem>| {
+        Failure::binding(
+            format!("recheck refused: {} violation(s)", errors.len()),
+            errors,
+        )
+    };
+    let evaluation = match parse_document::<Evaluation>(&evaluation_bytes) {
+        Ok(evaluation) => evaluation,
+        Err(DocError::Schema(message)) => {
+            return Err(refuse(vec![ErrorItem::new(
+                codes::SCHEMA,
+                "evaluation",
+                message,
+            )]));
+        }
+        Err(DocError::Syntax(message)) => {
+            return Err(Failure::usage(format!("evaluation: {message}")));
+        }
+    };
+    let structural = check_evaluation(&evaluation);
+    if !structural.is_empty() {
+        return Err(refuse(structural));
+    }
+    let first_bytes = read_file(&evaluation.battery.path)?;
+    let mut errors = Vec::new();
+    if sha256_hex(&first_bytes) != evaluation.battery.file_sha256 {
+        errors.push(ErrorItem::new(
+            cc::BATTERY_FILE_DIGEST_MISMATCH,
+            "battery.file_sha256",
+            "the original result's digest differs from the evaluation's record",
+        ));
+    }
+    let second: Option<Value> = serde_json::from_slice(&second_bytes).ok();
+    if second.is_none() {
+        errors.push(ErrorItem::new(bc::RESULT_MALFORMED, "battery", "not JSON"));
+    }
+    match parse_document::<Observation>(&observation_bytes) {
+        Err(DocError::Syntax(message)) => {
+            return Err(Failure::usage(format!("observation: {message}")));
+        }
+        Err(DocError::Schema(message)) => {
+            errors.push(ErrorItem::new(
+                bc::OBSERVATION_INVALID,
+                "observation",
+                message,
+            ));
+        }
+        Ok(observation) => {
+            for item in validate_observation(&observation) {
+                errors.push(ErrorItem::new(
+                    bc::OBSERVATION_INVALID,
+                    item.at.clone(),
+                    format!("{}: {}", item.code, item.message),
+                ));
+            }
+            if observation.result.sha256 != sha256_hex(&second_bytes) {
+                errors.push(ErrorItem::new(
+                    bc::OBSERVATION_RESULT_DIGEST_MISMATCH,
+                    "observation.result.sha256",
+                    "differs from the second result's bytes",
+                ));
+            }
+            if observation.plan.sha256 != evaluation.run_plan.sha256 {
+                errors.push(ErrorItem::new(
+                    bc::OBSERVATION_PLAN_DIGEST_MISMATCH,
+                    "observation.plan.sha256",
+                    "differs from the evaluation's run plan digest",
+                ));
+            }
+            if let Some(second) = &second {
+                let failed = second["failed"].as_array().is_some_and(|f| !f.is_empty());
+                if observation.battery_exit != i64::from(failed) {
+                    errors.push(ErrorItem::new(
+                        bc::BATTERY_EXIT_INCONSISTENT,
+                        "observation.battery_exit",
+                        "exit 1 exactly when the second result's failed is non-empty",
+                    ));
+                }
+                if second["battery_sha256"].as_str()
+                    != Some(observation.stdout_battery_sha256.as_str())
+                {
+                    errors.push(ErrorItem::new(
+                        bc::BATTERY_SHA256_MISMATCH,
+                        "observation.stdout_battery_sha256",
+                        "differs from the second result's battery_sha256",
+                    ));
+                }
+            }
+        }
+    }
+    let first: Value = serde_json::from_slice(&first_bytes).unwrap_or(Value::Null);
+    let (Some(second), true) = (second, errors.is_empty()) else {
+        return Err(refuse(errors));
+    };
+    let changed = changed_checks(&evaluation.derived_check_ids, &first, &second);
+    let status = if changed.is_empty() {
+        "unchanged"
+    } else {
+        "observation_changed"
+    };
+    let text =
+        to_output_string(&serde_json::json!({"status": status, "changed_check_ids": changed}))
+            .map_err(serialise_failure)?;
     write_output(out, out_path, &text)?;
     Ok(EXIT_OK)
 }
