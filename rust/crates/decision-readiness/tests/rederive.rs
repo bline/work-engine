@@ -233,3 +233,49 @@ fn structural_rules_each_report_their_code() {
         );
     }
 }
+
+/// S2-T1-002. A mechanical status can never be attributed: an attributed requirement is
+/// indeterminate with reason `attributed_judgment_required` and no predicates. Each variant keeps
+/// the counts consistent, so `attributed_shape` is the only code that can reject it.
+#[test]
+fn an_attributed_requirement_upgraded_to_met_or_unmet_is_an_attributed_shape_error() {
+    let case = met_case("rederive-attributed-met");
+    let observed = observe(&case, "run");
+    let file = evaluation_file(&case, &observed, "e.json");
+    let original = read_json(&file);
+    let last = original["requirements"].as_array().unwrap().len() - 1;
+    assert_eq!(original["requirements"][last]["class"], "attributed");
+    assert_eq!(original["requirements"][last]["status"], "indeterminate");
+    assert_eq!(
+        check_value(&case, "genuine", &original).code,
+        0,
+        "the unmodified evaluation is accepted"
+    );
+    let reason = original["requirements"][last]["reason"].clone();
+    let cases: Vec<(&str, &str, Mutation)> = vec![
+        ("met, reason kept", "met", Box::new(|_| {})),
+        (
+            "met, reason dropped",
+            "met",
+            Box::new(move |v| {
+                v["requirements"][last]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("reason");
+            }),
+        ),
+        ("unmet, reason kept", "unmet", Box::new(|_| {})),
+    ];
+    for (i, (label, status, mutate)) in cases.iter().enumerate() {
+        let mut value = original.clone();
+        value["requirements"][last]["status"] = json!(status);
+        value["requirements"][last]["reason"] = reason.clone();
+        mutate(&mut value);
+        let counts = &mut value["counts"];
+        counts["indeterminate"] = json!(counts["indeterminate"].as_u64().unwrap() - 1);
+        counts[status] = json!(counts[status].as_u64().unwrap() + 1);
+        let run = check_value(&case, &format!("attr{i}"), &value);
+        assert_eq!(run.code, 1, "{label}: {}", run.stdout);
+        assert_eq!(run.codes(), ["attributed_shape"], "{label}");
+    }
+}
