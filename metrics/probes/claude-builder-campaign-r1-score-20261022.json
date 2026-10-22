@@ -10,7 +10,7 @@
   "end": "2026-10-22T03:03:53+00:00",
   "hours": 3.265
  },
- "status": "campaign complete; integration proposed and awaiting user confirmation",
+ "status": "campaign complete and integrated",
  "cohorts": {
   "contract_and_planning": {
    "agents": 7,
@@ -839,5 +839,39 @@
    "all_added": true,
    "gates": "cargo 114 passed 0 failed; python unittest 41 OK; 7/7 part-e logs exit 0"
   }
+ },
+ "amendment_1": {
+  "amended_at": "2026-10-22T13:55:00Z",
+  "supersedes": "the status line and campaign_totals of the original record, which closed at proposed_integrate",
+  "integration": {
+   "status": "integrated_user_confirmed",
+   "record": "final-review/decision-branch-v2.json",
+   "integrated_as": "12a770bb..24c41cb9 on rescue-detached-20260911",
+   "base": "dc9fcc67",
+   "commits": 23,
+   "paths": 28,
+   "verified_here": "git diff 12a770bb~1..24c41cb9 is 28 files, 11415 insertions, 10203 Rust lines: byte-identical in size to the branch range scored above, so the denominator is unchanged",
+   "post_integration_gates": "cargo 114 passed 0 failed; python unittest 41 OK",
+   "base_note": "decision-branch-v2 records that the base moved from cb61f807 to dc9fcc67 because this measurement role committed between the decision and the cherry-pick"
+  },
+  "integration_cost": {
+   "weighted_Mwt": 2.026,
+   "orchestrator_calls": 22,
+   "new_subagents": 0,
+   "window": [
+    "2026-10-22T03:04:01Z",
+    "2026-10-22T13:48:05Z"
+   ],
+   "note": "the coordinator performed the cherry-pick, verification and record directly; no agent was launched"
+  },
+  "revised_totals": {
+   "subagent_weighted_Mwt": 36.847,
+   "orchestrator_weighted_Mwt": 20.895,
+   "total_weighted_Mwt": 57.742,
+   "orchestration_share": 0.362,
+   "Mwt_per_krs_subagents_only": 3.611,
+   "Mwt_per_krs_with_orchestration": 5.659
+  },
+  "what_changed": "The subagents-only figure of 3.61 Mwt/krs is unchanged, because the whole integration phase was orchestrator cost. Including orchestration the campaign moves from 5.46 to 5.66 Mwt/krs, and orchestration overhead from 33.9% to 36.2% against the baseline 25%."
  }
 }

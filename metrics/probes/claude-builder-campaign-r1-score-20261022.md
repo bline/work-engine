@@ -10,7 +10,8 @@ slice-1 numbers themselves unchanged.
 One orchestrator session (`bf60b4c1`) ran 25 agents over 3.27 hours and produced
 10,203 net added Rust lines on `worktree-agent-a27d1ec9c1e4acca4`
 (`6a945b15..8e68518a`, 23 commits, 28 files, all additions). The branch is
-**proposed for integration and awaiting user confirmation**; it is not merged.
+**integrated**, user-confirmed, as `12a770bb..24c41cb9` on
+`rescue-detached-20260911` (see the amendment at the end).
 
 ## What the Codex pilot registered and never saw
 
@@ -180,3 +181,27 @@ under measurement, and this role is excluded from both arms.
 - Line counts: 10,203 is the net branch diff. Per-slice figures sum gross
   per-commit additions (10,310), so the two code slices' ratios are marginally
   optimistic.
+
+## Amendment 1, 2026-10-22T13:55Z: integrated
+
+The original record closed at `proposed_integrate`. R1 was subsequently
+integrated and user-confirmed (`final-review/decision-branch-v2.json`), as
+`12a770bb..24c41cb9` on `rescue-detached-20260911`, 23 commits onto base
+`dc9fcc67`. Verified here: `git diff 12a770bb~1..24c41cb9` is 28 files, 11,415
+insertions, 10,203 Rust lines — identical in size to the branch range scored
+above, so **the denominator is unchanged and the headline figure stands**.
+Post-integration gates: cargo 114 passed / 0 failed, Python unittest 41 OK.
+
+The integration phase cost **2.026 Mwt over 22 orchestrator calls and launched
+no agent**: the coordinator cherry-picked, verified and recorded it directly.
+Because that is entirely orchestrator cost, the like-for-like figure of **3.61
+Mwt/krs is unchanged**. Including orchestration the campaign moves from 5.46 to
+**5.66 Mwt/krs**, and orchestration overhead from 33.9% to **36.2%** against the
+baseline's 25% — the gap on the one measure where this arm was already behind
+widens.
+
+`decision-branch-v2.json` records that the integration base moved from
+`cb61f807` to `dc9fcc67` because this measurement role committed between the
+decision and the cherry-pick. Worth noting as a process fact: the measured and
+the measuring sessions share a branch, and here the measurement landed inside
+the subject's own integration record.
