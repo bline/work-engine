@@ -38,6 +38,7 @@ pub mod check_codes {
     pub const DOWNGRADE_BASIS_NOT_ASSESSOR: &str = "downgrade_basis_not_assessor";
     pub const DOWNGRADE_REASON_MISSING: &str = "downgrade_reason_missing";
     pub const DOWNGRADE_EVIDENCE_MISSING: &str = "downgrade_evidence_missing";
+    pub const BASIS_INCONSISTENT: &str = "basis_inconsistent";
     pub const ATTRIBUTED_REASON_MISSING: &str = "attributed_reason_missing";
     pub const ATTRIBUTED_EVIDENCE_MISSING: &str = "attributed_evidence_missing";
     pub const VERDICT_INCONSISTENT: &str = "verdict_inconsistent";
@@ -521,6 +522,16 @@ pub fn check_assessment(a: &Assessment, ctx: &AssessmentContext<'_>) -> Vec<Erro
                         cc::ATTRIBUTED_EVIDENCE_MISSING,
                         format!("{at}.evidence"),
                         "an attributed status cites evidence",
+                    ));
+                }
+                // The tool never derives an attributed status beyond `indeterminate`, so any
+                // other status labelled `basis: evaluation` claims a derivation that did not happen.
+                let from = actual.unwrap_or(entry.evaluation_status);
+                if entry.assessed_status != from && entry.basis == AssessmentBasis::Evaluation {
+                    errors.push(err(
+                        cc::BASIS_INCONSISTENT,
+                        format!("{at}.basis"),
+                        "a status that differs from the evaluation's has basis assessor",
                     ));
                 }
             }

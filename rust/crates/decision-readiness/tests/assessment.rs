@@ -290,6 +290,47 @@ fn rule_4_attributed_requirements_need_a_reason_and_evidence() {
     assert_eq!(f.run("ready", &doc).code, 0);
 }
 
+/// T2F-001: the tool never derives an attributed status beyond `indeterminate`, so an attributed
+/// `met` labelled `basis: evaluation` is rejected; the same document with `basis: assessor` passes.
+#[test]
+fn an_attributed_status_not_derived_from_the_tool_cannot_carry_basis_evaluation() {
+    let f = fixture("assess-basis", true);
+    let profile = read_json(&f.case.profile_path());
+    let attributed: Vec<usize> = profile["requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r["class"] == "attributed")
+        .map(|(i, _)| i)
+        .collect();
+    assert!(!attributed.is_empty(), "{attributed:?}");
+    // Fable's probe: a forged `ready` over attributed requirements set to met, basis evaluation.
+    let forged = |basis: &str| {
+        let mut doc = f.doc.clone();
+        for &i in &attributed {
+            doc["requirements"][i]["assessed_status"] = json!("met");
+            doc["requirements"][i]["basis"] = json!(basis);
+        }
+        doc["indeterminate"] = json!([]);
+        doc["verdict"] = json!("ready");
+        doc
+    };
+    let run = f.run("basis-forged", &forged("evaluation"));
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(
+        run.codes(),
+        vec!["basis_inconsistent"; attributed.len()],
+        "{}",
+        run.stdout
+    );
+    // Control: the correct basis passes.
+    let run = f.run("basis-control", &forged("assessor"));
+    assert_eq!(run.code, 0, "{}", run.stdout);
+    // An attributed requirement left indeterminate keeps basis evaluation without error.
+    assert_eq!(f.run("basis-honest", &f.doc).code, 0);
+}
+
 #[test]
 fn rule_5_verdict_consistency_and_conservative_verdicts_need_a_profile_gap() {
     let f = fixture("assess-rule-5", true);
