@@ -1,0 +1,56 @@
+{
+ "schema": "claude-builder-slice-record-v1",
+ "recorded_at": "2026-10-22T01:30:00Z",
+ "campaign": "readiness-r1-20261021",
+ "slice": "S1 - decision-readiness crate",
+ "session": "bf60b4c1-34d1-4900-bbe0-15042efb0e2c",
+ "window": {"from": "2026-10-22T00:54:30Z", "to": "2026-10-22T01:22:49Z"},
+ "roles": [
+  {"agent": "a27d1ec9c1e4acca4", "role": "S1 builder", "model": "claude-sonnet-5-5", "effort": "high",
+   "calls": 75, "weighted": 2033000, "minutes": 9.6, "skill_cohort": "pre_change"},
+  {"agent": "abeb3da4543a8545f", "role": "S1 successor builder from handoff", "model": "claude-sonnet-5-5", "effort": "high",
+   "calls": 57, "weighted": 1510000, "minutes": 6.3, "skill_cohort": "pre_change"},
+  {"agent": "a1707d68eb26fb81c", "role": "S1 Tier-1 review", "model": "claude-opus-5-5", "effort": "high",
+   "calls": 104, "weighted": 2543000, "minutes": 10.0, "skill_cohort": "post_change"}
+ ],
+ "cost": {
+  "unit": "weighted tokens = uncached + cached/10 + 5*output, the pure-Codex baseline's unit",
+  "subagents_mwt": 6.051, "orchestrator_mwt": 2.435, "total_mwt": 8.486,
+  "rust_lines": 4849,
+  "mwt_per_krs_subagents_only": 1.25,
+  "mwt_per_krs_with_orchestrator": 1.75,
+  "baseline_range_mwt_per_krs": [2.04, 5.11],
+  "comparability": "Baseline per_slice figures exclude orchestration, which it records separately at about +25% on top, so the subagents-only figure is the like-for-like one. Baseline slices of similar size: lifecycle S4 at 5,492 lines and S5 at 5,236."
+ },
+ "quality": {
+  "m9_candidate_attempts": 1,
+  "m9_baseline": "mean 2.8, range 2-5, no slice accepted on its first candidate",
+  "m10_review_findings": 4,
+  "m10_severities": {"P3": 4},
+  "m10_baseline": "mean 6.0, range 4-9",
+  "mutation_probe": {"killed": 7, "survived": 2, "survivors": ["M4", "M5"],
+   "note": "Not a baseline measure. The reviewer found multi-profile root choice and multiple_git_root_paths have no discriminating test, so two mutants survive all 55 tests; behaviour is correct by direct probe."},
+  "verdict": {"value": "ready", "scope": "S1 slice acceptance as base for S2, not A1",
+   "integration_decision": "not_made_root_owned"}
+ },
+ "handoff": {
+  "observed": true,
+  "artifact": "/home/bline/.local/state/work-engine/readiness-r1-20261021/s1/handoff-v1.md",
+  "declared_as": "# S1 builder handoff v1 (handoff_ready)",
+  "builder_last_activity": "2026-10-22T01:05:07Z",
+  "successor_first_activity": "2026-10-22T01:05:37Z",
+  "declare_to_successor_start_seconds": 31,
+  "successor_cost_mwt": 1.510,
+  "reviewer_assessment_of_boundary": "all 5 Remaining items done; successor changed no src/ or Cargo.* file; nothing lost",
+  "significance": "This is outcome A of the handoff boundary pilot, observed end to end: handoff_ready declared with identity and artifact binding, a parent-launched successor, and an independent reviewer verifying that nothing was lost. The Codex pilot registered outcome A in advance and never observed it across about 62 thread-hours, because no context-replacement primitive exists in that tool set. Here the parent's Agent tool is that primitive.",
+  "limits": "Different harness, so this does not settle the Codex question. n=1. The 31 seconds is parent-mediated turnaround in this harness, not a general transfer latency, and it is not the quantity my withdrawn Codex claim needed."
+ },
+ "limits": [
+  "n=1 slice.",
+  "The reviewer is a Claude agent inside the same orchestration, not a party independent of the system under measurement.",
+  "Acceptance is scoped as a base for S2; the integration decision is explicitly not made and remains root-owned.",
+  "Builders ran on the pre-change skill text and the reviewer on the post-change text, so slice 1 is not a clean test of either.",
+  "Harness and model both differ from the Codex baseline, which cannot separate the two.",
+  "Line count is the crate's current total in the builder's worktree, not a diff against a prior version, because the crate is new."
+ ]
+}
