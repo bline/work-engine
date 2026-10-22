@@ -1,0 +1,160 @@
+{
+ "schema": "claude-builder-r2-prereg-v1",
+ "registered_at": "2026-10-22T14:10:00Z",
+ "registered_before": "campaign R2 design and dispatch",
+ "treatment": {
+  "commit": "cb61f807",
+  "subject": "Size manual-orchestration packets by their read set",
+  "files": [
+   "skills/manual-orchestration/references/worker.md",
+   "skills/manual-orchestration/references/coordinator.md"
+  ],
+  "reached_repo_copy_at": "2026-10-22T01:59:50Z"
+ },
+ "instrument": {
+  "resolved_defect": "R1-M-001",
+  "action": "~/.claude/skills/manual-orchestration replaced with a symlink to skills/manual-orchestration",
+  "verified": "diff -rq between the two paths reports no differences; worker.md and coordinator.md digests now agree",
+  "backup": "~/.local/state/work-engine/skill-backup-20261022/manual-orchestration-user-scope",
+  "sibling_sweep": "10 other skills present in both ~/.claude/skills and skills/ compared; all byte-identical, so manual-orchestration was the only divergence"
+ },
+ "cohort_rule": {
+  "pre_change": "builder read the reference text before 2026-10-22T01:59:50Z",
+  "post_change": "builder read it after, AND recorded the digest of what it read",
+  "note": "R1 could not apply the second clause, which is why R1-M-001 went unnoticed"
+ },
+ "frozen_baseline_r1_pre_change": {
+  "builders": [
+   {
+    "agent": "a27d1ec9c1e4acca4",
+    "role": "S1 builder",
+    "context_at_first_code_write": 88562,
+    "pre_write_read_calls": 26
+   },
+   {
+    "agent": "abeb3da4543a8545f",
+    "role": "S1 successor",
+    "context_at_first_code_write": 116779,
+    "pre_write_read_calls": 16
+   },
+   {
+    "agent": "a0e59f73949c117b9",
+    "role": "S2 builder",
+    "context_at_first_code_write": null,
+    "pre_write_read_calls": 29
+   },
+   {
+    "agent": "a68b863f021a779a8",
+    "role": "S2a successor",
+    "context_at_first_code_write": 100144,
+    "pre_write_read_calls": 15
+   },
+   {
+    "agent": "aed2ceafc33b90035",
+    "role": "S2a-2 successor",
+    "context_at_first_code_write": 71539,
+    "pre_write_read_calls": 14
+   },
+   {
+    "agent": "a5d3ffe262a707e38",
+    "role": "S2b builder",
+    "context_at_first_code_write": 103954,
+    "pre_write_read_calls": 14
+   },
+   {
+    "agent": "a74b04b4ca3160232",
+    "role": "S2b-2 successor",
+    "context_at_first_code_write": 58097,
+    "pre_write_read_calls": 10
+   }
+  ],
+  "B1_context_at_first_code_write": {
+   "n": 6,
+   "median": 94353,
+   "mean": 89846,
+   "min": 58097,
+   "max": 116779
+  },
+  "B2_builders_writing_no_code": {
+   "count": 1,
+   "of": 7,
+   "share": 0.143,
+   "instance": {
+    "agent": "a0e59f73949c117b9",
+    "reading_at_declaration": 145858,
+    "note": "declared a handoff having written nothing"
+   }
+  },
+  "B3_handoffs_per_rust_slice": 1.5,
+  "B4_Mwt_per_krs_code_slices": {
+   "s1": 1.255,
+   "s2": 1.778,
+   "mean": 1.517
+  },
+  "B5_orchestration_share": 0.362,
+  "B6_pre_write_read_calls": {
+   "n": 7,
+   "median": 15,
+   "min": 10,
+   "max": 29
+  }
+ },
+ "hypotheses": {
+  "H1": {
+   "claim": "context at first code write falls",
+   "supported_if": "R2 median over code-slice builders < 94353",
+   "disconfirmed_if": ">= 94353",
+   "confounded_by": "the treatment also says commit after each passing unit, which moves the first write earlier without reducing reading"
+  },
+  "H2": {
+   "claim": "no builder spends a whole context without writing code",
+   "supported_if": "0 of n",
+   "disconfirmed_if": ">=1"
+  },
+  "H3": {
+   "claim": "handoffs per Rust-building slice fall",
+   "supported_if": "< 1.5",
+   "disconfirmed_if": ">= 1.5"
+  },
+  "H4": {
+   "claim": "code-slice cost falls",
+   "supported_if": "< 1.517 Mwt/krs",
+   "disconfirmed_if": ">= 1.517"
+  },
+  "H5": {
+   "claim": "orchestration share",
+   "registered_as": "secondary; treatment does not target it; no effect is the expected result",
+   "baseline": 0.362
+  }
+ },
+ "disambiguation_rule": "A fall in H1 with pre_write_read_calls unchanged against B6 is earlier committing, not leaner reading, and must be reported as such. Only a fall in both supports the reading claim.",
+ "held_constant": {
+  "context_trigger_tokens": 150000,
+  "trigger_question": "whether 150000 is too conservative is campaign R3, not R2; the lowest auto-compaction observed on this machine is 202533 and two of four R1 handoffs fired below the trigger",
+  "models": {
+   "builder": "claude-sonnet-5-5 high",
+   "tier1": "claude-opus-5-5",
+   "tier2_final": "claude-fable-5-1"
+  },
+  "handoff_mechanism": "parent-mediated: handoff file plus handoff_ready, coordinator launches the successor on it"
+ },
+ "requirements_for_scorability": [
+  "at least two Rust-building slices of 2000-5000 added Rust lines each",
+  "every worker records the sha256 of each reference file it actually read",
+  "each packet states its read set, and the slice record states how many lines that read set comprises",
+  "context checks at each phase boundary with input_tokens, recommendation and trigger",
+  "branch, commit range and net added lines per language recorded at the end"
+ ],
+ "confounds": [
+  "between-campaign: R2 builds a different subject, so pre-write reading must be normalised per 1k lines the read set comprises",
+  "small n: R1 contributes 7 pre-change builders over 2 code slices; every claim carries its n",
+  "reviewers are inside the orchestration being measured; the only outside check is a direct gate re-run",
+  "instrument change: the symlink removes a confound but is itself a difference between R1 and R2",
+  "the measurement role shares a branch with the subject; R1's integration base moved because this role committed mid-decision. For R2 hold measurement commits until integration lands, or use a separate branch"
+ ],
+ "out_of_scope": [
+  "context trigger changes (R3)",
+  "comparison with pure-Codex on handoff behaviour: Codex has no context-replacement primitive, so the arms differ in capability not only instruction",
+  "Plus-unit or quota claims; weighted tokens are the only common unit"
+ ]
+}

@@ -703,7 +703,16 @@
     "detail": "The Skill tool resolves to /home/bline/.claude/skills/manual-orchestration; worker prompts cat /home/bline/code/work-engine/skills/manual-orchestration. Commit cb61f807 wrote the read-set sizing guidance to the repo copy at 2026-10-22T01:59:50Z and not to the user-scope copy, which still holds fa163bad. worker.md and coordinator.md differ by exactly those additions.",
     "consequence": "A worker briefed through the Skill tool alone does not receive the newest instruction change, so cohort membership cannot be read off the commit time alone. afd6ae453ed824ee9 (S3b) read only the user-scope copy after the divergence and is the one confirmed instance.",
     "remedy": "Make one copy authoritative, or have the parent state the commit it expects and have the worker verify the digest of what it actually read. S2 already pins a required skill commit in its prompt; no worker verifies the text against it.",
-    "role_note": "Reported, not fixed: the skill text is the instrument of the arm under measurement and this role is excluded from both arms."
+    "role_note": "Reported, not fixed: the skill text is the instrument of the arm under measurement and this role is excluded from both arms.",
+    "resolution": {
+     "resolved_at": "2026-10-22T13:57:00Z",
+     "action": "~/.claude/skills/manual-orchestration replaced with a symlink to skills/manual-orchestration, on user instruction",
+     "verified": "diff -rq reports no differences; worker.md and coordinator.md digests agree",
+     "backup": "~/.local/state/work-engine/skill-backup-20261022/manual-orchestration-user-scope",
+     "sibling_sweep": "10 other skills in both locations compared; all byte-identical",
+     "residual": "nothing verifies the text a worker read against the commit its prompt pins; registered as a scorability requirement for R2",
+     "role_note": "the earlier role_note said reported-not-fixed; the user directed the fix"
+    }
    },
    {
     "id": "R1-M-002",
