@@ -1,0 +1,36 @@
+{
+ "schema": "claude-builder-cohort-boundary-v1",
+ "recorded_at": "2026-10-22T01:18:00Z",
+ "note": "Instruction change landed while a worker was running. Recorded before the slice-0/slice-1 comparison is made, so the cohort boundary is not reconstructed afterwards.",
+ "skill_change": {
+  "commit": "fa163bad",
+  "committed_at": "2026-10-22T01:12:17Z",
+  "subject": "Fold first Claude-run lessons into manual-orchestration",
+  "files": [
+   "skills/manual-orchestration/references/anthropic-host.md",
+   "skills/manual-orchestration/references/context-boundary.md",
+   "skills/manual-orchestration/references/worker.md"
+  ],
+  "worker_facing_substance": [
+   "worker.md: parent growth estimates are not calibrated; a remediation estimated at 40K grew about 61K (n=1); use the largest growth observed for comparable work rather than a guess",
+   "context-boundary.md: mid-task check moves from once to each logical boundary before each substantial phase, and again before writing the result if an earlier reading exceeded about 120,000"
+  ]
+ },
+ "slice_1_worker": {
+  "agent": "a27d1ec9c1e4acca4",
+  "model": "claude-sonnet-5-5",
+  "launched": "2026-10-22T00:55:00Z",
+  "read_skill_md": "2026-10-22T00:55:31Z",
+  "read_references": "2026-10-22T00:55:35Z",
+  "references_read": ["worker.md", "call-cost.md", "anthropic-host.md"],
+  "reread_after_change": false,
+  "gap_seconds_read_to_commit": 1002
+ },
+ "cohort_assignment": {
+  "slice_0": "pre_change",
+  "slice_1": "transition - launched and briefed 16m42s before the change; holds the pre-change reference text unless the parent re-delivers it",
+  "first_clean_post_change": "the next worker launched after 2026-10-22T01:12:17Z"
+ },
+ "consequence_if_ignored": "Scoring slice 1 as post-change would attribute to the new instruction a run that never saw it, in the direction that flatters the change: the two edits target mid-task checking frequency and growth estimation, which is what this worker is doing now under the old text.",
+ "precedent": "Same structure as the handoff pilot's transition cohort, where the orchestration brief was revised three times mid-flight and cohort membership had to move with each revision rather than be assigned afterwards."
+}
