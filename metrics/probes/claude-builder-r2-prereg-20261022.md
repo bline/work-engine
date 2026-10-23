@@ -395,3 +395,34 @@ context). No measurement separates these, so no sign is claimed.
 channel use, which this campaign is not sized to provide. Until then the
 covariate is a named uncertainty in R2's limits section, not a quantified
 adjustment.
+
+### Amendment 5 addendum, 2026-10-23: the non-discoverability basis was too narrow
+
+**The wrong claim.** That `skills/coordination-channels` is not discoverable to
+a worker, verified by listing `~/.claude/skills` and `~/.codex/skills`.
+
+**The error class.** An absence claim whose stated search domain was narrower
+than the real one. Claude resolves skills from **four** classes, not one:
+
+| class | location | definitions |
+|---|---|---|
+| A | `~/.claude/skills/<name>/SKILL.md` | 12 |
+| B | `~/.claude/skills/synced/<uuid>/<name>/SKILL.md` (server-synced) | 26 |
+| C | `~/.claude/plugins` | 33 |
+| D | project-local `.claude/skills` | absent |
+
+**The downstream consequence.** None to the conclusion, which survives a
+complete search: `coordination-channels` appears in **no** class A–D and in
+neither Codex directory. But amendment 5's zero-delta argument rested on a
+two-directory check, so the basis is now the enumeration above.
+
+**The check that would have caught it.** Search for `SKILL.md` across the whole
+agent configuration root rather than listing the directory one expects.
+
+**A related fact worth recording**, because it bears on what a worker receives:
+the listing delivered to the fix-b builder named **13 skills**, while the
+discovery surface is **71 definitions**. Not everything discoverable is listed.
+So the per-dispatch verification amendment 5 requires must read **the worker's
+own listing**, not the filesystem — the filesystem is the wrong instrument for
+that question, and a clean filesystem check is necessary but not sufficient.
+

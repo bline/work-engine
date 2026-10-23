@@ -424,6 +424,19 @@
     "worker_facing_adoption": "deferred until R2 ends; stated in the skill's own first paragraph. Referencing it from a worker packet, a shared instruction or inherited context would make it treatment-relevant and pause R2 or void the B1-B6 comparison. Verified per dispatch, not once",
     "bias_direction": "not established",
     "bias_rationale": "zero worker-text delta does not imply zero experimental effect: root-side coordination can change dispatch order, packet content, how early a scope collision is caught and how often a worker is corrected mid-run, hence cost, handoffs and outcomes. Plausibly favourable to the treatment arm, possibly the reverse via more mid-run corrections. No measurement separates these, so no sign is claimed",
-    "what_would_settle_it": "R2 slices dispatched with and without root-side channel use; this campaign is not sized to provide that. Until then it is a named uncertainty in R2's limits, not a quantified adjustment"
+    "what_would_settle_it": "R2 slices dispatched with and without root-side channel use; this campaign is not sized to provide that. Until then it is a named uncertainty in R2's limits, not a quantified adjustment",
+    "addendum_20261023": {
+      "wrong_claim": "coordination-channels is not discoverable to a worker, verified by listing ~/.claude/skills and ~/.codex/skills",
+      "error_class": "an absence claim whose stated search domain was narrower than the real one; Claude resolves skills from four classes",
+      "discovery_classes": {
+        "A": "~/.claude/skills/<name>/SKILL.md: 12",
+        "B": "~/.claude/skills/synced/<uuid>/<name>/SKILL.md server-synced: 26",
+        "C": "~/.claude/plugins: 33",
+        "D": "project-local .claude/skills: absent"
+      },
+      "consequence": "none to the conclusion, which survives a complete search: coordination-channels appears in no class A-D and in neither Codex directory. But the basis is now the enumeration, not two listings",
+      "check_that_would_have_caught_it": "search for SKILL.md across the whole agent configuration root rather than listing the directory one expects",
+      "related_fact": "the listing delivered to the fix-b builder named 13 skills while the discovery surface is 71 definitions; not everything discoverable is listed, so per-dispatch verification must read the worker's own listing. A clean filesystem check is necessary but not sufficient"
+    }
   }
 }
