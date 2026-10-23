@@ -61,12 +61,26 @@
       },
       "rollback": "the displaced directory retained at ~/.codex/skills/.mo-old; one unlink plus one rename, original bytes not destroyed",
       "future_retargets": "atomic with no window: a symlink can atomically replace a symlink, confirmed by test"
-    }
+    },
+    "verification_limits": "the symlinks establish a shared source and the unchanged digests establish unchanged bytes at that source; neither establishes what a worker actually received on a given dispatch. The only worker-context reading taken here is the skills listing from the fix-b transcript. Amendment 5's per-dispatch verification requirement is not discharged by the symlink or the digests"
   },
   "open_not_acted_on": [
     "the other 16 diverged Codex copies are untouched; diverged carries no direction and a Codex copy may be the newer authoritative text, so linking could silently discard it",
     "role-scheduler specifically, because AGENTS.md has Codex agents read it at startup and the contract text differs",
     "which copy a Codex agent loads: needs a Codex transcript showing the resolved path, not collected by this role"
   ],
-  "role_boundary": "this role is excluded from both arms of the prospective correspondence trial and changed the Codex arm's delivery path only on explicit user instruction, with content verified identical first"
+  "role_boundary": "this role is excluded from both arms of the prospective correspondence trial and changed the Codex arm's delivery path only on explicit user instruction, with content verified identical first",
+  "extraction_regression_correction": {
+    "wrong_claim": "skills/coordination-channels/SKILL.md blob 9aaef9bc was committed as carrying the design's objective, responsibilities, four states and today-only capabilities",
+    "error_class": "the skill was compressed from the design's conclusions rather than its corrected text, reinstating four things the design had already fixed",
+    "regressions": [
+      "forwarding to a worker only via an unread packet or boundary handoff, when the design restored the mid-run correction and cites one as the case that contained the collision (CB-01)",
+      "overlap checking anchored to claim time, when the design replaced it with an order-independent invariant (CB-06)",
+      "wait mandated at startup with no timeout, which blocks indefinitely on an empty channel (CB-07)",
+      "an unconditional worker exclusion whose scope and reason sat in an unloaded document (CB-08)"
+    ],
+    "downstream_consequence": "a root following it would have been forbidden the single action that protected R2's read set, and the worker restriction's rationale would have outlived R2. Nothing acted on it between commit and repair",
+    "check_that_would_have_caught_it": "diff an extraction against its source's corrections list item by item, not against its summary; each regression maps to a numbered finding the design already records",
+    "found_by": "outside review of the extracted skill"
+  }
 }

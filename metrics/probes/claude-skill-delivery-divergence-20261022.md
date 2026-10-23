@@ -63,6 +63,14 @@ and the R2 planner recorded when they read those files.
 verified identical before the change, so no agent reads a different byte. Only
 the delivery path changed.
 
+**What that verification does and does not establish.** The symlinks establish a
+**shared source**; the unchanged digests establish **unchanged bytes at that
+source**. Neither establishes **what a worker actually received** on any given
+dispatch — that is read from a worker's own context, and the only such reading
+taken here is the skills listing found in the fix-b builder's transcript.
+Amendment 5's per-dispatch verification requirement stands for the rest and is
+not discharged by either the symlink or the digests.
+
 **Direction of effect: it removes a confound rather than adding one**, the same
 reasoning the pre-registration gives for the Claude-side symlink. Before, the
 two arms could silently come to read different treatment text; now they cannot.
@@ -93,3 +101,31 @@ symlink, so every future retarget of this path has no window at all.
 - This role is excluded from both arms of the prospective correspondence trial
   and changed the Codex arm's delivery path **only** on explicit user
   instruction, with the content verified identical first.
+
+## Correction, 2026-10-23: the extraction regressed its own source
+
+**The wrong claim.** `skills/coordination-channels/SKILL.md` (blob `9aaef9bc`)
+was committed as carrying "the objective, the communication responsibilities,
+the four separated states, and only capabilities that exist today."
+
+**The error class.** The skill was written by compressing the design document
+from its conclusions rather than from its corrected text, so it reinstated four
+things the design had already fixed: forwarding to a worker only via an unread
+packet or a boundary handoff (the design restored the mid-run correction, and
+cites one as the case that contained the collision); overlap checking anchored
+to claim time (the design replaced that with an order-independent invariant,
+because the known collision had the order a claim-time check misses);
+`wait` mandated at startup with no timeout, which blocks indefinitely on an
+empty channel; and an unconditional worker exclusion whose scope and reason
+were left in a document the reader has not loaded.
+
+**The downstream consequence.** Had a root followed it, the skill would have
+forbidden the single action that protected R2's read set, and its own stated
+rationale for the worker restriction would have outlived R2. Nothing acted on
+it between commit and repair.
+
+**The check that would have caught it.** Diff an extraction against the
+corrections list of its source, item by item, rather than against its summary.
+Each of the four maps to a numbered finding the design already records.
+
+**Found by** outside review of the extracted skill, not by this role.

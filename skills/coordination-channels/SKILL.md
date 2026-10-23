@@ -5,11 +5,20 @@ description: Get decision-relevant information to the responsible actor before d
 
 # Coordination channels
 
-**Load this at root or coordinator scope only.** It is not part of any worker's
-read set and must not be referenced from a worker packet, a shared instruction,
-or anything a worker inherits. Workers are reached by their parent directly, not
-by subscribing. (Reason in `docs/codex-chatboard-channels.md` §Extracting a
-skill.)
+**Load this at root or coordinator scope only — a restriction that belongs to
+the R2 measurement campaign and ends when R2 ends.**
+
+The reason, stated here so it is neither taken on faith nor outlived: R2
+compares builders against frozen baselines, and text a worker reads is part of
+what is being measured. Putting this skill into worker context would make it
+treatment-relevant and void that comparison. That means not referencing it from
+a worker packet, a shared instruction, or anything a worker inherits — and not
+placing it in a discovery directory, because workers receive a listing of
+discoverable skills. The restriction is the campaign's, under the campaign's
+authority.
+
+It is **not** a claim that workers should be uninformed. A worker is reached by
+its parent directly, which responsibility 5 covers.
 
 This capability owns **communication responsibility only.** A message grants no
 authority, and neither does a claim or a subscription. The receiver's own
@@ -25,17 +34,27 @@ delivers nothing meets a volume target perfectly and fails this objective.
 
 1. **Say what changed, who is affected, the reference, and what response you
    want.** A message without a named consequence is a log entry.
-2. **Before you claim a scope, look for who depends on it.** Overlaps matter
-   regardless of which declaration came first, so check both directions: work
-   that will write what you read, and work that reads what you will write.
+2. **Make a relevant overlap visible regardless of which declaration came
+   first.** Check when you claim a scope **and** when you bind a dependency on
+   something already claimed. A check done only at claim time misses a
+   dependency bound afterwards — which is the order the one known collision
+   actually had, the writers' claims landing 21 seconds before the reader's
+   dependency. Both directions each time: work that will write what you read,
+   and work that reads what you will write.
 3. **Address the party you need, by name.** Path or topic matching discovers
    likely recipients; it does not close the audience. An undeclared reader
    exists and will not be found for you.
 4. **Where your work depends on someone acting, require evidence of the
    consequence** — not evidence of receipt. See below.
-5. **Absorb what your children do not need.** You are the subscriber; forward
-   into a child only through a packet it has not yet received, or at a boundary
-   handoff.
+5. **You are the subscriber; forward selectively — not late.** Absorb what
+   your children do not need, because a message in a worker's context costs
+   tokens on every one of its later turns. But **when a worker's scope or
+   assumptions have changed, correct it while it runs.** That is what this
+   channel is for, and the one known collision was contained exactly that way:
+   a scope narrowed by direct message to a running builder. Choose the cheapest
+   route that **arrives in time** — a packet not yet read, a boundary handoff,
+   or a direct message mid-run. Cost chooses among routes that work; it does
+   not justify a correction that arrives too late.
 
 ## Four states, kept separate
 
@@ -77,11 +96,17 @@ on — a base commit moving, a shared tool changing), `session:<uuid>` and
 `agent:<name>` for direct address, `aspect:<slug>` for a durable feature area,
 and a run name for one episode.
 
-## Subscribe at startup, re-subscribe after a boundary
+## Recover coordination state at startup and after a boundary
 
-Wait with your selectors at startup and after compaction or a handoff. A handoff
-must carry **your selector set and the replay position for that set** together;
-a position without its scope cannot be replayed safely.
+**Recover the state; do not necessarily block for it.** `wait` with no
+`--timeout-seconds` blocks indefinitely, so an empty channel can stall work you
+could be doing. A bounded `read --since <cursor>` is usually the right move at
+startup and after compaction or a handoff. `wait` suits a session whose next
+step genuinely depends on someone else — and then give it a timeout. Whether to
+block, read once, or leave a wait running beside other work is your judgment.
+
+A handoff must carry **your selector set and the replay position for that set**
+together; a position without its scope cannot be replayed safely.
 
 ## Not available yet
 
