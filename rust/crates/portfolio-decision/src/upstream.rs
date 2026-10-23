@@ -49,7 +49,6 @@ const DECIDED: &str = "decided";
 #[derive(Debug, Clone)]
 pub(crate) struct PacketView {
     /// `(type, target_id)` of each relationship in the packet bytes (PK:27).
-    #[allow(dead_code)] // read by the cross-proposal rules (unit 4)
     pub relationships: Vec<(String, String)>,
 }
 

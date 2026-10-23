@@ -5,6 +5,8 @@
 //! and `decision-readiness` are reached only through their libraries (contract UD5).
 
 pub mod check;
+pub mod cli;
+mod cross;
 pub mod diag;
 pub mod model;
 mod read;

@@ -1,6 +1,7 @@
 //! `check --kind portfolio-decision` (contract 4.2): the parse, then every rule in the order of
 //! contract 4.2. Checking only reads; it writes nothing and mutates no bound file.
 
+use crate::cross;
 use crate::diag::{CheckReport, Failure};
 use crate::structure::{parse_portfolio, validate};
 use crate::upstream::resolve_all;
@@ -16,6 +17,8 @@ pub fn check_portfolio_bytes(bytes: &[u8]) -> Result<CheckReport, Failure> {
         Ok(record) => record,
     };
     let mut errors = validate(&record);
-    errors.extend(resolve_all(&record).errors);
+    let up = resolve_all(&record);
+    errors.extend(up.errors);
+    errors.extend(cross::check(&record, &up.packets));
     Ok(CheckReport::new(KIND_PORTFOLIO, errors, Vec::new()))
 }
