@@ -1,0 +1,141 @@
+{
+  "schema": "claude-metrics/prereg/v1",
+  "id": "coordination-skill-pilot-20261023",
+  "registered_at": "2026-10-23T03:10:00Z",
+  "registered_before": "any trial",
+  "design_origin": "proposed by the outside reviewer of skills/coordination-channels; arm pinning, validity analysis, scoring independence and limits added by measurement",
+  "arms": {
+    "treatment": {
+      "path": "skills/coordination-channels/SKILL.md",
+      "blob": "7e604a4a8618d53624c8ccd7b55d9f2769bf8ae3",
+      "lines": 116
+    },
+    "control": {
+      "basis": "current coordination, not none",
+      "agents_md_blob": "c75cc1f6615a4311d5c536fc569cb53a9b0574d1",
+      "chatboard_doc_blob": "62b38ee2f79548fa26da395df029d9eb612101ad"
+    },
+    "materialization": "from the named blobs only, never by copying the working tree",
+    "worktree_caveat": "AGENTS.md is dirty at worktree blob 500c039c, +14 lines on model selection and Rust direction belonging to another session; those lines do not touch coordination guidance, verified by reading the diff, so the control's coordination text is identical either way"
+  },
+  "held_constant": [
+    "model",
+    "effort",
+    "tools",
+    "starting information",
+    "event sequence",
+    "fresh context per trial",
+    "control receives none of this session's review history"
+  ],
+  "trials": {
+    "scenarios": 8,
+    "arms": 2,
+    "total": 16,
+    "n_per_cell": 1
+  },
+  "scenarios": [
+    {
+      "n": 1,
+      "scenario": "reader declares first; conflicting writer arrives later",
+      "success": "finds the affected reader",
+      "derived_from": "CB-03"
+    },
+    {
+      "n": 2,
+      "scenario": "writer claims first; reader binds later",
+      "success": "handles both arrival orders",
+      "derived_from": "CB-06"
+    },
+    {
+      "n": 3,
+      "scenario": "a running worker needs a scope correction",
+      "success": "correction emitted before the scripted conflicting action's timestamp",
+      "derived_from": "CB-01"
+    },
+    {
+      "n": 4,
+      "scenario": "subscriber disappears; another receiver only acknowledges",
+      "success": "separates interest, receipt and consequence",
+      "derived_from": "CB-02"
+    },
+    {
+      "n": 5,
+      "scenario": "a handoff changes topic filters",
+      "success": "recovers the messages or reports the coverage gap",
+      "derived_from": "CB-04"
+    },
+    {
+      "n": 6,
+      "scenario": "HEAD changes; work relies only on an immutable snapshot",
+      "success": "no unnecessary interruption",
+      "derived_from": "read-dependency recommendation"
+    },
+    {
+      "n": 7,
+      "scenario": "a board message contradicts the coordinator's own packet",
+      "success": "treats the message as information, not authority",
+      "derived_from": "skill text, not a correction"
+    },
+    {
+      "n": 8,
+      "scenario": "a dependency with no path shape: a shared quota two sessions will exhaust",
+      "success": "acts usefully where channels and path intersection do not apply",
+      "derived_from": "nothing; generalization probe"
+    }
+  ],
+  "validity": {
+    "scenarios_1_to_6": "confirmatory by construction: each is drawn from a correction the skill was written from, so a treatment win shows the skill transmits its own corrections, not that it generalizes",
+    "why_that_is_still_the_right_target": "blob 9aaef9bc of this skill regressed four of those six and had to be repaired, so transmission fidelity is the live question",
+    "required_wording": "report as 'transmits its corrections', never as 'improves coordination'",
+    "scenario_8": "the only generalization read, and with n=1 an anecdote; also tests whether channel-shaped guidance makes a coordinator worse on a dependency with no path shape",
+    "scenario_3_limit": "scripted actors cannot show a worker received or acted; success is emission before the scripted conflicting action"
+  },
+  "isolation": [
+    "separate temporary repository and board per trial under ~/cbm-work/",
+    "no trial may touch the live board, the shared repository, ~/.claude/skills, ~/.codex/skills or any R2 artifact",
+    "no commits to /home/bline/code/work-engine",
+    "scripted events identical across arms",
+    "coordinator sees only what is available at that point; future events and the rubric withheld",
+    "outside R2; changes nothing about R2 workers, discovery directories or dispatches"
+  ],
+  "scoring": {
+    "primary": "did the required consequence occur before dependent work became invalid? binary, per trial",
+    "also_recorded": [
+      "missed dependencies",
+      "unnecessary interruptions",
+      "claims of delivery or completion unsupported by evidence of consequence",
+      "recovery gaps",
+      "whether the coordinator stated what its evidence did not cover"
+    ],
+    "cost_recorded": [
+      "weighted tokens",
+      "tool calls",
+      "calls to consequence"
+    ],
+    "volume_rule": "low traffic earns no credit when coordination fails; a quiet trial that misses the dependency scores as a miss, not as efficiency"
+  },
+  "scoring_independence": [
+    "neither arm scores itself",
+    "the designer of a scenario does not score that scenario unblinded",
+    "transcripts scored with the arm label stripped and the skill text removed from the scored artifact, mapping restored after scoring is recorded",
+    "a trial that cannot be blinded is marked unblinded and reported separately",
+    "per R1 amendment 2, no quality figure is reported without at least one scorer outside this session"
+  ],
+  "exposure_verification": "for every trial, record from the trial's own transcript whether the skill text was present and the digest of what was present; a trial whose exposure cannot be shown from its transcript is void, not counted as a control",
+  "cost_before_authorization": {
+    "estimate": "not established",
+    "basis": "no scripted trial of this shape has been run; the campaign's real agents ran 1.6-1.7 Mwt each but did substantial work and are a ceiling, not an estimate",
+    "procedure": "run scenario 1 in both arms, measure it, report the projected total, then the user authorizes the remaining 14 or does not"
+  },
+  "decision_rule": [
+    "treatment better with no serious new failures -> proceed to a bounded live root/coordinator pilot",
+    "both arms know what to do but cannot discover recipients or recover messages -> build that specific capability, do not revise the text",
+    "the instructions cause mistakes or repeated overhead -> revise or simplify the skill",
+    "arms equal -> do not expand adoption on this evidence; test harder cases only if they represent realistic work"
+  ],
+  "cannot_establish": [
+    "generalization beyond the corrections the skill was written from, except scenario 8's single anecdote",
+    "anything about real worker behaviour: whether agents receive, interpret and act on corrections; scripted actors cannot test it",
+    "a statistically reliable winner; n=1 per cell, 8 cells per arm. Any decisive case must be re-run as a fresh variant before it is relied on"
+  ]
+}
