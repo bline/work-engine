@@ -242,6 +242,11 @@ addProjector("basic", P, snap());
 addProjector("bad profile", profileText({ rounding: "ceil" }), snap());
 addProjector("bad profile beats bad snapshot", profileText({ schemaVersion: 2 }), "null");
 for (const [name, extra] of exoticExtra) addProjector(`canonical: ${name}`, P, snap({ extra }));
+// Decimal ties found by an outside review: equally short candidates that Rust's and ECMAScript's
+// shortest formatting resolve differently (the original Rust formatter produced different
+// revisions from JS for both).
+addProjector("canonical: decimal tie 1000000000000000.25", P, snap({ extra: '"extra":1000000000000000.25' }));
+addProjector("canonical: decimal tie 771558860699787.2", P, snap({ extra: '"extra":771558860699787.2' }));
 addProjector("canonical: all exotic extras together", P, snap({ extra: exoticExtra.map(([, extra]) => extra).map((e, i) => `"x${i}":{${e}}`).join(",") }));
 addProjector("extra keys on snapshot and usage", P,
   `{"schemaVersion":1,"threadId":"thread-1","zz":[1],"aa":{"b":2},"latestTokenUsage":${usageText({ extra: '"q":1,"details2":{"p":1}' })}}`);
@@ -661,10 +666,71 @@ const legacy = [
 ];
 for (const text of legacy) addTimestamp(text);
 
+// ---------- number formatting differential ----------
+// `numberCases` is a differential sample of f64 values outside the hand-written corpus: each
+// entry is [bits, text] where `bits` is the IEEE-754 bit pattern as 16 hex digits and `text` is
+// JSON.stringify of that double in this Node (the ECMAScript Number::toString result). The Rust
+// test rebuilds the double from `bits` and requires the identical text. The sample has three parts:
+// fixed edge values, NUMBER_UNIFORM_COUNT finite doubles with uniformly random bit patterns, and
+// NUMBER_TIE_COUNT doubles with a binary exponent in [2^44, 2^53) and random mantissa, where
+// equally short decimal candidates (the tie that distinguishes Rust's and ECMAScript's shortest
+// digit choice) are common. It is a deterministic sample, not a proof over all of f64.
+// The sampler is splitmix64 over BigInt, independent of the corpus PRNG above.
+const NUMBER_SEED = 0x2f1d_c0de_5eedn;
+const NUMBER_UNIFORM_COUNT = 20000;
+const NUMBER_TIE_COUNT = 5000;
+function splitmix64(seed) {
+  let state = seed & 0xffffffffffffffffn;
+  return () => {
+    state = (state + 0x9e3779b97f4a7c15n) & 0xffffffffffffffffn;
+    let z = state;
+    z = ((z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n) & 0xffffffffffffffffn;
+    z = ((z ^ (z >> 27n)) * 0x94d049bb133111ebn) & 0xffffffffffffffffn;
+    return z ^ (z >> 31n);
+  };
+}
+const numberBuffer = new DataView(new ArrayBuffer(8));
+function numberCase(bits) {
+  numberBuffer.setBigUint64(0, bits);
+  const value = numberBuffer.getFloat64(0);
+  if (!Number.isFinite(value)) return null;
+  return [bits.toString(16).padStart(16, "0"), JSON.stringify(value)];
+}
+const numberCases = [];
+const numberFloats = (values) => {
+  for (const value of values) {
+    numberBuffer.setFloat64(0, value);
+    numberCases.push(numberCase(numberBuffer.getBigUint64(0)));
+  }
+};
+numberFloats([
+  0, -0, 1, -1, 0.1, 1.5, 123.456, 1e20, 1e21, 1e22, 1e23, 1.5e-7, 1e-6, 1e-7, 123456789012345680000, 1.7976931348623157e308,
+  5e-324, 2.2250738585072014e-308, 9007199254740991, 9007199254740992, 9007199254740993, -9007199254740993,
+  1000000000000000.25, 771558860699787.2, 4503599627370497.5, 0.000001234, 1.2345e-7,
+]);
+{
+  const next = splitmix64(NUMBER_SEED);
+  let uniform = 0;
+  while (uniform < NUMBER_UNIFORM_COUNT) {
+    const entry = numberCase(next());
+    if (entry) {
+      numberCases.push(entry);
+      uniform += 1;
+    }
+  }
+  for (let tie = 0; tie < NUMBER_TIE_COUNT; tie += 1) {
+    const raw = next();
+    const sign = raw >> 63n;
+    const exponent = BigInt(1023 + 44) + (((raw >> 52n) & 0x7ffn) % 9n);
+    const mantissa = raw & 0xfffffffffffffn;
+    numberCases.push(numberCase((sign << 63n) | (exponent << 52n) | mantissa));
+  }
+}
+
 // ---------- output ----------
 const caseCount = policyCases.length + profileCases.length + projectorCases.length + deviationCases.length
   + sweepRows.length + controllerCases.length + controllerCases.reduce((n, c) => n + c.steps.length, 0)
-  + pipelineCases.length + timestampCases.length;
+  + pipelineCases.length + timestampCases.length + numberCases.length;
 const fixture = {
   header: {
     generator: "rust/crates/context-pressure/tests/golden/generate.mjs",
@@ -682,7 +748,9 @@ const fixture = {
       controllerSteps: controllerCases.reduce((n, c) => n + c.steps.length, 0),
       pipelines: pipelineCases.length,
       timestamps: timestampCases.length,
+      numbers: numberCases.length,
     },
+    numberSample: { seed: `0x${NUMBER_SEED.toString(16)}`, uniform: NUMBER_UNIFORM_COUNT, tieStratum: NUMBER_TIE_COUNT },
   },
   sweepTemplate: SWEEP_TEMPLATE,
   policyCases,
@@ -693,6 +761,7 @@ const fixture = {
   controllerCases,
   pipelineCases,
   timestampCases,
+  numberCases,
 };
 writeFileSync(join(here, "vectors.json"), `${JSON.stringify(fixture, null, 0)}\n`);
 console.log(JSON.stringify(fixture.header));

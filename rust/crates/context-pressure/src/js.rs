@@ -83,48 +83,15 @@ fn write_quoted(text: &str, out: &mut String) {
 }
 
 /// ES `Number::toString(10)` as `JSON.stringify` applies it; non-finite becomes `null`.
+///
+/// Digit selection, the choice between equally short candidates, and the exponent thresholds
+/// are delegated to `ryu-js`, which implements the ECMAScript algorithm. Rust's own shortest
+/// formatting breaks ties between equally short candidates differently, so it is not used.
 pub(crate) fn js_number(value: f64) -> String {
     if !value.is_finite() {
         return "null".to_owned();
     }
-    if value == 0.0 {
-        return "0".to_owned();
-    }
-    let negative = value < 0.0;
-    // `{:e}` yields the shortest round-trip digits as `d.ddde<exp>`.
-    let scientific = format!("{:e}", value.abs());
-    let (mantissa, exponent) = scientific.split_once('e').unwrap_or((&scientific, "0"));
-    let digits: String = mantissa.chars().filter(|c| *c != '.').collect();
-    let exponent: i32 = exponent.parse().unwrap_or(0);
-    let k = digits.len() as i32;
-    let n = exponent + 1;
-    let mut out = String::new();
-    if negative {
-        out.push('-');
-    }
-    if k <= n && n <= 21 {
-        out.push_str(&digits);
-        out.extend(std::iter::repeat_n('0', (n - k) as usize));
-    } else if 0 < n && n <= 21 {
-        out.push_str(&digits[..n as usize]);
-        out.push('.');
-        out.push_str(&digits[n as usize..]);
-    } else if -6 < n && n <= 0 {
-        out.push_str("0.");
-        out.extend(std::iter::repeat_n('0', (-n) as usize));
-        out.push_str(&digits);
-    } else {
-        let e = n - 1;
-        out.push_str(&digits[..1]);
-        if k > 1 {
-            out.push('.');
-            out.push_str(&digits[1..]);
-        }
-        out.push('e');
-        out.push(if e < 0 { '-' } else { '+' });
-        let _ = write!(out, "{}", e.abs());
-    }
-    out
+    ryu_js::Buffer::new().format_finite(value).to_owned()
 }
 
 /// `Number.isSafeInteger` on a parsed JSON number.
@@ -175,5 +142,58 @@ mod tests {
         assert_eq!(js_number(0.000001), "0.000001");
         assert_eq!(js_number(123.456), "123.456");
         assert_eq!(js_number(-12345.5), "-12345.5");
+    }
+
+    /// Differential check against Node's `JSON.stringify` over the generator's sample of f64
+    /// bit patterns (`numberCases` in `tests/golden/vectors.json`; seed, stratum sizes and edge
+    /// values are documented in `tests/golden/generate.mjs`). Each entry is
+    /// `[bits as 16 hex digits, expected text]`. This is a deterministic sample, not a proof over
+    /// every f64.
+    #[test]
+    fn number_formatting_matches_node_sample() {
+        let fixture: Value =
+            serde_json::from_str(include_str!("../tests/golden/vectors.json")).expect("fixture");
+        let cases = fixture["numberCases"].as_array().expect("numberCases");
+        let declared = &fixture["header"]["numberSample"];
+        let edge_count = cases.len() as u64
+            - declared["uniform"].as_u64().expect("uniform count")
+            - declared["tieStratum"].as_u64().expect("tie count");
+        // The sample must keep its declared composition: edge values, uniform and tie strata.
+        assert!(edge_count >= 20, "edge values missing: {edge_count}");
+        assert!(cases.len() >= 25_000, "sample shrank to {}", cases.len());
+        let mut mismatches = Vec::new();
+        for case in cases {
+            let bits = u64::from_str_radix(case[0].as_str().expect("bits"), 16).expect("hex bits");
+            let expected = case[1].as_str().expect("text");
+            let actual = js_number(f64::from_bits(bits));
+            if actual != expected {
+                mismatches.push(format!("{bits:016x}: node {expected} rust {actual}"));
+            }
+        }
+        assert!(
+            mismatches.is_empty(),
+            "{} of {} sampled doubles differ from Node:\n{}",
+            mismatches.len(),
+            cases.len(),
+            mismatches
+                .iter()
+                .take(25)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+    }
+
+    #[test]
+    fn decimal_ties_follow_ecmascript() {
+        // Equally short candidates: Rust's shortest formatting picks ...3 for the first value;
+        // ECMAScript Number::toString picks ...2.
+        let tie: f64 = "1000000000000000.25".parse().expect("f64");
+        assert_eq!(js_number(tie), "1000000000000000.2");
+        let tie: f64 = "771558860699787.2".parse().expect("f64");
+        assert_eq!(js_number(tie), "771558860699787.2");
+        assert_eq!(js_number(-0.0), "0");
+        assert_eq!(js_number(f64::NAN), "null");
+        assert_eq!(js_number(f64::INFINITY), "null");
     }
 }

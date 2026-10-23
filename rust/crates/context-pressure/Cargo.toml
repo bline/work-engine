@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.92"
 publish = false
-description = "Deterministic context-pressure evidence: token-usage projector and hysteresis controller, hash-parity ports of the JS modules. Evidence only; no lifecycle authority."
+description = "Deterministic context-pressure evidence: token-usage projector and hysteresis controller, ports of the JS modules whose revisions are checked against JS-generated vectors. Evidence only; no lifecycle authority."
 
 [lib]
 name = "context_pressure"
@@ -14,6 +14,7 @@ path = "src/lib.rs"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"
+ryu-js = "=1.0.3"
 thiserror = "=2.0.21"
 
 [workspace]

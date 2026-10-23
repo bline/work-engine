@@ -104,6 +104,7 @@ fn fixture_header_is_consistent() {
         ("controllerSteps", steps),
         ("pipelines", count("pipelineCases")),
         ("timestamps", count("timestampCases")),
+        ("numbers", count("numberCases")),
     ];
     let mut total = 0;
     for (name, actual) in expected {
