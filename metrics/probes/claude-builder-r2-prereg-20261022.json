@@ -185,7 +185,8 @@
     "reviewers are inside the orchestration being measured; the only outside check is a direct gate re-run",
     "instrument change: the symlink removes a confound but is itself a difference between R1 and R2",
     "the measurement role shares a branch with the subject; R1's integration base moved because this role committed mid-decision. For R2 hold measurement commits until integration lands, or use a separate branch",
-    "instrument change (pending): fix-b's EXT-003 repair makes R2's integration gate strictly stricter than R1's, biasing any R1-vs-R2 integration comparison against the treatment. See amendment_4.gap_1_instrument_class"
+    "instrument change (pending): fix-b's EXT-003 repair makes R2's integration gate strictly stricter than R1's, biasing any R1-vs-R2 integration comparison against the treatment. See amendment_4.gap_1_instrument_class",
+    "covariate: skills/coordination-channels (5793fda3) adds root-side coordination with zero worker-read-set delta, but its effect on dispatch behaviour, cost and handoffs is not established and is recorded as uncertain, not zero. See amendment_5"
   ],
   "out_of_scope": [
     "context trigger changes (R3)",
@@ -400,5 +401,29 @@
       "the 237 of 999,566 sampled finite f64 incidence figure quoted in fix-a is the outside reviewer's; the EXT-001 mechanism was independently confirmed, the incidence was not"
     ],
     "effect_on_r2_status": "R2 stays unfrozen on the user-approved subject; added-line figures remain unverified; if fix-b lands inside the overlap the planner's freeze-check.json must be recomputed before any builder is scored against the size criterion"
+  },
+  "amendment_5": {
+    "amended_at": "2026-10-23T02:10:00Z",
+    "classified_before_use": true,
+    "subject": "skills/coordination-channels/SKILL.md, a root- and coordinator-scoped coordination skill",
+    "commit": "5793fda3",
+    "classification": "covariate",
+    "classification_basis": "amendment 1's standing rule: changes confined to root, coordinator or supervisor procedure",
+    "byte_delta_in_worker_read_set": {
+      "total": 0,
+      "basis": "the skill is not referenced from skills/manual-orchestration/ at all, and the four worker-read files are byte-identical before and after",
+      "worker_read_files": {
+        "skills/manual-orchestration/SKILL.md": "86ec40bc unchanged",
+        "skills/manual-orchestration/references/worker.md": "802ac8d8 unchanged",
+        "skills/manual-orchestration/references/call-cost.md": "af4d3bb9 unchanged",
+        "skills/manual-orchestration/references/anthropic-host.md": "84cfc80b unchanged"
+      },
+      "cross_check": "the same digests fix-a and the R2 planner recorded when they read those files"
+    },
+    "byte_delta_outside_it": "one new file, 91 lines, loaded only by a root or coordinator naming its path",
+    "worker_facing_adoption": "deferred until R2 ends; stated in the skill's own first paragraph. Referencing it from a worker packet, a shared instruction or inherited context would make it treatment-relevant and pause R2 or void the B1-B6 comparison. Verified per dispatch, not once",
+    "bias_direction": "not established",
+    "bias_rationale": "zero worker-text delta does not imply zero experimental effect: root-side coordination can change dispatch order, packet content, how early a scope collision is caught and how often a worker is corrected mid-run, hence cost, handoffs and outcomes. Plausibly favourable to the treatment arm, possibly the reverse via more mid-run corrections. No measurement separates these, so no sign is claimed",
+    "what_would_settle_it": "R2 slices dispatched with and without root-side channel use; this campaign is not sized to provide that. Until then it is a named uncertainty in R2's limits, not a quantified adjustment"
   }
 }

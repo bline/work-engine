@@ -357,3 +357,41 @@ test path, or land fix-b first and count at post-fix HEAD.
 qualification figures above are the scout's and remain `unverified` for added
 lines; if fix-b lands inside the overlap, the planner's `freeze-check.json` must
 be recomputed before any builder is scored against the size criterion.
+
+## Amendment 5, 2026-10-23: `skills/coordination-channels` is a covariate
+
+**Classified under amendment 1's standing rule before use.** The skill is
+root- and coordinator-scoped procedure, so it is a **covariate**, not a
+treatment change. Recorded with the commit, the byte delta inside the worker
+read set, and the bias direction.
+
+- **Commit** `5793fda3`, adding `skills/coordination-channels/SKILL.md` (91
+  lines) as a standalone skill.
+- **Byte delta inside the worker read set: zero, by construction.** The skill is
+  not referenced from `skills/manual-orchestration/` at all —
+  `grep -rn coordination-channels skills/manual-orchestration/` returns nothing
+  — and the four worker-read files are byte-identical before and after:
+  `SKILL.md` 86ec40bc…, `worker.md` 802ac8d8…, `call-cost.md` af4d3bb9…,
+  `anthropic-host.md` 84cfc80b…. These are the same digests fix-a and the R2
+  planner recorded when they read those files.
+- **Byte delta outside it:** one new file, 91 lines, loaded only by a root or
+  coordinator that names its path.
+- **Worker-facing adoption is deferred until R2 ends.** The skill's own first
+  paragraph says so. Referencing it from a worker packet, a shared instruction
+  or anything a worker inherits would make it treatment-relevant and pause R2 or
+  void the comparison with B1–B6. Verifying that is a precondition of every R2
+  dispatch, not a one-time check.
+
+**Bias direction: `not established`, and recorded as uncertain rather than
+rounded to zero.** Zero worker-text delta does **not** imply zero experimental
+effect. Better coordination at the root can change dispatch order, packet
+content, how early a scope collision is caught, how often a worker is corrected
+mid-run, and therefore cost, handoffs and outcomes — all of which R2 measures.
+The direction is plausibly favourable to the treatment arm (fewer wasted
+dispatches) but could run the other way (more mid-run corrections raising worker
+context). No measurement separates these, so no sign is claimed.
+
+**What would settle it.** R2 slices dispatched with and without root-side
+channel use, which this campaign is not sized to provide. Until then the
+covariate is a named uncertainty in R2's limits section, not a quantified
+adjustment.
