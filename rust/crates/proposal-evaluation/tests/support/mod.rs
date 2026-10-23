@@ -123,7 +123,8 @@ pub fn valid_set(packet_path: &str, packet_sha: &str, proj_path: &str, proj_sha:
         "authority": {
             "readiness_judgment_issued": false,
             "priority_authorized": false,
-            "acceptance_authorized": false
+            "acceptance_authorized": false,
+            "implementation_authorized": false
         }
     })
 }

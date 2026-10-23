@@ -335,7 +335,24 @@ fn rule_cases() -> Vec<(&'static str, Mutation, &'static str, &'static str)> {
             "authority_asserted",
             "authority.acceptance_authorized",
         ),
+        (
+            "implementation asserted",
+            |v| put(v, "/authority/implementation_authorized", json!(true)),
+            "authority_asserted",
+            "authority.implementation_authorized",
+        ),
     ]
+}
+
+#[test]
+fn authority_block_needs_all_four_members() {
+    let mut doc = dummy_set();
+    remove(&mut doc, "/authority", "implementation_authorized");
+    let found = violations(&doc);
+    assert!(
+        found.iter().any(|(c, _)| c == "schema"),
+        "missing member accepted: {found:?}"
+    );
 }
 
 #[test]

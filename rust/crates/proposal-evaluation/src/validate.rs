@@ -425,6 +425,7 @@ pub fn validate_estimate_set(s: &EstimateSet) -> Vec<ErrorItem> {
         ("readiness_judgment_issued", a.readiness_judgment_issued),
         ("priority_authorized", a.priority_authorized),
         ("acceptance_authorized", a.acceptance_authorized),
+        ("implementation_authorized", a.implementation_authorized),
     ] {
         if set {
             out.push(err(

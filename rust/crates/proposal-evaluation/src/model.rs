@@ -50,6 +50,8 @@ pub struct Authority {
     pub readiness_judgment_issued: bool,
     pub priority_authorized: bool,
     pub acceptance_authorized: bool,
+    /// Added by contract erratum E1-1 (EI:129, EV:27).
+    pub implementation_authorized: bool,
 }
 
 /// Which way is better on a measure's scale (EV:15).
