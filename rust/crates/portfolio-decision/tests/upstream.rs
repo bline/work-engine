@@ -130,6 +130,29 @@ fn supersession_must_name_the_previous_revision_of_the_same_portfolio() {
 }
 
 #[test]
+fn supersession_is_checked_one_hop_only() {
+    // The declared limit (crate docs): the target is hashed, parsed and compared on id and
+    // revision; the chain behind it is not walked. A revision-2 record whose own `supersedes`
+    // is dangling is therefore accepted as the target of a revision-3 record. Checking that
+    // record directly still fails, which is how the chain is established.
+    let w = world("supersession-one-hop", false);
+    let mut rev2 = w.doc.clone();
+    set(&mut rev2, "revision", json!(2));
+    set(
+        &mut rev2,
+        "supersedes",
+        file_ref(&w.dir.join("rev-1-gone.json"), SHA_A),
+    );
+    let rev2_file = w.dir.join("rev-2.json");
+    let sha = write_json(&rev2_file, &rev2);
+    let mut rev3 = w.doc.clone();
+    set(&mut rev3, "revision", json!(3));
+    set(&mut rev3, "supersedes", file_ref(&rev2_file, &sha));
+    assert_eq!(run(&rev3), Vec::<(String, String)>::new());
+    expect(&run(&rev2), "pointer_unresolved", "supersedes");
+}
+
+#[test]
 fn a_comparison_and_an_assessment_are_not_interchangeable() {
     let w = world("class-swap", false);
     // A comparison file in the readiness basis.

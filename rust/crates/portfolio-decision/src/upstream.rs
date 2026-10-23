@@ -170,6 +170,9 @@ pub(crate) fn resolve_all(p: &PortfolioDecision) -> Upstream {
     up
 }
 
+/// One hop only (declared in the crate docs): the target is hashed, parsed against the closed
+/// schema, and compared on `portfolio_id` and `revision`. It is not validated and its own
+/// `supersedes` is not followed, so the chain behind it is unchecked.
 fn supersedes(p: &PortfolioDecision, out: &mut Vec<ErrorItem>) {
     let Some(s) = &p.supersedes else { return };
     let Some(bytes) = resolve(out, &s.path, &s.sha256, "supersedes") else {
