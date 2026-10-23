@@ -193,5 +193,15 @@
       ],
       "trial_limits": "a per-trial weighted-token ceiling and a maximum emitted-action count, both chosen before launch and registered with the calibration result; a trial hitting a limit is recorded as limit_reached, not as a coordination failure"
     }
+  },
+  "status": {
+    "state": "registered_deferred_unrun",
+    "as_of": "2026-10-23",
+    "reason": "outside-review advice: dogfood the skill in ordinary root/coordinator work first; it answers the operational question with far less setup",
+    "trials_run": 0,
+    "fixtures_built": 0,
+    "harness_exists": false,
+    "preserved_why": "so a failure found while dogfooding can become a focused regression case without building all eight fixtures first",
+    "citation_rule": "nothing in this registration may be cited as a result"
   }
 }

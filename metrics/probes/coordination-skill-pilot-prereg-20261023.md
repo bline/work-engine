@@ -1,5 +1,13 @@
 # Pre-registration: scripted coordination-skill comparison
 
+> **STATUS: REGISTERED, DEFERRED, UNRUN.** 2026-10-23. On outside-review advice
+> the scripted pilot is deferred in favour of dogfooding the skill in ordinary
+> root/coordinator work, which answers the operational question with far less
+> setup. **No trial has run; no fixture has been built; no harness exists.** The
+> registration and the eight frozen fixtures are preserved as-is so that any
+> failure found while dogfooding can become a focused regression case without
+> building all eight first. Nothing in this file may be cited as a result.
+
 Registered **before any trial runs**. Design proposed by the outside reviewer of
 `skills/coordination-channels`; this registration adds the arm pinning, the
 validity analysis, the scoring independence rule, and the limits. Nothing here

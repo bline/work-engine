@@ -223,3 +223,47 @@ what the record claims to know.
 exclude: per-commit diffs over the chain, worktree state at head, and a
 transcript search for write-capable calls against those paths — each reported
 with its own coverage limit. All three were run for this correction.
+
+## Update, 2026-10-23: outcome A completed, and both repairs reviewed
+
+Three things recorded as `not established` at scoring time have resolved. They
+were found by reading the run record, not by notification — which is the gap the
+coordination work is about.
+
+**Outcome A is complete, correcting this score.** The score recorded the R2
+planner's successor as `not established` and outcome A as `incomplete`. A
+successor **was** launched and continued: agent `a3651b5029fc6574d` (Opus),
+"R2 planner successor", which wrote `packet-E1-v1.md`, `packet-E2-v1.md` and
+`packet-P1-v1.md` at 20:03 plus `freeze-check.json` at 20:02 — the deliverables
+the predecessor's handoff listed as outstanding. **Outcome A: 1 instance**, a
+parent-mediated boundary at 175,123 with a successor completing the predecessor's
+named next actions. This cohort still contributes **zero** builder outcome-A
+instances; the instance is the planner's.
+
+**R2-M-002 was acted on.** `freeze-check.json` carries a `fix_b` section naming
+the concurrent writer's head `2161afd7` and its four declared changed paths, so
+the planner recorded the overlap rather than counting blind.
+
+**Both repairs were reviewed `ready`, and that is reviewer-relative.**
+fix-a (reviewer `acc178b937faab284`): `ready`, no P1 or P2, two P3s. fix-b
+(reviewer `aac7e091fa9813e87`): `ready`, no P1 or P2, three P3s. Both reviewers
+are Opus subagents **inside** the orchestration being measured.
+
+R1 amendment 2 established that in-orchestration review at these tiers finds
+P3-class issues reliably and provenance- and contract-class issues unreliably —
+the outside reader found the P1 these same tiers had passed. So the correct
+statement is: **the repairs are reviewed `ready` by in-orchestration tier-1, and
+no outside reader has reviewed them.** Correctness remains `not established`.
+
+**One independent corroboration is worth separating out**, because it is a
+direct gate re-run rather than a judgment: fix-a's reviewer ran number-format
+probes **outside the builder's own sample** and found **0 mismatches in the
+fixed crate against 918 + 64 in the base**. That is independent of my own
+re-run of the builder's suite and of the builder's 267→0 figure.
+
+**A P3 landed on this role's own record.** fix-a's P3-2 found that
+`claude-p1-port-cohort-20261022.{md,json}` described the port's subject as
+parity "proven" while the same files record that the general byte-parity claim
+is false — the record contradicted itself. Annotated in both files rather than
+rewritten, so the registered wording stays visible with its status attached.
+

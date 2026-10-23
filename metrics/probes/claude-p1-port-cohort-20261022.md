@@ -26,8 +26,12 @@ it as an observational cohort labelled **not R2**, leave R2 frozen.
 ## Subject and builder
 
 `token-usage-pressure-projection.mjs` (112) + `context-pressure-controller.mjs`
-(257) → `rust/crates/context-pressure`, evidence producer only, with byte-identical
-sha256 revisions proven by JS-generated golden vectors. Builder
+(257) → `rust/crates/context-pressure`, evidence producer only, with sha256
+revisions **claimed at registration** to be byte-identical to the JS, proven by
+JS-generated golden vectors. **That claim did not survive outside review** — see
+the verdict below: parity holds over the corpus only. The description is kept as
+registered, with this pointer, so the subject line cannot be quoted as a general
+hash-compatibility contract. Builder
 `ad67ff1b4318eee35`, Sonnet 5.5 high, own worktree, base `6f4d08a1`, trigger
 150,000.
 

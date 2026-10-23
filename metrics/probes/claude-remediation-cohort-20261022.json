@@ -157,6 +157,37 @@
         "anything about future writes"
       ],
       "found_by": "outside review of docs/codex-chatboard-channels.md"
+    },
+    "update_20261023": {
+      "found_by": "reading the run record, not by notification",
+      "outcome_a_correction": {
+        "was": "successor_launched: not established; outcome_a_status: incomplete",
+        "now": "complete: agent a3651b5029fc6574d (Opus, 'R2 planner successor') wrote packet-E1/E2/P1-v1.md at 20:03 and freeze-check.json at 20:02, the deliverables the predecessor's handoff listed as outstanding",
+        "instances": 1,
+        "attribution": "the planner's boundary at 175,123, parent-mediated; this cohort still contributes zero builder outcome-A instances"
+      },
+      "r2_m_002_acted_on": "freeze-check.json carries a fix_b section naming the concurrent writer's head 2161afd7 and its four declared changed paths",
+      "reviews": {
+        "fix_a": {
+          "reviewer": "acc178b937faab284",
+          "assessment": "ready",
+          "p1": 0,
+          "p2": 0,
+          "p3": 2
+        },
+        "fix_b": {
+          "reviewer": "aac7e091fa9813e87",
+          "assessment": "ready",
+          "p1": 0,
+          "p2": 0,
+          "p3": 3
+        },
+        "qualification": "both reviewers are Opus subagents inside the orchestration being measured; per R1 amendment 2 these tiers find P3 reliably and provenance/contract unreliably, and an outside reader found the P1 they had passed",
+        "correct_statement": "the repairs are reviewed ready by in-orchestration tier-1 and no outside reader has reviewed them",
+        "correctness_of_repairs": "not established"
+      },
+      "independent_corroboration": "fix-a's reviewer ran number-format probes outside the builder's own sample: 0 mismatches in the fixed crate against 918 + 64 in the base. A direct gate re-run, independent of my re-run of the builder's suite and of the builder's 267->0 figure",
+      "p3_against_this_role": "fix-a P3-2: claude-p1-port-cohort-20261022.{md,json} described the port's subject as parity 'proven' while the same files record the general claim as false. Annotated in both files, registered wording preserved"
     }
   }
 }
