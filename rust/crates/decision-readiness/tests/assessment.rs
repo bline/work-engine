@@ -849,13 +849,13 @@ fn a_cited_path_that_is_not_a_plain_file_is_rejected_without_blocking() {
     assert_eq!(check("path-copy-link", &link).code, 0);
 }
 
-/// The citation is read through at most one byte more than the supplied `--evaluation` holds, so a
-/// cited file is classified without being read whole. The rule at the cap: a cited file of exactly
-/// the supplied length with the same bytes is accepted; one byte longer (the cap itself, whose
-/// extra byte is read and differs from nothing to compare) is `evaluation_path_mismatch`, as is
-/// one byte shorter; and a file far larger than the cap is `evaluation_path_mismatch` without
-/// being read, which the last case shows by running the check with a small address-space limit:
-/// reading a 4 GiB cited file whole would exhaust it and end the process by a signal.
+/// The citation is read through at most one byte more than the supplied `--evaluation` holds
+/// (`supplied.len() + 1`), so a cited file is classified without being read whole. The rule at the
+/// cap: a cited file with exactly the supplied bytes is accepted; one byte longer (the cap
+/// itself, whose extra byte is read and makes the bytes differ) is `evaluation_path_mismatch`, as
+/// is one byte shorter; and a file far larger than the cap is a mismatch too. The last case runs
+/// the check under a 1 GiB address-space limit on a sparse 4 GiB file: reading it whole would
+/// exhaust the limit and end the process by a signal instead of exit 1.
 #[test]
 fn the_citation_read_is_capped_one_byte_past_the_supplied_length() {
     use std::process::Command;
