@@ -16,7 +16,8 @@
       "chatboard_doc_blob": "62b38ee2f79548fa26da395df029d9eb612101ad"
     },
     "materialization": "from the named blobs only, never by copying the working tree",
-    "worktree_caveat": "AGENTS.md is dirty at worktree blob 500c039c, +14 lines on model selection and Rust direction belonging to another session; those lines do not touch coordination guidance, verified by reading the diff, so the control's coordination text is identical either way"
+    "worktree_caveat": "AGENTS.md is dirty at worktree blob 500c039c, +14 lines on model selection and Rust direction belonging to another session; those lines do not touch coordination guidance, verified by reading the diff, so the control's coordination text is identical either way",
+    "treatment_composition": "baseline PLUS skill; both arms receive the pinned baseline. The measured quantity is the skill marginal effect, and figures must be reported as marginal, not skill-versus-nothing"
   },
   "held_constant": [
     "model",
@@ -137,5 +138,60 @@
     "generalization beyond the corrections the skill was written from, except scenario 8's single anecdote",
     "anything about real worker behaviour: whether agents receive, interpret and act on corrections; scripted actors cannot test it",
     "a statistically reliable winner; n=1 per cell, 8 cells per arm. Any decisive case must be re-run as a fresh variant before it is relied on"
-  ]
+  ],
+  "amendment_1": {
+    "amended_at": "2026-10-23T03:40:00Z",
+    "before_first_trial": true,
+    "raised_by": "outside review of this registration",
+    "corrections": [
+      {
+        "id": 1,
+        "kind": "design error",
+        "subject": "treatment composition",
+        "was": "arm table readable as the skill replacing the pinned baseline",
+        "now": "both arms receive the baseline; treatment adds the skill; the measured quantity is the marginal effect"
+      },
+      {
+        "id": 2,
+        "kind": "design error",
+        "subject": "environment responsiveness",
+        "was": "scripted events identical across arms",
+        "now": "a deterministic state machine with an identical response POLICY per arm that reacts to coordinator actions; every fixture has at least one action that averts the invalidation and one that does not",
+        "why": "identical replies regardless of action make the primary metric unmeasurable, since a successful correction could have no effect",
+        "clock": "simulated, advanced by emitted actions only (posts, claims, dispatches, job starts, corrections); reads and inspections do not advance it, so machine speed is never scored"
+      },
+      {
+        "id": 3,
+        "kind": "completeness",
+        "subject": "fixtures frozen",
+        "artifact": "coordination-skill-pilot-fixtures-20261023.md",
+        "sha256_prefix": "f8062bc5",
+        "note": "'acts usefully' replaced by an observable criterion in every cell",
+        "s3_separation": "S3's primary is emission before clock 10; scripted worker compliance and acknowledgment go in scripted_compliance, which no primary or decision rule may read, being properties of the script and not evidence about real workers"
+      },
+      {
+        "id": 4,
+        "kind": "wrong premise",
+        "subject": "S8",
+        "was": "channels do not apply to a shared quota",
+        "now": "path intersection does not apply; channels can carry quota coordination. The fixture tests recognition of a dependency with no file paths, and any authorized route counts as a solution"
+      },
+      {
+        "id": 5,
+        "kind": "overstated claim",
+        "subject": "cost",
+        "was": "the campaign's 1.6-1.7 Mwt agents called a ceiling",
+        "now": "historical observations of different work, not an established ceiling for anything"
+      }
+    ],
+    "cost_reporting": {
+      "yields": "a conditional extrapolation, not an upper bound for eight scenarios of differing length",
+      "reported_as_three_separate_figures": [
+        "measured trial cost for S1 treatment and S1 control",
+        "harness construction cost, one-time and not per-trial",
+        "independent scoring cost, which scales with trials but is not the coordinator's"
+      ],
+      "trial_limits": "a per-trial weighted-token ceiling and a maximum emitted-action count, both chosen before launch and registered with the calibration result; a trial hitting a limit is recorded as limit_reached, not as a coordination failure"
+    }
+  }
 }

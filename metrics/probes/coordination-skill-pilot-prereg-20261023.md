@@ -137,3 +137,75 @@ before running the remaining 14.** The user authorizes the full set or does not.
 - A statistically reliable winner. n = 1 per cell, 8 cells per arm. Six-to-eight
   pairs expose failure modes. Any decisive case must be re-run as a fresh
   variant before it is relied on.
+
+## Amendment 1, 2026-10-23: five corrections before the first trial
+
+Raised by the outside reviewer of this registration. Two are design errors, not
+wording.
+
+### 1. Treatment is baseline **plus** skill (design error)
+
+The arm table could be read as the skill **replacing** the pinned coordination
+instructions, which would test a different question. **Both arms receive the
+baseline** — `AGENTS.md` `c75cc1f6…` §startup chatboard read and
+`docs/codex-chatboard.md` `62b38ee2…`. Treatment adds
+`skills/coordination-channels/SKILL.md` `7e604a4a…`. **The measured quantity is
+the skill's marginal effect**, and any figure from this pilot must be reported
+as marginal, not as skill-versus-nothing.
+
+### 2. Response policies, not identical replies (design error)
+
+The registration said "scripted events identical across arms". Taken literally
+that makes the primary metric unmeasurable: if the environment replies the same
+regardless of what the coordinator does, a successful correction can have no
+effect, so "did the consequence occur" has no variance to measure.
+
+**Corrected:** the environment is a deterministic state machine with an
+**identical response policy** per arm that reacts to what the coordinator
+actually does. Every fixture has at least one coordinator action that averts the
+invalidation and at least one that does not.
+
+**Simulated clock, advanced by emitted actions only** — posts, claims,
+dispatches, job starts, corrections. Reads and inspections do not advance it, so
+looking before acting is not penalised and **machine speed is never scored.**
+
+### 3. All eight fixtures frozen, with binary criteria
+
+`coordination-skill-pilot-fixtures-20261023.md`, sha256 `f8062bc5…`, frozen
+before any trial. "Acts usefully" is replaced by an observable criterion in
+every cell; S8's is a schedule meeting both deadlines without a window
+exceeding 10 units.
+
+**S3 keeps emission separate from worker action.** Its primary is emission of
+the correction before clock 10. The scripted worker's compliance and
+acknowledgment are recorded in `scripted_compliance`, which **no primary or
+decision rule may read**, because they are properties of the script and not
+evidence about real workers.
+
+### 4. S8's premise was wrong
+
+The registration said channels do not apply to a shared quota. **Path
+intersection** does not apply; channels can carry quota coordination perfectly
+well. The fixture now tests whether the coordinator recognises a dependency with
+no file paths, and **any authorized route counts as a solution** — no particular
+message or channel is prescribed. The quota is entirely simulated.
+
+### 5. The cost claim was overstated
+
+The registration called the campaign's 1.6–1.7 Mwt agents "a ceiling". They are
+**historical observations of different work**, not an established ceiling for
+anything. Corrected.
+
+**What the calibration pair yields is a conditional extrapolation, not an upper
+bound** for eight scenarios of differing length. Reported as three separate
+figures, never as one number:
+
+- **measured trial cost** for S1 treatment and S1 control,
+- **harness construction cost**, which is one-time and not per-trial,
+- **independent scoring cost**, which scales with trials but is not the
+  coordinator's.
+
+**Explicit trial limits are chosen before launch**, not discovered during it: a
+per-trial weighted-token ceiling and a maximum emitted-action count per trial,
+both registered with the calibration result. A trial that hits a limit is
+recorded as `limit_reached`, not as a failure of coordination.
