@@ -783,3 +783,68 @@ fn the_cited_evaluation_path_must_resolve_to_the_checked_bytes() {
     // Control: the honest assessment cites the supplied file.
     assert_eq!(f.run("path-control", &f.doc).code, 0);
 }
+
+/// The cited path comes from a stored document, so it must not be able to stall the check: a FIFO
+/// (or a link to one) has no writer, a directory has no bytes, and an oversize file must not be
+/// read without bound. Every case runs under an external deadline so a regression fails the test
+/// instead of hanging it.
+#[test]
+fn a_cited_path_that_is_not_a_plain_file_is_rejected_without_blocking() {
+    use std::time::Duration;
+    let f = fixture("assess-special", true);
+    let deadline = Duration::from_secs(10);
+    let check = |tag: &str, cited: &Path| {
+        let mut doc = f.doc.clone();
+        doc["evaluation"]["path"] = json!(s(cited));
+        let path = f.case.dir.join(format!("{tag}.assessment.json"));
+        write_json(&path, &doc);
+        cli_with_deadline(
+            &[
+                "check",
+                "--kind",
+                "assessment",
+                &s(&path),
+                "--evaluation",
+                &s(&f.evaluation),
+                "--profile",
+                &s(&f.case.profile_path()),
+            ],
+            deadline,
+        )
+        .unwrap_or_else(|| panic!("{tag}: the check did not exit within {deadline:?}"))
+    };
+    let unresolved = |tag: &str, cited: &Path| {
+        let run = check(tag, cited);
+        assert_eq!(run.code, 1, "{tag}: {}", run.stdout);
+        assert_eq!(run.codes(), ["evaluation_path_unresolved"], "{tag}");
+        let report = run.out_json();
+        let message = report["errors"][0]["message"].as_str().unwrap();
+        assert!(message.contains(&s(cited)), "{tag}: {message}");
+        assert_eq!(report["errors"][0]["at"], "evaluation.path", "{tag}");
+    };
+
+    let fifo = f.case.dir.join("evaluation.fifo");
+    make_fifo(&fifo);
+    unresolved("path-fifo", &fifo);
+    let fifo_link = f.case.dir.join("evaluation-fifo-link");
+    std::os::unix::fs::symlink(&fifo, &fifo_link).unwrap();
+    unresolved("path-fifo-link", &fifo_link);
+    unresolved("path-directory", &f.case.dir);
+
+    // A regular file larger than the checked bytes is a mismatch, found without reading it all.
+    let oversize = f.case.dir.join("oversize.json");
+    let mut bytes = std::fs::read(&f.evaluation).unwrap();
+    bytes.extend(std::iter::repeat_n(b' ', 1 << 20));
+    std::fs::write(&oversize, bytes).unwrap();
+    let run = check("path-oversize", &oversize);
+    assert_eq!(run.code, 1, "{}", run.stdout);
+    assert_eq!(run.codes(), ["evaluation_path_mismatch"]);
+
+    // Controls: a byte-identical regular copy and a symlink to it are still accepted.
+    let copy = f.case.dir.join("copy.json");
+    std::fs::copy(&f.evaluation, &copy).unwrap();
+    assert_eq!(check("path-copy", &copy).code, 0);
+    let link = f.case.dir.join("copy-link.json");
+    std::os::unix::fs::symlink(&copy, &link).unwrap();
+    assert_eq!(check("path-copy-link", &link).code, 0);
+}

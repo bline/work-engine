@@ -100,6 +100,58 @@ pub fn cli<S: AsRef<str>>(args: &[S]) -> Run {
     }
 }
 
+/// Like `cli`, but a child that has not exited within `limit` is killed and reported as `None`,
+/// so a regression that blocks cannot hang the test run.
+pub fn cli_with_deadline<S: AsRef<str>>(args: &[S], limit: std::time::Duration) -> Option<Run> {
+    use std::io::Read;
+    use std::process::Stdio;
+    let mut child = Command::new(BIN)
+        .args(args.iter().map(|a| a.as_ref()))
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("run work-engine-readiness");
+    let started = std::time::Instant::now();
+    loop {
+        if let Some(status) = child.try_wait().expect("poll child") {
+            let (mut stdout, mut stderr) = (String::new(), String::new());
+            child
+                .stdout
+                .take()
+                .unwrap()
+                .read_to_string(&mut stdout)
+                .unwrap();
+            child
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut stderr)
+                .unwrap();
+            return Some(Run {
+                code: status.code().expect("exit code"),
+                stdout,
+                stderr,
+            });
+        }
+        if started.elapsed() >= limit {
+            child.kill().expect("kill blocked child");
+            child.wait().expect("collect killed child");
+            return None;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+}
+
+/// Make a FIFO at `path` that has no writer.
+pub fn make_fifo(path: &Path) {
+    let status = Command::new("mkfifo")
+        .arg(path)
+        .status()
+        .expect("run mkfifo");
+    assert!(status.success(), "mkfifo {}", path.display());
+}
+
 /// Run git in `dir` with a fixed identity and no user or system configuration.
 pub fn git(dir: &Path, args: &[&str]) -> String {
     let output = Command::new("git")

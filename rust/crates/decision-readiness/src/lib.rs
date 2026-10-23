@@ -16,11 +16,19 @@
 //! rederive result alongside the assessment check.
 //!
 //! An assessment's `evaluation.path` is the pointer a reader follows, so `check --kind assessment`
-//! reads it: the path must be readable (`evaluation_path_unresolved`) and its bytes must equal the
-//! file passed with `--evaluation` (`evaluation_path_mismatch`). The path need not be the same
-//! pathname as `--evaluation`; a byte-identical copy at the cited path is accepted, since
-//! `evaluation.sha256` binds the content. The check runs at the time of checking and cannot show
-//! the file was at that path when the assessment was written.
+//! reads it: the path must name a readable regular file, following symlinks
+//! (`evaluation_path_unresolved` otherwise), and its bytes must equal the file passed with
+//! `--evaluation` (`evaluation_path_mismatch`). A FIFO, device or directory is opened without
+//! blocking and refused on the opened descriptor, never waited on, and at most the supplied
+//! file's length plus one byte is read. The path need not be the same pathname as `--evaluation`;
+//! a byte-identical copy at the cited path is accepted, since `evaluation.sha256` binds the
+//! content. The check runs at the time of checking and cannot show the file was at that path when
+//! the assessment was written.
+//!
+//! Every other path read from a stored document (the recorded plan, battery and observation of an
+//! evaluation under `--rederive` and `recheck`, and a subject's manifests) gets the same guard but
+//! with no length cap. Files named directly on the command line are read as given: a deliberate
+//! FIFO such as process substitution is the caller's choice, and the guard would refuse it.
 //!
 //! The attributed-basis rule trusts the evaluation's status, so the evaluation's requirement
 //! classes are compared with the profile's: an evaluation that relabels a requirement's class is

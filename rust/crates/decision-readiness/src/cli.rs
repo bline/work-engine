@@ -78,6 +78,51 @@ fn read_file(path: &str) -> Result<Vec<u8>, Failure> {
     std::fs::read(path).map_err(|error| Failure::usage(format!("cannot read {path}: {error}")))
 }
 
+/// Read a file whose path was taken from a stored document (a recorded input, a cited evaluation,
+/// a subject's manifest) rather than named on the command line. Such a path can name a FIFO, a
+/// device or a directory, and opening a FIFO waits for a writer indefinitely, so the file is
+/// opened without blocking and the opened descriptor, not the pathname, is checked to be a
+/// regular file. Symlinks are followed. `limit` caps the bytes read, so a file larger than the
+/// caller can use is detected without reading it whole.
+fn read_stored(path: &str, limit: Option<u64>) -> std::io::Result<Vec<u8>> {
+    use std::io::Read;
+    use std::os::unix::fs::OpenOptionsExt;
+    let not_regular = || {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "not a regular file (a stored path must name a regular file)",
+        )
+    };
+    // A path that is already not a regular file is refused before it is opened at all; the check
+    // on the descriptor below is the one that holds if the path is swapped in between.
+    if !std::fs::metadata(path)?.is_file() {
+        return Err(not_regular());
+    }
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(O_NONBLOCK)
+        .open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(not_regular());
+    }
+    let mut bytes = Vec::new();
+    file.take(limit.unwrap_or(u64::MAX))
+        .read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+/// `O_NONBLOCK` on Linux, the platform this tooling runs on: a FIFO opened with it for reading
+/// returns at once instead of waiting for a writer. Elsewhere the pathname check above is the only
+/// guard before the open.
+#[cfg(target_os = "linux")]
+const O_NONBLOCK: i32 = 0o4000;
+#[cfg(not(target_os = "linux"))]
+const O_NONBLOCK: i32 = 0;
+
+fn read_stored_file(path: &str) -> Result<Vec<u8>, Failure> {
+    read_stored(path, None).map_err(|error| Failure::usage(format!("cannot read {path}: {error}")))
+}
+
 /// Run the CLI. Returns the process exit code.
 pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
     match dispatch(args, out) {
@@ -297,9 +342,9 @@ fn rederive_evaluation(
 ) -> Result<(Vec<ErrorItem>, Vec<ErrorItem>), Failure> {
     let profile = read_file(profile_path)?;
     let subject = read_file(subject_path)?;
-    let plan = read_file(&recorded.run_plan.path)?;
-    let battery = read_file(&recorded.battery.path)?;
-    let observation = read_file(&recorded.observation.path)?;
+    let plan = read_stored_file(&recorded.run_plan.path)?;
+    let battery = read_stored_file(&recorded.battery.path)?;
+    let observation = read_stored_file(&recorded.observation.path)?;
     let mut bad = Vec::new();
     for (code, at, bytes, want) in [
         (
@@ -410,11 +455,12 @@ fn check_evaluation_citation(cited: &str, supplied: &[u8]) -> Option<ErrorItem> 
     if !is_normalised_absolute(cited) {
         return None;
     }
-    match std::fs::read(cited) {
+    // One byte past the supplied length is enough to tell a longer file from an identical one.
+    match read_stored(cited, Some(supplied.len() as u64 + 1)) {
         Err(error) => Some(ErrorItem::new(
             cc::EVALUATION_PATH_UNRESOLVED,
             "evaluation.path",
-            format!("cannot read the cited evaluation: {error}"),
+            format!("cannot read the cited evaluation {cited}: {error}"),
         )),
         Ok(bytes) if bytes != supplied => Some(ErrorItem::new(
             cc::EVALUATION_PATH_MISMATCH,
@@ -470,7 +516,7 @@ pub fn check_subject_bytes(
             return Err(Failure::usage(format!("subject: {message}")));
         }
     };
-    let read = |path: &str| std::fs::read(path);
+    let read = |path: &str| read_stored(path, None);
     let outcome = validate_subject(&profile, &sha256_hex(profile_bytes), &subject, &read)
         .map_err(|error| Failure::usage(error.to_string()))?;
     Ok(CheckReport::new("subject", outcome.errors))
@@ -497,7 +543,7 @@ fn plan(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
         .iter()
         .map(|(profile, subject)| PairBytes { profile, subject })
         .collect();
-    let read = |path: &str| std::fs::read(path);
+    let read = |path: &str| read_stored(path, None);
     let plan = derive_plan(&pairs, &read).map_err(|error| match error {
         PlanError::Input(message) => Failure::usage(message),
         PlanError::Refused(errors) => Failure::refused(
@@ -611,7 +657,7 @@ fn evaluate_bytes(
         evaluated_at,
         binary_sha256: &binary_sha256,
     };
-    let read = |path: &str| std::fs::read(path);
+    let read = |path: &str| read_stored(path, None);
     run_evaluate(&inputs, &read).map_err(|error| match error {
         EvalError::Input(message) => Failure::usage(message),
         EvalError::Invalid(errors) => Failure::refused(
@@ -664,7 +710,7 @@ fn recheck(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     if !structural.is_empty() {
         return Err(refuse(structural));
     }
-    let first_bytes = read_file(&evaluation.battery.path)?;
+    let first_bytes = read_stored_file(&evaluation.battery.path)?;
     let mut errors = Vec::new();
     if sha256_hex(&first_bytes) != evaluation.battery.file_sha256 {
         errors.push(ErrorItem::new(
@@ -746,4 +792,23 @@ fn recheck(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
             .map_err(serialise_failure)?;
     write_output(out, out_path, &text)?;
     Ok(EXIT_OK)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_stored;
+
+    #[test]
+    fn read_stored_caps_the_bytes_read_and_refuses_a_directory() {
+        let dir = std::env::temp_dir().join(format!("read-stored-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("f");
+        std::fs::write(&file, b"0123456789").unwrap();
+        let path = file.to_str().unwrap();
+        assert_eq!(read_stored(path, Some(4)).unwrap(), b"0123");
+        assert_eq!(read_stored(path, Some(11)).unwrap(), b"0123456789");
+        assert_eq!(read_stored(path, None).unwrap(), b"0123456789");
+        assert!(read_stored(dir.to_str().unwrap(), None).is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }
