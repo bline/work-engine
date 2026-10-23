@@ -371,11 +371,10 @@ fn ac5a_an_estimate_set_edited_after_derivation_is_a_digest_refusal() {
     edit_json(&w.sets[1], |d| {
         d["estimates"][0]["value"] = json!({"quantity": 3})
     });
-    assert_eq!(
-        check(&path, false).code,
-        0,
-        "the finding is still self-consistent"
-    );
+    // Contract S6: the plain check hashes the stored estimate-set paths too, so the edit shows.
+    let plain = check(&path, false);
+    assert_eq!(plain.code, 1, "{}", plain.stdout);
+    assert!(has(&plain.pairs(), "digest_mismatch", "estimate_sets.1"));
     let run = check(&path, true);
     assert_eq!(run.code, 3, "{}", run.stderr);
     assert!(has(&run.pairs(), "digest_mismatch", "estimate_sets.1"));

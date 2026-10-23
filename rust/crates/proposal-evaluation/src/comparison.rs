@@ -28,7 +28,7 @@ use std::collections::BTreeSet;
 pub const KIND_COMPARISON: &str = "comparison";
 
 /// Report note: what a pass without `--rederive` leaves open.
-pub const NOTE_NOT_REDERIVED: &str = "the finding was checked for internal consistency and against the contract at its stored path; it was not re-derived from the estimate sets (use --rederive)";
+pub const NOTE_NOT_REDERIVED: &str = "the finding was checked for internal consistency, against the contract at its stored path, and for the sha256 of every stored estimate-set path; the estimate sets were not read as records and the finding was not re-derived from them (use --rederive)";
 
 /// Check the bytes of a comparison finding (contract 3.4). Not JSON is a [`Failure`] (exit 2); a
 /// stored input that cannot be re-read or whose digest differs under `rederive` is a
@@ -49,7 +49,7 @@ pub fn check_comparison_bytes(bytes: &[u8], rederive: bool) -> Result<CheckRepor
         if rederive {
             contract = Some(
                 load_contract(&finding.contract.path, Some(&finding.contract.sha256))
-                    .map_err(resolved)?,
+                    .map_err(|f| resolved(f, "contract"))?,
             );
         } else {
             contract = resolve_contract(&finding, &mut errors);
@@ -59,6 +59,20 @@ pub fn check_comparison_bytes(bytes: &[u8], rederive: bool) -> Result<CheckRepor
         with_contract(&finding, c, &mut errors);
     }
     if !rederive {
+        // Contract S6 / EXT-004: every stored pointer is read at its stored path and hashed.
+        // `--rederive` does the same through `load_estimate_set` and refuses with exit 3.
+        for (i, set) in finding.estimate_sets.iter().enumerate() {
+            if check_file_ref_ok(&set.path, &set.sha256) {
+                read_pointer(
+                    &set.path,
+                    &set.sha256,
+                    &format!("estimate_sets.{i}"),
+                    &mut errors,
+                );
+            }
+        }
+    }
+    if !rederive {
         notes.push(NOTE_NOT_REDERIVED.to_string());
     } else if let Some(loaded) = contract {
         rederive_check(&finding, &loaded, &mut errors, &mut notes)?;
@@ -66,12 +80,13 @@ pub fn check_comparison_bytes(bytes: &[u8], rederive: bool) -> Result<CheckRepor
     Ok(CheckReport::new(KIND_COMPARISON, errors, notes))
 }
 
-/// A stored pointer that cannot be re-read is a binding refusal, not a usage error.
-fn resolved(f: Failure) -> Failure {
+/// A stored pointer that cannot be re-read is a binding refusal, not a usage error; `at` names
+/// the pointer (`contract` or `estimate_sets.N`).
+fn resolved(f: Failure, at: &str) -> Failure {
     match f {
         Failure::Io { path, message } => Failure::Binding {
             message: format!("stored path {path} cannot be read: {message}"),
-            errors: vec![ErrorItem::new(codes::POINTER_UNRESOLVED, "", message)],
+            errors: vec![ErrorItem::new(codes::POINTER_UNRESOLVED, at, message)],
         },
         other => other,
     }
@@ -410,25 +425,37 @@ fn need_limitation(f: &ComparisonFinding, prefix: &str, name: &str, out: &mut Ve
     }
 }
 
-/// Non-rederive resolution of the contract at its stored path. Reports and returns `None` when
-/// it cannot be read, its digest differs, or it is not a valid contract.
-fn resolve_contract(f: &ComparisonFinding, out: &mut Vec<ErrorItem>) -> Option<LoadedContract> {
-    let bytes = match read_regular_file(&f.contract.path) {
+/// Read the regular file at a stored path and hash it. `None` after reporting
+/// `pointer_unresolved` (unreadable, not a regular file, too large) or `digest_mismatch` at `at`.
+fn read_pointer(
+    path: &str,
+    stored_sha256: &str,
+    at: &str,
+    out: &mut Vec<ErrorItem>,
+) -> Option<(Vec<u8>, String)> {
+    let bytes = match read_regular_file(path) {
         Ok(b) => b,
         Err(message) => {
-            out.push(err(codes::POINTER_UNRESOLVED, "contract", message));
+            out.push(err(codes::POINTER_UNRESOLVED, at, message));
             return None;
         }
     };
     let found = sha256_hex(&bytes);
-    if found != f.contract.sha256 {
+    if found != stored_sha256 {
         out.push(err(
             codes::DIGEST_MISMATCH,
-            "contract",
-            format!("stored {}, found {found}", f.contract.sha256),
+            at,
+            format!("stored {stored_sha256}, found {found}"),
         ));
         return None;
     }
+    Some((bytes, found))
+}
+
+/// Non-rederive resolution of the contract at its stored path. Reports and returns `None` when
+/// it cannot be read, its digest differs, or it is not a valid contract.
+fn resolve_contract(f: &ComparisonFinding, out: &mut Vec<ErrorItem>) -> Option<LoadedContract> {
+    let (bytes, found) = read_pointer(&f.contract.path, &f.contract.sha256, "contract", out)?;
     match parse_contract(&bytes) {
         Ok(ParsedContract::Contract(c)) if validate_contract(&c).is_empty() => {
             Some(LoadedContract {
@@ -556,7 +583,7 @@ fn rederive_check(
         .enumerate()
         .map(|(i, s)| {
             load_estimate_set(&s.path, Some(&s.sha256), &format!("estimate_sets.{i}"))
-                .map_err(resolved)
+                .map_err(|f| resolved(f, &format!("estimate_sets.{i}")))
         })
         .collect::<Result<_, _>>()?;
     let fresh = derive(
