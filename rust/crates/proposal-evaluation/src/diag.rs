@@ -38,6 +38,12 @@ pub mod codes {
     pub const ESTIMATES_EMPTY: &str = "estimates_empty";
     /// An ordinal value, interval end or baseline names a label not in the scale's `levels`.
     pub const LEVEL_UNKNOWN: &str = "level_unknown";
+    // Comparison contract (contract 3.6).
+    pub const VERSION_INVALID: &str = "version_invalid";
+    pub const CONTRACT_PROPOSALS_INSUFFICIENT: &str = "contract_proposals_insufficient";
+    pub const STALE_BEFORE_AFTER_CUTOFF: &str = "stale_before_after_cutoff";
+    /// Named by the builder: `measures` is empty (a contract includes at least one measure).
+    pub const MEASURES_EMPTY: &str = "measures_empty";
 }
 
 /// One violated rule: a stable `code`, where it is (`at`, a dotted path), and a message.

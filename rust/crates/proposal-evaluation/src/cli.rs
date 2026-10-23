@@ -8,12 +8,12 @@
 //! Exit codes: 0 valid, 1 invalid, 2 usage, IO or parse failure. Exit 3 (a binding refusal)
 //! belongs to deriving commands, which this build does not have.
 
-use crate::check::{KIND, check_estimate_set_bytes};
+use crate::check::{KIND, KIND_CONTRACT, check_contract_bytes, check_estimate_set_bytes};
 use crate::diag::{EXIT_INVALID, EXIT_OK, Failure};
 use serde::Serialize;
 use std::io::Write;
 
-const USAGE: &str = "usage:\n  work-engine-evaluation check --kind estimate-set FILE";
+const USAGE: &str = "usage:\n  work-engine-evaluation check --kind estimate-set FILE\n  work-engine-evaluation check --kind contract FILE";
 
 /// Serialise an output document: `to_string_pretty` plus one `\n` (contract S2).
 pub fn to_output_string<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
@@ -75,16 +75,20 @@ fn parse_check(args: &[String]) -> Result<(String, String), Failure> {
 
 fn check(args: &[String], out: &mut dyn Write) -> Result<i32, Failure> {
     let (kind, file) = parse_check(args)?;
-    if kind != KIND {
+    if kind != KIND && kind != KIND_CONTRACT {
         return Err(Failure::Usage(format!(
-            "unknown --kind {kind:?}; this build checks {KIND:?}"
+            "unknown --kind {kind:?}; this build checks {KIND:?} and {KIND_CONTRACT:?}"
         )));
     }
     let bytes = std::fs::read(&file).map_err(|e| Failure::Io {
         path: file.clone(),
         message: e.to_string(),
     })?;
-    let report = check_estimate_set_bytes(&bytes)?;
+    let report = if kind == KIND_CONTRACT {
+        check_contract_bytes(&bytes)?
+    } else {
+        check_estimate_set_bytes(&bytes)?
+    };
     let text = to_output_string(&report)
         .map_err(|e| Failure::Usage(format!("cannot serialise output: {e}")))?;
     out.write_all(text.as_bytes())

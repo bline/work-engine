@@ -258,3 +258,110 @@ pub struct EstimateSet {
     pub limitations: Vec<String>,
     pub authority: Authority,
 }
+
+// ---------------------------------------------------------------------------
+// E2: the comparison contract (contract 3.1)
+// ---------------------------------------------------------------------------
+
+pub const CONTRACT_SCHEMA: &str = "proposal-comparison-contract-v1";
+
+/// The authority that selected the comparison surface (EI:112).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SelectingAuthority {
+    pub decision_owner: String,
+    pub exercised_by: String,
+    pub evidence: String,
+}
+
+/// A proposal revision the contract compares: the sha256 of its `packet.json` bytes (UD1).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContractProposal {
+    pub proposal_id: String,
+    pub packet_sha256: String,
+}
+
+/// One measure the contract includes, with the confidence an estimate must reach (UD3).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContractMeasure {
+    pub measure_id: String,
+    pub definition: String,
+    pub scale: Scale,
+    pub direction: Direction,
+    pub scope: String,
+    pub minimum_confidence: Confidence,
+}
+
+impl ContractMeasure {
+    /// The comparability key an estimate's `measure` must equal (EV:114).
+    pub fn measure(&self) -> Measure {
+        Measure {
+            definition: self.definition.clone(),
+            scale: self.scale.clone(),
+            direction: self.direction,
+            scope: self.scope.clone(),
+        }
+    }
+}
+
+/// A concern the contract intentionally leaves out (EI:107).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExcludedConcern {
+    pub concern: String,
+    pub reason: String,
+}
+
+/// How a missing, contested or stale condition is handled (UD6).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TreatmentKind {
+    Block,
+    DropMeasure,
+}
+
+/// Every member is required: a closed schema has no implicit default.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Treatment {
+    pub missing: TreatmentKind,
+    pub contested: TreatmentKind,
+    pub stale: TreatmentKind,
+}
+
+/// Whether intervals are used in the comparison.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Uncertainty {
+    Point,
+    IntervalRobust,
+}
+
+/// Constant non-authority block of a contract (EV:140); every member must be `false`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContractAuthority {
+    pub priority_authorized: bool,
+    pub acceptance_authorized: bool,
+}
+
+/// The authored comparison contract. There is deliberately no weights field (EV:122).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ComparisonContract {
+    pub schema: String,
+    pub contract_id: String,
+    pub version: u64,
+    pub selecting_authority: SelectingAuthority,
+    pub decision_scope: String,
+    pub proposals: Vec<ContractProposal>,
+    pub measures: Vec<ContractMeasure>,
+    pub excluded_concerns: Vec<ExcludedConcern>,
+    pub treatment: Treatment,
+    pub uncertainty: Uncertainty,
+    pub evidence_cutoff: String,
+    pub stale_before: String,
+    pub authority: ContractAuthority,
+}

@@ -148,6 +148,61 @@ pub fn has(found: &[(String, String)], code: &str, at: &str) -> bool {
     found.iter().any(|(c, a)| c == code && a == at)
 }
 
+/// A valid comparison contract over proposals `alpha.one` and `alpha.two` with one quantity
+/// measure (`cost`, lower is better) and one ordinal measure (`risk`, lower is better).
+pub fn valid_contract() -> Value {
+    json!({
+        "schema": "proposal-comparison-contract-v1",
+        "contract_id": "contract-1",
+        "version": 1,
+        "selecting_authority": {
+            "decision_owner": "portfolio owner",
+            "exercised_by": "tester",
+            "evidence": "fixture"
+        },
+        "decision_scope": "fixture scope",
+        "proposals": [
+            {"proposal_id": "alpha.one", "packet_sha256": HEX_A},
+            {"proposal_id": "alpha.two", "packet_sha256": HEX_B}
+        ],
+        "measures": [
+            {
+                "measure_id": "cost",
+                "definition": "engineering days",
+                "scale": {"kind": "quantity", "unit": "day", "exponent": 0},
+                "direction": "lower_is_better",
+                "scope": "this proposal",
+                "minimum_confidence": "medium"
+            },
+            {
+                "measure_id": "risk",
+                "definition": "chance of regression",
+                "scale": {"kind": "ordinal", "levels": ["low", "medium", "high"]},
+                "direction": "lower_is_better",
+                "scope": "this proposal",
+                "minimum_confidence": "low"
+            }
+        ],
+        "excluded_concerns": [{"concern": "morale", "reason": "not measured"}],
+        "treatment": {"missing": "block", "contested": "block", "stale": "block"},
+        "uncertainty": "point",
+        "evidence_cutoff": "2026-10-22T10:00:00Z",
+        "stale_before": "2026-10-01T00:00:00Z",
+        "authority": {"priority_authorized": false, "acceptance_authorized": false}
+    })
+}
+
+/// `(code, at)` pairs from `check_contract_bytes` on `value`.
+pub fn contract_violations(value: &Value) -> Vec<(String, String)> {
+    let bytes = serde_json::to_vec(value).unwrap();
+    proposal_evaluation::check_contract_bytes(&bytes)
+        .expect("valid JSON")
+        .errors
+        .into_iter()
+        .map(|e| (e.code, e.at))
+        .collect()
+}
+
 pub struct Run {
     pub code: i32,
     pub stdout: String,

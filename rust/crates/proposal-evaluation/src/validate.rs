@@ -16,7 +16,7 @@ pub enum Parsed {
     Invalid(Vec<ErrorItem>),
 }
 
-fn err(code: &str, at: impl Into<String>, message: impl Into<String>) -> ErrorItem {
+pub(crate) fn err(code: &str, at: impl Into<String>, message: impl Into<String>) -> ErrorItem {
     ErrorItem::new(code, at, message)
 }
 
@@ -148,13 +148,13 @@ pub fn is_utc_timestamp(text: &str) -> bool {
 // Rules
 // ---------------------------------------------------------------------------
 
-fn non_empty(out: &mut Vec<ErrorItem>, text: &str, at: &str) {
+pub(crate) fn non_empty(out: &mut Vec<ErrorItem>, text: &str, at: &str) {
     if text.is_empty() {
         out.push(err(codes::EMPTY_STRING, at, "must be a non-empty string"));
     }
 }
 
-fn time(out: &mut Vec<ErrorItem>, text: &str, at: &str) -> bool {
+pub(crate) fn time(out: &mut Vec<ErrorItem>, text: &str, at: &str) -> bool {
     let ok = is_utc_timestamp(text);
     if !ok {
         out.push(err(
@@ -230,7 +230,7 @@ fn check_value(
     }
 }
 
-fn check_scale(out: &mut Vec<ErrorItem>, scale: &Scale, at: &str) {
+pub(crate) fn check_scale(out: &mut Vec<ErrorItem>, scale: &Scale, at: &str) {
     match scale {
         Scale::Ordinal { levels } => {
             for (i, l) in levels.iter().enumerate() {

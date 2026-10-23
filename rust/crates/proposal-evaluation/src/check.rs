@@ -12,6 +12,7 @@
 //! current claim-evidence tooling emits projections over `proposal-research-v1` claims is
 //! `not established`; the fixtures in this crate are synthetic.
 
+use crate::contract::{ParsedContract, parse_contract, validate_contract};
 use crate::diag::{CheckReport, ErrorItem, Failure, codes};
 use crate::digest::{is_sha256_hex, sha256_hex};
 use crate::model::{BasisRef, Estimate, EstimateSet, FileRef};
@@ -51,6 +52,19 @@ pub fn check_estimate_set_bytes(bytes: &[u8]) -> Result<CheckReport, Failure> {
     let mut errors = validate_estimate_set(&set);
     check_pointers(&set, &mut errors);
     Ok(CheckReport::new(KIND, errors, notes()))
+}
+
+/// The `kind` printed in a contract report.
+pub const KIND_CONTRACT: &str = "contract";
+
+/// Check the bytes of a comparison-contract file (contract 3.4). The contract holds no file
+/// pointer, so nothing is resolved; every violated rule of a parseable document is listed.
+pub fn check_contract_bytes(bytes: &[u8]) -> Result<CheckReport, Failure> {
+    let errors = match parse_contract(bytes)? {
+        ParsedContract::Invalid(errors) => errors,
+        ParsedContract::Contract(c) => validate_contract(&c),
+    };
+    Ok(CheckReport::new(KIND_CONTRACT, errors, Vec::new()))
 }
 
 /// A pointer can be resolved only when its stored shape is valid, so a malformed path is never
